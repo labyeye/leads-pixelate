@@ -240,12 +240,20 @@ export const facebookAPI = {
         leadsCount: number;
       }>;
     }>(`/facebook/forms?pageId=${pageId}`),
-  connectPage: (pageId: string, selectedFormIds: string[]) =>
+  connectPage: (pageId: string, selectedFormIds: string[], allowedStates: string[] = []) =>
     request<{ success: boolean; message: string; data: any }>(
       "/facebook/connect-page",
       {
         method: "POST",
-        body: JSON.stringify({ pageId, selectedFormIds }),
+        body: JSON.stringify({ pageId, selectedFormIds, allowedStates }),
+      },
+    ),
+  sync: (pageId?: string) =>
+    request<{ success: boolean; message: string; data: { created: number; skipped: number } }>(
+      "/facebook/sync",
+      {
+        method: "POST",
+        body: JSON.stringify({ pageId }),
       },
     ),
   getConnectedPages: () =>

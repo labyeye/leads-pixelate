@@ -263,7 +263,7 @@ router.post(
   "/connect-page",
   protect,
   asyncHandler(async (req, res) => {
-    const { pageId, selectedFormIds = [] } = req.body;
+    const { pageId, selectedFormIds = [], allowedStates = [] } = req.body;
 
     if (!pageId || typeof pageId !== "string" || !/^\d+$/.test(pageId)) {
       return res
@@ -297,6 +297,7 @@ router.post(
       pageName,
       accessToken: pageToken,
       selectedFormIds,
+      allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
       webhookVerified: subscribed,
       connectedAt: new Date(),
     };
@@ -380,6 +381,109 @@ router.get(
       connectedAt: p.connectedAt,
     }));
     res.json({ success: true, data: pages });
+  }),
+);
+
+router.post(
+  "/sync",
+  protect,
+  asyncHandler(async (req, res) => {
+    const { pageId } = req.body;
+    const query = req.user.tenantId
+      ? { _id: req.user.tenantId }
+      : { ownerUser: req.user._id };
+
+    const tenant = await Tenant.findOne(query);
+    if (!tenant?.integrations?.facebook?.enabled) {
+      return res.status(400).json({ success: false, message: "Facebook not connected" });
+    }
+
+    const pagesToSync = pageId
+      ? tenant.integrations.facebook.pages.filter((p) => p.pageId === pageId)
+      : tenant.integrations.facebook.pages;
+
+    if (!pagesToSync.length) {
+      return res.status(400).json({ success: false, message: "No pages to sync" });
+    }
+
+    const adminUser = await User.findOne({
+      ...(tenant._id ? { tenantId: tenant._id } : {}),
+      role: { $in: ["admin", "super_admin"] },
+    });
+    if (!adminUser) {
+      return res.status(400).json({ success: false, message: "No admin user found" });
+    }
+
+    let totalCreated = 0;
+    let totalSkipped = 0;
+
+    for (const page of pagesToSync) {
+      const formIds = page.selectedFormIds?.length
+        ? page.selectedFormIds
+        : await (async () => {
+            const data = await fbGet(`/${page.pageId}/leadgen_forms`, page.accessToken, {
+              fields: "id",
+            });
+            return (data.data || []).map((f) => f.id);
+          })();
+
+      for (const formId of formIds) {
+        try {
+          const data = await fbGet(`/${formId}/leads`, page.accessToken, {
+            fields: "field_data,created_time,ad_id,ad_name,form_id",
+            limit: "100",
+          });
+
+          for (const lead of data.data || []) {
+            try {
+              const exists = await Lead.findOne({ facebookLeadgenId: lead.id });
+              if (exists) { totalSkipped++; continue; }
+
+              const fMap = {};
+              for (const f of lead.field_data || []) {
+                fMap[f.name.toLowerCase().replace(/\s+/g, "_")] = f.values?.[0] ?? "";
+              }
+
+              const state = (fMap.state || fMap.province || fMap.region || "").toLowerCase().trim();
+              const allowedStates = page.allowedStates || [];
+              if (allowedStates.length > 0 && state) {
+                const matches = allowedStates.some((s) => state.includes(s) || s.includes(state));
+                if (!matches) { totalSkipped++; continue; }
+              }
+
+              const name =
+                fMap.full_name ||
+                fMap.name ||
+                `${fMap.first_name || ""} ${fMap.last_name || ""}`.trim() ||
+                "Facebook Lead";
+
+              await Lead.create({
+                name,
+                company: fMap.company_name || fMap.company || "N/A",
+                phone: fMap.phone_number || fMap.phone || fMap.mobile || "",
+                email: fMap.email || fMap.email_address || "",
+                location: fMap.city || fMap.location || "",
+                source: "Facebook",
+                requirement: fMap.product || fMap.product_interest || `Via Facebook Lead Ad: ${lead.ad_name || formId}`,
+                status: "PENDING CONTACT",
+                assignedTo: adminUser._id,
+                tenantId: tenant._id || null,
+                facebookLeadgenId: lead.id,
+                facebookFormId: formId,
+                facebookAdId: lead.ad_id || "",
+              });
+              totalCreated++;
+            } catch {}
+          }
+        } catch {}
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Sync complete — ${totalCreated} new leads imported, ${totalSkipped} skipped`,
+      data: { created: totalCreated, skipped: totalSkipped },
+    });
   }),
 );
 
@@ -492,8 +596,18 @@ router.post(
           const company =
             fMap.company_name || fMap.company || fMap.organization || "";
           const city = fMap.city || fMap.location || "";
+          const state = (fMap.state || fMap.province || fMap.region || "").toLowerCase().trim();
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
+
+          // State filter — skip lead if allowedStates is set and state doesn't match
+          const allowedStates = pageConfig.allowedStates || [];
+          if (allowedStates.length > 0 && state) {
+            const stateMatches = allowedStates.some(
+              (s) => state.includes(s) || s.includes(state),
+            );
+            if (!stateMatches) continue;
+          }
 
           const adminUser = await User.findOne({
             ...(tenant._id ? { tenantId: tenant._id } : {}),

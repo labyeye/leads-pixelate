@@ -81,9 +81,12 @@ export function FacebookWizard({
     new Set(),
   );
   const [allForms, setAllForms] = useState(true); // "capture all forms" toggle
+  const [allowedStates, setAllowedStates] = useState<string[]>([]); // empty = all states
+  const [stateInput, setStateInput] = useState("");
 
   const [oauthLoading, setOauthLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState<string | null>(null);
 
   // Connected pages (multi-page)
   const [connectedPages, setConnectedPages] = useState<
@@ -178,7 +181,7 @@ export function FacebookWizard({
     setConnecting(true);
     try {
       const formIds = allForms ? [] : [...selectedFormIds];
-      await facebookAPI.connectPage(selectedPage.id, formIds);
+      await facebookAPI.connectPage(selectedPage.id, formIds, allowedStates);
       setStep("done");
       onConnected();
       toast({
@@ -641,6 +644,75 @@ export function FacebookWizard({
                 </span>
               </div>
             )}
+
+            {/* State / Location filter */}
+            <div className="border-2 border-black p-4 bg-white space-y-3">
+              <div>
+                <p className="text-xs font-bold text-black uppercase tracking-wider">
+                  Location Filter (Optional)
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Only capture leads from specific states or cities. Leave empty to capture from everywhere.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={stateInput}
+                  onChange={(e) => setStateInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const val = stateInput.trim();
+                      if (val && !allowedStates.includes(val)) {
+                        setAllowedStates((prev) => [...prev, val]);
+                      }
+                      setStateInput("");
+                    }
+                  }}
+                  placeholder="Type state or city, press Enter"
+                  className="flex-1 border-2 border-black px-3 py-2 text-sm focus:outline-none focus:border-[#1877F2]"
+                />
+                <button
+                  onClick={() => {
+                    const val = stateInput.trim();
+                    if (val && !allowedStates.includes(val)) {
+                      setAllowedStates((prev) => [...prev, val]);
+                    }
+                    setStateInput("");
+                  }}
+                  className="border-2 border-black px-3 py-2 bg-black text-white text-sm font-bold hover:bg-gray-800"
+                >
+                  Add
+                </button>
+              </div>
+
+              {allowedStates.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {allowedStates.map((s) => (
+                    <span
+                      key={s}
+                      className="flex items-center gap-1 border-2 border-black px-2 py-1 bg-[#EFF6FF] text-xs font-bold"
+                    >
+                      {s}
+                      <button
+                        onClick={() => setAllowedStates((prev) => prev.filter((x) => x !== s))}
+                        className="text-red-500 hover:text-red-700 ml-1"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {allowedStates.length === 0 && (
+                <p className="text-[11px] text-[#00C48C] font-medium">
+                  ✓ Capturing leads from all locations
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -684,6 +756,24 @@ export function FacebookWizard({
                     </p>
                   </div>
                   <button
+                    disabled={syncing === cp.pageId}
+                    onClick={async () => {
+                      setSyncing(cp.pageId);
+                      try {
+                        const res = await facebookAPI.sync(cp.pageId);
+                        toast({ title: "Sync complete", description: res.message });
+                      } catch (err: any) {
+                        toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+                      } finally {
+                        setSyncing(null);
+                      }
+                    }}
+                    className="border-2 border-black p-1.5 hover:bg-blue-50 transition-colors mr-1"
+                    title="Sync leads now"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-[#1877F2] ${syncing === cp.pageId ? "animate-spin" : ""}`} />
+                  </button>
+                  <button
                     disabled={disconnecting === cp.pageId}
                     onClick={async () => {
                       setDisconnecting(cp.pageId);
@@ -698,6 +788,7 @@ export function FacebookWizard({
                       }
                     }}
                     className="border-2 border-black p-1.5 hover:bg-red-50 transition-colors"
+                    title="Disconnect page"
                   >
                     {disconnecting === cp.pageId ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />

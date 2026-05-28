@@ -66,6 +66,8 @@ const tenantSchema = new mongoose.Schema(
             pageName: { type: String, default: "" },
             accessToken: { type: String, default: "" },
             selectedFormIds: { type: [String], default: [] },
+            // Empty = accept leads from all states; non-empty = only these states
+            allowedStates: { type: [String], default: [] },
             webhookVerified: { type: Boolean, default: false },
             connectedAt: { type: Date, default: null },
           },
