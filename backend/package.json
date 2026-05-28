@@ -1,0 +1,36 @@
+{
+  "name": "leadflow-saas-backend",
+  "version": "2.0.0",
+  "description": "LeadFlow SaaS — Lead Management Platform Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node utils/seeder.js",
+    "backup:leads": "node scripts/backupLeadsData.js",
+    "migrate:phase2": "node scripts/migrateToPhase2Structure.js",
+    "update:statushistory": "node scripts/updateStatusHistory.js",
+    "restore:leads": "node scripts/restoreLeadsData.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-async-handler": "^1.2.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.12.1",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "razorpay": "^2.9.6",
+    "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

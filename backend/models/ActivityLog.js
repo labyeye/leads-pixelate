@@ -1,0 +1,68 @@
+const mongoose = require("mongoose");
+
+const activityLogSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    userName: { type: String, default: "System" },
+    userEmail: { type: String, default: "" },
+    userRole: { type: String, default: "" },
+
+    action: {
+      type: String,
+      required: true,
+      enum: [
+        "LOGIN",
+        "LOGIN_FAILED",
+        "LOGOUT",
+        "REGISTER",
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "NOTE_ADDED",
+        "LEAD_CONVERTED",
+        "PASSWORD_CHANGED",
+        "PROFILE_UPDATED",
+        "INDIAMART_SYNC",
+        "PRINT_LOGGED",
+      ],
+    },
+
+    module: {
+      type: String,
+      enum: [
+        "Auth",
+        "User",
+        "Lead",
+        "Client",
+        "Product",
+        "FactoryProduct",
+        "Service",
+        "Quotation",
+        "Inventory",
+        "Printing",
+      ],
+    },
+
+    description: { type: String },
+
+    targetId: { type: String },
+
+    ip: { type: String },
+
+    timestamp: { type: Date, default: Date.now },
+  },
+  { timestamps: false, versionKey: false },
+);
+
+activityLogSchema.index(
+  { timestamp: 1 },
+  { expireAfterSeconds: 60 * 60 * 24 * 90 },
+);
+activityLogSchema.index({ timestamp: -1 });
+activityLogSchema.index({ user: 1 });
+activityLogSchema.index({ module: 1 });
+
+module.exports = mongoose.model("ActivityLog", activityLogSchema);

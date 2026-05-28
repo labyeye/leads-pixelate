@@ -1,0 +1,782 @@
+import { useState, useEffect } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { settingsAPI } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Building2,
+  Landmark,
+  FileCheck,
+  Loader2,
+  Save,
+  Plus,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  ShieldCheck,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// ── Permission matrix definition ────────────────────────────────────────────
+type CrudOp = "create" | "read" | "update" | "delete";
+type CrmRole =
+  | "super_admin"
+  | "admin"
+  | "sales_executive"
+  | "service_manager"
+  | "accountant";
+
+interface ResourcePermissions {
+  resource: string;
+  permissions: Record<CrmRole, Record<CrudOp, boolean>>;
+}
+
+const CRM_ROLES: { id: CrmRole; label: string }[] = [
+  { id: "super_admin", label: "Super Admin" },
+  { id: "admin", label: "Admin" },
+  { id: "sales_executive", label: "Sales Exec" },
+  { id: "service_manager", label: "Service Mgr" },
+  { id: "accountant", label: "Accountant" },
+];
+
+const defaultAll = (): Record<CrmRole, Record<CrudOp, boolean>> => ({
+  super_admin: { create: true, read: true, update: true, delete: true },
+  admin: { create: true, read: true, update: true, delete: true },
+  sales_executive: { create: false, read: false, update: false, delete: false },
+  service_manager: { create: false, read: false, update: false, delete: false },
+  accountant: { create: false, read: false, update: false, delete: false },
+});
+
+const INITIAL_PERMISSIONS: ResourcePermissions[] = [
+  {
+    resource: "Leads",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Visit Calendar",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: false, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Follow-ups",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: false, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Team / Users",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: false },
+      sales_executive: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: false, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Integrations",
+    permissions: {
+      ...defaultAll(),
+      sales_executive: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: false, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Billing",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: false },
+      admin: { create: false, read: true, update: false, delete: false },
+      sales_executive: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Settings",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: false, read: true, update: true, delete: false },
+      sales_executive: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: false, update: false, delete: false },
+    },
+  },
+];
+
+export default function SettingsPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [settings, setSettings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [permissions, setPermissions] =
+    useState<ResourcePermissions[]>(INITIAL_PERMISSIONS);
+  const [actionModal, setActionModal] = useState<{
+    show: boolean;
+    type: "success" | "error";
+    title: string;
+    message: string;
+  }>({ show: false, type: "success", title: "", message: "" });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const res = await settingsAPI.get();
+      setSettings(res.data);
+    } catch (error: any) {
+      setSettings({
+        companyName: user?.company?.name || "",
+        companyGST: "",
+        companyAddress: "",
+        companyPhone: "",
+        companyEmail: user?.company?.email || "",
+        companyWebsite: "",
+        logoUrl: "",
+        bankAccountName: "",
+        bankAccountNumber: "",
+        bankIFSC: "",
+        bankName: "",
+        bankBranch: "",
+        quotationTitle: "PROFORMA INVOICE",
+        quotationFooter: "",
+        quotationTerms: [],
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setSettings((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTermsChange = (index: number, value: string) => {
+    const newTerms = [...(settings.quotationTerms || [])];
+    newTerms[index] = value;
+    setSettings((prev: any) => ({ ...prev, quotationTerms: newTerms }));
+  };
+
+  const addTerm = () => {
+    setSettings((prev: any) => ({
+      ...prev,
+      quotationTerms: [...(prev.quotationTerms || []), ""],
+    }));
+  };
+
+  const removeTerm = (index: number) => {
+    const newTerms = (settings.quotationTerms || []).filter(
+      (_: any, i: number) => i !== index,
+    );
+    setSettings((prev: any) => ({ ...prev, quotationTerms: newTerms }));
+  };
+
+  const togglePermission = (resourceIdx: number, role: CrmRole, op: CrudOp) => {
+    setPermissions((prev) => {
+      const next = prev.map((r, i) => {
+        if (i !== resourceIdx) return r;
+        return {
+          ...r,
+          permissions: {
+            ...r.permissions,
+            [role]: { ...r.permissions[role], [op]: !r.permissions[role][op] },
+          },
+        };
+      });
+      return next;
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await settingsAPI.update(settings);
+      setActionModal({
+        show: true,
+        type: "success",
+        title: "Settings Saved",
+        message: "Settings saved successfully.",
+      });
+    } catch (error: any) {
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to save settings",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (actionModal.show && actionModal.type === "success") {
+      const t = setTimeout(
+        () => setActionModal((m) => ({ ...m, show: false })),
+        2000,
+      );
+      return () => clearTimeout(t);
+    }
+  }, [actionModal.show, actionModal.type]);
+
+  if (loading) {
+    return (
+      <AppLayout title="Settings">
+        <div className="flex h-[80vh] items-center justify-center">
+          <div className="w-10 h-10 bg-[#024BAB] border-2 border-black nb-shadow animate-bounce flex items-center justify-center">
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const InputField = ({
+    label,
+    name,
+    value,
+    placeholder = "",
+    type = "text",
+  }: any) => (
+    <div className="space-y-1.5">
+      <label className="block text-xs font-bold text-black uppercase tracking-wider">
+        {label}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0 bg-white"
+      />
+    </div>
+  );
+
+  const TextAreaField = ({
+    label,
+    name,
+    value,
+    placeholder = "",
+    rows = 3,
+  }: any) => (
+    <div className="space-y-1.5">
+      <label className="block text-xs font-bold text-black uppercase tracking-wider">
+        {label}
+      </label>
+      <textarea
+        name={name}
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0 bg-white resize-none"
+      />
+    </div>
+  );
+
+  const tabs = [
+    { id: "general", label: "General Info", icon: Building2 },
+    { id: "bank", label: "Bank Details", icon: Landmark },
+    { id: "terms", label: "Terms & Footer", icon: FileCheck },
+    { id: "permissions", label: "Permissions", icon: ShieldCheck },
+  ];
+
+  return (
+    <AppLayout title="Settings">
+      <div className="max-w-5xl mx-auto space-y-6 p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-black">
+              Settings
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage company information and quotation template defaults
+            </p>
+          </div>
+          {activeTab !== "permissions" && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={cn(
+                "nb-btn px-5 py-2.5 text-sm font-bold text-white border-2 border-black flex items-center gap-2 shrink-0",
+                saving
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-[#024BAB] hover:bg-[#01368A]",
+              )}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Save Changes
+            </button>
+          )}
+        </div>
+
+        {/* Tab nav */}
+        <div className="nb-card bg-white">
+          <div className="flex border-b-2 border-black flex-wrap">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex-1 px-3 sm:px-4 py-3 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-colors border-r-2 border-black last:border-r-0",
+                    activeTab === tab.id
+                      ? "bg-[#024BAB] text-white"
+                      : "bg-white text-black hover:bg-[#024BAB]/10",
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="p-5 sm:p-6">
+            {/* ── General Info ── */}
+            {activeTab === "general" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField
+                    label="Company Name"
+                    name="companyName"
+                    value={settings?.companyName || ""}
+                  />
+                  <InputField
+                    label="GST Number"
+                    name="companyGST"
+                    value={settings?.companyGST || ""}
+                    placeholder="07AAAAA0000A1Z5"
+                  />
+                  <InputField
+                    label="Phone Number"
+                    name="companyPhone"
+                    value={settings?.companyPhone || ""}
+                  />
+                  <InputField
+                    label="Email Address"
+                    name="companyEmail"
+                    value={settings?.companyEmail || ""}
+                    type="email"
+                  />
+                  <InputField
+                    label="Website URL"
+                    name="companyWebsite"
+                    value={settings?.companyWebsite || ""}
+                    placeholder="https://example.com"
+                  />
+                  <InputField
+                    label="Logo URL"
+                    name="logoUrl"
+                    value={settings?.logoUrl || ""}
+                    placeholder="https://yourdomain.com/logo.png"
+                  />
+                </div>
+                <TextAreaField
+                  label="Company Address"
+                  name="companyAddress"
+                  value={settings?.companyAddress || ""}
+                  placeholder="Enter full company address"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* ── Bank Details ── */}
+            {activeTab === "bank" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField
+                    label="Account Holder Name"
+                    name="bankAccountName"
+                    value={settings?.bankAccountName || ""}
+                  />
+                  <InputField
+                    label="Account Number"
+                    name="bankAccountNumber"
+                    value={settings?.bankAccountNumber || ""}
+                  />
+                  <InputField
+                    label="IFSC Code"
+                    name="bankIFSC"
+                    value={settings?.bankIFSC || ""}
+                  />
+                  <InputField
+                    label="Bank Name"
+                    name="bankName"
+                    value={settings?.bankName || ""}
+                  />
+                  <InputField
+                    label="Branch Name"
+                    name="bankBranch"
+                    value={settings?.bankBranch || ""}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── Terms & Footer ── */}
+            {activeTab === "terms" && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <InputField
+                    label="Quotation Page Title"
+                    name="quotationTitle"
+                    value={settings?.quotationTitle || ""}
+                    placeholder="e.g. PROFORMA INVOICE"
+                  />
+                  <TextAreaField
+                    label="Footer Message"
+                    name="quotationFooter"
+                    value={settings?.quotationFooter || ""}
+                    placeholder="e.g. This is a computer generated document."
+                    rows={2}
+                  />
+                </div>
+
+                <div className="border-t-2 border-black pt-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-black uppercase tracking-wider">
+                      Terms & Conditions
+                    </h3>
+                    <button
+                      onClick={addTerm}
+                      className="nb-btn px-3 py-1.5 text-xs font-bold text-white bg-[#00C48C] border-2 border-black flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add Term
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {(settings?.quotationTerms || []).map(
+                      (term: string, index: number) => (
+                        <div key={index} className="flex gap-2">
+                          <textarea
+                            value={term}
+                            onChange={(e) =>
+                              handleTermsChange(index, e.target.value)
+                            }
+                            placeholder={`Term ${index + 1}`}
+                            rows={2}
+                            className="flex-1 px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0 bg-white resize-none"
+                          />
+                          <button
+                            onClick={() => removeTerm(index)}
+                            className="nb-btn px-3 py-2 text-white bg-[#EF4444] border-2 border-black self-start"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ),
+                    )}
+                    {(!settings?.quotationTerms ||
+                      settings.quotationTerms.length === 0) && (
+                      <div className="text-center py-6 border-2 border-dashed border-black/30">
+                        <p className="text-xs text-muted-foreground">
+                          No terms added. Click "Add Term" to get started.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Permissions ── */}
+            {activeTab === "permissions" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 bg-[#024BAB] border-2 border-black flex items-center justify-center shrink-0 nb-shadow-sm">
+                    <ShieldCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-display font-bold text-black">
+                      Role Permissions
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Configure what each role can do per resource
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table
+                    className="w-full border-2 border-black"
+                    style={{ minWidth: 700 }}
+                  >
+                    <thead>
+                      <tr className="bg-[#024BAB]">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r-2 border-black w-36">
+                          Resource
+                        </th>
+                        {CRM_ROLES.map((role) => (
+                          <th
+                            key={role.id}
+                            className="px-2 py-3 text-center text-xs font-bold text-white uppercase tracking-wider border-r-2 border-black last:border-r-0"
+                            colSpan={4}
+                          >
+                            {role.label}
+                          </th>
+                        ))}
+                      </tr>
+                      <tr className="bg-[#024BAB]/10 border-b-2 border-black">
+                        <th className="px-4 py-2 text-left text-[10px] font-bold text-black uppercase tracking-wider border-r-2 border-black" />
+                        {CRM_ROLES.map((role) =>
+                          ["C", "R", "U", "D"].map((op) => (
+                            <th
+                              key={`${role.id}-${op}`}
+                              className="px-1 py-2 text-center text-[10px] font-bold text-black uppercase tracking-wider border-r border-black/20 last:border-r-2 last:border-black"
+                            >
+                              {op}
+                            </th>
+                          )),
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {permissions.map((res, resIdx) => (
+                        <tr
+                          key={res.resource}
+                          className={cn(
+                            "border-b-2 border-black last:border-b-0 transition-colors",
+                            resIdx % 2 === 0 ? "bg-white" : "bg-[#024BAB]/5",
+                          )}
+                        >
+                          <td className="px-4 py-3 text-xs font-bold text-black border-r-2 border-black whitespace-nowrap">
+                            {res.resource}
+                          </td>
+                          {CRM_ROLES.map((role) =>
+                            (
+                              ["create", "read", "update", "delete"] as CrudOp[]
+                            ).map((op) => {
+                              const checked = res.permissions[role.id][op];
+                              const isSuperAdmin = role.id === "super_admin";
+                              return (
+                                <td
+                                  key={`${role.id}-${op}`}
+                                  className="px-1 py-3 text-center border-r border-black/20 last:border-r-2 last:border-black"
+                                >
+                                  <button
+                                    onClick={() =>
+                                      !isSuperAdmin &&
+                                      togglePermission(resIdx, role.id, op)
+                                    }
+                                    disabled={isSuperAdmin}
+                                    className={cn(
+                                      "w-5 h-5 border-2 border-black flex items-center justify-center mx-auto transition-colors",
+                                      checked
+                                        ? "bg-[#024BAB]"
+                                        : "bg-white hover:bg-[#024BAB]/10",
+                                      isSuperAdmin &&
+                                        "opacity-60 cursor-not-allowed",
+                                    )}
+                                    title={
+                                      isSuperAdmin
+                                        ? "Super Admin always has full access"
+                                        : `Toggle ${op} for ${role.label}`
+                                    }
+                                  >
+                                    {checked && (
+                                      <svg
+                                        className="w-3 h-3 text-white"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                      >
+                                        <path
+                                          d="M2 6l3 3 5-5"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        />
+                                      </svg>
+                                    )}
+                                  </button>
+                                </td>
+                              );
+                            }),
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex items-start gap-2 p-3 border-2 border-black bg-[#FA731C]/10 mt-2">
+                  <span className="text-[10px] font-bold text-[#FA731C] uppercase tracking-wider shrink-0 mt-0.5">
+                    Note
+                  </span>
+                  <p className="text-xs text-black">
+                    C = Create, R = Read, U = Update, D = Delete. Super Admin
+                    always has full access to all resources. Changes here
+                    configure the role model for your team.
+                  </p>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => {
+                      setActionModal({
+                        show: true,
+                        type: "success",
+                        title: "Permissions Saved",
+                        message: "Role permissions have been updated.",
+                      });
+                    }}
+                    className="nb-btn px-5 py-2.5 text-sm font-bold text-white bg-[#024BAB] border-2 border-black flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save Permissions
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Success/Error Modal */}
+      {actionModal.show && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="nb-card bg-white w-full max-w-sm p-8 flex flex-col items-center justify-center text-center">
+            {actionModal.type === "success" ? (
+              <>
+                <div className="mb-4 animate-bounce">
+                  <CheckCircle className="w-16 h-16 text-[#00C48C]" />
+                </div>
+                <h2 className="text-2xl font-display font-bold text-black mb-2">
+                  {actionModal.title}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {actionModal.message}
+                </p>
+                <div className="flex gap-2 mt-4">
+                  <div className="w-2 h-2 bg-[#00C48C] rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-[#00C48C] rounded-full animate-pulse delay-100" />
+                  <div className="w-2 h-2 bg-[#00C48C] rounded-full animate-pulse delay-200" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-4 animate-bounce">
+                  <AlertCircle className="w-16 h-16 text-[#EF4444]" />
+                </div>
+                <h2 className="text-2xl font-display font-bold text-black mb-2">
+                  {actionModal.title}
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {actionModal.message}
+                </p>
+                <button
+                  onClick={() => setActionModal((m) => ({ ...m, show: false }))}
+                  className="nb-btn px-6 py-2 bg-[#EF4444] text-white text-sm font-bold border-2 border-black"
+                >
+                  Dismiss
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </AppLayout>
+  );
+}

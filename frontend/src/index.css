@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap");
+
+@layer base {
+  :root {
+    /* #024BAB as primary blue — matches HRMS */
+    --background: 213 60% 97%;
+    --foreground: 0 0% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 4%;
+
+    --primary: 213 96% 37%;
+    --primary-foreground: 0 0% 100%;
+
+    /* #FA731C as accent/secondary orange — matches HRMS */
+    --secondary: 26 95% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 213 30% 92%;
+    --muted-foreground: 0 0% 38%;
+
+    --accent: 26 95% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 72% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 4%;
+
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 4%;
+    --input: 0 0% 4%;
+    --ring: 213 96% 37%;
+
+    --radius: 0rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 4%;
+    --sidebar-primary: 213 96% 37%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 213 60% 95%;
+    --sidebar-accent-foreground: 0 0% 4%;
+    --sidebar-border: 0 0% 4%;
+    --sidebar-ring: 213 96% 37%;
+
+    --chart-1: 213 96% 37%;
+    --chart-2: 26 95% 55%;
+    --chart-3: 142 72% 42%;
+    --chart-4: 0 84% 55%;
+    --chart-5: 270 75% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer utilities {
+  /* Neubrutalism core shadows */
+  .nb-shadow {
+    box-shadow: 4px 4px 0px #0a0a0a;
+  }
+  .nb-shadow-sm {
+    box-shadow: 2px 2px 0px #0a0a0a;
+  }
+  .nb-shadow-lg {
+    box-shadow: 6px 6px 0px #0a0a0a;
+  }
+  .nb-shadow-blue {
+    box-shadow: 4px 4px 0px #024bab;
+  }
+  .nb-shadow-orange {
+    box-shadow: 4px 4px 0px #fa731c;
+  }
+
+  /* Neubrutalism card */
+  .nb-card {
+    @apply bg-white border-2 border-black;
+    box-shadow: 4px 4px 0px #0a0a0a;
+  }
+  .nb-card-hover {
+    @apply transition-all duration-150;
+  }
+  .nb-card-hover:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #0a0a0a;
+  }
+
+  /* Neubrutalism button */
+  .nb-btn {
+    @apply border-2 border-black font-bold transition-all duration-100;
+    box-shadow: 3px 3px 0px #0a0a0a;
+  }
+  .nb-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px #0a0a0a;
+  }
+  .nb-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #0a0a0a;
+  }
+
+  /* Neubrutalism input */
+  .nb-input {
+    @apply border-2 border-black bg-white font-medium rounded-none;
+    box-shadow: 2px 2px 0px #0a0a0a;
+  }
+  .nb-input:focus {
+    outline: none;
+    box-shadow: 3px 3px 0px #024bab;
+  }
+
+  /* Status badges */
+  .nb-badge {
+    @apply border-2 border-black font-bold text-xs px-2 py-0.5;
+    box-shadow: 2px 2px 0px #0a0a0a;
+  }
+
+  /* Tag color variants */
+  .nb-tag-blue {
+    @apply bg-[#024BAB] text-white;
+  }
+  .nb-tag-orange {
+    @apply bg-[#FA731C] text-white;
+  }
+  .nb-tag-green {
+    @apply bg-[#00C48C] text-black;
+  }
+  .nb-tag-red {
+    @apply bg-[#EF4444] text-white;
+  }
+  .nb-tag-blue {
+    @apply bg-[#024BAB] text-white;
+  }
+  .nb-tag-purple {
+    @apply bg-[#A855F7] text-white;
+  }
+  .nb-tag-white {
+    @apply bg-white text-black;
+  }
+  .nb-tag-teal {
+    @apply bg-[#0D9488] text-white;
+  }
+  .nb-tag-lime {
+    @apply bg-[#A3E635] text-black;
+  }
+  .nb-tag-pink {
+    @apply bg-[#FF3366] text-white;
+  }
+}
