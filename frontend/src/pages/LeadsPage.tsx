@@ -1303,6 +1303,9 @@ export default function LeadsPage() {
                     Phone
                   </th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                    City
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
                     <div className="flex items-center gap-1">
                       Budget
                       {renderBudgetRangeFilter()}
@@ -1447,6 +1450,9 @@ export default function LeadsPage() {
                             </td>
                             <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
                               {l.phone || "-"}
+                            </td>
+                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
+                              {l.location || "-"}
                             </td>
                             <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
                               {l.budget || "-"}

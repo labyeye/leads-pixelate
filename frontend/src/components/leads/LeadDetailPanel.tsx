@@ -141,7 +141,7 @@ export function LeadDetailPanel({
             <div className="flex items-start gap-2 text-muted-foreground pt-2">
               <MapPin className="w-4 h-4 mt-0.5 text-black/70" />
               <span className="text-foreground font-medium text-xs leading-tight">
-                Location: {lead.location}
+                City: {lead.location}
               </span>
             </div>
           )}
