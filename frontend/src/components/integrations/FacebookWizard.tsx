@@ -501,7 +501,7 @@ export function FacebookWizard({
               </h3>
               <p className="text-sm text-muted-foreground">
                 Forms from <strong>{selectedPage.name}</strong>. Leads from
-                these forms will appear in LeadFlow instantly.
+                these forms will appear in NestLeads instantly.
               </p>
             </div>
 
@@ -636,7 +636,7 @@ export function FacebookWizard({
                 </h3>
                 <p className="text-sm text-muted-foreground mt-2">
                   Every time someone fills your Lead Ad form, the lead will
-                  appear in LeadFlow within seconds.
+                  appear in NestLeads within seconds.
                 </p>
               </div>
             </div>

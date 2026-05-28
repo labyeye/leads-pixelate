@@ -66,7 +66,7 @@ router.get(
 
     const redirectUri =
       process.env.FACEBOOK_REDIRECT_URI ||
-      `${process.env.API_BASE_URL || "http://localhost:3500/"}/api/facebook/callback`;
+      `${process.env.VITE_API_URL || "https://leads.pixelatenest.com/"}/api/facebook/callback`;
 
     const state = Buffer.from(
       `${req.user.tenantId || "global"}:${req.user._id}`,
@@ -109,7 +109,7 @@ router.get(
 
     const redirectUri =
       process.env.FACEBOOK_REDIRECT_URI ||
-      `${process.env.API_BASE_URL || "http://localhost:3500/"}/api/facebook/callback`;
+      `${process.env.VITE_API_URL || "https://leads.pixelatenest.com/"}/api/facebook/callback`;
 
     const tokenRes = await fetch(
       `${FB_API}/oauth/access_token?` +

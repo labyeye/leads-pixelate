@@ -205,7 +205,7 @@ export default function OnboardingPage() {
           </div>
           <div>
             <span className="font-display font-bold text-black text-base block leading-tight">
-              LeadFlow
+              NestLeads
             </span>
             {tenant?.name && (
               <span className="text-[10px] text-muted-foreground font-medium">

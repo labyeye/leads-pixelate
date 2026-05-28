@@ -40,7 +40,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
           </div>
           <div className={cn(collapsed && "lg:hidden")}>
             <span className="font-display font-bold text-black text-[15px] block leading-tight">
-              LeadFlow
+              NestLeads
             </span>
             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
               CRM

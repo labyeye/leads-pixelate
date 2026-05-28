@@ -34,7 +34,7 @@ export default function LoginPage() {
             <Zap className="w-5 h-5 text-white fill-white" />
           </div>
           <span className="font-display font-bold text-white text-2xl">
-            LeadFlow
+            NestLeads
           </span>
         </div>
 
@@ -73,7 +73,7 @@ export default function LoginPage() {
               <Zap className="w-4 h-4 text-black fill-black" />
             </div>
             <span className="font-display font-bold text-xl text-black">
-              LeadFlow
+              NestLeads
             </span>
           </div>
 
@@ -165,7 +165,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-xs text-center text-muted-foreground mt-6">
-            New to LeadFlow?{" "}
+            New to NestLeads?{" "}
             <Link
               to="/register"
               className="font-bold text-black underline hover:text-[#FF3366] transition-colors"

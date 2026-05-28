@@ -1,7 +1,7 @@
 {
-  "name": "leadflow-saas-backend",
+  "name": "nestleads-saas-backend",
   "version": "2.0.0",
-  "description": "LeadFlow SaaS — Lead Management Platform Backend",
+  "description": "NestLeads SaaS — Lead Management Platform Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

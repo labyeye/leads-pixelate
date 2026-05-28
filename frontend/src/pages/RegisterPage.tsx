@@ -47,7 +47,7 @@ export default function RegisterPage() {
             <Zap className="w-5 h-5 text-white fill-white" />
           </div>
           <span className="font-display font-bold text-white text-2xl">
-            LeadFlow
+            NestLeads
           </span>
         </div>
 
@@ -93,7 +93,7 @@ export default function RegisterPage() {
               <Zap className="w-4 h-4 text-black fill-black" />
             </div>
             <span className="font-display font-bold text-xl text-black">
-              LeadFlow
+              NestLeads
             </span>
           </div>
 

@@ -100,7 +100,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.json({ success: true, message: "LeadFlow API" });
+  res.json({ success: true, message: "NestLeads API" });
 });
 
 app.use(notFound);
@@ -110,7 +110,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   if (process.env.NODE_ENV === "development") {
-    console.log(`LeadFlow API running on port ${PORT}`);
+    console.log(`NestLeads API running on port ${PORT}`);
   }
 });
 

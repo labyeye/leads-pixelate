@@ -222,12 +222,12 @@ const FacebookStep2Visual = () => (
       <div className="text-[11px] text-gray-600">Subscribe URL:</div>
       <HighlightBox label="Paste your webhook URL here">
         <div className="font-mono text-[10px] text-gray-700 break-all">
-          https://api.leadflow.app/api/facebook/webhook
+          https://api.nestleads.app/api/facebook/webhook
         </div>
       </HighlightBox>
       <div className="text-[11px] text-gray-600 mt-2">Verify Token:</div>
       <div className="border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-[10px] text-gray-700">
-        leadflow_verify_token
+        nestleads_verify_token
       </div>
       <div className="text-[10px] text-gray-400 flex items-start gap-1 mt-1">
         <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
@@ -268,7 +268,7 @@ const FacebookStep4Visual = () => (
     <div className="text-center">
       <p className="font-display font-bold text-base text-black">All set!</p>
       <p className="text-xs text-muted-foreground mt-1">
-        New Facebook Lead Ad submissions will appear in LeadFlow instantly.
+        New Facebook Lead Ad submissions will appear in NestLeads instantly.
       </p>
     </div>
   </div>
@@ -326,7 +326,7 @@ const INTEGRATIONS: Integration[] = [
         subtitle: "Step 3 of 3 — IndiaMART is now syncing leads",
         visual: <IndiamartStep3Visual />,
         instructions: [
-          "LeadFlow will check for new enquiries every 5 minutes automatically",
+          "NestLeads will check for new enquiries every 5 minutes automatically",
           "All new IndiaMART buyer enquiries will appear in your Leads tab",
           "You can also do a manual sync anytime from this page",
           'Each lead will be tagged with source "IndiaMART"',
@@ -359,14 +359,14 @@ const INTEGRATIONS: Integration[] = [
         actionLabel: "I've set up Lead Ads →",
       },
       {
-        title: "Add LeadFlow Webhook in Facebook",
+        title: "Add NestLeads Webhook in Facebook",
         subtitle: "Step 2 of 4 — Tell Facebook where to send leads",
         visual: <FacebookStep2Visual />,
         instructions: [
           'In your Facebook App, go to "Webhooks" in the left menu',
           'Click "Add Callback URL"',
           'Paste the Webhook URL shown below into the "Callback URL" field',
-          'In the "Verify Token" field, type exactly: leadflow_verify_token',
+          'In the "Verify Token" field, type exactly: nestleads_verify_token',
           'Click "Verify and Save" — Facebook will confirm the connection',
           'Then subscribe to the "leadgen" field to receive lead notifications',
         ],
@@ -375,14 +375,14 @@ const INTEGRATIONS: Integration[] = [
             key: "webhook_url",
             label: "Your Webhook URL (copy and paste into Facebook)",
             type: "readonly",
-            value: "https://api.leadflow.app/api/facebook/webhook",
+            value: "https://api.nestleads.app/api/facebook/webhook",
             help: "Paste this URL in Facebook App → Webhooks → Callback URL",
           },
           {
             key: "verify_token",
             label: "Verify Token (copy and paste into Facebook)",
             type: "readonly",
-            value: "leadflow_verify_token",
+            value: "nestleads_verify_token",
             help: "Paste this exact text in Facebook App → Webhooks → Verify Token",
           },
         ],
@@ -422,7 +422,7 @@ const INTEGRATIONS: Integration[] = [
         subtitle: "Step 4 of 4 — You're all set",
         visual: <FacebookStep4Visual />,
         instructions: [
-          "Every time someone fills your Facebook or Instagram Lead Ad, the lead will appear in LeadFlow instantly",
+          "Every time someone fills your Facebook or Instagram Lead Ad, the lead will appear in NestLeads instantly",
           'Leads are tagged with source "Facebook" so you can filter them',
           "You can create separate ad forms for different products and they'll all funnel here",
           "Go to Leads tab and filter by Source → Facebook to see them",
@@ -498,7 +498,7 @@ const INTEGRATIONS: Integration[] = [
           </div>
         ),
         instructions: [
-          "LeadFlow will check for new TradeIndia enquiries automatically",
+          "NestLeads will check for new TradeIndia enquiries automatically",
           'Leads will be tagged with source "TradeIndia"',
           "You can filter your Leads page by source to see TradeIndia leads",
         ],
@@ -544,7 +544,7 @@ const INTEGRATIONS: Integration[] = [
         instructions: [
           "Justdial provides API access on request — call their business support team",
           "Once you receive your API key via email, paste it below",
-          "LeadFlow will then auto-import all new Justdial enquiries",
+          "NestLeads will then auto-import all new Justdial enquiries",
         ],
         fields: [
           {
