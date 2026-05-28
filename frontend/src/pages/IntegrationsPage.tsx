@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
+import { facebookAPI } from "@/services/api";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -889,6 +890,15 @@ export default function IntegrationsPage() {
   >("login");
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
 
+  // Check DB on mount for existing Facebook connection
+  useEffect(() => {
+    facebookAPI.getConnectedPages().then((res) => {
+      if (res.data.length > 0) {
+        setConnectedIds((prev) => new Set([...prev, "facebook"]));
+      }
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     const fbStep = searchParams.get("fb_step");
     const fbError = searchParams.get("fb_error");
@@ -916,7 +926,7 @@ export default function IntegrationsPage() {
 
   const handleOpen = (integ: Integration) => {
     if (integ.id === "facebook") {
-      setFbStartStep("login");
+      setFbStartStep(connectedIds.has("facebook") ? "done" : "login");
       setShowFbWizard(true);
     } else {
       setSelected(integ);

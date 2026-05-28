@@ -47,6 +47,7 @@ import {
 import {
   leadsAPI,
   indiamartAPI,
+  facebookAPI,
   usersAPI,
   productsAPI,
   authAPI,
@@ -94,6 +95,8 @@ export default function LeadsPage() {
   const [syncPanelOpen, setSyncPanelOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<any>(null);
   const [lastSyncResult, setLastSyncResult] = useState<any>(null);
+  const [fbSyncing, setFbSyncing] = useState(false);
+  const [fbConnected, setFbConnected] = useState(false);
 
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [salesExecs, setSalesExecs] = useState<any[]>([]);
@@ -158,6 +161,9 @@ export default function LeadsPage() {
     fetchAllUsers();
     fetchProducts();
     fetchCurrentUser();
+    facebookAPI.getConnectedPages().then((res) => {
+      if (res.data.length > 0) setFbConnected(true);
+    }).catch(() => {});
   }, []);
   useEffect(() => {
     if (selectedLeadId) {
@@ -238,6 +244,19 @@ export default function LeadsPage() {
       const res = await indiamartAPI.getStatus();
       setSyncStatus(res.data);
     } catch {}
+  };
+
+  const handleFacebookSync = async () => {
+    try {
+      setFbSyncing(true);
+      const res = await facebookAPI.sync();
+      toast({ title: "Facebook Sync Complete", description: res.message });
+      fetchLeads();
+    } catch (error: any) {
+      toast({ title: "Facebook Sync Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setFbSyncing(false);
+    }
   };
 
   const handleIndiamartSync = async () => {
@@ -933,7 +952,23 @@ export default function LeadsPage() {
               Add Lead
             </Button>
 
-            {}
+            {fbConnected && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-10 gap-1.5 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 whitespace-nowrap"
+                onClick={handleFacebookSync}
+                disabled={fbSyncing}
+              >
+                {fbSyncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5" />
+                )}
+                {fbSyncing ? "Syncing..." : "Sync Facebook"}
+              </Button>
+            )}
+
             {syncStatus !== null && (
               <div className="flex items-center">
                 <Button
