@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -290,7 +291,7 @@ export default function OnboardingPage() {
                 }
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-4 bg-[#024BAB] border-2 border-black px-3 py-0.5 text-[11px] font-bold text-black uppercase tracking-wider">
+                  <div className="absolute -top-3 left-4 bg-[#024BAB] border-2 border-black px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
                     Most Popular
                   </div>
                 )}
@@ -398,7 +399,7 @@ export default function OnboardingPage() {
           </button>
 
           <p className="text-xs text-center text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
-            <span className="w-4 h-4 bg-[#00C48C] border-2 border-black flex items-center justify-center shrink-0 inline-flex">
+            <span className="w-4 h-4 bg-[#00C48C] border-2 border-black inline-flex items-center justify-center shrink-0">
               <Check className="w-2.5 h-2.5 text-black" />
             </span>
             Secured by Razorpay · UPI, Cards, Net Banking accepted · Cancel
