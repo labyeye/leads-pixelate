@@ -277,12 +277,11 @@ router.post(
         .json({ success: false, message: "selectedFormIds must be an array" });
     }
 
-    const tenant = await Tenant.findOne(
-      req.user.tenantId
-        ? { _id: req.user.tenantId }
-        : { ownerUser: req.user._id },
-    );
+    const query = req.user.tenantId
+      ? { _id: req.user.tenantId }
+      : { ownerUser: req.user._id };
 
+    const tenant = await Tenant.findOne(query);
     const userToken = tenant?.integrations?.facebook?.userAccessToken;
     if (!userToken) {
       return res
@@ -290,36 +289,41 @@ router.post(
         .json({ success: false, message: "Facebook not connected" });
     }
 
-    const { token: pageToken, name: pageName } = await getPageToken(
-      pageId,
-      userToken,
-    );
+    const { token: pageToken, name: pageName } = await getPageToken(pageId, userToken);
     const subscribed = await subscribePageToWebhook(pageId, pageToken);
 
-    await Tenant.findOneAndUpdate(
-      req.user.tenantId
-        ? { _id: req.user.tenantId }
-        : { ownerUser: req.user._id },
-      {
-        "integrations.facebook.enabled": true,
-        "integrations.facebook.pageId": pageId,
-        "integrations.facebook.pageName": pageName,
-        "integrations.facebook.accessToken": pageToken,
-        "integrations.facebook.selectedFormIds": selectedFormIds,
-        "integrations.facebook.webhookVerified": subscribed,
-        "integrations.facebook.connectedAt": new Date(),
-      },
+    const pageEntry = {
+      pageId,
+      pageName,
+      accessToken: pageToken,
+      selectedFormIds,
+      webhookVerified: subscribed,
+      connectedAt: new Date(),
+    };
+
+    // Upsert: update existing page entry or push new one
+    const existingPage = tenant.integrations.facebook.pages?.find(
+      (p) => p.pageId === pageId,
     );
+
+    if (existingPage) {
+      await Tenant.findOneAndUpdate(query, {
+        "integrations.facebook.enabled": true,
+        $set: { "integrations.facebook.pages.$[elem]": pageEntry },
+      }, {
+        arrayFilters: [{ "elem.pageId": pageId }],
+      });
+    } else {
+      await Tenant.findOneAndUpdate(query, {
+        "integrations.facebook.enabled": true,
+        $push: { "integrations.facebook.pages": pageEntry },
+      });
+    }
 
     res.json({
       success: true,
       message: "Facebook Page connected successfully",
-      data: {
-        pageId,
-        pageName,
-        subscribed,
-        formsSelected: selectedFormIds.length,
-      },
+      data: { pageId, pageName, subscribed, formsSelected: selectedFormIds.length },
     });
   }),
 );
@@ -328,21 +332,54 @@ router.post(
   "/disconnect",
   protect,
   asyncHandler(async (req, res) => {
-    await Tenant.findOneAndUpdate(
+    const { pageId } = req.body;
+    const query = req.user.tenantId
+      ? { _id: req.user.tenantId }
+      : { ownerUser: req.user._id };
+
+    if (pageId) {
+      // Remove a specific page
+      await Tenant.findOneAndUpdate(query, {
+        $pull: { "integrations.facebook.pages": { pageId } },
+      });
+      // Disable if no pages remain
+      const tenant = await Tenant.findOne(query);
+      if (!tenant?.integrations?.facebook?.pages?.length) {
+        await Tenant.findOneAndUpdate(query, {
+          "integrations.facebook.enabled": false,
+          "integrations.facebook.userAccessToken": "",
+        });
+      }
+    } else {
+      // Disconnect everything
+      await Tenant.findOneAndUpdate(query, {
+        "integrations.facebook.enabled": false,
+        "integrations.facebook.userAccessToken": "",
+        "integrations.facebook.oauthUserId": "",
+        "integrations.facebook.pages": [],
+      });
+    }
+    res.json({ success: true, message: "Facebook disconnected" });
+  }),
+);
+
+router.get(
+  "/connected-pages",
+  protect,
+  asyncHandler(async (req, res) => {
+    const tenant = await Tenant.findOne(
       req.user.tenantId
         ? { _id: req.user.tenantId }
         : { ownerUser: req.user._id },
-      {
-        "integrations.facebook.enabled": false,
-        "integrations.facebook.pageId": "",
-        "integrations.facebook.pageName": "",
-        "integrations.facebook.accessToken": "",
-        "integrations.facebook.userAccessToken": "",
-        "integrations.facebook.selectedFormIds": [],
-        "integrations.facebook.webhookVerified": false,
-      },
     );
-    res.json({ success: true, message: "Facebook disconnected" });
+    const pages = (tenant?.integrations?.facebook?.pages || []).map((p) => ({
+      pageId: p.pageId,
+      pageName: p.pageName,
+      selectedFormIds: p.selectedFormIds,
+      webhookVerified: p.webhookVerified,
+      connectedAt: p.connectedAt,
+    }));
+    res.json({ success: true, data: pages });
   }),
 );
 
@@ -409,17 +446,22 @@ router.post(
     for (const entry of body.entry || []) {
       const pageId = entry.id;
       const tenant = await Tenant.findOne({
-        "integrations.facebook.pageId": pageId,
+        "integrations.facebook.pages.pageId": pageId,
+        "integrations.facebook.enabled": true,
       });
-      if (!tenant || !tenant.integrations.facebook.enabled) continue;
+      if (!tenant) continue;
+
+      const pageConfig = tenant.integrations.facebook.pages.find(
+        (p) => p.pageId === pageId,
+      );
+      if (!pageConfig) continue;
 
       for (const change of entry.changes || []) {
         if (change.field !== "leadgen") continue;
 
         const { leadgen_id, form_id, ad_id, ad_name } = change.value;
 
-        const selectedForms =
-          tenant.integrations.facebook.selectedFormIds || [];
+        const selectedForms = pageConfig.selectedFormIds || [];
         if (selectedForms.length > 0 && !selectedForms.includes(form_id))
           continue;
 
@@ -428,7 +470,7 @@ router.post(
           if (exists) continue;
 
           const fbRes = await fetch(
-            `${FB_API}/${leadgen_id}?access_token=${tenant.integrations.facebook.accessToken}&fields=field_data,created_time`,
+            `${FB_API}/${leadgen_id}?access_token=${pageConfig.accessToken}&fields=field_data,created_time`,
           );
           const leadData = await fbRes.json();
 

@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   LogIn,
   LayoutGrid,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { facebookAPI } from "@/services/api";
@@ -83,6 +85,12 @@ export function FacebookWizard({
   const [oauthLoading, setOauthLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
+  // Connected pages (multi-page)
+  const [connectedPages, setConnectedPages] = useState<
+    Array<{ pageId: string; pageName: string; webhookVerified: boolean }>
+  >([]);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+
   // Load pages when arriving at select_page step
   useEffect(() => {
     if (step === "select_page") loadPages();
@@ -92,6 +100,18 @@ export function FacebookWizard({
   useEffect(() => {
     if (selectedPage) loadForms(selectedPage.id);
   }, [selectedPage]);
+
+  // Load connected pages when on done step
+  useEffect(() => {
+    if (step === "done") loadConnectedPages();
+  }, [step]);
+
+  const loadConnectedPages = async () => {
+    try {
+      const res = await facebookAPI.getConnectedPages();
+      setConnectedPages(res.data);
+    } catch {}
+  };
 
   const loadPages = async () => {
     setPagesLoading(true);
@@ -625,64 +645,95 @@ export function FacebookWizard({
         )}
 
         {step === "done" && (
-          <div className="max-w-lg mx-auto text-center space-y-6 pt-4">
-            <div className="nb-card bg-[#F0FDF4] p-8 flex flex-col items-center gap-4">
-              <div className="w-16 h-16 bg-[#00C48C] border-2 border-black flex items-center justify-center nb-shadow">
-                <CheckCircle2 className="w-8 h-8 text-black" />
+          <div className="max-w-lg mx-auto space-y-5 pt-4">
+            <div className="nb-card bg-[#F0FDF4] p-6 flex flex-col items-center gap-3 text-center">
+              <div className="w-14 h-14 bg-[#00C48C] border-2 border-black flex items-center justify-center nb-shadow">
+                <CheckCircle2 className="w-7 h-7 text-black" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-2xl text-black">
-                  {selectedPage?.name || "Your Page"} is connected!
+                <h3 className="font-display font-bold text-xl text-black">
+                  Facebook Connected!
                 </h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Every time someone fills your Lead Ad form, the lead will
-                  appear in NestLeads within seconds.
+                <p className="text-sm text-muted-foreground mt-1">
+                  Leads from your connected pages flow in automatically.
                 </p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-              {[
-                {
-                  icon: Zap,
-                  color: "#024BAB",
-                  title: "Instant capture",
-                  desc: "Leads arrive the moment someone submits a form",
-                },
-                {
-                  icon: ShieldCheck,
-                  color: "#00C48C",
-                  title: "No missed leads",
-                  desc: "Webhook ensures zero data loss even at high volume",
-                },
-                {
-                  icon: Users,
-                  color: "#1877F2",
-                  title: "Auto-assigned",
-                  desc: "New Facebook leads are assigned to your admin",
-                },
-                {
-                  icon: FileText,
-                  color: "#A855F7",
-                  title: "Tagged by source",
-                  desc: 'Filter by Source → "Facebook" to see them all',
-                },
-              ].map((item) => (
+            {/* Connected pages list */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-black uppercase tracking-wider">
+                Connected Pages ({connectedPages.length})
+              </p>
+              {connectedPages.map((cp) => (
                 <div
-                  key={item.title}
-                  className="nb-card bg-white p-3 flex items-start gap-3"
+                  key={cp.pageId}
+                  className="border-2 border-black p-3 bg-white flex items-center gap-3"
                 >
-                  <div
-                    className="w-8 h-8 border-2 border-black flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: item.color }}
+                  <div className="w-8 h-8 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
+                    <span className="text-white font-bold text-sm">f</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-black truncate">{cp.pageName}</p>
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      {cp.webhookVerified ? (
+                        <><Check className="w-3 h-3 text-[#00C48C]" /> Webhook active</>
+                      ) : (
+                        <><AlertCircle className="w-3 h-3 text-orange-400" /> Webhook pending</>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    disabled={disconnecting === cp.pageId}
+                    onClick={async () => {
+                      setDisconnecting(cp.pageId);
+                      try {
+                        await facebookAPI.disconnect(cp.pageId);
+                        setConnectedPages((prev) => prev.filter((p) => p.pageId !== cp.pageId));
+                        toast({ title: `${cp.pageName} disconnected` });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err.message, variant: "destructive" });
+                      } finally {
+                        setDisconnecting(null);
+                      }
+                    }}
+                    className="border-2 border-black p-1.5 hover:bg-red-50 transition-colors"
                   >
+                    {disconnecting === cp.pageId ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add another page */}
+            <button
+              onClick={() => {
+                setSelectedPage(null);
+                setSelectedFormIds(new Set());
+                setAllForms(true);
+                setStep("select_page");
+              }}
+              className="nb-btn w-full bg-white text-black py-3 text-sm font-bold flex items-center justify-center gap-2 border-2 border-black hover:bg-[#EFF6FF]"
+            >
+              <Plus className="w-4 h-4" /> Add Another Page
+            </button>
+
+            <div className="grid grid-cols-2 gap-3 text-left">
+              {[
+                { icon: Zap, color: "#024BAB", title: "Instant capture", desc: "Leads arrive the moment someone submits a form" },
+                { icon: ShieldCheck, color: "#00C48C", title: "No missed leads", desc: "Webhook ensures zero data loss" },
+              ].map((item) => (
+                <div key={item.title} className="nb-card bg-white p-3 flex items-start gap-3">
+                  <div className="w-8 h-8 border-2 border-black flex items-center justify-center shrink-0" style={{ backgroundColor: item.color }}>
                     <item.icon className="w-4 h-4 text-black" />
                   </div>
                   <div>
                     <p className="font-bold text-xs text-black">{item.title}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {item.desc}
-                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
                   </div>
                 </div>
               ))}

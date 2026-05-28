@@ -57,18 +57,19 @@ const tenantSchema = new mongoose.Schema(
       },
       facebook: {
         enabled: { type: Boolean, default: false },
-        // OAuth user-level token (long-lived, used to fetch pages/forms)
         userAccessToken: { type: String, default: "" },
         oauthUserId: { type: String, default: "" },
-        // Selected page
-        pageId: { type: String, default: "" },
-        pageName: { type: String, default: "" },
-        // Page-level never-expiring token (used for webhook + lead fetch)
-        accessToken: { type: String, default: "" },
-        // Optional: only capture leads from specific forms (empty = all forms)
-        selectedFormIds: { type: [String], default: [] },
-        webhookVerified: { type: Boolean, default: false },
-        connectedAt: { type: Date, default: null },
+        // Multi-page support — each connected page stored separately
+        pages: [
+          {
+            pageId: { type: String, required: true },
+            pageName: { type: String, default: "" },
+            accessToken: { type: String, default: "" },
+            selectedFormIds: { type: [String], default: [] },
+            webhookVerified: { type: Boolean, default: false },
+            connectedAt: { type: Date, default: null },
+          },
+        ],
       },
       tradeindia: {
         enabled: { type: Boolean, default: false },

@@ -248,9 +248,21 @@ export const facebookAPI = {
         body: JSON.stringify({ pageId, selectedFormIds }),
       },
     ),
-  disconnect: () =>
+  getConnectedPages: () =>
+    request<{
+      success: boolean;
+      data: Array<{
+        pageId: string;
+        pageName: string;
+        selectedFormIds: string[];
+        webhookVerified: boolean;
+        connectedAt: string;
+      }>;
+    }>("/facebook/connected-pages"),
+  disconnect: (pageId?: string) =>
     request<{ success: boolean; message: string }>("/facebook/disconnect", {
       method: "POST",
+      body: JSON.stringify({ pageId }),
     }),
 };
 
