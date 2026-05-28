@@ -436,9 +436,6 @@ router.post(
 
           for (const lead of data.data || []) {
             try {
-              const exists = await Lead.findOne({ facebookLeadgenId: lead.id });
-              if (exists) { totalSkipped++; continue; }
-
               const fMap = {};
               for (const f of lead.field_data || []) {
                 fMap[f.name.toLowerCase().replace(/\s+/g, "_")] = f.values?.[0] ?? "";
@@ -457,23 +454,34 @@ router.post(
                 `${fMap.first_name || ""} ${fMap.last_name || ""}`.trim() ||
                 "Facebook Lead";
 
-              await Lead.create({
+              const leadData = {
                 name,
                 company: fMap.company_name || fMap.company || "N/A",
                 phone: fMap.phone_number || fMap.phone || fMap.mobile || "",
                 email: fMap.email || fMap.email_address || "",
                 location: fMap.city || fMap.location || "",
-                source: "Facebook",
                 requirement: fMap.product || fMap.product_interest || `Via Facebook Lead Ad: ${lead.ad_name || formId}`,
-                status: "PENDING CONTACT",
-                assignedTo: adminUser._id,
-                tenantId: tenant._id || null,
-                facebookLeadgenId: lead.id,
-                facebookFormId: formId,
                 facebookAdId: lead.ad_id || "",
                 facebookAdName: lead.ad_name || "",
-              });
-              totalCreated++;
+              };
+
+              const exists = await Lead.findOne({ facebookLeadgenId: lead.id });
+              if (exists) {
+                // Update data fields only — never touch status
+                await Lead.findByIdAndUpdate(exists._id, { $set: leadData });
+                totalSkipped++;
+              } else {
+                await Lead.create({
+                  ...leadData,
+                  source: "Facebook",
+                  status: "PENDING CONTACT",
+                  assignedTo: adminUser._id,
+                  tenantId: tenant._id || null,
+                  facebookLeadgenId: lead.id,
+                  facebookFormId: formId,
+                });
+                totalCreated++;
+              }
             } catch {}
           }
         } catch {}
@@ -571,9 +579,6 @@ router.post(
           continue;
 
         try {
-          const exists = await Lead.findOne({ facebookLeadgenId: leadgen_id });
-          if (exists) continue;
-
           const fbRes = await fetch(
             `${FB_API}/${leadgen_id}?access_token=${pageConfig.accessToken}&fields=field_data,created_time`,
           );
@@ -610,6 +615,24 @@ router.post(
             if (!stateMatches) continue;
           }
 
+          const updatableFields = {
+            name,
+            company: company || "N/A",
+            phone,
+            email,
+            location: city,
+            requirement: product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
+            facebookAdId: ad_id || "",
+            facebookAdName: ad_name || "",
+          };
+
+          const existing = await Lead.findOne({ facebookLeadgenId: leadgen_id });
+          if (existing) {
+            // Update data only — never touch status
+            await Lead.findByIdAndUpdate(existing._id, { $set: updatableFields });
+            continue;
+          }
+
           const adminUser = await User.findOne({
             ...(tenant._id ? { tenantId: tenant._id } : {}),
             role: { $in: ["admin", "super_admin"] },
@@ -617,21 +640,13 @@ router.post(
           if (!adminUser) continue;
 
           await Lead.create({
-            name,
-            company: company || "N/A",
-            phone,
-            email,
-            location: city,
+            ...updatableFields,
             source: "Facebook",
-            requirement:
-              product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
             status: "PENDING CONTACT",
             assignedTo: adminUser._id,
             tenantId: tenant._id || null,
             facebookLeadgenId: leadgen_id,
             facebookFormId: form_id,
-            facebookAdId: ad_id || "",
-            facebookAdName: ad_name || "",
           });
         } catch {
           // Silently continue — don't let one failed lead stop processing others
