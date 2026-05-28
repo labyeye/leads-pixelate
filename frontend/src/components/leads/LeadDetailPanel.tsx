@@ -145,6 +145,16 @@ export function LeadDetailPanel({
               </span>
             </div>
           )}
+          {lead.facebookAdName && (
+            <div className="flex items-start gap-2 text-muted-foreground pt-2">
+              <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-[9px]">f</span>
+              </div>
+              <span className="text-foreground font-medium text-xs leading-tight">
+                Campaign: {lead.facebookAdName}
+              </span>
+            </div>
+          )}
           <div className="flex items-start gap-2 text-muted-foreground pt-2">
             <IndianRupee className="w-4 h-4 mt-0.5 text-success/70" />
             <span className="text-success font-bold text-xs leading-tight">

@@ -471,6 +471,7 @@ router.post(
                 facebookLeadgenId: lead.id,
                 facebookFormId: formId,
                 facebookAdId: lead.ad_id || "",
+                facebookAdName: lead.ad_name || "",
               });
               totalCreated++;
             } catch {}
@@ -630,6 +631,7 @@ router.post(
             facebookLeadgenId: leadgen_id,
             facebookFormId: form_id,
             facebookAdId: ad_id || "",
+            facebookAdName: ad_name || "",
           });
         } catch {
           // Silently continue — don't let one failed lead stop processing others

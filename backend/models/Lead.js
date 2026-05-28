@@ -32,6 +32,7 @@ const leadSchema = new mongoose.Schema(
     facebookLeadgenId: { type: String, default: null },
     facebookFormId: { type: String, default: null },
     facebookAdId: { type: String, default: null },
+    facebookAdName: { type: String, default: null },
     phone: {
       type: String,
       required: [true, "Please add a phone number"],

@@ -1306,6 +1306,9 @@ export default function LeadsPage() {
                     City
                   </th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                    Campaign
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
                     <div className="flex items-center gap-1">
                       Budget
                       {renderBudgetRangeFilter()}
@@ -1453,6 +1456,14 @@ export default function LeadsPage() {
                             </td>
                             <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
                               {l.location || "-"}
+                            </td>
+                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]" title={l.facebookAdName || "-"}>
+                              {l.facebookAdName ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
+                                  {l.facebookAdName}
+                                </span>
+                              ) : "-"}
                             </td>
                             <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
                               {l.budget || "-"}
