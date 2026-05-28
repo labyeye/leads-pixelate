@@ -8,7 +8,15 @@ const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 
 const FB_API = "https://graph.facebook.com/v20.0";
-const FB_SCOPES = ["email", "public_profile"].join(",");
+const FB_SCOPES = [
+  "email",
+  "public_profile",
+  "pages_show_list",
+  "pages_read_engagement",
+  "pages_manage_ads",
+  "leads_retrieval",
+  "pages_manage_metadata",
+].join(",");
 
 async function fbGet(path, token, params = {}) {
   const qs = new URLSearchParams({ access_token: token, ...params }).toString();
