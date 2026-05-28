@@ -16,6 +16,7 @@ const FB_SCOPES = [
   "pages_manage_ads",
   "leads_retrieval",
   "pages_manage_metadata",
+  "business_management",
 ].join(",");
 
 async function fbGet(path, token, params = {}) {
