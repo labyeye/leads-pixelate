@@ -172,15 +172,39 @@ router.get(
       });
     }
 
-    const data = await fbGet(
-      "/me/accounts",
-      tenant.integrations.facebook.userAccessToken,
-      {
-        fields: "id,name,picture,fan_count,category",
-      },
-    );
+    const token = tenant.integrations.facebook.userAccessToken;
 
-    const pages = (data.data || []).map((p) => ({
+    // Fetch personal account pages
+    const personalData = await fbGet("/me/accounts", token, {
+      fields: "id,name,picture,fan_count,category",
+    });
+    const personalPages = personalData.data || [];
+
+    // Fetch Business Manager pages
+    let businessPages = [];
+    try {
+      const businesses = await fbGet("/me/businesses", token, {
+        fields: "id,name",
+      });
+      for (const biz of businesses.data || []) {
+        try {
+          const bizPages = await fbGet(`/${biz.id}/owned_pages`, token, {
+            fields: "id,name,picture,fan_count,category",
+          });
+          businessPages = businessPages.concat(bizPages.data || []);
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    // Merge and deduplicate by page id
+    const seen = new Set();
+    const allPages = [...personalPages, ...businessPages].filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    const pages = allPages.map((p) => ({
       id: p.id,
       name: p.name,
       category: p.category,
