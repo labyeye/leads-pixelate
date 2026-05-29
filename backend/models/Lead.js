@@ -131,15 +131,12 @@ const leadSchema = new mongoose.Schema(
     ],
     indiamartQueryId: {
       type: String,
-      default: null,
     },
     indiamartQueryType: {
       type: String,
-      default: null,
     },
     indiamartQueryTime: {
       type: Date,
-      default: null,
     },
     statusHistory: [
       {
