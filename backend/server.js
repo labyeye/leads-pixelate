@@ -45,7 +45,7 @@ app.use(
 
 app.use(
   cors({
-    origin: "http://localhost:8081",
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
