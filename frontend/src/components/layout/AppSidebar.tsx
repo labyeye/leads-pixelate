@@ -4,7 +4,7 @@ import { getNavGroupsForRole } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, LogOut, Zap, X } from "lucide-react";
 import { useState } from "react";
-
+import nestleadslogo from "@/assets/images/NestLeads_Logo_Name.png";
 interface AppSidebarProps {
   mobileOpen: boolean;
   onClose: () => void;
@@ -35,17 +35,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
             collapsed ? "lg:justify-center lg:px-2 px-4 gap-3" : "px-4 gap-3",
           )}
         >
-          <div className="w-9 h-9 bg-[#024BAB] border-2 border-black flex items-center justify-center shrink-0 nb-shadow-sm">
-            <Zap className="w-4 h-4 text-white fill-white" />
-          </div>
-          <div className={cn(collapsed && "lg:hidden")}>
-            <span className="font-display font-bold text-black text-[15px] block leading-tight">
-              NestLeads
-            </span>
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-              CRM
-            </span>
-          </div>
+          <img src={nestleadslogo} alt="Logo" className="w-8 h-8" />
           <button
             onClick={onClose}
             className="ml-auto lg:hidden p-1 hover:bg-[#024BAB]/20 border border-transparent hover:border-black transition-colors"
