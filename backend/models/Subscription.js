@@ -2,10 +2,16 @@ const mongoose = require("mongoose");
 
 const invoiceSchema = new mongoose.Schema(
   {
+    hdfcPaymentId: { type: String },
+    hdfcOrderId: { type: String },
+    hdfcTrackingId: { type: String },
+    // kept for backward compat with old Razorpay records
     razorpayPaymentId: { type: String },
     razorpayOrderId: { type: String },
     amount: { type: Number }, // in paise
     currency: { type: String, default: "INR" },
+    plan: { type: String },
+    billingCycle: { type: String },
     status: {
       type: String,
       enum: ["created", "paid", "failed"],
@@ -43,7 +49,6 @@ const subscriptionSchema = new mongoose.Schema(
     currentPeriodStart: { type: Date },
     currentPeriodEnd: { type: Date },
     cancelledAt: { type: Date, default: null },
-    razorpaySubscriptionId: { type: String, default: null },
     invoices: [invoiceSchema],
   },
   { timestamps: true },
@@ -57,9 +62,9 @@ const PLAN_LIMITS = {
 };
 
 const PLAN_PRICES_MONTHLY = {
-  starter: 99900, // ₹999
-  growth: 249900, // ₹2,499
-  enterprise: 699900, // ₹6,999
+  starter: 50000, // ₹500
+  growth: 129900, // ₹1,299
+  enterprise: 299900, // ₹2,999
 };
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);

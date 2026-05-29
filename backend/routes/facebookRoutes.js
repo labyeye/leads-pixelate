@@ -65,12 +65,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const appId = process.env.FACEBOOK_APP_ID;
     if (!appId) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Facebook integration not configured",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Facebook integration not configured",
+      });
     }
 
     const redirectUri =
@@ -289,7 +287,10 @@ router.post(
         .json({ success: false, message: "Facebook not connected" });
     }
 
-    const { token: pageToken, name: pageName } = await getPageToken(pageId, userToken);
+    const { token: pageToken, name: pageName } = await getPageToken(
+      pageId,
+      userToken,
+    );
     const subscribed = await subscribePageToWebhook(pageId, pageToken);
 
     const pageEntry = {
@@ -308,12 +309,16 @@ router.post(
     );
 
     if (existingPage) {
-      await Tenant.findOneAndUpdate(query, {
-        "integrations.facebook.enabled": true,
-        $set: { "integrations.facebook.pages.$[elem]": pageEntry },
-      }, {
-        arrayFilters: [{ "elem.pageId": pageId }],
-      });
+      await Tenant.findOneAndUpdate(
+        query,
+        {
+          "integrations.facebook.enabled": true,
+          $set: { "integrations.facebook.pages.$[elem]": pageEntry },
+        },
+        {
+          arrayFilters: [{ "elem.pageId": pageId }],
+        },
+      );
     } else {
       await Tenant.findOneAndUpdate(query, {
         "integrations.facebook.enabled": true,
@@ -324,7 +329,12 @@ router.post(
     res.json({
       success: true,
       message: "Facebook Page connected successfully",
-      data: { pageId, pageName, subscribed, formsSelected: selectedFormIds.length },
+      data: {
+        pageId,
+        pageName,
+        subscribed,
+        formsSelected: selectedFormIds.length,
+      },
     });
   }),
 );
@@ -396,7 +406,9 @@ router.post(
 
     const tenant = await Tenant.findOne(query);
     if (!tenant?.integrations?.facebook?.enabled) {
-      return res.status(400).json({ success: false, message: "Facebook not connected" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
     }
 
     const pagesToSync = pageId
@@ -404,7 +416,9 @@ router.post(
       : tenant.integrations.facebook.pages;
 
     if (!pagesToSync.length) {
-      return res.status(400).json({ success: false, message: "No pages to sync" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No pages to sync" });
     }
 
     const adminUser = await User.findOne({
@@ -412,7 +426,9 @@ router.post(
       role: { $in: ["admin", "super_admin"] },
     });
     if (!adminUser) {
-      return res.status(400).json({ success: false, message: "No admin user found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No admin user found" });
     }
 
     let totalCreated = 0;
@@ -420,47 +436,77 @@ router.post(
     const pageResults = [];
 
     for (const page of pagesToSync) {
-      const pageResult = { pageName: page.pageName, forms: 0, created: 0, skipped: 0, error: null };
+      const pageResult = {
+        pageName: page.pageName,
+        forms: 0,
+        created: 0,
+        skipped: 0,
+        error: null,
+      };
 
       let formIds = [];
       try {
         formIds = page.selectedFormIds?.length
           ? page.selectedFormIds
           : await (async () => {
-              const data = await fbGet(`/${page.pageId}/leadgen_forms`, page.accessToken, {
-                fields: "id",
-              });
+              const data = await fbGet(
+                `/${page.pageId}/leadgen_forms`,
+                page.accessToken,
+                {
+                  fields: "id",
+                },
+              );
               return (data.data || []).map((f) => f.id);
             })();
         pageResult.forms = formIds.length;
       } catch (err) {
         pageResult.error = `Could not fetch forms: ${err.message}`;
         pageResults.push(pageResult);
-        console.error(`[FB sync] Failed to fetch forms for page ${page.pageName}:`, err.message);
+        console.error(
+          `[FB sync] Failed to fetch forms for page ${page.pageName}:`,
+          err.message,
+        );
         continue;
       }
 
       for (const formId of formIds) {
         try {
-          const todayMidnight = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+          const todayMidnight = Math.floor(
+            new Date().setHours(0, 0, 0, 0) / 1000,
+          );
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id",
             limit: "100",
-            filtering: JSON.stringify([{ field: "time_created", operator: "GREATER_THAN", value: todayMidnight }]),
+            filtering: JSON.stringify([
+              {
+                field: "time_created",
+                operator: "GREATER_THAN",
+                value: todayMidnight,
+              },
+            ]),
           });
 
           for (const lead of data.data || []) {
             try {
               const fMap = {};
               for (const f of lead.field_data || []) {
-                fMap[f.name.toLowerCase().replace(/\s+/g, "_")] = f.values?.[0] ?? "";
+                fMap[f.name.toLowerCase().replace(/\s+/g, "_")] =
+                  f.values?.[0] ?? "";
               }
 
-              const state = (fMap.state || fMap.province || fMap.region || "").toLowerCase().trim();
+              const state = (fMap.state || fMap.province || fMap.region || "")
+                .toLowerCase()
+                .trim();
               const allowedStates = page.allowedStates || [];
               if (allowedStates.length > 0 && state) {
-                const matches = allowedStates.some((s) => state.includes(s) || s.includes(state));
-                if (!matches) { totalSkipped++; pageResult.skipped++; continue; }
+                const matches = allowedStates.some(
+                  (s) => state.includes(s) || s.includes(state),
+                );
+                if (!matches) {
+                  totalSkipped++;
+                  pageResult.skipped++;
+                  continue;
+                }
               }
 
               const name =
@@ -475,7 +521,10 @@ router.post(
                 phone: fMap.phone_number || fMap.phone || fMap.mobile || "",
                 email: fMap.email || fMap.email_address || "",
                 location: fMap.city || fMap.location || "",
-                requirement: fMap.product || fMap.product_interest || `Via Facebook Lead Ad: ${lead.ad_name || formId}`,
+                requirement:
+                  fMap.product ||
+                  fMap.product_interest ||
+                  `Via Facebook Lead Ad: ${lead.ad_name || formId}`,
                 facebookAdId: lead.ad_id || "",
                 facebookAdName: lead.ad_name || "",
               };
@@ -483,7 +532,8 @@ router.post(
               const exists = await Lead.findOne({ facebookLeadgenId: lead.id });
               if (exists) {
                 await Lead.findByIdAndUpdate(exists._id, { $set: leadData });
-                totalSkipped++; pageResult.skipped++;
+                totalSkipped++;
+                pageResult.skipped++;
               } else {
                 await Lead.create({
                   ...leadData,
@@ -494,14 +544,21 @@ router.post(
                   facebookLeadgenId: lead.id,
                   facebookFormId: formId,
                 });
-                totalCreated++; pageResult.created++;
+                totalCreated++;
+                pageResult.created++;
               }
             } catch (err) {
-              console.error(`[FB sync] Failed to save lead from form ${formId}:`, err.message);
+              console.error(
+                `[FB sync] Failed to save lead from form ${formId}:`,
+                err.message,
+              );
             }
           }
         } catch (err) {
-          console.error(`[FB sync] Failed to fetch leads for form ${formId} on page ${page.pageName}:`, err.message);
+          console.error(
+            `[FB sync] Failed to fetch leads for form ${formId} on page ${page.pageName}:`,
+            err.message,
+          );
         }
       }
 
@@ -511,7 +568,11 @@ router.post(
     res.json({
       success: true,
       message: `Sync complete — ${totalCreated} new leads imported, ${totalSkipped} skipped`,
-      data: { created: totalCreated, skipped: totalSkipped, pages: pageResults },
+      data: {
+        created: totalCreated,
+        skipped: totalSkipped,
+        pages: pageResults,
+      },
     });
   }),
 );
@@ -622,7 +683,9 @@ router.post(
           const company =
             fMap.company_name || fMap.company || fMap.organization || "";
           const city = fMap.city || fMap.location || "";
-          const state = (fMap.state || fMap.province || fMap.region || "").toLowerCase().trim();
+          const state = (fMap.state || fMap.province || fMap.region || "")
+            .toLowerCase()
+            .trim();
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
 
@@ -641,15 +704,20 @@ router.post(
             phone,
             email,
             location: city,
-            requirement: product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
+            requirement:
+              product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
             facebookAdId: ad_id || "",
             facebookAdName: ad_name || "",
           };
 
-          const existing = await Lead.findOne({ facebookLeadgenId: leadgen_id });
+          const existing = await Lead.findOne({
+            facebookLeadgenId: leadgen_id,
+          });
           if (existing) {
             // Update data only — never touch status
-            await Lead.findByIdAndUpdate(existing._id, { $set: updatableFields });
+            await Lead.findByIdAndUpdate(existing._id, {
+              $set: updatableFields,
+            });
             continue;
           }
 

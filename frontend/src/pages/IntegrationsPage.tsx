@@ -893,12 +893,15 @@ export default function IntegrationsPage() {
 
   // Check DB on mount for existing Facebook connection
   useEffect(() => {
-    facebookAPI.getConnectedPages().then((res) => {
-      if (res.hasToken) setFbHasToken(true);
-      if (res.data.length > 0) {
-        setConnectedIds((prev) => new Set([...prev, "facebook"]));
-      }
-    }).catch(() => {});
+    facebookAPI
+      .getConnectedPages()
+      .then((res) => {
+        if (res.hasToken) setFbHasToken(true);
+        if (res.data.length > 0) {
+          setConnectedIds((prev) => new Set([...prev, "facebook"]));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -928,7 +931,13 @@ export default function IntegrationsPage() {
 
   const handleOpen = (integ: Integration) => {
     if (integ.id === "facebook") {
-      setFbStartStep(connectedIds.has("facebook") ? "done" : fbHasToken ? "select_page" : "login");
+      setFbStartStep(
+        connectedIds.has("facebook")
+          ? "done"
+          : fbHasToken
+            ? "select_page"
+            : "login",
+      );
       setShowFbWizard(true);
     } else {
       setSelected(integ);

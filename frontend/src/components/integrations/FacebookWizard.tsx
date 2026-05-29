@@ -652,7 +652,8 @@ export function FacebookWizard({
                   Location Filter (Optional)
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Only capture leads from specific states or cities. Leave empty to capture from everywhere.
+                  Only capture leads from specific states or cities. Leave empty
+                  to capture from everywhere.
                 </p>
               </div>
 
@@ -697,7 +698,11 @@ export function FacebookWizard({
                     >
                       {s}
                       <button
-                        onClick={() => setAllowedStates((prev) => prev.filter((x) => x !== s))}
+                        onClick={() =>
+                          setAllowedStates((prev) =>
+                            prev.filter((x) => x !== s),
+                          )
+                        }
                         className="text-red-500 hover:text-red-700 ml-1"
                       >
                         ✕
@@ -746,12 +751,20 @@ export function FacebookWizard({
                     <span className="text-white font-bold text-sm">f</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-black truncate">{cp.pageName}</p>
+                    <p className="font-bold text-sm text-black truncate">
+                      {cp.pageName}
+                    </p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                       {cp.webhookVerified ? (
-                        <><Check className="w-3 h-3 text-[#00C48C]" /> Webhook active</>
+                        <>
+                          <Check className="w-3 h-3 text-[#00C48C]" /> Webhook
+                          active
+                        </>
                       ) : (
-                        <><AlertCircle className="w-3 h-3 text-orange-400" /> Webhook pending</>
+                        <>
+                          <AlertCircle className="w-3 h-3 text-orange-400" />{" "}
+                          Webhook pending
+                        </>
                       )}
                     </p>
                   </div>
@@ -761,9 +774,16 @@ export function FacebookWizard({
                       setSyncing(cp.pageId);
                       try {
                         const res = await facebookAPI.sync(cp.pageId);
-                        toast({ title: "Sync complete", description: res.message });
+                        toast({
+                          title: "Sync complete",
+                          description: res.message,
+                        });
                       } catch (err: any) {
-                        toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+                        toast({
+                          title: "Sync failed",
+                          description: err.message,
+                          variant: "destructive",
+                        });
                       } finally {
                         setSyncing(null);
                       }
@@ -771,7 +791,9 @@ export function FacebookWizard({
                     className="border-2 border-black p-1.5 hover:bg-blue-50 transition-colors mr-1"
                     title="Sync leads now"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 text-[#1877F2] ${syncing === cp.pageId ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 text-[#1877F2] ${syncing === cp.pageId ? "animate-spin" : ""}`}
+                    />
                   </button>
                   <button
                     disabled={disconnecting === cp.pageId}
@@ -779,10 +801,16 @@ export function FacebookWizard({
                       setDisconnecting(cp.pageId);
                       try {
                         await facebookAPI.disconnect(cp.pageId);
-                        setConnectedPages((prev) => prev.filter((p) => p.pageId !== cp.pageId));
+                        setConnectedPages((prev) =>
+                          prev.filter((p) => p.pageId !== cp.pageId),
+                        );
                         toast({ title: `${cp.pageName} disconnected` });
                       } catch (err: any) {
-                        toast({ title: "Error", description: err.message, variant: "destructive" });
+                        toast({
+                          title: "Error",
+                          description: err.message,
+                          variant: "destructive",
+                        });
                       } finally {
                         setDisconnecting(null);
                       }
@@ -815,16 +843,34 @@ export function FacebookWizard({
 
             <div className="grid grid-cols-2 gap-3 text-left">
               {[
-                { icon: Zap, color: "#024BAB", title: "Instant capture", desc: "Leads arrive the moment someone submits a form" },
-                { icon: ShieldCheck, color: "#00C48C", title: "No missed leads", desc: "Webhook ensures zero data loss" },
+                {
+                  icon: Zap,
+                  color: "#024BAB",
+                  title: "Instant capture",
+                  desc: "Leads arrive the moment someone submits a form",
+                },
+                {
+                  icon: ShieldCheck,
+                  color: "#00C48C",
+                  title: "No missed leads",
+                  desc: "Webhook ensures zero data loss",
+                },
               ].map((item) => (
-                <div key={item.title} className="nb-card bg-white p-3 flex items-start gap-3">
-                  <div className="w-8 h-8 border-2 border-black flex items-center justify-center shrink-0" style={{ backgroundColor: item.color }}>
+                <div
+                  key={item.title}
+                  className="nb-card bg-white p-3 flex items-start gap-3"
+                >
+                  <div
+                    className="w-8 h-8 border-2 border-black flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  >
                     <item.icon className="w-4 h-4 text-black" />
                   </div>
                   <div>
                     <p className="font-bold text-xs text-black">{item.title}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {item.desc}
+                    </p>
                   </div>
                 </div>
               ))}

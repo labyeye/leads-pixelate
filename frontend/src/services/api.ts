@@ -193,25 +193,25 @@ export const billingAPI = {
   getPlans: () => request<{ success: boolean; data: any }>("/billing/plans"),
   getSubscription: () =>
     request<{ success: boolean; data: any }>("/billing/subscription"),
-  createOrder: (plan: string, billingCycle: "monthly" | "yearly") =>
-    request<{ success: boolean; data: any }>("/billing/create-order", {
+  getInvoices: () =>
+    request<{ success: boolean; data: any[] }>("/billing/invoices"),
+  createHdfcOrder: (plan: string, billingCycle: "monthly" | "yearly") =>
+    request<{
+      success: boolean;
+      data: {
+        encRequest: string;
+        accessCode: string;
+        gatewayUrl: string;
+        orderId: string;
+      };
+    }>("/billing/hdfc/create-order", {
       method: "POST",
       body: JSON.stringify({ plan, billingCycle }),
     }),
-  verifyPayment: (payload: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-    plan: string;
-    billingCycle: string;
-  }) =>
-    request<{ success: boolean; message: string; data: any }>(
-      "/billing/verify-payment",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      },
-    ),
+  cancelSubscription: () =>
+    request<{ success: boolean; message: string }>("/billing/cancel", {
+      method: "POST",
+    }),
 };
 
 export const facebookAPI = {
@@ -240,7 +240,11 @@ export const facebookAPI = {
         leadsCount: number;
       }>;
     }>(`/facebook/forms?pageId=${pageId}`),
-  connectPage: (pageId: string, selectedFormIds: string[], allowedStates: string[] = []) =>
+  connectPage: (
+    pageId: string,
+    selectedFormIds: string[],
+    allowedStates: string[] = [],
+  ) =>
     request<{ success: boolean; message: string; data: any }>(
       "/facebook/connect-page",
       {
@@ -249,13 +253,14 @@ export const facebookAPI = {
       },
     ),
   sync: (pageId?: string) =>
-    request<{ success: boolean; message: string; data: { created: number; skipped: number } }>(
-      "/facebook/sync",
-      {
-        method: "POST",
-        body: JSON.stringify({ pageId }),
-      },
-    ),
+    request<{
+      success: boolean;
+      message: string;
+      data: { created: number; skipped: number };
+    }>("/facebook/sync", {
+      method: "POST",
+      body: JSON.stringify({ pageId }),
+    }),
   getConnectedPages: () =>
     request<{
       success: boolean;

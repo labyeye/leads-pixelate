@@ -432,12 +432,10 @@ exports.connectAccount = asyncHandler(async (req, res) => {
     { upsert: true, new: true, runValidators: true },
   );
 
-  res
-    .status(201)
-    .json({
-      success: true,
-      data: { ...account.toObject(), accessToken: undefined },
-    });
+  res.status(201).json({
+    success: true,
+    data: { ...account.toObject(), accessToken: undefined },
+  });
 });
 
 exports.disconnectAccount = asyncHandler(async (req, res) => {

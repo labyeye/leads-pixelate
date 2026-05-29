@@ -161,9 +161,12 @@ export default function LeadsPage() {
     fetchAllUsers();
     fetchProducts();
     fetchCurrentUser();
-    facebookAPI.getConnectedPages().then((res) => {
-      if (res.data.length > 0) setFbConnected(true);
-    }).catch(() => {});
+    facebookAPI
+      .getConnectedPages()
+      .then((res) => {
+        if (res.data.length > 0) setFbConnected(true);
+      })
+      .catch(() => {});
   }, []);
   useEffect(() => {
     if (selectedLeadId) {
@@ -251,17 +254,29 @@ export default function LeadsPage() {
       setFbSyncing(true);
       const res = await facebookAPI.sync();
       const pageErrors = res.data?.pages?.filter((p: any) => p.error) || [];
-      const pageDetails = res.data?.pages?.map((p: any) =>
-        p.error ? `${p.pageName}: ❌ ${p.error}` : `${p.pageName}: +${p.created} new`
-      ).join("\n") || "";
+      const pageDetails =
+        res.data?.pages
+          ?.map((p: any) =>
+            p.error
+              ? `${p.pageName}: ❌ ${p.error}`
+              : `${p.pageName}: +${p.created} new`,
+          )
+          .join("\n") || "";
       toast({
         title: "Facebook Sync Complete",
-        description: pageErrors.length > 0 ? `${res.message}\n\n${pageDetails}` : res.message,
+        description:
+          pageErrors.length > 0
+            ? `${res.message}\n\n${pageDetails}`
+            : res.message,
         variant: pageErrors.length > 0 ? "destructive" : "default",
       });
       fetchLeads();
     } catch (error: any) {
-      toast({ title: "Facebook Sync Failed", description: error.message, variant: "destructive" });
+      toast({
+        title: "Facebook Sync Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setFbSyncing(false);
     }
@@ -1465,13 +1480,18 @@ export default function LeadsPage() {
                             <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
                               {l.location || "-"}
                             </td>
-                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]" title={l.facebookAdName || "-"}>
+                            <td
+                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
+                              title={l.facebookAdName || "-"}
+                            >
                               {l.facebookAdName ? (
                                 <span className="flex items-center gap-1">
                                   <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
                                   {l.facebookAdName}
                                 </span>
-                              ) : "-"}
+                              ) : (
+                                "-"
+                              )}
                             </td>
                             <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
                               {l.budget || "-"}
