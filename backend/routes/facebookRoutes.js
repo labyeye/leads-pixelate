@@ -417,22 +417,36 @@ router.post(
 
     let totalCreated = 0;
     let totalSkipped = 0;
+    const pageResults = [];
 
     for (const page of pagesToSync) {
-      const formIds = page.selectedFormIds?.length
-        ? page.selectedFormIds
-        : await (async () => {
-            const data = await fbGet(`/${page.pageId}/leadgen_forms`, page.accessToken, {
-              fields: "id",
-            });
-            return (data.data || []).map((f) => f.id);
-          })();
+      const pageResult = { pageName: page.pageName, forms: 0, created: 0, skipped: 0, error: null };
+
+      let formIds = [];
+      try {
+        formIds = page.selectedFormIds?.length
+          ? page.selectedFormIds
+          : await (async () => {
+              const data = await fbGet(`/${page.pageId}/leadgen_forms`, page.accessToken, {
+                fields: "id",
+              });
+              return (data.data || []).map((f) => f.id);
+            })();
+        pageResult.forms = formIds.length;
+      } catch (err) {
+        pageResult.error = `Could not fetch forms: ${err.message}`;
+        pageResults.push(pageResult);
+        console.error(`[FB sync] Failed to fetch forms for page ${page.pageName}:`, err.message);
+        continue;
+      }
 
       for (const formId of formIds) {
         try {
+          const todayMidnight = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id",
             limit: "100",
+            filtering: JSON.stringify([{ field: "time_created", operator: "GREATER_THAN", value: todayMidnight }]),
           });
 
           for (const lead of data.data || []) {
@@ -446,7 +460,7 @@ router.post(
               const allowedStates = page.allowedStates || [];
               if (allowedStates.length > 0 && state) {
                 const matches = allowedStates.some((s) => state.includes(s) || s.includes(state));
-                if (!matches) { totalSkipped++; continue; }
+                if (!matches) { totalSkipped++; pageResult.skipped++; continue; }
               }
 
               const name =
@@ -468,9 +482,8 @@ router.post(
 
               const exists = await Lead.findOne({ facebookLeadgenId: lead.id });
               if (exists) {
-                // Update data fields only — never touch status
                 await Lead.findByIdAndUpdate(exists._id, { $set: leadData });
-                totalSkipped++;
+                totalSkipped++; pageResult.skipped++;
               } else {
                 await Lead.create({
                   ...leadData,
@@ -481,18 +494,24 @@ router.post(
                   facebookLeadgenId: lead.id,
                   facebookFormId: formId,
                 });
-                totalCreated++;
+                totalCreated++; pageResult.created++;
               }
-            } catch {}
+            } catch (err) {
+              console.error(`[FB sync] Failed to save lead from form ${formId}:`, err.message);
+            }
           }
-        } catch {}
+        } catch (err) {
+          console.error(`[FB sync] Failed to fetch leads for form ${formId} on page ${page.pageName}:`, err.message);
+        }
       }
+
+      pageResults.push(pageResult);
     }
 
     res.json({
       success: true,
       message: `Sync complete — ${totalCreated} new leads imported, ${totalSkipped} skipped`,
-      data: { created: totalCreated, skipped: totalSkipped },
+      data: { created: totalCreated, skipped: totalSkipped, pages: pageResults },
     });
   }),
 );

@@ -250,7 +250,15 @@ export default function LeadsPage() {
     try {
       setFbSyncing(true);
       const res = await facebookAPI.sync();
-      toast({ title: "Facebook Sync Complete", description: res.message });
+      const pageErrors = res.data?.pages?.filter((p: any) => p.error) || [];
+      const pageDetails = res.data?.pages?.map((p: any) =>
+        p.error ? `${p.pageName}: ❌ ${p.error}` : `${p.pageName}: +${p.created} new`
+      ).join("\n") || "";
+      toast({
+        title: "Facebook Sync Complete",
+        description: pageErrors.length > 0 ? `${res.message}\n\n${pageDetails}` : res.message,
+        variant: pageErrors.length > 0 ? "destructive" : "default",
+      });
       fetchLeads();
     } catch (error: any) {
       toast({ title: "Facebook Sync Failed", description: error.message, variant: "destructive" });
