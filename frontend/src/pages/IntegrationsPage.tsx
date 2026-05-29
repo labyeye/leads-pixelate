@@ -889,10 +889,12 @@ export default function IntegrationsPage() {
     "login" | "select_page" | "select_forms" | "done"
   >("login");
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
+  const [fbHasToken, setFbHasToken] = useState(false);
 
   // Check DB on mount for existing Facebook connection
   useEffect(() => {
     facebookAPI.getConnectedPages().then((res) => {
+      if (res.hasToken) setFbHasToken(true);
       if (res.data.length > 0) {
         setConnectedIds((prev) => new Set([...prev, "facebook"]));
       }
@@ -926,7 +928,7 @@ export default function IntegrationsPage() {
 
   const handleOpen = (integ: Integration) => {
     if (integ.id === "facebook") {
-      setFbStartStep(connectedIds.has("facebook") ? "done" : "login");
+      setFbStartStep(connectedIds.has("facebook") ? "done" : fbHasToken ? "select_page" : "login");
       setShowFbWizard(true);
     } else {
       setSelected(integ);

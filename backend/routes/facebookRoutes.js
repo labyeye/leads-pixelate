@@ -380,7 +380,8 @@ router.get(
       webhookVerified: p.webhookVerified,
       connectedAt: p.connectedAt,
     }));
-    res.json({ success: true, data: pages });
+    const hasToken = !!tenant?.integrations?.facebook?.userAccessToken;
+    res.json({ success: true, data: pages, hasToken });
   }),
 );
 

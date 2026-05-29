@@ -259,6 +259,7 @@ export const facebookAPI = {
   getConnectedPages: () =>
     request<{
       success: boolean;
+      hasToken: boolean;
       data: Array<{
         pageId: string;
         pageName: string;
