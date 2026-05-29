@@ -139,26 +139,30 @@ const deleteUser = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 
-  if (user.role === "super_admin") {
+  if (user._id.toString() === req.user._id.toString()) {
     res.status(403);
-    throw new Error("Cannot delete super admin account");
+    throw new Error("Cannot deactivate your own account");
   }
 
-  user.status = "inactive";
-  await user.save();
+  if (user.role === "super_admin" && req.user.role !== "super_admin") {
+    res.status(403);
+    throw new Error("Only a super admin can remove another super admin");
+  }
+
+  await User.findByIdAndDelete(user._id);
 
   logActivity({
     user: req.user,
     action: "DELETE",
     module: "User",
-    description: `Admin ${req.user.name} deactivated user: ${user.name}`,
+    description: `Admin ${req.user.name} deleted user: ${user.name}`,
     targetId: user._id,
     ip: req.ip,
   });
 
   res.json({
     success: true,
-    message: "User deactivated successfully",
+    message: "User deleted successfully",
   });
 });
 

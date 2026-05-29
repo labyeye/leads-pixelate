@@ -45,7 +45,7 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: "http://localhost:8081",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -89,6 +89,8 @@ if (process.env.NODE_ENV === "development") {
 app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
+app.use("/api/clients", require("./routes/clientRoutes"));
+app.use("/api/quotations", require("./routes/quotationRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/settings", require("./routes/settingRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));

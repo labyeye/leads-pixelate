@@ -14,6 +14,10 @@ import {
   CheckCircle,
   AlertCircle,
   ShieldCheck,
+  ImageIcon,
+  Upload,
+  X,
+  Layout,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -372,8 +376,28 @@ export default function SettingsPage() {
     { id: "general", label: "General Info", icon: Building2 },
     { id: "bank", label: "Bank Details", icon: Landmark },
     { id: "terms", label: "Terms & Footer", icon: FileCheck },
+    { id: "template", label: "Quotation Template", icon: Layout },
     { id: "permissions", label: "Permissions", icon: ShieldCheck },
   ];
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 2 MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      setSettings((prev: any) => ({ ...prev, logoUrl: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setSettings((prev: any) => ({ ...prev, logoUrl: "" }));
+  };
 
   return (
     <AppLayout title="Settings">
@@ -388,7 +412,7 @@ export default function SettingsPage() {
               Manage company information and quotation template defaults
             </p>
           </div>
-          {activeTab !== "permissions" && (
+          {activeTab !== "permissions" && activeTab !== "template" && (
             <button
               onClick={handleSave}
               disabled={saving}
@@ -576,6 +600,147 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Quotation Template ── */}
+            {activeTab === "template" && (
+              <div className="space-y-6">
+                {/* Logo Upload */}
+                <div>
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
+                    <div className="w-1 h-5 bg-[#024BAB]" />
+                    <p className="text-xs font-black uppercase tracking-widest text-black">Company Logo</p>
+                    <p className="text-xs text-black/50 ml-1">— appears on all quotation PDFs</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    {/* Upload zone */}
+                    <div className="space-y-3">
+                      <label
+                        htmlFor="logo-upload"
+                        className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-black h-40 bg-white cursor-pointer hover:bg-[#FFDE00]/10 transition-colors group"
+                      >
+                        <div className="w-12 h-12 border-2 border-black bg-[#024BAB] flex items-center justify-center group-hover:bg-[#FFDE00] transition-colors">
+                          <Upload className="w-5 h-5 text-white group-hover:text-black" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs font-black uppercase tracking-widest text-black">Click to upload logo</p>
+                          <p className="text-[10px] text-black/40 mt-1">PNG, JPG, SVG — max 2 MB</p>
+                        </div>
+                        <input
+                          id="logo-upload"
+                          type="file"
+                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                          className="sr-only"
+                          onChange={handleLogoFileChange}
+                        />
+                      </label>
+
+                      {settings?.logoUrl && (
+                        <button
+                          onClick={handleRemoveLogo}
+                          className="nb-btn w-full flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-xs font-black uppercase tracking-widest"
+                        >
+                          <X className="w-3.5 h-3.5" /> Remove Logo
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Live preview of PDF header */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-black">Preview — PDF Header</p>
+                      <div className="border-2 border-black bg-white p-4 nb-shadow-sm">
+                        {/* Mimics the PDF header layout */}
+                        <div className="flex items-start gap-4 pb-3 border-b border-gray-200">
+                          <div className="w-14 h-14 border-2 border-black bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+                            {settings?.logoUrl ? (
+                              <img src={settings.logoUrl} alt="Company logo" className="w-full h-full object-contain" />
+                            ) : (
+                              <ImageIcon className="w-6 h-6 text-black/20" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-black text-[#1e3a8a] uppercase truncate">
+                              {settings?.companyName || "YOUR COMPANY NAME"}
+                            </p>
+                            <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                              {settings?.companyAddress || "Company Address"}
+                            </p>
+                            <p className="text-[10px] text-gray-500 truncate">
+                              {settings?.companyPhone && `M: ${settings.companyPhone}`}
+                            </p>
+                            <p className="text-[10px] text-gray-500 truncate">
+                              {settings?.companyEmail && `EMAIL: ${settings.companyEmail}`}
+                            </p>
+                            {settings?.companyGST && (
+                              <p className="text-[10px] font-bold text-gray-700 mt-0.5">
+                                GST NO: {settings.companyGST}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs font-black text-[#1e3a8a] uppercase">
+                              {settings?.quotationTitle || "PROFORMA INVOICE"}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-1">DATE: {new Date().toLocaleDateString("en-GB")}</p>
+                            <p className="text-[10px] text-gray-400">REF. NO.: SKF-0001</p>
+                          </div>
+                        </div>
+                        <p className="text-[9px] text-gray-300 mt-2 text-center uppercase tracking-widest">— Quotation body continues below —</p>
+                      </div>
+                      <p className="text-[10px] text-black/40">This is how the header will look on every quotation PDF you generate.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quotation Title */}
+                <div>
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
+                    <div className="w-1 h-5 bg-[#FFDE00]" />
+                    <p className="text-xs font-black uppercase tracking-widest text-black">Document Settings</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField
+                      label="Quotation / Invoice Title"
+                      name="quotationTitle"
+                      value={settings?.quotationTitle || ""}
+                      placeholder="e.g. PROFORMA INVOICE"
+                    />
+                    <TextAreaField
+                      label="Footer Message"
+                      name="quotationFooter"
+                      value={settings?.quotationFooter || ""}
+                      placeholder="e.g. Thank you for your business!"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                {/* Save button for template tab */}
+                <div className="flex justify-end pt-2 border-t-2 border-black">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="nb-btn px-6 py-2.5 text-sm font-black text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Template Settings
+                  </button>
+                </div>
+
+                {/* Info note */}
+                <div className="flex items-start gap-3 p-4 border-2 border-black bg-[#024BAB]/5">
+                  <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center shrink-0">
+                    <Layout className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-black uppercase tracking-wider">How it works</p>
+                    <p className="text-xs text-black/70 mt-1">
+                      Upload your company logo here. It will automatically appear at the top-left of every quotation PDF you generate from the Quotations page. Supported formats: PNG, JPG, SVG. Recommended size: 200×200 px or wider rectangular logos.
+                    </p>
                   </div>
                 </div>
               </div>

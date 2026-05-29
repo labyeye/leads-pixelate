@@ -28,6 +28,60 @@ router.post(
   syncFromIndiamart,
 );
 
+// TradeIndia stub — replace handler when integration is ready
+router.get(
+  "/tradeindia/status",
+  authorize("super_admin", "admin"),
+  (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        configured: false,
+        message:
+          "TradeIndia integration not configured. Contact support to enable.",
+      },
+    });
+  },
+);
+router.post(
+  "/tradeindia/sync",
+  authorize("super_admin", "admin"),
+  (req, res) => {
+    res
+      .status(400)
+      .json({
+        success: false,
+        message:
+          "TradeIndia integration is not configured yet. Please contact support to set up the API key.",
+      });
+  },
+);
+
+// Justdial stub — replace handler when integration is ready
+router.get(
+  "/justdial/status",
+  authorize("super_admin", "admin"),
+  (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        configured: false,
+        message:
+          "Justdial integration not configured. Contact support to enable.",
+      },
+    });
+  },
+);
+router.post("/justdial/sync", authorize("super_admin", "admin"), (req, res) => {
+  res
+    .status(400)
+    .json({
+      success: false,
+      message:
+        "Justdial integration is not configured yet. Please contact support to set up the API key.",
+    });
+});
+
 router.route("/").get(getLeads).post(createLead);
 
 router

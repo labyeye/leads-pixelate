@@ -155,6 +155,17 @@ export const leadsAPI = {
       method: "POST",
       body: JSON.stringify({ text }),
     }),
+  convertToClient: (
+    id: string,
+    data: { address: string; businessType: string; remarks?: string },
+  ) =>
+    request<{ success: boolean; data: any; message: string }>(
+      `/leads/${id}/convert`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
 };
 
 export const indiamartAPI = {
@@ -168,6 +179,26 @@ export const indiamartAPI = {
     ),
   getStatus: () =>
     request<{ success: boolean; data: any }>("/leads/indiamart/status"),
+};
+
+export const tradeindiaSyncAPI = {
+  sync: () =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/leads/tradeindia/sync",
+      { method: "POST", body: JSON.stringify({}) },
+    ),
+  getStatus: () =>
+    request<{ success: boolean; data: any }>("/leads/tradeindia/status"),
+};
+
+export const justdialSyncAPI = {
+  sync: () =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/leads/justdial/sync",
+      { method: "POST", body: JSON.stringify({}) },
+    ),
+  getStatus: () =>
+    request<{ success: boolean; data: any }>("/leads/justdial/status"),
 };
 
 export const dashboardAPI = {
@@ -256,7 +287,16 @@ export const facebookAPI = {
     request<{
       success: boolean;
       message: string;
-      data: { created: number; skipped: number };
+      data: {
+        created: number;
+        skipped: number;
+        pages?: Array<{
+          pageName: string;
+          created: number;
+          skipped: number;
+          error?: string;
+        }>;
+      };
     }>("/facebook/sync", {
       method: "POST",
       body: JSON.stringify({ pageId }),
@@ -277,6 +317,62 @@ export const facebookAPI = {
     request<{ success: boolean; message: string }>("/facebook/disconnect", {
       method: "POST",
       body: JSON.stringify({ pageId }),
+    }),
+};
+
+export const clientsAPI = {
+  getAll: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{
+      success: boolean;
+      count: number;
+      total: number;
+      data: any[];
+    }>(`/clients${query}`);
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: any }>(`/clients/${id}`),
+  create: (data: any) =>
+    request<{ success: boolean; data: any }>("/clients", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/clients/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/clients/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+export const quotationsAPI = {
+  getAll: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{
+      success: boolean;
+      count: number;
+      total: number;
+      data: any[];
+    }>(`/quotations${query}`);
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: any }>(`/quotations/${id}`),
+  create: (data: any) =>
+    request<{ success: boolean; data: any }>("/quotations", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/quotations/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/quotations/${id}`, {
+      method: "DELETE",
     }),
 };
 

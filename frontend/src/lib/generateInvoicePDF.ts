@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import logo from "@/assets/images/qlogo.png";
+import logo from "@/assets/images/NestLeads_Logo_Name.png";
 
 const PRIMARY = "#1e3a8a";
 const SECONDARY = "#111827";
@@ -171,10 +171,32 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const logoW = 45;
   const logoH = 60;
 
+  // Use company logo from settings if provided, else fall back to default
   try {
-    doc.addImage(logo, "PNG", ML, HT, logoW, logoH);
+    const customLogo = settings?.logoUrl?.trim();
+    if (customLogo) {
+      if (customLogo.startsWith("data:")) {
+        // base64 data URL — detect format from MIME type
+        const mime = customLogo.split(";")[0].split(":")[1] || "image/png";
+        const fmt = mime.includes("jpeg") ? "JPEG" : mime.includes("gif") ? "GIF" : "PNG";
+        doc.addImage(customLogo, fmt, ML, HT, logoW, logoH);
+      } else {
+        // External URL — fetch and load
+        const res = await fetch(customLogo);
+        const blob = await res.blob();
+        const b64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        doc.addImage(b64, "PNG", ML, HT, logoW, logoH);
+      }
+    } else {
+      doc.addImage(logo, "PNG", ML, HT, logoW, logoH);
+    }
   } catch (err) {
-    console.error("Error adding logo to PDF:", err);
+    // Silently fall back to default logo
+    try { doc.addImage(logo, "PNG", ML, HT, logoW, logoH); } catch {}
   }
 
   const textX = ML + logoW + 20;

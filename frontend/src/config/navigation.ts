@@ -9,6 +9,9 @@ import {
   Clock,
   CreditCard,
   Plug,
+  BarChart2,
+  Building2,
+  FileText,
 } from "lucide-react";
 
 export interface NavItem {
@@ -61,6 +64,40 @@ const allGroups: NavGroup[] = [
         href: "/followup-calendar",
         icon: Clock,
         roles: ["super_admin", "admin", "sales_executive"],
+      },
+    ],
+  },
+  {
+    label: "Business",
+    items: [
+      {
+        title: "Clients",
+        href: "/clients",
+        icon: Building2,
+        roles: [
+          "super_admin",
+          "admin",
+          "sales_executive",
+          "service_manager",
+          "accountant",
+        ],
+      },
+      {
+        title: "Quotations",
+        href: "/quotations",
+        icon: FileText,
+        roles: ["super_admin", "admin", "sales_executive", "accountant"],
+      },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      {
+        title: "Reports",
+        href: "/reports",
+        icon: BarChart2,
+        roles: ["super_admin", "admin"],
       },
     ],
   },

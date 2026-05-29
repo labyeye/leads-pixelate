@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, LogOut, Zap, X } from "lucide-react";
 import { useState } from "react";
 import nestleadslogo from "@/assets/images/NestLeads_Logo_Name.png";
+import nestleadslogosmall from "../../../public/favicon.png";
+
 interface AppSidebarProps {
   mobileOpen: boolean;
   onClose: () => void;
@@ -35,7 +37,24 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
             collapsed ? "lg:justify-center lg:px-2 px-4 gap-3" : "px-4 gap-3",
           )}
         >
-          <img src={nestleadslogo} alt="Logo" className="w-8 h-8" />
+          {/* Full logo — shown when expanded or on mobile */}
+          <img
+            src={nestleadslogo}
+            alt="NestLeads"
+            className={cn(
+              "h-14 w-auto object-contain shrink-0",
+              collapsed && "lg:hidden",
+            )}
+          />
+          <img
+            src={nestleadslogosmall}
+            alt="NestLeads"
+            className={cn(
+              "hidden items-center justify-center w-10 h-10 shrink-0",
+              collapsed && "lg:flex",
+            )}
+          />
+
           <button
             onClick={onClose}
             className="ml-auto lg:hidden p-1 hover:bg-[#024BAB]/20 border border-transparent hover:border-black transition-colors"

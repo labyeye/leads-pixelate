@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { roleLabels, roleColors, UserRole } from "@/types/crm";
+import { roleLabels, UserRole } from "@/types/crm";
 import { cn } from "@/lib/utils";
 import {
   Plus,
@@ -15,21 +15,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { usersAPI } from "@/services/api";
-import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -37,12 +30,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { usersAPI } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+
+const ROLE_NB: Record<string, string> = {
+  super_admin: "bg-[#024BAB] text-white border-black",
+  admin: "bg-black text-white border-black",
+  sales_executive: "bg-[#FFDE00] text-black border-black",
+  service_manager: "bg-white text-black border-black",
+  accountant: "bg-white text-black border-black",
+};
+
+const ROLE_COUNTS = [
+  "super_admin",
+  "admin",
+  "sales_executive",
+  "service_manager",
+  "accountant",
+] as const;
 
 export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,7 +82,7 @@ export default function UsersPage() {
     } catch (error: any) {
       toast({
         title: "Error fetching users",
-        description: error.message || "Something went wrong",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -91,35 +105,28 @@ export default function UsersPage() {
       });
       return;
     }
-
     try {
       setSaving(true);
-
       let res;
       if (editingUserId) {
         const payload = { ...formData };
-        if (!payload.password) {
-          delete (payload as any).password;
-        }
+        if (!payload.password) delete (payload as any).password;
         res = await usersAPI.update(editingUserId, payload);
       } else {
         res = await usersAPI.create(formData);
       }
-
       if (res.success) {
         toast({
           title: "Success",
-          description: editingUserId
-            ? "User updated successfully"
-            : "User created successfully",
+          description: editingUserId ? "User updated" : "User created",
         });
-        resetFormAndCloseModal();
+        resetForm();
         fetchUsers();
       }
     } catch (error: any) {
       toast({
-        title: "Error saving user",
-        description: error.message || "Something went wrong",
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -127,7 +134,7 @@ export default function UsersPage() {
     }
   };
 
-  const resetFormAndCloseModal = () => {
+  const resetForm = () => {
     setIsModalOpen(false);
     setEditingUserId(null);
     setFormData({
@@ -154,17 +161,16 @@ export default function UsersPage() {
   };
 
   const handleDeleteClick = async (id: string) => {
-    if (!window.confirm("Are you sure you want to deactivate this user?"))
-      return;
+    if (!window.confirm("Permanently delete this user? This cannot be undone.")) return;
     try {
       const res = await usersAPI.delete(id);
       if (res.success) {
-        toast({ title: "Success", description: "User deleted successfully" });
+        toast({ title: "Deleted", description: "User permanently deleted" });
         fetchUsers();
       }
     } catch (error: any) {
       toast({
-        title: "Error deleting user",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -177,17 +183,47 @@ export default function UsersPage() {
       u.email?.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const NbInput = ({
+    label,
+    id,
+    type = "text",
+    value,
+    onChange,
+    placeholder,
+    required,
+  }: any) => (
+    <div className="space-y-1">
+      <label
+        htmlFor={id}
+        className="block text-[10px] font-black uppercase tracking-widest text-black"
+      >
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        className="nb-input w-full px-3 py-2 text-sm"
+      />
+    </div>
+  );
+
   return (
-    <AppLayout title="Users">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 animate-fade-in">
-        <div className="flex items-center gap-2 bg-card rounded-lg border border-border px-3 py-2 w-full sm:w-72">
-          <Search className="w-4 h-4 text-muted-foreground" />
+    <AppLayout title="Team">
+      {/* Top bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2 nb-input px-3 py-2 w-full sm:w-72">
+          <Search className="w-4 h-4 text-black shrink-0" />
           <input
             type="text"
             placeholder="Search users..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-muted-foreground"
+            className="bg-transparent text-sm outline-none w-full text-black placeholder:text-black/40 font-medium"
           />
         </div>
 
@@ -195,13 +231,11 @@ export default function UsersPage() {
           open={isModalOpen}
           onOpenChange={(open) => {
             setIsModalOpen(open);
-            if (!open) resetFormAndCloseModal();
+            if (!open) resetForm();
           }}
         >
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              className="gap-1.5"
+            <button
               onClick={() => {
                 setEditingUserId(null);
                 setFormData({
@@ -213,167 +247,138 @@ export default function UsersPage() {
                   department: "",
                 });
               }}
+              className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
             >
-              <Plus className="w-3.5 h-3.5" /> Add User
-            </Button>
+              <Plus className="w-4 h-4" /> Add User
+            </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-md border-2 border-black rounded-none shadow-[6px_6px_0px_#000] p-0 gap-0">
             <form onSubmit={handleSubmitUser}>
-              <DialogHeader>
-                <DialogTitle>
+              <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4">
+                <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
                   {editingUserId ? "Edit User" : "Add New User"}
                 </DialogTitle>
-                <DialogDescription>
-                  {editingUserId
-                    ? "Update team member details. Leave password blank to keep current password."
-                    : "Create a new team member. They will use their email and password to log in."}
-                </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">
-                    Full Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">
-                    Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder="john@example.com"
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">
-                    Password{" "}
-                    {!editingUserId && (
-                      <span className="text-destructive">*</span>
-                    )}
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    placeholder={
-                      editingUserId
-                        ? "Leave blank to keep unchanged"
-                        : "Min. 6 characters"
-                    }
-                    required={!editingUserId}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="role">
-                    Role <span className="text-destructive">*</span>
-                  </Label>
+              <div className="grid gap-4 p-5 bg-white">
+                <NbInput
+                  label="Full Name"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e: any) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="John Doe"
+                  required
+                />
+                <NbInput
+                  label="Email"
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e: any) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="john@example.com"
+                  required
+                />
+                <NbInput
+                  label={
+                    editingUserId
+                      ? "Password (leave blank to keep)"
+                      : "Password"
+                  }
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e: any) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder={
+                    editingUserId
+                      ? "Leave blank to keep unchanged"
+                      : "Min. 6 characters"
+                  }
+                  required={!editingUserId}
+                />
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                    Role <span className="text-red-500">*</span>
+                  </label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value: UserRole) =>
-                      setFormData({ ...formData, role: value })
+                    onValueChange={(v: UserRole) =>
+                      setFormData({ ...formData, role: v })
                     }
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
+                    <SelectTrigger className="border-2 border-black rounded-none nb-shadow-sm focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                      <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
                       {Object.entries(roleLabels).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
+                        <SelectItem key={key} value={key} className="font-bold">
                           {label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
-                      placeholder="+91..."
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      value={formData.department}
-                      onChange={(e) =>
-                        setFormData({ ...formData, department: e.target.value })
-                      }
-                      placeholder="e.g. Sales"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <NbInput
+                    label="Phone"
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e: any) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    placeholder="+91..."
+                  />
+                  <NbInput
+                    label="Department"
+                    id="dept"
+                    value={formData.department}
+                    onChange={(e: any) =>
+                      setFormData({ ...formData, department: e.target.value })
+                    }
+                    placeholder="e.g. Sales"
+                  />
                 </div>
               </div>
-              <DialogFooter>
-                <Button
+              <DialogFooter className="border-t-2 border-black px-5 py-3 flex gap-2 bg-white">
+                <button
                   type="button"
-                  variant="outline"
-                  onClick={() => resetFormAndCloseModal()}
+                  onClick={resetForm}
+                  className="nb-btn bg-white text-black px-4 py-2 text-sm font-bold"
                 >
                   Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="nb-btn bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingUserId ? "Update User" : "Save User"}
-                </Button>
+                </button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {}
-      <div
-        className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5 animate-fade-in"
-        style={{ animationDelay: "100ms" }}
-      >
-        {(
-          [
-            "super_admin",
-            "admin",
-            "sales_executive",
-            "service_manager",
-            "accountant",
-          ] as const
-        ).map((role) => {
+      {/* Role count cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+        {ROLE_COUNTS.map((role) => {
           const count = users.filter((u) => u.role === role).length;
           return (
-            <div
-              key={role}
-              className="bg-card rounded-xl border border-border p-4 card-shadow text-center"
-            >
-              <p className="text-2xl font-bold text-foreground">
+            <div key={role} className="nb-card nb-card-hover p-4 text-center">
+              <p className="text-3xl font-black text-black">
                 {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-black/30" />
                 ) : (
                   count
                 )}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] font-black uppercase tracking-widest text-black/50 mt-1">
                 {roleLabels[role]}
               </p>
             </div>
@@ -381,50 +386,50 @@ export default function UsersPage() {
         })}
       </div>
 
-      <div
-        className="bg-card rounded-xl border border-border card-shadow overflow-hidden animate-fade-in"
-        style={{ animationDelay: "200ms" }}
-      >
+      {/* Table */}
+      <div className="nb-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  User
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                  Department
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                  Status
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                  Last Login
-                </th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Actions
-                </th>
+              <tr className="border-b-2 border-black bg-[#024BAB]">
+                {[
+                  { h: "User", cls: "" },
+                  { h: "Role", cls: "" },
+                  { h: "Department", cls: "hidden md:table-cell" },
+                  { h: "Status", cls: "hidden lg:table-cell" },
+                  { h: "Last Login", cls: "hidden lg:table-cell" },
+                  { h: "Actions", cls: "text-right" },
+                ].map(({ h, cls }) => (
+                  <th
+                    key={h}
+                    className={cn(
+                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest text-left",
+                      cls,
+                      h === "Actions" && "text-right",
+                    )}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Loading users...
+                  <td colSpan={6} className="text-center py-14">
+                    <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
+                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
+                      Loading...
                     </p>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10">
-                    <p className="text-sm text-muted-foreground">
-                      No users found.
-                    </p>
+                  <td
+                    colSpan={6}
+                    className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
+                  >
+                    No users found.
                   </td>
                 </tr>
               ) : (
@@ -436,23 +441,29 @@ export default function UsersPage() {
                       .join("")
                       .slice(0, 2)
                       .toUpperCase() || "U";
-
+                  const isSelf = (user._id || user.id) === currentUser?.id;
+                  const canDelete =
+                    !isSelf &&
+                    (user.role !== "super_admin" ||
+                      currentUser?.role === "super_admin");
                   return (
                     <tr
                       key={user._id || user.id}
-                      className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors animate-fade-in"
-                      style={{ animationDelay: `${i * 50}ms` }}
+                      className={cn(
+                        "border-b-2 border-black last:border-b-0 hover:bg-[#FFDE00]/10 transition-colors",
+                        i % 2 === 1 && "bg-[#024BAB]/5",
+                      )}
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                          <div className="w-9 h-9 border-2 border-black bg-[#024BAB] flex items-center justify-center text-xs font-black text-white shrink-0 nb-shadow-sm">
                             {initials}
                           </div>
                           <div>
-                            <p className="font-medium text-foreground">
+                            <p className="font-black text-black text-sm">
                               {user.name}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-black/50 font-medium">
                               {user.email}
                             </p>
                           </div>
@@ -461,64 +472,70 @@ export default function UsersPage() {
                       <td className="px-5 py-3.5">
                         <span
                           className={cn(
-                            "text-xs font-medium px-2 py-1 rounded-md",
-                            roleColors[user.role as UserRole],
+                            "text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider",
+                            ROLE_NB[user.role] ||
+                              "bg-white text-black border-black",
                           )}
                         >
                           {roleLabels[user.role as UserRole] || user.role}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell text-muted-foreground">
-                        {user.department || "-"}
+                      <td className="px-5 py-3.5 hidden md:table-cell font-bold text-sm text-black">
+                        {user.department || (
+                          <span className="text-black/30">—</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 hidden lg:table-cell">
                         <span
                           className={cn(
-                            "text-xs font-medium px-2 py-1 rounded-md",
+                            "text-[10px] font-black px-2 py-1 border-2 border-black uppercase tracking-wider",
                             user.status === "active"
-                              ? "bg-success/10 text-success"
-                              : "bg-muted text-muted-foreground",
+                              ? "bg-[#024BAB] text-white"
+                              : "bg-white text-black",
                           )}
                         >
                           {user.status || "active"}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell text-muted-foreground text-xs">
-                        {user.lastLogin
-                          ? new Date(user.lastLogin).toLocaleDateString(
-                              "en-IN",
-                              {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )
-                          : "-"}
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-bold text-black/50">
+                        {user.lastLogin ? (
+                          new Date(user.lastLogin).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        ) : (
+                          <span className="text-black/30">—</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1 rounded hover:bg-muted transition-colors">
-                              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                            <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors nb-shadow-sm flex items-center justify-center">
+                              <MoreHorizontal className="w-4 h-4" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent
+                            align="end"
+                            className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000] bg-white min-w-[140px] p-0"
+                          >
                             <DropdownMenuItem
                               onClick={() => handleEditClick(user)}
+                              className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
                             >
-                              <Pencil className="w-4 h-4 mr-2" />
-                              Edit
+                              <Pencil className="w-4 h-4 mr-2" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                              onClick={() =>
-                                handleDeleteClick(user._id || user.id)
-                              }
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
+                            {canDelete && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleDeleteClick(user._id || user.id)
+                                }
+                                className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>

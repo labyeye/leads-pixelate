@@ -15,6 +15,9 @@ import RegisterPage from "./pages/RegisterPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import BillingPage from "./pages/BillingPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import ReportsPage from "./pages/ReportsPage";
+import ClientsPage from "./pages/ClientsPage";
+import QuotationsPage from "./pages/QuotationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -157,6 +160,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          <ProtectedRoute>
+            <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/quotations"
+        element={
+          <ProtectedRoute>
+            <QuotationsPage />
           </ProtectedRoute>
         }
       />

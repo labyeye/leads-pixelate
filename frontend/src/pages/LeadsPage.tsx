@@ -23,6 +23,11 @@ import {
   MapPin,
   Ban,
   IndianRupee,
+  LayoutGrid,
+  List,
+  Flame,
+  Thermometer,
+  Snowflake,
 } from "lucide-react";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
 import { cn } from "@/lib/utils";
@@ -47,6 +52,8 @@ import {
 import {
   leadsAPI,
   indiamartAPI,
+  tradeindiaSyncAPI,
+  justdialSyncAPI,
   facebookAPI,
   usersAPI,
   productsAPI,
@@ -97,6 +104,8 @@ export default function LeadsPage() {
   const [lastSyncResult, setLastSyncResult] = useState<any>(null);
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
+  const [tiSyncing, setTiSyncing] = useState(false);
+  const [jdSyncing, setJdSyncing] = useState(false);
 
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [salesExecs, setSalesExecs] = useState<any[]>([]);
@@ -136,6 +145,7 @@ export default function LeadsPage() {
   const [newProductName, setNewProductName] = useState("");
   const [isAddingProduct, setIsAddingProduct] = useState(false);
 
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addLeadLoading, setAddLeadLoading] = useState(false);
   const [newLead, setNewLead] = useState({
@@ -301,6 +311,40 @@ export default function LeadsPage() {
       });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleTradeindiaSyncAttempt = async () => {
+    try {
+      setTiSyncing(true);
+      const res = await tradeindiaSyncAPI.sync();
+      toast({ title: "TradeIndia Sync Complete", description: res.message });
+      fetchLeads();
+    } catch (error: any) {
+      toast({
+        title: "TradeIndia Sync",
+        description: error.message || "TradeIndia integration not configured.",
+        variant: "destructive",
+      });
+    } finally {
+      setTiSyncing(false);
+    }
+  };
+
+  const handleJustdialSyncAttempt = async () => {
+    try {
+      setJdSyncing(true);
+      const res = await justdialSyncAPI.sync();
+      toast({ title: "Justdial Sync Complete", description: res.message });
+      fetchLeads();
+    } catch (error: any) {
+      toast({
+        title: "Justdial Sync",
+        description: error.message || "Justdial integration not configured.",
+        variant: "destructive",
+      });
+    } finally {
+      setJdSyncing(false);
     }
   };
 
@@ -879,7 +923,6 @@ export default function LeadsPage() {
         {}
         <div className="flex flex-wrap items-center gap-3 w-full">
           <div className="flex flex-wrap items-center gap-2 flex-1">
-            {}
             {currentUser?.role !== "sales_executive" && (
               <Dialog
                 open={isAssignModalOpen}
@@ -889,14 +932,10 @@ export default function LeadsPage() {
                 }}
               >
                 <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-10 gap-1.5 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
-                  >
+                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap">
                     <UserCheck className="w-3.5 h-3.5" />
                     Assign Lead
-                  </Button>
+                  </button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
@@ -966,22 +1005,19 @@ export default function LeadsPage() {
               </Dialog>
             )}
 
-            <Button
+            <button
               onClick={() => setIsAddModalOpen(true)}
-              size="sm"
-              className="h-10 gap-1.5 bg-green-600 hover:bg-green-700 text-white border-none shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Lead
-            </Button>
+            </button>
 
             {fbConnected && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-10 gap-1.5 border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 whitespace-nowrap"
+              <button
                 onClick={handleFacebookSync}
                 disabled={fbSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
               >
                 {fbSyncing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -989,18 +1025,16 @@ export default function LeadsPage() {
                   <RefreshCw className="w-3.5 h-3.5" />
                 )}
                 {fbSyncing ? "Syncing..." : "Sync Facebook"}
-              </Button>
+              </button>
             )}
 
             {syncStatus !== null && (
-              <div className="flex items-center">
-                <Button
+              <div className="flex items-center border-2 border-black shadow-[3px_3px_0px_#000]">
+                <button
                   id="indiamart-sync-btn"
-                  size="sm"
-                  variant="outline"
-                  className="h-10 gap-1.5 border-orange-300 text-orange-600 hover:bg-orange-50 hover:border-orange-400 whitespace-nowrap rounded-r-none border-r-0"
                   onClick={handleIndiamartSync}
                   disabled={syncing}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-orange-400 text-black font-black uppercase text-xs tracking-widest border-r-2 border-black hover:bg-orange-300 transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   {syncing ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1008,10 +1042,10 @@ export default function LeadsPage() {
                     <RefreshCw className="w-3.5 h-3.5" />
                   )}
                   {syncing ? "Syncing..." : "Sync IndiaMART"}
-                </Button>
+                </button>
                 <button
                   onClick={() => setSyncPanelOpen(!syncPanelOpen)}
-                  className="h-10 px-2 border border-orange-300 text-orange-500 hover:bg-orange-50 rounded-r-md transition-colors"
+                  className="px-2 py-2 bg-orange-400 hover:bg-orange-300 text-black transition-colors"
                 >
                   {syncPanelOpen ? (
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -1022,23 +1056,51 @@ export default function LeadsPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-2 bg-card rounded-lg border border-border px-3 h-10 w-full sm:w-44">
-              <CalendarIcon className="w-4 h-4 text-black" />
+            {/* TradeIndia Sync */}
+            <button
+              onClick={handleTradeindiaSyncAttempt}
+              disabled={tiSyncing}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              {tiSyncing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              {tiSyncing ? "Syncing..." : "Sync TradeIndia"}
+            </button>
+
+            {/* Justdial Sync */}
+            <button
+              onClick={handleJustdialSyncAttempt}
+              disabled={jdSyncing}
+              className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              {jdSyncing ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3.5 h-3.5" />
+              )}
+              {jdSyncing ? "Syncing..." : "Sync Justdial"}
+            </button>
+
+            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white shadow-[2px_2px_0px_#000]">
+              <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
+                className="bg-transparent text-xs font-bold outline-none w-full text-black"
                 title="Start Date"
               />
             </div>
-            <div className="flex items-center gap-2 bg-card rounded-lg border border-border px-3 h-10 w-full sm:w-44">
-              <CalendarIcon className="w-4 h-4 text-black" />
+            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white shadow-[2px_2px_0px_#000]">
+              <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
+                className="bg-transparent text-xs font-bold outline-none w-full text-black"
                 title="End Date"
               />
             </div>
@@ -1050,9 +1112,7 @@ export default function LeadsPage() {
               budgetFilters.length > 0 ||
               productFilters.length > 0 ||
               followUpDateFilter) && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => {
                   setStartDate("");
                   setEndDate("");
@@ -1065,14 +1125,14 @@ export default function LeadsPage() {
                   setBudgetMax("");
                   setFollowUpDateFilter(undefined);
                 }}
-                className="text-xs text-black hover:text-foreground h-10 px-2"
+                className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
               >
-                Reset All
-              </Button>
+                <X className="w-3 h-3" /> Reset All
+              </button>
             )}
           </div>
 
-          <div className="relative z-50 flex items-center gap-2 bg-card rounded-lg border border-border px-3 h-10 w-full lg:w-72">
+          <div className="relative z-50 flex items-center gap-2 bg-white border-2 border-black px-3 h-10 w-full lg:w-72 shadow-[2px_2px_0px_#000]">
             <Search className="w-4 h-4 text-black" />
             <input
               type="text"
@@ -1151,45 +1211,71 @@ export default function LeadsPage() {
 
           {}
         </div>
-        <div className="flex bg-muted/50 p-1 rounded-lg w-full lg:w-fit overflow-x-auto">
-          {Object.keys(categories).map((cat) => (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex w-full lg:w-fit overflow-x-auto border-2 border-black shadow-[3px_3px_0px_#000]">
+            {Object.keys(categories).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => { setActiveCategory(cat); setSelectedLeadId(null); }}
+                className={cn(
+                  "px-4 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 border-r-2 border-black last:border-r-0",
+                  activeCategory === cat
+                    ? "bg-[#024BAB] text-white"
+                    : "bg-white text-black hover:bg-[#FFDE00] hover:text-black",
+                )}
+              >
+                {cat}
+                <span className={cn(
+                  "text-[10px] font-black px-1.5 py-0.5 border border-black min-w-[20px] text-center",
+                  activeCategory === cat ? "bg-[#FFDE00] text-black" : "bg-black text-white",
+                )}>
+                  {leads.filter((l) => matchesCategory(l, cat)).length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* View mode toggle */}
+          <div className="flex items-center border-2 border-black shadow-[2px_2px_0px_#000] ml-auto">
             <button
-              key={cat}
-              onClick={() => {
-                setActiveCategory(cat);
-                setSelectedLeadId(null);
-              }}
+              onClick={() => setViewMode("table")}
+              title="Table view"
               className={cn(
-                "px-5 py-2.5 text-sm font-medium rounded-md whitespace-nowrap transition-all flex items-center gap-2",
-                activeCategory === cat
-                  ? "bg-background shadow-sm text-foreground"
-                  : "text-black hover:text-foreground",
+                "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black transition-colors",
+                viewMode === "table" ? "bg-[#024BAB] text-white" : "bg-white text-black hover:bg-[#FFDE00]",
               )}
             >
-              {cat}
-              <span className="text-[10px] bg-muted/80 text-black px-2 py-0.5 rounded-full font-bold">
-                {leads.filter((l) => matchesCategory(l, cat)).length}
-              </span>
+              <List className="w-3.5 h-3.5" /> Table
             </button>
-          ))}
+            <button
+              onClick={() => { setViewMode("kanban"); setSelectedLeadId(null); }}
+              title="Kanban view"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors",
+                viewMode === "kanban" ? "bg-[#024BAB] text-white" : "bg-white text-black hover:bg-[#FFDE00]",
+              )}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+            </button>
+          </div>
         </div>
 
         {}
 
         {}
         {syncPanelOpen && syncStatus && (
-          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-fade-in">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-orange-500" />
-              <h4 className="text-sm font-semibold text-orange-800">
+          <div className="border-2 border-black shadow-[4px_4px_0px_#000] bg-orange-50 animate-fade-in">
+            <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-black bg-orange-400">
+              <Zap className="w-4 h-4 text-black" />
+              <h4 className="text-xs font-black uppercase tracking-widest text-black">
                 IndiaMART Integration Status
               </h4>
               <span
                 className={cn(
-                  "text-[10px] px-2 py-0.5 rounded-full font-medium",
+                  "text-[10px] font-black px-2 py-0.5 border-2 border-black ml-auto",
                   syncStatus.apiKeyConfigured
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700",
+                    ? "bg-green-400 text-black"
+                    : "bg-red-400 text-black",
                 )}
               >
                 {syncStatus.apiKeyConfigured
@@ -1197,38 +1283,38 @@ export default function LeadsPage() {
                   : "API Key Missing"}
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-              <div className="bg-white rounded-lg p-3 border border-orange-100">
-                <p className="text-[10px] text-black uppercase tracking-wider">
+            <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              <div className="bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-black">
                   Total IM Leads
                 </p>
-                <p className="text-xl font-bold text-orange-600">
+                <p className="text-2xl font-black text-orange-600">
                   {syncStatus.totalIndiamartLeads || 0}
                 </p>
               </div>
-              <div className="bg-white rounded-lg p-3 border border-orange-100">
-                <p className="text-[10px] text-black uppercase tracking-wider">
+              <div className="bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-black">
                   Last 7 Days
                 </p>
-                <p className="text-xl font-bold text-orange-500">
+                <p className="text-2xl font-black text-orange-500">
                   {syncStatus.last7DaysLeads || 0}
                 </p>
               </div>
               {lastSyncResult && (
                 <>
-                  <div className="bg-white rounded-lg p-3 border border-green-100">
-                    <p className="text-[10px] text-black uppercase tracking-wider">
+                  <div className="bg-green-400 border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black">
                       Last Sync: New
                     </p>
-                    <p className="text-xl font-bold text-green-600">
+                    <p className="text-2xl font-black text-black">
                       {lastSyncResult.created || 0}
                     </p>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-gray-100">
-                    <p className="text-[10px] text-black uppercase tracking-wider">
+                  <div className="bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-black">
                       Last Sync: Skipped
                     </p>
-                    <p className="text-xl font-bold text-gray-500">
+                    <p className="text-2xl font-black text-gray-500">
                       {lastSyncResult.skipped || 0}
                     </p>
                   </div>
@@ -1236,31 +1322,33 @@ export default function LeadsPage() {
               )}
             </div>
             {syncStatus.recentSyncs?.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-orange-700 mb-2">
+              <div className="px-4 pb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-black mb-2">
                   Recent Syncs
                 </p>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                <div className="space-y-1 max-h-40 overflow-y-auto border-2 border-black">
                   {syncStatus.recentSyncs.map((log: any, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-xs border border-orange-100"
+                      className="flex items-center justify-between bg-white px-3 py-2 text-xs border-b-2 border-black last:border-b-0"
                     >
-                      <span className="text-black">
+                      <span className="font-bold text-black">
                         {new Date(log.timestamp).toLocaleString("en-IN", {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}
                       </span>
-                      <span className="text-green-600 font-medium">
+                      <span className="font-black text-green-700">
                         +{log.created} new
                       </span>
-                      <span className="text-black">{log.skipped} skipped</span>
+                      <span className="font-bold text-black">
+                        {log.skipped} skipped
+                      </span>
                       <span
                         className={cn(
-                          "font-medium",
+                          "font-black",
                           log.errors?.length > 0
-                            ? "text-red-500"
+                            ? "text-red-600"
                             : "text-gray-400",
                         )}
                       >
@@ -1273,36 +1361,124 @@ export default function LeadsPage() {
                 </div>
               </div>
             )}
-            <p className="text-[10px] text-orange-600/60 mt-2">
-              Auto-sync runs every 5 minutes in background. Click "Sync
-              IndiaMART" to fetch now.
+            <p className="text-[10px] font-bold text-black/50 px-4 pb-3">
+              Auto-sync runs every 5 minutes. Click "Sync IndiaMART" to fetch
+              immediately.
             </p>
           </div>
         )}
       </div>
 
+      {/* ── Kanban view ── */}
+      {viewMode === "kanban" && (
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max">
+            {Object.entries({
+              "New Lead": { bg: "bg-white", accent: "bg-primary" },
+              "Discussion/Requirement": { bg: "bg-white", accent: "bg-primary" },
+              "Quotation": { bg: "bg-white", accent: "bg-primary" },
+              "Visit Scheduled": { bg: "bg-white", accent: "bg-primary" },
+              "Visited": { bg: "bg-white", accent: "bg-primary" },
+              "Client": { bg: "bg-green-50", accent: "bg-green-600" },
+              "Dropped": { bg: "bg-red-50", accent: "bg-red-600" },
+            } as Record<string, { bg: string; accent: string }>).map(([cat, style]) => {
+              const colLeads = filtered.filter((l) => matchesCategory(l, cat));
+              return (
+                <div key={cat} className="w-72 shrink-0 border-2 border-black shadow-[4px_4px_0px_#000]">
+                  {/* Column header */}
+                  <div className={cn("flex items-center justify-between px-3 py-2.5 border-b-2 border-black", style.accent)}>
+                    <span className="text-xs font-black uppercase tracking-widest text-white">{cat}</span>
+                    <span className="text-[10px] font-black bg-white text-black px-1.5 py-0.5 border border-black min-w-[20px] text-center">
+                      {colLeads.length}
+                    </span>
+                  </div>
+
+                  {/* Cards */}
+                  <div className={cn("p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto", style.bg)}>
+                    {loading ? (
+                      <div className="flex justify-center pt-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-[#024BAB]" />
+                      </div>
+                    ) : colLeads.length === 0 ? (
+                      <div className="text-center pt-10 text-[10px] font-black uppercase tracking-widest text-black/30">
+                        No leads
+                      </div>
+                    ) : colLeads.map((l) => (
+                      <div
+                        key={l._id || l.id}
+                        onClick={() => { setSelectedLeadId(l._id || l.id); setViewMode("table"); setActiveCategory(cat); }}
+                        className={cn(
+                          "bg-white border-2 border-black p-3 cursor-pointer transition-all hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5",
+                          selectedLeadId === (l._id || l.id) && "ring-2 ring-[#024BAB]",
+                        )}
+                      >
+                        {/* Score badge */}
+                        {l.contactTag && (
+                          <div className="flex justify-end mb-1.5">
+                            <span className={cn(
+                              "inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
+                              l.contactTag === "HOT" && "bg-red-500 text-white",
+                              l.contactTag === "WARM" && "bg-[#FFDE00] text-black",
+                              l.contactTag === "COLD" && "bg-[#024BAB] text-white",
+                            )}>
+                              {l.contactTag === "HOT" && <Flame className="w-2.5 h-2.5" />}
+                              {l.contactTag === "WARM" && <Thermometer className="w-2.5 h-2.5" />}
+                              {l.contactTag === "COLD" && <Snowflake className="w-2.5 h-2.5" />}
+                              {l.contactTag}
+                            </span>
+                          </div>
+                        )}
+                        <p className="font-black text-black text-sm leading-tight">{l.name}</p>
+                        <p className="text-[10px] text-black/60 font-medium mt-0.5 truncate">{l.company}</p>
+                        {l.phone && <p className="text-[10px] text-black/50 mt-1">{l.phone}</p>}
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
+                          <span className={cn(
+                            "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase tracking-wider",
+                            sourceColors[l.source] || "bg-gray-100 text-black",
+                          )}>
+                            {l.source || "Manual"}
+                          </span>
+                          <span className={cn(
+                            "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
+                            statusColors[l.status] || "bg-gray-100 text-black border-transparent",
+                          )}>
+                            {l.status || "—"}
+                          </span>
+                        </div>
+                        {l.assignedTo?.name && (
+                          <p className="text-[9px] text-black/40 font-bold mt-1.5 truncate">
+                            → {l.assignedTo.name}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Table view ── */}
+      {viewMode === "table" && (
       <div className="flex flex-col xl:flex-row gap-5 items-start">
         {}
         <div
-          className="flex-1 bg-card rounded-xl border border-border card-shadow overflow-hidden animate-fade-in min-h-[500px]"
+          className="flex-1 bg-white border-2 border-black shadow-[4px_4px_0px_#000] overflow-hidden animate-fade-in min-h-[500px]"
           style={{ animationDelay: "100ms" }}
         >
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-            <p className="text-sm font-medium text-foreground">
-              {loading && (
-                <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
-              )}
-              {activeCategory} Leads
-            </p>
-          </div>
           <div className="overflow-x-auto relative max-h-[calc(100vh-250px)]">
             <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-20 bg-background/95 backdrop-blur shadow-sm">
-                <tr className="border-b border-border">
-                  <th className="text-left px-5 py-4 text-xs font-semibold text-black uppercase tracking-wider">
+              <thead className="sticky top-0 z-20">
+                <tr className="border-b-2 border-black bg-[#024BAB]">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                     Name
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden md:table-cell group">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                    Score
+                  </th>
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden md:table-cell group">
                     <div className="flex items-center gap-1">
                       Source
                       {renderHeaderFilter(
@@ -1319,27 +1495,27 @@ export default function LeadsPage() {
                       )}
                     </div>
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
                     Inquiry Date
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
                     Phone
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
                     City
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
                     Campaign
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
                     <div className="flex items-center gap-1">
                       Budget
                       {renderBudgetRangeFilter()}
                     </div>
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
                     <div className="flex items-center gap-1">
-                      Intrested Product
+                      Interested Product
                       {renderHeaderFilter(
                         "interestedProducts",
                         getUniqueValues("interestedProducts"),
@@ -1348,10 +1524,10 @@ export default function LeadsPage() {
                       )}
                     </div>
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
                     Remarks
                   </th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                     <div className="flex items-center gap-1">
                       Status
                       {renderHeaderFilter(
@@ -1363,11 +1539,11 @@ export default function LeadsPage() {
                     </div>
                   </th>
                   {currentUser?.role !== "sales_executive" && (
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden lg:table-cell">
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
                       Assigned
                     </th>
                   )}
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
                     <div className="flex items-center gap-1">
                       Follow-up
                       {renderFollowUpDateFilter()}
@@ -1451,6 +1627,23 @@ export default function LeadsPage() {
                                 {l.name}
                               </p>
                               <p className="text-xs text-black">{l.company}</p>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              {l.contactTag ? (
+                                <span className={cn(
+                                  "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
+                                  l.contactTag === "HOT" && "bg-red-500 text-white border-black",
+                                  l.contactTag === "WARM" && "bg-[#FFDE00] text-black border-black",
+                                  l.contactTag === "COLD" && "bg-[#024BAB] text-white border-black",
+                                )}>
+                                  {l.contactTag === "HOT" && <Flame className="w-3 h-3" />}
+                                  {l.contactTag === "WARM" && <Thermometer className="w-3 h-3" />}
+                                  {l.contactTag === "COLD" && <Snowflake className="w-3 h-3" />}
+                                  {l.contactTag}
+                                </span>
+                              ) : (
+                                <span className="text-black/20 text-xs">—</span>
+                              )}
                             </td>
                             <td className="px-5 py-3.5 hidden md:table-cell">
                               <span
@@ -1598,8 +1791,8 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+      )}
 
-      {}
       <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
