@@ -385,4 +385,110 @@ export const settingsAPI = {
     }),
 };
 
+export const whatsappAPI = {
+  // Connection
+  getStatus: () => request<{ success: boolean; data: any }>("/whatsapp/status"),
+  getConfig: () => request<{ success: boolean; data: any }>("/whatsapp/config"),
+  connectManual: (data: {
+    phoneNumberId: string;
+    accessToken: string;
+    wabaId?: string;
+    businessName?: string;
+    phoneNumber?: string;
+  }) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/whatsapp/connect-manual",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
+  connectEmbeddedSignup: (code: string) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/whatsapp/connect",
+      {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      },
+    ),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>("/whatsapp/disconnect", {
+      method: "POST",
+    }),
+  syncTemplates: () =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/whatsapp/templates/sync",
+      { method: "POST" },
+    ),
+
+  // Templates
+  getTemplates: () =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      "/whatsapp/templates",
+    ),
+  createTemplate: (data: any) =>
+    request<{ success: boolean; data: any }>("/whatsapp/templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateTemplate: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/whatsapp/templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteTemplate: (id: string) =>
+    request<{ success: boolean; message: string }>(
+      `/whatsapp/templates/${id}`,
+      { method: "DELETE" },
+    ),
+
+  // Campaigns
+  getCampaigns: () =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      "/whatsapp/campaigns",
+    ),
+  getCampaign: (id: string) =>
+    request<{ success: boolean; data: any }>(`/whatsapp/campaigns/${id}`),
+  createCampaign: (data: any) =>
+    request<{ success: boolean; data: any }>("/whatsapp/campaigns", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Single message
+  sendMessage: (data: {
+    leadId: string;
+    templateId?: string;
+    variableMapping?: any[];
+    messageType?: string;
+    messageText?: string;
+  }) =>
+    request<{ success: boolean; data: any }>("/whatsapp/send", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Replies
+  getReplies: () =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      "/whatsapp/replies",
+    ),
+
+  // Media
+  uploadMedia: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const token = getToken();
+    return fetch(`${API_BASE}/whatsapp/upload-media`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+      return data;
+    });
+  },
+};
+
 export { getToken, setToken, removeToken, ApiError };

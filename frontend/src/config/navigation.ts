@@ -12,6 +12,7 @@ import {
   BarChart2,
   Building2,
   FileText,
+  MessageCircle,
 } from "lucide-react";
 
 export interface NavItem {
@@ -114,6 +115,12 @@ const allGroups: NavGroup[] = [
         title: "Integrations",
         href: "/integrations",
         icon: Plug,
+        roles: ["super_admin", "admin"],
+      },
+      {
+        title: "WhatsApp",
+        href: "/whatsapp-settings",
+        icon: MessageCircle,
         roles: ["super_admin", "admin"],
       },
     ],

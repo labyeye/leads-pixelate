@@ -147,8 +147,8 @@ const CAMPAIGN_STATUS_COLORS: Record<string, string> = {
 export default function WhatsappSettingsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<
-    "config" | "templates" | "analytics" | "replies"
-  >("templates");
+    "connection" | "templates" | "analytics" | "replies"
+  >("connection");
 
   return (
     <AppLayout title="WhatsApp Settings">
@@ -169,10 +169,10 @@ export default function WhatsappSettingsPage() {
         {/* Tabs */}
         <div className="flex gap-0 border-b border-border px-6 bg-background">
           {[
+            { id: "connection", label: "Connection" },
             { id: "templates", label: "Templates" },
             { id: "analytics", label: "Campaign Analytics" },
             { id: "replies", label: "Replies" },
-            { id: "config", label: "Configuration" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -186,10 +186,10 @@ export default function WhatsappSettingsPage() {
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto">
+          {activeTab === "connection" && <ConnectionTab toast={toast} />}
           {activeTab === "templates" && <TemplatesTab toast={toast} />}
           {activeTab === "analytics" && <AnalyticsTab toast={toast} />}
           {activeTab === "replies" && <RepliesTab toast={toast} />}
-          {activeTab === "config" && <ConfigTab toast={toast} />}
         </div>
       </div>
     </AppLayout>
@@ -1272,24 +1272,76 @@ function RepliesTab({ toast }: { toast: any }) {
   );
 }
 
-// ─── Config Tab ───────────────────────────────────────────────────────────────
-function ConfigTab({ toast }: { toast: any }) {
-  const [config, setConfig] = useState<any>(null);
+// ─── Connection Tab ────────────────────────────────────────────────────────────
+function ConnectionTab({ toast }: { toast: any }) {
+  const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [form, setForm] = useState({ phoneNumberId: "", accessToken: "", wabaId: "", businessName: "", phoneNumber: "" });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await whatsappAPI.getConfig();
-        setConfig(res.data);
-      } catch {
-        toast({ title: "Failed to load config", variant: "destructive" });
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const webhookUrl = `https://leads-backend.pixelatenest.com/api/whatsapp/webhook`;
+
+  const fetchStatus = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await whatsappAPI.getStatus();
+      setStatus(res.data);
+    } catch {
+      toast({ title: "Failed to load WhatsApp status", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   }, [toast]);
+
+  useEffect(() => { fetchStatus(); }, [fetchStatus]);
+
+  const handleConnect = async () => {
+    if (!form.phoneNumberId.trim() || !form.accessToken.trim()) {
+      toast({ title: "Phone Number ID and Access Token are required", variant: "destructive" });
+      return;
+    }
+    setConnecting(true);
+    try {
+      await whatsappAPI.connectManual(form);
+      toast({ title: "WhatsApp connected successfully" });
+      setConnectOpen(false);
+      setForm({ phoneNumberId: "", accessToken: "", wabaId: "", businessName: "", phoneNumber: "" });
+      await fetchStatus();
+    } catch (err: any) {
+      toast({ title: "Connection failed", description: err.message, variant: "destructive" });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await whatsappAPI.disconnect();
+      toast({ title: "WhatsApp disconnected" });
+      await fetchStatus();
+    } catch {
+      toast({ title: "Failed to disconnect", variant: "destructive" });
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const handleSyncTemplates = async () => {
+    setSyncing(true);
+    try {
+      const res = await whatsappAPI.syncTemplates();
+      toast({ title: res.message });
+    } catch (err: any) {
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -1297,137 +1349,101 @@ function ConfigTab({ toast }: { toast: any }) {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const webhookUrl = `${window.location.origin.replace("3000", "5000")}/api/whatsapp/webhook`;
-
   return (
-    <div className="p-6 max-w-2xl">
-      <h2 className="font-semibold text-base mb-1">
-        WhatsApp API Configuration
-      </h2>
-      <p className="text-sm text-muted-foreground mb-6">
-        Configure your Meta WhatsApp Business API credentials in the backend
-        environment variables.
-      </p>
+    <div className="p-6 max-w-2xl space-y-6">
+      <div>
+        <h2 className="font-semibold text-base">WhatsApp Business Connection</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Connect your WhatsApp Business account to send messages directly from NestLeads.
+        </p>
+      </div>
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="space-y-6">
-          {/* Status */}
-          <div
-            className={`flex items-center gap-3 p-4 rounded-lg border ${config?.isConfigured ? "bg-green-50 border-green-200" : "bg-orange-50 border-orange-200"}`}
-          >
-            {config?.isConfigured ? (
-              <>
-                <Check className="w-5 h-5 text-green-600 shrink-0" />
-                <p className="text-sm text-green-700 font-medium">
-                  WhatsApp API is configured and ready.
-                </p>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="w-5 h-5 text-orange-600 shrink-0" />
-                <p className="text-sm text-orange-700">
-                  WhatsApp API is not configured. Add environment variables to
-                  your backend.
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Env vars */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3">
-              Required Environment Variables
-            </h3>
-            <div className="space-y-3">
-              {[
-                {
-                  key: "WHATSAPP_PHONE_NUMBER_ID",
-                  value: config?.phoneNumberId || "(not set)",
-                  desc: "Your WhatsApp Business Phone Number ID from Meta Developer Console",
-                },
-                {
-                  key: "WHATSAPP_ACCESS_TOKEN",
-                  value: "(secret)",
-                  desc: "Permanent access token from your Meta System User",
-                },
-                {
-                  key: "WHATSAPP_WEBHOOK_VERIFY_TOKEN",
-                  value: config?.webhookVerifyToken || "skylyf_whatsapp_verify",
-                  desc: "Custom string used to verify webhook from Meta",
-                },
-                {
-                  key: "WHATSAPP_APP_ID",
-                  value: config?.appId || "(not set)",
-                  desc: "Your Meta App ID",
-                },
-              ].map((item) => (
-                <div
-                  key={item.key}
-                  className="bg-muted/30 rounded-lg p-4 border border-border"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <code className="text-xs font-mono font-semibold text-foreground">
-                      {item.key}
-                    </code>
-                    <div className="flex items-center gap-1.5">
-                      <code className="text-xs font-mono text-muted-foreground truncate max-w-40">
-                        {item.value}
-                      </code>
-                      <button
-                        onClick={() => copy(item.key, item.key)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {copied === item.key ? (
-                          <Check className="w-3.5 h-3.5 text-green-500" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {item.desc}
+        <>
+          {/* Status card */}
+          <div className={`rounded-xl border p-5 ${status?.isConnected ? "bg-green-50 border-green-200" : "bg-muted/30 border-border"}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full mt-0.5 shrink-0 ${status?.isConnected ? "bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" : "bg-gray-400"}`} />
+                <div>
+                  <p className={`font-semibold text-sm ${status?.isConnected ? "text-green-800" : "text-foreground"}`}>
+                    {status?.isConnected ? "Connected" : "Not Connected"}
                   </p>
+                  {status?.isConnected && (
+                    <div className="mt-2 space-y-1">
+                      {status.businessName && (
+                        <p className="text-xs text-green-700"><span className="font-medium">Business:</span> {status.businessName}</p>
+                      )}
+                      {status.phoneNumber && (
+                        <p className="text-xs text-green-700"><span className="font-medium">Number:</span> {status.phoneNumber}</p>
+                      )}
+                      {status.wabaId && (
+                        <p className="text-xs text-green-700 font-mono"><span className="font-sans font-medium">WABA ID:</span> {status.wabaId}</p>
+                      )}
+                      {status.phoneNumberId && (
+                        <p className="text-xs text-green-700 font-mono"><span className="font-sans font-medium">Phone ID:</span> {status.phoneNumberId}</p>
+                      )}
+                      {status.lastSyncAt && (
+                        <p className="text-xs text-green-600">Last sync: {format(new Date(status.lastSyncAt), "dd MMM yyyy, h:mm a")}</p>
+                      )}
+                      {status.approvedTemplateCount > 0 && (
+                        <p className="text-xs text-green-600">{status.approvedTemplateCount} approved templates</p>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
+              <div className="flex flex-col gap-2 shrink-0">
+                {status?.isConnected ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={handleSyncTemplates} disabled={syncing} className="text-xs">
+                      {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+                      Sync Templates
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleDisconnect} disabled={disconnecting} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                      {disconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+                      Disconnect
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs" onClick={() => setConnectOpen(true)}>
+                    Connect WhatsApp Business
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Webhook URL */}
+          {/* Webhook info */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">
-              Webhook Configuration
-            </h3>
-            <div className="bg-muted/30 rounded-lg p-4 border border-border">
-              <p className="text-xs text-muted-foreground mb-2">
-                Set this as your webhook URL in Meta Business Manager → WhatsApp
-                → Configuration:
-              </p>
-              <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2">
-                <code className="text-xs font-mono flex-1 truncate">
-                  {webhookUrl}
-                </code>
-                <button
-                  onClick={() => copy(webhookUrl, "webhook")}
-                  className="text-muted-foreground hover:text-foreground shrink-0"
-                >
-                  {copied === "webhook" ? (
-                    <Check className="w-3.5 h-3.5 text-green-500" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
+            <h3 className="text-sm font-semibold mb-3">Webhook Configuration</h3>
+            <div className="bg-muted/30 rounded-lg p-4 border border-border space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1.5">Set this URL in Meta → WhatsApp → Configuration → Webhook:</p>
+                <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
+                  <code className="text-xs font-mono flex-1 truncate">{webhookUrl}</code>
+                  <button onClick={() => copy(webhookUrl, "webhook")} className="text-muted-foreground hover:text-foreground shrink-0">
+                    {copied === "webhook" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
-              <div className="mt-3 flex items-start gap-2">
+              {status?.webhookVerifyToken && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">Webhook Verify Token (use when Meta asks for it):</p>
+                  <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
+                    <code className="text-xs font-mono flex-1 truncate">{status.webhookVerifyToken}</code>
+                    <button onClick={() => copy(status.webhookVerifyToken, "token")} className="text-muted-foreground hover:text-foreground shrink-0">
+                      {copied === "token" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-start gap-2">
                 <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  Subscribe to <strong>messages</strong> and{" "}
-                  <strong>message_status_updates</strong> webhooks to receive
-                  delivery receipts and replies.
+                  Subscribe to <strong>messages</strong> and <strong>message_status_updates</strong> webhook fields to receive delivery receipts and customer replies.
                 </p>
               </div>
             </div>
@@ -1435,44 +1451,77 @@ function ConfigTab({ toast }: { toast: any }) {
 
           {/* Setup guide */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-blue-800 mb-2">
-              Quick Setup Guide
-            </h3>
+            <h3 className="text-sm font-semibold text-blue-800 mb-2">Setup Guide</h3>
             <ol className="text-xs text-blue-700 space-y-1.5 list-decimal list-inside">
-              <li>
-                Go to <strong>Meta for Developers</strong> → Your App → WhatsApp
-                → API Setup
-              </li>
-              <li>
-                Copy your <strong>Phone Number ID</strong> and generate a{" "}
-                <strong>Permanent Access Token</strong>
-              </li>
-              <li>
-                Add the environment variables to your backend{" "}
-                <code className="bg-blue-100 px-1 rounded">.env</code> file
-              </li>
-              <li>
-                Set the webhook URL above in Meta → WhatsApp → Configuration
-              </li>
-              <li>
-                Use your <strong>Webhook Verify Token</strong> when prompted by
-                Meta
-              </li>
-              <li>
-                Subscribe to <strong>messages</strong> webhook fields
-              </li>
-              <li>
-                Create and approve templates in{" "}
-                <strong>Meta Business Manager → Message Templates</strong>
-              </li>
-              <li>
-                Add templates here with their exact Meta names and mark them as{" "}
-                <strong>APPROVED</strong>
-              </li>
+              <li>Go to <strong>Meta for Developers</strong> → Your App → WhatsApp → API Setup</li>
+              <li>Copy your <strong>Phone Number ID</strong></li>
+              <li>Create a <strong>System User</strong> in Meta Business Manager and generate a <strong>Permanent Access Token</strong> with <code className="bg-blue-100 px-1 rounded">whatsapp_business_messaging</code> permission</li>
+              <li>Click <strong>Connect WhatsApp Business</strong> above and enter your credentials</li>
+              <li>Set the webhook URL above in Meta → WhatsApp → Configuration</li>
+              <li>Click <strong>Sync Templates</strong> to import your approved templates</li>
             </ol>
           </div>
-        </div>
+        </>
       )}
+
+      {/* Manual connect dialog */}
+      <Dialog open={connectOpen} onOpenChange={setConnectOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Connect WhatsApp Business</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Phone Number ID <span className="text-red-500">*</span></Label>
+              <Input
+                placeholder="e.g. 123456789012345"
+                value={form.phoneNumberId}
+                onChange={(e) => setForm((f) => ({ ...f, phoneNumberId: e.target.value.trim() }))}
+                className="mt-1 font-mono text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Found in Meta Developer Console → WhatsApp → API Setup</p>
+            </div>
+            <div>
+              <Label>Access Token <span className="text-red-500">*</span></Label>
+              <Input
+                type="password"
+                placeholder="Your permanent access token"
+                value={form.accessToken}
+                onChange={(e) => setForm((f) => ({ ...f, accessToken: e.target.value.trim() }))}
+                className="mt-1 font-mono text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Generate a permanent token via System User in Meta Business Manager</p>
+            </div>
+            <div>
+              <Label>WABA ID <span className="text-muted-foreground text-xs">(optional but recommended)</span></Label>
+              <Input
+                placeholder="WhatsApp Business Account ID"
+                value={form.wabaId}
+                onChange={(e) => setForm((f) => ({ ...f, wabaId: e.target.value.trim() }))}
+                className="mt-1 font-mono text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Required for template sync. Found in Meta Business Manager → WhatsApp Accounts</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Business Name</Label>
+                <Input placeholder="Your business name" value={form.businessName} onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))} className="mt-1 text-sm" />
+              </div>
+              <div>
+                <Label>Phone Number</Label>
+                <Input placeholder="+91 98765 43210" value={form.phoneNumber} onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))} className="mt-1 text-sm" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConnectOpen(false)}>Cancel</Button>
+            <Button onClick={handleConnect} disabled={connecting} className="bg-green-600 hover:bg-green-700 text-white">
+              {connecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+              Connect
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

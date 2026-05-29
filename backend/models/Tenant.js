@@ -82,6 +82,20 @@ const tenantSchema = new mongoose.Schema(
         enabled: { type: Boolean, default: false },
         apiKey: { type: String, default: "" },
       },
+      whatsapp: {
+        enabled: { type: Boolean, default: false },
+        wabaId: { type: String, default: "" },
+        phoneNumberId: { type: String, default: "" },
+        // AES-256-GCM encrypted: iv:authTag:ciphertext (hex)
+        accessToken: { type: String, default: "" },
+        businessName: { type: String, default: "" },
+        phoneNumber: { type: String, default: "" },
+        webhookVerifyToken: { type: String, default: "" },
+        isConnected: { type: Boolean, default: false },
+        lastSyncAt: { type: Date, default: null },
+        approvedTemplateCount: { type: Number, default: 0 },
+        tokenExpiresAt: { type: Date, default: null },
+      },
     },
     razorpay: {
       customerId: { type: String, default: null },

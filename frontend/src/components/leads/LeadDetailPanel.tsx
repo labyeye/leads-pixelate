@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Phone,
   PhoneOff,
@@ -13,7 +13,27 @@ import {
   Wind,
   Snowflake,
   IndianRupee,
+  MessageCircle,
+  Send,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { whatsappAPI } from "@/services/api";
+import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -34,12 +54,14 @@ export function LeadDetailPanel({
   onRefresh,
   className,
 }: LeadDetailPanelProps) {
+  const { toast } = useToast();
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [selectedContactTag, setSelectedContactTag] = useState<
     "HOT" | "WARM" | "COLD" | undefined
   >(undefined);
+  const [waDialogOpen, setWaDialogOpen] = useState(false);
 
   if (!lead) return null;
 
@@ -216,6 +238,26 @@ export function LeadDetailPanel({
         <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Actions
         </h4>
+
+        {/* WhatsApp quick action */}
+        {lead.phone && (
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 text-green-700 hover:text-green-800 hover:bg-green-50 border-green-200"
+            onClick={() => setWaDialogOpen(true)}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Send WhatsApp Message
+          </Button>
+        )}
+
+        {/* WhatsApp send dialog */}
+        <WhatsAppSendDialog
+          open={waDialogOpen}
+          onClose={() => setWaDialogOpen(false)}
+          lead={lead}
+          toast={toast}
+        />
 
         {}
         {activeCategory === "New Lead" && (
@@ -567,5 +609,151 @@ export function LeadDetailPanel({
         selectedTag={selectedContactTag}
       />
     </div>
+  );
+}
+
+// ─── WhatsApp Send Dialog ──────────────────────────────────────────────────────
+function WhatsAppSendDialog({
+  open,
+  onClose,
+  lead,
+  toast,
+}: {
+  open: boolean;
+  onClose: () => void;
+  lead: any;
+  toast: any;
+}) {
+  const [mode, setMode] = useState<"text" | "template">("text");
+  const [messageText, setMessageText] = useState("");
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [templateId, setTemplateId] = useState("");
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingTemplates(true);
+    whatsappAPI.getTemplates().then((res) => {
+      setTemplates((res.data || []).filter((t: any) => t.status === "APPROVED"));
+    }).catch(() => {}).finally(() => setLoadingTemplates(false));
+  }, [open]);
+
+  const handleSend = async () => {
+    if (mode === "text" && !messageText.trim()) return;
+    if (mode === "template" && !templateId) return;
+
+    setSending(true);
+    try {
+      await whatsappAPI.sendMessage({
+        leadId: lead._id,
+        ...(mode === "template" ? { templateId } : { messageType: "text", messageText }),
+      });
+      toast({ title: "Message sent successfully" });
+      setMessageText("");
+      setTemplateId("");
+      onClose();
+    } catch (err: any) {
+      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-4 h-4 text-green-600" />
+            </div>
+            WhatsApp — {lead.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-1">
+          <p className="text-xs text-muted-foreground">
+            Sending to: <span className="font-mono font-medium text-foreground">{lead.phone}</span>
+          </p>
+
+          {/* Mode toggle */}
+          <div className="flex bg-muted rounded-lg p-1 gap-1">
+            <button
+              onClick={() => setMode("text")}
+              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "text" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+            >
+              Free Text
+            </button>
+            <button
+              onClick={() => setMode("template")}
+              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "template" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+            >
+              Template
+            </button>
+          </div>
+
+          {mode === "text" ? (
+            <div>
+              <Label className="text-xs">Message</Label>
+              <Textarea
+                placeholder="Type your message..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                rows={4}
+                className="mt-1 text-sm"
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Free text only works within 24h of customer's last message. Use templates for new outreach.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <Label className="text-xs">Select Template</Label>
+              {loadingTemplates ? (
+                <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+              ) : templates.length === 0 ? (
+                <p className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
+                  No approved templates. Go to Settings → WhatsApp → Templates to create and sync templates.
+                </p>
+              ) : (
+                <Select value={templateId} onValueChange={setTemplateId}>
+                  <SelectTrigger className="mt-1 text-sm">
+                    <SelectValue placeholder="Choose a template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((t) => (
+                      <SelectItem key={t._id} value={t._id}>
+                        {t.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {templateId && templates.find((t) => t._id === templateId) && (
+                <div className="mt-3 bg-[#e5ddd5] rounded-xl p-3">
+                  <div className="bg-white rounded-lg p-3 shadow-sm text-sm text-gray-800 whitespace-pre-wrap">
+                    {templates.find((t) => t._id === templateId)?.bodyText}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button
+            size="sm"
+            onClick={handleSend}
+            disabled={sending || (mode === "text" ? !messageText.trim() : !templateId)}
+            className="bg-green-600 hover:bg-green-700 text-white gap-1"
+          >
+            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Send
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

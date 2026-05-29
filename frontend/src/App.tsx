@@ -18,6 +18,7 @@ import IntegrationsPage from "./pages/IntegrationsPage";
 import ReportsPage from "./pages/ReportsPage";
 import ClientsPage from "./pages/ClientsPage";
 import QuotationsPage from "./pages/QuotationsPage";
+import WhatsappSettingsPage from "./pages/WhatsappSettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -184,6 +185,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <QuotationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/whatsapp-settings"
+        element={
+          <ProtectedRoute>
+            <WhatsappSettingsPage />
           </ProtectedRoute>
         }
       />
