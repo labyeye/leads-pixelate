@@ -112,6 +112,7 @@ const whatsappCampaignSchema = new mongoose.Schema(
       ref: "Tenant",
       default: null,
     },
+    fromPhoneNumberId: { type: String, default: "" },
     sentAt: Date,
   },
   { timestamps: true },

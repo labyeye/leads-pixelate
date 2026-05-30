@@ -96,6 +96,7 @@ app.use("/api/settings", require("./routes/settingRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/billing", require("./routes/billingRoutes"));
 app.use("/api/facebook", require("./routes/facebookRoutes"));
+app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, status: "ok" });

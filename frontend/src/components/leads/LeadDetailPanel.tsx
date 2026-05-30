@@ -628,26 +628,44 @@ function WhatsAppSendDialog({
   const [messageText, setMessageText] = useState("");
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateId, setTemplateId] = useState("");
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [loadingInit, setLoadingInit] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Phone number selection — only shown when >1 number connected
+  const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
+  const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    setLoadingTemplates(true);
-    whatsappAPI.getTemplates().then((res) => {
-      setTemplates((res.data || []).filter((t: any) => t.status === "APPROVED"));
-    }).catch(() => {}).finally(() => setLoadingTemplates(false));
+    setLoadingInit(true);
+
+    Promise.all([
+      whatsappAPI.getTemplates(),
+      whatsappAPI.getStatus(),
+    ]).then(([tRes, sRes]) => {
+      setTemplates((tRes.data || []).filter((t: any) => t.status === "APPROVED"));
+      const nums = sRes.data?.phoneNumbers || [];
+      setPhoneNumbers(nums);
+      // Auto-select if only one
+      if (nums.length === 1) setSelectedPhoneNumberId(nums[0].phoneNumberId);
+      else setSelectedPhoneNumberId("");
+    }).catch(() => {}).finally(() => setLoadingInit(false));
   }, [open]);
+
+  const needsPhonePick = phoneNumbers.length > 1;
+  const canSend = needsPhonePick ? !!selectedPhoneNumberId : true;
 
   const handleSend = async () => {
     if (mode === "text" && !messageText.trim()) return;
     if (mode === "template" && !templateId) return;
+    if (!canSend) return;
 
     setSending(true);
     try {
       await whatsappAPI.sendMessage({
         leadId: lead._id,
         ...(mode === "template" ? { templateId } : { messageType: "text", messageText }),
+        ...(selectedPhoneNumberId ? { phoneNumberId: selectedPhoneNumberId } : {}),
       });
       toast({ title: "Message sent successfully" });
       setMessageText("");
@@ -672,81 +690,107 @@ function WhatsAppSendDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-1">
-          <p className="text-xs text-muted-foreground">
-            Sending to: <span className="font-mono font-medium text-foreground">{lead.phone}</span>
-          </p>
+        {loadingInit ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <div className="space-y-4 py-1">
+            <p className="text-xs text-muted-foreground">
+              Sending to: <span className="font-mono font-medium text-foreground">{lead.phone}</span>
+            </p>
 
-          {/* Mode toggle */}
-          <div className="flex bg-muted rounded-lg p-1 gap-1">
-            <button
-              onClick={() => setMode("text")}
-              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "text" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
-            >
-              Free Text
-            </button>
-            <button
-              onClick={() => setMode("template")}
-              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "template" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
-            >
-              Template
-            </button>
-          </div>
-
-          {mode === "text" ? (
-            <div>
-              <Label className="text-xs">Message</Label>
-              <Textarea
-                placeholder="Type your message..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                rows={4}
-                className="mt-1 text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Free text only works within 24h of customer's last message. Use templates for new outreach.
-              </p>
-            </div>
-          ) : (
-            <div>
-              <Label className="text-xs">Select Template</Label>
-              {loadingTemplates ? (
-                <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
-              ) : templates.length === 0 ? (
-                <p className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
-                  No approved templates. Go to Settings → WhatsApp → Templates to create and sync templates.
-                </p>
-              ) : (
-                <Select value={templateId} onValueChange={setTemplateId}>
+            {/* Phone number selector — only if multiple numbers connected */}
+            {needsPhonePick && (
+              <div>
+                <Label className="text-xs">Send from which number? <span className="text-red-500">*</span></Label>
+                <Select value={selectedPhoneNumberId} onValueChange={setSelectedPhoneNumberId}>
                   <SelectTrigger className="mt-1 text-sm">
-                    <SelectValue placeholder="Choose a template..." />
+                    <SelectValue placeholder="Select a number..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {templates.map((t) => (
-                      <SelectItem key={t._id} value={t._id}>
-                        {t.displayName}
+                    {phoneNumbers.map((p: any) => (
+                      <SelectItem key={p.phoneNumberId} value={p.phoneNumberId}>
+                        <div className="flex flex-col">
+                          <span>{p.label || p.businessName || p.phoneNumber}</span>
+                          {p.phoneNumber && p.label && (
+                            <span className="text-xs text-muted-foreground">{p.phoneNumber}</span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
-              {templateId && templates.find((t) => t._id === templateId) && (
-                <div className="mt-3 bg-[#e5ddd5] rounded-xl p-3">
-                  <div className="bg-white rounded-lg p-3 shadow-sm text-sm text-gray-800 whitespace-pre-wrap">
-                    {templates.find((t) => t._id === templateId)?.bodyText}
-                  </div>
-                </div>
-              )}
+              </div>
+            )}
+
+            {/* Mode toggle */}
+            <div className="flex bg-muted rounded-lg p-1 gap-1">
+              <button
+                onClick={() => setMode("text")}
+                className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "text" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+              >
+                Free Text
+              </button>
+              <button
+                onClick={() => setMode("template")}
+                className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "template" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+              >
+                Template
+              </button>
             </div>
-          )}
-        </div>
+
+            {mode === "text" ? (
+              <div>
+                <Label className="text-xs">Message</Label>
+                <Textarea
+                  placeholder="Type your message..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  rows={4}
+                  className="mt-1 text-sm"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Free text only works within 24h of customer's last message. Use templates for new outreach.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <Label className="text-xs">Select Template</Label>
+                {templates.length === 0 ? (
+                  <p className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
+                    No approved templates. Go to Settings → WhatsApp → Templates to sync.
+                  </p>
+                ) : (
+                  <Select value={templateId} onValueChange={setTemplateId}>
+                    <SelectTrigger className="mt-1 text-sm">
+                      <SelectValue placeholder="Choose a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((t) => (
+                        <SelectItem key={t._id} value={t._id}>
+                          {t.displayName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {templateId && templates.find((t) => t._id === templateId) && (
+                  <div className="mt-3 bg-[#e5ddd5] rounded-xl p-3">
+                    <div className="bg-white rounded-lg p-3 shadow-sm text-sm text-gray-800 whitespace-pre-wrap">
+                      {templates.find((t) => t._id === templateId)?.bodyText}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button
             size="sm"
             onClick={handleSend}
-            disabled={sending || (mode === "text" ? !messageText.trim() : !templateId)}
+            disabled={sending || loadingInit || !canSend || (mode === "text" ? !messageText.trim() : !templateId)}
             className="bg-green-600 hover:bg-green-700 text-white gap-1"
           >
             {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}

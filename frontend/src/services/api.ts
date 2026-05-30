@@ -389,37 +389,24 @@ export const whatsappAPI = {
   // Connection
   getStatus: () => request<{ success: boolean; data: any }>("/whatsapp/status"),
   getConfig: () => request<{ success: boolean; data: any }>("/whatsapp/config"),
-  connectManual: (data: {
-    phoneNumberId: string;
-    accessToken: string;
-    wabaId?: string;
-    businessName?: string;
-    phoneNumber?: string;
-  }) =>
-    request<{ success: boolean; message: string; data: any }>(
-      "/whatsapp/connect-manual",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      },
-    ),
-  connectEmbeddedSignup: (code: string) =>
-    request<{ success: boolean; message: string; data: any }>(
-      "/whatsapp/connect",
-      {
-        method: "POST",
-        body: JSON.stringify({ code }),
-      },
-    ),
-  disconnect: () =>
-    request<{ success: boolean; message: string }>("/whatsapp/disconnect", {
+  setup: (data: { accessToken: string; wabaId?: string }) =>
+    request<{ success: boolean; message: string }>("/whatsapp/setup", {
       method: "POST",
+      body: JSON.stringify(data),
     }),
+  addPhoneNumber: (data: { phoneNumberId: string; label?: string; businessName?: string; phoneNumber?: string }) =>
+    request<{ success: boolean; message: string; data: any }>("/whatsapp/phone-numbers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  removePhoneNumber: (phoneNumberId: string) =>
+    request<{ success: boolean; message: string }>(`/whatsapp/phone-numbers/${phoneNumberId}`, {
+      method: "DELETE",
+    }),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>("/whatsapp/disconnect", { method: "POST" }),
   syncTemplates: () =>
-    request<{ success: boolean; message: string; data: any }>(
-      "/whatsapp/templates/sync",
-      { method: "POST" },
-    ),
+    request<{ success: boolean; message: string; data: any }>("/whatsapp/templates/sync", { method: "POST" }),
 
   // Templates
   getTemplates: () =>
@@ -462,6 +449,7 @@ export const whatsappAPI = {
     variableMapping?: any[];
     messageType?: string;
     messageText?: string;
+    phoneNumberId?: string;
   }) =>
     request<{ success: boolean; data: any }>("/whatsapp/send", {
       method: "POST",

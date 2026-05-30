@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const {
-  connectEmbeddedSignup,
-  connectManual,
+  setup,
+  addPhoneNumber,
+  removePhoneNumber,
   disconnect,
   getStatus,
   getConfig,
@@ -33,39 +34,37 @@ const upload = multer({
   },
 });
 
-// Webhook — no auth (Meta calls these)
+// Webhook — no auth
 router.get("/webhook", verifyWebhook);
 router.post("/webhook", handleWebhook);
 
-// All other routes require authentication
 router.use(protect);
 
-// Connection
-router.post("/connect", authorize("super_admin", "admin"), connectEmbeddedSignup);
-router.post("/connect-manual", authorize("super_admin", "admin"), connectManual);
+// Connection setup
+router.post("/setup", authorize("super_admin", "admin"), setup);
+router.post("/phone-numbers", authorize("super_admin", "admin"), addPhoneNumber);
+router.delete("/phone-numbers/:phoneNumberId", authorize("super_admin", "admin"), removePhoneNumber);
 router.post("/disconnect", authorize("super_admin", "admin"), disconnect);
 router.get("/status", getStatus);
 router.get("/config", getConfig);
 
-// Media upload
+// Media
 router.post("/upload-media", authorize("super_admin", "admin"), upload.single("file"), uploadMedia);
 
 // Templates
 router.route("/templates")
   .get(getTemplates)
   .post(authorize("super_admin", "admin"), createTemplate);
-
 router.route("/templates/:id")
   .put(authorize("super_admin", "admin"), updateTemplate)
   .delete(authorize("super_admin", "admin"), deleteTemplate);
-
 router.post("/templates/sync", authorize("super_admin", "admin"), syncTemplates);
 
 // Campaigns
 router.route("/campaigns").get(getCampaigns).post(createCampaign);
 router.route("/campaigns/:id").get(getCampaign);
 
-// Single message send (from lead detail)
+// Single message
 router.post("/send", sendMessage);
 
 // Replies

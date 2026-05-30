@@ -84,17 +84,24 @@ const tenantSchema = new mongoose.Schema(
       },
       whatsapp: {
         enabled: { type: Boolean, default: false },
+        isConnected: { type: Boolean, default: false },
         wabaId: { type: String, default: "" },
-        phoneNumberId: { type: String, default: "" },
+        // One access token shared across all phone numbers under the same WABA
         // AES-256-GCM encrypted: iv:authTag:ciphertext (hex)
         accessToken: { type: String, default: "" },
-        businessName: { type: String, default: "" },
-        phoneNumber: { type: String, default: "" },
         webhookVerifyToken: { type: String, default: "" },
-        isConnected: { type: Boolean, default: false },
         lastSyncAt: { type: Date, default: null },
-        approvedTemplateCount: { type: Number, default: 0 },
-        tokenExpiresAt: { type: Date, default: null },
+        // Multiple phone numbers under one WABA / one access token
+        phoneNumbers: [
+          {
+            phoneNumberId: { type: String, required: true },
+            label: { type: String, default: "" },       // e.g. "Company A", "Sales"
+            businessName: { type: String, default: "" },
+            phoneNumber: { type: String, default: "" },  // display number e.g. +91 98001
+            approvedTemplateCount: { type: Number, default: 0 },
+            addedAt: { type: Date, default: Date.now },
+          },
+        ],
       },
     },
     razorpay: {
