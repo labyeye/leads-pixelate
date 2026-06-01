@@ -479,4 +479,20 @@ export const whatsappAPI = {
   },
 };
 
+export const activityAPI = {
+  getLogs: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{
+      success: boolean;
+      count: number;
+      total: number;
+      page: number;
+      pages: number;
+      data: any[];
+    }>(`/activity${query}`);
+  },
+  getStats: () =>
+    request<{ success: boolean; data: any }>("/activity/stats"),
+};
+
 export { getToken, setToken, removeToken, ApiError };

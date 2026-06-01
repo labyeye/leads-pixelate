@@ -18,7 +18,10 @@ import IntegrationsPage from "./pages/IntegrationsPage";
 import ReportsPage from "./pages/ReportsPage";
 import ClientsPage from "./pages/ClientsPage";
 import QuotationsPage from "./pages/QuotationsPage";
-import WhatsappSettingsPage from "./pages/WhatsappSettingsPage";
+import ConsolePage from "./pages/ConsolePage";
+import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
+import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
+import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -189,12 +192,20 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/whatsapp-settings"
-        element={
-          <ProtectedRoute>
-            <WhatsappSettingsPage />
-          </ProtectedRoute>
-        }
+        path="/console"
+        element={<ProtectedRoute><ConsolePage /></ProtectedRoute>}
+      />
+      <Route
+        path="/whatsapp/inbox"
+        element={<ProtectedRoute><WhatsAppInboxPage /></ProtectedRoute>}
+      />
+      <Route
+        path="/whatsapp/logs"
+        element={<ProtectedRoute><WhatsAppLogsPage /></ProtectedRoute>}
+      />
+      <Route
+        path="/whatsapp/setup"
+        element={<ProtectedRoute><WhatsAppSetupPage /></ProtectedRoute>}
       />
       <Route path="*" element={<NotFound />} />
     </Routes>

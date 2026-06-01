@@ -1,5 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { whatsappAPI } from "@/services/api";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useToast } from "@/components/ui/use-toast";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -151,17 +153,17 @@ export default function WhatsappSettingsPage() {
   >("connection");
 
   return (
-    <AppLayout title="WhatsApp Settings">
+    <AppLayout title="WhatsApp Setup">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-border bg-background">
-          <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-green-600" />
+        <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-black bg-white">
+          <div className="w-9 h-9 rounded-lg bg-[#25D366]/10 border-2 border-[#25D366]/20 flex items-center justify-center">
+            <FontAwesomeIcon icon={faWhatsapp} className="text-[#25D366] text-lg" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">WhatsApp Settings</h1>
+            <h1 className="text-xl font-bold">WhatsApp Setup</h1>
             <p className="text-xs text-muted-foreground">
-              Templates, analytics & reply management
+              Connection, templates & campaign analytics
             </p>
           </div>
         </div>

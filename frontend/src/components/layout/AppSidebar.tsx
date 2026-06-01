@@ -74,6 +74,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const active = location.pathname === item.href;
+                  const isWa = group.label === "WhatsApp";
                   return (
                     <Link
                       key={item.href}
@@ -82,13 +83,22 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
                       onClick={onClose}
                       className={cn(
                         "flex items-center gap-3 px-3 py-2.5 text-sm font-semibold transition-all duration-100 border-2",
-                        active
+                        active && isWa
+                          ? "bg-[#25D366] border-black text-white nb-shadow-sm"
+                          : active
                           ? "bg-[#024BAB] border-black text-white nb-shadow-sm"
+                          : isWa
+                          ? "border-transparent text-black hover:bg-[#25D366]/10 hover:border-[#25D366]/60"
                           : "border-transparent text-black hover:bg-[#024BAB]/10 hover:border-black",
                         collapsed && "lg:justify-center lg:px-0",
                       )}
                     >
-                      <item.icon className="w-[18px] h-[18px] shrink-0" />
+                      <item.icon
+                        className={cn(
+                          "w-[18px] h-[18px] shrink-0",
+                          isWa && !active && "text-[#25D366]",
+                        )}
+                      />
                       <span className={cn(collapsed && "lg:hidden")}>
                         {item.title}
                       </span>

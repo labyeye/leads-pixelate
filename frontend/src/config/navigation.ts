@@ -1,3 +1,4 @@
+import React from "react";
 import { UserRole } from "@/types/crm";
 import {
   LayoutDashboard,
@@ -12,13 +13,17 @@ import {
   BarChart2,
   Building2,
   FileText,
-  MessageCircle,
+  Terminal,
 } from "lucide-react";
+import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
+
+// Accept both LucideIcon and custom React components (e.g. Font Awesome wrappers)
+export type NavIconComponent = LucideIcon | React.ComponentType<{ className?: string }>;
 
 export interface NavItem {
   title: string;
   href: string;
-  icon: LucideIcon;
+  icon: NavIconComponent;
   roles: UserRole[];
 }
 
@@ -35,13 +40,7 @@ const allGroups: NavGroup[] = [
         title: "Dashboard",
         href: "/",
         icon: LayoutDashboard,
-        roles: [
-          "super_admin",
-          "admin",
-          "sales_executive",
-          "service_manager",
-          "accountant",
-        ],
+        roles: ["super_admin", "admin", "sales_executive", "service_manager", "accountant"],
       },
     ],
   },
@@ -75,13 +74,7 @@ const allGroups: NavGroup[] = [
         title: "Clients",
         href: "/clients",
         icon: Building2,
-        roles: [
-          "super_admin",
-          "admin",
-          "sales_executive",
-          "service_manager",
-          "accountant",
-        ],
+        roles: ["super_admin", "admin", "sales_executive", "service_manager", "accountant"],
       },
       {
         title: "Quotations",
@@ -103,6 +96,29 @@ const allGroups: NavGroup[] = [
     ],
   },
   {
+    label: "WhatsApp",
+    items: [
+      {
+        title: "Inbox",
+        href: "/whatsapp/inbox",
+        icon: WhatsAppNavIcon,
+        roles: ["super_admin", "admin", "sales_executive"],
+      },
+      {
+        title: "Logs",
+        href: "/whatsapp/logs",
+        icon: WhatsAppNavIcon,
+        roles: ["super_admin", "admin", "sales_executive"],
+      },
+      {
+        title: "Setup",
+        href: "/whatsapp/setup",
+        icon: WhatsAppNavIcon,
+        roles: ["super_admin", "admin"],
+      },
+    ],
+  },
+  {
     label: "Workspace",
     items: [
       {
@@ -115,12 +131,6 @@ const allGroups: NavGroup[] = [
         title: "Integrations",
         href: "/integrations",
         icon: Plug,
-        roles: ["super_admin", "admin"],
-      },
-      {
-        title: "WhatsApp",
-        href: "/whatsapp-settings",
-        icon: MessageCircle,
         roles: ["super_admin", "admin"],
       },
     ],
@@ -139,6 +149,12 @@ const allGroups: NavGroup[] = [
         href: "/settings",
         icon: Settings,
         roles: ["super_admin", "admin"],
+      },
+      {
+        title: "Console",
+        href: "/console",
+        icon: Terminal,
+        roles: ["super_admin"],
       },
     ],
   },
