@@ -529,23 +529,38 @@ router.post(
                 facebookAdName: lead.ad_name || "",
               };
 
-              const exists = await Lead.findOne({ facebookLeadgenId: lead.id });
+              const exists = await Lead.findOne({
+                facebookLeadgenId: lead.id,
+              });
               if (exists) {
                 await Lead.findByIdAndUpdate(exists._id, { $set: leadData });
                 totalSkipped++;
                 pageResult.skipped++;
               } else {
-                await Lead.create({
-                  ...leadData,
-                  source: "Facebook",
-                  status: "PENDING CONTACT",
-                  assignedTo: adminUser._id,
-                  tenantId: tenant._id || null,
-                  facebookLeadgenId: lead.id,
-                  facebookFormId: formId,
-                });
-                totalCreated++;
-                pageResult.created++;
+                try {
+                  await Lead.create({
+                    ...leadData,
+                    source: "Facebook",
+                    status: "PENDING CONTACT",
+                    assignedTo: adminUser._id,
+                    tenantId: tenant._id || null,
+                    facebookLeadgenId: lead.id,
+                    facebookFormId: formId,
+                  });
+                  totalCreated++;
+                  pageResult.created++;
+                } catch (createErr) {
+                  // Handle duplicate key error - try without facebook fields
+                  if (createErr.code === 11000) {
+                    console.warn(
+                      `[FB sync] Duplicate lead detected for ${leadData.name} (${leadData.phone}) - skipping`,
+                    );
+                    totalSkipped++;
+                    pageResult.skipped++;
+                  } else {
+                    throw createErr;
+                  }
+                }
               }
             } catch (err) {
               console.error(
