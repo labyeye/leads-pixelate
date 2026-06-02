@@ -36,7 +36,7 @@ function formatIMDate(date) {
   const HH = map.hour;
   const MM = map.minute;
   const SS = map.second;
-  return `${dd}-${mm}-${yyyy}${HH}:${MM}:${SS}`;
+  return `${dd}-${mm}-${yyyy} ${HH}:${MM}:${SS}`;
 }
 
 function parseIMDate(dateString) {
@@ -361,7 +361,7 @@ async function runScheduledSync(tenantId, apiKey) {
     endTime,
   });
 
-  lastSyncEndTime = endTime;
+  lastSyncEndTime = now.toISOString();
 
   console.log(
     `[IndiaMART Sync] ${new Date().toISOString()} | Fetched: ${result.fetched} | Created: ${result.created} | Skipped: ${result.skipped}`,

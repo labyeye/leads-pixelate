@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       "/api": {
-        target: "https://skylyf-backend.vercel.app",
+        target: process.env.VITE_BACKEND_URL || "https://leads-backend.pixelatenest.com",
         changeOrigin: true,
         secure: false,
       },

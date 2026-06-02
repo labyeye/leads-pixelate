@@ -40,7 +40,14 @@ async function request<T>(
     ...options,
     headers,
   });
-  const data = await response.json();
+
+  let data: any = {};
+  try {
+    const text = await response.text();
+    if (text) data = JSON.parse(text);
+  } catch {
+    // Non-JSON response (e.g. HTML error page from crashed server)
+  }
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -168,7 +175,6 @@ export const leadsAPI = {
     ),
 };
 
-
 export const tradeindiaSyncAPI = {
   sync: () =>
     request<{ success: boolean; message: string; data: any }>(
@@ -211,9 +217,43 @@ export const productsAPI = {
 export const billingAPI = {
   getPlans: () => request<{ success: boolean; data: any }>("/billing/plans"),
   getSubscription: () =>
-    request<{ success: boolean; data: any }>("/billing/subscription"),
+    request<{ success: boolean; data: any }>(`/billing/subscription`),
   getInvoices: () =>
     request<{ success: boolean; data: any[] }>("/billing/invoices"),
+  createOrder: (plan: string, billingCycle: "monthly" | "yearly") =>
+    request<{
+      success: boolean;
+      data: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        customerEmail: string;
+        customerPhone: string;
+        customerName: string;
+        key: string;
+      };
+    }>("/billing/razorpay/create-order", {
+      method: "POST",
+      body: JSON.stringify({ plan, billingCycle }),
+    }),
+  verifyPayment: (payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    plan: string;
+    billingCycle: string;
+  }) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/billing/razorpay/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          razorpayOrderId: payload.razorpay_order_id,
+          razorpayPaymentId: payload.razorpay_payment_id,
+          razorpaySignature: payload.razorpay_signature,
+        }),
+      },
+    ),
   createHdfcOrder: (plan: string, billingCycle: "monthly" | "yearly") =>
     request<{
       success: boolean;
@@ -382,9 +422,12 @@ export const indiamartAPI = {
       body: JSON.stringify({ apiKey }),
     }),
   disconnect: () =>
-    request<{ success: boolean; message: string }>("/leads/indiamart/disconnect", {
-      method: "POST",
-    }),
+    request<{ success: boolean; message: string }>(
+      "/leads/indiamart/disconnect",
+      {
+        method: "POST",
+      },
+    ),
   sync: (body?: { start_time?: string; end_time?: string }) =>
     request<{ success: boolean; message: string; data: any }>(
       "/leads/indiamart/sync",
@@ -401,19 +444,35 @@ export const whatsappAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  addPhoneNumber: (data: { phoneNumberId: string; label?: string; businessName?: string; phoneNumber?: string }) =>
-    request<{ success: boolean; message: string; data: any }>("/whatsapp/phone-numbers", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  addPhoneNumber: (data: {
+    phoneNumberId: string;
+    label?: string;
+    businessName?: string;
+    phoneNumber?: string;
+  }) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/whatsapp/phone-numbers",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    ),
   removePhoneNumber: (phoneNumberId: string) =>
-    request<{ success: boolean; message: string }>(`/whatsapp/phone-numbers/${phoneNumberId}`, {
-      method: "DELETE",
-    }),
+    request<{ success: boolean; message: string }>(
+      `/whatsapp/phone-numbers/${phoneNumberId}`,
+      {
+        method: "DELETE",
+      },
+    ),
   disconnect: () =>
-    request<{ success: boolean; message: string }>("/whatsapp/disconnect", { method: "POST" }),
+    request<{ success: boolean; message: string }>("/whatsapp/disconnect", {
+      method: "POST",
+    }),
   syncTemplates: () =>
-    request<{ success: boolean; message: string; data: any }>("/whatsapp/templates/sync", { method: "POST" }),
+    request<{ success: boolean; message: string; data: any }>(
+      "/whatsapp/templates/sync",
+      { method: "POST" },
+    ),
 
   // Templates
   getTemplates: () =>
@@ -498,8 +557,7 @@ export const activityAPI = {
       data: any[];
     }>(`/activity${query}`);
   },
-  getStats: () =>
-    request<{ success: boolean; data: any }>("/activity/stats"),
+  getStats: () => request<{ success: boolean; data: any }>("/activity/stats"),
 };
 
 export { getToken, setToken, removeToken, ApiError };

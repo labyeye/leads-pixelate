@@ -27,6 +27,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.10",
     "razorpay": "^2.9.6",
     "validator": "^13.12.0"
   },

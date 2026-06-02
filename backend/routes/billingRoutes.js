@@ -3,10 +3,12 @@ const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const { protect } = require("../middleware/auth");
 const crypto = require("crypto");
+const Razorpay = require("razorpay");
 const Tenant = require("../models/Tenant");
 const Subscription = require("../models/Subscription");
 
 const { PLAN_LIMITS, PLAN_PRICES_MONTHLY } = Subscription;
+const { sendWelcomeEmail } = require("../utils/emailService");
 
 // ── HDFC Smart Gateway helpers ────────────────────────────────────────────────
 
@@ -36,6 +38,30 @@ function getHdfcConfig() {
     ? "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction"
     : "https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
   return { merchantId, workingKey, accessCode, gatewayUrl };
+}
+
+// ── Razorpay helpers ──────────────────────────────────────────────────────────
+
+function getRazorpayInstance() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay not configured");
+  }
+  return new Razorpay({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
+}
+
+function verifyRazorpaySignature(orderId, paymentId, signature) {
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  const body = `${orderId}|${paymentId}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", keySecret)
+    .update(body)
+    .digest("hex");
+  return expectedSignature === signature;
 }
 
 // ── Plans (public) ────────────────────────────────────────────────────────────
@@ -319,6 +345,198 @@ router.post(
     return res.redirect(
       `${frontendUrl}/billing?payment=success&plan=${plan}&billingCycle=${billingCycle}`,
     );
+  }),
+);
+
+// ── Razorpay: Create Order ────────────────────────────────────────────────────
+
+router.post(
+  "/razorpay/create-order",
+  protect,
+  asyncHandler(async (req, res) => {
+    const { plan, billingCycle = "monthly" } = req.body;
+
+    if (!["starter", "growth", "enterprise"].includes(plan)) {
+      return res.status(400).json({ success: false, message: "Invalid plan" });
+    }
+
+    const razorpay = getRazorpayInstance();
+    const basePrice = PLAN_PRICES_MONTHLY[plan]; // already in paise
+    const amountPaise =
+      billingCycle === "yearly"
+        ? Math.round(basePrice * 12 * 0.8)
+        : basePrice;
+
+    const tenant = await Tenant.findById(req.user.tenantId);
+    const customerName = tenant?.name || req.user.name || "Customer";
+    const customerEmail = tenant?.email || req.user.email || "";
+    const customerPhone = tenant?.phone || "";
+
+    try {
+      const order = await razorpay.orders.create({
+        amount: amountPaise,
+        currency: "INR",
+        receipt: `ORD_${req.user.tenantId.toString().slice(-10)}_${Date.now()}`,
+        notes: {
+          plan,
+          billingCycle,
+          tenantId: req.user.tenantId.toString(),
+          customerName,
+          customerEmail,
+        },
+      });
+
+      // Store order info for verification later
+      const subscription = await Subscription.findOneAndUpdate(
+        { tenant: req.user.tenantId },
+        {
+          pendingOrder: {
+            razorpayOrderId: order.id,
+            plan,
+            billingCycle,
+            amount: amountPaise / 100,
+            createdAt: new Date(),
+          },
+        },
+        { upsert: true, new: true },
+      );
+
+      res.json({
+        success: true,
+        data: {
+          orderId: order.id,
+          amount: amountPaise,
+          currency: "INR",
+          customerEmail,
+          customerPhone,
+          customerName,
+          key: process.env.RAZORPAY_KEY_ID,
+        },
+      });
+    } catch (err) {
+      const errMsg =
+        err?.error?.description || err?.message || JSON.stringify(err);
+      console.error("Razorpay create-order error:", JSON.stringify(err));
+      res.status(400).json({
+        success: false,
+        message: "Failed to create order",
+        error: errMsg,
+      });
+    }
+  }),
+);
+
+// ── Razorpay: Verify Payment ──────────────────────────────────────────────────
+
+router.post(
+  "/razorpay/verify",
+  protect,
+  asyncHandler(async (req, res) => {
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing payment details",
+      });
+    }
+
+    // Verify signature
+    const isSignatureValid = verifyRazorpaySignature(
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    );
+
+    if (!isSignatureValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment signature",
+      });
+    }
+
+    try {
+      const razorpay = getRazorpayInstance();
+      const payment = await razorpay.payments.fetch(razorpayPaymentId);
+
+      if (payment.status === "captured") {
+        const subscription = await Subscription.findOne({
+          tenant: req.user.tenantId,
+        });
+
+        if (!subscription?.pendingOrder) {
+          return res.status(400).json({
+            success: false,
+            message: "Order not found",
+          });
+        }
+
+        const { plan, billingCycle, amount } = subscription.pendingOrder;
+
+        // Update subscription
+        const updatedSubscription = await Subscription.findOneAndUpdate(
+          { tenant: req.user.tenantId },
+          {
+            plan,
+            billingCycle,
+            status: "active",
+            startDate: new Date(),
+            nextBillingDate:
+              billingCycle === "yearly"
+                ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            amount,
+            paymentMethod: "razorpay",
+            paymentDetails: {
+              razorpayOrderId,
+              razorpayPaymentId,
+              status: payment.status,
+            },
+            $unset: { pendingOrder: 1 },
+          },
+          { new: true },
+        );
+
+        // Update tenant plan
+        const updatedTenant = await Tenant.findByIdAndUpdate(
+          req.user.tenantId,
+          { plan, planStartDate: new Date() },
+          { new: true },
+        );
+
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail({
+          to: updatedTenant?.email || req.user.email,
+          companyName: updatedTenant?.name || req.user.name || "Team",
+          userName: req.user.name || "there",
+          plan,
+          billingCycle,
+          amount,
+          paymentId: razorpayPaymentId,
+        }).catch((err) => console.error("Welcome email failed:", err.message));
+
+        res.json({
+          success: true,
+          message: "Payment successful",
+          data: {
+            plan,
+            billingCycle,
+            status: updatedSubscription.status,
+          },
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: `Payment ${payment.status}`,
+        });
+      }
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        message: "Verification failed",
+        error: err.message,
+      });
+    }
   }),
 );
 

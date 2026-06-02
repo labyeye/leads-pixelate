@@ -46,6 +46,26 @@ const subscriptionSchema = new mongoose.Schema(
       enum: ["active", "cancelled", "past_due", "trialing"],
       default: "trialing",
     },
+    startDate: { type: Date },
+    nextBillingDate: { type: Date },
+    amount: { type: Number }, // amount in rupees
+    paymentMethod: {
+      type: String,
+      enum: ["hdfc", "razorpay"],
+      default: null,
+    },
+    paymentDetails: {
+      razorpayOrderId: { type: String },
+      razorpayPaymentId: { type: String },
+      status: { type: String },
+    },
+    pendingOrder: {
+      razorpayOrderId: { type: String },
+      plan: { type: String },
+      billingCycle: { type: String },
+      amount: { type: Number },
+      createdAt: { type: Date },
+    },
     currentPeriodStart: { type: Date },
     currentPeriodEnd: { type: Date },
     cancelledAt: { type: Date, default: null },

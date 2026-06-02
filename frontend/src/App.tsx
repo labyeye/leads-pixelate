@@ -22,6 +22,7 @@ import ConsolePage from "./pages/ConsolePage";
 import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
 import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
 import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -207,6 +208,7 @@ function AppRoutes() {
         path="/whatsapp/setup"
         element={<ProtectedRoute><WhatsAppSetupPage /></ProtectedRoute>}
       />
+      <Route path="/payment-success" element={<PaymentSuccessPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

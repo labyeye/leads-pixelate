@@ -19,8 +19,8 @@ const PLANS = [
     name: "Starter",
     icon: Zap,
     color: "#A3E635",
-    priceMonthly: 999,
-    priceYearly: 799,
+    priceMonthly: 499,
+    priceYearly: 399,
     description: "Perfect for small sales teams just getting started",
     features: [
       "500 leads per month",
@@ -36,8 +36,8 @@ const PLANS = [
     name: "Growth",
     icon: Rocket,
     color: "#024BAB",
-    priceMonthly: 2499,
-    priceYearly: 1999,
+    priceMonthly: 1249,
+    priceYearly: 1099,
     description: "For teams serious about scaling their sales pipeline",
     features: [
       "5,000 leads per month",
@@ -55,8 +55,8 @@ const PLANS = [
     name: "Enterprise",
     icon: Crown,
     color: "#A855F7",
-    priceMonthly: 6999,
-    priceYearly: 5599,
+    priceMonthly: 5999,
+    priceYearly: 4999,
     description: "Unlimited scale with dedicated support and custom setup",
     features: [
       "Unlimited leads",
@@ -154,11 +154,7 @@ export default function OnboardingPage() {
               billingCycle: billing,
             });
             await refreshTenant();
-            toast({
-              title: "Payment successful!",
-              description: `Welcome to NESTLead ${plan.name}.`,
-            });
-            navigate("/", { replace: true });
+            navigate(`/payment-success?plan=${selectedPlan}&billing=${billing}`, { replace: true });
           } catch (err: any) {
             toast({
               title: "Payment verification failed",
