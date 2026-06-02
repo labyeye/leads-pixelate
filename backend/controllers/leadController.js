@@ -639,7 +639,7 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
 
   const result = await syncIndiamartLeads({
     apiKey,
-    tenantId: req.user.tenantId || null,
+    tenantId: req.user.tenantId || tenant?._id || null,
     startTime,
     endTime,
     updateExisting: false,
@@ -732,6 +732,18 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
     });
   }
 
+  // Find the tenant with active IndiaMART integration
+  const tenant = await Tenant.findOne({
+    "integrations.indiamart.enabled": true,
+    "integrations.indiamart.apiKey": { $exists: true, $ne: "" },
+  });
+
+  if (!tenant) {
+    console.warn(
+      "[IndiaMART Webhook] No active IndiaMART tenant found, leads will be created without tenantId",
+    );
+  }
+
   let createdCount = 0;
 
   for (const record of records) {
@@ -741,8 +753,11 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
     try {
       const existing = await Lead.findOne({ indiamartQueryId: qid });
       if (!existing) {
-        const assignToId = await getRoundRobinAssigneeId();
+        const assignToId = await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
+        if (tenant) {
+          leadData.tenantId = tenant._id;
+        }
         await Lead.create(leadData);
         createdCount++;
       }
