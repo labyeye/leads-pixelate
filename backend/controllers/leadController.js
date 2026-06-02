@@ -184,6 +184,10 @@ const getLeads = asyncHandler(async (req, res) => {
 
   const query = {};
 
+  if (req.user.tenantId) {
+    query.tenantId = req.user.tenantId;
+  }
+
   if (startDate || endDate) {
     query.createdAt = {};
     if (startDate) {
@@ -285,6 +289,7 @@ const createLead = asyncHandler(async (req, res) => {
     budget,
     interestedProducts,
     location,
+    tenantId: req.user.tenantId || null,
     assignedTo: assignedTo || req.user._id,
     followUpDate,
     status: "PENDING CONTACT",
