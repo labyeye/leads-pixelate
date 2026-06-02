@@ -472,8 +472,18 @@ router.post(
         }
 
         const { plan, billingCycle, amount } = subscription.pendingOrder;
+        const amountPaise = Math.round(amount * 100);
 
-        // Update subscription
+        // Get sequential invoice number across all tenants
+        const countResult = await Subscription.aggregate([
+          { $unwind: { path: "$invoices", preserveNullAndEmptyArrays: false } },
+          { $match: { "invoices.status": "paid" } },
+          { $count: "total" },
+        ]);
+        const invoiceSeq = (countResult[0]?.total || 0) + 1;
+        const invoiceNumber = `KHT/${String(invoiceSeq).padStart(4, "0")}`;
+
+        // Update subscription + push invoice record
         const updatedSubscription = await Subscription.findOneAndUpdate(
           { tenant: req.user.tenantId },
           {
@@ -493,6 +503,17 @@ router.post(
               status: payment.status,
             },
             $unset: { pendingOrder: 1 },
+            $push: {
+              invoices: {
+                razorpayPaymentId,
+                razorpayOrderId,
+                amount: amountPaise,
+                plan,
+                billingCycle,
+                status: "paid",
+                paidAt: new Date(),
+              },
+            },
           },
           { new: true },
         );
@@ -504,15 +525,16 @@ router.post(
           { new: true },
         );
 
-        // Send welcome email (non-blocking)
+        // Send welcome email with invoice (non-blocking)
         sendWelcomeEmail({
           to: updatedTenant?.email || req.user.email,
           companyName: updatedTenant?.name || req.user.name || "Team",
           userName: req.user.name || "there",
           plan,
           billingCycle,
-          amount,
+          amountRupees: amount,
           paymentId: razorpayPaymentId,
+          invoiceNumber,
         }).catch((err) => console.error("Welcome email failed:", err.message));
 
         res.json({

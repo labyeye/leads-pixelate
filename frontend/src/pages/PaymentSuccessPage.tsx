@@ -1,9 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-const PLAN_META: Record<string, { label: string; color: string; emoji: string }> = {
+const PLAN_META: Record<
+  string,
+  { label: string; color: string; emoji: string }
+> = {
   starter: { label: "Starter", color: "#A3E635", emoji: "⚡" },
-  growth:  { label: "Growth",  color: "#024BAB", emoji: "🚀" },
+  growth: { label: "Growth", color: "#024BAB", emoji: "🚀" },
   enterprise: { label: "Enterprise", color: "#A855F7", emoji: "👑" },
 };
 
@@ -13,10 +16,15 @@ const PARTICLES = Array.from({ length: 60 }, (_, i) => ({
   delay: Math.random() * 3,
   duration: 2.5 + Math.random() * 2.5,
   size: 6 + Math.random() * 8,
-  color: ["#024BAB", "#A3E635", "#F59E0B", "#EC4899", "#A855F7", "#10B981", "#EF4444"][
-    Math.floor(Math.random() * 7)
-  ],
-  rotate: Math.random() * 360,
+  color: [
+    "#024BAB",
+    "#A3E635",
+    "#F59E0B",
+    "#EC4899",
+    "#A855F7",
+    "#10B981",
+    "#EF4444",
+  ][Math.floor(Math.random() * 7)],
   shape: Math.random() > 0.5 ? "circle" : "rect",
 }));
 
@@ -27,41 +35,27 @@ export default function PaymentSuccessPage() {
   const billing = params.get("billing") || "monthly";
   const meta = PLAN_META[plan] || PLAN_META.growth;
 
-  const [countdown, setCountdown] = useState(7);
   const [checkVisible, setCheckVisible] = useState(false);
   const [textVisible, setTextVisible] = useState(false);
   const [cardVisible, setCardVisible] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const t1 = setTimeout(() => setCheckVisible(true), 200);
-    const t2 = setTimeout(() => setTextVisible(true), 800);
-    const t3 = setTimeout(() => setCardVisible(true), 1300);
-
-    intervalRef.current = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(intervalRef.current!);
-          navigate("/", { replace: true });
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
-
+    const t2 = setTimeout(() => setTextVisible(true), 700);
+    const t3 = setTimeout(() => setCardVisible(true), 1200);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      clearInterval(intervalRef.current!);
     };
-  }, [navigate]);
+  }, []);
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #020617 0%, #0c1445 40%, #0f172a 100%)",
+        background:
+          "linear-gradient(135deg, #020617 0%, #0c1445 40%, #0f172a 100%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -74,7 +68,7 @@ export default function PaymentSuccessPage() {
       <style>{`
         @keyframes confetti-fall {
           0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+          100% { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
         }
         @keyframes check-pop {
           0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
@@ -99,11 +93,19 @@ export default function PaymentSuccessPage() {
         }
         @keyframes shimmer {
           0%   { background-position: -200% center; }
-          100% { background-position: 200% center; }
+          100% { background-position:  200% center; }
         }
+        .btn-dashboard {
+          background: #024BAB; color: #fff; border: none;
+          border-radius: 12px; padding: 15px 40px;
+          font-size: 16px; font-weight: 700; cursor: pointer;
+          letter-spacing: 0.3px; transition: background 0.2s, transform 0.15s;
+        }
+        .btn-dashboard:hover { background: #0357c7; transform: translateY(-2px); }
+        .btn-dashboard:active { transform: translateY(0); }
       `}</style>
 
-      {/* Confetti particles */}
+      {/* Confetti */}
       {PARTICLES.map((p) => (
         <div
           key={p.id}
@@ -121,7 +123,7 @@ export default function PaymentSuccessPage() {
         />
       ))}
 
-      {/* Checkmark circle */}
+      {/* Checkmark */}
       <div
         style={{
           width: 100,
@@ -167,9 +169,10 @@ export default function PaymentSuccessPage() {
         <h1
           style={{
             margin: "0 0 10px",
-            fontSize: "clamp(28px,5vw,42px)",
+            fontSize: "clamp(28px, 5vw, 44px)",
             fontWeight: 800,
-            background: "linear-gradient(90deg, #ffffff 0%, #93c5fd 50%, #ffffff 100%)",
+            background:
+              "linear-gradient(90deg, #ffffff 0%, #93c5fd 50%, #ffffff 100%)",
             backgroundSize: "200% auto",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -182,36 +185,37 @@ export default function PaymentSuccessPage() {
         <p
           style={{
             margin: "0 0 24px",
-            fontSize: 17,
+            fontSize: 16,
             color: "#94a3b8",
             lineHeight: 1.6,
           }}
         >
-          Your account is live. Time to build your sales pipeline and close more deals.
+          Your account is live. Time to build your sales pipeline and close more
+          deals.
         </p>
       </div>
 
-      {/* Plan badge card */}
+      {/* Plan badge */}
       <div
         style={{
           background: "rgba(255,255,255,0.05)",
           border: "1px solid rgba(255,255,255,0.12)",
           backdropFilter: "blur(12px)",
           borderRadius: 20,
-          padding: "24px 36px",
+          padding: "24px 40px",
           textAlign: "center",
           minWidth: 260,
           animation: cardVisible
             ? "slide-up 0.6s ease forwards, pulse-badge 3s 1s ease-in-out infinite"
             : "none",
           opacity: cardVisible ? 1 : 0,
-          marginBottom: 32,
+          marginBottom: 36,
         }}
       >
         <div style={{ fontSize: 36, marginBottom: 8 }}>{meta.emoji}</div>
         <div
           style={{
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 600,
             color: "#64748b",
             textTransform: "uppercase",
@@ -221,7 +225,14 @@ export default function PaymentSuccessPage() {
         >
           Plan Activated
         </div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 4 }}>
+        <div
+          style={{
+            fontSize: 30,
+            fontWeight: 800,
+            color: "#fff",
+            marginBottom: 8,
+          }}
+        >
           {meta.label}
         </div>
         <div
@@ -232,7 +243,7 @@ export default function PaymentSuccessPage() {
             color: meta.color,
             borderRadius: 999,
             padding: "4px 14px",
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 600,
           }}
         >
@@ -240,47 +251,25 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
 
-      {/* CTA buttons */}
+      {/* CTA */}
       <div
         style={{
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-          justifyContent: "center",
           animation: cardVisible ? "fade-in 0.6s 0.3s ease forwards" : "none",
           opacity: cardVisible ? 1 : 0,
+          textAlign: "center",
         }}
       >
         <button
-          onClick={() => { clearInterval(intervalRef.current!); navigate("/", { replace: true }); }}
-          style={{
-            background: "#024BAB",
-            color: "#fff",
-            border: "none",
-            borderRadius: 12,
-            padding: "14px 32px",
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: "pointer",
-            letterSpacing: "0.3px",
-          }}
+          className="btn-dashboard"
+          onClick={() => navigate("/", { replace: true })}
         >
           Go to Dashboard →
         </button>
+        <p style={{ marginTop: 12, fontSize: 12, color: "#475569" }}>
+          A welcome email with your invoice has been sent to your registered
+          email.
+        </p>
       </div>
-
-      {/* Countdown */}
-      <p
-        style={{
-          marginTop: 20,
-          fontSize: 13,
-          color: "#475569",
-          animation: cardVisible ? "fade-in 0.6s 0.5s ease forwards" : "none",
-          opacity: cardVisible ? 1 : 0,
-        }}
-      >
-        Redirecting automatically in {countdown}s…
-      </p>
     </div>
   );
 }
