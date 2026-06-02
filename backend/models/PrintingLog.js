@@ -29,6 +29,11 @@ const printingLogSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   {
     timestamps: true,

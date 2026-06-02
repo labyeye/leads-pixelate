@@ -60,6 +60,11 @@ const clientSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lead",
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -69,5 +74,6 @@ const clientSchema = new mongoose.Schema(
 clientSchema.index({ name: "text", company: "text", email: "text" });
 clientSchema.index({ projectStatus: 1 });
 clientSchema.index({ paymentStatus: 1 });
+clientSchema.index({ tenantId: 1 });
 
 module.exports = mongoose.model("Client", clientSchema);

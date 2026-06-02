@@ -16,6 +16,11 @@ const factoryProductSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   {
     timestamps: true,

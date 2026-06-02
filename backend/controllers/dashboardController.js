@@ -13,6 +13,7 @@ const User = require("../models/User");
 const CLOSED_STATUSES = ["WON", "DROP"];
 
 const getDashboardStats = asyncHandler(async (req, res) => {
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const now = new Date();
 
   const todayStart = new Date(now);
@@ -61,23 +62,25 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     uncontactedLeadsCount,
     userPerformanceData,
   ] = await Promise.all([
-    Lead.countDocuments(),
-    Lead.countDocuments({ createdAt: { $gte: todayStart, $lte: todayEnd } }),
-    Lead.countDocuments({ createdAt: { $gte: startOfWeek } }),
-    Lead.countDocuments({ createdAt: { $gte: startOfMonth } }),
+    Lead.countDocuments({ ...tf }),
+    Lead.countDocuments({ ...tf, createdAt: { $gte: todayStart, $lte: todayEnd } }),
+    Lead.countDocuments({ ...tf, createdAt: { $gte: startOfWeek } }),
+    Lead.countDocuments({ ...tf, createdAt: { $gte: startOfMonth } }),
     Lead.countDocuments({
+      ...tf,
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     }),
-    Lead.countDocuments({ status: "WON" }),
-    User.countDocuments({ status: "active" }),
-    Lead.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Lead.aggregate([{ $group: { _id: "$source", count: { $sum: 1 } } }]),
+    Lead.countDocuments({ ...tf, status: "WON" }),
+    User.countDocuments({ ...tf, status: "active" }),
+    Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
+    Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$source", count: { $sum: 1 } } }]),
 
     // Hot leads
-    Lead.countDocuments({ status: { $in: HOT_STATUSES } }),
+    Lead.countDocuments({ ...tf, status: { $in: HOT_STATUSES } }),
 
     // Today's follow-ups
     Lead.find({
+      ...tf,
       followUpDate: { $gte: todayStart, $lte: todayEnd },
       status: { $nin: CLOSED_STATUSES },
     })
@@ -88,19 +91,21 @@ const getDashboardStats = asyncHandler(async (req, res) => {
 
     // Overdue follow-ups (past due, not closed)
     Lead.countDocuments({
+      ...tf,
       followUpDate: { $lt: todayStart },
       status: { $nin: CLOSED_STATUSES },
     }),
 
     // Uncontacted leads (PENDING CONTACT for 48h+)
     Lead.countDocuments({
+      ...tf,
       status: "PENDING CONTACT",
       createdAt: { $lt: twoDaysAgo },
     }),
 
     // Team leaderboard
     User.aggregate([
-      { $match: { status: "active" } },
+      { $match: { ...tf, status: "active" } },
       {
         $lookup: {
           from: "leads",
@@ -152,9 +157,11 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     monthBoundaries.map(({ monthStart, monthEnd }) =>
       Promise.all([
         Lead.countDocuments({
+          ...tf,
           createdAt: { $gte: monthStart, $lte: monthEnd },
         }),
         Lead.countDocuments({
+          ...tf,
           status: "WON",
           updatedAt: { $gte: monthStart, $lte: monthEnd },
         }),

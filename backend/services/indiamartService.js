@@ -345,14 +345,14 @@ let lastSyncEndTime = null;
 
 async function runScheduledSync(tenantId, apiKey) {
   const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   const endTime = formatIMDate(now);
   const startTime = lastSyncEndTime
     ? formatIMDate(
         new Date(new Date(lastSyncEndTime).getTime() - 5 * 60 * 1000),
       )
-    : formatIMDate(oneHourAgo);
+    : formatIMDate(oneDayAgo);
 
   const result = await syncIndiamartLeads({
     apiKey,

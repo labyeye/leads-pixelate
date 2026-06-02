@@ -25,6 +25,11 @@ const productSchema = new mongoose.Schema(
     description: {
       type: String,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -34,5 +39,6 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ name: "text" });
 productSchema.index({ category: 1 });
 productSchema.index({ status: 1 });
+productSchema.index({ tenantId: 1 });
 
 module.exports = mongoose.model("Product", productSchema);

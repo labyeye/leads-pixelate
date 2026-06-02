@@ -68,6 +68,11 @@ const settingSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   {
     timestamps: true,

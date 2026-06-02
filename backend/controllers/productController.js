@@ -7,6 +7,8 @@ const getProducts = asyncHandler(async (req, res) => {
 
   const query = {};
 
+  if (req.user.tenantId) query.tenantId = req.user.tenantId;
+
   if (category) query.category = category;
   if (status) query.status = status;
   if (search) {
@@ -37,7 +39,10 @@ const getProduct = asyncHandler(async (req, res) => {
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-  const product = await Product.create(req.body);
+  const product = await Product.create({
+    ...req.body,
+    tenantId: req.user.tenantId || null,
+  });
 
   logActivity({
     user: req.user,

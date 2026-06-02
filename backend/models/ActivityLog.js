@@ -52,6 +52,12 @@ const activityLogSchema = new mongoose.Schema(
 
     ip: { type: String },
 
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
+
     timestamp: { type: Date, default: Date.now },
   },
   { timestamps: false, versionKey: false },

@@ -15,6 +15,8 @@ const getActivityLogs = asyncHandler(async (req, res) => {
 
   const query = {};
 
+  if (req.user.tenantId) query.tenantId = req.user.tenantId;
+
   if (module) query.module = module;
   if (action) query.action = action;
   if (userId) query.user = userId;
@@ -59,6 +61,7 @@ const getActivityLogs = asyncHandler(async (req, res) => {
 });
 
 const getActivityStats = asyncHandler(async (req, res) => {
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const last7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -71,22 +74,26 @@ const getActivityStats = asyncHandler(async (req, res) => {
     recentLogins,
     loginFails,
   ] = await Promise.all([
-    ActivityLog.countDocuments(),
-    ActivityLog.countDocuments({ timestamp: { $gte: last24h } }),
-    ActivityLog.countDocuments({ timestamp: { $gte: last7d } }),
+    ActivityLog.countDocuments({ ...tf }),
+    ActivityLog.countDocuments({ ...tf, timestamp: { $gte: last24h } }),
+    ActivityLog.countDocuments({ ...tf, timestamp: { $gte: last7d } }),
     ActivityLog.aggregate([
+      { $match: { ...tf } },
       { $group: { _id: "$action", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]),
     ActivityLog.aggregate([
+      { $match: { ...tf } },
       { $group: { _id: "$module", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]),
     ActivityLog.countDocuments({
+      ...tf,
       action: "LOGIN",
       timestamp: { $gte: last24h },
     }),
     ActivityLog.countDocuments({
+      ...tf,
       action: "LOGIN_FAILED",
       timestamp: { $gte: last24h },
     }),

@@ -632,9 +632,9 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
     endTime = end_time;
   } else {
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     endTime = formatIMDate(now);
-    startTime = formatIMDate(oneHourAgo);
+    startTime = formatIMDate(oneDayAgo);
   }
 
   const result = await syncIndiamartLeads({
@@ -642,7 +642,7 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
     tenantId: req.user.tenantId || null,
     startTime,
     endTime,
-    updateExisting: true,
+    updateExisting: false,
   });
 
   // Update lastSync timestamp on tenant

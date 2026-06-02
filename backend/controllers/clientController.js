@@ -13,6 +13,8 @@ const getClients = asyncHandler(async (req, res) => {
 
   const query = {};
 
+  if (req.user.tenantId) query.tenantId = req.user.tenantId;
+
   if (projectStatus) query.projectStatus = projectStatus;
   if (paymentStatus) query.paymentStatus = paymentStatus;
   if (search) {
@@ -55,7 +57,10 @@ const getClient = asyncHandler(async (req, res) => {
 });
 
 const createClient = asyncHandler(async (req, res) => {
-  const client = await Client.create(req.body);
+  const client = await Client.create({
+    ...req.body,
+    tenantId: req.user.tenantId || null,
+  });
 
   logActivity({
     user: req.user,

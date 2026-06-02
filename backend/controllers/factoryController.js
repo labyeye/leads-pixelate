@@ -5,7 +5,8 @@ const PrintingLog = require("../models/PrintingLog");
 const logActivity = require("../utils/activityLogger");
 
 const getInventory = asyncHandler(async (req, res) => {
-  const reels = await Reel.find()
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const reels = await Reel.find(tf)
     .populate("enteredBy", "name email")
     .sort("-createdAt");
 
@@ -26,6 +27,7 @@ const addReel = asyncHandler(async (req, res) => {
     reelSize,
     entryDate: entryDate || Date.now(),
     enteredBy: req.user._id,
+    tenantId: req.user.tenantId || null,
   });
 
   const populated = await reel.populate("enteredBy", "name email");
@@ -43,7 +45,8 @@ const addReel = asyncHandler(async (req, res) => {
 });
 
 const getFactoryProducts = asyncHandler(async (req, res) => {
-  const products = await FactoryProduct.find({ isActive: true }).sort("name");
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const products = await FactoryProduct.find({ ...tf, isActive: true }).sort("name");
   res.json({ success: true, count: products.length, data: products });
 });
 
@@ -55,12 +58,13 @@ const addFactoryProduct = asyncHandler(async (req, res) => {
     throw new Error("Product name is required");
   }
 
-  const product = await FactoryProduct.create({ name, description });
+  const product = await FactoryProduct.create({ name, description, tenantId: req.user.tenantId || null });
   res.status(201).json({ success: true, data: product });
 });
 
 const getPrintingLogs = asyncHandler(async (req, res) => {
-  const logs = await PrintingLog.find()
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const logs = await PrintingLog.find(tf)
     .populate("reelNo", "reelNo company reelWeight reelSize")
     .populate("product", "name")
     .populate("printedBy", "name email")
@@ -98,6 +102,7 @@ const addPrintingLog = asyncHandler(async (req, res) => {
     product: product._id,
     printDate: printDate || Date.now(),
     printedBy: req.user._id,
+    tenantId: req.user.tenantId || null,
   });
 
   const populated = await PrintingLog.findById(log._id)
@@ -120,7 +125,7 @@ const addPrintingLog = asyncHandler(async (req, res) => {
 const getReports = asyncHandler(async (req, res) => {
   const { startDate, endDate } = req.query;
 
-  const matchStage = {};
+  const matchStage = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   if (startDate || endDate) {
     matchStage.printDate = {};
     if (startDate) matchStage.printDate.$gte = new Date(startDate);

@@ -68,6 +68,11 @@ const socialPostSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   { timestamps: true },
 );
@@ -75,5 +80,6 @@ const socialPostSchema = new mongoose.Schema(
 socialPostSchema.index({ status: 1 });
 socialPostSchema.index({ scheduledAt: 1 });
 socialPostSchema.index({ createdAt: -1 });
+socialPostSchema.index({ tenantId: 1 });
 
 module.exports = mongoose.model("SocialPost", socialPostSchema);

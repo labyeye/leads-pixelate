@@ -7,6 +7,8 @@ const getQuotations = asyncHandler(async (req, res) => {
 
   const query = {};
 
+  if (req.user.tenantId) query.tenantId = req.user.tenantId;
+
   if (status) query.status = status;
   if (search) {
     query.$or = [
@@ -56,6 +58,7 @@ const getQuotation = asyncHandler(async (req, res) => {
 
 const createQuotation = asyncHandler(async (req, res) => {
   req.body.createdBy = req.user._id;
+  req.body.tenantId = req.user.tenantId || null;
 
   const quotation = await Quotation.create(req.body);
 

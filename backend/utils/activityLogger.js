@@ -8,6 +8,7 @@ function logActivity({ user, action, module, description, targetId, ip } = {}) {
         userName: user?.name || "Anonymous",
         userEmail: user?.email || "",
         userRole: user?.role || "",
+        tenantId: user?.tenantId || null,
         action,
         module,
         description,

@@ -168,6 +168,7 @@ async function executePublish(post) {
 
 exports.getPosts = asyncHandler(async (req, res) => {
   const filter = {};
+  if (req.user.tenantId) filter.tenantId = req.user.tenantId;
   if (req.query.status) filter.status = req.query.status;
   if (req.query.platform) filter.platforms = req.query.platform;
 
@@ -208,6 +209,7 @@ exports.createPost = asyncHandler(async (req, res) => {
     scheduledAt: new Date(scheduledAt),
     status: "DRAFT",
     createdBy: req.user._id,
+    tenantId: req.user.tenantId || null,
   });
 
   await post.populate("createdBy", "name");

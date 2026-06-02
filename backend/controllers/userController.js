@@ -7,6 +7,8 @@ const getUsers = asyncHandler(async (req, res) => {
 
   const query = {};
 
+  if (req.user.tenantId) query.tenantId = req.user.tenantId;
+
   if (status) query.status = status;
   if (role) query.role = role;
   if (search) {
@@ -55,6 +57,7 @@ const createUser = asyncHandler(async (req, res) => {
     role: role || "sales_executive",
     phone,
     department,
+    tenantId: req.user.tenantId || null,
   });
 
   logActivity({
@@ -174,11 +177,13 @@ const updateAutoAssign = asyncHandler(async (req, res) => {
     throw new Error("userIds must be an array");
   }
 
-  await User.updateMany({}, { receiveAutoAssignedLeads: false });
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+
+  await User.updateMany(tenantFilter, { receiveAutoAssignedLeads: false });
 
   if (userIds.length > 0) {
     await User.updateMany(
-      { _id: { $in: userIds } },
+      { _id: { $in: userIds }, ...tenantFilter },
       { receiveAutoAssignedLeads: true },
     );
   }
