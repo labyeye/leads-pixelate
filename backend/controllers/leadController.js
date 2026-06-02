@@ -1,8 +1,10 @@
 const asyncHandler = require("express-async-handler");
 const Lead = require("../models/Lead");
+const Tenant = require("../models/Tenant");
 const {
   syncIndiamartLeads,
   formatIMDate,
+  fetchFromIndiaMART,
   mapIMLeadToModel,
   getRoundRobinAssigneeId,
 } = require("../services/indiamartService");
@@ -551,11 +553,79 @@ const convertToClient = asyncHandler(async (req, res) => {
 
 const syncLogs = [];
 
-const syncFromIndiamart = asyncHandler(async (req, res) => {
-  const { start_time, end_time } = req.body;
+const connectIndiamart = asyncHandler(async (req, res) => {
+  const { apiKey } = req.body;
+  if (!apiKey || !apiKey.trim()) {
+    res.status(400);
+    throw new Error("API key is required");
+  }
 
-  let startTime = null;
-  let endTime = null;
+  // Verify the key with a live call (204 = valid but no leads, 200 = valid with leads)
+  try {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const result = await fetchFromIndiaMART(
+      apiKey.trim(),
+      formatIMDate(oneHourAgo),
+      formatIMDate(now),
+    );
+    if (result.CODE !== 200 && result.CODE !== 204) {
+      res.status(400);
+      throw new Error(result.MESSAGE || "Invalid API key");
+    }
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(400);
+      throw new Error(`Could not verify API key: ${err.message}`);
+    }
+    throw err;
+  }
+
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.indiamart.enabled": true,
+    "integrations.indiamart.apiKey": apiKey.trim(),
+  });
+
+  res.json({ success: true, message: "IndiaMART connected successfully" });
+});
+
+const disconnectIndiamart = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.indiamart.enabled": false,
+    "integrations.indiamart.apiKey": "",
+  });
+
+  res.json({ success: true, message: "IndiaMART disconnected" });
+});
+
+const syncFromIndiamart = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  const tenant = await Tenant.findOne(query);
+  const apiKey =
+    process.env.INDIAMART_API_KEY ||
+    (tenant?.integrations?.indiamart?.apiKey) ||
+    null;
+
+  if (!apiKey) {
+    res.status(400);
+    throw new Error(
+      "IndiaMART not connected. Please add your API key from the Integrations page.",
+    );
+  }
+
+  const { start_time, end_time } = req.body;
+  let startTime, endTime;
 
   if (start_time && end_time) {
     startTime = start_time;
@@ -568,10 +638,16 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
   }
 
   const result = await syncIndiamartLeads({
+    apiKey,
+    tenantId: req.user.tenantId || null,
     startTime,
     endTime,
     updateExisting: true,
-    defaultAssignedTo: req.user._id,
+  });
+
+  // Update lastSync timestamp on tenant
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.indiamart.lastSync": new Date(),
   });
 
   const logEntry = {
@@ -588,6 +664,7 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
   };
   syncLogs.unshift(logEntry);
   if (syncLogs.length > 50) syncLogs.pop();
+
   res.json({
     success: true,
     message: `Sync complete. ${result.created} new lead(s) imported, ${result.updated || 0} existing lead(s) updated.`,
@@ -596,21 +673,36 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
 });
 
 const getIndiamartSyncStatus = asyncHandler(async (req, res) => {
-  const total = await Lead.countDocuments({ source: "IndiaMART" });
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  const tenant = await Tenant.findOne(query);
+  const integration = tenant?.integrations?.indiamart || {};
+  const connected =
+    !!process.env.INDIAMART_API_KEY ||
+    (integration.enabled && !!integration.apiKey);
+
+  const leadFilter = { source: "IndiaMART" };
+  if (req.user.tenantId) leadFilter.tenantId = req.user.tenantId;
+
+  const total = await Lead.countDocuments(leadFilter);
   const lastWeek = new Date();
   lastWeek.setDate(lastWeek.getDate() - 7);
   const recentCount = await Lead.countDocuments({
-    source: "IndiaMART",
+    ...leadFilter,
     createdAt: { $gte: lastWeek },
   });
 
   res.json({
     success: true,
     data: {
+      connected,
+      apiKeyConfigured: connected,
+      lastSync: integration.lastSync || null,
       totalIndiamartLeads: total,
       last7DaysLeads: recentCount,
       recentSyncs: syncLogs.slice(0, 10),
-      apiKeyConfigured: !!process.env.INDIAMART_API_KEY,
     },
   });
 });
@@ -679,6 +771,8 @@ module.exports = {
   deleteLead,
   addNote,
   convertToClient,
+  connectIndiamart,
+  disconnectIndiamart,
   syncFromIndiamart,
   getIndiamartSyncStatus,
   indiamartWebhook,

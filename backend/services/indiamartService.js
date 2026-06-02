@@ -113,11 +113,10 @@ function parseIMDate(dateString) {
   );
 }
 
-async function fetchFromIndiaMART(startTime, endTime) {
-  const key = process.env.INDIAMART_API_KEY;
-  if (!key) throw new Error("INDIAMART_API_KEY not set in environment");
+async function fetchFromIndiaMART(apiKey, startTime, endTime) {
+  if (!apiKey) throw new Error("INDIAMART_API_KEY not set in environment");
 
-  let url = `${INDIAMART_API_BASE}?glusr_crm_key=${encodeURIComponent(key)}`;
+  let url = `${INDIAMART_API_BASE}?glusr_crm_key=${encodeURIComponent(apiKey)}`;
   if (startTime) url += `&start_time=${encodeURIComponent(startTime)}`;
   if (endTime) url += `&end_time=${encodeURIComponent(endTime)}`;
 
@@ -188,18 +187,25 @@ function mapIMLeadToModel(record, defaultAssignedTo) {
   };
 }
 
-async function getRoundRobinAssigneeId() {
+async function getRoundRobinAssigneeId(tenantId = null) {
+  const tenantFilter = tenantId ? { tenantId } : {};
+
   let targets = await User.find({
+    ...tenantFilter,
     role: "sales_executive",
     status: "active",
     receiveAutoAssignedLeads: true,
   });
 
   if (targets.length === 0) {
-    targets = await User.find({ role: "sales_executive", status: "active" });
+    targets = await User.find({ ...tenantFilter, role: "sales_executive", status: "active" });
   }
 
   if (targets.length === 0) {
+    targets = await User.find({ ...tenantFilter, role: { $in: ["super_admin", "admin"] } });
+  }
+
+  if (targets.length === 0 && tenantId) {
     targets = await User.find({ role: { $in: ["super_admin", "admin"] } });
   }
 
@@ -231,6 +237,8 @@ async function getRoundRobinAssigneeId() {
 }
 
 async function syncIndiamartLeads({
+  apiKey,
+  tenantId = null,
   startTime,
   endTime,
   updateExisting = true,
@@ -246,7 +254,7 @@ async function syncIndiamartLeads({
 
   let apiData;
   try {
-    apiData = await fetchFromIndiaMART(startTime, endTime);
+    apiData = await fetchFromIndiaMART(apiKey, startTime, endTime);
     result.apiResponse = {
       CODE: apiData.CODE,
       STATUS: apiData.STATUS,
@@ -320,8 +328,9 @@ async function syncIndiamartLeads({
         continue;
       }
 
-      const assignedToId = await getRoundRobinAssigneeId();
+      const assignedToId = await getRoundRobinAssigneeId(tenantId);
       const leadData = mapIMLeadToModel(record, assignedToId);
+      if (tenantId) leadData.tenantId = tenantId;
       await Lead.create(leadData);
       result.created++;
     } catch (err) {
@@ -334,7 +343,7 @@ async function syncIndiamartLeads({
 
 let lastSyncEndTime = null;
 
-async function runScheduledSync(defaultAssignedTo) {
+async function runScheduledSync(tenantId, apiKey) {
   const now = new Date();
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
@@ -346,6 +355,8 @@ async function runScheduledSync(defaultAssignedTo) {
     : formatIMDate(oneHourAgo);
 
   const result = await syncIndiamartLeads({
+    apiKey,
+    tenantId,
     startTime,
     endTime,
   });

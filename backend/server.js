@@ -18,12 +18,34 @@ connectDB().then(async () => {
 
   cron.schedule("*/5 * * * *", async () => {
     try {
-      if (!process.env.INDIAMART_API_KEY) return;
-      const adminUser = await User.findOne({
-        role: { $in: ["super_admin", "admin"] },
+      const Tenant = require("./models/Tenant");
+
+      // Global env key (legacy / single-tenant setup)
+      if (process.env.INDIAMART_API_KEY) {
+        const adminUser = await User.findOne({
+          role: { $in: ["super_admin", "admin"] },
+        });
+        if (adminUser) {
+          await runScheduledSync(null, process.env.INDIAMART_API_KEY);
+        }
+        return;
+      }
+
+      // Multi-tenant: sync each tenant that has IndiaMART connected
+      const tenants = await Tenant.find({
+        "integrations.indiamart.enabled": true,
+        "integrations.indiamart.apiKey": { $nin: ["", null] },
       });
-      if (!adminUser) return;
-      await runScheduledSync(adminUser._id);
+
+      for (const tenant of tenants) {
+        await runScheduledSync(
+          tenant._id,
+          tenant.integrations.indiamart.apiKey,
+        );
+        await Tenant.findByIdAndUpdate(tenant._id, {
+          "integrations.indiamart.lastSync": new Date(),
+        });
+      }
     } catch (err) {
       if (process.env.NODE_ENV === "development") {
         console.error("[IndiaMART Cron]", err.message);

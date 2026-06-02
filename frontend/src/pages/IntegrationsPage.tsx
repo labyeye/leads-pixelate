@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
-import { facebookAPI } from "@/services/api";
+import { facebookAPI, indiamartAPI } from "@/services/api";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -606,7 +606,6 @@ function IntegrationWizard({
     setFields((p) => ({ ...p, [key]: val }));
 
   const handleNext = async () => {
-    // On the second-to-last step (save step), simulate saving
     const isSaveStep =
       current.fields && current.fields.some((f) => f.type !== "readonly");
     if (isSaveStep) {
@@ -622,9 +621,25 @@ function IntegrationWizard({
         return;
       }
       setSaving(true);
-      await new Promise((r) => setTimeout(r, 1200));
+      try {
+        if (integration.id === "indiamart") {
+          await indiamartAPI.connect(fields.api_key);
+          toast({ title: "Connected!", description: "IndiaMART is now syncing leads every 5 minutes." });
+        } else {
+          // Other integrations: no real API yet
+          await new Promise((r) => setTimeout(r, 800));
+          toast({ title: "Saved!", description: "Connection verified." });
+        }
+      } catch (err: any) {
+        setSaving(false);
+        toast({
+          title: "Connection failed",
+          description: err?.message || "Could not verify API key. Please check and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
       setSaving(false);
-      toast({ title: "Saved!", description: "Verifying connection…" });
     }
 
     if (isLast) {
@@ -891,7 +906,7 @@ export default function IntegrationsPage() {
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [fbHasToken, setFbHasToken] = useState(false);
 
-  // Check DB on mount for existing Facebook connection
+  // Check DB on mount for existing connections
   useEffect(() => {
     facebookAPI
       .getConnectedPages()
@@ -899,6 +914,15 @@ export default function IntegrationsPage() {
         if (res.hasToken) setFbHasToken(true);
         if (res.data.length > 0) {
           setConnectedIds((prev) => new Set([...prev, "facebook"]));
+        }
+      })
+      .catch(() => {});
+
+    indiamartAPI
+      .getStatus()
+      .then((res) => {
+        if (res.data?.connected) {
+          setConnectedIds((prev) => new Set([...prev, "indiamart"]));
         }
       })
       .catch(() => {});

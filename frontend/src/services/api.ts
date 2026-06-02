@@ -168,18 +168,6 @@ export const leadsAPI = {
     ),
 };
 
-export const indiamartAPI = {
-  sync: (params?: { start_time?: string; end_time?: string }) =>
-    request<{ success: boolean; message: string; data: any }>(
-      "/leads/indiamart/sync",
-      {
-        method: "POST",
-        body: JSON.stringify(params || {}),
-      },
-    ),
-  getStatus: () =>
-    request<{ success: boolean; data: any }>("/leads/indiamart/status"),
-};
 
 export const tradeindiaSyncAPI = {
   sync: () =>
@@ -383,6 +371,25 @@ export const settingsAPI = {
       method: "PUT",
       body: JSON.stringify(settings),
     }),
+};
+
+export const indiamartAPI = {
+  getStatus: () =>
+    request<{ success: boolean; data: any }>("/leads/indiamart/status"),
+  connect: (apiKey: string) =>
+    request<{ success: boolean; message: string }>("/leads/indiamart/connect", {
+      method: "POST",
+      body: JSON.stringify({ apiKey }),
+    }),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>("/leads/indiamart/disconnect", {
+      method: "POST",
+    }),
+  sync: (body?: { start_time?: string; end_time?: string }) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/leads/indiamart/sync",
+      { method: "POST", body: JSON.stringify(body || {}) },
+    ),
 };
 
 export const whatsappAPI = {

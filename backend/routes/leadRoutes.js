@@ -8,6 +8,8 @@ const {
   deleteLead,
   addNote,
   convertToClient,
+  connectIndiamart,
+  disconnectIndiamart,
   syncFromIndiamart,
   getIndiamartSyncStatus,
   indiamartWebhook,
@@ -21,6 +23,16 @@ router.get(
   "/indiamart/status",
   authorize("super_admin", "admin"),
   getIndiamartSyncStatus,
+);
+router.post(
+  "/indiamart/connect",
+  authorize("super_admin", "admin"),
+  connectIndiamart,
+);
+router.post(
+  "/indiamart/disconnect",
+  authorize("super_admin", "admin"),
+  disconnectIndiamart,
 );
 router.post(
   "/indiamart/sync",
