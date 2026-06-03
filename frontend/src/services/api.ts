@@ -545,6 +545,117 @@ export const whatsappAPI = {
   },
 };
 
+export const socialAPI = {
+  getStats: () =>
+    request<{ success: boolean; data: any }>("/social/stats"),
+  getPosts: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ success: boolean; count: number; data: any[] }>(
+      `/social/posts${query}`,
+    );
+  },
+  getPost: (id: string) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}`),
+  createPost: (data: any) =>
+    request<{ success: boolean; data: any }>("/social/posts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updatePost: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deletePost: (id: string) =>
+    request<{ success: boolean; message: string }>(`/social/posts/${id}`, {
+      method: "DELETE",
+    }),
+  submitPost: (id: string) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}/submit`, {
+      method: "PUT",
+    }),
+  approvePost: (id: string, note?: string) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}/approve`, {
+      method: "PUT",
+      body: JSON.stringify({ note }),
+    }),
+  rejectPost: (id: string, reason: string) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}/reject`, {
+      method: "PUT",
+      body: JSON.stringify({ reason }),
+    }),
+  publishPost: (id: string) =>
+    request<{ success: boolean; data: any; message: string }>(
+      `/social/posts/${id}/publish`,
+      { method: "POST" },
+    ),
+  getAccounts: () =>
+    request<{ success: boolean; count: number; data: any[] }>("/social/accounts"),
+  connectAccount: (data: any) =>
+    request<{ success: boolean; data: any }>("/social/accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  disconnectAccount: (id: string) =>
+    request<{ success: boolean; message: string }>(`/social/accounts/${id}`, {
+      method: "DELETE",
+    }),
+  getFacebookAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>(
+      "/social/auth/facebook",
+    ),
+  fetchFacebookPages: (userToken: string) =>
+    request<{ success: boolean; data: any[] }>("/social/auth/facebook/pages", {
+      method: "POST",
+      body: JSON.stringify({ userToken }),
+    }),
+};
+
+export const campaignAPI = {
+  getAll: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ success: boolean; count: number; data: any[] }>(
+      `/campaigns${query}`,
+    );
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: any }>(`/campaigns/${id}`),
+  create: (data: any) =>
+    request<{ success: boolean; data: any }>("/campaigns", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/campaigns/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/campaigns/${id}`, {
+      method: "DELETE",
+    }),
+  launch: (id: string) =>
+    request<{ success: boolean; data: any; message: string }>(
+      `/campaigns/${id}/launch`,
+      { method: "POST" },
+    ),
+  pause: (id: string) =>
+    request<{ success: boolean; data: any }>(`/campaigns/${id}/pause`, {
+      method: "POST",
+    }),
+  cancel: (id: string) =>
+    request<{ success: boolean; data: any }>(`/campaigns/${id}/cancel`, {
+      method: "POST",
+    }),
+  getStats: () =>
+    request<{ success: boolean; data: any }>("/campaigns/stats"),
+  resolveAudience: (filters: any) =>
+    request<{ success: boolean; data: { count: number; contacts: any[] } }>(
+      "/campaigns/resolve-audience",
+      { method: "POST", body: JSON.stringify(filters) },
+    ),
+};
+
 export const activityAPI = {
   getLogs: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";

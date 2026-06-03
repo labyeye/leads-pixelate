@@ -14,6 +14,8 @@ import {
   Building2,
   FileText,
   Terminal,
+  Instagram,
+  Megaphone,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -106,6 +108,23 @@ const allGroups: NavGroup[] = [
         href: "/reports",
         icon: BarChart2,
         roles: ["super_admin", "admin"],
+      },
+    ],
+  },
+  {
+    label: "Marketing",
+    items: [
+      {
+        title: "Social Planner",
+        href: "/social-planner",
+        icon: Instagram,
+        roles: ["super_admin", "admin", "sales_executive"],
+      },
+      {
+        title: "Campaigns",
+        href: "/campaigns",
+        icon: Megaphone,
+        roles: ["super_admin", "admin", "sales_executive"],
       },
     ],
   },

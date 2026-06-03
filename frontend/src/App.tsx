@@ -23,6 +23,9 @@ import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
 import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
 import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
+import CampaignsPage from "./pages/CampaignsPage";
+import CampaignBuilderPage from "./pages/CampaignBuilderPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -221,6 +224,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <WhatsAppSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/social-planner"
+        element={
+          <ProtectedRoute>
+            <SocialMediaPlannerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns"
+        element={
+          <ProtectedRoute>
+            <CampaignsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/new"
+        element={
+          <ProtectedRoute>
+            <CampaignBuilderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/:id/edit"
+        element={
+          <ProtectedRoute>
+            <CampaignBuilderPage />
           </ProtectedRoute>
         }
       />

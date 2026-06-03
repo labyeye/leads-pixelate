@@ -10,7 +10,8 @@
       "Bash(npm install:*)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\(d.get\\('dependencies',{}\\).keys\\(\\)\\)\\)\\)\")",
       "Bash(node --check /Users/labh/Desktop/Projects/agency-flow-crm/backend/controllers/socialController.js)",
-      "Bash(node --check /Users/labh/Desktop/Projects/agency-flow-crm/backend/routes/socialRoutes.js)"
+      "Bash(node --check /Users/labh/Desktop/Projects/agency-flow-crm/backend/routes/socialRoutes.js)",
+      "Bash(npm run *)"
     ]
   }
 }

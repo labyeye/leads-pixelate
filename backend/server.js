@@ -14,7 +14,11 @@ dotenv.config();
 connectDB().then(async () => {
   const cron = require("node-cron");
   const { runScheduledSync } = require("./services/indiamartService");
+  const { runScheduledPosts } = require("./controllers/socialController");
   const User = require("./models/User");
+
+  // Publish scheduled social posts every minute
+  cron.schedule("* * * * *", runScheduledPosts);
 
   cron.schedule("*/5 * * * *", async () => {
     try {
@@ -120,6 +124,8 @@ app.use("/api/billing", require("./routes/billingRoutes"));
 app.use("/api/facebook", require("./routes/facebookRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
+app.use("/api/social", require("./routes/socialRoutes"));
+app.use("/api/campaigns", require("./routes/campaignRoutes"));
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, status: "ok" });

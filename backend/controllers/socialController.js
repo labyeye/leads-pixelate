@@ -182,7 +182,8 @@ exports.getPosts = asyncHandler(async (req, res) => {
 });
 
 exports.getPost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id)
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter })
     .populate("createdBy", "name")
     .populate("approvedBy", "name");
 
@@ -217,7 +218,8 @@ exports.createPost = asyncHandler(async (req, res) => {
 });
 
 exports.updatePost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter });
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
@@ -249,7 +251,8 @@ exports.updatePost = asyncHandler(async (req, res) => {
 });
 
 exports.deletePost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter });
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
@@ -268,7 +271,8 @@ exports.deletePost = asyncHandler(async (req, res) => {
 
 // Submit for approval
 exports.submitPost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter });
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
@@ -289,7 +293,8 @@ exports.submitPost = asyncHandler(async (req, res) => {
 
 // Approve post
 exports.approvePost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter });
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
@@ -326,7 +331,8 @@ exports.approvePost = asyncHandler(async (req, res) => {
 
 // Reject post
 exports.rejectPost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter });
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
@@ -348,7 +354,8 @@ exports.rejectPost = asyncHandler(async (req, res) => {
 
 // Manual publish trigger
 exports.publishPost = asyncHandler(async (req, res) => {
-  const post = await SocialPost.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter });
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
@@ -613,13 +620,14 @@ exports.fetchFacebookPages = asyncHandler(async (req, res) => {
 
 // Stats for dashboard
 exports.getStats = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const [total, pending, scheduled, posted, failed, accounts] =
     await Promise.all([
-      SocialPost.countDocuments(),
-      SocialPost.countDocuments({ status: "PENDING_APPROVAL" }),
-      SocialPost.countDocuments({ status: "SCHEDULED" }),
-      SocialPost.countDocuments({ status: "POSTED" }),
-      SocialPost.countDocuments({ status: "FAILED" }),
+      SocialPost.countDocuments(tenantFilter),
+      SocialPost.countDocuments({ ...tenantFilter, status: "PENDING_APPROVAL" }),
+      SocialPost.countDocuments({ ...tenantFilter, status: "SCHEDULED" }),
+      SocialPost.countDocuments({ ...tenantFilter, status: "POSTED" }),
+      SocialPost.countDocuments({ ...tenantFilter, status: "FAILED" }),
       SocialAccount.countDocuments({ isActive: true }),
     ]);
 
