@@ -992,7 +992,6 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-        </div>
       </div>
 
       {/* Success/Error Modal */}
