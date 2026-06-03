@@ -359,6 +359,57 @@ export const facebookAPI = {
       `/facebook/meta-campaigns/${id}/insights${query}`,
     );
   },
+  createCampaign: (data: any) =>
+    request<{ success: boolean; data: any }>("/facebook/meta-campaigns", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateCampaign: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/facebook/meta-campaigns/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteCampaign: (id: string) =>
+    request<{ success: boolean; message: string }>(
+      `/facebook/meta-campaigns/${id}`,
+      { method: "DELETE" },
+    ),
+  getAdSets: (campaignId: string) =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      `/facebook/meta-campaigns/${campaignId}/adsets`,
+    ),
+  createAdSet: (data: any) =>
+    request<{ success: boolean; data: any }>("/facebook/adsets", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateAdSet: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/facebook/adsets/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteAdSet: (id: string) =>
+    request<{ success: boolean; message: string }>(`/facebook/adsets/${id}`, {
+      method: "DELETE",
+    }),
+  getAds: (adSetId: string) =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      `/facebook/adsets/${adSetId}/ads`,
+    ),
+  createAd: (data: any) =>
+    request<{ success: boolean; data: any }>("/facebook/ads", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateAd: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/facebook/ads/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  deleteAd: (id: string) =>
+    request<{ success: boolean; message: string }>(`/facebook/ads/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 export const clientsAPI = {

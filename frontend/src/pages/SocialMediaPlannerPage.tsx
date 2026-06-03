@@ -200,10 +200,10 @@ export default function SocialMediaPlannerPage() {
     <AppLayout title="Social Media Planner">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
+        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-background">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-              <Instagram className="w-5 h-5 text-purple-600" />
+            <div className="w-9 h-9 bg-purple-600 border-2 border-black nb-shadow flex items-center justify-center">
+              <Instagram className="w-5 h-5 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-semibold">Social Media Planner</h1>
@@ -249,7 +249,7 @@ export default function SocialMediaPlannerPage() {
         )}
 
         {/* Page tabs */}
-        <div className="flex border-b border-border px-6 bg-background">
+        <div className="flex border-b-2 border-black px-6 bg-background">
           {[
             { id: "posts", label: "Posts" },
             { id: "accounts", label: "Connected Accounts" },
@@ -257,7 +257,11 @@ export default function SocialMediaPlannerPage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-1 mr-5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.id ? "border-purple-500 text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`py-3 px-1 mr-6 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === t.id
+                  ? "border-purple-600 text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
             >
               {t.label}
             </button>
@@ -430,19 +434,23 @@ function PostsTab({
             <button
               key={t.id}
               onClick={() => setFilter(t.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${filter === t.id ? "bg-purple-600 text-white" : "text-muted-foreground hover:bg-accent"}`}
+              className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all border-2 ${
+                filter === t.id
+                  ? "border-black bg-purple-600 text-white nb-shadow-sm"
+                  : "border-transparent text-muted-foreground hover:border-black hover:bg-accent"
+              }`}
             >
               {t.label}
             </button>
           ))}
         </div>
         <div className="flex gap-2 ml-3 shrink-0">
-          <Button variant="outline" size="sm" onClick={fetchPosts}>
+          <Button variant="outline" size="sm" onClick={fetchPosts} className="nb-btn">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
             size="sm"
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="nb-btn bg-purple-600 text-white hover:bg-purple-700"
             onClick={() => {
               setEditingPost(null);
               setWizardOpen(true);
@@ -645,7 +653,7 @@ function PostCard({
     post.status === "SCHEDULED" && isPast(new Date(post.scheduledAt));
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden">
+    <div className="nb-card nb-card-hover overflow-hidden border-l-4 border-l-purple-600">
       <div className="px-5 py-4">
         <div className="flex items-start gap-4">
           {/* Image thumbnail */}
@@ -653,11 +661,11 @@ function PostCard({
             <img
               src={post.imageUrl}
               alt=""
-              className="w-16 h-16 object-cover rounded-lg shrink-0 border border-border"
+              className="w-16 h-16 object-cover shrink-0 border-2 border-black"
             />
           ) : (
-            <div className="w-16 h-16 rounded-lg shrink-0 bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-100 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-purple-300" />
+            <div className="w-16 h-16 shrink-0 bg-purple-100 border-2 border-black flex items-center justify-center">
+              <ImageIcon className="w-6 h-6 text-purple-400" />
             </div>
           )}
 
@@ -673,12 +681,12 @@ function PostCard({
                 {cfg.label}
               </span>
               {post.platforms.includes("facebook") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-semibold">
                   <Facebook className="w-3 h-3" /> Facebook
                 </span>
               )}
               {post.platforms.includes("instagram") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700">
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-semibold">
                   <Instagram className="w-3 h-3" /> Instagram
                 </span>
               )}
@@ -748,34 +756,36 @@ function PostCard({
 
           {/* Actions */}
           <div className="flex flex-col gap-1.5 shrink-0">
-            {/* Creator actions */}
-            {["DRAFT", "REJECTED"].includes(post.status) && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={onEdit}
-                >
-                  <Pencil className="w-3 h-3 mr-1" /> Edit
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white"
-                  onClick={onSubmit}
-                  disabled={actionLoading}
-                >
-                  <Send className="w-3 h-3 mr-1" /> Submit
-                </Button>
-              </>
+            {/* Edit — available for all editable statuses */}
+            {!["POSTING", "POSTED"].includes(post.status) && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs nb-btn"
+                onClick={onEdit}
+              >
+                <Pencil className="w-3 h-3 mr-1" /> Edit
+              </Button>
             )}
 
-            {/* Admin approval actions */}
+            {/* Submit for approval — DRAFT or REJECTED */}
+            {["DRAFT", "REJECTED"].includes(post.status) && (
+              <Button
+                size="sm"
+                className="h-7 text-xs nb-btn bg-purple-600 text-white hover:bg-purple-700"
+                onClick={onSubmit}
+                disabled={actionLoading}
+              >
+                <Send className="w-3 h-3 mr-1" /> Submit
+              </Button>
+            )}
+
+            {/* Admin approval actions — PENDING */}
             {isAdmin && post.status === "PENDING_APPROVAL" && (
               <>
                 <Button
                   size="sm"
-                  className="h-7 text-xs bg-green-600 hover:bg-green-700 text-white"
+                  className="h-7 text-xs nb-btn bg-[#00C48C] text-black hover:bg-[#00C48C]/90"
                   onClick={onApprove}
                   disabled={actionLoading}
                 >
@@ -784,7 +794,7 @@ function PostCard({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                  className="h-7 text-xs nb-btn text-red-600 border-red-300 hover:bg-red-50"
                   onClick={onReject}
                   disabled={actionLoading}
                 >
@@ -793,11 +803,11 @@ function PostCard({
               </>
             )}
 
-            {/* Admin: publish now for SCHEDULED or FAILED */}
-            {isAdmin && ["SCHEDULED", "FAILED"].includes(post.status) && (
+            {/* Admin: post now for SCHEDULED / FAILED */}
+            {isAdmin && ["SCHEDULED", "FAILED", "APPROVED"].includes(post.status) && (
               <Button
                 size="sm"
-                className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                className="h-7 text-xs nb-btn bg-[#024BAB] text-white hover:bg-[#024BAB]/90"
                 onClick={onPublishNow}
                 disabled={actionLoading}
               >
@@ -810,7 +820,7 @@ function PostCard({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
+                className="h-7 w-7 p-0 text-red-500 hover:bg-red-50 border-2 border-transparent hover:border-red-300"
                 onClick={onDelete}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -911,20 +921,20 @@ function PostWizard({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+          <DialogTitle className="flex items-center gap-2 font-display">
+            <div className="w-6 h-6 bg-purple-600 border-2 border-black flex items-center justify-center shrink-0">
               <Instagram className="w-3.5 h-3.5 text-white" />
             </div>
             {editingPost ? "Edit Post" : "New Post"}
-            <span className="ml-auto text-xs font-normal text-muted-foreground">
-              Step {step} of 3
+            <span className="ml-auto text-xs font-bold text-muted-foreground border-2 border-black px-2 py-0.5">
+              Step {step} / 3
             </span>
           </DialogTitle>
           <div className="flex gap-1 mt-2">
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`h-1 flex-1 rounded-full ${s <= step ? "bg-purple-500" : "bg-muted"}`}
+                className={`h-2 flex-1 border border-black ${s <= step ? "bg-purple-600" : "bg-muted"}`}
               />
             ))}
           </div>
