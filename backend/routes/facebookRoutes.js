@@ -17,6 +17,8 @@ const FB_SCOPES = [
   "leads_retrieval",
   "pages_manage_metadata",
   "business_management",
+  "ads_read",
+  "ads_management",
 ].join(",");
 
 async function fbGet(path, token, params = {}) {
@@ -786,7 +788,14 @@ router.get(
       });
       adAccounts = acData.data || [];
     } catch (err) {
-      return res.status(400).json({ success: false, message: err.message });
+      const needsReconnect = err.message?.includes("#100") || err.message?.includes("Unsupported") || err.message?.includes("permission");
+      return res.status(needsReconnect ? 403 : 400).json({
+        success: false,
+        message: needsReconnect
+          ? "Ads permission missing. Please reconnect Facebook from Integrations → Facebook → Disconnect & reconnect to grant Ads access."
+          : err.message,
+        code: needsReconnect ? "ADS_PERMISSION_MISSING" : "API_ERROR",
+      });
     }
 
     // Fetch campaigns for every active ad account
