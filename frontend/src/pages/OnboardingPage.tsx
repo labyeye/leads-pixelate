@@ -154,7 +154,10 @@ export default function OnboardingPage() {
               billingCycle: billing,
             });
             await refreshTenant();
-            navigate(`/payment-success?plan=${selectedPlan}&billing=${billing}`, { replace: true });
+            navigate(
+              `/payment-success?plan=${selectedPlan}&billing=${billing}`,
+              { replace: true },
+            );
           } catch (err: any) {
             toast({
               title: "Payment verification failed",

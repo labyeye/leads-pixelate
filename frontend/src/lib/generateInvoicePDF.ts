@@ -178,7 +178,11 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       if (customLogo.startsWith("data:")) {
         // base64 data URL — detect format from MIME type
         const mime = customLogo.split(";")[0].split(":")[1] || "image/png";
-        const fmt = mime.includes("jpeg") ? "JPEG" : mime.includes("gif") ? "GIF" : "PNG";
+        const fmt = mime.includes("jpeg")
+          ? "JPEG"
+          : mime.includes("gif")
+            ? "GIF"
+            : "PNG";
         doc.addImage(customLogo, fmt, ML, HT, logoW, logoH);
       } else {
         // External URL — fetch and load
@@ -196,7 +200,9 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     }
   } catch (err) {
     // Silently fall back to default logo
-    try { doc.addImage(logo, "PNG", ML, HT, logoW, logoH); } catch {}
+    try {
+      doc.addImage(logo, "PNG", ML, HT, logoW, logoH);
+    } catch {}
   }
 
   const textX = ML + logoW + 20;

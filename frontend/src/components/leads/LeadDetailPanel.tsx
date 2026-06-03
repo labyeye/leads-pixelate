@@ -639,17 +639,19 @@ function WhatsAppSendDialog({
     if (!open) return;
     setLoadingInit(true);
 
-    Promise.all([
-      whatsappAPI.getTemplates(),
-      whatsappAPI.getStatus(),
-    ]).then(([tRes, sRes]) => {
-      setTemplates((tRes.data || []).filter((t: any) => t.status === "APPROVED"));
-      const nums = sRes.data?.phoneNumbers || [];
-      setPhoneNumbers(nums);
-      // Auto-select if only one
-      if (nums.length === 1) setSelectedPhoneNumberId(nums[0].phoneNumberId);
-      else setSelectedPhoneNumberId("");
-    }).catch(() => {}).finally(() => setLoadingInit(false));
+    Promise.all([whatsappAPI.getTemplates(), whatsappAPI.getStatus()])
+      .then(([tRes, sRes]) => {
+        setTemplates(
+          (tRes.data || []).filter((t: any) => t.status === "APPROVED"),
+        );
+        const nums = sRes.data?.phoneNumbers || [];
+        setPhoneNumbers(nums);
+        // Auto-select if only one
+        if (nums.length === 1) setSelectedPhoneNumberId(nums[0].phoneNumberId);
+        else setSelectedPhoneNumberId("");
+      })
+      .catch(() => {})
+      .finally(() => setLoadingInit(false));
   }, [open]);
 
   const needsPhonePick = phoneNumbers.length > 1;
@@ -664,15 +666,23 @@ function WhatsAppSendDialog({
     try {
       await whatsappAPI.sendMessage({
         leadId: lead._id,
-        ...(mode === "template" ? { templateId } : { messageType: "text", messageText }),
-        ...(selectedPhoneNumberId ? { phoneNumberId: selectedPhoneNumberId } : {}),
+        ...(mode === "template"
+          ? { templateId }
+          : { messageType: "text", messageText }),
+        ...(selectedPhoneNumberId
+          ? { phoneNumberId: selectedPhoneNumberId }
+          : {}),
       });
       toast({ title: "Message sent successfully" });
       setMessageText("");
       setTemplateId("");
       onClose();
     } catch (err: any) {
-      toast({ title: "Failed to send", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to send",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSending(false);
     }
@@ -691,18 +701,29 @@ function WhatsAppSendDialog({
         </DialogHeader>
 
         {loadingInit ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+          <div className="flex justify-center py-6">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
         ) : (
           <div className="space-y-4 py-1">
             <p className="text-xs text-muted-foreground">
-              Sending to: <span className="font-mono font-medium text-foreground">{lead.phone}</span>
+              Sending to:{" "}
+              <span className="font-mono font-medium text-foreground">
+                {lead.phone}
+              </span>
             </p>
 
             {/* Phone number selector — only if multiple numbers connected */}
             {needsPhonePick && (
               <div>
-                <Label className="text-xs">Send from which number? <span className="text-red-500">*</span></Label>
-                <Select value={selectedPhoneNumberId} onValueChange={setSelectedPhoneNumberId}>
+                <Label className="text-xs">
+                  Send from which number?{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={selectedPhoneNumberId}
+                  onValueChange={setSelectedPhoneNumberId}
+                >
                   <SelectTrigger className="mt-1 text-sm">
                     <SelectValue placeholder="Select a number..." />
                   </SelectTrigger>
@@ -710,9 +731,13 @@ function WhatsAppSendDialog({
                     {phoneNumbers.map((p: any) => (
                       <SelectItem key={p.phoneNumberId} value={p.phoneNumberId}>
                         <div className="flex flex-col">
-                          <span>{p.label || p.businessName || p.phoneNumber}</span>
+                          <span>
+                            {p.label || p.businessName || p.phoneNumber}
+                          </span>
                           {p.phoneNumber && p.label && (
-                            <span className="text-xs text-muted-foreground">{p.phoneNumber}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {p.phoneNumber}
+                            </span>
                           )}
                         </div>
                       </SelectItem>
@@ -749,7 +774,8 @@ function WhatsAppSendDialog({
                   className="mt-1 text-sm"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Free text only works within 24h of customer's last message. Use templates for new outreach.
+                  Free text only works within 24h of customer's last message.
+                  Use templates for new outreach.
                 </p>
               </div>
             ) : (
@@ -757,7 +783,8 @@ function WhatsAppSendDialog({
                 <Label className="text-xs">Select Template</Label>
                 {templates.length === 0 ? (
                   <p className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
-                    No approved templates. Go to Settings → WhatsApp → Templates to sync.
+                    No approved templates. Go to Settings → WhatsApp → Templates
+                    to sync.
                   </p>
                 ) : (
                   <Select value={templateId} onValueChange={setTemplateId}>
@@ -786,14 +813,25 @@ function WhatsAppSendDialog({
         )}
 
         <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             size="sm"
             onClick={handleSend}
-            disabled={sending || loadingInit || !canSend || (mode === "text" ? !messageText.trim() : !templateId)}
+            disabled={
+              sending ||
+              loadingInit ||
+              !canSend ||
+              (mode === "text" ? !messageText.trim() : !templateId)
+            }
             className="bg-green-600 hover:bg-green-700 text-white gap-1"
           >
-            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {sending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
             Send
           </Button>
         </DialogFooter>

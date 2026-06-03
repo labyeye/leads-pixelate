@@ -16,6 +16,7 @@ Powered By NestLeads | {{COMPANY_NAME}}
 Jahan `{{COMPANY_NAME}}` automatically aayega **Settings → Company Name** se.
 
 **Example:**
+
 - Agar Settings mein Company Name hai `Sharma Enterprises` toh footer banega:
   `Powered By NestLeads | Sharma Enterprises`
 - Agar `Pixelate Nest` hai toh:
@@ -41,14 +42,15 @@ Jahan `{{COMPANY_NAME}}` automatically aayega **Settings → Company Name** se.
 
 ## Variable Convention
 
-| Variable | Matlab | Lead Field |
-|---|---|---|
-| `{{1}}` | Lead ka naam | Name |
-| `{{2}}` | Company naam | Company |
-| `{{3}}` | Product / Requirement | Requirement |
-| `{{4}}` | Amount / Date (context pe depend) | Budget / Date |
+| Variable | Matlab                            | Lead Field    |
+| -------- | --------------------------------- | ------------- |
+| `{{1}}`  | Lead ka naam                      | Name          |
+| `{{2}}`  | Company naam                      | Company       |
+| `{{3}}`  | Product / Requirement             | Requirement   |
+| `{{4}}`  | Amount / Date (context pe depend) | Budget / Date |
 
 ---
+
 ---
 
 ## TEMPLATE 1 — Pehli Baar Contact (New Lead Welcome)
@@ -96,6 +98,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 2 — Call Nahi Uthaya
@@ -148,6 +151,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 3 — Discussion Started
@@ -199,6 +203,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 4 — Quotation Ready (With PDF)
@@ -257,6 +262,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 5 — Visit Scheduled
@@ -311,6 +317,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 6 — Post Visit Follow-up
@@ -363,6 +370,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 7 — Deal Won / Order Confirmed
@@ -420,6 +428,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 8 — Re-engagement (Cold / Inactive Lead)
@@ -471,6 +480,7 @@ Powered By NestLeads | Sharma Enterprises
 ```
 
 ---
+
 ---
 
 ## TEMPLATE 9 — Follow-up Date Reminder
@@ -525,17 +535,17 @@ Powered By NestLeads | Sharma Enterprises
 
 ## Quick Reference Table
 
-| Lead Status | Template to Use |
-|---|---|
-| `PENDING CONTACT` | `welcome_new_lead` |
-| `1` / `2` / `3` (call missed) | `call_missed_followup` |
-| `DISCUSSION` / `DISCUSSION 1–3` | `discussion_followup` |
-| `QUOTATION` / `QUOTATION 1–3` | `quotation_ready` |
-| `VISIT SCHEDULED` | `visit_scheduled_confirm` |
-| `VISITED` | `post_visit_followup` |
-| `WON` | `deal_won_welcome` |
-| `COLD` tag / long inactive | `re_engage_cold_lead` |
-| Any follow-up date | `followup_reminder_lead` |
+| Lead Status                     | Template to Use           |
+| ------------------------------- | ------------------------- |
+| `PENDING CONTACT`               | `welcome_new_lead`        |
+| `1` / `2` / `3` (call missed)   | `call_missed_followup`    |
+| `DISCUSSION` / `DISCUSSION 1–3` | `discussion_followup`     |
+| `QUOTATION` / `QUOTATION 1–3`   | `quotation_ready`         |
+| `VISIT SCHEDULED`               | `visit_scheduled_confirm` |
+| `VISITED`                       | `post_visit_followup`     |
+| `WON`                           | `deal_won_welcome`        |
+| `COLD` tag / long inactive      | `re_engage_cold_lead`     |
+| Any follow-up date              | `followup_reminder_lead`  |
 
 ---
 
@@ -545,11 +555,13 @@ Meta template mein footer **ek baar hardcode** karna hoga apni company ka naam.
 Kyunki Meta templates approve ho jaate hain aur footer dynamic nahi hoti WhatsApp mein.
 
 **Ye karo:**
+
 1. NestLeads → **Settings** → Company Name mein apna naam daalo
 2. Meta template mein footer likhte time wahi naam use karo:
    `Powered By NestLeads | Tumhari Company Ka Naam`
 
 **Example:**
+
 - Ek client ka naam hai `Pixelate Nest` → footer: `Powered By NestLeads | Pixelate Nest`
 - Doosre client ka naam hai `Sharma Traders` → footer: `Powered By NestLeads | Sharma Traders`
 
@@ -559,16 +571,16 @@ Har client apna alag template banayega — footer mein unka apna naam hoga.
 
 ## Meta Template Rules (Important)
 
-| Rule | Detail |
-|---|---|
+| Rule          | Detail                                                      |
+| ------------- | ----------------------------------------------------------- |
 | Template name | Sirf lowercase, numbers, underscore — `welcome_new_lead` ✅ |
-| Variables | `{{1}}`, `{{2}}` format — koi aur format nahi |
-| Footer | Optional but recommended |
-| Edit | Approved template edit nahi hoti — naya banana padta hai |
-| Category | UTILITY = fast approval, MARKETING = slow approval |
-| Free text | Sirf 24 ghante ke andar customer ka reply aane ke baad |
-| New outreach | Hamesha approved template se — free text nahi chalega |
+| Variables     | `{{1}}`, `{{2}}` format — koi aur format nahi               |
+| Footer        | Optional but recommended                                    |
+| Edit          | Approved template edit nahi hoti — naya banana padta hai    |
+| Category      | UTILITY = fast approval, MARKETING = slow approval          |
+| Free text     | Sirf 24 ghante ke andar customer ka reply aane ke baad      |
+| New outreach  | Hamesha approved template se — free text nahi chalega       |
 
 ---
 
-*Last updated: May 2026 | NestLeads CRM by Pixelate Nest*
+_Last updated: May 2026 | NestLeads CRM by Pixelate Nest_

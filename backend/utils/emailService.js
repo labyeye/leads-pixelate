@@ -15,20 +15,68 @@ function createTransport() {
 // ── Number to words (Indian format) ──────────────────────────────────────────
 
 const ONES = [
-  "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
-  "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
-  "Seventeen", "Eighteen", "Nineteen",
+  "",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
 ];
-const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+const TENS = [
+  "",
+  "",
+  "Twenty",
+  "Thirty",
+  "Forty",
+  "Fifty",
+  "Sixty",
+  "Seventy",
+  "Eighty",
+  "Ninety",
+];
 
 function _toWords(n) {
   if (n === 0) return "";
-  if (n < 20)  return ONES[n];
-  if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? " " + ONES[n % 10] : "");
-  if (n < 1000)       return ONES[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " " + _toWords(n % 100) : "");
-  if (n < 100000)     return _toWords(Math.floor(n / 1000)) + " Thousand" + (n % 1000 ? " " + _toWords(n % 1000) : "");
-  if (n < 10000000)   return _toWords(Math.floor(n / 100000)) + " Lakh" + (n % 100000 ? " " + _toWords(n % 100000) : "");
-  return _toWords(Math.floor(n / 10000000)) + " Crore" + (n % 10000000 ? " " + _toWords(n % 10000000) : "");
+  if (n < 20) return ONES[n];
+  if (n < 100)
+    return TENS[Math.floor(n / 10)] + (n % 10 ? " " + ONES[n % 10] : "");
+  if (n < 1000)
+    return (
+      ONES[Math.floor(n / 100)] +
+      " Hundred" +
+      (n % 100 ? " " + _toWords(n % 100) : "")
+    );
+  if (n < 100000)
+    return (
+      _toWords(Math.floor(n / 1000)) +
+      " Thousand" +
+      (n % 1000 ? " " + _toWords(n % 1000) : "")
+    );
+  if (n < 10000000)
+    return (
+      _toWords(Math.floor(n / 100000)) +
+      " Lakh" +
+      (n % 100000 ? " " + _toWords(n % 100000) : "")
+    );
+  return (
+    _toWords(Math.floor(n / 10000000)) +
+    " Crore" +
+    (n % 10000000 ? " " + _toWords(n % 10000000) : "")
+  );
 }
 
 function numberToWords(amount) {
@@ -43,14 +91,40 @@ function fmt(n) {
 }
 
 function getPlanLabel(plan) {
-  return { starter: "Starter", growth: "Growth", enterprise: "Enterprise" }[plan] || plan;
+  return (
+    { starter: "Starter", growth: "Growth", enterprise: "Enterprise" }[plan] ||
+    plan
+  );
 }
 
 function getPlanFeatures(plan) {
   const map = {
-    starter:    ["500 leads per month", "2 team members", "IndiaMART integration", "Follow-up reminders", "Email support"],
-    growth:     ["5,000 leads per month", "10 team members", "IndiaMART + Facebook Lead Ads", "Visit calendar & scheduling", "Advanced follow-up workflows", "Priority support", "CSV export"],
-    enterprise: ["Unlimited leads", "Unlimited team members", "All integrations", "Custom workflows", "Dedicated account manager", "SLA guarantee", "Custom reporting", "API access"],
+    starter: [
+      "500 leads per month",
+      "2 team members",
+      "IndiaMART integration",
+      "Follow-up reminders",
+      "Email support",
+    ],
+    growth: [
+      "5,000 leads per month",
+      "10 team members",
+      "IndiaMART + Facebook Lead Ads",
+      "Visit calendar & scheduling",
+      "Advanced follow-up workflows",
+      "Priority support",
+      "CSV export",
+    ],
+    enterprise: [
+      "Unlimited leads",
+      "Unlimited team members",
+      "All integrations",
+      "Custom workflows",
+      "Dedicated account manager",
+      "SLA guarantee",
+      "Custom reporting",
+      "API access",
+    ],
   };
   return map[plan] || [];
 }
@@ -69,17 +143,23 @@ function buildInvoiceHtml({
   amountRupees,
   paymentId,
 }) {
-  const planLabel  = getPlanLabel(plan);
+  const planLabel = getPlanLabel(plan);
   const cycleLabel = billingCycle === "yearly" ? "Yearly" : "Monthly";
 
   // GST reverse-calculation (amount charged is GST-inclusive at 18% IGST)
-  const taxable  = parseFloat((amountRupees / 1.18).toFixed(2));
-  const igst     = parseFloat((amountRupees - taxable).toFixed(2));
-  const total    = amountRupees;
+  const taxable = parseFloat((amountRupees / 1.18).toFixed(2));
+  const igst = parseFloat((amountRupees - taxable).toFixed(2));
+  const total = amountRupees;
 
   const serviceDesc = `NESTLeads ${planLabel} Plan — ${cycleLabel} Subscription`;
 
-  const cell = (content, align = "left", bold = false, bg = "#fff", color = "#111827") =>
+  const cell = (
+    content,
+    align = "left",
+    bold = false,
+    bg = "#fff",
+    color = "#111827",
+  ) =>
     `<td style="padding:8px 10px;font-size:12px;text-align:${align};background:${bg};color:${color};${bold ? "font-weight:700;" : ""}border:1px solid #e5e7eb;">${content}</td>`;
 
   return `<!DOCTYPE html>
@@ -318,11 +398,20 @@ function buildInvoiceHtml({
 
 // ── Welcome email wrapper ─────────────────────────────────────────────────────
 
-function buildWelcomeHtml({ companyName, userName, plan, dashboardUrl, invoiceHtml }) {
-  const planLabel  = getPlanLabel(plan);
-  const features   = getPlanFeatures(plan);
+function buildWelcomeHtml({
+  companyName,
+  userName,
+  plan,
+  dashboardUrl,
+  invoiceHtml,
+}) {
+  const planLabel = getPlanLabel(plan);
+  const features = getPlanFeatures(plan);
   const featureRows = features
-    .map((f) => `<tr><td style="padding:5px 0;font-size:13px;color:#374151;"><span style="display:inline-block;width:18px;height:18px;background:#024BAB;border-radius:50%;text-align:center;line-height:18px;font-size:10px;color:#fff;margin-right:8px;vertical-align:middle;">&#10003;</span>${f}</td></tr>`)
+    .map(
+      (f) =>
+        `<tr><td style="padding:5px 0;font-size:13px;color:#374151;"><span style="display:inline-block;width:18px;height:18px;background:#024BAB;border-radius:50%;text-align:center;line-height:18px;font-size:10px;color:#fff;margin-right:8px;vertical-align:middle;">&#10003;</span>${f}</td></tr>`,
+    )
     .join("");
 
   return `<!DOCTYPE html>
@@ -390,18 +479,28 @@ function buildWelcomeHtml({ companyName, userName, plan, dashboardUrl, invoiceHt
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-async function sendWelcomeEmail({ to, companyName, userName, plan, billingCycle, amountRupees, paymentId, invoiceNumber }) {
+async function sendWelcomeEmail({
+  to,
+  companyName,
+  userName,
+  plan,
+  billingCycle,
+  amountRupees,
+  paymentId,
+  invoiceNumber,
+}) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.warn("Email not configured — skipping welcome email.");
     return;
   }
 
-  const transporter  = createTransport();
-  const dashboardUrl = process.env.CLIENT_URL || "https://leads.pixelatenest.com";
-  const now          = new Date();
-  const dateOpts     = { day: "2-digit", month: "long", year: "numeric" };
-  const invoiceDate  = now.toLocaleDateString("en-IN", dateOpts);
-  const dueDate      = invoiceDate;
+  const transporter = createTransport();
+  const dashboardUrl =
+    process.env.CLIENT_URL || "https://leads.pixelatenest.com";
+  const now = new Date();
+  const dateOpts = { day: "2-digit", month: "long", year: "numeric" };
+  const invoiceDate = now.toLocaleDateString("en-IN", dateOpts);
+  const dueDate = invoiceDate;
 
   const invoiceHtml = buildInvoiceHtml({
     invoiceNumber,
@@ -416,7 +515,13 @@ async function sendWelcomeEmail({ to, companyName, userName, plan, billingCycle,
     paymentId,
   });
 
-  const fullHtml = buildWelcomeHtml({ companyName, userName, plan, dashboardUrl, invoiceHtml });
+  const fullHtml = buildWelcomeHtml({
+    companyName,
+    userName,
+    plan,
+    dashboardUrl,
+    invoiceHtml,
+  });
 
   await transporter.sendMail({
     from: `"NESTLeads" <${process.env.SMTP_USER}>`,

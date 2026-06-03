@@ -161,7 +161,8 @@ export default function UsersPage() {
   };
 
   const handleDeleteClick = async (id: string) => {
-    if (!window.confirm("Permanently delete this user? This cannot be undone.")) return;
+    if (!window.confirm("Permanently delete this user? This cannot be undone."))
+      return;
     try {
       const res = await usersAPI.delete(id);
       if (res.success) {

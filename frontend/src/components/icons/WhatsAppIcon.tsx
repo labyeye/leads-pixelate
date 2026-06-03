@@ -7,7 +7,10 @@ interface WhatsAppIconProps {
   colored?: boolean; // true = green brand color, false = inherit current color
 }
 
-export function WhatsAppIcon({ className, colored = false }: WhatsAppIconProps) {
+export function WhatsAppIcon({
+  className,
+  colored = false,
+}: WhatsAppIconProps) {
   return (
     <FontAwesomeIcon
       icon={faWhatsapp}
@@ -19,10 +22,5 @@ export function WhatsAppIcon({ className, colored = false }: WhatsAppIconProps) 
 // Wrapper that matches the LucideIcon interface (className only)
 // Used in navigation config
 export function WhatsAppNavIcon({ className }: { className?: string }) {
-  return (
-    <FontAwesomeIcon
-      icon={faWhatsapp}
-      className={className}
-    />
-  );
+  return <FontAwesomeIcon icon={faWhatsapp} className={className} />;
 }

@@ -152,13 +152,17 @@ const leadSchema = new mongoose.Schema(
   },
 );
 
-leadSchema.index({ name: "text", company: "text", email: "text" });
-leadSchema.index({ status: 1 });
-leadSchema.index({ assignedTo: 1 });
-leadSchema.index({ source: 1 });
-leadSchema.index({ createdAt: -1 });
+leadSchema.index({
+  name: "text",
+  company: "text",
+  email: "text",
+  phone: "text",
+});
+leadSchema.index({ tenantId: 1, createdAt: -1 }); // primary list: tenant + newest first
+leadSchema.index({ tenantId: 1, status: 1, createdAt: -1 }); // category tab queries
+leadSchema.index({ tenantId: 1, source: 1 });
+leadSchema.index({ tenantId: 1, assignedTo: 1 });
 leadSchema.index({ indiamartQueryId: 1 }, { sparse: true, unique: true });
 leadSchema.index({ facebookLeadgenId: 1 }, { sparse: true, unique: true });
-leadSchema.index({ tenantId: 1 });
 
 module.exports = mongoose.model("Lead", leadSchema);

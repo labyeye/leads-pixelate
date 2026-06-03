@@ -198,11 +198,18 @@ async function getRoundRobinAssigneeId(tenantId = null) {
   });
 
   if (targets.length === 0) {
-    targets = await User.find({ ...tenantFilter, role: "sales_executive", status: "active" });
+    targets = await User.find({
+      ...tenantFilter,
+      role: "sales_executive",
+      status: "active",
+    });
   }
 
   if (targets.length === 0) {
-    targets = await User.find({ ...tenantFilter, role: { $in: ["super_admin", "admin"] } });
+    targets = await User.find({
+      ...tenantFilter,
+      role: { $in: ["super_admin", "admin"] },
+    });
   }
 
   if (targets.length === 0 && tenantId) {

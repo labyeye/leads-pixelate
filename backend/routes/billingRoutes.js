@@ -363,9 +363,7 @@ router.post(
     const razorpay = getRazorpayInstance();
     const basePrice = PLAN_PRICES_MONTHLY[plan]; // already in paise
     const amountPaise =
-      billingCycle === "yearly"
-        ? Math.round(basePrice * 12 * 0.8)
-        : basePrice;
+      billingCycle === "yearly" ? Math.round(basePrice * 12 * 0.8) : basePrice;
 
     const tenant = await Tenant.findById(req.user.tenantId);
     const customerName = tenant?.name || req.user.name || "Customer";

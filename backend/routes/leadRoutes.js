@@ -59,13 +59,11 @@ router.post(
   "/tradeindia/sync",
   authorize("super_admin", "admin"),
   (req, res) => {
-    res
-      .status(400)
-      .json({
-        success: false,
-        message:
-          "TradeIndia integration is not configured yet. Please contact support to set up the API key.",
-      });
+    res.status(400).json({
+      success: false,
+      message:
+        "TradeIndia integration is not configured yet. Please contact support to set up the API key.",
+    });
   },
 );
 
@@ -85,13 +83,11 @@ router.get(
   },
 );
 router.post("/justdial/sync", authorize("super_admin", "admin"), (req, res) => {
-  res
-    .status(400)
-    .json({
-      success: false,
-      message:
-        "Justdial integration is not configured yet. Please contact support to set up the API key.",
-    });
+  res.status(400).json({
+    success: false,
+    message:
+      "Justdial integration is not configured yet. Please contact support to set up the API key.",
+  });
 });
 
 router.route("/").get(getLeads).post(createLead);

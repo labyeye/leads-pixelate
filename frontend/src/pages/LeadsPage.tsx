@@ -96,6 +96,9 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [olderCursor, setOlderCursor] = useState<Date | null>(null); // start of oldest loaded batch
+  const [hasOlderLeads, setHasOlderLeads] = useState(false);
   const { toast } = useToast();
 
   const [syncing, setSyncing] = useState(false);
@@ -163,6 +166,9 @@ export default function LeadsPage() {
   });
 
   useEffect(() => {
+    setLeads([]);
+    setOlderCursor(null);
+    setHasOlderLeads(false);
     fetchLeads();
   }, [startDate, endDate]);
 
@@ -232,15 +238,51 @@ export default function LeadsPage() {
     }
   };
 
+  const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
       const params: any = {};
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
 
-      const res = await leadsAPI.getAll(params);
-      setLeads(res.data || []);
+      if (startDate || endDate) {
+        // User has set an explicit date filter — respect it fully
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        const res = await leadsAPI.getAll(params);
+        setLeads(res.data || []);
+        setHasOlderLeads(false);
+        setOlderCursor(null);
+      } else {
+        // Progressive mode: load today first
+        const today = new Date();
+        params.startDate = toDateStr(today);
+        const res = await leadsAPI.getAll(params);
+        setLeads(res.data || []);
+
+        // Auto-load yesterday right after today (background)
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        setOlderCursor(yesterday);
+        setHasOlderLeads(true);
+
+        // Fetch yesterday silently and append
+        try {
+          const res2 = await leadsAPI.getAll({
+            startDate: toDateStr(yesterday),
+            endDate: toDateStr(yesterday),
+          });
+          if (res2.data?.length) {
+            setLeads((prev) => [...prev, ...res2.data]);
+          }
+          // Mark cursor as day-before-yesterday for subsequent "load older"
+          const dayBefore = new Date(yesterday);
+          dayBefore.setDate(dayBefore.getDate() - 1);
+          setOlderCursor(dayBefore);
+        } catch {
+          // silent — today's leads are already shown
+        }
+      }
     } catch (error: any) {
       toast({
         title: "Error fetching leads",
@@ -249,6 +291,40 @@ export default function LeadsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOlderLeads = async () => {
+    if (!olderCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      // Load one week at a time going backward
+      const batchEnd = new Date(olderCursor);
+      const batchStart = new Date(olderCursor);
+      batchStart.setDate(batchStart.getDate() - 6);
+
+      const res = await leadsAPI.getAll({
+        startDate: toDateStr(batchStart),
+        endDate: toDateStr(batchEnd),
+      });
+
+      if (res.data?.length) {
+        setLeads((prev) => [...prev, ...res.data]);
+        const nextCursor = new Date(batchStart);
+        nextCursor.setDate(nextCursor.getDate() - 1);
+        setOlderCursor(nextCursor);
+        setHasOlderLeads(true);
+      } else {
+        setHasOlderLeads(false);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error loading older leads",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -1216,7 +1292,10 @@ export default function LeadsPage() {
             {Object.keys(categories).map((cat) => (
               <button
                 key={cat}
-                onClick={() => { setActiveCategory(cat); setSelectedLeadId(null); }}
+                onClick={() => {
+                  setActiveCategory(cat);
+                  setSelectedLeadId(null);
+                }}
                 className={cn(
                   "px-4 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 border-r-2 border-black last:border-r-0",
                   activeCategory === cat
@@ -1225,10 +1304,14 @@ export default function LeadsPage() {
                 )}
               >
                 {cat}
-                <span className={cn(
-                  "text-[10px] font-black px-1.5 py-0.5 border border-black min-w-[20px] text-center",
-                  activeCategory === cat ? "bg-[#FFDE00] text-black" : "bg-black text-white",
-                )}>
+                <span
+                  className={cn(
+                    "text-[10px] font-black px-1.5 py-0.5 border border-black min-w-[20px] text-center",
+                    activeCategory === cat
+                      ? "bg-[#FFDE00] text-black"
+                      : "bg-black text-white",
+                  )}
+                >
                   {leads.filter((l) => matchesCategory(l, cat)).length}
                 </span>
               </button>
@@ -1242,17 +1325,24 @@ export default function LeadsPage() {
               title="Table view"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black transition-colors",
-                viewMode === "table" ? "bg-[#024BAB] text-white" : "bg-white text-black hover:bg-[#FFDE00]",
+                viewMode === "table"
+                  ? "bg-[#024BAB] text-white"
+                  : "bg-white text-black hover:bg-[#FFDE00]",
               )}
             >
               <List className="w-3.5 h-3.5" /> Table
             </button>
             <button
-              onClick={() => { setViewMode("kanban"); setSelectedLeadId(null); }}
+              onClick={() => {
+                setViewMode("kanban");
+                setSelectedLeadId(null);
+              }}
               title="Kanban view"
               className={cn(
                 "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors",
-                viewMode === "kanban" ? "bg-[#024BAB] text-white" : "bg-white text-black hover:bg-[#FFDE00]",
+                viewMode === "kanban"
+                  ? "bg-[#024BAB] text-white"
+                  : "bg-white text-black hover:bg-[#FFDE00]",
               )}
             >
               <LayoutGrid className="w-3.5 h-3.5" /> Kanban
@@ -1375,422 +1465,527 @@ export default function LeadsPage() {
           <div className="flex gap-4 min-w-max">
             {Object.entries({
               "New Lead": { bg: "bg-white", accent: "bg-primary" },
-              "Discussion/Requirement": { bg: "bg-white", accent: "bg-primary" },
-              "Quotation": { bg: "bg-white", accent: "bg-primary" },
+              "Discussion/Requirement": {
+                bg: "bg-white",
+                accent: "bg-primary",
+              },
+              Quotation: { bg: "bg-white", accent: "bg-primary" },
               "Visit Scheduled": { bg: "bg-white", accent: "bg-primary" },
-              "Visited": { bg: "bg-white", accent: "bg-primary" },
-              "Client": { bg: "bg-green-50", accent: "bg-green-600" },
-              "Dropped": { bg: "bg-red-50", accent: "bg-red-600" },
-            } as Record<string, { bg: string; accent: string }>).map(([cat, style]) => {
-              const colLeads = filtered.filter((l) => matchesCategory(l, cat));
-              return (
-                <div key={cat} className="w-72 shrink-0 border-2 border-black shadow-[4px_4px_0px_#000]">
-                  {/* Column header */}
-                  <div className={cn("flex items-center justify-between px-3 py-2.5 border-b-2 border-black", style.accent)}>
-                    <span className="text-xs font-black uppercase tracking-widest text-white">{cat}</span>
-                    <span className="text-[10px] font-black bg-white text-black px-1.5 py-0.5 border border-black min-w-[20px] text-center">
-                      {colLeads.length}
-                    </span>
-                  </div>
+              Visited: { bg: "bg-white", accent: "bg-primary" },
+              Client: { bg: "bg-green-50", accent: "bg-green-600" },
+              Dropped: { bg: "bg-red-50", accent: "bg-red-600" },
+            } as Record<string, { bg: string; accent: string }>).map(
+              ([cat, style]) => {
+                const colLeads = filtered.filter((l) =>
+                  matchesCategory(l, cat),
+                );
+                return (
+                  <div
+                    key={cat}
+                    className="w-72 shrink-0 border-2 border-black shadow-[4px_4px_0px_#000]"
+                  >
+                    {/* Column header */}
+                    <div
+                      className={cn(
+                        "flex items-center justify-between px-3 py-2.5 border-b-2 border-black",
+                        style.accent,
+                      )}
+                    >
+                      <span className="text-xs font-black uppercase tracking-widest text-white">
+                        {cat}
+                      </span>
+                      <span className="text-[10px] font-black bg-white text-black px-1.5 py-0.5 border border-black min-w-[20px] text-center">
+                        {colLeads.length}
+                      </span>
+                    </div>
 
-                  {/* Cards */}
-                  <div className={cn("p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto", style.bg)}>
-                    {loading ? (
-                      <div className="flex justify-center pt-8">
-                        <Loader2 className="w-5 h-5 animate-spin text-[#024BAB]" />
-                      </div>
-                    ) : colLeads.length === 0 ? (
-                      <div className="text-center pt-10 text-[10px] font-black uppercase tracking-widest text-black/30">
-                        No leads
-                      </div>
-                    ) : colLeads.map((l) => (
-                      <div
-                        key={l._id || l.id}
-                        onClick={() => { setSelectedLeadId(l._id || l.id); setViewMode("table"); setActiveCategory(cat); }}
-                        className={cn(
-                          "bg-white border-2 border-black p-3 cursor-pointer transition-all hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5",
-                          selectedLeadId === (l._id || l.id) && "ring-2 ring-[#024BAB]",
-                        )}
-                      >
-                        {/* Score badge */}
-                        {l.contactTag && (
-                          <div className="flex justify-end mb-1.5">
-                            <span className={cn(
-                              "inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
-                              l.contactTag === "HOT" && "bg-red-500 text-white",
-                              l.contactTag === "WARM" && "bg-[#FFDE00] text-black",
-                              l.contactTag === "COLD" && "bg-[#024BAB] text-white",
-                            )}>
-                              {l.contactTag === "HOT" && <Flame className="w-2.5 h-2.5" />}
-                              {l.contactTag === "WARM" && <Thermometer className="w-2.5 h-2.5" />}
-                              {l.contactTag === "COLD" && <Snowflake className="w-2.5 h-2.5" />}
-                              {l.contactTag}
-                            </span>
-                          </div>
-                        )}
-                        <p className="font-black text-black text-sm leading-tight">{l.name}</p>
-                        <p className="text-[10px] text-black/60 font-medium mt-0.5 truncate">{l.company}</p>
-                        {l.phone && <p className="text-[10px] text-black/50 mt-1">{l.phone}</p>}
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
-                          <span className={cn(
-                            "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase tracking-wider",
-                            sourceColors[l.source] || "bg-gray-100 text-black",
-                          )}>
-                            {l.source || "Manual"}
-                          </span>
-                          <span className={cn(
-                            "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
-                            statusColors[l.status] || "bg-gray-100 text-black border-transparent",
-                          )}>
-                            {l.status || "—"}
-                          </span>
+                    {/* Cards */}
+                    <div
+                      className={cn(
+                        "p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto",
+                        style.bg,
+                      )}
+                    >
+                      {loading ? (
+                        <div className="flex justify-center pt-8">
+                          <Loader2 className="w-5 h-5 animate-spin text-[#024BAB]" />
                         </div>
-                        {l.assignedTo?.name && (
-                          <p className="text-[9px] text-black/40 font-bold mt-1.5 truncate">
-                            → {l.assignedTo.name}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      ) : colLeads.length === 0 ? (
+                        <div className="text-center pt-10 text-[10px] font-black uppercase tracking-widest text-black/30">
+                          No leads
+                        </div>
+                      ) : (
+                        colLeads.map((l) => (
+                          <div
+                            key={l._id || l.id}
+                            onClick={() => {
+                              setSelectedLeadId(l._id || l.id);
+                              setViewMode("table");
+                              setActiveCategory(cat);
+                            }}
+                            className={cn(
+                              "bg-white border-2 border-black p-3 cursor-pointer transition-all hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5",
+                              selectedLeadId === (l._id || l.id) &&
+                                "ring-2 ring-[#024BAB]",
+                            )}
+                          >
+                            {/* Score badge */}
+                            {l.contactTag && (
+                              <div className="flex justify-end mb-1.5">
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
+                                    l.contactTag === "HOT" &&
+                                      "bg-red-500 text-white",
+                                    l.contactTag === "WARM" &&
+                                      "bg-[#FFDE00] text-black",
+                                    l.contactTag === "COLD" &&
+                                      "bg-[#024BAB] text-white",
+                                  )}
+                                >
+                                  {l.contactTag === "HOT" && (
+                                    <Flame className="w-2.5 h-2.5" />
+                                  )}
+                                  {l.contactTag === "WARM" && (
+                                    <Thermometer className="w-2.5 h-2.5" />
+                                  )}
+                                  {l.contactTag === "COLD" && (
+                                    <Snowflake className="w-2.5 h-2.5" />
+                                  )}
+                                  {l.contactTag}
+                                </span>
+                              </div>
+                            )}
+                            <p className="font-black text-black text-sm leading-tight">
+                              {l.name}
+                            </p>
+                            <p className="text-[10px] text-black/60 font-medium mt-0.5 truncate">
+                              {l.company}
+                            </p>
+                            {l.phone && (
+                              <p className="text-[10px] text-black/50 mt-1">
+                                {l.phone}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
+                              <span
+                                className={cn(
+                                  "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase tracking-wider",
+                                  sourceColors[l.source] ||
+                                    "bg-gray-100 text-black",
+                                )}
+                              >
+                                {l.source || "Manual"}
+                              </span>
+                              <span
+                                className={cn(
+                                  "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
+                                  statusColors[l.status] ||
+                                    "bg-gray-100 text-black border-transparent",
+                                )}
+                              >
+                                {l.status || "—"}
+                              </span>
+                            </div>
+                            {l.assignedTo?.name && (
+                              <p className="text-[9px] text-black/40 font-bold mt-1.5 truncate">
+                                → {l.assignedTo.name}
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              },
+            )}
           </div>
         </div>
       )}
 
       {/* ── Table view ── */}
       {viewMode === "table" && (
-      <div className="flex flex-col xl:flex-row gap-5 items-start">
-        {}
-        <div
-          className="flex-1 bg-white border-2 border-black shadow-[4px_4px_0px_#000] overflow-hidden animate-fade-in min-h-[500px]"
-          style={{ animationDelay: "100ms" }}
-        >
-          <div className="overflow-x-auto relative max-h-[calc(100vh-250px)]">
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-20">
-                <tr className="border-b-2 border-black bg-[#024BAB]">
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                    Name
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                    Score
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden md:table-cell group">
-                    <div className="flex items-center gap-1">
-                      Source
-                      {renderHeaderFilter(
-                        "source",
-                        [
-                          "IndiaMART",
-                          "Manual",
-                          "Website",
-                          "Walk-in",
-                          "Referral",
-                        ],
-                        sourceFilters,
-                        setSourceFilters,
-                      )}
-                    </div>
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                    Inquiry Date
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                    Phone
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                    City
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                    Campaign
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                    <div className="flex items-center gap-1">
-                      Budget
-                      {renderBudgetRangeFilter()}
-                    </div>
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                    <div className="flex items-center gap-1">
-                      Interested Product
-                      {renderHeaderFilter(
-                        "interestedProducts",
-                        getUniqueValues("interestedProducts"),
-                        productFilters,
-                        setProductFilters,
-                      )}
-                    </div>
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                    Remarks
-                  </th>
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                    <div className="flex items-center gap-1">
-                      Status
-                      {renderHeaderFilter(
-                        "status",
-                        Object.keys(statusColors),
-                        statusFilters,
-                        setStatusFilters,
-                      )}
-                    </div>
-                  </th>
-                  {currentUser?.role !== "sales_executive" && (
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                      Assigned
+        <div className="flex flex-col xl:flex-row gap-5 items-start">
+          {}
+          <div
+            className="flex-1 bg-white border-2 border-black shadow-[4px_4px_0px_#000] overflow-hidden animate-fade-in min-h-[500px]"
+            style={{ animationDelay: "100ms" }}
+          >
+            <div className="overflow-x-auto relative max-h-[calc(100vh-250px)]">
+              <table className="w-full text-sm border-collapse">
+                <thead className="sticky top-0 z-20">
+                  <tr className="border-b-2 border-black bg-[#024BAB]">
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      Name
                     </th>
-                  )}
-                  <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                    <div className="flex items-center gap-1">
-                      Follow-up
-                      {renderFollowUpDateFilter()}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={10} className="text-center py-10">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-black" />
-                      <p className="text-sm text-black mt-2">
-                        Loading leads...
-                      </p>
-                    </td>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      Score
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden md:table-cell group">
+                      <div className="flex items-center gap-1">
+                        Source
+                        {renderHeaderFilter(
+                          "source",
+                          [
+                            "IndiaMART",
+                            "Manual",
+                            "Website",
+                            "Walk-in",
+                            "Referral",
+                          ],
+                          sourceFilters,
+                          setSourceFilters,
+                        )}
+                      </div>
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
+                      Inquiry Date
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
+                      Phone
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
+                      City
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
+                      Campaign
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
+                      <div className="flex items-center gap-1">
+                        Budget
+                        {renderBudgetRangeFilter()}
+                      </div>
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
+                      <div className="flex items-center gap-1">
+                        Interested Product
+                        {renderHeaderFilter(
+                          "interestedProducts",
+                          getUniqueValues("interestedProducts"),
+                          productFilters,
+                          setProductFilters,
+                        )}
+                      </div>
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
+                      Remarks
+                    </th>
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <div className="flex items-center gap-1">
+                        Status
+                        {renderHeaderFilter(
+                          "status",
+                          Object.keys(statusColors),
+                          statusFilters,
+                          setStatusFilters,
+                        )}
+                      </div>
+                    </th>
+                    {currentUser?.role !== "sales_executive" && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
+                        Assigned
+                      </th>
+                    )}
+                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
+                      <div className="flex items-center gap-1">
+                        Follow-up
+                        {renderFollowUpDateFilter()}
+                      </div>
+                    </th>
                   </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="text-center py-10">
-                      <p className="text-sm text-black">
-                        No {activeCategory.toLowerCase()} leads found.
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  (() => {
-                    let lastGroupDate = "";
-                    return filtered.map((l, i) => {
-                      const groupDate = l.indiamartQueryTime
-                        ? format(new Date(l.indiamartQueryTime), "d MMMM yyyy")
-                        : format(new Date(l.createdAt), "d MMMM yyyy");
-                      const showHeader = groupDate !== lastGroupDate;
-                      lastGroupDate = groupDate;
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} className="text-center py-10">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-black" />
+                        <p className="text-sm text-black mt-2">
+                          Loading leads...
+                        </p>
+                      </td>
+                    </tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="text-center py-10">
+                        <p className="text-sm text-black">
+                          No {activeCategory.toLowerCase()} leads found.
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    (() => {
+                      let lastGroupDate = "";
+                      return filtered.map((l, i) => {
+                        const groupDate = l.indiamartQueryTime
+                          ? format(
+                              new Date(l.indiamartQueryTime),
+                              "d MMMM yyyy",
+                            )
+                          : format(new Date(l.createdAt), "d MMMM yyyy");
+                        const showHeader = groupDate !== lastGroupDate;
+                        lastGroupDate = groupDate;
 
-                      return (
-                        <Fragment key={l._id || l.id}>
-                          {showHeader && (
-                            <tr className="bg-muted/40 border-y border-border/50 shadow-sm animate-fade-in group">
-                              <td
-                                colSpan={10}
-                                className="px-5 py-2.5 text-xs font-bold text-black uppercase tracking-widest"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <CalendarIcon className="w-3.5 h-3.5 text-primary/70" />
-                                  {groupDate}
-                                  <span className="text-[10px] font-medium bg-muted px-1.5 py-0.5 rounded-full border border-border/50 text-black/60 invisible group-hover:visible ml-2 transition-all">
-                                    {
-                                      filtered.filter((le) => {
-                                        const d = le.indiamartQueryTime
-                                          ? format(
-                                              new Date(le.indiamartQueryTime),
-                                              "d MMMM yyyy",
-                                            )
-                                          : format(
-                                              new Date(le.createdAt),
-                                              "d MMMM yyyy",
-                                            );
-                                        return d === groupDate;
-                                      }).length
-                                    }{" "}
-                                    leads
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                          <tr
-                            key={l._id || l.id}
-                            className={cn(
-                              "border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer animate-fade-in",
-                              selectedLeadId === (l._id || l.id)
-                                ? "bg-muted/50"
-                                : "",
+                        return (
+                          <Fragment key={l._id || l.id}>
+                            {showHeader && (
+                              <tr className="bg-muted/40 border-y border-border/50 shadow-sm animate-fade-in group">
+                                <td
+                                  colSpan={10}
+                                  className="px-5 py-2.5 text-xs font-bold text-black uppercase tracking-widest"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <CalendarIcon className="w-3.5 h-3.5 text-primary/70" />
+                                    {groupDate}
+                                    <span className="text-[10px] font-medium bg-muted px-1.5 py-0.5 rounded-full border border-border/50 text-black/60 invisible group-hover:visible ml-2 transition-all">
+                                      {
+                                        filtered.filter((le) => {
+                                          const d = le.indiamartQueryTime
+                                            ? format(
+                                                new Date(le.indiamartQueryTime),
+                                                "d MMMM yyyy",
+                                              )
+                                            : format(
+                                                new Date(le.createdAt),
+                                                "d MMMM yyyy",
+                                              );
+                                          return d === groupDate;
+                                        }).length
+                                      }{" "}
+                                      leads
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
                             )}
-                            style={{ animationDelay: `${i * 30}ms` }}
-                            onClick={() => setSelectedLeadId(l._id || l.id)}
-                          >
-                            <td className="px-5 py-3.5">
-                              <p className="font-medium text-foreground">
-                                {l.name}
-                              </p>
-                              <p className="text-xs text-black">{l.company}</p>
-                            </td>
-                            <td className="px-5 py-3.5">
-                              {l.contactTag ? (
-                                <span className={cn(
-                                  "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
-                                  l.contactTag === "HOT" && "bg-red-500 text-white border-black",
-                                  l.contactTag === "WARM" && "bg-[#FFDE00] text-black border-black",
-                                  l.contactTag === "COLD" && "bg-[#024BAB] text-white border-black",
-                                )}>
-                                  {l.contactTag === "HOT" && <Flame className="w-3 h-3" />}
-                                  {l.contactTag === "WARM" && <Thermometer className="w-3 h-3" />}
-                                  {l.contactTag === "COLD" && <Snowflake className="w-3 h-3" />}
-                                  {l.contactTag}
-                                </span>
-                              ) : (
-                                <span className="text-black/20 text-xs">—</span>
+                            <tr
+                              key={l._id || l.id}
+                              className={cn(
+                                "border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer animate-fade-in",
+                                selectedLeadId === (l._id || l.id)
+                                  ? "bg-muted/50"
+                                  : "",
                               )}
-                            </td>
-                            <td className="px-5 py-3.5 hidden md:table-cell">
-                              <span
-                                className={cn(
-                                  "text-xs font-medium px-2 py-1 rounded-md text-nowrap",
-                                  sourceColors[l.source] ||
-                                    "bg-muted text-black",
+                              style={{ animationDelay: `${i * 30}ms` }}
+                              onClick={() => setSelectedLeadId(l._id || l.id)}
+                            >
+                              <td className="px-5 py-3.5">
+                                <p className="font-medium text-foreground">
+                                  {l.name}
+                                </p>
+                                <p className="text-xs text-black">
+                                  {l.company}
+                                </p>
+                              </td>
+                              <td className="px-5 py-3.5">
+                                {l.contactTag ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
+                                      l.contactTag === "HOT" &&
+                                        "bg-red-500 text-white border-black",
+                                      l.contactTag === "WARM" &&
+                                        "bg-[#FFDE00] text-black border-black",
+                                      l.contactTag === "COLD" &&
+                                        "bg-[#024BAB] text-white border-black",
+                                    )}
+                                  >
+                                    {l.contactTag === "HOT" && (
+                                      <Flame className="w-3 h-3" />
+                                    )}
+                                    {l.contactTag === "WARM" && (
+                                      <Thermometer className="w-3 h-3" />
+                                    )}
+                                    {l.contactTag === "COLD" && (
+                                      <Snowflake className="w-3 h-3" />
+                                    )}
+                                    {l.contactTag}
+                                  </span>
+                                ) : (
+                                  <span className="text-black/20 text-xs">
+                                    —
+                                  </span>
                                 )}
-                              >
-                                {l.source || "General"}
-                              </span>
-                            </td>
-                            <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
-                              {l.indiamartQueryTime
-                                ? format(
-                                    new Date(l.indiamartQueryTime),
-                                    "dd MMM, hh:mm a",
-                                  )
-                                : format(
-                                    new Date(l.createdAt),
-                                    "dd MMM, hh:mm a",
-                                  )}
-                            </td>
-                            <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
-                              {l.phone || "-"}
-                            </td>
-                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
-                              {l.location || "-"}
-                            </td>
-                            <td
-                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
-                              title={l.facebookAdName || "-"}
-                            >
-                              {l.facebookAdName ? (
-                                <span className="flex items-center gap-1">
-                                  <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
-                                  {l.facebookAdName}
-                                </span>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
-                              {l.budget || "-"}
-                            </td>
-                            <td
-                              className="px-5 py-3.5 hidden xl:table-cell text-black truncate max-w-[150px]"
-                              title={l.interestedProducts?.join(", ") || "-"}
-                            >
-                              {l.interestedProducts &&
-                              l.interestedProducts.length > 0
-                                ? l.interestedProducts.join(", ")
-                                : "-"}
-                            </td>
-                            <td
-                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
-                              title={l.remarks || "-"}
-                            >
-                              {l.remarks || "-"}
-                            </td>
-                            <td className="px-5 py-3.5">
-                              <div className="flex flex-col items-start gap-1">
+                              </td>
+                              <td className="px-5 py-3.5 hidden md:table-cell">
                                 <span
                                   className={cn(
-                                    "text-xs font-medium px-2.5 py-1 rounded-full border text-nowrap",
-                                    statusColors[l.status] ||
-                                      "bg-muted text-black border-transparent",
+                                    "text-xs font-medium px-2 py-1 rounded-md text-nowrap",
+                                    sourceColors[l.source] ||
+                                      "bg-muted text-black",
                                   )}
                                 >
-                                  {l.status || "ALL"}
+                                  {l.source || "General"}
                                 </span>
-                                {activeCategory === "Quotation" &&
-                                  !l.status?.includes("QUOTATION") &&
-                                  l.stagePath?.some((s: string) =>
-                                    s.includes("QUOTATION"),
-                                  ) && (
-                                    <span className="text-[9px] text-purple-600 font-bold whitespace-nowrap bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-0.5">
-                                      <Check className="w-2 h-2" /> Quotation
-                                      Sent
-                                    </span>
-                                  )}
-                              </div>
-                            </td>
-                            {currentUser?.role !== "sales_executive" && (
-                              <td
-                                className="px-5 py-3.5 hidden lg:table-cell"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Select
-                                  value={
-                                    typeof l.assignedTo === "object"
-                                      ? l.assignedTo?._id
-                                      : l.assignedTo || "unassigned"
-                                  }
-                                  onValueChange={(value) =>
-                                    handleUpdateAssignee(l._id || l.id, value)
-                                  }
-                                >
-                                  <SelectTrigger className="h-8 w-[140px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0 px-2">
-                                    <SelectValue placeholder="Unassigned" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="unassigned" disabled>
-                                      Unassigned
-                                    </SelectItem>
-                                    {allUsers.map((u) => (
-                                      <SelectItem key={u._id} value={u._id}>
-                                        {u.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
                               </td>
-                            )}
-                            <td className="px-5 py-3.5 hidden lg:table-cell text-black">
-                              {l.followUpDate
-                                ? new Date(l.followUpDate).toLocaleDateString(
-                                    "en-IN",
-                                    { day: "numeric", month: "short" },
-                                  )
-                                : "-"}
-                            </td>
-                          </tr>
-                        </Fragment>
-                      );
-                    });
-                  })()
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                              <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
+                                {l.indiamartQueryTime
+                                  ? format(
+                                      new Date(l.indiamartQueryTime),
+                                      "dd MMM, hh:mm a",
+                                    )
+                                  : format(
+                                      new Date(l.createdAt),
+                                      "dd MMM, hh:mm a",
+                                    )}
+                              </td>
+                              <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
+                                {l.phone || "-"}
+                              </td>
+                              <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
+                                {l.location || "-"}
+                              </td>
+                              <td
+                                className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
+                                title={l.facebookAdName || "-"}
+                              >
+                                {l.facebookAdName ? (
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
+                                    {l.facebookAdName}
+                                  </span>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                              <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
+                                {l.budget || "-"}
+                              </td>
+                              <td
+                                className="px-5 py-3.5 hidden xl:table-cell text-black truncate max-w-[150px]"
+                                title={l.interestedProducts?.join(", ") || "-"}
+                              >
+                                {l.interestedProducts &&
+                                l.interestedProducts.length > 0
+                                  ? l.interestedProducts.join(", ")
+                                  : "-"}
+                              </td>
+                              <td
+                                className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
+                                title={l.remarks || "-"}
+                              >
+                                {l.remarks || "-"}
+                              </td>
+                              <td className="px-5 py-3.5">
+                                <div className="flex flex-col items-start gap-1">
+                                  <span
+                                    className={cn(
+                                      "text-xs font-medium px-2.5 py-1 rounded-full border text-nowrap",
+                                      statusColors[l.status] ||
+                                        "bg-muted text-black border-transparent",
+                                    )}
+                                  >
+                                    {l.status || "ALL"}
+                                  </span>
+                                  {activeCategory === "Quotation" &&
+                                    !l.status?.includes("QUOTATION") &&
+                                    l.stagePath?.some((s: string) =>
+                                      s.includes("QUOTATION"),
+                                    ) && (
+                                      <span className="text-[9px] text-purple-600 font-bold whitespace-nowrap bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-0.5">
+                                        <Check className="w-2 h-2" /> Quotation
+                                        Sent
+                                      </span>
+                                    )}
+                                </div>
+                              </td>
+                              {currentUser?.role !== "sales_executive" && (
+                                <td
+                                  className="px-5 py-3.5 hidden lg:table-cell"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Select
+                                    value={
+                                      typeof l.assignedTo === "object"
+                                        ? l.assignedTo?._id
+                                        : l.assignedTo || "unassigned"
+                                    }
+                                    onValueChange={(value) =>
+                                      handleUpdateAssignee(l._id || l.id, value)
+                                    }
+                                  >
+                                    <SelectTrigger className="h-8 w-[140px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0 px-2">
+                                      <SelectValue placeholder="Unassigned" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="unassigned" disabled>
+                                        Unassigned
+                                      </SelectItem>
+                                      {allUsers.map((u) => (
+                                        <SelectItem key={u._id} value={u._id}>
+                                          {u.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </td>
+                              )}
+                              <td className="px-5 py-3.5 hidden lg:table-cell text-black">
+                                {l.followUpDate
+                                  ? new Date(l.followUpDate).toLocaleDateString(
+                                      "en-IN",
+                                      { day: "numeric", month: "short" },
+                                    )
+                                  : "-"}
+                              </td>
+                            </tr>
+                          </Fragment>
+                        );
+                      });
+                    })()
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        {lead && (
-          <div className="w-full xl:w-96 sticky top-24 xl:top-[100px] mt-0 h-fit max-h-[calc(100vh-140px)] animate-slide-in-left">
-            <LeadDetailPanel
-              lead={lead}
-              onClose={() => setSelectedLeadId(null)}
-              onRefresh={() => {
-                fetchLeads();
-                if (selectedLeadId) fetchFullLead(selectedLeadId);
-              }}
-              className="card-shadow"
-            />
+            {/* Progressive date loading */}
+            {!startDate && !endDate && (
+              <div className="flex items-center justify-center py-4 border-t-2 border-dashed border-black/20">
+                {loadingMore ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading older leads…
+                  </div>
+                ) : hasOlderLeads ? (
+                  <button
+                    onClick={loadOlderLeads}
+                    className="flex items-center gap-2 px-5 py-2 text-xs font-bold border-2 border-black bg-white hover:bg-[#FFDE00] transition-colors shadow-[2px_2px_0px_#000]"
+                  >
+                    Load older leads
+                    {olderCursor && (
+                      <span className="font-normal text-muted-foreground">
+                        (before{" "}
+                        {olderCursor.toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                        )
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    All leads loaded
+                  </p>
+                )}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {lead && (
+            <div className="w-full xl:w-96 sticky top-24 xl:top-[100px] mt-0 h-fit max-h-[calc(100vh-140px)] animate-slide-in-left">
+              <LeadDetailPanel
+                lead={lead}
+                onClose={() => setSelectedLeadId(null)}
+                onRefresh={() => {
+                  fetchLeads();
+                  if (selectedLeadId) fetchFullLead(selectedLeadId);
+                }}
+                className="card-shadow"
+              />
+            </div>
+          )}
+        </div>
       )}
 
       <Dialog open={isStatusModalOpen} onOpenChange={setIsStatusModalOpen}>

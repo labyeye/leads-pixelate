@@ -18,7 +18,9 @@ import {
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 
 // Accept both LucideIcon and custom React components (e.g. Font Awesome wrappers)
-export type NavIconComponent = LucideIcon | React.ComponentType<{ className?: string }>;
+export type NavIconComponent =
+  | LucideIcon
+  | React.ComponentType<{ className?: string }>;
 
 export interface NavItem {
   title: string;
@@ -40,7 +42,13 @@ const allGroups: NavGroup[] = [
         title: "Dashboard",
         href: "/",
         icon: LayoutDashboard,
-        roles: ["super_admin", "admin", "sales_executive", "service_manager", "accountant"],
+        roles: [
+          "super_admin",
+          "admin",
+          "sales_executive",
+          "service_manager",
+          "accountant",
+        ],
       },
     ],
   },
@@ -74,7 +82,13 @@ const allGroups: NavGroup[] = [
         title: "Clients",
         href: "/clients",
         icon: Building2,
-        roles: ["super_admin", "admin", "sales_executive", "service_manager", "accountant"],
+        roles: [
+          "super_admin",
+          "admin",
+          "sales_executive",
+          "service_manager",
+          "accountant",
+        ],
       },
       {
         title: "Quotations",

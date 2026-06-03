@@ -624,7 +624,10 @@ function IntegrationWizard({
       try {
         if (integration.id === "indiamart") {
           await indiamartAPI.connect(fields.api_key);
-          toast({ title: "Connected!", description: "IndiaMART is now syncing leads every 5 minutes." });
+          toast({
+            title: "Connected!",
+            description: "IndiaMART is now syncing leads every 5 minutes.",
+          });
         } else {
           // Other integrations: no real API yet
           await new Promise((r) => setTimeout(r, 800));
@@ -634,7 +637,9 @@ function IntegrationWizard({
         setSaving(false);
         toast({
           title: "Connection failed",
-          description: err?.message || "Could not verify API key. Please check and try again.",
+          description:
+            err?.message ||
+            "Could not verify API key. Please check and try again.",
           variant: "destructive",
         });
         return;

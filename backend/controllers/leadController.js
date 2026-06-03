@@ -181,7 +181,7 @@ const getLeads = asyncHandler(async (req, res) => {
     endDate,
     hasFollowup,
     page = 1,
-    limit = 100000000000,
+    limit = 500,
   } = req.query;
 
   const query = {};
@@ -218,6 +218,7 @@ const getLeads = asyncHandler(async (req, res) => {
       { name: { $regex: search, $options: "i" } },
       { company: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
+      { phone: { $regex: search, $options: "i" } },
     ];
   }
 
@@ -230,7 +231,7 @@ const getLeads = asyncHandler(async (req, res) => {
   const [leads, total] = await Promise.all([
     Lead.find(query)
       .populate("assignedTo", "name email")
-      .populate("statusHistory.changedBy", "name")
+      .lean()
       .sort("-createdAt")
       .skip(skip)
       .limit(parseInt(limit)),
@@ -614,7 +615,7 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
   const tenant = await Tenant.findOne(query);
   const apiKey =
     process.env.INDIAMART_API_KEY ||
-    (tenant?.integrations?.indiamart?.apiKey) ||
+    tenant?.integrations?.indiamart?.apiKey ||
     null;
 
   if (!apiKey) {

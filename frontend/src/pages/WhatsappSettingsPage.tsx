@@ -158,7 +158,10 @@ export default function WhatsappSettingsPage() {
         {/* Header */}
         <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-black bg-white">
           <div className="w-9 h-9 rounded-lg bg-[#25D366]/10 border-2 border-[#25D366]/20 flex items-center justify-center">
-            <FontAwesomeIcon icon={faWhatsapp} className="text-[#25D366] text-lg" />
+            <FontAwesomeIcon
+              icon={faWhatsapp}
+              className="text-[#25D366] text-lg"
+            />
           </div>
           <div>
             <h1 className="text-xl font-bold">WhatsApp Setup</h1>
@@ -1290,7 +1293,12 @@ function ConnectionTab({ toast }: { toast: any }) {
   // Step 2: add phone number
   const [addPhoneOpen, setAddPhoneOpen] = useState(false);
   const [addingSaving, setAddingSaving] = useState(false);
-  const [addForm, setAddForm] = useState({ phoneNumberId: "", label: "", businessName: "", phoneNumber: "" });
+  const [addForm, setAddForm] = useState({
+    phoneNumberId: "",
+    label: "",
+    businessName: "",
+    phoneNumber: "",
+  });
 
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -1302,13 +1310,18 @@ function ConnectionTab({ toast }: { toast: any }) {
       const res = await whatsappAPI.getStatus();
       setStatus(res.data);
     } catch {
-      toast({ title: "Failed to load WhatsApp status", variant: "destructive" });
+      toast({
+        title: "Failed to load WhatsApp status",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
-  useEffect(() => { fetchStatus(); }, [fetchStatus]);
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
 
   const handleSetup = async () => {
     if (!setupForm.accessToken.trim()) {
@@ -1317,13 +1330,20 @@ function ConnectionTab({ toast }: { toast: any }) {
     }
     setSetupSaving(true);
     try {
-      await whatsappAPI.setup({ accessToken: setupForm.accessToken, wabaId: setupForm.wabaId });
+      await whatsappAPI.setup({
+        accessToken: setupForm.accessToken,
+        wabaId: setupForm.wabaId,
+      });
       toast({ title: "Access token saved. Now add your phone number(s)." });
       setSetupOpen(false);
       setSetupForm({ accessToken: "", wabaId: "" });
       await fetchStatus();
     } catch (err: any) {
-      toast({ title: "Setup failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Setup failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSetupSaving(false);
     }
@@ -1339,10 +1359,19 @@ function ConnectionTab({ toast }: { toast: any }) {
       await whatsappAPI.addPhoneNumber(addForm);
       toast({ title: "Phone number added" });
       setAddPhoneOpen(false);
-      setAddForm({ phoneNumberId: "", label: "", businessName: "", phoneNumber: "" });
+      setAddForm({
+        phoneNumberId: "",
+        label: "",
+        businessName: "",
+        phoneNumber: "",
+      });
       await fetchStatus();
     } catch (err: any) {
-      toast({ title: "Failed to add number", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to add number",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setAddingSaving(false);
     }
@@ -1380,7 +1409,11 @@ function ConnectionTab({ toast }: { toast: any }) {
       const res = await whatsappAPI.syncTemplates();
       toast({ title: res.message });
     } catch (err: any) {
-      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Sync failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSyncing(false);
     }
@@ -1397,21 +1430,27 @@ function ConnectionTab({ toast }: { toast: any }) {
   return (
     <div className="p-6 max-w-2xl space-y-6">
       <div>
-        <h2 className="font-semibold text-base">WhatsApp Business Connection</h2>
+        <h2 className="font-semibold text-base">
+          WhatsApp Business Connection
+        </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           One access token, multiple phone numbers — each from the same WABA.
         </p>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        <div className="flex justify-center py-8">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
       ) : (
         <>
           {/* Step 1 — Access Token */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${status?.isConnected ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}>
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${status?.isConnected ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}
+                >
                   {status?.isConnected ? <Check className="w-3 h-3" /> : "1"}
                 </div>
                 <span className="text-sm font-medium">Access Token & WABA</span>
@@ -1419,19 +1458,44 @@ function ConnectionTab({ toast }: { toast: any }) {
               <div className="flex gap-2">
                 {status?.isConnected ? (
                   <>
-                    <Button size="sm" variant="outline" onClick={handleSyncTemplates} disabled={syncing} className="text-xs h-7">
-                      {syncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleSyncTemplates}
+                      disabled={syncing}
+                      className="text-xs h-7"
+                    >
+                      {syncing ? (
+                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      ) : (
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                      )}
                       Sync Templates
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setSetupOpen(true)} className="text-xs h-7">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSetupOpen(true)}
+                      className="text-xs h-7"
+                    >
                       Update Token
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleDisconnect} disabled={disconnecting} className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDisconnect}
+                      disabled={disconnecting}
+                      className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    >
                       Disconnect All
                     </Button>
                   </>
                 ) : (
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-7" onClick={() => setSetupOpen(true)}>
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+                    onClick={() => setSetupOpen(true)}
+                  >
                     Set Up Access Token
                   </Button>
                 )}
@@ -1452,18 +1516,31 @@ function ConnectionTab({ toast }: { toast: any }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${phoneNumbers.length > 0 ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}>
-                  {phoneNumbers.length > 0 ? <Check className="w-3 h-3" /> : "2"}
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${phoneNumbers.length > 0 ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}
+                >
+                  {phoneNumbers.length > 0 ? (
+                    <Check className="w-3 h-3" />
+                  ) : (
+                    "2"
+                  )}
                 </div>
                 <span className="text-sm font-medium">
                   Phone Numbers
                   {phoneNumbers.length > 0 && (
-                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">({phoneNumbers.length} connected)</span>
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      ({phoneNumbers.length} connected)
+                    </span>
                   )}
                 </span>
               </div>
               {status?.isConnected && (
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setAddPhoneOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs h-7 gap-1"
+                  onClick={() => setAddPhoneOpen(true)}
+                >
                   <Plus className="w-3 h-3" /> Add Number
                 </Button>
               )}
@@ -1472,32 +1549,45 @@ function ConnectionTab({ toast }: { toast: any }) {
             {phoneNumbers.length === 0 ? (
               <div className="ml-7 border border-dashed border-border rounded-lg p-4 text-center">
                 <p className="text-xs text-muted-foreground">
-                  {status?.isConnected ? "No phone numbers added yet. Click \"Add Number\" to add your first." : "Set up access token first."}
+                  {status?.isConnected
+                    ? 'No phone numbers added yet. Click "Add Number" to add your first.'
+                    : "Set up access token first."}
                 </p>
               </div>
             ) : (
               <div className="ml-7 space-y-2">
                 {phoneNumbers.map((p: any) => (
-                  <div key={p.phoneNumberId} className="flex items-center justify-between gap-3 bg-muted/30 border border-border rounded-lg px-3 py-2.5">
+                  <div
+                    key={p.phoneNumberId}
+                    className="flex items-center justify-between gap-3 bg-muted/30 border border-border rounded-lg px-3 py-2.5"
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                         <MessageCircle className="w-3.5 h-3.5 text-green-600" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{p.label || p.businessName || "WhatsApp Number"}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{p.phoneNumber || p.phoneNumberId}</p>
+                        <p className="text-sm font-medium truncate">
+                          {p.label || p.businessName || "WhatsApp Number"}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {p.phoneNumber || p.phoneNumberId}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Active</span>
+                      <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        Active
+                      </span>
                       <button
                         onClick={() => handleRemovePhone(p.phoneNumberId)}
                         disabled={removingId === p.phoneNumberId}
                         className="text-muted-foreground hover:text-red-500 transition-colors p-1"
                       >
-                        {removingId === p.phoneNumberId
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <Trash2 className="w-3.5 h-3.5" />}
+                        {removingId === p.phoneNumberId ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -1508,31 +1598,59 @@ function ConnectionTab({ toast }: { toast: any }) {
 
           {/* Webhook */}
           <div>
-            <h3 className="text-sm font-semibold mb-2">Webhook Configuration</h3>
+            <h3 className="text-sm font-semibold mb-2">
+              Webhook Configuration
+            </h3>
             <div className="bg-muted/30 rounded-lg p-4 border border-border space-y-3">
               <div>
-                <p className="text-xs text-muted-foreground mb-1.5">Callback URL for Meta → WhatsApp → Configuration:</p>
+                <p className="text-xs text-muted-foreground mb-1.5">
+                  Callback URL for Meta → WhatsApp → Configuration:
+                </p>
                 <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
-                  <code className="text-xs font-mono flex-1 truncate">{webhookUrl}</code>
-                  <button onClick={() => copy(webhookUrl, "webhook")} className="text-muted-foreground hover:text-foreground shrink-0">
-                    {copied === "webhook" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <code className="text-xs font-mono flex-1 truncate">
+                    {webhookUrl}
+                  </code>
+                  <button
+                    onClick={() => copy(webhookUrl, "webhook")}
+                    className="text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    {copied === "webhook" ? (
+                      <Check className="w-3.5 h-3.5 text-green-500" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
               </div>
               {status?.webhookVerifyToken && (
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1.5">Verify Token:</p>
+                  <p className="text-xs text-muted-foreground mb-1.5">
+                    Verify Token:
+                  </p>
                   <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
-                    <code className="text-xs font-mono flex-1 truncate">{status.webhookVerifyToken}</code>
-                    <button onClick={() => copy(status.webhookVerifyToken, "vtoken")} className="text-muted-foreground hover:text-foreground shrink-0">
-                      {copied === "vtoken" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    <code className="text-xs font-mono flex-1 truncate">
+                      {status.webhookVerifyToken}
+                    </code>
+                    <button
+                      onClick={() => copy(status.webhookVerifyToken, "vtoken")}
+                      className="text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                      {copied === "vtoken" ? (
+                        <Check className="w-3.5 h-3.5 text-green-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
                     </button>
                   </div>
                 </div>
               )}
               <p className="text-xs text-muted-foreground flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
-                Subscribe to <strong className="mx-0.5">messages</strong> and <strong className="mx-0.5">message_status_updates</strong> fields.
+                Subscribe to <strong className="mx-0.5">
+                  messages
+                </strong> and{" "}
+                <strong className="mx-0.5">message_status_updates</strong>{" "}
+                fields.
               </p>
             </div>
           </div>
@@ -1543,41 +1661,72 @@ function ConnectionTab({ toast }: { toast: any }) {
       <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{status?.isConnected ? "Update Access Token" : "Set Up WhatsApp Business"}</DialogTitle>
+            <DialogTitle>
+              {status?.isConnected
+                ? "Update Access Token"
+                : "Set Up WhatsApp Business"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-xs text-blue-700">
-                <strong>Step 1 of 2:</strong> Enter your Meta System User access token. This is shared across all your phone numbers under the same WABA.
+                <strong>Step 1 of 2:</strong> Enter your Meta System User access
+                token. This is shared across all your phone numbers under the
+                same WABA.
               </p>
             </div>
             <div>
-              <Label>Access Token <span className="text-red-500">*</span></Label>
+              <Label>
+                Access Token <span className="text-red-500">*</span>
+              </Label>
               <Input
                 type="password"
                 placeholder="EAAxxxxx... (permanent system user token)"
                 value={setupForm.accessToken}
-                onChange={(e) => setSetupForm((f) => ({ ...f, accessToken: e.target.value.trim() }))}
+                onChange={(e) =>
+                  setSetupForm((f) => ({
+                    ...f,
+                    accessToken: e.target.value.trim(),
+                  }))
+                }
                 className="mt-1 font-mono text-sm"
               />
               <p className="text-[11px] text-muted-foreground mt-1">
-                Meta Business Manager → System Users → Generate Token → select <code className="bg-muted px-1 rounded">whatsapp_business_messaging</code>
+                Meta Business Manager → System Users → Generate Token → select{" "}
+                <code className="bg-muted px-1 rounded">
+                  whatsapp_business_messaging
+                </code>
               </p>
             </div>
             <div>
-              <Label>WABA ID <span className="text-muted-foreground text-xs">(required for template sync)</span></Label>
+              <Label>
+                WABA ID{" "}
+                <span className="text-muted-foreground text-xs">
+                  (required for template sync)
+                </span>
+              </Label>
               <Input
                 placeholder="WhatsApp Business Account ID"
                 value={setupForm.wabaId}
-                onChange={(e) => setSetupForm((f) => ({ ...f, wabaId: e.target.value.trim() }))}
+                onChange={(e) =>
+                  setSetupForm((f) => ({ ...f, wabaId: e.target.value.trim() }))
+                }
                 className="mt-1 font-mono text-sm"
               />
-              <p className="text-[11px] text-muted-foreground mt-1">Meta Business Manager → WhatsApp Accounts → copy the Account ID</p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Meta Business Manager → WhatsApp Accounts → copy the Account ID
+              </p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSetupOpen(false)}>Cancel</Button>
-            <Button onClick={handleSetup} disabled={setupSaving} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button variant="outline" onClick={() => setSetupOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSetup}
+              disabled={setupSaving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
               {setupSaving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
               Save & Continue
             </Button>
@@ -1594,43 +1743,82 @@ function ConnectionTab({ toast }: { toast: any }) {
           <div className="space-y-4 py-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-xs text-blue-700">
-                <strong>Step 2:</strong> Add a phone number from your WABA. You can add multiple numbers — same access token works for all.
+                <strong>Step 2:</strong> Add a phone number from your WABA. You
+                can add multiple numbers — same access token works for all.
               </p>
             </div>
             <div>
-              <Label>Phone Number ID <span className="text-red-500">*</span></Label>
+              <Label>
+                Phone Number ID <span className="text-red-500">*</span>
+              </Label>
               <Input
                 placeholder="e.g. 123456789012345"
                 value={addForm.phoneNumberId}
-                onChange={(e) => setAddForm((f) => ({ ...f, phoneNumberId: e.target.value.trim() }))}
+                onChange={(e) =>
+                  setAddForm((f) => ({
+                    ...f,
+                    phoneNumberId: e.target.value.trim(),
+                  }))
+                }
                 className="mt-1 font-mono text-sm"
               />
-              <p className="text-[11px] text-muted-foreground mt-1">Meta Developer Console → WhatsApp → API Setup → Phone Number ID</p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Meta Developer Console → WhatsApp → API Setup → Phone Number ID
+              </p>
             </div>
             <div>
-              <Label>Label <span className="text-muted-foreground text-xs">(helps identify which number)</span></Label>
+              <Label>
+                Label{" "}
+                <span className="text-muted-foreground text-xs">
+                  (helps identify which number)
+                </span>
+              </Label>
               <Input
                 placeholder='e.g. "Company A", "Sales", "Support"'
                 value={addForm.label}
-                onChange={(e) => setAddForm((f) => ({ ...f, label: e.target.value }))}
+                onChange={(e) =>
+                  setAddForm((f) => ({ ...f, label: e.target.value }))
+                }
                 className="mt-1 text-sm"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Display Number</Label>
-                <Input placeholder="+91 98001 00001" value={addForm.phoneNumber} onChange={(e) => setAddForm((f) => ({ ...f, phoneNumber: e.target.value }))} className="mt-1 text-sm" />
+                <Input
+                  placeholder="+91 98001 00001"
+                  value={addForm.phoneNumber}
+                  onChange={(e) =>
+                    setAddForm((f) => ({ ...f, phoneNumber: e.target.value }))
+                  }
+                  className="mt-1 text-sm"
+                />
               </div>
               <div>
                 <Label>Business Name</Label>
-                <Input placeholder="Company A" value={addForm.businessName} onChange={(e) => setAddForm((f) => ({ ...f, businessName: e.target.value }))} className="mt-1 text-sm" />
+                <Input
+                  placeholder="Company A"
+                  value={addForm.businessName}
+                  onChange={(e) =>
+                    setAddForm((f) => ({ ...f, businessName: e.target.value }))
+                  }
+                  className="mt-1 text-sm"
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddPhoneOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddPhone} disabled={addingSaving} className="bg-green-600 hover:bg-green-700 text-white">
-              {addingSaving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+            <Button variant="outline" onClick={() => setAddPhoneOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddPhone}
+              disabled={addingSaving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {addingSaving && (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              )}
               Add Number
             </Button>
           </DialogFooter>

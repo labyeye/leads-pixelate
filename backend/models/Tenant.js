@@ -95,9 +95,9 @@ const tenantSchema = new mongoose.Schema(
         phoneNumbers: [
           {
             phoneNumberId: { type: String, required: true },
-            label: { type: String, default: "" },       // e.g. "Company A", "Sales"
+            label: { type: String, default: "" }, // e.g. "Company A", "Sales"
             businessName: { type: String, default: "" },
-            phoneNumber: { type: String, default: "" },  // display number e.g. +91 98001
+            phoneNumber: { type: String, default: "" }, // display number e.g. +91 98001
             approvedTemplateCount: { type: Number, default: 0 },
             addedAt: { type: Date, default: Date.now },
           },

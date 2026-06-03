@@ -274,10 +274,10 @@ export default function DashboardPage() {
       <AppLayout title="Dashboard">
         <div className="flex h-[80vh] items-center justify-center">
           <img
-              src={nestleadslogosmall}
-              alt="NestLeads"
-              className="hidden items-center justify-center w-10 h-10 shrink-0 animate-bounce"
-            />
+            src={nestleadslogosmall}
+            alt="NestLeads"
+            className="hidden items-center justify-center w-10 h-10 shrink-0 animate-bounce"
+          />
         </div>
       </AppLayout>
     );

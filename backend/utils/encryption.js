@@ -23,7 +23,11 @@ function encrypt(plaintext) {
     cipher.final(),
   ]);
   const authTag = cipher.getAuthTag();
-  return [iv.toString("hex"), authTag.toString("hex"), encrypted.toString("hex")].join(":");
+  return [
+    iv.toString("hex"),
+    authTag.toString("hex"),
+    encrypted.toString("hex"),
+  ].join(":");
 }
 
 /**
@@ -35,7 +39,11 @@ function decrypt(encoded) {
   if (parts.length !== 3) return encoded; // not encrypted — return as-is (migration safety)
   const [ivHex, authTagHex, encHex] = parts;
   const key = getKey();
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(ivHex, "hex"));
+  const decipher = crypto.createDecipheriv(
+    ALGORITHM,
+    key,
+    Buffer.from(ivHex, "hex"),
+  );
   decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
   const decrypted = Buffer.concat([
     decipher.update(Buffer.from(encHex, "hex")),

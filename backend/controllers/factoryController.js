@@ -46,7 +46,9 @@ const addReel = asyncHandler(async (req, res) => {
 
 const getFactoryProducts = asyncHandler(async (req, res) => {
   const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const products = await FactoryProduct.find({ ...tf, isActive: true }).sort("name");
+  const products = await FactoryProduct.find({ ...tf, isActive: true }).sort(
+    "name",
+  );
   res.json({ success: true, count: products.length, data: products });
 });
 
@@ -58,7 +60,11 @@ const addFactoryProduct = asyncHandler(async (req, res) => {
     throw new Error("Product name is required");
   }
 
-  const product = await FactoryProduct.create({ name, description, tenantId: req.user.tenantId || null });
+  const product = await FactoryProduct.create({
+    name,
+    description,
+    tenantId: req.user.tenantId || null,
+  });
   res.status(201).json({ success: true, data: product });
 });
 

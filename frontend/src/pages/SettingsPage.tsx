@@ -384,7 +384,11 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Logo must be under 2 MB.", variant: "destructive" });
+      toast({
+        title: "File too large",
+        description: "Logo must be under 2 MB.",
+        variant: "destructive",
+      });
       return;
     }
     const reader = new FileReader();
@@ -612,8 +616,12 @@ export default function SettingsPage() {
                 <div>
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black">Company Logo</p>
-                    <p className="text-xs text-black/50 ml-1">— appears on all quotation PDFs</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                      Company Logo
+                    </p>
+                    <p className="text-xs text-black/50 ml-1">
+                      — appears on all quotation PDFs
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -627,8 +635,12 @@ export default function SettingsPage() {
                           <Upload className="w-5 h-5 text-white group-hover:text-black" />
                         </div>
                         <div className="text-center">
-                          <p className="text-xs font-black uppercase tracking-widest text-black">Click to upload logo</p>
-                          <p className="text-[10px] text-black/40 mt-1">PNG, JPG, SVG — max 2 MB</p>
+                          <p className="text-xs font-black uppercase tracking-widest text-black">
+                            Click to upload logo
+                          </p>
+                          <p className="text-[10px] text-black/40 mt-1">
+                            PNG, JPG, SVG — max 2 MB
+                          </p>
                         </div>
                         <input
                           id="logo-upload"
@@ -651,13 +663,19 @@ export default function SettingsPage() {
 
                     {/* Live preview of PDF header */}
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-black">Preview — PDF Header</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-black">
+                        Preview — PDF Header
+                      </p>
                       <div className="border-2 border-black bg-white p-4 nb-shadow-sm">
                         {/* Mimics the PDF header layout */}
                         <div className="flex items-start gap-4 pb-3 border-b border-gray-200">
                           <div className="w-14 h-14 border-2 border-black bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {settings?.logoUrl ? (
-                              <img src={settings.logoUrl} alt="Company logo" className="w-full h-full object-contain" />
+                              <img
+                                src={settings.logoUrl}
+                                alt="Company logo"
+                                className="w-full h-full object-contain"
+                              />
                             ) : (
                               <ImageIcon className="w-6 h-6 text-black/20" />
                             )}
@@ -670,10 +688,12 @@ export default function SettingsPage() {
                               {settings?.companyAddress || "Company Address"}
                             </p>
                             <p className="text-[10px] text-gray-500 truncate">
-                              {settings?.companyPhone && `M: ${settings.companyPhone}`}
+                              {settings?.companyPhone &&
+                                `M: ${settings.companyPhone}`}
                             </p>
                             <p className="text-[10px] text-gray-500 truncate">
-                              {settings?.companyEmail && `EMAIL: ${settings.companyEmail}`}
+                              {settings?.companyEmail &&
+                                `EMAIL: ${settings.companyEmail}`}
                             </p>
                             {settings?.companyGST && (
                               <p className="text-[10px] font-bold text-gray-700 mt-0.5">
@@ -685,13 +705,22 @@ export default function SettingsPage() {
                             <p className="text-xs font-black text-[#1e3a8a] uppercase">
                               {settings?.quotationTitle || "PROFORMA INVOICE"}
                             </p>
-                            <p className="text-[10px] text-gray-400 mt-1">DATE: {new Date().toLocaleDateString("en-GB")}</p>
-                            <p className="text-[10px] text-gray-400">REF. NO.: SKF-0001</p>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              DATE: {new Date().toLocaleDateString("en-GB")}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              REF. NO.: SKF-0001
+                            </p>
                           </div>
                         </div>
-                        <p className="text-[9px] text-gray-300 mt-2 text-center uppercase tracking-widest">— Quotation body continues below —</p>
+                        <p className="text-[9px] text-gray-300 mt-2 text-center uppercase tracking-widest">
+                          — Quotation body continues below —
+                        </p>
                       </div>
-                      <p className="text-[10px] text-black/40">This is how the header will look on every quotation PDF you generate.</p>
+                      <p className="text-[10px] text-black/40">
+                        This is how the header will look on every quotation PDF
+                        you generate.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -700,7 +729,9 @@ export default function SettingsPage() {
                 <div>
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#FFDE00]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black">Document Settings</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                      Document Settings
+                    </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <InputField
@@ -726,7 +757,11 @@ export default function SettingsPage() {
                     disabled={saving}
                     className="nb-btn px-6 py-2.5 text-sm font-black text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
                     Save Template Settings
                   </button>
                 </div>
@@ -737,9 +772,15 @@ export default function SettingsPage() {
                     <Layout className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-black text-black uppercase tracking-wider">How it works</p>
+                    <p className="text-xs font-black text-black uppercase tracking-wider">
+                      How it works
+                    </p>
                     <p className="text-xs text-black/70 mt-1">
-                      Upload your company logo here. It will automatically appear at the top-left of every quotation PDF you generate from the Quotations page. Supported formats: PNG, JPG, SVG. Recommended size: 200×200 px or wider rectangular logos.
+                      Upload your company logo here. It will automatically
+                      appear at the top-left of every quotation PDF you generate
+                      from the Quotations page. Supported formats: PNG, JPG,
+                      SVG. Recommended size: 200×200 px or wider rectangular
+                      logos.
                     </p>
                   </div>
                 </div>

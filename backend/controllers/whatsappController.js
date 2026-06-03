@@ -72,11 +72,22 @@ function buildTemplateComponents(template, variableMapping, lead) {
   const components = [];
 
   if (template.headerType === "TEXT" && template.headerText) {
-    components.push({ type: "header", parameters: [{ type: "text", text: template.headerText }] });
+    components.push({
+      type: "header",
+      parameters: [{ type: "text", text: template.headerText }],
+    });
   } else if (template.headerType === "DOCUMENT" && template.headerMediaId) {
     components.push({
       type: "header",
-      parameters: [{ type: "document", document: { id: template.headerMediaId, filename: template.headerMediaName || "document.pdf" } }],
+      parameters: [
+        {
+          type: "document",
+          document: {
+            id: template.headerMediaId,
+            filename: template.headerMediaName || "document.pdf",
+          },
+        },
+      ],
     });
   } else if (template.headerType === "IMAGE" && template.headerMediaId) {
     components.push({
@@ -88,14 +99,25 @@ function buildTemplateComponents(template, variableMapping, lead) {
   if (variableMapping?.length > 0) {
     const params = [...variableMapping]
       .sort((a, b) => a.position - b.position)
-      .map((v) => ({ type: "text", text: resolveVariable(v.fieldKey, v.customValue, lead) }));
-    if (params.length > 0) components.push({ type: "body", parameters: params });
+      .map((v) => ({
+        type: "text",
+        text: resolveVariable(v.fieldKey, v.customValue, lead),
+      }));
+    if (params.length > 0)
+      components.push({ type: "body", parameters: params });
   }
 
   return components;
 }
 
-async function sendWaMessage(phoneNumberId, accessToken, to, templateName, language, components) {
+async function sendWaMessage(
+  phoneNumberId,
+  accessToken,
+  to,
+  templateName,
+  language,
+  components,
+) {
   const body = {
     messaging_product: "whatsapp",
     to,
@@ -106,7 +128,10 @@ async function sendWaMessage(phoneNumberId, accessToken, to, templateName, langu
 
   const res = await fetch(`${WA_API}/${phoneNumberId}/messages`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -122,12 +147,18 @@ async function sendWaMessage(phoneNumberId, accessToken, to, templateName, langu
 // Sets up the shared access token + WABA ID for this tenant. No phone number yet.
 exports.setup = asyncHandler(async (req, res) => {
   const { accessToken, wabaId } = req.body;
-  if (!accessToken) { res.status(400); throw new Error("accessToken is required"); }
+  if (!accessToken) {
+    res.status(400);
+    throw new Error("accessToken is required");
+  }
 
   // Validate token
   const testRes = await fetch(`${WA_API}/me?access_token=${accessToken}`);
   const testData = await testRes.json();
-  if (testData.error) { res.status(400); throw new Error("Invalid access token: " + testData.error.message); }
+  if (testData.error) {
+    res.status(400);
+    throw new Error("Invalid access token: " + testData.error.message);
+  }
 
   const webhookVerifyToken = crypto.randomBytes(16).toString("hex");
 
@@ -141,27 +172,42 @@ exports.setup = asyncHandler(async (req, res) => {
       "integrations.whatsapp.webhookVerifyToken": webhookVerifyToken,
       "integrations.whatsapp.lastSyncAt": new Date(),
     },
-    { new: true }
+    { new: true },
   );
 
-  res.json({ success: true, message: "WhatsApp access token saved. Now add your phone numbers." });
+  res.json({
+    success: true,
+    message: "WhatsApp access token saved. Now add your phone numbers.",
+  });
 });
 
 // POST /api/whatsapp/phone-numbers
 // Add a phone number ID to this tenant's WhatsApp config.
 exports.addPhoneNumber = asyncHandler(async (req, res) => {
   const { phoneNumberId, label, businessName, phoneNumber } = req.body;
-  if (!phoneNumberId) { res.status(400); throw new Error("phoneNumberId is required"); }
+  if (!phoneNumberId) {
+    res.status(400);
+    throw new Error("phoneNumberId is required");
+  }
 
-  const wa = (await Tenant.findOne(getTenantQuery(req.user)))?.integrations?.whatsapp;
-  if (!wa?.isConnected || !wa?.accessToken) { res.status(400); throw new Error("Set up access token first via /api/whatsapp/setup"); }
+  const wa = (await Tenant.findOne(getTenantQuery(req.user)))?.integrations
+    ?.whatsapp;
+  if (!wa?.isConnected || !wa?.accessToken) {
+    res.status(400);
+    throw new Error("Set up access token first via /api/whatsapp/setup");
+  }
 
   const accessToken = decrypt(wa.accessToken);
 
   // Validate phone number ID against Meta
-  const checkRes = await fetch(`${WA_API}/${phoneNumberId}?fields=display_phone_number,verified_name&access_token=${accessToken}`);
+  const checkRes = await fetch(
+    `${WA_API}/${phoneNumberId}?fields=display_phone_number,verified_name&access_token=${accessToken}`,
+  );
   const checkData = await checkRes.json();
-  if (checkData.error) { res.status(400); throw new Error("Invalid Phone Number ID: " + checkData.error.message); }
+  if (checkData.error) {
+    res.status(400);
+    throw new Error("Invalid Phone Number ID: " + checkData.error.message);
+  }
 
   // Check duplicate
   if (wa.phoneNumbers?.some((p) => p.phoneNumberId === phoneNumberId)) {
@@ -169,20 +215,17 @@ exports.addPhoneNumber = asyncHandler(async (req, res) => {
     throw new Error("This phone number is already connected");
   }
 
-  await Tenant.findOneAndUpdate(
-    getTenantQuery(req.user),
-    {
-      $push: {
-        "integrations.whatsapp.phoneNumbers": {
-          phoneNumberId,
-          label: label || checkData.verified_name || "",
-          businessName: businessName || checkData.verified_name || "",
-          phoneNumber: phoneNumber || checkData.display_phone_number || "",
-          addedAt: new Date(),
-        },
+  await Tenant.findOneAndUpdate(getTenantQuery(req.user), {
+    $push: {
+      "integrations.whatsapp.phoneNumbers": {
+        phoneNumberId,
+        label: label || checkData.verified_name || "",
+        businessName: businessName || checkData.verified_name || "",
+        phoneNumber: phoneNumber || checkData.display_phone_number || "",
+        addedAt: new Date(),
       },
-    }
-  );
+    },
+  });
 
   res.json({
     success: true,
@@ -198,10 +241,9 @@ exports.addPhoneNumber = asyncHandler(async (req, res) => {
 // DELETE /api/whatsapp/phone-numbers/:phoneNumberId
 exports.removePhoneNumber = asyncHandler(async (req, res) => {
   const { phoneNumberId } = req.params;
-  await Tenant.findOneAndUpdate(
-    getTenantQuery(req.user),
-    { $pull: { "integrations.whatsapp.phoneNumbers": { phoneNumberId } } }
-  );
+  await Tenant.findOneAndUpdate(getTenantQuery(req.user), {
+    $pull: { "integrations.whatsapp.phoneNumbers": { phoneNumberId } },
+  });
   res.json({ success: true, message: "Phone number removed" });
 });
 
@@ -247,7 +289,11 @@ exports.getConfig = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: {
-      isConfigured: !!(wa.isConnected && wa.accessToken && wa.phoneNumbers?.length > 0),
+      isConfigured: !!(
+        wa.isConnected &&
+        wa.accessToken &&
+        wa.phoneNumbers?.length > 0
+      ),
       webhookVerifyToken: wa.webhookVerifyToken || "",
       appId: process.env.FACEBOOK_APP_ID || "",
       phoneNumberCount: wa.phoneNumbers?.length || 0,
@@ -261,16 +307,39 @@ exports.getConfig = asyncHandler(async (req, res) => {
 
 exports.getTemplates = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const templates = await WhatsappTemplate.find(tenantFilter).sort({ createdAt: -1 }).populate("createdBy", "name");
+  const templates = await WhatsappTemplate.find(tenantFilter)
+    .sort({ createdAt: -1 })
+    .populate("createdBy", "name");
   res.json({ success: true, count: templates.length, data: templates });
 });
 
 exports.createTemplate = asyncHandler(async (req, res) => {
-  const { name, displayName, category, language, headerType, headerText, bodyText, footerText, buttons, metaTemplateName, notes } = req.body;
+  const {
+    name,
+    displayName,
+    category,
+    language,
+    headerType,
+    headerText,
+    bodyText,
+    footerText,
+    buttons,
+    metaTemplateName,
+    notes,
+  } = req.body;
   const varMatches = (bodyText || "").match(/\{\{\d+\}\}/g) || [];
   const template = await WhatsappTemplate.create({
-    name, displayName, category, language, headerType, headerText, bodyText, footerText, buttons,
-    metaTemplateName: metaTemplateName || name, notes,
+    name,
+    displayName,
+    category,
+    language,
+    headerType,
+    headerText,
+    bodyText,
+    footerText,
+    buttons,
+    metaTemplateName: metaTemplateName || name,
+    notes,
     variableCount: new Set(varMatches).size,
     tenantId: req.user.tenantId || null,
     createdBy: req.user._id,
@@ -280,20 +349,35 @@ exports.createTemplate = asyncHandler(async (req, res) => {
 
 exports.updateTemplate = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  let template = await WhatsappTemplate.findOne({ _id: req.params.id, ...tenantFilter });
-  if (!template) { res.status(404); throw new Error("Template not found"); }
+  let template = await WhatsappTemplate.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
+  if (!template) {
+    res.status(404);
+    throw new Error("Template not found");
+  }
   if (req.body.bodyText !== undefined) {
     const varMatches = (req.body.bodyText || "").match(/\{\{\d+\}\}/g) || [];
     req.body.variableCount = new Set(varMatches).size;
   }
-  template = await WhatsappTemplate.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  template = await WhatsappTemplate.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
   res.json({ success: true, data: template });
 });
 
 exports.deleteTemplate = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const template = await WhatsappTemplate.findOne({ _id: req.params.id, ...tenantFilter });
-  if (!template) { res.status(404); throw new Error("Template not found"); }
+  const template = await WhatsappTemplate.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
+  if (!template) {
+    res.status(404);
+    throw new Error("Template not found");
+  }
   await template.deleteOne();
   res.json({ success: true, message: "Template deleted" });
 });
@@ -301,11 +385,17 @@ exports.deleteTemplate = asyncHandler(async (req, res) => {
 // POST /api/whatsapp/templates/sync — pull approved templates from Meta
 exports.syncTemplates = asyncHandler(async (req, res) => {
   const wa = await getWaBase(req.user);
-  if (!wa) { res.status(400); throw new Error("WhatsApp is not connected"); }
-  if (!wa.wabaId) { res.status(400); throw new Error("WABA ID not set. Please reconnect WhatsApp."); }
+  if (!wa) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected");
+  }
+  if (!wa.wabaId) {
+    res.status(400);
+    throw new Error("WABA ID not set. Please reconnect WhatsApp.");
+  }
 
   const metaRes = await fetch(
-    `${WA_API}/${wa.wabaId}/message_templates?access_token=${wa.accessToken}&fields=name,category,language,status,components&limit=100`
+    `${WA_API}/${wa.wabaId}/message_templates?access_token=${wa.accessToken}&fields=name,category,language,status,components&limit=100`,
   );
   const metaData = await metaRes.json();
   if (metaData.error) throw new Error(metaData.error.message);
@@ -329,24 +419,40 @@ exports.syncTemplates = asyncHandler(async (req, res) => {
         metaTemplateName: t.name,
         category: t.category,
         language: t.language,
-        status: t.status === "APPROVED" ? "APPROVED" : t.status === "REJECTED" ? "REJECTED" : "PENDING",
+        status:
+          t.status === "APPROVED"
+            ? "APPROVED"
+            : t.status === "REJECTED"
+              ? "REJECTED"
+              : "PENDING",
         headerType: header?.format || "NONE",
         headerText: header?.text || "",
         bodyText: body?.text || "",
         footerText: footer?.text || "",
-        buttons: (buttons?.buttons || []).map((b) => ({ type: b.type, text: b.text, url: b.url, phoneNumber: b.phone_number })),
+        buttons: (buttons?.buttons || []).map((b) => ({
+          type: b.type,
+          text: b.text,
+          url: b.url,
+          phoneNumber: b.phone_number,
+        })),
         variableCount: new Set(varMatches).size,
         tenantId,
       },
-      { upsert: true, new: true, runValidators: false }
+      { upsert: true, new: true, runValidators: false },
     );
     synced++;
   }
 
   const approvedCount = templates.filter((t) => t.status === "APPROVED").length;
-  await Tenant.findOneAndUpdate(getTenantQuery(req.user), { "integrations.whatsapp.lastSyncAt": new Date() });
+  await Tenant.findOneAndUpdate(getTenantQuery(req.user), {
+    "integrations.whatsapp.lastSyncAt": new Date(),
+  });
 
-  res.json({ success: true, message: `Synced ${synced} templates from Meta`, data: { synced, approved: approvedCount } });
+  res.json({
+    success: true,
+    message: `Synced ${synced} templates from Meta`,
+    data: { synced, approved: approvedCount },
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -365,67 +471,136 @@ exports.getCampaigns = asyncHandler(async (req, res) => {
 
 exports.getCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaign = await WhatsappCampaign.findOne({ _id: req.params.id, ...tenantFilter })
-    .populate("template").populate("createdBy", "name");
-  if (!campaign) { res.status(404); throw new Error("Campaign not found"); }
+  const campaign = await WhatsappCampaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  })
+    .populate("template")
+    .populate("createdBy", "name");
+  if (!campaign) {
+    res.status(404);
+    throw new Error("Campaign not found");
+  }
   res.json({ success: true, data: campaign });
 });
 
 exports.createCampaign = asyncHandler(async (req, res) => {
-  const { name, templateId, leadIds, variableMapping, phoneNumberId } = req.body;
-  if (!name || !templateId || !leadIds?.length) { res.status(400); throw new Error("name, templateId, and leadIds are required"); }
+  const { name, templateId, leadIds, variableMapping, phoneNumberId } =
+    req.body;
+  if (!name || !templateId || !leadIds?.length) {
+    res.status(400);
+    throw new Error("name, templateId, and leadIds are required");
+  }
 
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const template = await WhatsappTemplate.findOne({ _id: templateId, ...tenantFilter });
-  if (!template) { res.status(404); throw new Error("Template not found"); }
+  const template = await WhatsappTemplate.findOne({
+    _id: templateId,
+    ...tenantFilter,
+  });
+  if (!template) {
+    res.status(404);
+    throw new Error("Template not found");
+  }
 
   const wa = await getWaBase(req.user);
-  if (!wa) { res.status(400); throw new Error("WhatsApp is not connected"); }
+  if (!wa) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected");
+  }
 
   const resolvedPhoneNumberId = resolvePhoneNumberId(wa, phoneNumberId);
   if (!resolvedPhoneNumberId) {
     res.status(400);
-    throw new Error(wa.phoneNumbers.length > 1
-      ? "Multiple numbers connected — please specify phoneNumberId"
-      : "No phone numbers connected. Add one in Settings → WhatsApp."
+    throw new Error(
+      wa.phoneNumbers.length > 1
+        ? "Multiple numbers connected — please specify phoneNumberId"
+        : "No phone numbers connected. Add one in Settings → WhatsApp.",
     );
   }
 
   const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter });
   const messages = leads.map((lead) => ({
-    lead: lead._id, leadName: lead.name, leadCompany: lead.company,
-    phone: formatPhone(lead.phone), status: "PENDING",
+    lead: lead._id,
+    leadName: lead.name,
+    leadCompany: lead.company,
+    phone: formatPhone(lead.phone),
+    status: "PENDING",
   }));
 
   const campaign = await WhatsappCampaign.create({
-    name, template: template._id,
-    templateSnapshot: { name: template.name, displayName: template.displayName, bodyText: template.bodyText, headerText: template.headerText, footerText: template.footerText },
-    variableMapping: variableMapping || [], messages,
-    totalCount: messages.length, status: "SENDING",
-    tenantId: req.user.tenantId || null, createdBy: req.user._id,
-    fromPhoneNumberId: resolvedPhoneNumberId, sentAt: new Date(),
+    name,
+    template: template._id,
+    templateSnapshot: {
+      name: template.name,
+      displayName: template.displayName,
+      bodyText: template.bodyText,
+      headerText: template.headerText,
+      footerText: template.footerText,
+    },
+    variableMapping: variableMapping || [],
+    messages,
+    totalCount: messages.length,
+    status: "SENDING",
+    tenantId: req.user.tenantId || null,
+    createdBy: req.user._id,
+    fromPhoneNumberId: resolvedPhoneNumberId,
+    sentAt: new Date(),
   });
 
   res.status(201).json({ success: true, data: campaign });
 
   (async () => {
-    let sentCount = 0, failedCount = 0;
+    let sentCount = 0,
+      failedCount = 0;
     for (const lead of leads) {
       const phone = formatPhone(lead.phone);
-      const msg = campaign.messages.find((m) => String(m.lead) === String(lead._id));
-      if (!phone) { if (msg) { msg.status = "FAILED"; msg.failedReason = "Invalid phone number"; } failedCount++; continue; }
+      const msg = campaign.messages.find(
+        (m) => String(m.lead) === String(lead._id),
+      );
+      if (!phone) {
+        if (msg) {
+          msg.status = "FAILED";
+          msg.failedReason = "Invalid phone number";
+        }
+        failedCount++;
+        continue;
+      }
       try {
-        const components = buildTemplateComponents(template, variableMapping, lead);
-        const apiRes = await sendWaMessage(resolvedPhoneNumberId, wa.accessToken, phone, template.metaTemplateName || template.name, template.language, components);
-        if (msg) { msg.status = "SENT"; msg.waMessageId = apiRes?.messages?.[0]?.id || ""; msg.sentAt = new Date(); }
+        const components = buildTemplateComponents(
+          template,
+          variableMapping,
+          lead,
+        );
+        const apiRes = await sendWaMessage(
+          resolvedPhoneNumberId,
+          wa.accessToken,
+          phone,
+          template.metaTemplateName || template.name,
+          template.language,
+          components,
+        );
+        if (msg) {
+          msg.status = "SENT";
+          msg.waMessageId = apiRes?.messages?.[0]?.id || "";
+          msg.sentAt = new Date();
+        }
         sentCount++;
       } catch (err) {
-        if (msg) { msg.status = "FAILED"; msg.failedReason = err.message; }
+        if (msg) {
+          msg.status = "FAILED";
+          msg.failedReason = err.message;
+        }
         failedCount++;
       }
     }
-    campaign.sentCount = sentCount; campaign.failedCount = failedCount;
-    campaign.status = failedCount === leads.length ? "FAILED" : sentCount > 0 ? "COMPLETED" : "PARTIAL";
+    campaign.sentCount = sentCount;
+    campaign.failedCount = failedCount;
+    campaign.status =
+      failedCount === leads.length
+        ? "FAILED"
+        : sentCount > 0
+          ? "COMPLETED"
+          : "PARTIAL";
     await campaign.save();
   })().catch((err) => console.error("[WA Campaign]", err.message));
 });
@@ -437,49 +612,98 @@ exports.createCampaign = asyncHandler(async (req, res) => {
 // POST /api/whatsapp/send
 // phoneNumberId: optional — required only when multiple numbers are connected
 exports.sendMessage = asyncHandler(async (req, res) => {
-  const { leadId, templateId, variableMapping, messageType, messageText, phoneNumberId } = req.body;
-  if (!leadId) { res.status(400); throw new Error("leadId is required"); }
+  const {
+    leadId,
+    templateId,
+    variableMapping,
+    messageType,
+    messageText,
+    phoneNumberId,
+  } = req.body;
+  if (!leadId) {
+    res.status(400);
+    throw new Error("leadId is required");
+  }
 
   const wa = await getWaBase(req.user);
-  if (!wa) { res.status(400); throw new Error("WhatsApp is not connected"); }
+  if (!wa) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected");
+  }
 
   const resolvedPhoneNumberId = resolvePhoneNumberId(wa, phoneNumberId);
   if (!resolvedPhoneNumberId) {
     res.status(400);
-    throw new Error(wa.phoneNumbers.length > 1
-      ? "Multiple numbers connected — please specify phoneNumberId"
-      : "No phone numbers connected. Add one in Settings → WhatsApp."
+    throw new Error(
+      wa.phoneNumbers.length > 1
+        ? "Multiple numbers connected — please specify phoneNumberId"
+        : "No phone numbers connected. Add one in Settings → WhatsApp.",
     );
   }
 
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const lead = await Lead.findOne({ _id: leadId, ...tenantFilter });
-  if (!lead) { res.status(404); throw new Error("Lead not found"); }
+  if (!lead) {
+    res.status(404);
+    throw new Error("Lead not found");
+  }
 
   const phone = formatPhone(lead.phone);
-  if (!phone) { res.status(400); throw new Error("Lead has no valid phone number"); }
+  if (!phone) {
+    res.status(400);
+    throw new Error("Lead has no valid phone number");
+  }
 
   let waResult;
   if (messageType === "text" && messageText) {
-    const body = { messaging_product: "whatsapp", to: phone, type: "text", text: { body: messageText } };
+    const body = {
+      messaging_product: "whatsapp",
+      to: phone,
+      type: "text",
+      text: { body: messageText },
+    };
     const r = await fetch(`${WA_API}/${resolvedPhoneNumberId}/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${wa.accessToken}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${wa.accessToken}`,
+      },
       body: JSON.stringify(body),
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data?.error?.message || "WhatsApp API error");
     waResult = data;
   } else if (templateId) {
-    const template = await WhatsappTemplate.findOne({ _id: templateId, ...tenantFilter });
-    if (!template) { res.status(404); throw new Error("Template not found"); }
-    const components = buildTemplateComponents(template, variableMapping || [], lead);
-    waResult = await sendWaMessage(resolvedPhoneNumberId, wa.accessToken, phone, template.metaTemplateName || template.name, template.language, components);
+    const template = await WhatsappTemplate.findOne({
+      _id: templateId,
+      ...tenantFilter,
+    });
+    if (!template) {
+      res.status(404);
+      throw new Error("Template not found");
+    }
+    const components = buildTemplateComponents(
+      template,
+      variableMapping || [],
+      lead,
+    );
+    waResult = await sendWaMessage(
+      resolvedPhoneNumberId,
+      wa.accessToken,
+      phone,
+      template.metaTemplateName || template.name,
+      template.language,
+      components,
+    );
   } else {
-    res.status(400); throw new Error("Either templateId or messageType+messageText is required");
+    res.status(400);
+    throw new Error("Either templateId or messageType+messageText is required");
   }
 
-  res.json({ success: true, data: { messageId: waResult?.messages?.[0]?.id || "" } });
+  res.json({
+    success: true,
+    data: { messageId: waResult?.messages?.[0]?.id || "" },
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -492,8 +716,11 @@ exports.verifyWebhook = asyncHandler(async (req, res) => {
   const challenge = req.query["hub.challenge"];
   if (mode !== "subscribe") return res.sendStatus(403);
 
-  if (token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN) return res.status(200).send(challenge);
-  const tenant = await Tenant.findOne({ "integrations.whatsapp.webhookVerifyToken": token });
+  if (token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN)
+    return res.status(200).send(challenge);
+  const tenant = await Tenant.findOne({
+    "integrations.whatsapp.webhookVerifyToken": token,
+  });
   if (tenant) return res.status(200).send(challenge);
   res.sendStatus(403);
 });
@@ -505,7 +732,10 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
 
   for (const entry of body.entry || []) {
     const wabaId = entry.id;
-    const tenant = await Tenant.findOne({ "integrations.whatsapp.wabaId": wabaId, "integrations.whatsapp.isConnected": true });
+    const tenant = await Tenant.findOne({
+      "integrations.whatsapp.wabaId": wabaId,
+      "integrations.whatsapp.isConnected": true,
+    });
 
     for (const change of entry.changes || []) {
       const value = change.value || {};
@@ -513,25 +743,47 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
       for (const statusObj of value.statuses || []) {
         const waMessageId = statusObj.id;
         const newStatus = (statusObj.status || "").toUpperCase();
-        const statusMap = { SENT: "SENT", DELIVERED: "DELIVERED", READ: "READ", FAILED: "FAILED" };
+        const statusMap = {
+          SENT: "SENT",
+          DELIVERED: "DELIVERED",
+          READ: "READ",
+          FAILED: "FAILED",
+        };
         const statusField = statusMap[newStatus];
         if (!statusField) continue;
         try {
           const tenantFilter = tenant ? { tenantId: tenant._id } : {};
-          const campaign = await WhatsappCampaign.findOne({ "messages.waMessageId": waMessageId, ...tenantFilter });
+          const campaign = await WhatsappCampaign.findOne({
+            "messages.waMessageId": waMessageId,
+            ...tenantFilter,
+          });
           if (!campaign) continue;
-          const msg = campaign.messages.find((m) => m.waMessageId === waMessageId);
+          const msg = campaign.messages.find(
+            (m) => m.waMessageId === waMessageId,
+          );
           if (!msg) continue;
           const prev = msg.status;
           msg.status = statusField;
-          if (statusField === "DELIVERED") { msg.deliveredAt = new Date(); if (prev !== "DELIVERED") campaign.deliveredCount++; }
-          if (statusField === "READ") { msg.readAt = new Date(); if (prev !== "READ") campaign.readCount++; }
+          if (statusField === "DELIVERED") {
+            msg.deliveredAt = new Date();
+            if (prev !== "DELIVERED") campaign.deliveredCount++;
+          }
+          if (statusField === "READ") {
+            msg.readAt = new Date();
+            if (prev !== "READ") campaign.readCount++;
+          }
           if (statusField === "FAILED") {
             msg.failedReason = statusObj?.errors?.[0]?.message || "Failed";
-            if (prev !== "FAILED") { campaign.failedCount++; if (prev === "SENT") campaign.sentCount = Math.max(0, campaign.sentCount - 1); }
+            if (prev !== "FAILED") {
+              campaign.failedCount++;
+              if (prev === "SENT")
+                campaign.sentCount = Math.max(0, campaign.sentCount - 1);
+            }
           }
           await campaign.save();
-        } catch (err) { console.error("[WA Webhook Status]", err.message); }
+        } catch (err) {
+          console.error("[WA Webhook Status]", err.message);
+        }
       }
 
       for (const incomingMsg of value.messages || []) {
@@ -540,13 +792,25 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
         const messageText = incomingMsg?.text?.body || "";
         try {
           const tenantFilter = tenant ? { tenantId: tenant._id } : {};
-          const campaign = await WhatsappCampaign.findOne({ "messages.phone": fromPhone, ...tenantFilter }).sort({ sentAt: -1 });
+          const campaign = await WhatsappCampaign.findOne({
+            "messages.phone": fromPhone,
+            ...tenantFilter,
+          }).sort({ sentAt: -1 });
           if (!campaign) continue;
           const sentMsg = campaign.messages.find((m) => m.phone === fromPhone);
-          campaign.replies.push({ lead: sentMsg?.lead, leadName: sentMsg?.leadName, phone: fromPhone, messageText, waMessageId: incomingMsg.id, receivedAt: new Date() });
+          campaign.replies.push({
+            lead: sentMsg?.lead,
+            leadName: sentMsg?.leadName,
+            phone: fromPhone,
+            messageText,
+            waMessageId: incomingMsg.id,
+            receivedAt: new Date(),
+          });
           campaign.repliedCount = (campaign.repliedCount || 0) + 1;
           await campaign.save();
-        } catch (err) { console.error("[WA Webhook Reply]", err.message); }
+        } catch (err) {
+          console.error("[WA Webhook Reply]", err.message);
+        }
       }
     }
   }
@@ -558,17 +822,33 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
 
 exports.getReplies = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaigns = await WhatsappCampaign.find({ repliedCount: { $gt: 0 }, ...tenantFilter })
-    .select("name replies sentAt").sort({ "replies.receivedAt": -1 });
-  const replies = campaigns.flatMap((c) => c.replies.map((r) => ({ campaignId: c._id, campaignName: c.name, ...r.toObject() })));
+  const campaigns = await WhatsappCampaign.find({
+    repliedCount: { $gt: 0 },
+    ...tenantFilter,
+  })
+    .select("name replies sentAt")
+    .sort({ "replies.receivedAt": -1 });
+  const replies = campaigns.flatMap((c) =>
+    c.replies.map((r) => ({
+      campaignId: c._id,
+      campaignName: c.name,
+      ...r.toObject(),
+    })),
+  );
   replies.sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
   res.json({ success: true, count: replies.length, data: replies });
 });
 
 exports.uploadMedia = asyncHandler(async (req, res) => {
-  if (!req.file) { res.status(400); throw new Error("No file uploaded"); }
+  if (!req.file) {
+    res.status(400);
+    throw new Error("No file uploaded");
+  }
   const wa = await getWaBase(req.user);
-  if (!wa || !wa.phoneNumbers.length) { res.status(400); throw new Error("WhatsApp is not connected"); }
+  if (!wa || !wa.phoneNumbers.length) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected");
+  }
 
   // Use first phone number for media upload
   const phoneNumberId = wa.phoneNumbers[0].phoneNumberId;
@@ -584,6 +864,12 @@ exports.uploadMedia = asyncHandler(async (req, res) => {
     body: form,
   });
   const data = await uploadRes.json();
-  if (!uploadRes.ok) { res.status(400); throw new Error(data?.error?.message || "Media upload failed"); }
-  res.json({ success: true, data: { mediaId: data.id, filename: originalname, mimetype } });
+  if (!uploadRes.ok) {
+    res.status(400);
+    throw new Error(data?.error?.message || "Media upload failed");
+  }
+  res.json({
+    success: true,
+    data: { mediaId: data.id, filename: originalname, mimetype },
+  });
 });

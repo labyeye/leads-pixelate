@@ -194,19 +194,35 @@ function AppRoutes() {
       />
       <Route
         path="/console"
-        element={<ProtectedRoute><ConsolePage /></ProtectedRoute>}
+        element={
+          <ProtectedRoute>
+            <ConsolePage />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/whatsapp/inbox"
-        element={<ProtectedRoute><WhatsAppInboxPage /></ProtectedRoute>}
+        element={
+          <ProtectedRoute>
+            <WhatsAppInboxPage />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/whatsapp/logs"
-        element={<ProtectedRoute><WhatsAppLogsPage /></ProtectedRoute>}
+        element={
+          <ProtectedRoute>
+            <WhatsAppLogsPage />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/whatsapp/setup"
-        element={<ProtectedRoute><WhatsAppSetupPage /></ProtectedRoute>}
+        element={
+          <ProtectedRoute>
+            <WhatsAppSetupPage />
+          </ProtectedRoute>
+        }
       />
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
       <Route path="*" element={<NotFound />} />

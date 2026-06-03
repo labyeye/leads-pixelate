@@ -86,10 +86,10 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
                         active && isWa
                           ? "bg-[#25D366] border-black text-white nb-shadow-sm"
                           : active
-                          ? "bg-[#024BAB] border-black text-white nb-shadow-sm"
-                          : isWa
-                          ? "border-transparent text-black hover:bg-[#25D366]/10 hover:border-[#25D366]/60"
-                          : "border-transparent text-black hover:bg-[#024BAB]/10 hover:border-black",
+                            ? "bg-[#024BAB] border-black text-white nb-shadow-sm"
+                            : isWa
+                              ? "border-transparent text-black hover:bg-[#25D366]/10 hover:border-[#25D366]/60"
+                              : "border-transparent text-black hover:bg-[#024BAB]/10 hover:border-black",
                         collapsed && "lg:justify-center lg:px-0",
                       )}
                     >

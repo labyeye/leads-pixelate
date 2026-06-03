@@ -63,7 +63,10 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     userPerformanceData,
   ] = await Promise.all([
     Lead.countDocuments({ ...tf }),
-    Lead.countDocuments({ ...tf, createdAt: { $gte: todayStart, $lte: todayEnd } }),
+    Lead.countDocuments({
+      ...tf,
+      createdAt: { $gte: todayStart, $lte: todayEnd },
+    }),
     Lead.countDocuments({ ...tf, createdAt: { $gte: startOfWeek } }),
     Lead.countDocuments({ ...tf, createdAt: { $gte: startOfMonth } }),
     Lead.countDocuments({
@@ -72,8 +75,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     }),
     Lead.countDocuments({ ...tf, status: "WON" }),
     User.countDocuments({ ...tf, status: "active" }),
-    Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$status", count: { $sum: 1 } } }]),
-    Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$source", count: { $sum: 1 } } }]),
+    Lead.aggregate([
+      { $match: { ...tf } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
+    Lead.aggregate([
+      { $match: { ...tf } },
+      { $group: { _id: "$source", count: { $sum: 1 } } },
+    ]),
 
     // Hot leads
     Lead.countDocuments({ ...tf, status: { $in: HOT_STATUSES } }),
