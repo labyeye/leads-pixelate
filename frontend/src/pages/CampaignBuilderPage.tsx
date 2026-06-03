@@ -98,17 +98,24 @@ export default function CampaignBuilderPage() {
   const [description, setDescription] = useState("");
 
   // Step 2 — Audience
-  const [targetType, setTargetType] = useState<"ALL_LEADS" | "SEGMENT">("ALL_LEADS");
+  const [targetType, setTargetType] = useState<"ALL_LEADS" | "SEGMENT">(
+    "ALL_LEADS",
+  );
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [audiencePreview, setAudiencePreview] = useState<{ count: number; preview: any[] } | null>(null);
+  const [audiencePreview, setAudiencePreview] = useState<{
+    count: number;
+    preview: any[];
+  } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
   // Step 3 — Template
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
-  const [variableMapping, setVariableMapping] = useState<Array<{ position: number; fieldKey: string; customValue: string }>>([]);
+  const [variableMapping, setVariableMapping] = useState<
+    Array<{ position: number; fieldKey: string; customValue: string }>
+  >([]);
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
 
@@ -127,7 +134,8 @@ export default function CampaignBuilderPage() {
         setTemplates(tplRes.data || []);
         const numbers = cfgRes.data?.phoneNumbers || [];
         setPhoneNumbers(numbers);
-        if (numbers.length === 1) setSelectedPhoneNumberId(numbers[0].phoneNumberId);
+        if (numbers.length === 1)
+          setSelectedPhoneNumberId(numbers[0].phoneNumberId);
       } catch {
         // WhatsApp may not be configured — silent
       } finally {
@@ -140,7 +148,8 @@ export default function CampaignBuilderPage() {
   // Auto-initialize variable mapping when template changes
   useEffect(() => {
     if (!selectedTemplate) return;
-    const varCount = (selectedTemplate.bodyText?.match(/\{\{(\d+)\}\}/g) || []).length;
+    const varCount = (selectedTemplate.bodyText?.match(/\{\{(\d+)\}\}/g) || [])
+      .length;
     setVariableMapping(
       Array.from({ length: varCount }, (_, i) => ({
         position: i + 1,
@@ -153,19 +162,23 @@ export default function CampaignBuilderPage() {
   // Load existing campaign if editing
   useEffect(() => {
     if (!isEdit) return;
-    campaignAPI.getById(id!).then((res) => {
-      const c = res.data;
-      setName(c.name || "");
-      setDescription(c.description || "");
-      setTargetType(c.audience?.targetType || "ALL_LEADS");
-      setSelectedStatuses(c.audience?.filters?.leadStatus || []);
-      setSelectedSources(c.audience?.filters?.leadSource || []);
-      setSelectedTemplateId(c.whatsapp?.templateId || "");
-      setVariableMapping(c.whatsapp?.variableMapping || []);
-      setSelectedPhoneNumberId(c.whatsapp?.phoneNumberId || "");
-    }).catch(() => {
-      toast({ title: "Failed to load campaign", variant: "destructive" });
-    }).finally(() => setLoadingInitial(false));
+    campaignAPI
+      .getById(id!)
+      .then((res) => {
+        const c = res.data;
+        setName(c.name || "");
+        setDescription(c.description || "");
+        setTargetType(c.audience?.targetType || "ALL_LEADS");
+        setSelectedStatuses(c.audience?.filters?.leadStatus || []);
+        setSelectedSources(c.audience?.filters?.leadSource || []);
+        setSelectedTemplateId(c.whatsapp?.templateId || "");
+        setVariableMapping(c.whatsapp?.variableMapping || []);
+        setSelectedPhoneNumberId(c.whatsapp?.phoneNumberId || "");
+      })
+      .catch(() => {
+        toast({ title: "Failed to load campaign", variant: "destructive" });
+      })
+      .finally(() => setLoadingInitial(false));
   }, [id, isEdit]);
 
   const handlePreviewAudience = useCallback(async () => {
@@ -191,10 +204,14 @@ export default function CampaignBuilderPage() {
   }, [step]);
 
   const toggleStatus = (v: string) =>
-    setSelectedStatuses((prev) => prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]);
+    setSelectedStatuses((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
 
   const toggleSource = (v: string) =>
-    setSelectedSources((prev) => prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]);
+    setSelectedSources((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
 
   const handleSave = async (launch = false) => {
     setSaving(true);
@@ -231,12 +248,19 @@ export default function CampaignBuilderPage() {
 
       if (launch && isAdmin) {
         await campaignAPI.launch(campaignId);
-        toast({ title: "Campaign launched!", description: "Messages are being sent." });
+        toast({
+          title: "Campaign launched!",
+          description: "Messages are being sent.",
+        });
       }
 
       navigate("/campaigns");
     } catch (err: any) {
-      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to save",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -254,7 +278,7 @@ export default function CampaignBuilderPage() {
 
   const canNext =
     (step === 1 && name.trim()) ||
-    (step === 2) ||
+    step === 2 ||
     (step === 3 && selectedTemplateId) ||
     step === 4;
 
@@ -267,7 +291,9 @@ export default function CampaignBuilderPage() {
             <Megaphone className="w-4 h-4 text-orange-600" />
           </div>
           <div>
-            <h1 className="text-base font-semibold">{isEdit ? "Edit Campaign" : "New Campaign"}</h1>
+            <h1 className="text-base font-semibold">
+              {isEdit ? "Edit Campaign" : "New Campaign"}
+            </h1>
             <p className="text-xs text-muted-foreground">Step {step} of 4</p>
           </div>
         </div>
@@ -300,7 +326,9 @@ export default function CampaignBuilderPage() {
           {step === 1 && (
             <>
               <div>
-                <Label>Campaign Name <span className="text-red-500">*</span></Label>
+                <Label>
+                  Campaign Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   placeholder="e.g. May Followup Blast"
                   value={name}
@@ -309,7 +337,12 @@ export default function CampaignBuilderPage() {
                 />
               </div>
               <div>
-                <Label>Description <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                <Label>
+                  Description{" "}
+                  <span className="text-muted-foreground text-xs">
+                    (optional)
+                  </span>
+                </Label>
                 <Textarea
                   placeholder="What's this campaign about?"
                   value={description}
@@ -321,8 +354,9 @@ export default function CampaignBuilderPage() {
               <div className="p-4 bg-orange-50 border border-orange-100 rounded-lg flex gap-3">
                 <Info className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-orange-700">
-                  You'll choose your audience and WhatsApp template in the next steps.
-                  The campaign will be saved as a <strong>Draft</strong> until you launch it.
+                  You'll choose your audience and WhatsApp template in the next
+                  steps. The campaign will be saved as a <strong>Draft</strong>{" "}
+                  until you launch it.
                 </p>
               </div>
             </>
@@ -335,8 +369,16 @@ export default function CampaignBuilderPage() {
                 <Label className="mb-2 block">Target Type</Label>
                 <div className="flex gap-3">
                   {[
-                    { id: "ALL_LEADS", label: "All Leads", desc: "Send to every lead in the system" },
-                    { id: "SEGMENT", label: "Filtered Segment", desc: "Apply status / source filters" },
+                    {
+                      id: "ALL_LEADS",
+                      label: "All Leads",
+                      desc: "Send to every lead in the system",
+                    },
+                    {
+                      id: "SEGMENT",
+                      label: "Filtered Segment",
+                      desc: "Apply status / source filters",
+                    },
                   ].map(({ id, label, desc }) => (
                     <button
                       key={id}
@@ -344,7 +386,9 @@ export default function CampaignBuilderPage() {
                       className={`flex-1 text-left p-3 rounded-xl border-2 transition-all ${targetType === id ? "border-orange-400 bg-orange-50" : "border-border hover:border-muted-foreground/30"}`}
                     >
                       <p className="text-sm font-semibold">{label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {desc}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -361,7 +405,9 @@ export default function CampaignBuilderPage() {
                           onClick={() => toggleStatus(value)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${selectedStatuses.includes(value) ? "border-orange-400 bg-orange-50 text-orange-700" : "border-border text-muted-foreground hover:border-muted-foreground/40"}`}
                         >
-                          {selectedStatuses.includes(value) && <Check className="w-3 h-3 inline mr-1" />}
+                          {selectedStatuses.includes(value) && (
+                            <Check className="w-3 h-3 inline mr-1" />
+                          )}
                           {label}
                         </button>
                       ))}
@@ -377,7 +423,9 @@ export default function CampaignBuilderPage() {
                           onClick={() => toggleSource(value)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${selectedSources.includes(value) ? "border-blue-400 bg-blue-50 text-blue-700" : "border-border text-muted-foreground hover:border-muted-foreground/40"}`}
                         >
-                          {selectedSources.includes(value) && <Check className="w-3 h-3 inline mr-1" />}
+                          {selectedSources.includes(value) && (
+                            <Check className="w-3 h-3 inline mr-1" />
+                          )}
                           {label}
                         </button>
                       ))}
@@ -390,8 +438,18 @@ export default function CampaignBuilderPage() {
               <div className="border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">Audience Preview</p>
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handlePreviewAudience} disabled={previewLoading}>
-                    {previewLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={handlePreviewAudience}
+                    disabled={previewLoading}
+                  >
+                    {previewLoading ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3" />
+                    )}
                   </Button>
                 </div>
                 {previewLoading ? (
@@ -402,20 +460,35 @@ export default function CampaignBuilderPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-100 rounded-lg">
                       <Users className="w-4 h-4 text-orange-600" />
-                      <span className="text-sm font-bold text-orange-700">{audiencePreview.count}</span>
-                      <span className="text-sm text-orange-600">contacts will receive this campaign</span>
+                      <span className="text-sm font-bold text-orange-700">
+                        {audiencePreview.count}
+                      </span>
+                      <span className="text-sm text-orange-600">
+                        contacts will receive this campaign
+                      </span>
                     </div>
                     {audiencePreview.preview.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Sample contacts</p>
+                        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">
+                          Sample contacts
+                        </p>
                         {audiencePreview.preview.map((contact, i) => (
-                          <div key={i} className="flex items-center gap-2 text-xs py-1 border-b border-border last:border-0">
+                          <div
+                            key={i}
+                            className="flex items-center gap-2 text-xs py-1 border-b border-border last:border-0"
+                          >
                             <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground">
                               {contact.name?.[0]?.toUpperCase()}
                             </div>
                             <span className="font-medium">{contact.name}</span>
-                            {contact.company && <span className="text-muted-foreground">· {contact.company}</span>}
-                            <span className="ml-auto font-mono text-muted-foreground">{contact.phone}</span>
+                            {contact.company && (
+                              <span className="text-muted-foreground">
+                                · {contact.company}
+                              </span>
+                            )}
+                            <span className="ml-auto font-mono text-muted-foreground">
+                              {contact.phone}
+                            </span>
                           </div>
                         ))}
                         {audiencePreview.count > 5 && (
@@ -427,7 +500,9 @@ export default function CampaignBuilderPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground text-center py-4">Click refresh to preview audience</p>
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    Click refresh to preview audience
+                  </p>
                 )}
               </div>
             </>
@@ -444,14 +519,21 @@ export default function CampaignBuilderPage() {
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
                   <AlertCircle className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
                   <div className="text-xs text-yellow-700">
-                    <p className="font-semibold mb-1">No WhatsApp templates found</p>
-                    <p>Go to <strong>WhatsApp → Setup</strong> to sync your approved Meta templates first.</p>
+                    <p className="font-semibold mb-1">
+                      No WhatsApp templates found
+                    </p>
+                    <p>
+                      Go to <strong>WhatsApp → Setup</strong> to sync your
+                      approved Meta templates first.
+                    </p>
                   </div>
                 </div>
               ) : (
                 <>
                   <div>
-                    <Label className="mb-2 block">Select Template <span className="text-red-500">*</span></Label>
+                    <Label className="mb-2 block">
+                      Select Template <span className="text-red-500">*</span>
+                    </Label>
                     <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                       {templates.map((t) => (
                         <button
@@ -460,12 +542,16 @@ export default function CampaignBuilderPage() {
                           className={`w-full text-left p-3 rounded-xl border-2 transition-all ${selectedTemplateId === t._id ? "border-orange-400 bg-orange-50" : "border-border hover:border-muted-foreground/30"}`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-semibold">{t.displayName || t.name}</p>
+                            <p className="text-sm font-semibold">
+                              {t.displayName || t.name}
+                            </p>
                             {selectedTemplateId === t._id && (
                               <Check className="w-4 h-4 text-orange-600" />
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{t.bodyText}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {t.bodyText}
+                          </p>
                         </button>
                       ))}
                     </div>
@@ -490,7 +576,9 @@ export default function CampaignBuilderPage() {
                               value={vm.fieldKey}
                               onValueChange={(v) =>
                                 setVariableMapping((prev) =>
-                                  prev.map((x, j) => j === i ? { ...x, fieldKey: v } : x),
+                                  prev.map((x, j) =>
+                                    j === i ? { ...x, fieldKey: v } : x,
+                                  ),
                                 )
                               }
                             >
@@ -499,7 +587,11 @@ export default function CampaignBuilderPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 {VARIABLE_FIELDS.map((f) => (
-                                  <SelectItem key={f.value} value={f.value} className="text-xs">
+                                  <SelectItem
+                                    key={f.value}
+                                    value={f.value}
+                                    className="text-xs"
+                                  >
                                     {f.label}
                                   </SelectItem>
                                 ))}
@@ -511,7 +603,11 @@ export default function CampaignBuilderPage() {
                                 value={vm.customValue}
                                 onChange={(e) =>
                                   setVariableMapping((prev) =>
-                                    prev.map((x, j) => j === i ? { ...x, customValue: e.target.value } : x),
+                                    prev.map((x, j) =>
+                                      j === i
+                                        ? { ...x, customValue: e.target.value }
+                                        : x,
+                                    ),
                                   )
                                 }
                                 className="h-8 text-xs flex-1"
@@ -526,15 +622,26 @@ export default function CampaignBuilderPage() {
                   {/* Phone number selection */}
                   {phoneNumbers.length > 1 && (
                     <div>
-                      <Label className="mb-2 block">Send From <span className="text-red-500">*</span></Label>
-                      <Select value={selectedPhoneNumberId} onValueChange={setSelectedPhoneNumberId}>
+                      <Label className="mb-2 block">
+                        Send From <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={selectedPhoneNumberId}
+                        onValueChange={setSelectedPhoneNumberId}
+                      >
                         <SelectTrigger className="text-sm">
                           <SelectValue placeholder="Select a phone number..." />
                         </SelectTrigger>
                         <SelectContent>
                           {phoneNumbers.map((pn) => (
-                            <SelectItem key={pn.phoneNumberId} value={pn.phoneNumberId}>
-                              {pn.label || pn.businessName || pn.phoneNumber || pn.phoneNumberId}
+                            <SelectItem
+                              key={pn.phoneNumberId}
+                              value={pn.phoneNumberId}
+                            >
+                              {pn.label ||
+                                pn.businessName ||
+                                pn.phoneNumber ||
+                                pn.phoneNumberId}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -553,29 +660,48 @@ export default function CampaignBuilderPage() {
 
               <div className="bg-muted/30 rounded-xl p-4 space-y-3">
                 <ReviewRow label="Name" value={name} />
-                {description && <ReviewRow label="Description" value={description} />}
+                {description && (
+                  <ReviewRow label="Description" value={description} />
+                )}
                 <ReviewRow
                   label="Audience"
                   value={
                     targetType === "ALL_LEADS"
                       ? "All Leads"
-                      : `Filtered: ${[
-                          selectedStatuses.length ? `${selectedStatuses.length} statuses` : "",
-                          selectedSources.length ? `${selectedSources.length} sources` : "",
-                        ].filter(Boolean).join(", ") || "No filters"}`
+                      : `Filtered: ${
+                          [
+                            selectedStatuses.length
+                              ? `${selectedStatuses.length} statuses`
+                              : "",
+                            selectedSources.length
+                              ? `${selectedSources.length} sources`
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "No filters"
+                        }`
                   }
                 />
                 {audiencePreview && (
-                  <ReviewRow label="Est. Contacts" value={String(audiencePreview.count)} />
+                  <ReviewRow
+                    label="Est. Contacts"
+                    value={String(audiencePreview.count)}
+                  />
                 )}
                 <ReviewRow
                   label="Template"
-                  value={selectedTemplate ? (selectedTemplate.displayName || selectedTemplate.name) : "Not selected"}
+                  value={
+                    selectedTemplate
+                      ? selectedTemplate.displayName || selectedTemplate.name
+                      : "Not selected"
+                  }
                 />
                 {variableMapping.length > 0 && (
                   <ReviewRow
                     label="Variables"
-                    value={variableMapping.map((v) => `{{${v.position}}} → ${v.fieldKey}`).join(", ")}
+                    value={variableMapping
+                      .map((v) => `{{${v.position}}} → ${v.fieldKey}`)
+                      .join(", ")}
                   />
                 )}
               </div>
@@ -583,15 +709,21 @@ export default function CampaignBuilderPage() {
               {/* Template preview */}
               {selectedTemplate && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Message Preview</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Message Preview
+                  </p>
                   <div className="bg-[#ECE5DD] rounded-xl p-4">
                     <div className="bg-white rounded-xl p-3 max-w-xs shadow-sm text-xs text-gray-800 whitespace-pre-wrap">
                       {selectedTemplate.headerText && (
-                        <p className="font-bold mb-1">{selectedTemplate.headerText}</p>
+                        <p className="font-bold mb-1">
+                          {selectedTemplate.headerText}
+                        </p>
                       )}
                       <p>{selectedTemplate.bodyText}</p>
                       {selectedTemplate.footerText && (
-                        <p className="text-gray-400 mt-1 text-[10px]">{selectedTemplate.footerText}</p>
+                        <p className="text-gray-400 mt-1 text-[10px]">
+                          {selectedTemplate.footerText}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -615,7 +747,11 @@ export default function CampaignBuilderPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => step > 1 ? setStep((s) => (s - 1) as Step) : navigate("/campaigns")}
+            onClick={() =>
+              step > 1
+                ? setStep((s) => (s - 1) as Step)
+                : navigate("/campaigns")
+            }
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
             {step === 1 ? "Cancel" : "Back"}

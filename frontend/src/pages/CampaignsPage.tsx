@@ -1,546 +1,755 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { campaignAPI } from "@/services/api";
+import { campaignAPI, whatsappAPI, facebookAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Megaphone,
   Plus,
   Loader2,
   RefreshCw,
-  Users,
   Send,
   CheckCheck,
   Eye,
-  XCircle,
-  BarChart3,
-  Pencil,
-  Trash2,
+  AlertCircle,
   PlayCircle,
   PauseCircle,
   StopCircle,
+  Trash2,
+  Megaphone,
   MessageSquare,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
+  Facebook,
+  TrendingUp,
+  DollarSign,
+  MousePointer,
+  Users,
+  BarChart3,
+  ExternalLink,
+  Zap,
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Campaign {
+interface WaCampaign {
   _id: string;
   name: string;
-  description?: string;
-  type: string;
   status: string;
-  audience: {
-    targetType: string;
-    totalContacts: number;
-  };
+  templateSnapshot?: { displayName?: string; bodyText?: string };
+  totalCount: number;
+  sentCount: number;
+  deliveredCount: number;
+  readCount: number;
+  failedCount: number;
+  repliedCount: number;
+  createdAt: string;
+  sentAt?: string;
+  createdBy?: { name: string };
+}
+
+interface MetaCampaign {
+  id: string;
+  name: string;
+  status: string;
+  objective?: string;
+  daily_budget?: string;
+  lifetime_budget?: string;
+  budget_remaining?: string;
+  start_time?: string;
+  stop_time?: string;
+  created_time: string;
+  adAccountName: string;
+  currency: string;
+}
+
+interface MyCampaign {
+  _id: string;
+  name: string;
+  status: string;
+  type: string;
+  audience: { totalContacts: number };
   metrics: {
     total: number;
     sent: number;
     delivered: number;
     read: number;
-    replied: number;
     failed: number;
   };
-  createdBy?: { name: string };
-  launchedAt?: string;
-  completedAt?: string;
   createdAt: string;
+  launchedAt?: string;
+  createdBy?: { name: string };
 }
 
-interface Stats {
-  total: number;
-  draft: number;
-  running: number;
-  completed: number;
-  cancelled: number;
-  totalSent: number;
-  totalDelivered: number;
-  totalRead: number;
-}
+type ActiveTab = "meta" | "whatsapp" | "mine";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  DRAFT: { label: "Draft", color: "bg-gray-100 text-gray-600 border-gray-200", icon: Pencil },
-  RUNNING: { label: "Running", color: "bg-blue-100 text-blue-700 border-blue-200", icon: PlayCircle },
-  COMPLETED: { label: "Completed", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
-  PAUSED: { label: "Paused", color: "bg-yellow-100 text-yellow-700 border-yellow-200", icon: PauseCircle },
-  CANCELLED: { label: "Cancelled", color: "bg-red-100 text-red-700 border-red-200", icon: XCircle },
+// ─── Status config ─────────────────────────────────────────────────────────────
+const WA_STATUS: Record<string, { label: string; bg: string }> = {
+  COMPLETED: { label: "COMPLETED", bg: "bg-green-400" },
+  SENDING: { label: "SENDING", bg: "bg-blue-400" },
+  FAILED: { label: "FAILED", bg: "bg-red-400" },
+  PARTIAL: { label: "PARTIAL", bg: "bg-orange-400" },
+  DRAFT: { label: "DRAFT", bg: "bg-gray-300" },
 };
 
-const FILTER_TABS = [
-  { id: "ALL", label: "All" },
-  { id: "DRAFT", label: "Draft" },
-  { id: "RUNNING", label: "Running" },
-  { id: "COMPLETED", label: "Completed" },
-  { id: "CANCELLED", label: "Cancelled" },
-];
+const META_STATUS: Record<string, { label: string; bg: string }> = {
+  ACTIVE: { label: "ACTIVE", bg: "bg-green-400" },
+  PAUSED: { label: "PAUSED", bg: "bg-yellow-400" },
+  DELETED: { label: "DELETED", bg: "bg-red-400" },
+  ARCHIVED: { label: "ARCHIVED", bg: "bg-gray-300" },
+};
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+const MY_STATUS: Record<string, { label: string; bg: string }> = {
+  DRAFT: { label: "DRAFT", bg: "bg-gray-300" },
+  RUNNING: { label: "RUNNING", bg: "bg-blue-400" },
+  COMPLETED: { label: "COMPLETED", bg: "bg-green-400" },
+  PAUSED: { label: "PAUSED", bg: "bg-yellow-400" },
+  CANCELLED: { label: "CANCELLED", bg: "bg-red-400" },
+};
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function CampaignsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("ALL");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [cancelId, setCancelId] = useState<string | null>(null);
-  const [cancelling, setCancelling] = useState(false);
+  const [tab, setTab] = useState<ActiveTab>("meta");
+  const [metaCampaigns, setMetaCampaigns] = useState<MetaCampaign[]>([]);
+  const [waCampaigns, setWaCampaigns] = useState<WaCampaign[]>([]);
+  const [myCampaigns, setMyCampaigns] = useState<MyCampaign[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [actionId, setActionId] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchMeta = useCallback(async () => {
     setLoading(true);
     try {
-      const params = filter !== "ALL" ? { status: filter } : {};
-      const [campaignsRes, statsRes] = await Promise.all([
-        campaignAPI.getAll(params),
-        campaignAPI.getStats(),
-      ]);
-      setCampaigns(campaignsRes.data);
-      setStats(statsRes.data);
-    } catch {
-      toast({ title: "Failed to load campaigns", variant: "destructive" });
+      const res = await facebookAPI.getMetaCampaigns();
+      setMetaCampaigns(res.data || []);
+    } catch (err: any) {
+      if (err.message?.includes("not connected")) {
+        toast({
+          title: "Facebook not connected",
+          description: "Connect Facebook in Integrations first.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to fetch Meta campaigns",
+          description: err.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [filter, toast]);
+  }, [toast]);
+
+  const fetchWa = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await whatsappAPI.getCampaigns();
+      setWaCampaigns(res.data || []);
+    } catch {
+      toast({
+        title: "Failed to fetch WhatsApp campaigns",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const fetchMine = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await campaignAPI.getAll();
+      setMyCampaigns(res.data || []);
+    } catch {
+      toast({ title: "Failed to fetch campaigns", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (tab === "meta") fetchMeta();
+    else if (tab === "whatsapp") fetchWa();
+    else fetchMine();
+  }, [tab]);
 
   const handleLaunch = async (id: string) => {
-    setActionLoading(id);
+    setActionId(id);
     try {
       await campaignAPI.launch(id);
-      toast({ title: "Campaign launched!", description: "Messages are being sent." });
-      await fetchData();
+      toast({ title: "Campaign launched!" });
+      fetchMine();
     } catch (err: any) {
-      toast({ title: "Launch failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Launch failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
-      setActionLoading(null);
+      setActionId(null);
     }
   };
 
-  const handlePause = async (id: string) => {
-    setActionLoading(id);
+  const handleDelete = async (id: string) => {
+    setActionId(id);
     try {
-      await campaignAPI.pause(id);
-      toast({ title: "Campaign paused" });
-      await fetchData();
+      await campaignAPI.delete(id);
+      toast({ title: "Deleted" });
+      fetchMine();
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
-      setActionLoading(null);
+      setActionId(null);
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    setDeleting(true);
-    try {
-      await campaignAPI.delete(deleteId);
-      toast({ title: "Campaign deleted" });
-      setDeleteId(null);
-      await fetchData();
-    } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
-    } finally {
-      setDeleting(false);
-    }
+  const refresh = () => {
+    if (tab === "meta") fetchMeta();
+    else if (tab === "whatsapp") fetchWa();
+    else fetchMine();
   };
 
-  const handleCancel = async () => {
-    if (!cancelId) return;
-    setCancelling(true);
-    try {
-      await campaignAPI.cancel(cancelId);
-      toast({ title: "Campaign cancelled" });
-      setCancelId(null);
-      await fetchData();
-    } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
-    } finally {
-      setCancelling(false);
-    }
-  };
+  // ─── Stats ───────────────────────────────────────────────────────────────
+  const metaActive = metaCampaigns.filter((c) => c.status === "ACTIVE").length;
+  const waCompleted = waCampaigns.filter(
+    (c) => c.status === "COMPLETED",
+  ).length;
+  const waTotalSent = waCampaigns.reduce((s, c) => s + (c.sentCount || 0), 0);
+  const myRunning = myCampaigns.filter((c) => c.status === "RUNNING").length;
 
   return (
     <AppLayout title="Campaigns">
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
+      <div className="flex flex-col h-full bg-[#FFFBF0]">
+        {/* ── Header ──────────────────────────────────────────────────── */}
+        <div className="border-b-2 border-black px-6 py-4 bg-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
-              <Megaphone className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 bg-orange-400 border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_0px_#000]">
+              <Megaphone className="w-5 h-5 text-black" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">Campaigns</h1>
-              <p className="text-xs text-muted-foreground">
-                Create and manage WhatsApp outreach campaigns
+              <h1 className="text-xl font-black uppercase tracking-tight">
+                Campaigns
+              </h1>
+              <p className="text-xs text-gray-600 font-medium">
+                Meta Ads · WhatsApp · CRM
               </p>
             </div>
           </div>
-          <Button
-            size="sm"
-            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
-            onClick={() => navigate("/campaigns/new")}
-          >
-            <Plus className="w-4 h-4 mr-1" /> New Campaign
-          </Button>
+          <div className="flex gap-2">
+            <button
+              onClick={refresh}
+              className="p-2 border-2 border-black shadow-[3px_3px_0px_0px_#000] bg-white hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] transition-all"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+              />
+            </button>
+            <button
+              onClick={() => navigate("/campaigns/new")}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-400 border-2 border-black font-black text-sm uppercase shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] transition-all"
+            >
+              <Plus className="w-4 h-4" /> New
+            </button>
+          </div>
         </div>
 
-        {/* Stats row */}
-        {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 px-6 py-3 border-b border-border bg-muted/20">
-            {[
-              { label: "Total", value: stats.total, color: "text-gray-700" },
-              { label: "Draft", value: stats.draft, color: "text-gray-500" },
-              { label: "Running", value: stats.running, color: "text-blue-600" },
-              { label: "Completed", value: stats.completed, color: "text-green-600" },
-              { label: "Total Sent", value: stats.totalSent, color: "text-orange-600" },
-              { label: "Delivered", value: stats.totalDelivered, color: "text-purple-600" },
-            ].map((s) => (
-              <div key={s.label} className="text-center">
-                <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Filter tabs + refresh */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-border">
-          <div className="flex gap-1 overflow-x-auto">
-            {FILTER_TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setFilter(t.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${filter === t.id ? "bg-orange-500 text-white" : "text-muted-foreground hover:bg-accent"}`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <Button variant="outline" size="sm" onClick={fetchData} className="shrink-0 ml-3">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Campaign list */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex justify-center py-16">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : campaigns.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center">
-                <Megaphone className="w-8 h-8 text-orange-300" />
-              </div>
+        {/* ── Stats bar ───────────────────────────────────────────────── */}
+        <div className="grid grid-cols-4 border-b-2 border-black">
+          {[
+            {
+              label: "Meta Active",
+              value: metaActive,
+              bg: "bg-blue-300",
+              icon: Facebook,
+            },
+            {
+              label: "WA Sent",
+              value: waTotalSent,
+              bg: "bg-green-300",
+              icon: Send,
+            },
+            {
+              label: "WA Completed",
+              value: waCompleted,
+              bg: "bg-yellow-300",
+              icon: CheckCheck,
+            },
+            {
+              label: "CRM Running",
+              value: myRunning,
+              bg: "bg-orange-300",
+              icon: Zap,
+            },
+          ].map((s, i) => (
+            <div
+              key={i}
+              className={`${s.bg} border-r-2 border-black last:border-r-0 p-4 flex items-center gap-3`}
+            >
+              <s.icon className="w-5 h-5 text-black shrink-0" />
               <div>
-                <p className="text-sm font-medium text-foreground">No campaigns yet</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Create your first campaign to start reaching your leads.
+                <p className="text-2xl font-black">{s.value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider">
+                  {s.label}
                 </p>
               </div>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white"
-                onClick={() => navigate("/campaigns/new")}
-              >
-                <Plus className="w-4 h-4 mr-1" /> New Campaign
-              </Button>
             </div>
-          ) : (
-            <div className="grid gap-4 max-w-4xl">
-              {campaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign._id}
-                  campaign={campaign}
-                  isAdmin={isAdmin}
-                  actionLoading={actionLoading === campaign._id}
-                  onEdit={() => navigate(`/campaigns/${campaign._id}/edit`)}
-                  onLaunch={() => handleLaunch(campaign._id)}
-                  onPause={() => handlePause(campaign._id)}
-                  onCancel={() => setCancelId(campaign._id)}
-                  onDelete={() => setDeleteId(campaign._id)}
-                />
-              ))}
-            </div>
-          )}
+          ))}
         </div>
 
-        {/* Delete confirm */}
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Campaign?</AlertDialogTitle>
-              <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                disabled={deleting}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {deleting && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* ── Tabs ────────────────────────────────────────────────────── */}
+        <div className="flex border-b-2 border-black bg-white">
+          {(
+            [
+              { id: "meta", label: "📘 Meta Ads", count: metaCampaigns.length },
+              {
+                id: "whatsapp",
+                label: "💬 WhatsApp",
+                count: waCampaigns.length,
+              },
+              {
+                id: "mine",
+                label: "⚡ CRM Campaigns",
+                count: myCampaigns.length,
+              },
+            ] as { id: ActiveTab; label: string; count: number }[]
+          ).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-5 py-3 font-black text-sm uppercase tracking-wide border-r-2 border-black transition-all ${
+                tab === t.id
+                  ? "bg-black text-white"
+                  : "bg-white text-black hover:bg-gray-100"
+              }`}
+            >
+              {t.label}
+              {t.count > 0 && (
+                <span
+                  className={`ml-2 text-xs px-1.5 py-0.5 border border-current font-black ${tab === t.id ? "border-white" : "border-black"}`}
+                >
+                  {t.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-        {/* Cancel confirm */}
-        <AlertDialog open={!!cancelId} onOpenChange={() => setCancelId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Cancel Campaign?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will stop the campaign. It cannot be restarted.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Keep it</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {cancelling && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Cancel Campaign
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* ── Content ─────────────────────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-orange-400 border-2 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_#000] animate-bounce">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+                <p className="font-black uppercase text-sm">Loading...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* META ADS TAB */}
+              {tab === "meta" && (
+                <div className="space-y-3">
+                  {metaCampaigns.length === 0 ? (
+                    <EmptyState
+                      icon={Facebook}
+                      title="No Meta Campaigns"
+                      desc="Connect Facebook in Integrations to see your ad campaigns here."
+                      bg="bg-blue-300"
+                    />
+                  ) : (
+                    metaCampaigns.map((c) => (
+                      <MetaCampaignCard key={c.id} campaign={c} />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* WHATSAPP TAB */}
+              {tab === "whatsapp" && (
+                <div className="space-y-3">
+                  {waCampaigns.length === 0 ? (
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="No WhatsApp Campaigns"
+                      desc="Send your first WhatsApp campaign from the messaging page."
+                      bg="bg-green-300"
+                    />
+                  ) : (
+                    waCampaigns.map((c) => (
+                      <WaCampaignCard key={c._id} campaign={c} />
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* MY CAMPAIGNS TAB */}
+              {tab === "mine" && (
+                <div className="space-y-3">
+                  {myCampaigns.length === 0 ? (
+                    <EmptyState
+                      icon={Megaphone}
+                      title="No CRM Campaigns"
+                      desc="Create your first campaign to start reaching leads."
+                      bg="bg-orange-300"
+                      action={{
+                        label: "+ New Campaign",
+                        onClick: () => navigate("/campaigns/new"),
+                      }}
+                    />
+                  ) : (
+                    myCampaigns.map((c) => (
+                      <MyCampaignCard
+                        key={c._id}
+                        campaign={c}
+                        isAdmin={isAdmin}
+                        loading={actionId === c._id}
+                        onEdit={() => navigate(`/campaigns/${c._id}/edit`)}
+                        onLaunch={() => handleLaunch(c._id)}
+                        onDelete={() => handleDelete(c._id)}
+                      />
+                    ))
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </AppLayout>
   );
 }
 
-// ─── Campaign Card ────────────────────────────────────────────────────────────
-function CampaignCard({
-  campaign,
-  isAdmin,
-  actionLoading,
-  onEdit,
-  onLaunch,
-  onPause,
-  onCancel,
-  onDelete,
-}: {
-  campaign: Campaign;
-  isAdmin: boolean;
-  actionLoading: boolean;
-  onEdit: () => void;
-  onLaunch: () => void;
-  onPause: () => void;
-  onCancel: () => void;
-  onDelete: () => void;
-}) {
-  const cfg = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.DRAFT;
-  const StatusIcon = cfg.icon;
-  const total = campaign.metrics.total || campaign.audience.totalContacts || 0;
-  const deliveryRate = total > 0 ? Math.round((campaign.metrics.delivered / total) * 100) : 0;
-  const readRate = total > 0 ? Math.round((campaign.metrics.read / total) * 100) : 0;
+// ─── Meta Campaign Card ───────────────────────────────────────────────────────
+function MetaCampaignCard({ campaign: c }: { campaign: MetaCampaign }) {
+  const st = META_STATUS[c.status] || { label: c.status, bg: "bg-gray-300" };
+  const budget = c.daily_budget
+    ? `₹${(+c.daily_budget / 100).toLocaleString()}/day`
+    : c.lifetime_budget
+      ? `₹${(+c.lifetime_budget / 100).toLocaleString()} total`
+      : "—";
+  const remaining = c.budget_remaining
+    ? `₹${(+c.budget_remaining / 100).toLocaleString()} left`
+    : null;
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden hover:border-orange-200 transition-colors">
-      <div className="px-5 py-4">
-        <div className="flex items-start gap-4">
-          {/* Type icon */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center shrink-0">
-            <MessageSquare className="w-5 h-5 text-orange-600" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            {/* Name + status */}
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="font-semibold text-sm truncate">{campaign.name}</h3>
-              <span
-                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}
-              >
-                <StatusIcon className="w-3 h-3" />
-                {cfg.label}
+    <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] p-4 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] transition-all">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 bg-blue-300 border-2 border-black flex items-center justify-center shrink-0">
+          <Facebook className="w-5 h-5 text-black" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="font-black text-sm">{c.name}</h3>
+            <span
+              className={`${st.bg} border border-black text-[10px] font-black px-2 py-0.5 uppercase`}
+            >
+              {st.label}
+            </span>
+            {c.objective && (
+              <span className="bg-gray-100 border border-black text-[10px] font-bold px-2 py-0.5 uppercase">
+                {c.objective.replace(/_/g, " ")}
               </span>
-              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
-                {campaign.type}
-              </span>
-            </div>
-
-            {campaign.description && (
-              <p className="text-xs text-muted-foreground mb-2 line-clamp-1">
-                {campaign.description}
-              </p>
             )}
-
-            {/* Metrics row */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <MetricBadge icon={Users} value={total} label="Contacts" color="text-gray-600" />
-              <MetricBadge icon={Send} value={campaign.metrics.sent} label="Sent" color="text-blue-600" />
-              <MetricBadge icon={CheckCheck} value={campaign.metrics.delivered} label="Delivered" color="text-green-600" />
-              <MetricBadge icon={Eye} value={campaign.metrics.read} label="Read" color="text-purple-600" />
-              {campaign.metrics.failed > 0 && (
-                <MetricBadge icon={AlertCircle} value={campaign.metrics.failed} label="Failed" color="text-red-600" />
-              )}
+          </div>
+          <p className="text-xs text-gray-500 font-medium mb-2">
+            {c.adAccountName}
+          </p>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <div className="flex items-center gap-1">
+              <DollarSign className="w-3 h-3 text-green-700" />
+              <span className="font-bold">{budget}</span>
             </div>
-
-            {/* Progress bar (only for completed/running) */}
-            {["RUNNING", "COMPLETED"].includes(campaign.status) && total > 0 && (
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>Delivery rate</span>
-                  <span className="font-medium text-green-600">{deliveryRate}%</span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all"
-                    style={{ width: `${deliveryRate}%` }}
-                  />
-                </div>
-                {readRate > 0 && (
-                  <>
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>Read rate</span>
-                      <span className="font-medium text-purple-600">{readRate}%</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full transition-all"
-                        style={{ width: `${readRate}%` }}
-                      />
-                    </div>
-                  </>
-                )}
+            {remaining && (
+              <div className="flex items-center gap-1">
+                <BarChart3 className="w-3 h-3 text-blue-700" />
+                <span className="font-bold text-blue-700">{remaining}</span>
               </div>
             )}
+            {c.start_time && (
+              <span className="text-gray-500">
+                {format(new Date(c.start_time), "dd MMM yyyy")}
+                {c.stop_time
+                  ? ` → ${format(new Date(c.stop_time), "dd MMM yyyy")}`
+                  : " → ongoing"}
+              </span>
+            )}
+          </div>
+        </div>
+        <a
+          href={`https://www.facebook.com/adsmanager/manage/campaigns?selected_campaign_ids=${c.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-2 border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] transition-all shrink-0"
+          title="Open in Ads Manager"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+      </div>
+    </div>
+  );
+}
 
-            {/* Footer info */}
-            <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-              {campaign.createdBy && (
-                <span>By {campaign.createdBy.name}</span>
-              )}
-              {campaign.launchedAt ? (
-                <span className="flex items-center gap-1">
-                  <PlayCircle className="w-3 h-3" />
-                  Launched {formatDistanceToNow(new Date(campaign.launchedAt), { addSuffix: true })}
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Created {format(new Date(campaign.createdAt), "dd MMM yyyy")}
-                </span>
-              )}
+// ─── WhatsApp Campaign Card ───────────────────────────────────────────────────
+function WaCampaignCard({ campaign: c }: { campaign: WaCampaign }) {
+  const st = WA_STATUS[c.status] || { label: c.status, bg: "bg-gray-300" };
+  const total = c.totalCount || 1;
+  const deliveryPct = Math.round((c.deliveredCount / total) * 100);
+  const readPct = Math.round((c.readCount / total) * 100);
+
+  return (
+    <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] p-4 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] transition-all">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 bg-green-300 border-2 border-black flex items-center justify-center shrink-0">
+          <MessageSquare className="w-5 h-5 text-black" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="font-black text-sm">{c.name}</h3>
+            <span
+              className={`${st.bg} border border-black text-[10px] font-black px-2 py-0.5 uppercase`}
+            >
+              {st.label}
+            </span>
+          </div>
+          {c.templateSnapshot?.displayName && (
+            <p className="text-[11px] text-gray-500 font-medium mb-2">
+              Template: {c.templateSnapshot.displayName}
+            </p>
+          )}
+          {/* Metrics grid */}
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {[
+              {
+                label: "Total",
+                value: c.totalCount,
+                icon: Users,
+                color: "bg-gray-100",
+              },
+              {
+                label: "Sent",
+                value: c.sentCount,
+                icon: Send,
+                color: "bg-blue-100",
+              },
+              {
+                label: "Delivered",
+                value: c.deliveredCount,
+                icon: CheckCheck,
+                color: "bg-green-100",
+              },
+              {
+                label: "Read",
+                value: c.readCount,
+                icon: Eye,
+                color: "bg-purple-100",
+              },
+            ].map((m) => (
+              <div
+                key={m.label}
+                className={`${m.color} border border-black p-2 text-center`}
+              >
+                <m.icon className="w-3 h-3 mx-auto mb-0.5 text-black" />
+                <p className="text-sm font-black">{m.value}</p>
+                <p className="text-[9px] font-bold uppercase">{m.label}</p>
+              </div>
+            ))}
+          </div>
+          {/* Progress bars */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold w-16 uppercase">
+                Delivery
+              </span>
+              <div className="flex-1 h-2 bg-gray-200 border border-black">
+                <div
+                  className="h-full bg-green-400 transition-all"
+                  style={{ width: `${deliveryPct}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-black w-8">{deliveryPct}%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold w-16 uppercase">Read</span>
+              <div className="flex-1 h-2 bg-gray-200 border border-black">
+                <div
+                  className="h-full bg-purple-400 transition-all"
+                  style={{ width: `${readPct}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-black w-8">{readPct}%</span>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-1.5 shrink-0">
-            {campaign.status === "DRAFT" && (
-              <>
-                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onEdit}>
-                  <Pencil className="w-3 h-3 mr-1" /> Edit
-                </Button>
-                {isAdmin && (
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={onLaunch}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? (
-                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                    ) : (
-                      <PlayCircle className="w-3 h-3 mr-1" />
-                    )}
-                    Launch
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </>
-            )}
-
-            {campaign.status === "RUNNING" && isAdmin && (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs"
-                  onClick={onPause}
-                  disabled={actionLoading}
-                >
-                  <PauseCircle className="w-3 h-3 mr-1" /> Pause
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-red-600 hover:bg-red-50"
-                  onClick={onCancel}
-                >
-                  <StopCircle className="w-3 h-3 mr-1" /> Cancel
-                </Button>
-              </>
-            )}
-
-            {["COMPLETED", "CANCELLED"].includes(campaign.status) && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
-                onClick={onDelete}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            )}
-          </div>
+          <p className="text-[10px] text-gray-400 font-medium mt-2">
+            {c.sentAt
+              ? `Sent ${format(new Date(c.sentAt), "dd MMM yyyy, h:mm a")}`
+              : format(new Date(c.createdAt), "dd MMM yyyy")}
+            {c.createdBy ? ` · ${c.createdBy.name}` : ""}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function MetricBadge({
+// ─── My Campaign Card ─────────────────────────────────────────────────────────
+function MyCampaignCard({
+  campaign: c,
+  isAdmin,
+  loading,
+  onEdit,
+  onLaunch,
+  onDelete,
+}: {
+  campaign: MyCampaign;
+  isAdmin: boolean;
+  loading: boolean;
+  onEdit: () => void;
+  onLaunch: () => void;
+  onDelete: () => void;
+}) {
+  const st = MY_STATUS[c.status] || { label: c.status, bg: "bg-gray-300" };
+  const total = c.metrics.total || c.audience.totalContacts || 0;
+  const pct = total > 0 ? Math.round((c.metrics.delivered / total) * 100) : 0;
+
+  return (
+    <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_#000] p-4 hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_#000] transition-all">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 bg-orange-300 border-2 border-black flex items-center justify-center shrink-0">
+          <Megaphone className="w-5 h-5 text-black" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <h3 className="font-black text-sm">{c.name}</h3>
+            <span
+              className={`${st.bg} border border-black text-[10px] font-black px-2 py-0.5 uppercase`}
+            >
+              {st.label}
+            </span>
+            <span className="bg-gray-100 border border-black text-[10px] font-bold px-2 py-0.5 uppercase">
+              {c.type}
+            </span>
+          </div>
+          <div className="flex gap-4 text-xs mb-2">
+            <span className="font-bold">
+              <Users className="w-3 h-3 inline mr-1" />
+              {total} contacts
+            </span>
+            <span className="font-bold text-blue-700">
+              <Send className="w-3 h-3 inline mr-1" />
+              {c.metrics.sent} sent
+            </span>
+            <span className="font-bold text-green-700">
+              <CheckCheck className="w-3 h-3 inline mr-1" />
+              {c.metrics.delivered} delivered
+            </span>
+            {c.metrics.failed > 0 && (
+              <span className="font-bold text-red-600">
+                <AlertCircle className="w-3 h-3 inline mr-1" />
+                {c.metrics.failed} failed
+              </span>
+            )}
+          </div>
+          {total > 0 && (
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1 h-2 bg-gray-200 border border-black">
+                <div
+                  className="h-full bg-orange-400 transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-black">{pct}%</span>
+            </div>
+          )}
+          <p className="text-[10px] text-gray-400 font-medium">
+            {format(new Date(c.createdAt), "dd MMM yyyy")}
+            {c.createdBy ? ` · ${c.createdBy.name}` : ""}
+          </p>
+        </div>
+        {/* Actions */}
+        <div className="flex flex-col gap-1.5 shrink-0">
+          {c.status === "DRAFT" && (
+            <>
+              <button
+                onClick={onEdit}
+                className="px-3 py-1.5 text-[11px] font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] transition-all bg-white"
+              >
+                Edit
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={onLaunch}
+                  disabled={loading}
+                  className="px-3 py-1.5 text-[11px] font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] transition-all bg-green-400 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    "Launch"
+                  )}
+                </button>
+              )}
+              <button
+                onClick={onDelete}
+                disabled={loading}
+                className="px-3 py-1.5 text-[11px] font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] transition-all bg-red-300 disabled:opacity-50"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </>
+          )}
+          {["COMPLETED", "CANCELLED"].includes(c.status) && (
+            <button
+              onClick={onDelete}
+              className="px-3 py-1.5 text-[11px] font-black uppercase border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_#000] transition-all bg-red-300"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({
   icon: Icon,
-  value,
-  label,
-  color,
+  title,
+  desc,
+  bg,
+  action,
 }: {
   icon: React.ElementType;
-  value: number;
-  label: string;
-  color: string;
+  title: string;
+  desc: string;
+  bg: string;
+  action?: { label: string; onClick: () => void };
 }) {
   return (
-    <div className="flex items-center gap-1">
-      <Icon className={`w-3 h-3 ${color}`} />
-      <span className={`text-xs font-semibold ${color}`}>{value}</span>
-      <span className="text-[10px] text-muted-foreground">{label}</span>
+    <div className="border-2 border-black border-dashed p-12 flex flex-col items-center gap-4 text-center bg-white">
+      <div
+        className={`w-14 h-14 ${bg} border-2 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_#000]`}
+      >
+        <Icon className="w-7 h-7 text-black" />
+      </div>
+      <p className="font-black text-base uppercase">{title}</p>
+      <p className="text-sm text-gray-600 max-w-xs">{desc}</p>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="px-5 py-2 bg-orange-400 border-2 border-black font-black text-sm uppercase shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#000] transition-all"
+        >
+          {action.label}
+        </button>
+      )}
     </div>
   );
 }

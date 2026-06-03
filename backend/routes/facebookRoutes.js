@@ -759,4 +759,93 @@ router.post(
   }),
 );
 
+// ─── Meta Ads Campaigns ───────────────────────────────────────────────────────
+
+router.get(
+  "/meta-campaigns",
+  protect,
+  asyncHandler(async (req, res) => {
+    const query = req.user.tenantId
+      ? { _id: req.user.tenantId }
+      : { ownerUser: req.user._id };
+    const tenant = await Tenant.findOne(query);
+    const userToken = tenant?.integrations?.facebook?.userAccessToken;
+
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+
+    // Fetch ad accounts
+    let adAccounts = [];
+    try {
+      const acData = await fbGet("/me/adaccounts", userToken, {
+        fields: "id,name,currency,account_status,amount_spent",
+        limit: "20",
+      });
+      adAccounts = acData.data || [];
+    } catch (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+
+    // Fetch campaigns for every active ad account
+    const allCampaigns = [];
+    for (const account of adAccounts) {
+      try {
+        const cpData = await fbGet(`/${account.id}/campaigns`, userToken, {
+          fields:
+            "id,name,status,objective,daily_budget,lifetime_budget,budget_remaining,start_time,stop_time,created_time",
+          limit: "100",
+        });
+        for (const c of cpData.data || []) {
+          allCampaigns.push({
+            ...c,
+            adAccountId: account.id,
+            adAccountName: account.name,
+            currency: account.currency || "INR",
+          });
+        }
+      } catch {
+        // skip accounts with insufficient permissions
+      }
+    }
+
+    res.json({
+      success: true,
+      count: allCampaigns.length,
+      data: allCampaigns,
+      adAccounts,
+    });
+  }),
+);
+
+router.get(
+  "/meta-campaigns/:id/insights",
+  protect,
+  asyncHandler(async (req, res) => {
+    const query = req.user.tenantId
+      ? { _id: req.user.tenantId }
+      : { ownerUser: req.user._id };
+    const tenant = await Tenant.findOne(query);
+    const userToken = tenant?.integrations?.facebook?.userAccessToken;
+
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+
+    try {
+      const data = await fbGet(`/${req.params.id}/insights`, userToken, {
+        fields: "impressions,clicks,spend,reach,cpm,cpc,ctr,frequency",
+        date_preset: req.query.datePreset || "last_30d",
+      });
+      res.json({ success: true, data: data.data?.[0] || null });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }),
+);
+
 module.exports = router;

@@ -20,7 +20,11 @@ router.get("/stats", getStats);
 router.post("/resolve-audience", resolveAudience);
 
 router.route("/").get(getCampaigns).post(createCampaign);
-router.route("/:id").get(getCampaign).put(updateCampaign).delete(deleteCampaign);
+router
+  .route("/:id")
+  .get(getCampaign)
+  .put(updateCampaign)
+  .delete(deleteCampaign);
 
 router.post("/:id/launch", authorize("super_admin", "admin"), launchCampaign);
 router.post("/:id/pause", authorize("super_admin", "admin"), pauseCampaign);

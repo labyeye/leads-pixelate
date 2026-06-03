@@ -346,6 +346,19 @@ export const facebookAPI = {
       method: "POST",
       body: JSON.stringify({ pageId }),
     }),
+  getMetaCampaigns: () =>
+    request<{
+      success: boolean;
+      count: number;
+      data: any[];
+      adAccounts: any[];
+    }>("/facebook/meta-campaigns"),
+  getMetaCampaignInsights: (id: string, datePreset?: string) => {
+    const query = datePreset ? `?datePreset=${datePreset}` : "";
+    return request<{ success: boolean; data: any }>(
+      `/facebook/meta-campaigns/${id}/insights${query}`,
+    );
+  },
 };
 
 export const clientsAPI = {
@@ -546,8 +559,7 @@ export const whatsappAPI = {
 };
 
 export const socialAPI = {
-  getStats: () =>
-    request<{ success: boolean; data: any }>("/social/stats"),
+  getStats: () => request<{ success: boolean; data: any }>("/social/stats"),
   getPosts: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<{ success: boolean; count: number; data: any[] }>(
@@ -590,7 +602,9 @@ export const socialAPI = {
       { method: "POST" },
     ),
   getAccounts: () =>
-    request<{ success: boolean; count: number; data: any[] }>("/social/accounts"),
+    request<{ success: boolean; count: number; data: any[] }>(
+      "/social/accounts",
+    ),
   connectAccount: (data: any) =>
     request<{ success: boolean; data: any }>("/social/accounts", {
       method: "POST",
@@ -647,8 +661,7 @@ export const campaignAPI = {
     request<{ success: boolean; data: any }>(`/campaigns/${id}/cancel`, {
       method: "POST",
     }),
-  getStats: () =>
-    request<{ success: boolean; data: any }>("/campaigns/stats"),
+  getStats: () => request<{ success: boolean; data: any }>("/campaigns/stats"),
   resolveAudience: (filters: any) =>
     request<{ success: boolean; data: { count: number; contacts: any[] } }>(
       "/campaigns/resolve-audience",

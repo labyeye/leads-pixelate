@@ -90,12 +90,20 @@ function buildTemplateComponents(template, variableMapping, lead) {
         type: "text",
         text: resolveVariable(v.fieldKey, v.customValue, lead),
       }));
-    if (params.length > 0) components.push({ type: "body", parameters: params });
+    if (params.length > 0)
+      components.push({ type: "body", parameters: params });
   }
   return components;
 }
 
-async function sendWaMessage(phoneNumberId, accessToken, to, templateName, language, components) {
+async function sendWaMessage(
+  phoneNumberId,
+  accessToken,
+  to,
+  templateName,
+  language,
+  components,
+) {
   const body = {
     messaging_product: "whatsapp",
     to,
@@ -137,7 +145,9 @@ async function resolveLeads(audience, tenantId) {
 
 async function syncMetricsFromWa(campaign) {
   if (!campaign.whatsappCampaignId) return campaign;
-  const wa = await WhatsappCampaign.findById(campaign.whatsappCampaignId).select(
+  const wa = await WhatsappCampaign.findById(
+    campaign.whatsappCampaignId,
+  ).select(
     "sentCount deliveredCount readCount failedCount repliedCount status",
   );
   if (!wa) return campaign;
@@ -217,7 +227,10 @@ exports.createCampaign = asyncHandler(async (req, res) => {
 
 exports.updateCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaign = await Campaign.findOne({ _id: req.params.id, ...tenantFilter });
+  const campaign = await Campaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
 
   if (!campaign) {
     res.status(404);
@@ -241,7 +254,10 @@ exports.updateCampaign = asyncHandler(async (req, res) => {
 
 exports.deleteCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaign = await Campaign.findOne({ _id: req.params.id, ...tenantFilter });
+  const campaign = await Campaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
 
   if (!campaign) {
     res.status(404);
@@ -259,7 +275,10 @@ exports.deleteCampaign = asyncHandler(async (req, res) => {
 
 exports.launchCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaign = await Campaign.findOne({ _id: req.params.id, ...tenantFilter });
+  const campaign = await Campaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
 
   if (!campaign) {
     res.status(404);
@@ -272,7 +291,8 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
   }
 
   if (campaign.type === "WHATSAPP") {
-    const { templateId, variableMapping, phoneNumberId } = campaign.whatsapp || {};
+    const { templateId, variableMapping, phoneNumberId } =
+      campaign.whatsapp || {};
 
     if (!templateId) {
       res.status(400);
@@ -364,19 +384,27 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
 
     // Background send
     (async () => {
-      let sentCount = 0, failedCount = 0;
+      let sentCount = 0,
+        failedCount = 0;
       for (const lead of leads) {
         const phone = formatPhone(lead.phone);
         const msg = waCampaign.messages.find(
           (m) => String(m.lead) === String(lead._id),
         );
         if (!phone) {
-          if (msg) { msg.status = "FAILED"; msg.failedReason = "Invalid phone"; }
+          if (msg) {
+            msg.status = "FAILED";
+            msg.failedReason = "Invalid phone";
+          }
           failedCount++;
           continue;
         }
         try {
-          const components = buildTemplateComponents(template, variableMapping, lead);
+          const components = buildTemplateComponents(
+            template,
+            variableMapping,
+            lead,
+          );
           const apiRes = await sendWaMessage(
             resolvedPhoneNumberId,
             wa.accessToken,
@@ -385,10 +413,17 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
             template.language,
             components,
           );
-          if (msg) { msg.status = "SENT"; msg.waMessageId = apiRes?.messages?.[0]?.id || ""; msg.sentAt = new Date(); }
+          if (msg) {
+            msg.status = "SENT";
+            msg.waMessageId = apiRes?.messages?.[0]?.id || "";
+            msg.sentAt = new Date();
+          }
           sentCount++;
         } catch (err) {
-          if (msg) { msg.status = "FAILED"; msg.failedReason = err.message; }
+          if (msg) {
+            msg.status = "FAILED";
+            msg.failedReason = err.message;
+          }
           failedCount++;
         }
       }
@@ -412,7 +447,10 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
 
 exports.pauseCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaign = await Campaign.findOne({ _id: req.params.id, ...tenantFilter });
+  const campaign = await Campaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
 
   if (!campaign) {
     res.status(404);
@@ -431,7 +469,10 @@ exports.pauseCampaign = asyncHandler(async (req, res) => {
 
 exports.cancelCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const campaign = await Campaign.findOne({ _id: req.params.id, ...tenantFilter });
+  const campaign = await Campaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
 
   if (!campaign) {
     res.status(404);
@@ -492,7 +533,10 @@ exports.getStats = asyncHandler(async (req, res) => {
 exports.resolveAudience = asyncHandler(async (req, res) => {
   const { targetType, filters } = req.body;
 
-  const audience = { targetType: targetType || "ALL_LEADS", filters: filters || {} };
+  const audience = {
+    targetType: targetType || "ALL_LEADS",
+    filters: filters || {},
+  };
   const leads = await resolveLeads(audience, req.user.tenantId);
 
   res.json({
