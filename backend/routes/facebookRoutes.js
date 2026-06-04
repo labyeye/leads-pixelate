@@ -476,9 +476,7 @@ router.post(
 
       for (const formId of formIds) {
         try {
-          const todayMidnight = Math.floor(
-            new Date().setHours(0, 0, 0, 0) / 1000,
-          );
+          const twoDaysAgo = Math.floor((Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000);
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id",
             limit: "100",
@@ -486,7 +484,7 @@ router.post(
               {
                 field: "time_created",
                 operator: "GREATER_THAN",
-                value: todayMidnight,
+                value: twoDaysAgo,
               },
             ]),
           });
