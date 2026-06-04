@@ -15,6 +15,9 @@ import {
   LayoutGrid,
   Plus,
   Trash2,
+  MapPin,
+  Pencil,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { facebookAPI } from "@/services/api";
@@ -90,9 +93,15 @@ export function FacebookWizard({
 
   // Connected pages (multi-page)
   const [connectedPages, setConnectedPages] = useState<
-    Array<{ pageId: string; pageName: string; webhookVerified: boolean }>
+    Array<{ pageId: string; pageName: string; webhookVerified: boolean; allowedStates: string[]; selectedFormIds: string[] }>
   >([]);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+
+  // Inline filter editing on Done step
+  const [editingFilterPageId, setEditingFilterPageId] = useState<string | null>(null);
+  const [editFilterInput, setEditFilterInput] = useState("");
+  const [editFilterValues, setEditFilterValues] = useState<string[]>([]);
+  const [savingFilter, setSavingFilter] = useState(false);
 
   // Load pages when arriving at select_page step
   useEffect(() => {
@@ -113,7 +122,27 @@ export function FacebookWizard({
     try {
       const res = await facebookAPI.getConnectedPages();
       setConnectedPages(res.data);
-    } catch {}
+    } catch (_e) {
+      // silently ignore
+    }
+  };
+
+  const handleSaveFilter = async (cp: { pageId: string; pageName: string; selectedFormIds: string[] }) => {
+    setSavingFilter(true);
+    try {
+      await facebookAPI.connectPage(cp.pageId, cp.selectedFormIds, editFilterValues);
+      setConnectedPages((prev) =>
+        prev.map((p) =>
+          p.pageId === cp.pageId ? { ...p, allowedStates: editFilterValues } : p,
+        ),
+      );
+      setEditingFilterPageId(null);
+      toast({ title: "Filter updated", description: `Location filter saved for ${cp.pageName}` });
+    } catch (err: unknown) {
+      toast({ title: "Failed to save filter", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setSavingFilter(false);
+    }
   };
 
   const loadPages = async () => {
@@ -121,10 +150,10 @@ export function FacebookWizard({
     try {
       const res = await facebookAPI.getPages();
       setPages(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Could not load Pages",
-        description: err.message,
+        description: (err as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -138,10 +167,10 @@ export function FacebookWizard({
     try {
       const res = await facebookAPI.getForms(pageId);
       setForms(res.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Could not load forms",
-        description: err.message,
+        description: (err as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -155,10 +184,10 @@ export function FacebookWizard({
       const res = await facebookAPI.getAuthUrl();
       // Open in same tab — Facebook requires this for prod (popup blocked on mobile)
       window.location.href = res.data.authUrl;
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Error",
-        description: err.message || "Could not get Facebook login URL",
+        description: (err as Error).message || "Could not get Facebook login URL",
         variant: "destructive",
       });
       setOauthLoading(false);
@@ -188,10 +217,10 @@ export function FacebookWizard({
         title: "Facebook connected!",
         description: `${selectedPage.name} is now syncing leads.`,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Connection failed",
-        description: err.message,
+        description: (err as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -202,7 +231,11 @@ export function FacebookWizard({
   const toggleForm = (id: string) => {
     setSelectedFormIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -743,87 +776,168 @@ export function FacebookWizard({
                 Connected Pages ({connectedPages.length})
               </p>
               {connectedPages.map((cp) => (
-                <div
-                  key={cp.pageId}
-                  className="border-2 border-black p-3 bg-white flex items-center gap-3"
-                >
-                  <div className="w-8 h-8 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
-                    <span className="text-white font-bold text-sm">f</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-black truncate">
-                      {cp.pageName}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      {cp.webhookVerified ? (
-                        <>
-                          <Check className="w-3 h-3 text-[#00C48C]" /> Webhook
-                          active
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-3 h-3 text-orange-400" />{" "}
-                          Webhook pending
-                        </>
+                <div key={cp.pageId} className="border-2 border-black bg-white">
+                  {/* Page row */}
+                  <div className="p-3 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
+                      <span className="text-white font-bold text-sm">f</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-black truncate">
+                        {cp.pageName}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        {cp.webhookVerified ? (
+                          <>
+                            <Check className="w-3 h-3 text-[#00C48C]" /> Webhook active
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-3 h-3 text-orange-400" /> Webhook pending
+                          </>
+                        )}
+                      </p>
+                      {cp.allowedStates?.length > 0 && editingFilterPageId !== cp.pageId && (
+                        <p className="text-[11px] text-[#1877F2] font-medium flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3" />
+                          {cp.allowedStates.join(", ")}
+                        </p>
                       )}
-                    </p>
+                    </div>
+                    {/* Edit filter button */}
+                    <button
+                      onClick={() => {
+                        if (editingFilterPageId === cp.pageId) {
+                          setEditingFilterPageId(null);
+                        } else {
+                          setEditingFilterPageId(cp.pageId);
+                          setEditFilterValues(cp.allowedStates || []);
+                          setEditFilterInput("");
+                        }
+                      }}
+                      className="border-2 border-black p-1.5 hover:bg-yellow-50 transition-colors mr-1"
+                      title="Edit location filter"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-yellow-600" />
+                    </button>
+                    <button
+                      disabled={syncing === cp.pageId}
+                      onClick={async () => {
+                        setSyncing(cp.pageId);
+                        try {
+                          const res = await facebookAPI.sync(cp.pageId);
+                          toast({ title: "Sync complete", description: res.message });
+                        } catch (err: unknown) {
+                          toast({ title: "Sync failed", description: (err as Error).message, variant: "destructive" });
+                        } finally {
+                          setSyncing(null);
+                        }
+                      }}
+                      className="border-2 border-black p-1.5 hover:bg-blue-50 transition-colors mr-1"
+                      title="Sync leads now"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-[#1877F2] ${syncing === cp.pageId ? "animate-spin" : ""}`} />
+                    </button>
+                    <button
+                      disabled={disconnecting === cp.pageId}
+                      onClick={async () => {
+                        setDisconnecting(cp.pageId);
+                        try {
+                          await facebookAPI.disconnect(cp.pageId);
+                          setConnectedPages((prev) => prev.filter((p) => p.pageId !== cp.pageId));
+                          toast({ title: `${cp.pageName} disconnected` });
+                        } catch (err: unknown) {
+                          toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+                        } finally {
+                          setDisconnecting(null);
+                        }
+                      }}
+                      className="border-2 border-black p-1.5 hover:bg-red-50 transition-colors"
+                      title="Disconnect page"
+                    >
+                      {disconnecting === cp.pageId ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                      )}
+                    </button>
                   </div>
-                  <button
-                    disabled={syncing === cp.pageId}
-                    onClick={async () => {
-                      setSyncing(cp.pageId);
-                      try {
-                        const res = await facebookAPI.sync(cp.pageId);
-                        toast({
-                          title: "Sync complete",
-                          description: res.message,
-                        });
-                      } catch (err: any) {
-                        toast({
-                          title: "Sync failed",
-                          description: err.message,
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setSyncing(null);
-                      }
-                    }}
-                    className="border-2 border-black p-1.5 hover:bg-blue-50 transition-colors mr-1"
-                    title="Sync leads now"
-                  >
-                    <RefreshCw
-                      className={`w-3.5 h-3.5 text-[#1877F2] ${syncing === cp.pageId ? "animate-spin" : ""}`}
-                    />
-                  </button>
-                  <button
-                    disabled={disconnecting === cp.pageId}
-                    onClick={async () => {
-                      setDisconnecting(cp.pageId);
-                      try {
-                        await facebookAPI.disconnect(cp.pageId);
-                        setConnectedPages((prev) =>
-                          prev.filter((p) => p.pageId !== cp.pageId),
-                        );
-                        toast({ title: `${cp.pageName} disconnected` });
-                      } catch (err: any) {
-                        toast({
-                          title: "Error",
-                          description: err.message,
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setDisconnecting(null);
-                      }
-                    }}
-                    className="border-2 border-black p-1.5 hover:bg-red-50 transition-colors"
-                    title="Disconnect page"
-                  >
-                    {disconnecting === cp.pageId ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                    )}
-                  </button>
+
+                  {/* Inline filter editor */}
+                  {editingFilterPageId === cp.pageId && (
+                    <div className="border-t-2 border-black p-3 bg-[#FFFBEB] space-y-2">
+                      <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> Location Filter
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Only capture leads from these cities/states. Leave empty to capture from everywhere.
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editFilterInput}
+                          onChange={(e) => setEditFilterInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === ",") {
+                              e.preventDefault();
+                              const val = editFilterInput.trim();
+                              if (val && !editFilterValues.includes(val)) {
+                                setEditFilterValues((prev) => [...prev, val]);
+                              }
+                              setEditFilterInput("");
+                            }
+                          }}
+                          placeholder="Type city or state, press Enter"
+                          className="flex-1 border-2 border-black px-3 py-1.5 text-sm focus:outline-none focus:border-[#1877F2]"
+                        />
+                        <button
+                          onClick={() => {
+                            const val = editFilterInput.trim();
+                            if (val && !editFilterValues.includes(val)) {
+                              setEditFilterValues((prev) => [...prev, val]);
+                            }
+                            setEditFilterInput("");
+                          }}
+                          className="border-2 border-black px-3 py-1.5 bg-black text-white text-sm font-bold hover:bg-gray-800"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      {editFilterValues.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {editFilterValues.map((s) => (
+                            <span key={s} className="flex items-center gap-1 border-2 border-black px-2 py-0.5 bg-[#EFF6FF] text-xs font-bold">
+                              {s}
+                              <button
+                                onClick={() => setEditFilterValues((prev) => prev.filter((x) => x !== s))}
+                                className="text-red-500 hover:text-red-700 ml-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-[#00C48C] font-medium">✓ Capturing leads from all locations</p>
+                      )}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => handleSaveFilter(cp)}
+                          disabled={savingFilter}
+                          className="border-2 border-black px-4 py-1.5 bg-[#00C48C] text-black text-xs font-bold hover:bg-green-400 flex items-center gap-1"
+                        >
+                          {savingFilter ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                          Save Filter
+                        </button>
+                        <button
+                          onClick={() => setEditingFilterPageId(null)}
+                          className="border-2 border-black px-4 py-1.5 bg-white text-black text-xs font-bold hover:bg-gray-100"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

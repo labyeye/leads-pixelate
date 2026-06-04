@@ -388,7 +388,8 @@ router.get(
     const pages = (tenant?.integrations?.facebook?.pages || []).map((p) => ({
       pageId: p.pageId,
       pageName: p.pageName,
-      selectedFormIds: p.selectedFormIds,
+      selectedFormIds: p.selectedFormIds || [],
+      allowedStates: p.allowedStates || [],
       webhookVerified: p.webhookVerified,
       connectedAt: p.connectedAt,
     }));
