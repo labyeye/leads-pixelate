@@ -435,7 +435,8 @@ router.post(
     }
 
     let totalCreated = 0;
-    let totalSkipped = 0;
+    let totalUpdated = 0;
+    let totalFiltered = 0;
     const pageResults = [];
 
     for (const page of pagesToSync) {
@@ -443,7 +444,8 @@ router.post(
         pageName: page.pageName,
         forms: 0,
         created: 0,
-        skipped: 0,
+        updated: 0,
+        filtered: 0,
         error: null,
       };
 
@@ -505,18 +507,13 @@ router.post(
                 .trim();
               const locationRaw = state || cityField;
               const allowedStates = page.allowedStates || [];
-              if (allowedStates.length > 0) {
-                if (!locationRaw) {
-                  totalSkipped++;
-                  pageResult.skipped++;
-                  continue;
-                }
+              if (allowedStates.length > 0 && locationRaw) {
                 const matches = allowedStates.some(
                   (s) => locationRaw.includes(s) || s.includes(locationRaw),
                 );
                 if (!matches) {
-                  totalSkipped++;
-                  pageResult.skipped++;
+                  totalFiltered++;
+                  pageResult.filtered++;
                   continue;
                 }
               }
@@ -546,8 +543,8 @@ router.post(
               });
               if (exists) {
                 await Lead.findByIdAndUpdate(exists._id, { $set: leadData });
-                totalSkipped++;
-                pageResult.skipped++;
+                totalUpdated++;
+                pageResult.updated++;
               } else {
                 try {
                   await Lead.create({
@@ -562,13 +559,13 @@ router.post(
                   totalCreated++;
                   pageResult.created++;
                 } catch (createErr) {
-                  // Handle duplicate key error - try without facebook fields
+                  // Handle duplicate key error
                   if (createErr.code === 11000) {
                     console.warn(
                       `[FB sync] Duplicate lead detected for ${leadData.name} (${leadData.phone}) - skipping`,
                     );
-                    totalSkipped++;
-                    pageResult.skipped++;
+                    totalUpdated++;
+                    pageResult.updated++;
                   } else {
                     throw createErr;
                   }
@@ -592,12 +589,16 @@ router.post(
       pageResults.push(pageResult);
     }
 
+    const parts = [`${totalCreated} new`];
+    if (totalUpdated > 0) parts.push(`${totalUpdated} already in DB`);
+    if (totalFiltered > 0) parts.push(`${totalFiltered} blocked by location filter`);
     res.json({
       success: true,
-      message: `Sync complete — ${totalCreated} new leads imported, ${totalSkipped} skipped`,
+      message: `Sync complete — ${parts.join(", ")}`,
       data: {
         created: totalCreated,
-        skipped: totalSkipped,
+        updated: totalUpdated,
+        filtered: totalFiltered,
         pages: pageResults,
       },
     });
@@ -716,11 +717,10 @@ router.post(
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
 
-          // Location filter — skip lead if allowedStates is set and city/state doesn't match
+          // Location filter — only block if location is explicitly a non-matching city
           const locationRaw = state || city.toLowerCase().trim();
           const allowedStates = pageConfig.allowedStates || [];
-          if (allowedStates.length > 0) {
-            if (!locationRaw) continue;
+          if (allowedStates.length > 0 && locationRaw) {
             const stateMatches = allowedStates.some(
               (s) => locationRaw.includes(s) || s.includes(locationRaw),
             );
