@@ -497,12 +497,15 @@ router.post(
                   f.values?.[0] ?? "";
               }
 
+              const extractCity = (m) =>
+                m.city || m.city_town || m["city/town"] || m.district || m.town ||
+                Object.entries(m).find(([k]) => k.includes("city") || k.includes("district") || k.includes("town"))?.[1] ||
+                m.location || "";
+
               const state = (fMap.state || fMap.province || fMap.region || "")
                 .toLowerCase()
                 .trim();
-              const cityField = (fMap.city || fMap.location || "")
-                .toLowerCase()
-                .trim();
+              const cityField = extractCity(fMap).toLowerCase().trim();
               const locationRaw = state || cityField;
               const allowedStates = page.allowedStates || [];
               if (allowedStates.length > 0 && locationRaw) {
@@ -527,7 +530,7 @@ router.post(
                 company: fMap.company_name || fMap.company || "N/A",
                 phone: fMap.phone_number || fMap.phone || fMap.mobile || "",
                 email: fMap.email || fMap.email_address || "",
-                location: fMap.city || fMap.location || "",
+                location: extractCity(fMap),
                 requirement:
                   fMap.product ||
                   fMap.product_interest ||
@@ -708,7 +711,12 @@ router.post(
           const email = fMap.email || fMap.email_address || "";
           const company =
             fMap.company_name || fMap.company || fMap.organization || "";
-          const city = fMap.city || fMap.location || "";
+          const extractCity = (m) =>
+            m.city || m.city_town || m["city/town"] || m.district || m.town ||
+            Object.entries(m).find(([k]) => k.includes("city") || k.includes("district") || k.includes("town"))?.[1] ||
+            m.location || "";
+
+          const city = extractCity(fMap);
           const state = (fMap.state || fMap.province || fMap.region || "")
             .toLowerCase()
             .trim();
