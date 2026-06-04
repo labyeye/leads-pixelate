@@ -499,10 +499,19 @@ router.post(
               const state = (fMap.state || fMap.province || fMap.region || "")
                 .toLowerCase()
                 .trim();
+              const cityField = (fMap.city || fMap.location || "")
+                .toLowerCase()
+                .trim();
+              const locationRaw = state || cityField;
               const allowedStates = page.allowedStates || [];
-              if (allowedStates.length > 0 && state) {
+              if (allowedStates.length > 0) {
+                if (!locationRaw) {
+                  totalSkipped++;
+                  pageResult.skipped++;
+                  continue;
+                }
                 const matches = allowedStates.some(
-                  (s) => state.includes(s) || s.includes(state),
+                  (s) => locationRaw.includes(s) || s.includes(locationRaw),
                 );
                 if (!matches) {
                   totalSkipped++;
@@ -706,11 +715,13 @@ router.post(
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
 
-          // State filter — skip lead if allowedStates is set and state doesn't match
+          // Location filter — skip lead if allowedStates is set and city/state doesn't match
+          const locationRaw = state || city.toLowerCase().trim();
           const allowedStates = pageConfig.allowedStates || [];
-          if (allowedStates.length > 0 && state) {
+          if (allowedStates.length > 0) {
+            if (!locationRaw) continue;
             const stateMatches = allowedStates.some(
-              (s) => state.includes(s) || s.includes(state),
+              (s) => locationRaw.includes(s) || s.includes(locationRaw),
             );
             if (!stateMatches) continue;
           }
