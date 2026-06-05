@@ -92,7 +92,7 @@ function fmt(n) {
 
 function getPlanLabel(plan) {
   return (
-    { starter: "Starter", growth: "Growth", enterprise: "Enterprise" }[plan] ||
+    { starter: "Starter", growth: "Growth", pro: "Pro", enterprise: "Pro" }[plan] ||
     plan
   );
 }
@@ -114,6 +114,16 @@ function getPlanFeatures(plan) {
       "Advanced follow-up workflows",
       "Priority support",
       "CSV export",
+    ],
+    pro: [
+      "Unlimited leads",
+      "Unlimited team members",
+      "All integrations",
+      "Custom workflows",
+      "Dedicated account manager",
+      "SLA guarantee",
+      "Custom reporting",
+      "API access",
     ],
     enterprise: [
       "Unlimited leads",

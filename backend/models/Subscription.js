@@ -33,7 +33,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["trial", "starter", "growth", "enterprise"],
+      enum: ["trial", "starter", "growth", "pro", "enterprise"],
       default: "trial",
     },
     billingCycle: {
@@ -78,15 +78,25 @@ const PLAN_LIMITS = {
   trial: { leadsPerMonth: 100, teamMembers: 2 },
   starter: { leadsPerMonth: 500, teamMembers: 2 },
   growth: { leadsPerMonth: 5000, teamMembers: 10 },
-  enterprise: { leadsPerMonth: 99999, teamMembers: 999 },
+  pro: { leadsPerMonth: 99999, teamMembers: 999 },
+  enterprise: { leadsPerMonth: 99999, teamMembers: 999 }, // legacy alias
 };
 
 const PLAN_PRICES_MONTHLY = {
-  starter: 50000, // ₹500
-  growth: 129900, // ₹1,299
-  enterprise: 299900, // ₹2,999
+  starter: 49900,  // ₹499
+  growth: 124900,  // ₹1,249
+  pro: 399900,     // ₹3,999
+  enterprise: 399900, // legacy alias
+};
+
+const PLAN_PRICES_YEARLY = {
+  starter: 499900,   // ₹4,999  (2 months free)
+  growth: 1249900,   // ₹12,499 (2 months free)
+  pro: 3999900,      // ₹39,999 (2 months free)
+  enterprise: 3999900, // legacy alias
 };
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);
 module.exports.PLAN_LIMITS = PLAN_LIMITS;
 module.exports.PLAN_PRICES_MONTHLY = PLAN_PRICES_MONTHLY;
+module.exports.PLAN_PRICES_YEARLY = PLAN_PRICES_YEARLY;

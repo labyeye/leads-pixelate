@@ -7,7 +7,7 @@ const Razorpay = require("razorpay");
 const Tenant = require("../models/Tenant");
 const Subscription = require("../models/Subscription");
 
-const { PLAN_LIMITS, PLAN_PRICES_MONTHLY } = Subscription;
+const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
 const { sendWelcomeEmail } = require("../utils/emailService");
 
 // ── HDFC Smart Gateway helpers ────────────────────────────────────────────────
@@ -73,7 +73,7 @@ router.get("/plans", (req, res) => {
       starter: {
         name: "Starter",
         priceMonthly: PLAN_PRICES_MONTHLY.starter,
-        priceYearly: Math.round(PLAN_PRICES_MONTHLY.starter * 12 * 0.8),
+        priceYearly: PLAN_PRICES_YEARLY.starter,
         currency: "INR",
         limits: PLAN_LIMITS.starter,
         features: [
@@ -87,7 +87,7 @@ router.get("/plans", (req, res) => {
       growth: {
         name: "Growth",
         priceMonthly: PLAN_PRICES_MONTHLY.growth,
-        priceYearly: Math.round(PLAN_PRICES_MONTHLY.growth * 12 * 0.8),
+        priceYearly: PLAN_PRICES_YEARLY.growth,
         currency: "INR",
         limits: PLAN_LIMITS.growth,
         features: [
@@ -101,12 +101,12 @@ router.get("/plans", (req, res) => {
         ],
         popular: true,
       },
-      enterprise: {
-        name: "Enterprise",
-        priceMonthly: PLAN_PRICES_MONTHLY.enterprise,
-        priceYearly: Math.round(PLAN_PRICES_MONTHLY.enterprise * 12 * 0.8),
+      pro: {
+        name: "Pro",
+        priceMonthly: PLAN_PRICES_MONTHLY.pro,
+        priceYearly: PLAN_PRICES_YEARLY.pro,
         currency: "INR",
-        limits: PLAN_LIMITS.enterprise,
+        limits: PLAN_LIMITS.pro,
         features: [
           "Unlimited leads",
           "Unlimited team members",
@@ -179,7 +179,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (!["starter", "growth", "enterprise"].includes(plan)) {
+    if (!["starter", "growth", "pro", "enterprise"].includes(plan)) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
@@ -187,7 +187,7 @@ router.post(
 
     const basePrice = PLAN_PRICES_MONTHLY[plan];
     const amountPaise =
-      billingCycle === "yearly" ? Math.round(basePrice * 12 * 0.8) : basePrice;
+      billingCycle === "yearly" ? PLAN_PRICES_YEARLY[plan] : basePrice;
     const amountRupees = (amountPaise / 100).toFixed(2);
 
     const orderId = `ORD_${req.user.tenantId}_${Date.now()}`;
@@ -290,7 +290,7 @@ router.post(
       );
     }
 
-    if (!["starter", "growth", "enterprise"].includes(plan)) {
+    if (!["starter", "growth", "pro", "enterprise"].includes(plan)) {
       return res.redirect(
         `${frontendUrl}/billing?payment=failed&reason=invalid_plan`,
       );
@@ -356,7 +356,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (!["starter", "growth", "enterprise"].includes(plan)) {
+    if (!["starter", "growth", "pro", "enterprise"].includes(plan)) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 

@@ -15,7 +15,14 @@
       "Bash(npm list *)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['dependencies'].get\\('jspdf-autotable','not found'\\)\\)\")",
       "Read(//Users/labh/Desktop/Projects/nestgst/backend/**)",
-      "Read(//Users/labh/Desktop/Projects/nestgst/frontend/src/**)"
+      "Read(//Users/labh/Desktop/Projects/nestgst/frontend/src/**)",
+      "Bash(find /Users/labh/Desktop/Projects/nestgst -type f | sort)",
+      "Read(//Users/labh/Desktop/Projects/nestgst/**)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"exit:$?\")"
+    ],
+    "additionalDirectories": [
+      "/Users/labh/Desktop/Projects/nestgst/backend/src"
     ]
   }
 }

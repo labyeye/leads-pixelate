@@ -57,7 +57,7 @@ const PLAN_META: Record<
       "CSV export",
     ],
   },
-  enterprise: {
+  pro: {
     color: "#A855F7",
     icon: "Zap",
     description: "Unlimited scale, custom needs",
@@ -70,6 +70,17 @@ const PLAN_META: Record<
       "SLA guarantee",
       "Custom reporting",
       "API access",
+    ],
+  },
+  enterprise: {
+    color: "#A855F7",
+    icon: "Zap",
+    description: "Unlimited scale, custom needs",
+    features: [
+      "Unlimited leads",
+      "Unlimited team members",
+      "All integrations",
+      "Custom workflows",
     ],
   },
 };
@@ -391,7 +402,7 @@ export default function BillingPage() {
       )
     : 0;
 
-  const planIds = ["starter", "growth", "enterprise"];
+  const planIds = ["starter", "growth", "pro"];
 
   return (
     <AppLayout title="Billing">
@@ -420,7 +431,7 @@ export default function BillingPage() {
                   </p>
                   <p className="text-sm font-medium text-white/70">
                     {periodEnd
-                      ? `Next billing: ${formatDate(periodEnd)} · ${plans?.[currentPlanId] ? formatAmount(billing === "yearly" ? Math.round(plans[currentPlanId].priceMonthly * 12 * 0.8) : plans[currentPlanId].priceMonthly) : "—"}`
+                      ? `Next billing: ${formatDate(periodEnd)} · ${plans?.[currentPlanId] ? formatAmount(billing === "yearly" ? plans[currentPlanId].priceYearly : plans[currentPlanId].priceMonthly) : "—"}`
                       : "Free trial — upgrade to activate"}
                   </p>
                 </div>
@@ -517,7 +528,7 @@ export default function BillingPage() {
                   >
                     Yearly
                     <span className="ml-1.5 text-[10px] bg-[#00C48C] text-black border border-black px-1 py-0.5 font-bold">
-                      -20%
+                      2 months free
                     </span>
                   </button>
                 </div>
@@ -531,7 +542,7 @@ export default function BillingPage() {
                   const isPaying = payingPlan === planId;
                   const priceRaw = apiPlan
                     ? billing === "yearly"
-                      ? Math.round(apiPlan.priceMonthly * 12 * 0.8)
+                      ? apiPlan.priceYearly
                       : apiPlan.priceMonthly
                     : null;
                   const priceDisplay =
@@ -615,9 +626,7 @@ export default function BillingPage() {
                           "Current Plan"
                         ) : (
                           <>
-                            {planId === "enterprise"
-                              ? "Contact Sales"
-                              : "Upgrade Now"}{" "}
+                            {"Upgrade Now"}{" "}
                             <ArrowRight className="w-4 h-4" />
                           </>
                         )}

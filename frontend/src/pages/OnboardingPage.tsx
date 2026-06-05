@@ -20,7 +20,7 @@ const PLANS = [
     icon: Zap,
     color: "#A3E635",
     priceMonthly: 499,
-    priceYearly: 399,
+    priceYearly: 4999,
     description: "Perfect for small sales teams just getting started",
     features: [
       "500 leads per month",
@@ -37,7 +37,7 @@ const PLANS = [
     icon: Rocket,
     color: "#024BAB",
     priceMonthly: 1249,
-    priceYearly: 1099,
+    priceYearly: 12499,
     description: "For teams serious about scaling their sales pipeline",
     features: [
       "5,000 leads per month",
@@ -51,12 +51,12 @@ const PLANS = [
     popular: true,
   },
   {
-    id: "enterprise" as const,
-    name: "Enterprise",
+    id: "pro" as const,
+    name: "Pro",
     icon: Crown,
     color: "#A855F7",
-    priceMonthly: 5999,
-    priceYearly: 4999,
+    priceMonthly: 3999,
+    priceYearly: 39999,
     description: "Unlimited scale with dedicated support and custom setup",
     features: [
       "Unlimited leads",
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
 
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [selectedPlan, setSelectedPlan] = useState<
-    "starter" | "growth" | "enterprise"
+    "starter" | "growth" | "pro"
   >("growth");
   const [paying, setPaying] = useState(false);
 
@@ -190,11 +190,14 @@ export default function OnboardingPage() {
   };
 
   const currentPlan = PLANS.find((p) => p.id === selectedPlan)!;
-  const price =
-    billing === "yearly" ? currentPlan.priceYearly : currentPlan.priceMonthly;
-  const yearlyTotal = currentPlan.priceYearly * 12;
+  const yearlyTotal = currentPlan.priceYearly; // total billed for the year
   const monthlyTotal = currentPlan.priceMonthly * 12;
   const yearlySaving = monthlyTotal - yearlyTotal;
+  // per-month equivalent when billed yearly (for display only)
+  const price =
+    billing === "yearly"
+      ? Math.round(currentPlan.priceYearly / 12)
+      : currentPlan.priceMonthly;
 
   return (
     <div className="min-h-screen bg-[#FFFDF5]">
@@ -272,7 +275,9 @@ export default function OnboardingPage() {
           {PLANS.map((plan) => {
             const isSelected = selectedPlan === plan.id;
             const planPrice =
-              billing === "yearly" ? plan.priceYearly : plan.priceMonthly;
+              billing === "yearly"
+                ? Math.round(plan.priceYearly / 12)
+                : plan.priceMonthly;
             return (
               <button
                 key={plan.id}

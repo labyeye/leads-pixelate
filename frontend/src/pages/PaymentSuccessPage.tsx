@@ -7,7 +7,8 @@ const PLAN_META: Record<
 > = {
   starter: { label: "Starter", color: "#A3E635", emoji: "⚡" },
   growth: { label: "Growth", color: "#024BAB", emoji: "🚀" },
-  enterprise: { label: "Enterprise", color: "#A855F7", emoji: "👑" },
+  pro: { label: "Pro", color: "#A855F7", emoji: "👑" },
+  enterprise: { label: "Pro", color: "#A855F7", emoji: "👑" },
 };
 
 const PARTICLES = Array.from({ length: 60 }, (_, i) => ({
