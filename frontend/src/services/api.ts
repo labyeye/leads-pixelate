@@ -175,6 +175,15 @@ export const leadsAPI = {
     ),
 };
 
+export const reportsAPI = {
+  getStatusHistory: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ success: boolean; count: number; data: any[] }>(
+      `/leads/reports/status-history${query}`,
+    );
+  },
+};
+
 export const tradeindiaSyncAPI = {
   sync: () =>
     request<{ success: boolean; message: string; data: any }>(
@@ -303,12 +312,13 @@ export const facebookAPI = {
     pageId: string,
     selectedFormIds: string[],
     allowedStates: string[] = [],
+    defaultAssigneeId: string = "",
   ) =>
     request<{ success: boolean; message: string; data: any }>(
       "/facebook/connect-page",
       {
         method: "POST",
-        body: JSON.stringify({ pageId, selectedFormIds, allowedStates }),
+        body: JSON.stringify({ pageId, selectedFormIds, allowedStates, defaultAssigneeId }),
       },
     ),
   sync: (pageId?: string) =>

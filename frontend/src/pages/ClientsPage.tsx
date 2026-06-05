@@ -45,6 +45,68 @@ const PAYMENT_NB: Record<string, string> = {
   Overdue: "bg-black text-white border-black",
 };
 
+const NbInput = ({
+  label,
+  id,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  required,
+  as: As = "input",
+  rows,
+}: any) => (
+  <div className="space-y-1">
+    <label
+      htmlFor={id}
+      className="block text-[10px] font-black uppercase tracking-widest text-black"
+    >
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    {As === "textarea" ? (
+      <textarea
+        id={id}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        rows={rows || 2}
+        className="border-2 w-full px-3 py-2 text-sm resize-none"
+      />
+    ) : (
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        className="border-2 w-full px-3 py-2 text-sm"
+      />
+    )}
+  </div>
+);
+
+const NbSelect = ({ label, value, onChange, options }: any) => (
+  <div className="space-y-1">
+    <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+      {label}
+    </label>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="border-2 border-black rounded-none nb-shadow-sm focus:ring-0 bg-white font-bold h-10">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+        {options.map((o: string) => (
+          <SelectItem key={o} value={o} className="font-bold">
+            {o}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+);
+
 export default function ClientsPage() {
   const [search, setSearch] = useState("");
   const [clients, setClients] = useState<any[]>([]);
@@ -191,73 +253,11 @@ export default function ClientsPage() {
       c.company?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const NbInput = ({
-    label,
-    id,
-    type = "text",
-    value,
-    onChange,
-    placeholder,
-    required,
-    as: As = "input",
-    rows,
-  }: any) => (
-    <div className="space-y-1">
-      <label
-        htmlFor={id}
-        className="block text-[10px] font-black uppercase tracking-widest text-black"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      {As === "textarea" ? (
-        <textarea
-          id={id}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          rows={rows || 2}
-          className="nb-input w-full px-3 py-2 text-sm resize-none"
-        />
-      ) : (
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          required={required}
-          className="nb-input w-full px-3 py-2 text-sm"
-        />
-      )}
-    </div>
-  );
-
-  const NbSelect = ({ label, value, onChange, options }: any) => (
-    <div className="space-y-1">
-      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
-        {label}
-      </label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="border-2 border-black rounded-none nb-shadow-sm focus:ring-0 bg-white font-bold h-10">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
-          {options.map((o: string) => (
-            <SelectItem key={o} value={o} className="font-bold">
-              {o}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
   return (
     <AppLayout title="Clients">
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2 nb-input px-3 py-2 w-full sm:w-72">
+        <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input
             type="text"
@@ -278,12 +278,12 @@ export default function ClientsPage() {
           <DialogTrigger asChild>
             <button
               onClick={resetForm}
-              className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Add Client
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg border-2 border-black rounded-none shadow-[6px_6px_0px_#000] p-0 gap-0 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-lg border-2 border-black rounded-none p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4 sticky top-0 z-10">
                 <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
@@ -400,14 +400,14 @@ export default function ClientsPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="nb-btn bg-white text-black px-4 py-2 text-sm font-bold"
+                  className="border-2 bg-white text-black px-4 py-2 text-sm font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="nb-btn bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                  className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingClientId ? "Update Client" : "Save Client"}
@@ -435,7 +435,7 @@ export default function ClientsPage() {
           <div
             key={label}
             className={cn(
-              "border-2 border-black p-4 text-center nb-shadow",
+              "border-2 border-black p-4 text-center",
               bg,
             )}
           >
@@ -448,7 +448,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Table */}
-      <div className="nb-card overflow-hidden">
+      <div className="border-2 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>

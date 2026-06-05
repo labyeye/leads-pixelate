@@ -22,7 +22,11 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
 import { facebookAPI, indiamartAPI } from "@/services/api";
-
+import companylogo from "../assets/images/Logo.png";
+import indiamartLogo from "../assets/images/logos/indiamart.png";
+import facebookLogo from "../assets/images/logos/facebook.png";
+import tradeindiLogo from "../assets/images/logos/tradeindia.webp";
+import justdiallogo from "../assets/images/logos/justdial.webp";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type IntegrationId = "indiamart" | "facebook" | "tradeindia" | "justdial";
@@ -52,6 +56,7 @@ interface Integration {
   color: string;
   bgColor: string;
   icon: string;
+  logo?: string;
   connected: boolean;
   leadsToday?: number;
   lastSync?: string;
@@ -282,9 +287,10 @@ const INTEGRATIONS: Integration[] = [
     id: "indiamart",
     name: "IndiaMART",
     shortDesc: "Auto-import buyer enquiries every 5 min",
-    color: "#FB923C",
+    color: "#9A1C17",
     bgColor: "#FFF7ED",
     icon: "IM",
+    logo: indiamartLogo,
     connected: false,
     docsUrl:
       "https://seller.indiamart.com/messagecentre/crm-api-lead-integration/",
@@ -343,6 +349,7 @@ const INTEGRATIONS: Integration[] = [
     color: "#1877F2",
     bgColor: "#EFF6FF",
     icon: "FB",
+    logo: facebookLogo,
     connected: false,
     docsUrl:
       "https://developers.facebook.com/docs/marketing-api/guides/lead-ads/",
@@ -436,9 +443,10 @@ const INTEGRATIONS: Integration[] = [
     id: "tradeindia",
     name: "TradeIndia",
     shortDesc: "Import leads from your TradeIndia listings",
-    color: "#16A34A",
+    color: "#F57D26",
     bgColor: "#F0FDF4",
     icon: "TI",
+    logo: tradeindiLogo,
     connected: false,
     docsUrl: "#",
     steps: [
@@ -511,9 +519,10 @@ const INTEGRATIONS: Integration[] = [
     id: "justdial",
     name: "Justdial",
     shortDesc: "Pull enquiries from Justdial business listings",
-    color: "#DC2626",
+    color: "#1176BA",
     bgColor: "#FEF2F2",
     icon: "JD",
+    logo: justdiallogo,
     connected: false,
     docsUrl: "#",
     steps: [
@@ -666,10 +675,20 @@ function IntegrationWizard({
         style={{ backgroundColor: integration.bgColor }}
       >
         <div
-          className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-bold text-sm text-white shrink-0"
-          style={{ backgroundColor: integration.color }}
+          className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-bold text-sm text-white shrink-0 overflow-hidden"
+          style={{
+            backgroundColor: integration.logo ? "#fff" : integration.color,
+          }}
         >
-          {integration.icon}
+          {integration.logo ? (
+            <img
+              src={integration.logo}
+              alt={integration.name}
+              className="w-8 h-8 object-contain"
+            />
+          ) : (
+            integration.icon
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-display font-bold text-xl text-black">
@@ -992,7 +1011,7 @@ export default function IntegrationsPage() {
   if (showFbWizard) {
     return (
       <AppLayout title="Integrations">
-        <div className="max-w-5xl mx-auto nb-card bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
+        <div className="max-w-5xl mx-auto border-2 bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
           <FacebookWizard
             onClose={handleFbClose}
             onConnected={handleFbConnected}
@@ -1007,7 +1026,7 @@ export default function IntegrationsPage() {
   if (selected) {
     return (
       <AppLayout title="Integrations">
-        <div className="max-w-5xl mx-auto nb-card bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
+        <div className="max-w-5xl mx-auto border-2 bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
           <IntegrationWizard integration={selected} onClose={handleClose} />
         </div>
       </AppLayout>
@@ -1017,15 +1036,13 @@ export default function IntegrationsPage() {
   return (
     <AppLayout title="Integrations">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="nb-card bg-[#024BAB] p-4 sm:p-5 flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary border-2 border-black flex items-center justify-center shrink-0">
-            <Zap className="w-6 h-6 text-[#024BAB] fill-white" />
-          </div>
+        <div className="border-2 bg-[#024BAB] p-4 sm:p-5 flex items-center gap-4">
+          <img src={companylogo} alt="Logo" className="w-12 h-12" />
           <div>
-            <h2 className="font-display font-bold text-xl text-black">
+            <h2 className="font-display font-bold text-xl text-white">
               Connect your lead sources
             </h2>
-            <p className="text-sm font-medium text-black/70 mt-0.5">
+            <p className="text-sm font-medium text-white/70 mt-0.5">
               Connect once — leads flow in automatically. No manual uploads
               needed.
             </p>
@@ -1038,15 +1055,25 @@ export default function IntegrationsPage() {
             return (
               <div
                 key={integ.id}
-                className="nb-card bg-white p-5 flex flex-col"
+                className="border-2 bg-white p-5 flex flex-col"
               >
                 {/* Card top */}
                 <div className="flex items-start gap-3 mb-4">
                   <div
-                    className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-bold text-sm text-white shrink-0"
-                    style={{ backgroundColor: integ.color }}
+                    className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-bold text-sm text-white shrink-0 overflow-hidden"
+                    style={{
+                      backgroundColor: integ.logo ? "#fff" : integ.color,
+                    }}
                   >
-                    {integ.icon}
+                    {integ.logo ? (
+                      <img
+                        src={integ.logo}
+                        alt={integ.name}
+                        className="w-8 h-8 object-contain"
+                      />
+                    ) : (
+                      integ.icon
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -1129,7 +1156,7 @@ export default function IntegrationsPage() {
           })}
         </div>
 
-        <div className="nb-card bg-white p-4 sm:p-5">
+        <div className="border-2 bg-white p-4 sm:p-5">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
             Coming Soon
           </p>

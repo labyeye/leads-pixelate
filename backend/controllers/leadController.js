@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const mongoose = require("mongoose");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const {
@@ -779,6 +780,89 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
   });
 });
 
+const getStatusHistoryReport = asyncHandler(async (req, res) => {
+  const { period, userId, fromDate, toDate } = req.query;
+
+  const now = new Date();
+  let start, end;
+
+  if (fromDate && toDate) {
+    start = new Date(fromDate);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(toDate);
+    end.setHours(23, 59, 59, 999);
+  } else {
+    end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    start = new Date(now);
+    if (period === "week") {
+      start.setDate(now.getDate() - 6);
+    } else if (period === "month") {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (period === "year") {
+      start = new Date(now.getFullYear(), 0, 1);
+    }
+    start.setHours(0, 0, 0, 0);
+  }
+
+  const tenantFilter = {};
+  if (req.user.tenantId) tenantFilter.tenantId = req.user.tenantId;
+  if (req.user.role === "sales_executive")
+    tenantFilter.assignedTo = req.user._id;
+
+  const historyMatch = {
+    "statusHistory.timestamp": { $gte: start, $lte: end },
+  };
+  if (userId) {
+    historyMatch["statusHistory.changedBy"] = new mongoose.Types.ObjectId(
+      userId,
+    );
+  }
+
+  const pipeline = [
+    { $match: tenantFilter },
+    { $unwind: "$statusHistory" },
+    { $match: historyMatch },
+    {
+      $lookup: {
+        from: "users",
+        localField: "statusHistory.changedBy",
+        foreignField: "_id",
+        as: "_changedByArr",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "assignedTo",
+        foreignField: "_id",
+        as: "_assignedArr",
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        leadId: "$_id",
+        leadName: "$name",
+        leadCompany: "$company",
+        leadPhone: "$phone",
+        currentStatus: "$status",
+        changedToStatus: "$statusHistory.status",
+        timestamp: "$statusHistory.timestamp",
+        remarks: "$statusHistory.remarks",
+        changedBy: { $arrayElemAt: ["$_changedByArr.name", 0] },
+        changedById: "$statusHistory.changedBy",
+        assignedTo: { $arrayElemAt: ["$_assignedArr.name", 0] },
+      },
+    },
+    { $sort: { timestamp: -1 } },
+  ];
+
+  const results = await Lead.aggregate(pipeline);
+
+  res.json({ success: true, count: results.length, data: results });
+});
+
 module.exports = {
   getLeads,
   getLead,
@@ -792,4 +876,5 @@ module.exports = {
   syncFromIndiamart,
   getIndiamartSyncStatus,
   indiamartWebhook,
+  getStatusHistoryReport,
 };

@@ -38,7 +38,7 @@ import { useToast } from "@/components/ui/use-toast";
 const ROLE_NB: Record<string, string> = {
   super_admin: "bg-[#024BAB] text-white border-black",
   admin: "bg-black text-white border-black",
-  sales_executive: "bg-[#FFDE00] text-black border-black",
+  sales_executive: "bg-[#FF751F] text-white border-black",
   service_manager: "bg-white text-black border-black",
   accountant: "bg-white text-black border-black",
 };
@@ -50,6 +50,35 @@ const ROLE_COUNTS = [
   "service_manager",
   "accountant",
 ] as const;
+
+const NbInput = ({
+  label,
+  id,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  required,
+}: any) => (
+  <div className="space-y-1">
+    <label
+      htmlFor={id}
+      className="block text-[10px] font-black uppercase tracking-widest text-black"
+    >
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <input
+      id={id}
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      className="border-2 w-full px-3 py-2 text-sm"
+    />
+  </div>
+);
 
 export default function UsersPage() {
   const [search, setSearch] = useState("");
@@ -184,40 +213,11 @@ export default function UsersPage() {
       u.email?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const NbInput = ({
-    label,
-    id,
-    type = "text",
-    value,
-    onChange,
-    placeholder,
-    required,
-  }: any) => (
-    <div className="space-y-1">
-      <label
-        htmlFor={id}
-        className="block text-[10px] font-black uppercase tracking-widest text-black"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        className="nb-input w-full px-3 py-2 text-sm"
-      />
-    </div>
-  );
-
   return (
     <AppLayout title="Team">
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2 nb-input px-3 py-2 w-full sm:w-72">
+        <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input
             type="text"
@@ -248,12 +248,12 @@ export default function UsersPage() {
                   department: "",
                 });
               }}
-              className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> Add User
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md border-2 border-black rounded-none shadow-[6px_6px_0px_#000] p-0 gap-0">
+          <DialogContent className="sm:max-w-md border-2 border-black rounded-none p-0 gap-0">
             <form onSubmit={handleSubmitUser}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4">
                 <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
@@ -311,7 +311,7 @@ export default function UsersPage() {
                       setFormData({ ...formData, role: v })
                     }
                   >
-                    <SelectTrigger className="border-2 border-black rounded-none nb-shadow-sm focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                    <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
@@ -348,14 +348,14 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="nb-btn bg-white text-black px-4 py-2 text-sm font-bold"
+                  className="border-2 bg-white text-black px-4 py-2 text-sm font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="nb-btn bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                  className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingUserId ? "Update User" : "Save User"}
@@ -371,7 +371,7 @@ export default function UsersPage() {
         {ROLE_COUNTS.map((role) => {
           const count = users.filter((u) => u.role === role).length;
           return (
-            <div key={role} className="nb-card nb-card-hover p-4 text-center">
+            <div key={role} className="border-2 p-4 text-center">
               <p className="text-3xl font-black text-black">
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto text-black/30" />
@@ -388,7 +388,7 @@ export default function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="nb-card overflow-hidden">
+      <div className="border-2 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
@@ -451,13 +451,13 @@ export default function UsersPage() {
                     <tr
                       key={user._id || user.id}
                       className={cn(
-                        "border-b-2 border-black last:border-b-0 hover:bg-[#FFDE00]/10 transition-colors",
+                        "border-b-2 border-black last:border-b-0 hover:bg-[#024BAB]/10 transition-colors",
                         i % 2 === 1 && "bg-[#024BAB]/5",
                       )}
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 border-2 border-black bg-[#024BAB] flex items-center justify-center text-xs font-black text-white shrink-0 nb-shadow-sm">
+                          <div className="w-9 h-9 border-2 border-black bg-[#024BAB] flex items-center justify-center text-xs font-black text-white shrink-0">
                             {initials}
                           </div>
                           <div>
@@ -513,13 +513,13 @@ export default function UsersPage() {
                       <td className="px-5 py-3.5 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors nb-shadow-sm flex items-center justify-center">
+                            <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors flex items-center justify-center">
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000] bg-white min-w-[140px] p-0"
+                            className="border-2 border-black rounded-none bg-white min-w-[140px] p-0"
                           >
                             <DropdownMenuItem
                               onClick={() => handleEditClick(user)}

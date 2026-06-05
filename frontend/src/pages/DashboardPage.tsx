@@ -68,7 +68,7 @@ function KpiCard({
   const inner = (
     <div
       className={cn(
-        "nb-card p-4 flex flex-col gap-3 nb-card-hover",
+        "border-2 p-4 flex flex-col gap-3 nb-card-hover",
         urgent && "bg-[#FFF0F0]",
       )}
     >
@@ -84,7 +84,7 @@ function KpiCard({
         {trend && (
           <span
             className={cn(
-              "flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 border-2 border-black nb-shadow-sm",
+              "flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 border-2 border-black ",
               trend === "up"
                 ? "bg-[#A3E635] text-black"
                 : "bg-[#EF4444] text-white",
@@ -161,7 +161,7 @@ function TodayFollowUpsList({ leads }: { leads: any[] }) {
     <div className="space-y-2">
       {leads.slice(0, 6).map((lead) => (
         <Link key={lead._id} to="/leads">
-          <div className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black hover:nb-shadow-sm transition-all">
+          <div className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black hover: transition-all">
             <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center text-xs font-bold text-black shrink-0">
               {(lead.name || "U")[0].toUpperCase()}
             </div>
@@ -236,7 +236,7 @@ function Leaderboard({ performers }: { performers: any[] }) {
 const NbTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border-2 border-black nb-shadow-sm px-3 py-2 text-xs">
+    <div className="bg-white border-2 border-black  px-3 py-2 text-xs">
       <p className="font-bold text-black mb-1">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-2">
@@ -319,7 +319,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center border-2 border-black nb-shadow-sm overflow-hidden">
+          <div className="flex items-center border-2 border-black  overflow-hidden">
             {(["today", "week", "month"] as Period[]).map((p, i) => (
               <button
                 key={p}
@@ -337,7 +337,7 @@ export default function DashboardPage() {
             ))}
           </div>
           <Link to="/leads">
-            <button className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5">
+            <button className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5">
               <Plus className="w-4 h-4" /> Add Lead
             </button>
           </Link>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
       {(stats.overdueFollowUps > 0 ||
         stats.uncontactedLeads > 0 ||
         stats.hotLeads > 0) && (
-        <div className="flex flex-wrap gap-2 mb-6 p-3 border-2 border-[#EF4444] bg-[#FFF0F0] nb-shadow-sm">
+        <div className="flex flex-wrap gap-2 mb-6 p-3 border-2 border-[#EF4444] bg-[#FFF0F0] ">
           <span className="text-xs font-bold text-[#EF4444] uppercase tracking-wider flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5" /> Action needed
           </span>
@@ -423,7 +423,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
-        <div className="lg:col-span-2 nb-card bg-white p-5">
+        <div className="lg:col-span-2 border-2 bg-white p-5">
           <h3 className="font-display font-bold text-base text-black mb-1">
             Sales Funnel
           </h3>
@@ -433,7 +433,7 @@ export default function DashboardPage() {
           <SalesFunnel stages={funnelStages || []} />
         </div>
 
-        <div className="lg:col-span-3 nb-card bg-white p-5">
+        <div className="lg:col-span-3 border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-display font-bold text-base text-black">
@@ -494,7 +494,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="nb-card bg-white p-5">
+        <div className="border-2 bg-white p-5">
           <h3 className="font-display font-bold text-base text-black mb-1">
             Lead Sources
           </h3>
@@ -551,7 +551,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Today's follow-ups */}
-        <div className="nb-card bg-white p-5">
+        <div className="border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-display font-bold text-base text-black">
@@ -562,7 +562,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link to="/followup-calendar">
-              <button className="text-xs font-bold text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors nb-shadow-sm">
+              <button className="text-xs font-bold text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
                 View all →
               </button>
             </Link>
@@ -571,7 +571,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Team leaderboard */}
-        <div className="nb-card bg-white p-5">
+        <div className="border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-display font-bold text-base text-black">
@@ -582,7 +582,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link to="/users">
-              <button className="text-xs font-bold text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors nb-shadow-sm">
+              <button className="text-xs font-bold text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
                 Team →
               </button>
             </Link>
@@ -593,7 +593,7 @@ export default function DashboardPage() {
 
       {/* FAB */}
       <Link to="/leads" className="fixed bottom-6 right-6 z-50">
-        <button className="nb-btn w-14 h-14 bg-[#024BAB] text-white flex items-center justify-center">
+        <button className="border-2 w-14 h-14 bg-[#024BAB] text-white flex items-center justify-center">
           <Plus className="w-6 h-6" />
         </button>
       </Link>

@@ -606,8 +606,8 @@ export default function LeadsPage() {
           className={cn(
             "p-1 rounded-sm hover:bg-muted transition-colors",
             currentFilters.length > 0
-              ? "text-primary bg-primary/10"
-              : "text-black/50 hover:text-primary",
+              ? "text-white bg-white"
+              : "text-white hover:text-secondary",
           )}
         >
           <Filter className="w-3 h-3" />
@@ -997,8 +997,9 @@ export default function LeadsPage() {
       {}
       <div className="flex flex-col gap-5 mb-6 animate-fade-in">
         {}
-        <div className="flex flex-wrap items-center gap-3 w-full">
-          <div className="flex flex-wrap items-center gap-2 flex-1">
+        <div className="flex flex-col gap-2 w-full">
+          {/* Row 1 — actions + syncs */}
+          <div className="flex flex-wrap items-center gap-2">
             {currentUser?.role !== "sales_executive" && (
               <Dialog
                 open={isAssignModalOpen}
@@ -1008,7 +1009,7 @@ export default function LeadsPage() {
                 }}
               >
                 <DialogTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap">
+                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap">
                     <UserCheck className="w-3.5 h-3.5" />
                     Assign Lead
                   </button>
@@ -1083,7 +1084,7 @@ export default function LeadsPage() {
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Lead
@@ -1093,7 +1094,7 @@ export default function LeadsPage() {
               <button
                 onClick={handleFacebookSync}
                 disabled={fbSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
               >
                 {fbSyncing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1105,7 +1106,7 @@ export default function LeadsPage() {
             )}
 
             {syncStatus !== null && (
-              <div className="flex items-center border-2 border-black shadow-[3px_3px_0px_#000]">
+              <div className="flex items-center border-2 border-black">
                 <button
                   id="indiamart-sync-btn"
                   onClick={handleIndiamartSync}
@@ -1136,7 +1137,7 @@ export default function LeadsPage() {
             <button
               onClick={handleTradeindiaSyncAttempt}
               disabled={tiSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {tiSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1150,7 +1151,7 @@ export default function LeadsPage() {
             <button
               onClick={handleJustdialSyncAttempt}
               disabled={jdSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {jdSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1160,7 +1161,11 @@ export default function LeadsPage() {
               {jdSyncing ? "Syncing..." : "Sync Justdial"}
             </button>
 
-            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white shadow-[2px_2px_0px_#000]">
+          </div>
+
+          {/* Row 2 — date range + search */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white">
               <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
               <input
                 type="date"
@@ -1170,7 +1175,7 @@ export default function LeadsPage() {
                 title="Start Date"
               />
             </div>
-            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white shadow-[2px_2px_0px_#000]">
+            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white">
               <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
               <input
                 type="date"
@@ -1180,45 +1185,18 @@ export default function LeadsPage() {
                 title="End Date"
               />
             </div>
-            {(startDate ||
-              endDate ||
-              search ||
-              statusFilters.length > 0 ||
-              sourceFilters.length > 0 ||
-              budgetFilters.length > 0 ||
-              productFilters.length > 0 ||
-              followUpDateFilter) && (
-              <button
-                onClick={() => {
-                  setStartDate("");
-                  setEndDate("");
-                  setSearch("");
-                  setStatusFilters([]);
-                  setSourceFilters([]);
-                  setBudgetFilters([]);
-                  setProductFilters([]);
-                  setBudgetMin("");
-                  setBudgetMax("");
-                  setFollowUpDateFilter(undefined);
-                }}
-                className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
-              >
-                <X className="w-3 h-3" /> Reset All
-              </button>
-            )}
-          </div>
 
-          <div className="relative z-50 flex items-center gap-2 bg-white border-2 border-black px-3 h-10 w-full lg:w-72 shadow-[2px_2px_0px_#000]">
-            <Search className="w-4 h-4 text-black" />
-            <input
-              type="text"
-              placeholder="Search by name, company, phone..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
-            />
+            <div className="relative z-50 flex items-center gap-2 bg-white border-2 border-black px-3 h-10 flex-1 min-w-[200px]">
+              <Search className="w-4 h-4 text-black shrink-0" />
+              <input
+                type="text"
+                placeholder="Search by name, company, phone..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
+              />
             {search.trim().length > 0 && (
-              <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-popover border border-border rounded-md shadow-xl max-h-80 overflow-y-auto">
+              <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-popover border border-border rounded-md shadow-xl max-h-80 overflow-y-auto z-50">
                 {leads
                   .filter(
                     (l) =>
@@ -1283,12 +1261,38 @@ export default function LeadsPage() {
                 )}
               </div>
             )}
-          </div>
+            </div>
 
-          {}
+            {(startDate ||
+              endDate ||
+              search ||
+              statusFilters.length > 0 ||
+              sourceFilters.length > 0 ||
+              budgetFilters.length > 0 ||
+              productFilters.length > 0 ||
+              followUpDateFilter) && (
+              <button
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setSearch("");
+                  setStatusFilters([]);
+                  setSourceFilters([]);
+                  setBudgetFilters([]);
+                  setProductFilters([]);
+                  setBudgetMin("");
+                  setBudgetMax("");
+                  setFollowUpDateFilter(undefined);
+                }}
+                className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
+              >
+                <X className="w-3 h-3" /> Reset All
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex w-full lg:w-fit overflow-x-auto border-2 border-black shadow-[3px_3px_0px_#000]">
+          <div className="flex w-full lg:w-fit overflow-x-auto border-2 border-black">
             {Object.keys(categories).map((cat) => (
               <button
                 key={cat}
@@ -1319,7 +1323,7 @@ export default function LeadsPage() {
           </div>
 
           {/* View mode toggle */}
-          <div className="flex items-center border-2 border-black shadow-[2px_2px_0px_#000] ml-auto">
+          <div className="flex items-center border-2 border-black ml-auto">
             <button
               onClick={() => setViewMode("table")}
               title="Table view"
@@ -1374,7 +1378,7 @@ export default function LeadsPage() {
               </span>
             </div>
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-              <div className="bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+              <div className="bg-white border-2 border-black p-3">
                 <p className="text-[10px] font-black uppercase tracking-widest text-black">
                   Total IM Leads
                 </p>
@@ -1382,7 +1386,7 @@ export default function LeadsPage() {
                   {syncStatus.totalIndiamartLeads || 0}
                 </p>
               </div>
-              <div className="bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+              <div className="bg-white border-2 border-black p-3">
                 <p className="text-[10px] font-black uppercase tracking-widest text-black">
                   Last 7 Days
                 </p>
@@ -1392,7 +1396,7 @@ export default function LeadsPage() {
               </div>
               {lastSyncResult && (
                 <>
-                  <div className="bg-green-400 border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                  <div className="bg-green-400 border-2 border-black p-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-black">
                       Last Sync: New
                     </p>
@@ -1400,7 +1404,7 @@ export default function LeadsPage() {
                       {lastSyncResult.created || 0}
                     </p>
                   </div>
-                  <div className="bg-white border-2 border-black p-3 shadow-[2px_2px_0px_#000]">
+                  <div className="bg-white border-2 border-black p-3">
                     <p className="text-[10px] font-black uppercase tracking-widest text-black">
                       Last Sync: Skipped
                     </p>
@@ -1524,7 +1528,7 @@ export default function LeadsPage() {
                               setActiveCategory(cat);
                             }}
                             className={cn(
-                              "bg-white border-2 border-black p-3 cursor-pointer transition-all hover:shadow-[3px_3px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5",
+                              "bg-white border-2 border-black p-3 cursor-pointer transition-all hover hover:-translate-x-0.5 hover:-translate-y-0.5",
                               selectedLeadId === (l._id || l.id) &&
                                 "ring-2 ring-[#024BAB]",
                             )}
@@ -1609,7 +1613,7 @@ export default function LeadsPage() {
         <div className="flex flex-col xl:flex-row gap-5 items-start">
           {}
           <div
-            className="flex-1 bg-white border-2 border-black shadow-[4px_4px_0px_#000] overflow-hidden animate-fade-in min-h-[500px]"
+            className="flex-1 bg-white border-2 border-black overflow-hidden animate-fade-in min-h-[500px]"
             style={{ animationDelay: "100ms" }}
           >
             <div className="overflow-x-auto relative max-h-[calc(100vh-250px)]">
@@ -1949,7 +1953,7 @@ export default function LeadsPage() {
                 ) : hasOlderLeads ? (
                   <button
                     onClick={loadOlderLeads}
-                    className="flex items-center gap-2 px-5 py-2 text-xs font-bold border-2 border-black bg-white hover:bg-[#FFDE00] transition-colors shadow-[2px_2px_0px_#000]"
+                    className="flex items-center gap-2 px-5 py-2 text-xs font-bold border-2 border-black bg-white hover:bg-[#FFDE00] transition-colors"
                   >
                     Load older leads
                     {olderCursor && (

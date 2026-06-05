@@ -29,7 +29,7 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <div className="hidden md:flex items-center gap-2 border-2 border-black bg-white px-3 py-1.5 w-48 lg:w-52 nb-shadow-sm">
+        <div className="hidden md:flex items-center gap-2 border-2 border-black bg-white px-3 py-1.5 w-48 lg:w-52">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input
             type="text"
@@ -41,14 +41,14 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
         </div>
 
         <button
-          className="relative w-9 h-9 border-2 border-black bg-white flex items-center justify-center hover:bg-[#024BAB] transition-colors nb-shadow-sm"
+          className="relative w-9 h-9 border-2 border-black bg-white flex items-center justify-center hover:bg-[#024BAB] transition-colors"
           aria-label="Notifications"
         >
           <Bell className="w-[18px] h-[18px] text-black" />
           <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 border border-black" />
         </button>
 
-        <div className="flex items-center gap-2 border-2 border-black bg-[#024BAB] px-2 sm:px-3 py-1.5 nb-shadow-sm">
+        <div className="flex items-center gap-2 border-2 border-black bg-[#024BAB] px-2 sm:px-3 py-1.5">
           <div className="w-6 h-6 bg-white flex items-center justify-center text-[10px] font-bold text-black shrink-0">
             {user.name?.[0]?.toUpperCase() ?? "U"}
           </div>

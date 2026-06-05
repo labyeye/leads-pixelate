@@ -1,8 +1,18 @@
 import { useState, useEffect } from "react";
+import indiamartLogo from "@/assets/images/logos/indiamart.png";
+import facebookLogo from "@/assets/images/logos/facebook.png";
+import tradeindiLogo from "@/assets/images/logos/tradeindia.webp";
+import justdialLogo from "@/assets/images/logos/justdial.webp";
+
+const SOURCE_LOGOS: Record<string, string> = {
+  indiamart: indiamartLogo,
+  facebook: facebookLogo,
+  tradeindia: tradeindiLogo,
+  justdial: justdialLogo,
+};
 import {
   Phone,
   PhoneOff,
-  DollarSign,
   Calendar as CalendarIcon,
   FileText,
   MapPin,
@@ -15,6 +25,7 @@ import {
   IndianRupee,
   MessageCircle,
   Send,
+  Mail,
 } from "lucide-react";
 import {
   Dialog,
@@ -40,6 +51,7 @@ import { format } from "date-fns";
 import { statusColors, getCategoryByStatus } from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
+import { WhatsAppIcon } from "../icons/WhatsAppIcon";
 
 interface LeadDetailPanelProps {
   lead: any;
@@ -86,7 +98,7 @@ export function LeadDetailPanel({
   return (
     <div
       className={cn(
-        "bg-card rounded-xl border border-border p-5 flex flex-col h-full overflow-y-auto",
+        "bg-card border-2 border-border p-5 flex flex-col h-full overflow-y-auto",
         className,
       )}
     >
@@ -94,7 +106,7 @@ export function LeadDetailPanel({
         <h3 className="font-semibold text-foreground">Lead Details</h3>
         <button
           onClick={onClose}
-          className="text-muted-foreground hover:text-foreground text-sm"
+          className="text-red-500 hover:text-red-700 text-sm"
         >
           ✕
         </button>
@@ -107,7 +119,7 @@ export function LeadDetailPanel({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-muted/30 p-2.5 rounded-lg border border-border/50">
+          <div className="bg-muted/30 p-2.5 rounded-lg border-2 border-black">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
               Status
             </p>
@@ -140,49 +152,66 @@ export function LeadDetailPanel({
               </span>
             </div>
           )}
-          <div className="bg-muted/30 p-2.5 rounded-lg border border-border/50">
+          <div className="bg-muted/30 p-2.5 rounded-lg border-2 border-black">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
               Source
             </p>
-            <p className="text-xs font-medium text-foreground">{lead.source}</p>
+            <div className="flex items-center gap-1.5">
+              {SOURCE_LOGOS[lead.source?.toLowerCase()] && (
+                <img
+                  src={SOURCE_LOGOS[lead.source.toLowerCase()]}
+                  alt={lead.source}
+                  className="w-4 h-4 object-contain rounded-sm shrink-0"
+                />
+              )}
+              <p className="text-xs font-medium text-foreground">
+                {lead.source}
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Phone className="w-4 h-4" />
-            <span className="text-foreground">{lead.phone}</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Phone className="w-4 h-4 shrink-0" />
+              <span className="text-foreground">{lead.phone}</span>
+            </div>
+            {lead.location && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <MapPin className="w-4 h-4 mt-0.5 text-black/70 shrink-0" />
+                <span className="text-foreground font-medium text-xs leading-tight">
+                  City: {lead.location}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="w-4 h-4 flex items-center justify-center font-bold text-xs">
-              @
+              <Mail className="w-4 h-4 text-black" />
             </div>
             <span className="text-primary">{lead.email || "No email"}</span>
           </div>
-          {lead.location && (
-            <div className="flex items-start gap-2 text-muted-foreground pt-2">
-              <MapPin className="w-4 h-4 mt-0.5 text-black/70" />
-              <span className="text-foreground font-medium text-xs leading-tight">
-                City: {lead.location}
-              </span>
-            </div>
-          )}
-          {lead.facebookAdName && (
-            <div className="flex items-start gap-2 text-muted-foreground pt-2">
-              <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-[9px]">f</span>
+
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            {lead.facebookAdName && (
+              <div className="flex items-start gap-2 text-muted-foreground">
+                <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
+                  <span className="text-white font-bold text-[9px]">f</span>
+                </div>
+                <span className="text-foreground font-medium text-xs leading-tight">
+                  Campaign: {lead.facebookAdName}
+                </span>
               </div>
-              <span className="text-foreground font-medium text-xs leading-tight">
-                Campaign: {lead.facebookAdName}
+            )}
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <IndianRupee className="w-4 h-4 mt-0.5 text-success/70" />
+              <span className="text-success font-bold text-xs leading-tight">
+                Budget: {lead.budget || "Not Specified"}
               </span>
             </div>
-          )}
-          <div className="flex items-start gap-2 text-muted-foreground pt-2">
-            <IndianRupee className="w-4 h-4 mt-0.5 text-success/70" />
-            <span className="text-success font-bold text-xs leading-tight">
-              Budget: {lead.budget || "Not Specified"}
-            </span>
           </div>
+
           <div className="flex items-start gap-2 text-muted-foreground pt-2">
             <CalendarIcon className="w-4 h-4 mt-0.5 text-blue-500/70" />
             <span className="text-secondary font-bold text-xs leading-tight">
@@ -243,10 +272,10 @@ export function LeadDetailPanel({
         {lead.phone && (
           <Button
             variant="outline"
-            className="w-full justify-start gap-2 text-green-700 hover:text-green-800 hover:bg-green-50 border-green-200"
+            className="w-full border-2 justify-start gap-2 text-green-700 hover:text-green-800 hover:bg-green-50 border-black"
             onClick={() => setWaDialogOpen(true)}
           >
-            <MessageCircle className="w-4 h-4" />
+            <WhatsAppIcon className="w-4 h-4" />
             Send WhatsApp Message
           </Button>
         )}
@@ -258,14 +287,13 @@ export function LeadDetailPanel({
           lead={lead}
           toast={toast}
         />
-
         {}
         {activeCategory === "New Lead" && (
           <div className="grid grid-cols-1 gap-2">
             {}
             {}
             <Button
-              className="w-full justify-start gap-2 bg-green-600 hover:bg-green-700 text-white"
+              className="w-full border-2 justify-start gap-2 bg-green-600 hover:bg-green-700 text-white"
               onClick={() => handleUpdateStatusTrigger("DISCUSSION")}
             >
               <Check className="w-4 h-4" /> Contacted
@@ -275,7 +303,7 @@ export function LeadDetailPanel({
             {lead.status === "PENDING CONTACT" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full border-2 justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("1")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 1)
@@ -285,7 +313,7 @@ export function LeadDetailPanel({
             {lead.status === "1" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full border-2 justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("2")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 2)
@@ -295,7 +323,7 @@ export function LeadDetailPanel({
             {lead.status === "2" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full border-2 justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("3")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 3)
@@ -305,7 +333,7 @@ export function LeadDetailPanel({
             {lead.status === "3" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                className="w-full border-2 justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                 onClick={() => handleUpdateStatusTrigger("COMPLETED")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 4 → Mark
@@ -316,7 +344,7 @@ export function LeadDetailPanel({
             {lead.status === "COMPLETED" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                className="w-full border-2 justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                 onClick={() => handleUpdateStatusTrigger("COMPLETED")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Additional Attempt)
@@ -326,7 +354,7 @@ export function LeadDetailPanel({
             {}
             <Button
               variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="w-full border-2 justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => handleUpdateStatusTrigger("DROP")}
             >
               <Ban className="w-4 h-4" /> Drop Lead
@@ -346,7 +374,7 @@ export function LeadDetailPanel({
             {lead.status === "DISCUSSION" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("DISCUSSION 1")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 1)
@@ -356,7 +384,7 @@ export function LeadDetailPanel({
             {lead.status === "DISCUSSION 1" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("DISCUSSION 2")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 2)
@@ -366,7 +394,7 @@ export function LeadDetailPanel({
             {lead.status === "DISCUSSION 2" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("DISCUSSION 3")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 3)
@@ -423,7 +451,7 @@ export function LeadDetailPanel({
             {lead.status === "QUOTATION" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("QUOTATION 1")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 1)
@@ -433,7 +461,7 @@ export function LeadDetailPanel({
             {lead.status === "QUOTATION 1" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("QUOTATION 2")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 2)
@@ -443,7 +471,7 @@ export function LeadDetailPanel({
             {lead.status === "QUOTATION 2" && (
               <Button
                 variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200"
+                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
                 onClick={() => handleUpdateStatusTrigger("QUOTATION 3")}
               >
                 <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 3)

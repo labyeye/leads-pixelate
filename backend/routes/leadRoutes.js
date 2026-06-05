@@ -13,6 +13,7 @@ const {
   syncFromIndiamart,
   getIndiamartSyncStatus,
   indiamartWebhook,
+  getStatusHistoryReport,
 } = require("../controllers/leadController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -90,6 +91,7 @@ router.post("/justdial/sync", authorize("super_admin", "admin"), (req, res) => {
   });
 });
 
+router.get("/reports/status-history", getStatusHistoryReport);
 router.route("/").get(getLeads).post(createLead);
 
 router

@@ -6,7 +6,6 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
   Users,
   FileText,
   Zap,
@@ -16,11 +15,11 @@ import {
   Plus,
   Trash2,
   MapPin,
-  Pencil,
+  UserCheck,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { facebookAPI } from "@/services/api";
+import { facebookAPI, usersAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -91,9 +90,13 @@ export function FacebookWizard({
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
 
+  // Users for assignee dropdown
+  const [users, setUsers] = useState<Array<{ _id: string; name: string; role: string }>>([]);
+  const [defaultAssigneeId, setDefaultAssigneeId] = useState("");
+
   // Connected pages (multi-page)
   const [connectedPages, setConnectedPages] = useState<
-    Array<{ pageId: string; pageName: string; webhookVerified: boolean; allowedStates: string[]; selectedFormIds: string[] }>
+    Array<{ pageId: string; pageName: string; webhookVerified: boolean; allowedStates: string[]; selectedFormIds: string[]; defaultAssigneeId: string }>
   >([]);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
 
@@ -101,11 +104,19 @@ export function FacebookWizard({
   const [editingFilterPageId, setEditingFilterPageId] = useState<string | null>(null);
   const [editFilterInput, setEditFilterInput] = useState("");
   const [editFilterValues, setEditFilterValues] = useState<string[]>([]);
+  const [editAssigneeId, setEditAssigneeId] = useState("");
   const [savingFilter, setSavingFilter] = useState(false);
 
   // Load pages when arriving at select_page step
   useEffect(() => {
     if (step === "select_page") loadPages();
+  }, [step]);
+
+  // Load users when arriving at select_forms step
+  useEffect(() => {
+    if (step === "select_forms" && users.length === 0) {
+      usersAPI.getAll().then((res) => setUsers(res.data || [])).catch(() => {});
+    }
   }, [step]);
 
   // Load forms when page is selected
@@ -115,7 +126,12 @@ export function FacebookWizard({
 
   // Load connected pages when on done step
   useEffect(() => {
-    if (step === "done") loadConnectedPages();
+    if (step === "done") {
+      loadConnectedPages();
+      if (users.length === 0) {
+        usersAPI.getAll().then((res) => setUsers(res.data || [])).catch(() => {});
+      }
+    }
   }, [step]);
 
   const loadConnectedPages = async () => {
@@ -127,19 +143,21 @@ export function FacebookWizard({
     }
   };
 
-  const handleSaveFilter = async (cp: { pageId: string; pageName: string; selectedFormIds: string[] }) => {
+  const handleSaveFilter = async (cp: { pageId: string; pageName: string; selectedFormIds: string[]; defaultAssigneeId: string }) => {
     setSavingFilter(true);
     try {
-      await facebookAPI.connectPage(cp.pageId, cp.selectedFormIds, editFilterValues);
+      await facebookAPI.connectPage(cp.pageId, cp.selectedFormIds, editFilterValues, editAssigneeId);
       setConnectedPages((prev) =>
         prev.map((p) =>
-          p.pageId === cp.pageId ? { ...p, allowedStates: editFilterValues } : p,
+          p.pageId === cp.pageId
+            ? { ...p, allowedStates: editFilterValues, defaultAssigneeId: editAssigneeId }
+            : p,
         ),
       );
       setEditingFilterPageId(null);
-      toast({ title: "Filter updated", description: `Location filter saved for ${cp.pageName}` });
+      toast({ title: "Settings updated", description: `Saved for ${cp.pageName}` });
     } catch (err: unknown) {
-      toast({ title: "Failed to save filter", description: (err as Error).message, variant: "destructive" });
+      toast({ title: "Failed to save", description: (err as Error).message, variant: "destructive" });
     } finally {
       setSavingFilter(false);
     }
@@ -210,7 +228,7 @@ export function FacebookWizard({
     setConnecting(true);
     try {
       const formIds = allForms ? [] : [...selectedFormIds];
-      await facebookAPI.connectPage(selectedPage.id, formIds, allowedStates);
+      await facebookAPI.connectPage(selectedPage.id, formIds, allowedStates, defaultAssigneeId);
       setStep("done");
       onConnected();
       toast({
@@ -751,6 +769,30 @@ export function FacebookWizard({
                 </p>
               )}
             </div>
+
+            {/* Default Assignee */}
+            <div className="border-2 border-black p-4 bg-white space-y-3">
+              <div>
+                <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                  <UserCheck className="w-3.5 h-3.5" /> Default Assignee
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Leads from this page will always be assigned to this person. Leave empty to assign to the admin.
+                </p>
+              </div>
+              <select
+                value={defaultAssigneeId}
+                onChange={(e) => setDefaultAssigneeId(e.target.value)}
+                className="w-full border-2 border-black px-3 py-2 text-sm font-medium bg-white focus:outline-none focus:border-[#1877F2]"
+              >
+                <option value="">— Auto-assign to admin —</option>
+                {users.map((u) => (
+                  <option key={u._id} value={u._id}>
+                    {u.name} ({u.role.replace("_", " ")})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 
@@ -803,8 +845,16 @@ export function FacebookWizard({
                           {cp.allowedStates.join(", ")}
                         </p>
                       )}
+                      {editingFilterPageId !== cp.pageId && (
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <UserCheck className="w-3 h-3" />
+                          {cp.defaultAssigneeId
+                            ? (users.find((u) => u._id === cp.defaultAssigneeId)?.name || "Assigned user")
+                            : "Auto-assign to admin"}
+                        </p>
+                      )}
                     </div>
-                    {/* Edit filter button */}
+                    {/* Edit settings button */}
                     <button
                       onClick={() => {
                         if (editingFilterPageId === cp.pageId) {
@@ -813,10 +863,11 @@ export function FacebookWizard({
                           setEditingFilterPageId(cp.pageId);
                           setEditFilterValues(cp.allowedStates || []);
                           setEditFilterInput("");
+                          setEditAssigneeId(cp.defaultAssigneeId || "");
                         }
                       }}
                       className="border-2 border-black p-1.5 hover:bg-yellow-50 transition-colors mr-1"
-                      title="Edit location filter"
+                      title="Edit settings"
                     >
                       <MapPin className="w-3.5 h-3.5 text-yellow-600" />
                     </button>
@@ -865,7 +916,26 @@ export function FacebookWizard({
 
                   {/* Inline filter editor */}
                   {editingFilterPageId === cp.pageId && (
-                    <div className="border-t-2 border-black p-3 bg-[#FFFBEB] space-y-2">
+                    <div className="border-t-2 border-black p-3 bg-[#FFFBEB] space-y-3">
+                      {/* Assignee */}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                          <UserCheck className="w-3 h-3" /> Default Assignee
+                        </p>
+                        <select
+                          value={editAssigneeId}
+                          onChange={(e) => setEditAssigneeId(e.target.value)}
+                          className="w-full border-2 border-black px-3 py-1.5 text-sm font-medium bg-white focus:outline-none focus:border-[#1877F2]"
+                        >
+                          <option value="">— Auto-assign to admin —</option>
+                          {users.map((u) => (
+                            <option key={u._id} value={u._id}>
+                              {u.name} ({u.role.replace("_", " ")})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
                       <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> Location Filter
                       </p>

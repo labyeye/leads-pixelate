@@ -60,6 +60,49 @@ const initialFormState = {
   status: "Draft",
 };
 
+const NbInput = ({
+  label,
+  id,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  required,
+  as: As = "input",
+  rows,
+  className: cls,
+}: any) => (
+  <div className="space-y-1">
+    <label
+      htmlFor={id}
+      className="block text-[10px] font-black uppercase tracking-widest text-black"
+    >
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    {As === "textarea" ? (
+      <textarea
+        id={id}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        rows={rows || 2}
+        className={cn("border-2 w-full px-3 py-2 text-sm resize-none", cls)}
+      />
+    ) : (
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        className={cn("border-2 w-full px-3 py-2 text-sm", cls)}
+      />
+    )}
+  </div>
+);
+
 export default function QuotationsPage() {
   const [search, setSearch] = useState("");
   const [quotations, setQuotations] = useState<any[]>([]);
@@ -254,54 +297,11 @@ export default function QuotationsPage() {
   const tax = (subtotal - discount) * 0.18;
   const total = subtotal - discount + tax;
 
-  const NbInput = ({
-    label,
-    id,
-    type = "text",
-    value,
-    onChange,
-    placeholder,
-    required,
-    as: As = "input",
-    rows,
-    className: cls,
-  }: any) => (
-    <div className="space-y-1">
-      <label
-        htmlFor={id}
-        className="block text-[10px] font-black uppercase tracking-widest text-black"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      {As === "textarea" ? (
-        <textarea
-          id={id}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          rows={rows || 2}
-          className={cn("nb-input w-full px-3 py-2 text-sm resize-none", cls)}
-        />
-      ) : (
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          required={required}
-          className={cn("nb-input w-full px-3 py-2 text-sm", cls)}
-        />
-      )}
-    </div>
-  );
-
   return (
     <AppLayout title="Quotations">
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2 nb-input px-3 py-2 w-full sm:w-72">
+        <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input
             type="text"
@@ -322,7 +322,7 @@ export default function QuotationsPage() {
           <DialogTrigger asChild>
             <button
               onClick={resetForm}
-              className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> New Quotation
             </button>
@@ -411,7 +411,7 @@ export default function QuotationsPage() {
                 {/* Quotation Details */}
                 <div>
                   <div className="flex items-center gap-3 mb-3 pb-2 border-b-2 border-black">
-                    <div className="w-1 h-5 bg-[#FFDE00]" />
+                    <div className="w-1 h-5 bg-[#024BAB]" />
                     <p className="text-xs font-black uppercase tracking-widest text-black">
                       Quotation Details
                     </p>
@@ -450,7 +450,7 @@ export default function QuotationsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-black">
                     <div className="flex items-center gap-3">
-                      <div className="w-1 h-5 bg-black" />
+                      <div className="w-1 h-5 bg-primary" />
                       <p className="text-xs font-black uppercase tracking-widest text-black">
                         Line Items
                       </p>
@@ -463,13 +463,13 @@ export default function QuotationsPage() {
                           { name: "", price: 0, quantity: 1 },
                         ])
                       }
-                      className="nb-btn bg-black text-white px-3 py-1 text-xs font-black"
+                      className="border-2 bg-primary text-white px-3 py-1 text-xs font-black"
                     >
                       + Add Item
                     </button>
                   </div>
                   <div className="border-2 border-black bg-white">
-                    <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-black">
+                    <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-primary">
                       <div className="col-span-6 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
                         Description
                       </div>
@@ -546,7 +546,7 @@ export default function QuotationsPage() {
                                 setField("services", s);
                               }
                             }}
-                            className="w-6 h-6 border-2 border-black bg-black text-white text-xs font-black hover:bg-red-600 transition-colors flex items-center justify-center"
+                            className="w-6 h-6 border-2 border-black bg-[#F82B2B] text-white text-xs font-black hover:bg-red-600 transition-colors flex items-center justify-center"
                           >
                             ×
                           </button>
@@ -619,10 +619,10 @@ export default function QuotationsPage() {
                       value={formData.status}
                       onValueChange={(v) => setField("status", v)}
                     >
-                      <SelectTrigger className="border-2 border-black rounded-none nb-shadow-sm focus:ring-0 bg-white font-bold h-10">
+                      <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 bg-white font-bold h-10">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                      <SelectContent className="border-2 border-black rounded-none">
                         {["Draft", "Sent", "Approved", "Rejected"].map((s) => (
                           <SelectItem key={s} value={s} className="font-bold">
                             {s}
@@ -641,7 +641,7 @@ export default function QuotationsPage() {
                   disabled={
                     !formData.clientName || !formData.projectTitle || saving
                   }
-                  className="nb-btn bg-[#FFDE00] text-black px-4 py-2 text-sm font-black flex items-center gap-1.5 disabled:opacity-50"
+                  className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm font-black flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {previewingId === "new" ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -654,14 +654,14 @@ export default function QuotationsPage() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="nb-btn bg-white text-black px-4 py-2 text-sm font-bold"
+                    className="border-2 bg-white text-black px-4 py-2 text-sm font-bold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="nb-btn bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                    className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
                   >
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     {editingQId ? "Update Quotation" : "Save Quotation"}
@@ -700,7 +700,7 @@ export default function QuotationsPage() {
           <div
             key={label}
             className={cn(
-              "border-2 border-black p-3 text-center nb-shadow",
+              "border-2 border-black p-3 text-center",
               bg,
             )}
           >
@@ -713,11 +713,11 @@ export default function QuotationsPage() {
       </div>
 
       {/* Table */}
-      <div className="nb-card overflow-hidden">
+      <div className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b-2 border-black bg-[#024BAB]">
+              <tr className="border-2 border-black bg-[#024BAB]">
                 {[
                   "Number & Date",
                   "Buyer / Project",
@@ -802,13 +802,13 @@ export default function QuotationsPage() {
                     <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors nb-shadow-sm flex items-center justify-center">
+                          <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors flex items-center justify-center">
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000] bg-white min-w-[160px] p-0"
+                          className="border-2 border-black rounded-none bg-white min-w-[160px] p-0"
                         >
                           <DropdownMenuItem
                             onClick={() => handleDownloadPDF(q)}
@@ -867,7 +867,7 @@ export default function QuotationsPage() {
             </span>
             <button
               onClick={() => window.print()}
-              className="nb-btn bg-[#FFDE00] text-black px-4 py-1.5 text-xs font-black"
+              className="border-2 bg-[#FFDE00] text-black px-4 py-1.5 text-xs font-black"
             >
               Print
             </button>

@@ -263,7 +263,7 @@ router.post(
   "/connect-page",
   protect,
   asyncHandler(async (req, res) => {
-    const { pageId, selectedFormIds = [], allowedStates = [] } = req.body;
+    const { pageId, selectedFormIds = [], allowedStates = [], defaultAssigneeId = "" } = req.body;
 
     if (!pageId || typeof pageId !== "string" || !/^\d+$/.test(pageId)) {
       return res
@@ -301,6 +301,7 @@ router.post(
       accessToken: pageToken,
       selectedFormIds,
       allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
+      defaultAssigneeId,
       webhookVerified: subscribed,
       connectedAt: new Date(),
     };
@@ -390,6 +391,7 @@ router.get(
       pageName: p.pageName,
       selectedFormIds: p.selectedFormIds || [],
       allowedStates: p.allowedStates || [],
+      defaultAssigneeId: p.defaultAssigneeId || "",
       webhookVerified: p.webhookVerified,
       connectedAt: p.connectedAt,
     }));
@@ -433,6 +435,16 @@ router.post(
         .status(400)
         .json({ success: false, message: "No admin user found" });
     }
+
+    // Cache resolved assignees to avoid repeated DB hits per page
+    const assigneeCache = {};
+    const resolveAssignee = async (defaultAssigneeId) => {
+      if (!defaultAssigneeId) return adminUser._id;
+      if (assigneeCache[defaultAssigneeId]) return assigneeCache[defaultAssigneeId];
+      const u = await User.findById(defaultAssigneeId).catch(() => null);
+      assigneeCache[defaultAssigneeId] = u?._id || adminUser._id;
+      return assigneeCache[defaultAssigneeId];
+    };
 
     let totalCreated = 0;
     let totalUpdated = 0;
@@ -548,11 +560,12 @@ router.post(
                 pageResult.updated++;
               } else {
                 try {
+                  const assigneeId = await resolveAssignee(page.defaultAssigneeId);
                   await Lead.create({
                     ...leadData,
                     source: "Facebook",
                     status: "PENDING CONTACT",
-                    assignedTo: adminUser._id,
+                    assignedTo: assigneeId,
                     tenantId: tenant._id || null,
                     facebookLeadgenId: lead.id,
                     facebookFormId: formId,
@@ -756,17 +769,25 @@ router.post(
             continue;
           }
 
-          const adminUser = await User.findOne({
-            ...(tenant._id ? { tenantId: tenant._id } : {}),
-            role: { $in: ["admin", "super_admin"] },
-          });
-          if (!adminUser) continue;
+          let assigneeId = null;
+          if (pageConfig.defaultAssigneeId) {
+            const u = await User.findById(pageConfig.defaultAssigneeId).catch(() => null);
+            assigneeId = u?._id || null;
+          }
+          if (!assigneeId) {
+            const adminUser = await User.findOne({
+              ...(tenant._id ? { tenantId: tenant._id } : {}),
+              role: { $in: ["admin", "super_admin"] },
+            });
+            if (!adminUser) continue;
+            assigneeId = adminUser._id;
+          }
 
           await Lead.create({
             ...updatableFields,
             source: "Facebook",
             status: "PENDING CONTACT",
-            assignedTo: adminUser._id,
+            assignedTo: assigneeId,
             tenantId: tenant._id || null,
             facebookLeadgenId: leadgen_id,
             facebookFormId: form_id,

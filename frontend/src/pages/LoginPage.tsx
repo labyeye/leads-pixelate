@@ -2,6 +2,16 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { AlertCircle, Zap, Eye, EyeOff } from "lucide-react";
+import logoimg from "@/assets/images/Logo.png";
+import indiamartLogo from "@/assets/images/logos/indiamart.png";
+import facebookLogo from "@/assets/images/logos/facebook.png";
+import tradeindiLogo from "@/assets/images/logos/tradeindia.webp";
+
+const PLATFORMS = [
+  { label: "IndiaMART", logo: indiamartLogo },
+  { label: "Facebook Ads", logo: facebookLogo },
+  { label: "TradeIndia", logo: tradeindiLogo },
+];
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -26,13 +36,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] flex">
+    <div className="min-h-screen bg-[#FFFFFF] flex">
       {/* Left panel — branding */}
       <div className="hidden lg:flex w-1/2 bg-[#024BAB] border-r-2 border-black flex-col justify-between p-12">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center nb-shadow-sm">
-            <Zap className="w-5 h-5 text-white fill-white" />
-          </div>
+          <img src={logoimg} alt="NestLeads" className="w-14 h-14" />
           <span className="font-display font-bold text-white text-2xl">
             NestLeads
           </span>
@@ -47,18 +55,23 @@ export default function LoginPage() {
             One place.
           </h1>
           <p className="text-white/70 text-lg font-medium max-w-sm">
-            The SaaS CRM built for Indian B2B sales teams — with IndiaMART,
-            Facebook Ads and more, built in.
+            Centralize all your leads from various platforms and never miss a
+            follow-up again.
           </p>
         </div>
 
         <div className="flex gap-4">
-          {["IndiaMART", "Facebook Ads", "TradeIndia"].map((s) => (
+          {PLATFORMS.map(({ label, logo }) => (
             <div
-              key={s}
-              className="border-2 border-black bg-black text-white px-3 py-1.5 text-xs font-bold nb-shadow-sm"
+              key={label}
+              className="border-2 border-black bg-white text-black px-3 py-1.5 text-xs font-bold flex items-center gap-2"
             >
-              {s}
+              <img
+                src={logo}
+                alt={label}
+                className="w-4 h-4 object-contain rounded-sm"
+              />
+              {label}
             </div>
           ))}
         </div>
@@ -69,9 +82,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center">
-              <Zap className="w-4 h-4 text-black fill-black" />
-            </div>
+            <img src="/logo.png" alt="NestLeads" className="w-8 h-8" />
             <span className="font-display font-bold text-xl text-black">
               NestLeads
             </span>
@@ -82,16 +93,10 @@ export default function LoginPage() {
           </h2>
           <p className="text-muted-foreground text-sm mb-8">
             Sign in to your workspace ·{" "}
-            <Link
-              to="/register"
-              className="font-bold text-black underline hover:text-[#FF3366] transition-colors"
-            >
-              Create account
-            </Link>
           </p>
 
           {error && (
-            <div className="flex items-center gap-2 bg-[#EF4444]/10 border-2 border-[#EF4444] text-[#EF4444] text-sm px-3 py-2.5 mb-5 nb-shadow-sm">
+            <div className="flex items-center gap-2 bg-[#EF4444]/10 border-2 border-[#EF4444] text-[#EF4444] text-sm px-3 py-2.5 mb-5">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span className="font-medium">{error}</span>
             </div>
@@ -102,26 +107,28 @@ export default function LoginPage() {
               <label className="block text-sm font-bold text-black mb-1.5">
                 Email
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError("");
-                }}
-                placeholder="you@company.com"
-                className="nb-input w-full px-3 py-2.5 text-sm"
-                required
-                autoComplete="email"
-                autoFocus
-              />
+              <div className="flex items-center border-2 border-black">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="you@company.com"
+                  className="w-full px-3 py-2.5 text-sm"
+                  required
+                  autoComplete="email"
+                  autoFocus
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-bold text-black mb-1.5">
                 Password
               </label>
-              <div className="flex items-center border-2 border-black nb-shadow-sm">
+              <div className="flex items-center border-2 border-black">
                 <input
                   type={showPw ? "text" : "password"}
                   value={password}
@@ -151,7 +158,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="nb-btn w-full bg-[#024BAB] text-white py-3 text-sm font-bold mt-2"
+              className=" w-full hover:bg-[#024BAB] hover:text-white border-2 bg-[#FF751F] text-white py-3 text-sm font-bold mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
