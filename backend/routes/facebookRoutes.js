@@ -482,6 +482,7 @@ router.post(
     let totalUpdated = 0;
     let totalFiltered = 0;
     const pageResults = [];
+    const adPlatformCache = {};
 
 
     for (const page of pagesToSync) {
@@ -598,9 +599,21 @@ router.post(
               };
 
               const p = (lead.platform || "").toLowerCase();
-              const resolvedSource =
-                p === "ig" ? "Instagram" : p === "fb" ? "Facebook" : "Facebook";
-              const resolvedPlatforms = p ? [p] : [];
+              console.log(`[FB sync] lead=${lead.id} platform="${lead.platform}" ad_id="${lead.ad_id}"`);
+              let resolvedSource = "Facebook";
+              let resolvedPlatforms = [];
+              if (p === "ig" || p === "instagram") {
+                resolvedSource = "Instagram";
+                resolvedPlatforms = ["ig"];
+              } else if (p === "fb" || p === "facebook") {
+                resolvedSource = "Facebook";
+                resolvedPlatforms = ["fb"];
+              } else if (lead.ad_id) {
+                // platform field missing — fall back to ad publisher_platforms lookup
+                const r = await resolveAdPlatform(lead.ad_id, page.accessToken, adPlatformCache);
+                resolvedSource = r.source;
+                resolvedPlatforms = r.platforms;
+              }
 
               const exists = await Lead.findOne({
                 facebookLeadgenId: lead.id,
