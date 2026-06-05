@@ -263,7 +263,12 @@ router.post(
   "/connect-page",
   protect,
   asyncHandler(async (req, res) => {
-    const { pageId, selectedFormIds = [], allowedStates = [], defaultAssigneeId = "" } = req.body;
+    const {
+      pageId,
+      selectedFormIds = [],
+      allowedStates = [],
+      defaultAssigneeId = "",
+    } = req.body;
 
     if (!pageId || typeof pageId !== "string" || !/^\d+$/.test(pageId)) {
       return res
@@ -440,7 +445,8 @@ router.post(
     const assigneeCache = {};
     const resolveAssignee = async (defaultAssigneeId) => {
       if (!defaultAssigneeId) return adminUser._id;
-      if (assigneeCache[defaultAssigneeId]) return assigneeCache[defaultAssigneeId];
+      if (assigneeCache[defaultAssigneeId])
+        return assigneeCache[defaultAssigneeId];
       const u = await User.findById(defaultAssigneeId).catch(() => null);
       assigneeCache[defaultAssigneeId] = u?._id || adminUser._id;
       return assigneeCache[defaultAssigneeId];
@@ -488,7 +494,9 @@ router.post(
 
       for (const formId of formIds) {
         try {
-          const twoDaysAgo = Math.floor((Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000);
+          const twoDaysAgo = Math.floor(
+            (Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000,
+          );
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id",
             limit: "100",
@@ -510,9 +518,19 @@ router.post(
               }
 
               const extractCity = (m) =>
-                m.city || m.city_town || m["city/town"] || m.district || m.town ||
-                Object.entries(m).find(([k]) => k.includes("city") || k.includes("district") || k.includes("town"))?.[1] ||
-                m.location || "";
+                m.city ||
+                m.city_town ||
+                m["city/town"] ||
+                m.district ||
+                m.town ||
+                Object.entries(m).find(
+                  ([k]) =>
+                    k.includes("city") ||
+                    k.includes("district") ||
+                    k.includes("town"),
+                )?.[1] ||
+                m.location ||
+                "";
 
               const state = (fMap.state || fMap.province || fMap.region || "")
                 .toLowerCase()
@@ -549,6 +567,7 @@ router.post(
                   `Via Facebook Lead Ad: ${lead.ad_name || formId}`,
                 facebookAdId: lead.ad_id || "",
                 facebookAdName: lead.ad_name || "",
+                facebookPageName: page.pageName || "",
               };
 
               const exists = await Lead.findOne({
@@ -560,7 +579,9 @@ router.post(
                 pageResult.updated++;
               } else {
                 try {
-                  const assigneeId = await resolveAssignee(page.defaultAssigneeId);
+                  const assigneeId = await resolveAssignee(
+                    page.defaultAssigneeId,
+                  );
                   await Lead.create({
                     ...leadData,
                     source: "Facebook",
@@ -605,7 +626,8 @@ router.post(
 
     const parts = [`${totalCreated} new`];
     if (totalUpdated > 0) parts.push(`${totalUpdated} already in DB`);
-    if (totalFiltered > 0) parts.push(`${totalFiltered} blocked by location filter`);
+    if (totalFiltered > 0)
+      parts.push(`${totalFiltered} blocked by location filter`);
     res.json({
       success: true,
       message: `Sync complete — ${parts.join(", ")}`,
@@ -725,9 +747,19 @@ router.post(
           const company =
             fMap.company_name || fMap.company || fMap.organization || "";
           const extractCity = (m) =>
-            m.city || m.city_town || m["city/town"] || m.district || m.town ||
-            Object.entries(m).find(([k]) => k.includes("city") || k.includes("district") || k.includes("town"))?.[1] ||
-            m.location || "";
+            m.city ||
+            m.city_town ||
+            m["city/town"] ||
+            m.district ||
+            m.town ||
+            Object.entries(m).find(
+              ([k]) =>
+                k.includes("city") ||
+                k.includes("district") ||
+                k.includes("town"),
+            )?.[1] ||
+            m.location ||
+            "";
 
           const city = extractCity(fMap);
           const state = (fMap.state || fMap.province || fMap.region || "")
@@ -756,6 +788,7 @@ router.post(
               product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
             facebookAdId: ad_id || "",
             facebookAdName: ad_name || "",
+            facebookPageName: pageConfig.pageName || "",
           };
 
           const existing = await Lead.findOne({
@@ -771,7 +804,9 @@ router.post(
 
           let assigneeId = null;
           if (pageConfig.defaultAssigneeId) {
-            const u = await User.findById(pageConfig.defaultAssigneeId).catch(() => null);
+            const u = await User.findById(pageConfig.defaultAssigneeId).catch(
+              () => null,
+            );
             assigneeId = u?._id || null;
           }
           if (!assigneeId) {
@@ -827,7 +862,10 @@ router.get(
       });
       adAccounts = acData.data || [];
     } catch (err) {
-      const needsReconnect = err.message?.includes("#100") || err.message?.includes("Unsupported") || err.message?.includes("permission");
+      const needsReconnect =
+        err.message?.includes("#100") ||
+        err.message?.includes("Unsupported") ||
+        err.message?.includes("permission");
       return res.status(needsReconnect ? 403 : 400).json({
         success: false,
         message: needsReconnect

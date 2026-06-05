@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useToast } from "@/components/ui/use-toast";
-import { leadsAPI, reportsAPI, usersAPI } from "@/services/api";
+import { leadsAPI, reportsAPI, settingsAPI, usersAPI } from "@/services/api";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -13,9 +13,9 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import autoTable from "jspdf-autotable";
 import {
   Select,
   SelectContent,
@@ -78,9 +78,15 @@ const PERIODS: { key: Period; label: string }[] = [
   { key: "custom", label: "Custom" },
 ];
 
+function resolveCompany(lead: any): string {
+  if (lead.source === "Facebook" && (!lead.company || lead.company === "N/A")) {
+    return lead.facebookPageName || "—";
+  }
+  return lead.company && lead.company !== "N/A" ? lead.company : "—";
+}
+
 export default function ReportsPage() {
   const { toast } = useToast();
-  const tableRef = useRef<HTMLDivElement>(null);
 
   const [activeTab, setActiveTab] = useState<Tab>("leads");
   const [leads, setLeads] = useState<any[]>([]);
@@ -143,7 +149,11 @@ export default function ReportsPage() {
       const res = await leadsAPI.getAll(params);
       setLeads(res.data || []);
     } catch (err: any) {
-      toast({ title: "Error loading leads", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error loading leads",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -153,14 +163,25 @@ export default function ReportsPage() {
     setFilters((prev) => ({ ...prev, [key]: value }));
 
   const handleReset = () => {
-    const reset = { search: "", status: "all", source: "all", assignedTo: "all", startDate: "", endDate: "" };
+    const reset = {
+      search: "",
+      status: "all",
+      source: "all",
+      assignedTo: "all",
+      startDate: "",
+      endDate: "",
+    };
     setFilters(reset);
     fetchLeads(reset);
   };
 
   // ── Activity tab ──
   const fetchActivity = async () => {
-    if (activityPeriod === "custom" && (!activityCustomFrom || !activityCustomTo)) return;
+    if (
+      activityPeriod === "custom" &&
+      (!activityCustomFrom || !activityCustomTo)
+    )
+      return;
     try {
       setActivityLoading(true);
       const params: Record<string, string> = {};
@@ -174,7 +195,11 @@ export default function ReportsPage() {
       const res = await reportsAPI.getStatusHistory(params);
       setActivityData(res.data || []);
     } catch (err: any) {
-      toast({ title: "Error loading activity", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error loading activity",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActivityLoading(false);
     }
@@ -196,7 +221,9 @@ export default function ReportsPage() {
         params.startDate = from.toISOString().slice(0, 10);
         params.endDate = now.toISOString().slice(0, 10);
       } else if (teamPeriod === "month") {
-        params.startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        params.startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+          .toISOString()
+          .slice(0, 10);
         params.endDate = now.toISOString().slice(0, 10);
       } else if (teamPeriod === "year") {
         params.startDate = `${now.getFullYear()}-01-01`;
@@ -205,7 +232,11 @@ export default function ReportsPage() {
       const res = await leadsAPI.getAll(params);
       setTeamLeads(res.data || []);
     } catch (err: any) {
-      toast({ title: "Error loading team data", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error loading team data",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setTeamLoading(false);
     }
@@ -213,11 +244,33 @@ export default function ReportsPage() {
 
   // ── Team stats computation ──
   const teamStats = (() => {
-    const map: Record<string, { name: string; total: number; won: number; drop: number; pending: number; discussion: number; quotation: number; visited: number }> = {};
+    const map: Record<
+      string,
+      {
+        name: string;
+        total: number;
+        won: number;
+        drop: number;
+        pending: number;
+        discussion: number;
+        quotation: number;
+        visited: number;
+      }
+    > = {};
     for (const lead of teamLeads) {
       const uid = lead.assignedTo?._id || "unassigned";
       const uname = lead.assignedTo?.name || "Unassigned";
-      if (!map[uid]) map[uid] = { name: uname, total: 0, won: 0, drop: 0, pending: 0, discussion: 0, quotation: 0, visited: 0 };
+      if (!map[uid])
+        map[uid] = {
+          name: uname,
+          total: 0,
+          won: 0,
+          drop: 0,
+          pending: 0,
+          discussion: 0,
+          quotation: 0,
+          visited: 0,
+        };
       map[uid].total++;
       const s = lead.status || "";
       if (s === "WON") map[uid].won++;
@@ -232,15 +285,35 @@ export default function ReportsPage() {
 
   // ── Exports ──
   const exportCSV = () => {
-    const headers = ["Name", "Company", "Phone", "Email", "Source", "Status", "Assigned To", "Location", "Follow-up Date", "Created At"];
+    const headers = [
+      "Name",
+      "Company",
+      "Phone",
+      "Email",
+      "Source",
+      "Status",
+      "Assigned To",
+      "Location",
+      "Follow-up Date",
+      "Created At",
+    ];
     const rows = leads.map((l) => [
-      l.name || "", l.company || "", l.phone || "", l.email || "",
-      l.source || "", l.status || "", l.assignedTo?.name || "Unassigned",
+      l.name || "",
+      resolveCompany(l),
+      l.phone || "",
+      l.email || "",
+      l.source || "",
+      l.status || "",
+      l.assignedTo?.name || "Unassigned",
       l.location || "",
-      l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "",
+      l.followUpDate
+        ? new Date(l.followUpDate).toLocaleDateString("en-IN")
+        : "",
       l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "",
     ]);
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -251,14 +324,29 @@ export default function ReportsPage() {
   };
 
   const exportActivityCSV = () => {
-    const headers = ["Lead Name", "Company", "Phone", "Changed To", "Changed By", "Assigned To", "Remarks", "Time"];
+    const headers = [
+      "Lead Name",
+      "Company",
+      "Phone",
+      "Changed To",
+      "Changed By",
+      "Assigned To",
+      "Remarks",
+      "Time",
+    ];
     const rows = activityData.map((r) => [
-      r.leadName || "", r.leadCompany || "", r.leadPhone || "",
-      r.changedToStatus || "", r.changedBy || "", r.assignedTo || "",
+      r.leadName || "",
+      r.leadCompany || "",
+      r.leadPhone || "",
+      r.changedToStatus || "",
+      r.changedBy || "",
+      r.assignedTo || "",
       r.remarks || "",
       r.timestamp ? new Date(r.timestamp).toLocaleString("en-IN") : "",
     ]);
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -269,19 +357,75 @@ export default function ReportsPage() {
   };
 
   const exportPDF = async () => {
-    if (!tableRef.current) return;
     try {
       setExporting(true);
-      const canvas = await html2canvas(tableRef.current, { scale: 1.5, useCORS: true });
-      const img = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height * w) / canvas.width;
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(14);
-      pdf.text(`LEADS REPORT  —  ${new Date().toLocaleDateString("en-IN")}`, 20, 22);
-      pdf.addImage(img, "PNG", 0, 32, w, h);
-      pdf.save(`leads-${new Date().toISOString().slice(0, 10)}.pdf`);
+      let settings: any = {};
+      try {
+        const res = await settingsAPI.get();
+        settings = res.data || {};
+      } catch { /* use defaults if settings unavailable */ }
+
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pw = doc.internal.pageSize.getWidth();
+
+      // ── Header band ──
+      doc.setFillColor(2, 75, 171);
+      doc.rect(0, 0, pw, 22, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(settings.companyName || "Company", 8, 9);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      const meta = [settings.companyAddress, settings.companyPhone, settings.companyEmail]
+        .filter(Boolean).join("   |   ");
+      if (meta) doc.text(meta, 8, 16);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(`LEADS REPORT  —  ${new Date().toLocaleDateString("en-IN")}`, pw - 8, 9, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text(
+        `Total: ${counts.total}   Won: ${counts.won}   Drop: ${counts.drop}   Pending: ${counts.pending}`,
+        pw - 8, 16, { align: "right" },
+      );
+      doc.setTextColor(0, 0, 0);
+
+      // ── Table ──
+      autoTable(doc, {
+        startY: 25,
+        head: [["#", "Name", "Company / FB Page", "Phone", "Source", "Status", "Assigned To", "Follow-up", "Created"]],
+        body: leads.map((l, i) => [
+          i + 1,
+          l.name || "—",
+          resolveCompany(l),
+          l.phone || "—",
+          l.source || "—",
+          l.status || "—",
+          l.assignedTo?.name || "Unassigned",
+          l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "—",
+          l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "—",
+        ]),
+        styles: { fontSize: 7, cellPadding: 2.2, overflow: "linebreak" },
+        headStyles: { fillColor: [2, 75, 171], textColor: 255, fontStyle: "bold", fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        columnStyles: { 0: { cellWidth: 8, halign: "center" } },
+        margin: { left: 5, right: 5 },
+      });
+
+      // ── Per-page footer ──
+      const totalPages = (doc as any).internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        const ph = doc.internal.pageSize.getHeight();
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 8, ph - 4);
+        doc.text(`Page ${p} of ${totalPages}`, pw / 2, ph - 4, { align: "center" });
+        if (settings.companyName) doc.text(settings.companyName, pw - 8, ph - 4, { align: "right" });
+      }
+
+      doc.save(`leads-${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err: any) {
       toast({ title: "PDF export failed", description: err.message, variant: "destructive" });
     } finally {
@@ -306,9 +450,21 @@ export default function ReportsPage() {
   ].filter(Boolean).length;
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "leads", label: "Leads Report", icon: <FileText className="w-3.5 h-3.5" /> },
-    { key: "activity", label: "Status Activity", icon: <Activity className="w-3.5 h-3.5" /> },
-    { key: "team", label: "Team Report", icon: <Users className="w-3.5 h-3.5" /> },
+    {
+      key: "leads",
+      label: "Leads Report",
+      icon: <FileText className="w-3.5 h-3.5" />,
+    },
+    {
+      key: "activity",
+      label: "Status Activity",
+      icon: <Activity className="w-3.5 h-3.5" />,
+    },
+    {
+      key: "team",
+      label: "Team Report",
+      icon: <Users className="w-3.5 h-3.5" />,
+    },
   ];
 
   return (
@@ -344,7 +500,11 @@ export default function ReportsPage() {
                 { key: "total", label: "Total Leads", text: "text-primary" },
                 { key: "won", label: "Won", text: "text-green-600" },
                 { key: "drop", label: "Dropped", text: "text-red-600" },
-                { key: "pending", label: "Pending Contact", text: "text-black" },
+                {
+                  key: "pending",
+                  label: "Pending Contact",
+                  text: "text-black",
+                },
               ].map(({ key, label, text }) => (
                 <div
                   key={key}
@@ -353,7 +513,14 @@ export default function ReportsPage() {
                   <p className={cn("text-4xl font-black tabular-nums", text)}>
                     {loading ? "—" : counts[key as keyof typeof counts]}
                   </p>
-                  <p className={cn("text-xs font-bold uppercase tracking-widest mt-1", text)}>{label}</p>
+                  <p
+                    className={cn(
+                      "text-xs font-bold uppercase tracking-widest mt-1",
+                      text,
+                    )}
+                  >
+                    {label}
+                  </p>
                 </div>
               ))}
             </div>
@@ -380,7 +547,9 @@ export default function ReportsPage() {
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                     <div className="xl:col-span-2 space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">Search</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        Search
+                      </label>
                       <div className="flex items-center gap-2 border-2 border-black px-2 py-1.5 bg-white focus-within:ring-2 focus-within:ring-black">
                         <Search className="w-3.5 h-3.5 text-black shrink-0" />
                         <input
@@ -391,7 +560,10 @@ export default function ReportsPage() {
                           className="text-sm bg-transparent outline-none w-full text-black placeholder:text-gray-400 font-medium"
                         />
                         {filters.search && (
-                          <button onClick={() => setFilter("search", "")} className="shrink-0">
+                          <button
+                            onClick={() => setFilter("search", "")}
+                            className="shrink-0"
+                          >
                             <X className="w-3 h-3 text-black" />
                           </button>
                         )}
@@ -399,49 +571,108 @@ export default function ReportsPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">Status</label>
-                      <Select value={filters.status} onValueChange={(v) => setFilter("status", v)}>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        Status
+                      </label>
+                      <Select
+                        value={filters.status}
+                        onValueChange={(v) => setFilter("status", v)}
+                      >
                         <SelectTrigger className="h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                           <SelectValue placeholder="All Statuses" />
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-none">
-                          <SelectItem value="all" className="font-bold">All Statuses</SelectItem>
-                          {STATUSES.map((s) => <SelectItem key={s} value={s} className="font-medium">{s}</SelectItem>)}
+                          <SelectItem value="all" className="font-bold">
+                            All Statuses
+                          </SelectItem>
+                          {STATUSES.map((s) => (
+                            <SelectItem
+                              key={s}
+                              value={s}
+                              className="font-medium"
+                            >
+                              {s}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">Source</label>
-                      <Select value={filters.source} onValueChange={(v) => setFilter("source", v)}>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        Source
+                      </label>
+                      <Select
+                        value={filters.source}
+                        onValueChange={(v) => setFilter("source", v)}
+                      >
                         <SelectTrigger className="h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                           <SelectValue placeholder="All Sources" />
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-none">
-                          <SelectItem value="all" className="font-bold">All Sources</SelectItem>
-                          {SOURCES.map((s) => <SelectItem key={s} value={s} className="font-medium">{s}</SelectItem>)}
+                          <SelectItem value="all" className="font-bold">
+                            All Sources
+                          </SelectItem>
+                          {SOURCES.map((s) => (
+                            <SelectItem
+                              key={s}
+                              value={s}
+                              className="font-medium"
+                            >
+                              {s}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">Assigned To</label>
-                      <Select value={filters.assignedTo} onValueChange={(v) => setFilter("assignedTo", v)}>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        Assigned To
+                      </label>
+                      <Select
+                        value={filters.assignedTo}
+                        onValueChange={(v) => setFilter("assignedTo", v)}
+                      >
                         <SelectTrigger className="h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                           <SelectValue placeholder="All Members" />
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-none">
-                          <SelectItem value="all" className="font-bold">All Members</SelectItem>
-                          {users.map((u) => <SelectItem key={u._id} value={u._id} className="font-medium">{u.name}</SelectItem>)}
+                          <SelectItem value="all" className="font-bold">
+                            All Members
+                          </SelectItem>
+                          {users.map((u) => (
+                            <SelectItem
+                              key={u._id}
+                              value={u._id}
+                              className="font-medium"
+                            >
+                              {u.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">From — To</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        From — To
+                      </label>
                       <div className="flex gap-1">
-                        <input type="date" value={filters.startDate} onChange={(e) => setFilter("startDate", e.target.value)} className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0" />
-                        <input type="date" value={filters.endDate} onChange={(e) => setFilter("endDate", e.target.value)} className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0" />
+                        <input
+                          type="date"
+                          value={filters.startDate}
+                          onChange={(e) =>
+                            setFilter("startDate", e.target.value)
+                          }
+                          className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
+                        />
+                        <input
+                          type="date"
+                          value={filters.endDate}
+                          onChange={(e) => setFilter("endDate", e.target.value)}
+                          className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
+                        />
                       </div>
                     </div>
                   </div>
@@ -452,11 +683,16 @@ export default function ReportsPage() {
                       disabled={loading}
                       className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50"
                     >
-                      {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      {loading && (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      )}
                       Apply Filters
                     </button>
                     {activeFilterCount > 0 && (
-                      <button onClick={handleReset} className="flex items-center gap-1 px-4 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all">
+                      <button
+                        onClick={handleReset}
+                        className="flex items-center gap-1 px-4 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                      >
                         <X className="w-3 h-3" /> Reset
                       </button>
                     )}
@@ -470,57 +706,159 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
                 <p className="text-xs font-black uppercase tracking-widest text-black">
                   {loading ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</span>
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                      Loading...
+                    </span>
                   ) : (
                     `${leads.length} lead${leads.length !== 1 ? "s" : ""} found`
                   )}
                 </p>
                 <div className="flex gap-2">
-                  <button onClick={exportCSV} disabled={loading || leads.length === 0} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                  <button
+                    onClick={exportCSV}
+                    disabled={loading || leads.length === 0}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
                     <Download className="w-3.5 h-3.5" /> CSV
                   </button>
-                  <button onClick={exportPDF} disabled={loading || leads.length === 0 || exporting} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                    {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />} PDF
+                  <button
+                    onClick={exportPDF}
+                    disabled={loading || leads.length === 0 || exporting}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {exporting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FileText className="w-3.5 h-3.5" />
+                    )}{" "}
+                    PDF
                   </button>
                 </div>
               </div>
 
-              <div ref={tableRef} className="overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-primary text-white">
-                      {["#", "Name / Email", "Company", "Phone", "Source", "Status", "Assigned To", "Follow-up", "Created"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0">{h}</th>
+                      {[
+                        "#",
+                        "Name / Email",
+                        "Company",
+                        "Phone",
+                        "Source",
+                        "Status",
+                        "Assigned To",
+                        "Follow-up",
+                        "Created",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
-                      <tr><td colSpan={9} className="text-center py-16"><Loader2 className="w-8 h-8 animate-spin mx-auto text-black" /><p className="text-sm font-bold text-black mt-2 uppercase tracking-widest">Loading leads...</p></td></tr>
+                      <tr>
+                        <td colSpan={9} className="text-center py-16">
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
+                          <p className="text-sm font-bold text-black mt-2 uppercase tracking-widest">
+                            Loading leads...
+                          </p>
+                        </td>
+                      </tr>
                     ) : leads.length === 0 ? (
-                      <tr><td colSpan={9} className="text-center py-16"><p className="text-sm font-black uppercase tracking-widest text-black">No leads found.</p><p className="text-xs text-gray-500 mt-1">Try adjusting your filters.</p></td></tr>
+                      <tr>
+                        <td colSpan={9} className="text-center py-16">
+                          <p className="text-sm font-black uppercase tracking-widest text-black">
+                            No leads found.
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Try adjusting your filters.
+                          </p>
+                        </td>
+                      </tr>
                     ) : (
                       leads.map((lead, i) => (
-                        <tr key={lead._id || i} className={cn("border-b-2 border-black last:border-b-0 transition-colors", i % 2 === 0 ? "bg-white" : "bg-gray-50/50")}>
-                          <td className="px-4 py-3 text-xs font-black text-gray-400 whitespace-nowrap">{i + 1}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="font-black text-black text-sm">{lead.name || "—"}</p>
-                            {lead.email && <p className="text-[10px] text-gray-500 font-medium">{lead.email}</p>}
+                        <tr
+                          key={lead._id || i}
+                          className={cn(
+                            "border-b-2 border-black last:border-b-0 transition-colors",
+                            i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
+                          )}
+                        >
+                          <td className="px-4 py-3 text-xs font-black text-gray-400 whitespace-nowrap">
+                            {i + 1}
                           </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{lead.company || "—"}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{lead.phone || "—"}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">{lead.source || "—"}</span>
+                            <p className="font-black text-black text-sm">
+                              {lead.name || "—"}
+                            </p>
+                            {lead.email && (
+                              <p className="text-[10px] text-gray-500 font-medium">
+                                {lead.email}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {resolveCompany(lead)}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {lead.phone || "—"}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={cn("text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2", statusBadge(lead.status))}>{lead.status || "—"}</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">
+                              {lead.source || "—"}
+                            </span>
                           </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{lead.assignedTo?.name || <span className="text-gray-400 italic font-medium text-xs">Unassigned</span>}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span
+                              className={cn(
+                                "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                statusBadge(lead.status),
+                              )}
+                            >
+                              {lead.status || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {lead.assignedTo?.name || (
+                              <span className="text-gray-400 italic font-medium text-xs">
+                                Unassigned
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
-                            {lead.followUpDate ? new Date(lead.followUpDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : <span className="text-gray-400">—</span>}
+                            {lead.followUpDate ? (
+                              new Date(lead.followUpDate).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
-                            {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : <span className="text-gray-400">—</span>}
+                            {lead.createdAt ? (
+                              new Date(lead.createdAt).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -532,7 +870,10 @@ export default function ReportsPage() {
               {leads.length > 0 && (
                 <div className="border-t-2 border-black px-4 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest flex justify-between">
                   <span>Total: {leads.length} leads</span>
-                  <span>Won: {counts.won} · Drop: {counts.drop} · Pending: {counts.pending}</span>
+                  <span>
+                    Won: {counts.won} · Drop: {counts.drop} · Pending:{" "}
+                    {counts.pending}
+                  </span>
                 </div>
               )}
             </div>
@@ -552,7 +893,9 @@ export default function ReportsPage() {
               <div className="p-4 space-y-4">
                 {/* Period buttons */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-black">Period</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                    Period
+                  </label>
                   <div className="flex flex-wrap gap-2">
                     {PERIODS.map((p) => (
                       <button
@@ -574,14 +917,32 @@ export default function ReportsPage() {
                 {activityPeriod === "custom" && (
                   <div className="flex gap-3 items-end">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">From</label>
-                      <input type="date" value={activityCustomFrom} onChange={(e) => setActivityCustomFrom(e.target.value)} className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black" />
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        From
+                      </label>
+                      <input
+                        type="date"
+                        value={activityCustomFrom}
+                        onChange={(e) => setActivityCustomFrom(e.target.value)}
+                        className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
+                      />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">To</label>
-                      <input type="date" value={activityCustomTo} onChange={(e) => setActivityCustomTo(e.target.value)} className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black" />
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        To
+                      </label>
+                      <input
+                        type="date"
+                        value={activityCustomTo}
+                        onChange={(e) => setActivityCustomTo(e.target.value)}
+                        className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
+                      />
                     </div>
-                    <button onClick={fetchActivity} disabled={!activityCustomFrom || !activityCustomTo} className="px-4 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40">
+                    <button
+                      onClick={fetchActivity}
+                      disabled={!activityCustomFrom || !activityCustomTo}
+                      className="px-4 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40"
+                    >
                       Apply
                     </button>
                   </div>
@@ -589,19 +950,40 @@ export default function ReportsPage() {
 
                 <div className="flex flex-wrap gap-4 items-end">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black">Team Member</label>
-                    <Select value={activityUser} onValueChange={(v) => setActivityUser(v)}>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                      Team Member
+                    </label>
+                    <Select
+                      value={activityUser}
+                      onValueChange={(v) => setActivityUser(v)}
+                    >
                       <SelectTrigger className="w-48 h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                         <SelectValue placeholder="All Members" />
                       </SelectTrigger>
                       <SelectContent className="border-2 border-black rounded-none">
-                        <SelectItem value="all" className="font-bold">All Members</SelectItem>
-                        {users.map((u) => <SelectItem key={u._id} value={u._id} className="font-medium">{u.name}</SelectItem>)}
+                        <SelectItem value="all" className="font-bold">
+                          All Members
+                        </SelectItem>
+                        {users.map((u) => (
+                          <SelectItem
+                            key={u._id}
+                            value={u._id}
+                            className="font-medium"
+                          >
+                            {u.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <button onClick={fetchActivity} disabled={activityLoading} className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 h-9">
-                    {activityLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <button
+                    onClick={fetchActivity}
+                    disabled={activityLoading}
+                    className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 h-9"
+                  >
+                    {activityLoading && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    )}
                     Refresh
                   </button>
                 </div>
@@ -613,12 +995,19 @@ export default function ReportsPage() {
               <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
                 <p className="text-xs font-black uppercase tracking-widest text-black">
                   {activityLoading ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</span>
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                      Loading...
+                    </span>
                   ) : (
                     `${activityData.length} status change${activityData.length !== 1 ? "s" : ""}`
                   )}
                 </p>
-                <button onClick={exportActivityCSV} disabled={activityLoading || activityData.length === 0} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                <button
+                  onClick={exportActivityCSV}
+                  disabled={activityLoading || activityData.length === 0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
               </div>
@@ -627,45 +1016,121 @@ export default function ReportsPage() {
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-primary text-white">
-                      {["#", "Lead Name", "Company", "Phone", "Status Changed To", "Changed By", "Assigned To", "Remarks", "Date & Time"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0">{h}</th>
+                      {[
+                        "#",
+                        "Lead Name",
+                        "Company",
+                        "Phone",
+                        "Status Changed To",
+                        "Changed By",
+                        "Assigned To",
+                        "Remarks",
+                        "Date & Time",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {activityLoading ? (
-                      <tr><td colSpan={9} className="text-center py-16"><Loader2 className="w-8 h-8 animate-spin mx-auto text-black" /></td></tr>
+                      <tr>
+                        <td colSpan={9} className="text-center py-16">
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
+                        </td>
+                      </tr>
                     ) : activityData.length === 0 ? (
-                      <tr><td colSpan={9} className="text-center py-16">
-                        <p className="text-sm font-black uppercase tracking-widest text-black">No activity found.</p>
-                        <p className="text-xs text-gray-500 mt-1">Try a different period or team member.</p>
-                      </td></tr>
+                      <tr>
+                        <td colSpan={9} className="text-center py-16">
+                          <p className="text-sm font-black uppercase tracking-widest text-black">
+                            No activity found.
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Try a different period or team member.
+                          </p>
+                        </td>
+                      </tr>
                     ) : (
                       activityData.map((row, i) => (
-                        <tr key={i} className={cn("border-b-2 border-black last:border-b-0", i % 2 === 0 ? "bg-white" : "bg-gray-50/50")}>
-                          <td className="px-4 py-3 text-xs font-black text-gray-400">{i + 1}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="font-black text-black text-sm">{row.leadName || "—"}</p>
+                        <tr
+                          key={i}
+                          className={cn(
+                            "border-b-2 border-black last:border-b-0",
+                            i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
+                          )}
+                        >
+                          <td className="px-4 py-3 text-xs font-black text-gray-400">
+                            {i + 1}
                           </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{row.leadCompany || "—"}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{row.leadPhone || "—"}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={cn("text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2", statusBadge(row.changedToStatus))}>
+                            <p className="font-black text-black text-sm">
+                              {row.leadName || "—"}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {row.leadCompany || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {row.leadPhone || "—"}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span
+                              className={cn(
+                                "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                statusBadge(row.changedToStatus),
+                              )}
+                            >
                               {row.changedToStatus || "—"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{row.changedBy || <span className="text-gray-400 italic text-xs">System</span>}</td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">{row.assignedTo || <span className="text-gray-400 italic text-xs">—</span>}</td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {row.changedBy || (
+                              <span className="text-gray-400 italic text-xs">
+                                System
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                            {row.assignedTo || (
+                              <span className="text-gray-400 italic text-xs">
+                                —
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-xs text-gray-600 max-w-[200px]">
-                            <span className="line-clamp-2">{row.remarks || <span className="text-gray-400 italic">—</span>}</span>
+                            <span className="line-clamp-2">
+                              {row.remarks || (
+                                <span className="text-gray-400 italic">—</span>
+                              )}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
                             {row.timestamp ? (
                               <>
-                                <p>{new Date(row.timestamp).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
-                                <p className="text-gray-500 font-medium">{new Date(row.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</p>
+                                <p>
+                                  {new Date(row.timestamp).toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    },
+                                  )}
+                                </p>
+                                <p className="text-gray-500 font-medium">
+                                  {new Date(row.timestamp).toLocaleTimeString(
+                                    "en-IN",
+                                    { hour: "2-digit", minute: "2-digit" },
+                                  )}
+                                </p>
                               </>
-                            ) : "—"}
+                            ) : (
+                              "—"
+                            )}
                           </td>
                         </tr>
                       ))
@@ -712,7 +1177,10 @@ export default function ReportsPage() {
               <div className="px-4 py-3 border-b-2 border-black bg-white flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-widest text-black">
                   {teamLoading ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</span>
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                      Loading...
+                    </span>
                   ) : (
                     `${teamStats.length} team member${teamStats.length !== 1 ? "s" : ""} · ${teamLeads.length} leads`
                   )}
@@ -723,46 +1191,98 @@ export default function ReportsPage() {
                 <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="bg-primary text-white">
-                      {["#", "Team Member", "Total Leads", "Won", "Drop", "Pending", "Discussion", "Quotation", "Visit"].map((h) => (
-                        <th key={h} className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0">{h}</th>
+                      {[
+                        "#",
+                        "Team Member",
+                        "Total Leads",
+                        "Won",
+                        "Drop",
+                        "Pending",
+                        "Discussion",
+                        "Quotation",
+                        "Visit",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {teamLoading ? (
-                      <tr><td colSpan={9} className="text-center py-16"><Loader2 className="w-8 h-8 animate-spin mx-auto text-black" /></td></tr>
+                      <tr>
+                        <td colSpan={9} className="text-center py-16">
+                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
+                        </td>
+                      </tr>
                     ) : teamStats.length === 0 ? (
-                      <tr><td colSpan={9} className="text-center py-16">
-                        <p className="text-sm font-black uppercase tracking-widest text-black">No data found.</p>
-                      </td></tr>
+                      <tr>
+                        <td colSpan={9} className="text-center py-16">
+                          <p className="text-sm font-black uppercase tracking-widest text-black">
+                            No data found.
+                          </p>
+                        </td>
+                      </tr>
                     ) : (
                       teamStats.map((member, i) => (
-                        <tr key={i} className={cn("border-b-2 border-black last:border-b-0", i % 2 === 0 ? "bg-white" : "bg-gray-50/50")}>
-                          <td className="px-4 py-3 text-xs font-black text-gray-400">{i + 1}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="font-black text-black text-sm">{member.name}</p>
+                        <tr
+                          key={i}
+                          className={cn(
+                            "border-b-2 border-black last:border-b-0",
+                            i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
+                          )}
+                        >
+                          <td className="px-4 py-3 text-xs font-black text-gray-400">
+                            {i + 1}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-lg font-black text-primary tabular-nums">{member.total}</span>
+                            <p className="font-black text-black text-sm">
+                              {member.name}
+                            </p>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-green-600 tabular-nums">{member.won}</span>
-                            {member.total > 0 && <span className="text-[10px] text-gray-400 ml-1">({Math.round((member.won / member.total) * 100)}%)</span>}
+                            <span className="text-lg font-black text-primary tabular-nums">
+                              {member.total}
+                            </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-red-500 tabular-nums">{member.drop}</span>
+                            <span className="text-sm font-black text-green-600 tabular-nums">
+                              {member.won}
+                            </span>
+                            {member.total > 0 && (
+                              <span className="text-[10px] text-gray-400 ml-1">
+                                ({Math.round((member.won / member.total) * 100)}
+                                %)
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-yellow-600 tabular-nums">{member.pending}</span>
+                            <span className="text-sm font-black text-red-500 tabular-nums">
+                              {member.drop}
+                            </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-purple-600 tabular-nums">{member.discussion}</span>
+                            <span className="text-sm font-black text-yellow-600 tabular-nums">
+                              {member.pending}
+                            </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-orange-500 tabular-nums">{member.quotation}</span>
+                            <span className="text-sm font-black text-purple-600 tabular-nums">
+                              {member.discussion}
+                            </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-blue-600 tabular-nums">{member.visited}</span>
+                            <span className="text-sm font-black text-orange-500 tabular-nums">
+                              {member.quotation}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-black text-blue-600 tabular-nums">
+                              {member.visited}
+                            </span>
                           </td>
                         </tr>
                       ))
@@ -775,7 +1295,9 @@ export default function ReportsPage() {
                 <div className="border-t-2 border-black px-4 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest flex justify-between">
                   <span>Team: {teamStats.length} members</span>
                   <span>
-                    Total: {teamLeads.length} · Won: {teamStats.reduce((s, m) => s + m.won, 0)} · Drop: {teamStats.reduce((s, m) => s + m.drop, 0)}
+                    Total: {teamLeads.length} · Won:{" "}
+                    {teamStats.reduce((s, m) => s + m.won, 0)} · Drop:{" "}
+                    {teamStats.reduce((s, m) => s + m.drop, 0)}
                   </span>
                 </div>
               )}
@@ -785,35 +1307,90 @@ export default function ReportsPage() {
             {!teamLoading && teamStats.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {teamStats.map((member, i) => (
-                  <div key={i} className="border-2 border-black bg-white p-4 space-y-3 hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all shadow-[3px_3px_0px_#000]">
+                  <div
+                    key={i}
+                    className="border-2 border-black bg-white p-4 space-y-3 hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all shadow-[3px_3px_0px_#000]"
+                  >
                     <div className="flex items-center justify-between border-b-2 border-black pb-2">
-                      <p className="font-black text-black uppercase tracking-wide">{member.name}</p>
-                      <span className="text-2xl font-black text-primary tabular-nums">{member.total}</span>
+                      <p className="font-black text-black uppercase tracking-wide">
+                        {member.name}
+                      </p>
+                      <span className="text-2xl font-black text-primary tabular-nums">
+                        {member.total}
+                      </span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       {[
-                        { label: "Won", value: member.won, color: "text-green-600" },
-                        { label: "Drop", value: member.drop, color: "text-red-500" },
-                        { label: "Pending", value: member.pending, color: "text-yellow-600" },
-                        { label: "Discussion", value: member.discussion, color: "text-purple-600" },
-                        { label: "Quotation", value: member.quotation, color: "text-orange-500" },
-                        { label: "Visit", value: member.visited, color: "text-blue-600" },
+                        {
+                          label: "Won",
+                          value: member.won,
+                          color: "text-green-600",
+                        },
+                        {
+                          label: "Drop",
+                          value: member.drop,
+                          color: "text-red-500",
+                        },
+                        {
+                          label: "Pending",
+                          value: member.pending,
+                          color: "text-yellow-600",
+                        },
+                        {
+                          label: "Discussion",
+                          value: member.discussion,
+                          color: "text-purple-600",
+                        },
+                        {
+                          label: "Quotation",
+                          value: member.quotation,
+                          color: "text-orange-500",
+                        },
+                        {
+                          label: "Visit",
+                          value: member.visited,
+                          color: "text-blue-600",
+                        },
                       ].map(({ label, value, color }) => (
                         <div key={label} className="border border-black p-1.5">
-                          <p className={cn("text-lg font-black tabular-nums", color)}>{value}</p>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">{label}</p>
+                          <p
+                            className={cn(
+                              "text-lg font-black tabular-nums",
+                              color,
+                            )}
+                          >
+                            {value}
+                          </p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                            {label}
+                          </p>
                         </div>
                       ))}
                     </div>
                     {member.total > 0 && (
                       <div className="space-y-1">
                         <div className="flex justify-between text-[10px] font-black uppercase">
-                          <span className="text-green-600">WON {Math.round((member.won / member.total) * 100)}%</span>
-                          <span className="text-red-500">DROP {Math.round((member.drop / member.total) * 100)}%</span>
+                          <span className="text-green-600">
+                            WON {Math.round((member.won / member.total) * 100)}%
+                          </span>
+                          <span className="text-red-500">
+                            DROP{" "}
+                            {Math.round((member.drop / member.total) * 100)}%
+                          </span>
                         </div>
                         <div className="h-2 border border-black bg-gray-100 overflow-hidden flex">
-                          <div className="bg-green-400 h-full transition-all" style={{ width: `${(member.won / member.total) * 100}%` }} />
-                          <div className="bg-red-400 h-full transition-all" style={{ width: `${(member.drop / member.total) * 100}%` }} />
+                          <div
+                            className="bg-green-400 h-full transition-all"
+                            style={{
+                              width: `${(member.won / member.total) * 100}%`,
+                            }}
+                          />
+                          <div
+                            className="bg-red-400 h-full transition-all"
+                            style={{
+                              width: `${(member.drop / member.total) * 100}%`,
+                            }}
+                          />
                         </div>
                       </div>
                     )}

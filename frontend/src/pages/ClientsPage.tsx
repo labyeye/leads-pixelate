@@ -434,10 +434,7 @@ export default function ClientsPage() {
         ].map(({ label, val, bg }) => (
           <div
             key={label}
-            className={cn(
-              "border-2 border-black p-4 text-center",
-              bg,
-            )}
+            className={cn("border-2 border-black p-4 text-center", bg)}
           >
             <p className="text-3xl font-black">{loading ? "—" : val}</p>
             <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">

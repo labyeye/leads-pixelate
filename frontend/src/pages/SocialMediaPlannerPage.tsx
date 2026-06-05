@@ -445,7 +445,12 @@ function PostsTab({
           ))}
         </div>
         <div className="flex gap-2 ml-3 shrink-0">
-          <Button variant="outline" size="sm" onClick={fetchPosts} className="nb-btn">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchPosts}
+            className="nb-btn"
+          >
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
@@ -804,16 +809,17 @@ function PostCard({
             )}
 
             {/* Admin: post now for SCHEDULED / FAILED */}
-            {isAdmin && ["SCHEDULED", "FAILED", "APPROVED"].includes(post.status) && (
-              <Button
-                size="sm"
-                className="h-7 text-xs nb-btn bg-[#024BAB] text-white hover:bg-[#024BAB]/90"
-                onClick={onPublishNow}
-                disabled={actionLoading}
-              >
-                <Zap className="w-3 h-3 mr-1" /> Post Now
-              </Button>
-            )}
+            {isAdmin &&
+              ["SCHEDULED", "FAILED", "APPROVED"].includes(post.status) && (
+                <Button
+                  size="sm"
+                  className="h-7 text-xs nb-btn bg-[#024BAB] text-white hover:bg-[#024BAB]/90"
+                  onClick={onPublishNow}
+                  disabled={actionLoading}
+                >
+                  <Zap className="w-3 h-3 mr-1" /> Post Now
+                </Button>
+              )}
 
             {/* Delete */}
             {!["POSTING", "POSTED"].includes(post.status) && (

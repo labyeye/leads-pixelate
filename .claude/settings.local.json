@@ -11,7 +11,11 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\(d.get\\('dependencies',{}\\).keys\\(\\)\\)\\)\\)\")",
       "Bash(node --check /Users/labh/Desktop/Projects/agency-flow-crm/backend/controllers/socialController.js)",
       "Bash(node --check /Users/labh/Desktop/Projects/agency-flow-crm/backend/routes/socialRoutes.js)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npm list *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['dependencies'].get\\('jspdf-autotable','not found'\\)\\)\")",
+      "Read(//Users/labh/Desktop/Projects/nestgst/backend/**)",
+      "Read(//Users/labh/Desktop/Projects/nestgst/frontend/src/**)"
     ]
   }
 }

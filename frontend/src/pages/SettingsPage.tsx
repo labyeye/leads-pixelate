@@ -429,48 +429,62 @@ export default function SettingsPage() {
         {/* Sidebar */}
         <div className="w-56 shrink-0 border-r-2 border-black bg-white overflow-y-auto">
           <div className="p-4 border-b-2 border-black">
-            <h1 className="text-base font-display font-bold text-black">Settings</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Company & system config</p>
+            <h1 className="text-base font-display font-bold text-black">
+              Settings
+            </h1>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Company & system config
+            </p>
           </div>
           <nav className="p-2">
-            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-3 pb-1">Company</p>
-            {tabs.filter(t => ["general","bank","terms","template"].includes(t.id)).map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-left rounded transition-colors mb-0.5",
-                    activeTab === tab.id
-                      ? "bg-[#024BAB] text-white"
-                      : "text-black hover:bg-[#024BAB]/10",
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  {tab.label}
-                </button>
-              );
-            })}
-            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-4 pb-1">System</p>
-            {tabs.filter(t => t.id === "permissions").map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-left rounded transition-colors mb-0.5",
-                    activeTab === tab.id
-                      ? "bg-[#024BAB] text-white"
-                      : "text-black hover:bg-[#024BAB]/10",
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  {tab.label}
-                </button>
-              );
-            })}
+            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-3 pb-1">
+              Company
+            </p>
+            {tabs
+              .filter((t) =>
+                ["general", "bank", "terms", "template"].includes(t.id),
+              )
+              .map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-left rounded transition-colors mb-0.5",
+                      activeTab === tab.id
+                        ? "bg-[#024BAB] text-white"
+                        : "text-black hover:bg-[#024BAB]/10",
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-4 pb-1">
+              System
+            </p>
+            {tabs
+              .filter((t) => t.id === "permissions")
+              .map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-left rounded transition-colors mb-0.5",
+                      activeTab === tab.id
+                        ? "bg-[#024BAB] text-white"
+                        : "text-black hover:bg-[#024BAB]/10",
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    {tab.label}
+                  </button>
+                );
+              })}
           </nav>
         </div>
 
@@ -480,7 +494,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-white sticky top-0 z-10">
             <div>
               <h2 className="font-display font-bold text-black">
-                {tabs.find(t => t.id === activeTab)?.label}
+                {tabs.find((t) => t.id === activeTab)?.label}
               </h2>
             </div>
             {activeTab !== "permissions" && activeTab !== "template" && (
@@ -489,10 +503,16 @@ export default function SettingsPage() {
                 disabled={saving}
                 className={cn(
                   "nb-btn px-5 py-2 text-sm font-bold text-white border-2 border-black flex items-center gap-2",
-                  saving ? "bg-gray-400 cursor-not-allowed" : "bg-[#024BAB] hover:bg-[#01368A]",
+                  saving
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-[#024BAB] hover:bg-[#01368A]",
                 )}
               >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
                 Save Changes
               </button>
             )}

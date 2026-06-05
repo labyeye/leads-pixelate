@@ -699,10 +699,7 @@ export default function QuotationsPage() {
         ].map(({ label, val, bg }) => (
           <div
             key={label}
-            className={cn(
-              "border-2 border-black p-3 text-center",
-              bg,
-            )}
+            className={cn("border-2 border-black p-3 text-center", bg)}
           >
             <p className="text-2xl font-black">{loading ? "—" : val}</p>
             <p className="text-[10px] font-black uppercase tracking-widest mt-0.5 opacity-80">

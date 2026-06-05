@@ -318,7 +318,12 @@ export const facebookAPI = {
       "/facebook/connect-page",
       {
         method: "POST",
-        body: JSON.stringify({ pageId, selectedFormIds, allowedStates, defaultAssigneeId }),
+        body: JSON.stringify({
+          pageId,
+          selectedFormIds,
+          allowedStates,
+          defaultAssigneeId,
+        }),
       },
     ),
   sync: (pageId?: string) =>

@@ -1160,7 +1160,6 @@ export default function LeadsPage() {
               )}
               {jdSyncing ? "Syncing..." : "Sync Justdial"}
             </button>
-
           </div>
 
           {/* Row 2 — date range + search */}
@@ -1195,25 +1194,9 @@ export default function LeadsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
               />
-            {search.trim().length > 0 && (
-              <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-popover border border-border rounded-md shadow-xl max-h-80 overflow-y-auto z-50">
-                {leads
-                  .filter(
-                    (l) =>
-                      (l.name || "")
-                        .toLowerCase()
-                        .includes(search.toLowerCase()) ||
-                      (l.company || "")
-                        .toLowerCase()
-                        .includes(search.toLowerCase()) ||
-                      (l.phone || "")
-                        .toLowerCase()
-                        .includes(search.toLowerCase()),
-                  )
-                  .slice(0, 20).length === 0 ? (
-                  <div className="p-3 text-sm text-black">No leads found.</div>
-                ) : (
-                  leads
+              {search.trim().length > 0 && (
+                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-popover border border-border rounded-md shadow-xl max-h-80 overflow-y-auto z-50">
+                  {leads
                     .filter(
                       (l) =>
                         (l.name || "")
@@ -1226,41 +1209,59 @@ export default function LeadsPage() {
                           .toLowerCase()
                           .includes(search.toLowerCase()),
                     )
-                    .slice(0, 20)
-                    .map((l) => (
-                      <div
-                        key={l._id || l.id}
-                        className="p-3 hover:bg-muted cursor-pointer border-b border-border/50 last:border-b-0"
-                        onClick={() => {
-                          setSearch("");
-                          setActiveCategory(
-                            getCategoryByStatus(l.status || "ALL"),
-                          );
-                          setSelectedLeadId(l._id || l.id);
-                        }}
-                      >
-                        <div className="font-medium text-sm flex justify-between items-center">
-                          <span>{l.name}</span>
-                          <span
-                            className={cn(
-                              "text-[10px] px-2 py-0.5 rounded-full border",
-                              statusColors[l.status] ||
-                                "bg-muted text-black border-transparent",
-                            )}
-                          >
-                            {l.status || "ALL"}
-                          </span>
+                    .slice(0, 20).length === 0 ? (
+                    <div className="p-3 text-sm text-black">
+                      No leads found.
+                    </div>
+                  ) : (
+                    leads
+                      .filter(
+                        (l) =>
+                          (l.name || "")
+                            .toLowerCase()
+                            .includes(search.toLowerCase()) ||
+                          (l.company || "")
+                            .toLowerCase()
+                            .includes(search.toLowerCase()) ||
+                          (l.phone || "")
+                            .toLowerCase()
+                            .includes(search.toLowerCase()),
+                      )
+                      .slice(0, 20)
+                      .map((l) => (
+                        <div
+                          key={l._id || l.id}
+                          className="p-3 hover:bg-muted cursor-pointer border-b border-border/50 last:border-b-0"
+                          onClick={() => {
+                            setSearch("");
+                            setActiveCategory(
+                              getCategoryByStatus(l.status || "ALL"),
+                            );
+                            setSelectedLeadId(l._id || l.id);
+                          }}
+                        >
+                          <div className="font-medium text-sm flex justify-between items-center">
+                            <span>{l.name}</span>
+                            <span
+                              className={cn(
+                                "text-[10px] px-2 py-0.5 rounded-full border",
+                                statusColors[l.status] ||
+                                  "bg-muted text-black border-transparent",
+                              )}
+                            >
+                              {l.status || "ALL"}
+                            </span>
+                          </div>
+                          <div className="text-xs text-black mt-1 flex gap-2">
+                            <span>{l.company || "No Company"}</span>
+                            <span>•</span>
+                            <span>{l.phone || "No Phone"}</span>
+                          </div>
                         </div>
-                        <div className="text-xs text-black mt-1 flex gap-2">
-                          <span>{l.company || "No Company"}</span>
-                          <span>•</span>
-                          <span>{l.phone || "No Phone"}</span>
-                        </div>
-                      </div>
-                    ))
-                )}
-              </div>
-            )}
+                      ))
+                  )}
+                </div>
+              )}
             </div>
 
             {(startDate ||
