@@ -94,6 +94,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [activeDatePreset, setActiveDatePreset] = useState<string>("");
 
   // ── Leads tab filters ──
   const [filters, setFilters] = useState({
@@ -172,7 +173,41 @@ export default function ReportsPage() {
       endDate: "",
     };
     setFilters(reset);
+    setActiveDatePreset("");
     fetchLeads(reset);
+  };
+
+  const applyDatePreset = (preset: string) => {
+    const now = new Date();
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    let startDate = "";
+    let endDate = fmt(now);
+    if (preset === "today") {
+      startDate = fmt(now);
+    } else if (preset === "yesterday") {
+      const y = new Date(now);
+      y.setDate(now.getDate() - 1);
+      startDate = fmt(y);
+      endDate = fmt(y);
+    } else if (preset === "last3") {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 2);
+      startDate = fmt(d);
+    } else if (preset === "last7") {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 6);
+      startDate = fmt(d);
+    } else if (preset === "last30") {
+      const d = new Date(now);
+      d.setDate(now.getDate() - 29);
+      startDate = fmt(d);
+    } else if (preset === "thisMonth") {
+      startDate = fmt(new Date(now.getFullYear(), now.getMonth(), 1));
+    }
+    setActiveDatePreset(preset);
+    const updated = { ...filters, startDate, endDate };
+    setFilters(updated);
+    fetchLeads(updated);
   };
 
   // ── Activity tab ──
@@ -702,6 +737,31 @@ export default function ReportsPage() {
               )}
             </div>
 
+            {/* Date quick-select bar */}
+            <div className="flex items-center gap-2 px-1 py-2 flex-wrap">
+              {[
+                { key: "today", label: "Today" },
+                { key: "yesterday", label: "Yesterday" },
+                { key: "last3", label: "Last 3 Days" },
+                { key: "last7", label: "Last 7 Days" },
+                { key: "last30", label: "Last 30 Days" },
+                { key: "thisMonth", label: "This Month" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => activeDatePreset === key ? (setActiveDatePreset(""), fetchLeads({ ...filters, startDate: "", endDate: "" }), setFilters(f => ({ ...f, startDate: "", endDate: "" }))) : applyDatePreset(key)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                    activeDatePreset === key
+                      ? "bg-[#FA731C] text-white shadow-none translate-x-[2px] translate-y-[2px]"
+                      : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {/* Table */}
             <div className="border-2 border-black bg-white overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
@@ -746,12 +806,13 @@ export default function ReportsPage() {
                         "#",
                         "Name / Email",
                         "Company",
-                        "Phone",
                         "Source",
                         "Status",
+                        "Tag",
                         "Assigned To",
                         "Follow-up",
                         "Created",
+                        "Remarks",
                       ].map((h) => (
                         <th
                           key={h}
@@ -765,7 +826,7 @@ export default function ReportsPage() {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={9} className="text-center py-16">
+                        <td colSpan={10} className="text-center py-16">
                           <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
                           <p className="text-sm font-bold text-black mt-2 uppercase tracking-widest">
                             Loading leads...
@@ -774,7 +835,7 @@ export default function ReportsPage() {
                       </tr>
                     ) : leads.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="text-center py-16">
+                        <td colSpan={10} className="text-center py-16">
                           <p className="text-sm font-black uppercase tracking-widest text-black">
                             No leads found.
                           </p>
@@ -808,9 +869,6 @@ export default function ReportsPage() {
                           <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
                             {resolveCompany(lead)}
                           </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {lead.phone || "—"}
-                          </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">
                               {lead.source || "—"}
@@ -825,6 +883,18 @@ export default function ReportsPage() {
                             >
                               {lead.status || "—"}
                             </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {lead.contactTag ? (
+                              <span className={cn(
+                                "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                lead.contactTag === "HOT" ? "bg-red-500 text-white border-red-700" :
+                                lead.contactTag === "WARM" ? "bg-orange-400 text-black border-orange-600" :
+                                "bg-blue-300 text-black border-blue-500",
+                              )}>
+                                {lead.contactTag}
+                              </span>
+                            ) : <span className="text-gray-300">—</span>}
                           </td>
                           <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
                             {lead.assignedTo?.name || (
@@ -859,6 +929,13 @@ export default function ReportsPage() {
                               )
                             ) : (
                               <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-black max-w-[160px]">
+                            {lead.remarks ? (
+                              <span className="line-clamp-2">{lead.remarks}</span>
+                            ) : (
+                              <span className="text-gray-300">—</span>
                             )}
                           </td>
                         </tr>
