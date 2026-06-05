@@ -85,6 +85,7 @@ import {
   statusColors,
   sourceColors,
 } from "@/components/leads/statusConstants";
+import { SourceBadge } from "@/components/leads/SourceBadge";
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
@@ -1573,15 +1574,7 @@ export default function LeadsPage() {
                               </p>
                             )}
                             <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
-                              <span
-                                className={cn(
-                                  "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase tracking-wider",
-                                  sourceColors[l.source] ||
-                                    "bg-gray-100 text-black",
-                                )}
-                              >
-                                {l.source || "Manual"}
-                              </span>
+                              <SourceBadge source={l.source} size="sm" />
                               <span
                                 className={cn(
                                   "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
@@ -1816,15 +1809,7 @@ export default function LeadsPage() {
                                 )}
                               </td>
                               <td className="px-5 py-3.5 hidden md:table-cell">
-                                <span
-                                  className={cn(
-                                    "text-xs font-medium px-2 py-1 rounded-md text-nowrap",
-                                    sourceColors[l.source] ||
-                                      "bg-muted text-black",
-                                  )}
-                                >
-                                  {l.source || "General"}
-                                </span>
+                                <SourceBadge source={l.source} />
                               </td>
                               <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
                                 {l.indiamartQueryTime
