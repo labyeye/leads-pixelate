@@ -478,20 +478,11 @@ router.post(
       return assigneeCache[defaultAssigneeId];
     };
 
-    // Delete Meta/Facebook/Instagram leads older than 2 days before syncing
-    const twoDaysAgoDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-    const deleted = await Lead.deleteMany({
-      tenantId: tenant._id || null,
-      source: { $in: ["Facebook", "Instagram", "Meta"] },
-      createdAt: { $lt: twoDaysAgoDate },
-    });
-
     let totalCreated = 0;
     let totalUpdated = 0;
     let totalFiltered = 0;
-    let totalDeleted = deleted.deletedCount || 0;
     const pageResults = [];
-    const adPlatformCache = {}; // cache per sync run to avoid duplicate FB API calls
+
 
     for (const page of pagesToSync) {
       const pageResult = {
@@ -534,7 +525,7 @@ router.post(
             (Date.now() - 3 * 24 * 60 * 60 * 1000) / 1000,
           );
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
-            fields: "field_data,created_time,ad_id,ad_name,form_id",
+            fields: "field_data,created_time,ad_id,ad_name,form_id,platform",
             limit: "100",
             filtering: JSON.stringify([
               {
@@ -606,12 +597,10 @@ router.post(
                 facebookPageName: page.pageName || "",
               };
 
-              const { source: resolvedSource, platforms: resolvedPlatforms } =
-                await resolveAdPlatform(
-                  lead.ad_id,
-                  page.accessToken,
-                  adPlatformCache,
-                );
+              const p = (lead.platform || "").toLowerCase();
+              const resolvedSource =
+                p === "ig" ? "Instagram" : p === "fb" ? "Facebook" : "Facebook";
+              const resolvedPlatforms = p ? [p] : [];
 
               const exists = await Lead.findOne({
                 facebookLeadgenId: lead.id,
@@ -678,8 +667,6 @@ router.post(
     if (totalUpdated > 0) parts.push(`${totalUpdated} already in DB`);
     if (totalFiltered > 0)
       parts.push(`${totalFiltered} blocked by location filter`);
-    if (totalDeleted > 0)
-      parts.push(`${totalDeleted} old leads removed`);
     res.json({
       success: true,
       message: `Sync complete — ${parts.join(", ")}`,
@@ -687,7 +674,6 @@ router.post(
         created: totalCreated,
         updated: totalUpdated,
         filtered: totalFiltered,
-        deleted: totalDeleted,
         pages: pageResults,
       },
     });
