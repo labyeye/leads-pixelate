@@ -1634,10 +1634,13 @@ export default function LeadsPage() {
                           "source",
                           [
                             "IndiaMART",
-                            "Manual",
+                            "TradeIndia",
+                            "Justdial",
+                            "Facebook",
+                            "Instagram",
+                            "Meta",
                             "Website",
-                            "Walk-in",
-                            "Referral",
+                            "Manual",
                           ],
                           sourceFilters,
                           setSourceFilters,
@@ -2308,9 +2311,10 @@ export default function LeadsPage() {
                         "IndiaMART",
                         "TradeIndia",
                         "Justdial",
+                        "Facebook",
+                        "Instagram",
+                        "Meta",
                         "Website",
-                        "Walk-in",
-                        "Referral",
                       ].map((s) => (
                         <SelectItem key={s} value={s}>
                           {s}

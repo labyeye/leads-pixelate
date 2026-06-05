@@ -38,6 +38,8 @@ type Period = "today" | "week" | "month";
 const SOURCE_COLORS: Record<string, string> = {
   IndiaMART: "#FB923C",
   Facebook: "#3B82F6",
+  Instagram: "#C026D3",
+  Meta: "#1D4ED8",
   TradeIndia: "#00C48C",
   Justdial: "#EF4444",
   Website: "#A855F7",

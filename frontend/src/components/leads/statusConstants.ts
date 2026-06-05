@@ -61,4 +61,7 @@ export const sourceColors: Record<string, string> = {
   Justdial: "bg-orange-400 text-slate-900 font-semibold",
   Website: "bg-purple-400 text-white font-semibold",
   Manual: "bg-slate-300 text-slate-900 font-semibold",
+  Facebook: "bg-blue-500 text-white font-semibold",
+  Instagram: "bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold",
+  Meta: "bg-blue-700 text-white font-semibold",
 };

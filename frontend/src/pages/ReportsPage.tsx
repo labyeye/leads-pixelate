@@ -394,7 +394,7 @@ export default function ReportsPage() {
       // ── Table ──
       autoTable(doc, {
         startY: 25,
-        head: [["#", "Name", "Company / FB Page", "Phone", "Source", "Status", "Assigned To", "Follow-up", "Created"]],
+        head: [["#", "Name", "Company / FB Page", "Phone", "Source", "Status", "Assigned To", "Follow-up", "Created", "Remarks"]],
         body: leads.map((l, i) => [
           i + 1,
           l.name || "—",
@@ -405,11 +405,12 @@ export default function ReportsPage() {
           l.assignedTo?.name || "Unassigned",
           l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "—",
           l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "—",
+          l.remarks || "—",
         ]),
         styles: { fontSize: 7, cellPadding: 2.2, overflow: "linebreak" },
         headStyles: { fillColor: [2, 75, 171], textColor: 255, fontStyle: "bold", fontSize: 7 },
         alternateRowStyles: { fillColor: [248, 248, 248] },
-        columnStyles: { 0: { cellWidth: 8, halign: "center" } },
+        columnStyles: { 0: { cellWidth: 8, halign: "center" }, 9: { cellWidth: 35 } },
         margin: { left: 5, right: 5 },
       });
 

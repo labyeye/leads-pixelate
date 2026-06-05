@@ -29,6 +29,32 @@ async function fbGet(path, token, params = {}) {
   return data;
 }
 
+/**
+ * Resolve publisher_platforms for an ad_id.
+ * Returns "Instagram" if only IG, "Facebook" if only FB, "Meta" if both.
+ * Uses an in-memory cache per sync run to avoid duplicate API calls.
+ */
+async function resolveAdPlatform(adId, token, cache) {
+  if (!adId) return { source: "Facebook", platforms: [] };
+  if (cache[adId]) return cache[adId];
+  try {
+    const data = await fbGet(`/${adId}`, token, { fields: "publisher_platforms" });
+    const platforms = data.publisher_platforms || [];
+    const hasFb = platforms.includes("facebook");
+    const hasIg = platforms.includes("instagram");
+    let source = "Facebook";
+    if (hasIg && !hasFb) source = "Instagram";
+    else if (hasIg && hasFb) source = "Meta";
+    const result = { source, platforms };
+    cache[adId] = result;
+    return result;
+  } catch {
+    // If ad lookup fails (e.g. ad deleted), default to Facebook
+    cache[adId] = { source: "Facebook", platforms: [] };
+    return cache[adId];
+  }
+}
+
 async function getLongLivedToken(shortToken) {
   const res = await fetch(
     `${FB_API}/oauth/access_token?grant_type=fb_exchange_token` +
@@ -456,6 +482,7 @@ router.post(
     let totalUpdated = 0;
     let totalFiltered = 0;
     const pageResults = [];
+    const adPlatformCache = {}; // cache per sync run to avoid duplicate FB API calls
 
     for (const page of pagesToSync) {
       const pageResult = {
@@ -494,8 +521,8 @@ router.post(
 
       for (const formId of formIds) {
         try {
-          const twoDaysAgo = Math.floor(
-            (Date.now() - 2 * 24 * 60 * 60 * 1000) / 1000,
+          const thirtyDaysAgo = Math.floor(
+            (Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000,
           );
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id",
@@ -504,7 +531,7 @@ router.post(
               {
                 field: "time_created",
                 operator: "GREATER_THAN",
-                value: twoDaysAgo,
+                value: thirtyDaysAgo,
               },
             ]),
           });
@@ -570,11 +597,24 @@ router.post(
                 facebookPageName: page.pageName || "",
               };
 
+              const { source: resolvedSource, platforms: resolvedPlatforms } =
+                await resolveAdPlatform(
+                  lead.ad_id,
+                  page.accessToken,
+                  adPlatformCache,
+                );
+
               const exists = await Lead.findOne({
                 facebookLeadgenId: lead.id,
               });
               if (exists) {
-                await Lead.findByIdAndUpdate(exists._id, { $set: leadData });
+                await Lead.findByIdAndUpdate(exists._id, {
+                  $set: {
+                    ...leadData,
+                    source: resolvedSource,
+                    adPlatforms: resolvedPlatforms,
+                  },
+                });
                 totalUpdated++;
                 pageResult.updated++;
               } else {
@@ -584,7 +624,8 @@ router.post(
                   );
                   await Lead.create({
                     ...leadData,
-                    source: "Facebook",
+                    source: resolvedSource,
+                    adPlatforms: resolvedPlatforms,
                     status: "PENDING CONTACT",
                     assignedTo: assigneeId,
                     tenantId: tenant._id || null,
@@ -791,13 +832,19 @@ router.post(
             facebookPageName: pageConfig.pageName || "",
           };
 
+          const { source: resolvedSource, platforms: resolvedPlatforms } =
+            await resolveAdPlatform(ad_id, pageConfig.accessToken, {});
+
           const existing = await Lead.findOne({
             facebookLeadgenId: leadgen_id,
           });
           if (existing) {
-            // Update data only — never touch status
             await Lead.findByIdAndUpdate(existing._id, {
-              $set: updatableFields,
+              $set: {
+                ...updatableFields,
+                source: resolvedSource,
+                adPlatforms: resolvedPlatforms,
+              },
             });
             continue;
           }
@@ -820,7 +867,8 @@ router.post(
 
           await Lead.create({
             ...updatableFields,
-            source: "Facebook",
+            source: resolvedSource,
+            adPlatforms: resolvedPlatforms,
             status: "PENDING CONTACT",
             assignedTo: assigneeId,
             tenantId: tenant._id || null,

@@ -21,8 +21,14 @@ const leadSchema = new mongoose.Schema(
         "Website",
         "Manual",
         "Facebook",
+        "Instagram",
+        "Meta",
       ],
       required: [true, "Please specify the lead source"],
+    },
+    adPlatforms: {
+      type: [String],
+      default: [],
     },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
