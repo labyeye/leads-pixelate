@@ -11,7 +11,7 @@ import { authAPI, setToken, removeToken, getToken } from "@/services/api";
 interface Tenant {
   _id: string;
   name: string;
-  plan: "trial" | "starter" | "growth" | "pro" | "enterprise";
+  plan: "trial" | "starter" | "growth" | "professional" | "business" | "enterprise" | "pro";
   status: string;
 }
 

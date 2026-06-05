@@ -92,8 +92,14 @@ function fmt(n) {
 
 function getPlanLabel(plan) {
   return (
-    { starter: "Starter", growth: "Growth", pro: "Pro", enterprise: "Pro" }[plan] ||
-    plan
+    {
+      starter: "Starter",
+      growth: "Growth",
+      professional: "Professional",
+      business: "Business",
+      enterprise: "Enterprise",
+      pro: "Professional",
+    }[plan] || plan
   );
 }
 

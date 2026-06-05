@@ -76,9 +76,10 @@ router.get("/plans", (req, res) => {
         priceYearly: PLAN_PRICES_YEARLY.starter,
         currency: "INR",
         limits: PLAN_LIMITS.starter,
+        employees: 25,
         features: [
-          "500 leads/month",
-          "2 team members",
+          "Up to 25 employees",
+          "2,000 leads/month",
           "IndiaMART integration",
           "Follow-up reminders",
           "Email support",
@@ -90,9 +91,10 @@ router.get("/plans", (req, res) => {
         priceYearly: PLAN_PRICES_YEARLY.growth,
         currency: "INR",
         limits: PLAN_LIMITS.growth,
+        employees: 50,
         features: [
-          "5,000 leads/month",
-          "10 team members",
+          "Up to 50 employees",
+          "10,000 leads/month",
           "IndiaMART + Facebook Ads",
           "Advanced follow-up workflows",
           "Calendar & visit tracking",
@@ -101,21 +103,58 @@ router.get("/plans", (req, res) => {
         ],
         popular: true,
       },
-      pro: {
-        name: "Pro",
-        priceMonthly: PLAN_PRICES_MONTHLY.pro,
-        priceYearly: PLAN_PRICES_YEARLY.pro,
+      professional: {
+        name: "Professional",
+        priceMonthly: PLAN_PRICES_MONTHLY.professional,
+        priceYearly: PLAN_PRICES_YEARLY.professional,
         currency: "INR",
-        limits: PLAN_LIMITS.pro,
+        limits: PLAN_LIMITS.professional,
+        employees: 100,
         features: [
-          "Unlimited leads",
-          "Unlimited team members",
+          "Up to 100 employees",
+          "50,000 leads/month",
+          "All integrations",
+          "Advanced analytics",
+          "Custom workflows",
+          "Dedicated support",
+          "API access",
+        ],
+      },
+      business: {
+        name: "Business",
+        priceMonthly: PLAN_PRICES_MONTHLY.business,
+        priceYearly: PLAN_PRICES_YEARLY.business,
+        currency: "INR",
+        limits: PLAN_LIMITS.business,
+        employees: 250,
+        features: [
+          "Up to 250 employees",
+          "2,00,000 leads/month",
           "All integrations",
           "Custom workflows",
           "Dedicated account manager",
           "SLA guarantee",
           "Custom reporting",
-          "API access",
+          "White-label options",
+        ],
+      },
+      enterprise: {
+        name: "Enterprise",
+        priceMonthly: null,
+        priceYearly: null,
+        currency: "INR",
+        limits: PLAN_LIMITS.enterprise,
+        employees: null,
+        custom: true,
+        features: [
+          "250+ employees",
+          "Unlimited leads",
+          "Unlimited team members",
+          "Custom integrations",
+          "Dedicated account manager",
+          "SLA guarantee",
+          "Custom reporting",
+          "On-premise option",
         ],
       },
     },
@@ -179,7 +218,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (!["starter", "growth", "pro", "enterprise"].includes(plan)) {
+    if (!["starter", "growth", "professional", "business", "pro"].includes(plan)) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
@@ -290,7 +329,7 @@ router.post(
       );
     }
 
-    if (!["starter", "growth", "pro", "enterprise"].includes(plan)) {
+    if (!["starter", "growth", "professional", "business", "pro"].includes(plan)) {
       return res.redirect(
         `${frontendUrl}/billing?payment=failed&reason=invalid_plan`,
       );
@@ -356,7 +395,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (!["starter", "growth", "pro", "enterprise"].includes(plan)) {
+    if (!["starter", "growth", "professional", "business", "pro"].includes(plan)) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 

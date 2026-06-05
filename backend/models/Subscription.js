@@ -33,7 +33,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["trial", "starter", "growth", "pro", "enterprise"],
+      enum: ["trial", "starter", "growth", "professional", "business", "enterprise", "pro"],
       default: "trial",
     },
     billingCycle: {
@@ -75,25 +75,31 @@ const subscriptionSchema = new mongoose.Schema(
 );
 
 const PLAN_LIMITS = {
-  trial: { leadsPerMonth: 100, teamMembers: 2 },
-  starter: { leadsPerMonth: 500, teamMembers: 2 },
-  growth: { leadsPerMonth: 5000, teamMembers: 10 },
-  pro: { leadsPerMonth: 99999, teamMembers: 999 },
-  enterprise: { leadsPerMonth: 99999, teamMembers: 999 }, // legacy alias
+  trial:        { leadsPerMonth: 100,    teamMembers: 2   },
+  starter:      { leadsPerMonth: 2000,   teamMembers: 25  },
+  growth:       { leadsPerMonth: 10000,  teamMembers: 50  },
+  professional: { leadsPerMonth: 50000,  teamMembers: 100 },
+  business:     { leadsPerMonth: 200000, teamMembers: 250 },
+  enterprise:   { leadsPerMonth: 999999, teamMembers: 999 },
+  pro:          { leadsPerMonth: 50000,  teamMembers: 100 }, // legacy alias → professional
 };
 
 const PLAN_PRICES_MONTHLY = {
-  starter: 49900,  // ₹499
-  growth: 124900,  // ₹1,249
-  pro: 399900,     // ₹3,999
-  enterprise: 399900, // legacy alias
+  starter:      49900,   // ₹499
+  growth:       99900,   // ₹999
+  professional: 199900,  // ₹1,999
+  business:     449900,  // ₹4,499
+  enterprise:   0,       // custom
+  pro:          199900,  // legacy alias → professional pricing
 };
 
 const PLAN_PRICES_YEARLY = {
-  starter: 499900,   // ₹4,999  (2 months free)
-  growth: 1249900,   // ₹12,499 (2 months free)
-  pro: 3999900,      // ₹39,999 (2 months free)
-  enterprise: 3999900, // legacy alias
+  starter:      499900,   // ₹4,999  (2 months free)
+  growth:       999900,   // ₹9,999  (2 months free)
+  professional: 1999900,  // ₹19,999 (2 months free)
+  business:     4499900,  // ₹44,999 (2 months free)
+  enterprise:   0,        // custom
+  pro:          1999900,  // legacy alias → professional pricing
 };
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);

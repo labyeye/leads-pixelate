@@ -24,19 +24,20 @@ const PLAN_META: Record<
   string,
   {
     color: string;
-    icon: string;
     description: string;
+    employees: string;
     features: string[];
     popular?: boolean;
+    custom?: boolean;
   }
 > = {
   starter: {
     color: "#A3E635",
-    icon: "Zap",
     description: "Perfect for small sales teams",
+    employees: "Up to 25",
     features: [
-      "Up to 500 leads/month",
-      "2 team members",
+      "Up to 25 employees",
+      "2,000 leads/month",
       "IndiaMART integration",
       "Follow-up reminders",
       "Email support",
@@ -44,12 +45,12 @@ const PLAN_META: Record<
   },
   growth: {
     color: "#FA731C",
-    icon: "Zap",
     description: "For growing sales operations",
+    employees: "Up to 50",
     popular: true,
     features: [
-      "Up to 5,000 leads/month",
-      "10 team members",
+      "Up to 50 employees",
+      "10,000 leads/month",
       "IndiaMART + Facebook Ads",
       "Advanced follow-up workflows",
       "Calendar & visit tracking",
@@ -57,28 +58,59 @@ const PLAN_META: Record<
       "CSV export",
     ],
   },
-  pro: {
-    color: "#A855F7",
-    icon: "Zap",
-    description: "Unlimited scale, custom needs",
+  professional: {
+    color: "#024BAB",
+    description: "For scaling teams with advanced needs",
+    employees: "Up to 100",
     features: [
-      "Unlimited leads",
-      "Unlimited team members",
+      "Up to 100 employees",
+      "50,000 leads/month",
+      "All integrations",
+      "Advanced analytics",
+      "Custom workflows",
+      "Dedicated support",
+      "API access",
+    ],
+  },
+  business: {
+    color: "#0EA5E9",
+    description: "High-volume operations at scale",
+    employees: "Up to 250",
+    features: [
+      "Up to 250 employees",
+      "2,00,000 leads/month",
       "All integrations",
       "Custom workflows",
       "Dedicated account manager",
       "SLA guarantee",
       "Custom reporting",
-      "API access",
+      "White-label options",
     ],
   },
   enterprise: {
     color: "#A855F7",
-    icon: "Zap",
-    description: "Unlimited scale, custom needs",
+    description: "Custom solution for large organisations",
+    employees: "250+",
+    custom: true,
     features: [
+      "250+ employees",
       "Unlimited leads",
       "Unlimited team members",
+      "Custom integrations",
+      "Dedicated account manager",
+      "SLA guarantee",
+      "Custom reporting",
+      "On-premise option",
+    ],
+  },
+  // legacy aliases
+  pro: {
+    color: "#024BAB",
+    description: "For scaling teams with advanced needs",
+    employees: "Up to 100",
+    features: [
+      "Up to 100 employees",
+      "50,000 leads/month",
       "All integrations",
       "Custom workflows",
     ],
@@ -402,7 +434,7 @@ export default function BillingPage() {
       )
     : 0;
 
-  const planIds = ["starter", "growth", "pro"];
+  const planIds = ["starter", "growth", "professional", "business", "enterprise"];
 
   return (
     <AppLayout title="Billing">
@@ -534,19 +566,23 @@ export default function BillingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
                 {planIds.map((planId) => {
                   const meta = PLAN_META[planId];
                   const apiPlan = plans?.[planId];
                   const isCurrent = planId === currentPlanId;
                   const isPaying = payingPlan === planId;
-                  const priceRaw = apiPlan
-                    ? billing === "yearly"
-                      ? apiPlan.priceYearly
-                      : apiPlan.priceMonthly
-                    : null;
-                  const priceDisplay =
-                    priceRaw !== null
+                  const isCustom = meta.custom;
+                  const priceRaw = isCustom
+                    ? null
+                    : apiPlan
+                      ? billing === "yearly"
+                        ? apiPlan.priceYearly
+                        : apiPlan.priceMonthly
+                      : null;
+                  const priceDisplay = isCustom
+                    ? "Custom"
+                    : priceRaw != null
                       ? `₹${(priceRaw / 100).toLocaleString("en-IN")}`
                       : "—";
 
@@ -554,7 +590,7 @@ export default function BillingPage() {
                     <div
                       key={planId}
                       className={cn(
-                        "nb-card p-5 flex flex-col relative",
+                        "nb-card p-4 flex flex-col relative",
                         isCurrent && "border-[#024BAB] border-4",
                       )}
                       style={
@@ -564,73 +600,83 @@ export default function BillingPage() {
                       }
                     >
                       {meta.popular && (
-                        <div className="absolute -top-3 left-4 bg-[#024BAB] border-2 border-black px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
+                        <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
                           Most Popular
                         </div>
                       )}
                       {isCurrent && (
-                        <div className="absolute -top-3 right-4 bg-[#00C48C] border-2 border-black px-3 py-0.5 text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                        <div className="absolute -top-3 right-3 bg-[#00C48C] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" /> Active
                         </div>
                       )}
                       <div
-                        className="w-8 h-8 border-2 border-black flex items-center justify-center mb-3"
+                        className="w-7 h-7 border-2 border-black flex items-center justify-center mb-2"
                         style={{ backgroundColor: meta.color }}
                       >
-                        <Zap className="w-4 h-4 text-black" />
+                        <Zap className="w-3.5 h-3.5 text-black" />
                       </div>
-                      <h3 className="font-display font-bold text-xl text-black">
-                        {capitalise(planId)}
+                      <h3 className="font-display font-bold text-base text-black leading-tight">
+                        {meta.employees && (
+                          <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                            {meta.employees} employees
+                          </span>
+                        )}
+                        {planId === "professional" ? "Professional" : planId === "business" ? "Business" : capitalise(planId)}
                       </h3>
-                      <p className="text-xs text-muted-foreground mb-3">
+                      <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
                         {meta.description}
                       </p>
-                      <div className="mb-4">
-                        <span className="font-display font-bold text-3xl text-black">
+                      <div className="mb-3">
+                        <span className="font-display font-bold text-2xl text-black">
                           {priceDisplay}
                         </span>
-                        <span className="text-sm font-medium text-muted-foreground">
-                          /{billing === "yearly" ? "yr" : "mo"}
-                        </span>
+                        {!isCustom && (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            /{billing === "yearly" ? "yr" : "mo"}
+                          </span>
+                        )}
                       </div>
-                      <ul className="space-y-2 flex-1 mb-5">
+                      <ul className="space-y-1.5 flex-1 mb-4">
                         {meta.features.map((f) => (
                           <li
                             key={f}
-                            className="flex items-start gap-2 text-sm font-medium text-black"
+                            className="flex items-start gap-1.5 text-xs font-medium text-black"
                           >
                             <Check
-                              className="w-4 h-4 shrink-0 mt-0.5"
+                              className="w-3.5 h-3.5 shrink-0 mt-0.5"
                               style={{ color: meta.color }}
                             />
                             {f}
                           </li>
                         ))}
                       </ul>
-                      <button
-                        onClick={() => !isCurrent && handleUpgrade(planId)}
-                        disabled={isCurrent || isPaying || !!payingPlan}
-                        className={cn(
-                          "nb-btn w-full py-2.5 text-sm flex items-center justify-center gap-2",
-                          isCurrent
-                            ? "bg-[#024BAB] text-white cursor-default"
-                            : "bg-black text-white disabled:opacity-60",
-                        )}
-                      >
-                        {isPaying ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                            Redirecting…
-                          </>
-                        ) : isCurrent ? (
-                          "Current Plan"
-                        ) : (
-                          <>
-                            {"Upgrade Now"}{" "}
-                            <ArrowRight className="w-4 h-4" />
-                          </>
-                        )}
-                      </button>
+                      {isCustom ? (
+                        <a
+                          href="mailto:sales@pixelatenest.com"
+                          className="nb-btn w-full py-2 text-xs flex items-center justify-center gap-1.5 bg-[#A855F7] text-white"
+                        >
+                          Contact Sales <ArrowRight className="w-3.5 h-3.5" />
+                        </a>
+                      ) : (
+                        <button
+                          onClick={() => !isCurrent && handleUpgrade(planId)}
+                          disabled={isCurrent || isPaying || !!payingPlan}
+                          className={cn(
+                            "nb-btn w-full py-2 text-xs flex items-center justify-center gap-1.5",
+                            isCurrent
+                              ? "bg-[#024BAB] text-white cursor-default"
+                              : "bg-black text-white disabled:opacity-60",
+                          )}
+                        >
+                          {isPaying ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Redirecting…</>
+                          ) : isCurrent ? (
+                            "Current Plan"
+                          ) : (
+                            <>Upgrade Now <ArrowRight className="w-3.5 h-3.5" /></>
+                          )}
+                        </button>
+                      )}
                     </div>
                   );
                 })}

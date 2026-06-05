@@ -19,10 +19,14 @@
       "Bash(find /Users/labh/Desktop/Projects/nestgst -type f | sort)",
       "Read(//Users/labh/Desktop/Projects/nestgst/**)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(echo \"exit:$?\")"
+      "Bash(echo \"exit:$?\")",
+      "Bash(/Users/labh/Desktop/Projects/leads-pixelate/frontend/node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit)"
     ],
     "additionalDirectories": [
-      "/Users/labh/Desktop/Projects/nestgst/backend/src"
+      "/Users/labh/Desktop/Projects/nestgst/backend/src",
+      "/Users/labh/Desktop/Projects/nestgst/frontend/src/services",
+      "/Users/labh/Desktop/Projects/nestgst/frontend/src/pages"
     ]
   }
 }

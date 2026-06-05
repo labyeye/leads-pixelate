@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { billingAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
-import { Check, Zap, Crown, Rocket, LogOut, RefreshCw } from "lucide-react";
+import { Check, Zap, Crown, Rocket, Building2, Building, LogOut, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -19,12 +19,14 @@ const PLANS = [
     name: "Starter",
     icon: Zap,
     color: "#A3E635",
+    employees: "Up to 25",
     priceMonthly: 499,
     priceYearly: 4999,
+    custom: false,
     description: "Perfect for small sales teams just getting started",
     features: [
-      "500 leads per month",
-      "2 team members",
+      "2,000 leads per month",
+      "25 team members",
       "IndiaMART integration",
       "Follow-up reminders",
       "Email support",
@@ -36,12 +38,14 @@ const PLANS = [
     name: "Growth",
     icon: Rocket,
     color: "#024BAB",
-    priceMonthly: 1249,
-    priceYearly: 12499,
+    employees: "Up to 50",
+    priceMonthly: 999,
+    priceYearly: 9999,
+    custom: false,
     description: "For teams serious about scaling their sales pipeline",
     features: [
-      "5,000 leads per month",
-      "10 team members",
+      "10,000 leads per month",
+      "50 team members",
       "IndiaMART + Facebook Lead Ads",
       "Visit calendar & scheduling",
       "Advanced follow-up workflows",
@@ -51,21 +55,62 @@ const PLANS = [
     popular: true,
   },
   {
-    id: "pro" as const,
-    name: "Pro",
+    id: "professional" as const,
+    name: "Professional",
     icon: Crown,
+    color: "#FA731C",
+    employees: "Up to 100",
+    priceMonthly: 1999,
+    priceYearly: 19999,
+    custom: false,
+    description: "Advanced features for growing companies",
+    features: [
+      "50,000 leads per month",
+      "100 team members",
+      "All integrations",
+      "Advanced analytics",
+      "Custom workflows",
+      "Priority support",
+    ],
+    popular: false,
+  },
+  {
+    id: "business" as const,
+    name: "Business",
+    icon: Building2,
+    color: "#0EA5E9",
+    employees: "Up to 250",
+    priceMonthly: 4499,
+    priceYearly: 44999,
+    custom: false,
+    description: "Enterprise-grade features for large sales orgs",
+    features: [
+      "200,000 leads per month",
+      "250 team members",
+      "All integrations",
+      "Dedicated account manager",
+      "SLA guarantee",
+      "Custom reporting",
+    ],
+    popular: false,
+  },
+  {
+    id: "enterprise" as const,
+    name: "Enterprise",
+    icon: Building,
     color: "#A855F7",
-    priceMonthly: 3999,
-    priceYearly: 39999,
-    description: "Unlimited scale with dedicated support and custom setup",
+    employees: "250+",
+    priceMonthly: null,
+    priceYearly: null,
+    custom: true,
+    description: "Custom pricing for large enterprises with unique needs",
     features: [
       "Unlimited leads",
       "Unlimited team members",
       "All integrations",
-      "Custom workflows",
-      "Dedicated account manager",
+      "Dedicated infrastructure",
       "SLA guarantee",
-      "Custom reporting",
+      "Custom onboarding",
       "API access",
     ],
     popular: false,
@@ -90,7 +135,7 @@ export default function OnboardingPage() {
 
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [selectedPlan, setSelectedPlan] = useState<
-    "starter" | "growth" | "pro"
+    "starter" | "growth" | "professional" | "business" | "enterprise"
   >("growth");
   const [paying, setPaying] = useState(false);
 
@@ -190,13 +235,13 @@ export default function OnboardingPage() {
   };
 
   const currentPlan = PLANS.find((p) => p.id === selectedPlan)!;
-  const yearlyTotal = currentPlan.priceYearly; // total billed for the year
-  const monthlyTotal = currentPlan.priceMonthly * 12;
-  const yearlySaving = monthlyTotal - yearlyTotal;
-  // per-month equivalent when billed yearly (for display only)
+  const isCustom = currentPlan.custom;
+  const yearlyTotal = currentPlan.priceYearly;
+  const monthlyTotal = currentPlan.priceMonthly != null ? currentPlan.priceMonthly * 12 : 0;
+  const yearlySaving = yearlyTotal != null ? monthlyTotal - yearlyTotal : 0;
   const price =
-    billing === "yearly"
-      ? Math.round(currentPlan.priceYearly / 12)
+    billing === "yearly" && yearlyTotal != null
+      ? Math.round(yearlyTotal / 12)
       : currentPlan.priceMonthly;
 
   return (
@@ -265,17 +310,18 @@ export default function OnboardingPage() {
             >
               Yearly
               <span className="bg-[#00C48C] text-black border border-black px-1.5 py-0.5 text-[10px] font-bold">
-                Save 20%
+                2 months free
               </span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           {PLANS.map((plan) => {
             const isSelected = selectedPlan === plan.id;
-            const planPrice =
-              billing === "yearly"
+            const planPrice = plan.custom
+              ? null
+              : billing === "yearly" && plan.priceYearly != null
                 ? Math.round(plan.priceYearly / 12)
                 : plan.priceMonthly;
             return (
@@ -283,7 +329,7 @@ export default function OnboardingPage() {
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan.id)}
                 className={cn(
-                  "nb-card p-5 flex flex-col text-left transition-all relative",
+                  "nb-card p-4 flex flex-col text-left transition-all relative",
                   isSelected
                     ? "border-black translate-x-[-2px] translate-y-[-2px]"
                     : "border-black/30 hover:border-black",
@@ -295,53 +341,59 @@ export default function OnboardingPage() {
                 }
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-4 bg-[#024BAB] border-2 border-black px-3 py-0.5 text-[11px] font-bold text-white uppercase tracking-wider">
+                  <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
                     Most Popular
                   </div>
                 )}
 
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div
-                    className="w-10 h-10 border-2 border-black flex items-center justify-center shrink-0"
+                    className="w-8 h-8 border-2 border-black flex items-center justify-center shrink-0"
                     style={{ backgroundColor: plan.color }}
                   >
-                    <plan.icon className="w-5 h-5 text-black" />
+                    <plan.icon className="w-4 h-4 text-black" />
                   </div>
                   {isSelected && (
-                    <div className="w-6 h-6 bg-black border-2 border-black flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5 text-white" />
+                    <div className="w-5 h-5 bg-black border-2 border-black flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
                 </div>
 
-                <h3 className="font-display font-bold text-xl text-black mb-0.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  {plan.employees} employees
+                </span>
+                <h3 className="font-display font-bold text-base text-black mb-0.5 leading-tight">
                   {plan.name}
                 </h3>
-                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
                   {plan.description}
                 </p>
 
-                <div className="mb-4">
-                  <span className="font-display font-bold text-3xl text-black">
-                    ₹{planPrice.toLocaleString()}
-                  </span>
-                  <span className="text-sm text-muted-foreground font-medium">
-                    /{billing === "yearly" ? "mo, billed yearly" : "month"}
-                  </span>
+                <div className="mb-3">
+                  {plan.custom ? (
+                    <span className="font-display font-bold text-2xl text-black">Custom</span>
+                  ) : (
+                    <>
+                      <span className="font-display font-bold text-2xl text-black">
+                        ₹{planPrice!.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        /{billing === "yearly" ? "mo" : "mo"}
+                      </span>
+                    </>
+                  )}
                 </div>
 
-                <ul className="space-y-2">
+                <ul className="space-y-1.5">
                   {plan.features.map((f) => (
                     <li
                       key={f}
-                      className="flex items-start gap-2 text-sm text-black"
+                      className="flex items-start gap-1.5 text-xs text-black"
                     >
                       <Check
-                        className="w-4 h-4 shrink-0 mt-0.5"
-                        style={{
-                          color:
-                            plan.color === "#024BAB" ? "#0A0A0A" : plan.color,
-                        }}
+                        className="w-3.5 h-3.5 shrink-0 mt-0.5"
+                        style={{ color: plan.color }}
                       />
                       {f}
                     </li>
@@ -357,57 +409,67 @@ export default function OnboardingPage() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-black">
                 {currentPlan.name} Plan ·{" "}
-                {billing === "yearly" ? "Yearly" : "Monthly"}
+                {isCustom ? "Custom" : billing === "yearly" ? "Yearly" : "Monthly"}
               </span>
-              <span className="font-display font-bold text-xl text-black">
-                ₹{price.toLocaleString()}
-                <span className="text-sm font-medium text-muted-foreground">
-                  /mo
+              {isCustom ? (
+                <span className="font-display font-bold text-xl text-black">Custom</span>
+              ) : (
+                <span className="font-display font-bold text-xl text-black">
+                  ₹{price!.toLocaleString()}
+                  <span className="text-sm font-medium text-muted-foreground">/mo</span>
                 </span>
-              </span>
+              )}
             </div>
-            {billing === "yearly" && (
+            {!isCustom && billing === "yearly" && (
               <div className="bg-[#A3E635]/20 border-2 border-[#A3E635] px-3 py-2 flex items-center justify-between">
-                <span className="text-xs font-bold text-black">
-                  Yearly saving
-                </span>
+                <span className="text-xs font-bold text-black">Yearly saving</span>
                 <span className="text-xs font-bold text-[#16A34A]">
                   ₹{yearlySaving.toLocaleString()} / year
                 </span>
               </div>
             )}
-            {billing === "yearly" && (
+            {!isCustom && billing === "yearly" && yearlyTotal != null && (
               <p className="text-xs text-muted-foreground mt-2">
                 Billed as ₹{yearlyTotal.toLocaleString()} today for 12 months
               </p>
             )}
           </div>
 
-          <button
-            onClick={handlePay}
-            disabled={paying}
-            className="nb-btn w-full bg-[#024BAB] text-white py-4 text-base font-bold flex items-center justify-center gap-3"
-          >
-            {paying ? (
-              <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                Opening payment...
-              </>
-            ) : (
-              <>
-                Pay ₹
-                {(billing === "yearly" ? yearlyTotal : price).toLocaleString()}{" "}
-                &amp; Start Now
-              </>
-            )}
-          </button>
+          {isCustom ? (
+            <a
+              href="mailto:sales@pixelatenest.com"
+              className="nb-btn w-full bg-[#A855F7] text-white py-4 text-base font-bold flex items-center justify-center gap-3"
+            >
+              Contact Sales →
+            </a>
+          ) : (
+            <button
+              onClick={handlePay}
+              disabled={paying}
+              className="nb-btn w-full bg-[#024BAB] text-white py-4 text-base font-bold flex items-center justify-center gap-3"
+            >
+              {paying ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  Opening payment...
+                </>
+              ) : (
+                <>
+                  Pay ₹
+                  {(billing === "yearly" && yearlyTotal != null ? yearlyTotal : price!).toLocaleString()}{" "}
+                  &amp; Start Now
+                </>
+              )}
+            </button>
+          )}
 
           <p className="text-xs text-center text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
             <span className="w-4 h-4 bg-[#00C48C] border-2 border-black inline-flex items-center justify-center shrink-0">
               <Check className="w-2.5 h-2.5 text-black" />
             </span>
-            Secured by Razorpay · UPI, Cards, Net Banking accepted · Cancel
-            anytime
+            {isCustom
+              ? "We'll get back to you within 24 hours"
+              : "Secured by Razorpay · UPI, Cards, Net Banking accepted · Cancel anytime"}
           </p>
         </div>
       </div>
