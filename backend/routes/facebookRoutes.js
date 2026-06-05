@@ -478,9 +478,18 @@ router.post(
       return assigneeCache[defaultAssigneeId];
     };
 
+    // Delete Meta/Facebook/Instagram leads older than 2 days before syncing
+    const twoDaysAgoDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    const deleted = await Lead.deleteMany({
+      tenantId: tenant._id || null,
+      source: { $in: ["Facebook", "Instagram", "Meta"] },
+      createdAt: { $lt: twoDaysAgoDate },
+    });
+
     let totalCreated = 0;
     let totalUpdated = 0;
     let totalFiltered = 0;
+    let totalDeleted = deleted.deletedCount || 0;
     const pageResults = [];
     const adPlatformCache = {}; // cache per sync run to avoid duplicate FB API calls
 
@@ -521,8 +530,8 @@ router.post(
 
       for (const formId of formIds) {
         try {
-          const thirtyDaysAgo = Math.floor(
-            (Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000,
+          const twoDaysAgo = Math.floor(
+            (Date.now() - 3 * 24 * 60 * 60 * 1000) / 1000,
           );
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id",
@@ -531,7 +540,7 @@ router.post(
               {
                 field: "time_created",
                 operator: "GREATER_THAN",
-                value: thirtyDaysAgo,
+                value: twoDaysAgo,
               },
             ]),
           });
@@ -669,6 +678,8 @@ router.post(
     if (totalUpdated > 0) parts.push(`${totalUpdated} already in DB`);
     if (totalFiltered > 0)
       parts.push(`${totalFiltered} blocked by location filter`);
+    if (totalDeleted > 0)
+      parts.push(`${totalDeleted} old leads removed`);
     res.json({
       success: true,
       message: `Sync complete — ${parts.join(", ")}`,
@@ -676,6 +687,7 @@ router.post(
         created: totalCreated,
         updated: totalUpdated,
         filtered: totalFiltered,
+        deleted: totalDeleted,
         pages: pageResults,
       },
     });
