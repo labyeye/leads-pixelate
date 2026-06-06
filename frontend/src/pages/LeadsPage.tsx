@@ -3,7 +3,7 @@ import { useState, useEffect, Fragment } from "react";
 import {
   Search,
   Plus,
-  RefreshCw,
+
   MoreVertical,
   Phone,
   Mail,
@@ -86,6 +86,10 @@ import {
   sourceColors,
 } from "@/components/leads/statusConstants";
 import { SourceBadge } from "@/components/leads/SourceBadge";
+import fbLogo from "@/assets/images/logos/facebook.png";
+import imLogo from "@/assets/images/logos/indiamart.png";
+import tiLogo from "@/assets/images/logos/tradeindia.webp";
+import jdLogo from "@/assets/images/logos/justdial.webp";
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
@@ -1095,12 +1099,12 @@ export default function LeadsPage() {
               <button
                 onClick={handleFacebookSync}
                 disabled={fbSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-blue-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#1877F2] font-black uppercase text-xs tracking-widest border-2 border-[#1877F2] shadow-[2px_2px_0px_#1877F2] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
               >
                 {fbSyncing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <img src={fbLogo} alt="Facebook" className="w-4 h-4 object-contain" />
                 )}
                 {fbSyncing ? "Syncing..." : "Sync Facebook"}
               </button>
@@ -1112,18 +1116,18 @@ export default function LeadsPage() {
                   id="indiamart-sync-btn"
                   onClick={handleIndiamartSync}
                   disabled={syncing}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-orange-400 text-black font-black uppercase text-xs tracking-widest border-r-2 border-black hover:bg-orange-300 transition-colors disabled:opacity-50 whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#E07B39] font-black uppercase text-xs tracking-widest border-r-2 border-[#E07B39] hover:bg-orange-50 transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   {syncing ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E07B39]" />
                   ) : (
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <img src={imLogo} alt="IndiaMART" className="w-4 h-4 object-contain" />
                   )}
                   {syncing ? "Syncing..." : "Sync IndiaMART"}
                 </button>
                 <button
                   onClick={() => setSyncPanelOpen(!syncPanelOpen)}
-                  className="px-2 py-2 bg-orange-400 hover:bg-orange-300 text-black transition-colors"
+                  className="px-2 py-2 bg-white hover:bg-orange-50 text-[#E07B39] border-l border-[#E07B39]/30 transition-colors"
                 >
                   {syncPanelOpen ? (
                     <ChevronUp className="w-3.5 h-3.5" />
@@ -1138,12 +1142,12 @@ export default function LeadsPage() {
             <button
               onClick={handleTradeindiaSyncAttempt}
               disabled={tiSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-red-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#22C55E] font-black uppercase text-xs tracking-widest border-2 border-[#22C55E] shadow-[2px_2px_0px_#22C55E] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {tiSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <RefreshCw className="w-3.5 h-3.5" />
+                <img src={tiLogo} alt="TradeIndia" className="w-4 h-4 object-contain" />
               )}
               {tiSyncing ? "Syncing..." : "Sync TradeIndia"}
             </button>
@@ -1152,12 +1156,12 @@ export default function LeadsPage() {
             <button
               onClick={handleJustdialSyncAttempt}
               disabled={jdSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#EF4444] font-black uppercase text-xs tracking-widest border-2 border-[#EF4444] shadow-[2px_2px_0px_#EF4444] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {jdSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <RefreshCw className="w-3.5 h-3.5" />
+                <img src={jdLogo} alt="Justdial" className="w-4 h-4 object-contain" />
               )}
               {jdSyncing ? "Syncing..." : "Sync Justdial"}
             </button>

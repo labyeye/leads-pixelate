@@ -208,7 +208,6 @@ export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/dashboard/stats"),
 };
 
-// Products are used internally by Leads (interested products field)
 export const productsAPI = {
   getAll: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
@@ -221,6 +220,13 @@ export const productsAPI = {
       method: "POST",
       body: JSON.stringify(productData),
     }),
+  update: (id: string, productData: any) =>
+    request<{ success: boolean; data: any }>(`/products/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(productData),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean }>(`/products/${id}`, { method: "DELETE" }),
 };
 
 export const billingAPI = {
