@@ -11,7 +11,6 @@ import {
   Loader2,
   Download,
   CheckCircle,
-  XCircle,
   RefreshCw,
   Building2,
 } from "lucide-react";
@@ -275,29 +274,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
 
 // ── HDFC payment form submitter ───────────────────────────────────────────────
 
-function submitHdfcForm(
-  encRequest: string,
-  accessCode: string,
-  gatewayUrl: string,
-) {
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = gatewayUrl;
-  form.style.display = "none";
-
-  const enc = document.createElement("input");
-  enc.name = "encRequest";
-  enc.value = encRequest;
-  form.appendChild(enc);
-
-  const ac = document.createElement("input");
-  ac.name = "access_code";
-  ac.value = accessCode;
-  form.appendChild(ac);
-
-  document.body.appendChild(form);
-  form.submit();
-}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -483,6 +459,8 @@ export default function BillingPage() {
         Math.ceil((new Date(periodEnd).getTime() - Date.now()) / 86400000),
       )
     : 0;
+  const billingCycle = subscription?.billingCycle || "monthly";
+  const totalPeriodDays = billingCycle === "yearly" ? 365 : 31;
 
   const planIds = ["starter", "growth", "professional", "business", "enterprise"];
 
@@ -557,8 +535,8 @@ export default function BillingPage() {
                 {
                   label: "Days remaining",
                   value: daysRemaining.toString(),
-                  max: "31",
-                  pct: Math.min(100, Math.round((daysRemaining / 31) * 100)),
+                  max: totalPeriodDays.toString(),
+                  pct: Math.min(100, Math.round((daysRemaining / totalPeriodDays) * 100)),
                 },
               ].map((stat) => (
                 <div key={stat.label} className="nb-card p-4 bg-white">
