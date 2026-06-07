@@ -926,6 +926,7 @@ export default function LeadsPage() {
             currentUser?._id || (allUsers.length > 0 ? allUsers[0]._id : ""),
           interestedProducts: [],
           location: "",
+          state: "",
         });
         fetchLeads();
       }

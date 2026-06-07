@@ -3,6 +3,7 @@ const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
 const { protect } = require("../middleware/auth");
+const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
@@ -560,15 +561,21 @@ router.post(
                 m.location ||
                 "";
 
-              const state = (fMap.state || fMap.province || fMap.region || "")
-                .toLowerCase()
-                .trim();
-              const cityField = extractCity(fMap).toLowerCase().trim();
-              const locationRaw = state || cityField;
+              let stateRaw = (fMap.state || fMap.province || fMap.region || "").trim();
+              let cityRaw = extractCity(fMap).trim();
+              // If state/city looks like a pincode, resolve it first
+              if (isPincode(stateRaw)) {
+                const resolved = await resolvePincode(stateRaw);
+                if (resolved) { stateRaw = resolved.state; if (!cityRaw) cityRaw = resolved.city; }
+              } else if (isPincode(cityRaw)) {
+                const resolved = await resolvePincode(cityRaw);
+                if (resolved) { cityRaw = resolved.city; if (!stateRaw) stateRaw = resolved.state; }
+              }
+              const locationRaw = (stateRaw || cityRaw).toLowerCase().trim();
               const allowedStates = page.allowedStates || [];
               if (allowedStates.length > 0 && locationRaw) {
                 const matches = allowedStates.some(
-                  (s) => locationRaw.includes(s) || s.includes(locationRaw),
+                  (s) => locationRaw.includes(s.toLowerCase()) || s.toLowerCase().includes(locationRaw),
                 );
                 if (!matches) {
                   totalFiltered++;
@@ -813,19 +820,26 @@ router.post(
             m.location ||
             "";
 
-          const city = extractCity(fMap);
-          const state = (fMap.state || fMap.province || fMap.region || "")
-            .toLowerCase()
-            .trim();
+          let cityRaw = extractCity(fMap).trim();
+          let stateRaw = (fMap.state || fMap.province || fMap.region || "").trim();
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
 
+          // Resolve pincode → city/state before location filter
+          if (isPincode(stateRaw)) {
+            const resolved = await resolvePincode(stateRaw);
+            if (resolved) { stateRaw = resolved.state; if (!cityRaw) cityRaw = resolved.city; }
+          } else if (isPincode(cityRaw)) {
+            const resolved = await resolvePincode(cityRaw);
+            if (resolved) { cityRaw = resolved.city; if (!stateRaw) stateRaw = resolved.state; }
+          }
+
           // Location filter — only block if location is explicitly a non-matching city
-          const locationRaw = state || city.toLowerCase().trim();
+          const locationRaw = (stateRaw || cityRaw).toLowerCase().trim();
           const allowedStates = pageConfig.allowedStates || [];
           if (allowedStates.length > 0 && locationRaw) {
             const stateMatches = allowedStates.some(
-              (s) => locationRaw.includes(s) || s.includes(locationRaw),
+              (s) => locationRaw.includes(s.toLowerCase()) || s.toLowerCase().includes(locationRaw),
             );
             if (!stateMatches) continue;
           }
