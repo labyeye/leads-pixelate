@@ -290,7 +290,8 @@ async function syncIndiamartLeads({
     }
 
     try {
-      const existing = await Lead.findOne({ indiamartQueryId: qid });
+      const tenantFilter = tenantId ? { tenantId } : { tenantId: null };
+      const existing = await Lead.findOne({ indiamartQueryId: qid, ...tenantFilter });
       if (existing) {
         if (updateExisting) {
           const parsedTime = record.QUERY_TIME

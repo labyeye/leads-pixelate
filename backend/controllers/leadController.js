@@ -753,7 +753,8 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
     const qid = record.UNIQUE_QUERY_ID;
 
     try {
-      const existing = await Lead.findOne({ indiamartQueryId: qid });
+      const tenantFilter = tenant ? { tenantId: tenant._id } : { tenantId: null };
+      const existing = await Lead.findOne({ indiamartQueryId: qid, ...tenantFilter });
       if (!existing) {
         const assignToId = await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
