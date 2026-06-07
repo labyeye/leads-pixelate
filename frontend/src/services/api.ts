@@ -255,8 +255,6 @@ export const billingAPI = {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
-    plan: string;
-    billingCycle: string;
   }) =>
     request<{ success: boolean; message: string; data: any }>(
       "/billing/razorpay/verify",

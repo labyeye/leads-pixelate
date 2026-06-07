@@ -16,7 +16,7 @@ import {
   Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { billingAPI, settingsAPI } from "@/services/api";
+import { billingAPI, settingsAPI, leadsAPI, usersAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 
@@ -311,6 +311,8 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [payingPlan, setPayingPlan] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [leadsCount, setLeadsCount] = useState<number | null>(null);
+  const [membersCount, setMembersCount] = useState<number | null>(null);
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const notifiedRef = useRef(false);
@@ -369,6 +371,16 @@ export default function BillingPage() {
       } catch {
         // settings not critical
       }
+
+      // Fetch actual usage: leads this month + team members
+      const now = new Date();
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const [leadsRes, membersRes] = await Promise.allSettled([
+        leadsAPI.getAll({ startDate: monthStart }),
+        usersAPI.getAll(),
+      ]);
+      if (leadsRes.status === "fulfilled") setLeadsCount(leadsRes.value.count ?? leadsRes.value.data?.length ?? 0);
+      if (membersRes.status === "fulfilled") setMembersCount(membersRes.value.count ?? membersRes.value.data?.length ?? 0);
     } finally {
       setLoading(false);
     }
@@ -532,15 +544,15 @@ export default function BillingPage() {
               {[
                 {
                   label: "Leads this month",
-                  value: "—",
-                  max: maxLeads.toLocaleString(),
-                  pct: 0,
+                  value: leadsCount !== null ? leadsCount.toLocaleString() : "—",
+                  max: maxLeads === 999999 ? "∞" : maxLeads.toLocaleString(),
+                  pct: leadsCount !== null && maxLeads < 999999 ? Math.min(100, Math.round((leadsCount / maxLeads) * 100)) : 0,
                 },
                 {
                   label: "Team members",
-                  value: "—",
+                  value: membersCount !== null ? membersCount.toString() : "—",
                   max: maxMembers === 999 ? "∞" : maxMembers.toString(),
-                  pct: 0,
+                  pct: membersCount !== null && maxMembers < 999 ? Math.min(100, Math.round((membersCount / maxMembers) * 100)) : 0,
                 },
                 {
                   label: "Days remaining",
