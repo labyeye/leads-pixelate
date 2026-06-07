@@ -11,6 +11,7 @@ const {
 } = require("../services/indiamartService");
 const User = require("../models/User");
 const logActivity = require("../utils/activityLogger");
+const { resolvePincode } = require("../utils/pincode");
 
 const VALID_TRANSITIONS = {
   "PENDING CONTACT": ["1", "DISCUSSION", "DROP"],
@@ -282,6 +283,15 @@ const createLead = asyncHandler(async (req, res) => {
     location,
   } = req.body;
 
+  // Auto-resolve pincode → city/state
+  let resolvedLocation = location || "";
+  let resolvedState = req.body.state || "";
+  const pinResolved = await resolvePincode(location);
+  if (pinResolved) {
+    resolvedLocation = pinResolved.city;
+    if (!resolvedState) resolvedState = pinResolved.state;
+  }
+
   const lead = await Lead.create({
     name,
     company,
@@ -292,7 +302,8 @@ const createLead = asyncHandler(async (req, res) => {
     remarks,
     budget,
     interestedProducts,
-    location,
+    location: resolvedLocation,
+    state: resolvedState,
     tenantId: req.user.tenantId || null,
     assignedTo: assignedTo || req.user._id,
     followUpDate,
@@ -371,6 +382,15 @@ const updateLead = asyncHandler(async (req, res) => {
     if (!["HOT", "WARM", "COLD"].includes(req.body.contactTag)) {
       res.status(400);
       throw new Error("Contact tag must be one of: HOT, WARM, COLD");
+    }
+  }
+
+  // Auto-resolve pincode in location field
+  if (req.body.location) {
+    const pinResolved = await resolvePincode(req.body.location);
+    if (pinResolved) {
+      req.body.location = pinResolved.city;
+      if (!req.body.state) req.body.state = pinResolved.state;
     }
   }
 

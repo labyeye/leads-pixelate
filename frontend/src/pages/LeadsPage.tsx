@@ -168,7 +168,30 @@ export default function LeadsPage() {
     assignedTo: "",
     interestedProducts: [] as string[],
     location: "",
+    state: "",
   });
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+
+  const handleLocationChange = async (val: string) => {
+    setNewLead((prev) => ({ ...prev, location: val }));
+    if (/^\d{6}$/.test(val.trim())) {
+      setPincodeLoading(true);
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${val.trim()}`);
+        const data = await res.json();
+        const po = data?.[0]?.PostOffice?.[0];
+        if (po) {
+          setNewLead((prev) => ({
+            ...prev,
+            location: po.District || po.Name,
+            state: po.State,
+          }));
+        }
+      } catch { /* silent */ } finally {
+        setPincodeLoading(false);
+      }
+    }
+  };
 
   useEffect(() => {
     setLeads([]);
@@ -2264,14 +2287,31 @@ export default function LeadsPage() {
                   >
                     Location
                   </Label>
+                  <div className="relative">
+                    <Input
+                      id="location"
+                      type="text"
+                      placeholder="City or 6-digit pincode"
+                      value={newLead.location}
+                      onChange={(e) => handleLocationChange(e.target.value)}
+                    />
+                    {pincodeLoading && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/40 animate-pulse">
+                        Looking up…
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state" className="text-xs font-semibold uppercase text-black">
+                    State
+                  </Label>
                   <Input
-                    id="location"
+                    id="state"
                     type="text"
-                    placeholder="Enter location"
-                    value={newLead.location}
-                    onChange={(e) =>
-                      setNewLead({ ...newLead, location: e.target.value })
-                    }
+                    placeholder="State (auto-filled from pincode)"
+                    value={newLead.state}
+                    onChange={(e) => setNewLead({ ...newLead, state: e.target.value })}
                   />
                 </div>
               </div>

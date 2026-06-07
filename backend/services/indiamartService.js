@@ -1,6 +1,7 @@
 const https = require("https");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
+const { resolvePincode, isPincode } = require("../utils/pincode");
 
 const INDIAMART_API_BASE =
   "https://mapi.indiamart.com/wservce/crm/crmListing/v2/";
@@ -334,6 +335,22 @@ async function syncIndiamartLeads({
           result.skipped++;
         }
         continue;
+      }
+
+      // Resolve pincode → city/state if SENDER_CITY or SENDER_STATE is a 6-digit pin
+      if (isPincode(record.SENDER_CITY)) {
+        const resolved = await resolvePincode(record.SENDER_CITY);
+        if (resolved) {
+          record.SENDER_CITY = resolved.city;
+          if (!record.SENDER_STATE) record.SENDER_STATE = resolved.state;
+        }
+      }
+      if (isPincode(record.SENDER_STATE)) {
+        const resolved = await resolvePincode(record.SENDER_STATE);
+        if (resolved) {
+          record.SENDER_STATE = resolved.state;
+          if (!record.SENDER_CITY) record.SENDER_CITY = resolved.city;
+        }
       }
 
       const assignedToId = await getRoundRobinAssigneeId(tenantId);
