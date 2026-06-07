@@ -13,6 +13,7 @@ export interface User {
   avatar?: string;
   phone?: string;
   department?: string;
+  employeeId?: string;
   status: "active" | "inactive";
   lastLogin?: string;
 }

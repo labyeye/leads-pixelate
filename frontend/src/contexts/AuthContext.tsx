@@ -46,6 +46,7 @@ function mapUser(data: any): User {
     avatar: data.avatar,
     phone: data.phone,
     department: data.department,
+    employeeId: data.employeeId,
     status: data.status,
     lastLogin: data.lastLogin,
   };

@@ -377,14 +377,52 @@ export default function BillingPage() {
   async function handleUpgrade(planId: string) {
     setPayingPlan(planId);
     try {
-      const res = await billingAPI.createHdfcOrder(planId, billing);
-      const { encRequest, accessCode, gatewayUrl } = res.data;
-      submitHdfcForm(encRequest, accessCode, gatewayUrl);
+      const res = await billingAPI.createOrder(planId, billing);
+      const { orderId, amount, currency, customerEmail, customerPhone, customerName, key } = res.data;
+
+      // Load Razorpay SDK if not already loaded
+      await new Promise<void>((resolve, reject) => {
+        if ((window as any).Razorpay) { resolve(); return; }
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Razorpay SDK failed to load"));
+        document.body.appendChild(script);
+      });
+
+      const rzp = new (window as any).Razorpay({
+        key,
+        amount,
+        currency,
+        name: "NestLeads CRM",
+        description: `${capitalise(planId)} Plan — ${billing}`,
+        order_id: orderId,
+        prefill: { name: customerName, email: customerEmail, contact: customerPhone },
+        theme: { color: "#024BAB" },
+        handler: async (response: any) => {
+          try {
+            await billingAPI.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast({ title: "Payment Successful!", description: `Your ${capitalise(planId)} plan is now active.` });
+            loadAll();
+          } catch {
+            toast({ title: "Verification Failed", description: "Payment was received but verification failed. Contact support.", variant: "destructive" });
+          } finally {
+            setPayingPlan(null);
+          }
+        },
+        modal: {
+          ondismiss: () => setPayingPlan(null),
+        },
+      });
+      rzp.open();
     } catch (err: any) {
       toast({
         title: "Payment Error",
-        description:
-          err.message || "Could not initiate payment. Please try again.",
+        description: err.message || "Could not initiate payment. Please try again.",
         variant: "destructive",
       });
       setPayingPlan(null);
@@ -416,7 +454,7 @@ export default function BillingPage() {
     toast({
       title: "Update Payment Method",
       description:
-        "To update your payment method, please make a new payment on plan renewal. HDFC SmartGateway securely manages your card details.",
+        "To update your payment method, please make a new payment on plan renewal. Razorpay securely manages your card details.",
     });
   }
 
@@ -692,18 +730,16 @@ export default function BillingPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-8 bg-[#024BAB] flex items-center justify-center shrink-0 border border-black">
                     <span className="text-white font-bold text-[10px] leading-tight text-center">
-                      HDFC
-                      <br />
-                      PAY
+                      RZRPY
                     </span>
                   </div>
                   <div>
                     <p className="font-bold text-sm text-black">
-                      HDFC SmartGateway
+                      Razorpay
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {subscription?.status === "active"
-                        ? "Your subscription is managed securely via HDFC SmartGateway"
+                        ? "Your subscription is managed securely via Razorpay"
                         : "No active payment method — subscribe to a plan"}
                     </p>
                   </div>
@@ -717,8 +753,7 @@ export default function BillingPage() {
               </div>
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 shrink-0" />
-                Payments processed securely via HDFC SmartGateway. We never
-                store your card details.
+                Payments processed securely via Razorpay. We never store your card details.
               </p>
             </div>
 

@@ -22,7 +22,8 @@
       "Bash(echo \"exit:$?\")",
       "Bash(/Users/labh/Desktop/Projects/leads-pixelate/frontend/node_modules/.bin/tsc --noEmit)",
       "Bash(node_modules/.bin/tsc --noEmit)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(xargs ls)"
     ],
     "additionalDirectories": [
       "/Users/labh/Desktop/Projects/nestgst/backend/src",

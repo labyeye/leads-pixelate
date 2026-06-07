@@ -8,6 +8,7 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  Camera,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -97,6 +98,7 @@ export default function UsersPage() {
     role: "sales_executive" as UserRole,
     phone: "",
     department: "",
+    avatar: "",
   });
 
   useEffect(() => {
@@ -173,6 +175,7 @@ export default function UsersPage() {
       role: "sales_executive",
       phone: "",
       department: "",
+      avatar: "",
     });
   };
 
@@ -184,6 +187,7 @@ export default function UsersPage() {
       role: user.role || "sales_executive",
       phone: user.phone || "",
       department: user.department || "",
+      avatar: user.avatar || "",
     });
     setEditingUserId(user._id || user.id);
     setIsModalOpen(true);
@@ -246,6 +250,7 @@ export default function UsersPage() {
                   role: "sales_executive",
                   phone: "",
                   department: "",
+                  avatar: "",
                 });
               }}
               className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
@@ -343,6 +348,49 @@ export default function UsersPage() {
                     placeholder="e.g. Sales"
                   />
                 </div>
+                {/* Photo upload */}
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                    Profile Photo
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] flex items-center justify-center">
+                      {formData.avatar ? (
+                        <img src={formData.avatar} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                    <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-bold bg-white hover:bg-black hover:text-white transition-colors">
+                      Upload Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 2 * 1024 * 1024) {
+                            toast({ title: "Image too large", description: "Max 2MB", variant: "destructive" });
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => setFormData((f) => ({ ...f, avatar: reader.result as string }));
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                    {formData.avatar && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData((f) => ({ ...f, avatar: "" }))}
+                        className="text-xs font-bold text-red-500 underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
               <DialogFooter className="border-t-2 border-black px-5 py-3 flex gap-2 bg-white">
                 <button
@@ -395,6 +443,7 @@ export default function UsersPage() {
               <tr className="border-b-2 border-black bg-[#024BAB]">
                 {[
                   { h: "User", cls: "" },
+                  { h: "Emp ID", cls: "hidden sm:table-cell" },
                   { h: "Role", cls: "" },
                   { h: "Department", cls: "hidden md:table-cell" },
                   { h: "Status", cls: "hidden lg:table-cell" },
@@ -417,7 +466,7 @@ export default function UsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-14">
+                  <td colSpan={7} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                     <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
                       Loading...
@@ -427,7 +476,7 @@ export default function UsersPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
                   >
                     No users found.
@@ -457,8 +506,14 @@ export default function UsersPage() {
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 border-2 border-black bg-[#024BAB] flex items-center justify-center text-xs font-black text-white shrink-0">
-                            {initials}
+                          <div className="w-9 h-9 border-2 border-black shrink-0 overflow-hidden bg-[#024BAB]">
+                            {user.avatar ? (
+                              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-xs font-black text-white">
+                                {initials}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <p className="font-black text-black text-sm">
@@ -469,6 +524,11 @@ export default function UsersPage() {
                             </p>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-5 py-3.5 hidden sm:table-cell">
+                        <span className="text-xs font-black text-black/60 font-mono">
+                          {user.employeeId || "—"}
+                        </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span

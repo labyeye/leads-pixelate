@@ -42,13 +42,18 @@ const getUser = asyncHandler(async (req, res) => {
 });
 
 const createUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role, phone, department } = req.body;
+  const { name, email, password, role, phone, department, avatar } = req.body;
 
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
     throw new Error("User with this email already exists");
   }
+
+  // Auto-generate employee ID scoped to tenant
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const count = await User.countDocuments(tenantFilter);
+  const employeeId = `EMP-${String(count + 1).padStart(3, "0")}`;
 
   const user = await User.create({
     name,
@@ -57,6 +62,8 @@ const createUser = asyncHandler(async (req, res) => {
     role: role || "sales_executive",
     phone,
     department,
+    avatar: avatar || undefined,
+    employeeId,
     tenantId: req.user.tenantId || null,
   });
 
@@ -78,6 +85,8 @@ const createUser = asyncHandler(async (req, res) => {
       role: user.role,
       phone: user.phone,
       department: user.department,
+      avatar: user.avatar,
+      employeeId: user.employeeId,
       status: user.status,
     },
   });
@@ -105,17 +114,19 @@ const updateUser = asyncHandler(async (req, res) => {
     department,
     status,
     receiveAutoAssignedLeads,
+    avatar,
   } = req.body;
 
   if (name) user.name = name;
   if (email) user.email = email;
   if (password) user.password = password;
   if (role && req.user.role === "super_admin") user.role = role;
-  if (phone) user.phone = phone;
-  if (department) user.department = department;
+  if (phone !== undefined) user.phone = phone;
+  if (department !== undefined) user.department = department;
   if (status) user.status = status;
   if (receiveAutoAssignedLeads !== undefined)
     user.receiveAutoAssignedLeads = receiveAutoAssignedLeads;
+  if (avatar !== undefined) user.avatar = avatar;
 
   const updated = await user.save();
 

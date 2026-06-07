@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
     },
+    employeeId: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["active", "inactive"],

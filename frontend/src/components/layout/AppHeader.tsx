@@ -49,8 +49,14 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
         </button>
 
         <div className="flex items-center gap-2 border-2 border-black bg-[#024BAB] px-2 sm:px-3 py-1.5">
-          <div className="w-6 h-6 bg-white flex items-center justify-center text-[10px] font-bold text-black shrink-0">
-            {user.name?.[0]?.toUpperCase() ?? "U"}
+          <div className="w-6 h-6 border border-white shrink-0 overflow-hidden">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-white flex items-center justify-center text-[10px] font-bold text-black">
+                {user.name?.[0]?.toUpperCase() ?? "U"}
+              </div>
+            )}
           </div>
           <span className="hidden sm:block text-sm font-bold text-white max-w-[100px] truncate">
             {user.name}

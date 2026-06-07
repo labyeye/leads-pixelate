@@ -258,7 +258,7 @@ function TextAreaField({
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, tenant } = useAuth();
   const { toast } = useToast();
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -281,14 +281,18 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       const res = await settingsAPI.get();
-      setSettings(res.data);
+      // Prefill companyName from tenant if not yet saved in settings
+      setSettings({
+        ...res.data,
+        companyName: res.data?.companyName || tenant?.name || "",
+      });
     } catch (error: any) {
       setSettings({
-        companyName: user?.company?.name || "",
+        companyName: tenant?.name || "",
         companyGST: "",
         companyAddress: "",
         companyPhone: "",
-        companyEmail: user?.company?.email || "",
+        companyEmail: user?.email || "",
         companyWebsite: "",
         logoUrl: "",
         bankAccountName: "",
