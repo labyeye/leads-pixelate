@@ -18,6 +18,8 @@ import IntegrationsPage from "./pages/IntegrationsPage";
 import ReportsPage from "./pages/ReportsPage";
 import ClientsPage from "./pages/ClientsPage";
 import QuotationsPage from "./pages/QuotationsPage";
+import ProductsPage from "./pages/ProductsPage";
+import ServicesPage from "./pages/ServicesPage";
 import ConsolePage from "./pages/ConsolePage";
 import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
 import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
@@ -192,6 +194,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <QuotationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/products"
+        element={
+          <ProtectedRoute>
+            <ProductsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services"
+        element={
+          <ProtectedRoute>
+            <ServicesPage />
           </ProtectedRoute>
         }
       />
