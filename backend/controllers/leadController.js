@@ -183,8 +183,6 @@ const getLeads = asyncHandler(async (req, res) => {
     startDate,
     endDate,
     hasFollowup,
-    page = 1,
-    limit = 500,
   } = req.query;
 
   const query = {};
@@ -229,24 +227,15 @@ const getLeads = asyncHandler(async (req, res) => {
     query.assignedTo = req.user._id;
   }
 
-  const skip = (parseInt(page) - 1) * parseInt(limit);
-
-  const [leads, total] = await Promise.all([
-    Lead.find(query)
-      .populate("assignedTo", "name email")
-      .lean()
-      .sort("-createdAt")
-      .skip(skip)
-      .limit(parseInt(limit)),
-    Lead.countDocuments(query),
-  ]);
+  const leads = await Lead.find(query)
+    .populate("assignedTo", "name email")
+    .lean()
+    .sort("-createdAt");
 
   res.json({
     success: true,
     count: leads.length,
-    total,
-    page: parseInt(page),
-    pages: Math.ceil(total / parseInt(limit)),
+    total: leads.length,
     data: leads,
   });
 });

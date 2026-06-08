@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Search,
   Plus,
@@ -89,6 +89,7 @@ import fbLogo from "@/assets/images/logos/facebook.png";
 import imLogo from "@/assets/images/logos/indiamart.png";
 import tiLogo from "@/assets/images/logos/tradeindia.webp";
 import jdLogo from "@/assets/images/logos/justdial.webp";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
@@ -100,9 +101,6 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [olderCursor, setOlderCursor] = useState<Date | null>(null); // start of oldest loaded batch
-  const [hasOlderLeads, setHasOlderLeads] = useState(false);
   const { toast } = useToast();
 
   const [syncing, setSyncing] = useState(false);
@@ -198,8 +196,6 @@ export default function LeadsPage() {
 
   useEffect(() => {
     setLeads([]);
-    setOlderCursor(null);
-    setHasOlderLeads(false);
     fetchLeads();
   }, [startDate, endDate]);
 
@@ -269,51 +265,14 @@ export default function LeadsPage() {
     }
   };
 
-  const toDateStr = (d: Date) => d.toISOString().split("T")[0];
-
   const fetchLeads = async () => {
     try {
       setLoading(true);
       const params: any = {};
-
-      if (startDate || endDate) {
-        // User has set an explicit date filter — respect it fully
-        if (startDate) params.startDate = startDate;
-        if (endDate) params.endDate = endDate;
-        const res = await leadsAPI.getAll(params);
-        setLeads(res.data || []);
-        setHasOlderLeads(false);
-        setOlderCursor(null);
-      } else {
-        // Progressive mode: load today first
-        const today = new Date();
-        params.startDate = toDateStr(today);
-        const res = await leadsAPI.getAll(params);
-        setLeads(res.data || []);
-
-        // Auto-load yesterday right after today (background)
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        setOlderCursor(yesterday);
-        setHasOlderLeads(true);
-
-        // Fetch yesterday silently and append
-        try {
-          const res2 = await leadsAPI.getAll({
-            startDate: toDateStr(yesterday),
-            endDate: toDateStr(yesterday),
-          });
-          if (res2.data?.length) {
-            setLeads((prev) => [...prev, ...res2.data]);
-          }
-          // Mark cursor as day-before-yesterday for subsequent "load older"
-          const dayBefore = new Date(yesterday);
-          dayBefore.setDate(dayBefore.getDate() - 1);
-          setOlderCursor(dayBefore);
-        } catch {
-          // silent — today's leads are already shown
-        }
-      }
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      const res = await leadsAPI.getAll(params);
+      setLeads(res.data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching leads",
@@ -322,40 +281,6 @@ export default function LeadsPage() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadOlderLeads = async () => {
-    if (!olderCursor || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      // Load one week at a time going backward
-      const batchEnd = new Date(olderCursor);
-      const batchStart = new Date(olderCursor);
-      batchStart.setDate(batchStart.getDate() - 6);
-
-      const res = await leadsAPI.getAll({
-        startDate: toDateStr(batchStart),
-        endDate: toDateStr(batchEnd),
-      });
-
-      if (res.data?.length) {
-        setLeads((prev) => [...prev, ...res.data]);
-        const nextCursor = new Date(batchStart);
-        nextCursor.setDate(nextCursor.getDate() - 1);
-        setOlderCursor(nextCursor);
-        setHasOlderLeads(true);
-      } else {
-        setHasOlderLeads(false);
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error loading older leads",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingMore(false);
     }
   };
 
@@ -610,6 +535,41 @@ export default function LeadsPage() {
       const dateB = new Date(b.createdAt).getTime();
       return dateB - dateA;
     });
+
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualList = useMemo(() => {
+    type VItem =
+      | { type: "header"; date: string; count: number }
+      | { type: "row"; lead: any };
+    const items: VItem[] = [];
+    const dateCounts: Record<string, number> = {};
+    for (const l of filtered) {
+      const d = l.indiamartQueryTime
+        ? format(new Date(l.indiamartQueryTime), "d MMMM yyyy")
+        : format(new Date(l.createdAt), "d MMMM yyyy");
+      dateCounts[d] = (dateCounts[d] || 0) + 1;
+    }
+    let lastDate = "";
+    for (const l of filtered) {
+      const d = l.indiamartQueryTime
+        ? format(new Date(l.indiamartQueryTime), "d MMMM yyyy")
+        : format(new Date(l.createdAt), "d MMMM yyyy");
+      if (d !== lastDate) {
+        items.push({ type: "header", date: d, count: dateCounts[d] });
+        lastDate = d;
+      }
+      items.push({ type: "row", lead: l });
+    }
+    return items;
+  }, [filtered]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: virtualList.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (i) => (virtualList[i].type === "header" ? 38 : 57),
+    overscan: 15,
+  });
 
   const getUniqueValues = (field: string) => {
     const values = new Set<string>();
@@ -1657,7 +1617,11 @@ export default function LeadsPage() {
             className="flex-1 bg-white border-2 border-black overflow-hidden animate-fade-in min-h-[500px]"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="overflow-x-auto relative max-h-[calc(100vh-250px)]">
+            <div
+              ref={parentRef}
+              className="overflow-x-auto overflow-y-auto relative"
+              style={{ maxHeight: "calc(100vh - 250px)" }}
+            >
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-20">
                   <tr className="border-b-2 border-black bg-[#024BAB]">
@@ -1762,61 +1726,53 @@ export default function LeadsPage() {
                       </td>
                     </tr>
                   ) : (
-                    (() => {
-                      let lastGroupDate = "";
-                      return filtered.map((l, i) => {
-                        const groupDate = l.indiamartQueryTime
-                          ? format(
-                              new Date(l.indiamartQueryTime),
-                              "d MMMM yyyy",
-                            )
-                          : format(new Date(l.createdAt), "d MMMM yyyy");
-                        const showHeader = groupDate !== lastGroupDate;
-                        lastGroupDate = groupDate;
-
-                        return (
-                          <Fragment key={l._id || l.id}>
-                            {showHeader && (
-                              <tr className="bg-muted/40 border-y border-border/50 shadow-sm animate-fade-in group">
-                                <td
-                                  colSpan={10}
-                                  className="px-5 py-2.5 text-xs font-bold text-black uppercase tracking-widest"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <CalendarIcon className="w-3.5 h-3.5 text-primary/70" />
-                                    {groupDate}
-                                    <span className="text-[10px] font-medium bg-muted px-1.5 py-0.5 rounded-full border border-border/50 text-black/60 invisible group-hover:visible ml-2 transition-all">
-                                      {
-                                        filtered.filter((le) => {
-                                          const d = le.indiamartQueryTime
-                                            ? format(
-                                                new Date(le.indiamartQueryTime),
-                                                "d MMMM yyyy",
-                                              )
-                                            : format(
-                                                new Date(le.createdAt),
-                                                "d MMMM yyyy",
-                                              );
-                                          return d === groupDate;
-                                        }).length
-                                      }{" "}
-                                      leads
-                                    </span>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
+                    <>
+                      {(rowVirtualizer.getVirtualItems()[0]?.start ?? 0) > 0 && (
+                        <tr>
+                          <td
+                            colSpan={10}
+                            style={{
+                              height: rowVirtualizer.getVirtualItems()[0].start,
+                              padding: 0,
+                            }}
+                          />
+                        </tr>
+                      )}
+                      {rowVirtualizer.getVirtualItems().map((vRow) => {
+                        const item = virtualList[vRow.index];
+                        if (item.type === "header") {
+                          return (
                             <tr
-                              key={l._id || l.id}
-                              className={cn(
-                                "border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer animate-fade-in",
-                                selectedLeadId === (l._id || l.id)
-                                  ? "bg-muted/50"
-                                  : "",
-                              )}
-                              style={{ animationDelay: `${i * 30}ms` }}
-                              onClick={() => setSelectedLeadId(l._id || l.id)}
+                              key={`hdr-${vRow.index}`}
+                              className="bg-muted/40 border-y border-border/50 shadow-sm group"
                             >
+                              <td
+                                colSpan={10}
+                                className="px-5 py-2.5 text-xs font-bold text-black uppercase tracking-widest"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <CalendarIcon className="w-3.5 h-3.5 text-primary/70" />
+                                  {item.date}
+                                  <span className="text-[10px] font-medium bg-muted px-1.5 py-0.5 rounded-full border border-border/50 text-black/60 invisible group-hover:visible ml-2 transition-all">
+                                    {item.count} leads
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+                        const l = item.lead;
+                        return (
+                          <tr
+                            key={l._id || l.id}
+                            className={cn(
+                              "border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer",
+                              selectedLeadId === (l._id || l.id)
+                                ? "bg-muted/50"
+                                : "",
+                            )}
+                            onClick={() => setSelectedLeadId(l._id || l.id)}
+                          >
                               <td className="px-5 py-3.5">
                                 <p className="font-medium text-foreground">
                                   {l.name}
@@ -1969,47 +1925,29 @@ export default function LeadsPage() {
                                   : "-"}
                               </td>
                             </tr>
-                          </Fragment>
-                        );
-                      });
-                    })()
+                          );
+                        })}
+                      {(() => {
+                        const vItems = rowVirtualizer.getVirtualItems();
+                        if (vItems.length === 0) return null;
+                        const bottomPad =
+                          rowVirtualizer.getTotalSize() -
+                          vItems[vItems.length - 1].end;
+                        return bottomPad > 0 ? (
+                          <tr>
+                            <td
+                              colSpan={10}
+                              style={{ height: bottomPad, padding: 0 }}
+                            />
+                          </tr>
+                        ) : null;
+                      })()}
+                    </>
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* Progressive date loading */}
-            {!startDate && !endDate && (
-              <div className="flex items-center justify-center py-4 border-t-2 border-dashed border-black/20">
-                {loadingMore ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading older leads…
-                  </div>
-                ) : hasOlderLeads ? (
-                  <button
-                    onClick={loadOlderLeads}
-                    className="flex items-center gap-2 px-5 py-2 text-xs font-bold border-2 border-black bg-white hover:bg-[#FFDE00] transition-colors"
-                  >
-                    Load older leads
-                    {olderCursor && (
-                      <span className="font-normal text-muted-foreground">
-                        (before{" "}
-                        {olderCursor.toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                        )
-                      </span>
-                    )}
-                  </button>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    All leads loaded
-                  </p>
-                )}
-              </div>
-            )}
           </div>
 
           {lead && (
