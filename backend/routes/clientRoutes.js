@@ -7,16 +7,20 @@ const {
   updateClient,
   deleteClient,
 } = require("../controllers/clientController");
-const { protect, authorize } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
+const { checkPermission } = require("../middleware/checkPermission");
 
 router.use(protect);
 
-router.route("/").get(getClients).post(createClient);
+router
+  .route("/")
+  .get(checkPermission("Clients", "read"), getClients)
+  .post(checkPermission("Clients", "create"), createClient);
 
 router
   .route("/:id")
-  .get(getClient)
-  .put(updateClient)
-  .delete(authorize("super_admin", "admin"), deleteClient);
+  .get(checkPermission("Clients", "read"), getClient)
+  .put(checkPermission("Clients", "update"), updateClient)
+  .delete(checkPermission("Clients", "delete"), deleteClient);
 
 module.exports = router;

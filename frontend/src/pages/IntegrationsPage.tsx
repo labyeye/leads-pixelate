@@ -960,7 +960,10 @@ export default function IntegrationsPage() {
     usersAPI
       .getAll()
       .then((res) => {
-        const list = (res.data || []).map((u: any) => ({ _id: u._id, name: u.name }));
+        const list = (res.data || []).map((u: any) => ({
+          _id: u._id,
+          name: u.name,
+        }));
         setImUsers(list);
       })
       .catch(() => {});
@@ -1173,7 +1176,9 @@ export default function IntegrationsPage() {
                       Lead Assignment
                     </p>
                     <p className="text-[11px] text-muted-foreground mb-3">
-                      Select who receives IndiaMART leads. One person = all leads go there. Multiple = round-robin. None = auto round-robin among all sales team.
+                      Select who receives IndiaMART leads. One person = all
+                      leads go there. Multiple = round-robin. None = auto
+                      round-robin among all sales team.
                     </p>
                     <div className="flex flex-col gap-1 mb-3 max-h-40 overflow-y-auto border-2 border-black p-2 bg-[#F9FAFB]">
                       {imUsers.map((u) => {

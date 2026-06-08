@@ -33,6 +33,7 @@ import {
 import { useState, useEffect } from "react";
 import { clientsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
+import { usePermission } from "@/hooks/usePermission";
 
 const PROJECT_NB: Record<string, string> = {
   Active: "bg-[#024BAB] text-white border-black",
@@ -108,6 +109,7 @@ const NbSelect = ({ label, value, onChange, options }: any) => (
 );
 
 export default function ClientsPage() {
+  const { can } = usePermission();
   const [search, setSearch] = useState("");
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -275,14 +277,16 @@ export default function ClientsPage() {
             if (!open) resetForm();
           }}
         >
-          <DialogTrigger asChild>
-            <button
-              onClick={resetForm}
-              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" /> Add Client
-            </button>
-          </DialogTrigger>
+          {can("Clients", "create") && (
+            <DialogTrigger asChild>
+              <button
+                onClick={resetForm}
+                className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Add Client
+              </button>
+            </DialogTrigger>
+          )}
           <DialogContent className="sm:max-w-lg border-2 border-black rounded-none p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4 sticky top-0 z-10">
@@ -555,20 +559,24 @@ export default function ClientsPage() {
                           align="end"
                           className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000] bg-white min-w-[140px] p-0"
                         >
-                          <DropdownMenuItem
-                            onClick={() => handleEditClick(client)}
-                            className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
-                          >
-                            <Pencil className="w-4 h-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleDeleteClick(client._id || client.id)
-                            }
-                            className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
+                          {can("Clients", "update") && (
+                            <DropdownMenuItem
+                              onClick={() => handleEditClick(client)}
+                              className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
+                            >
+                              <Pencil className="w-4 h-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                          )}
+                          {can("Clients", "delete") && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleDeleteClick(client._id || client.id)
+                              }
+                              className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

@@ -73,6 +73,126 @@ const INITIAL_PERMISSIONS: ResourcePermissions[] = [
     },
   },
   {
+    resource: "Products",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Clients",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Quotations",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: true, read: true, update: true, delete: false },
+    },
+  },
+  {
+    resource: "Services",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: true,
+        read: true,
+        update: true,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Reports",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
+    resource: "Campaigns",
+    permissions: {
+      super_admin: { create: true, read: true, update: true, delete: true },
+      admin: { create: true, read: true, update: true, delete: true },
+      sales_executive: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      service_manager: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      accountant: { create: false, read: true, update: false, delete: false },
+    },
+  },
+  {
     resource: "Visit Calendar",
     permissions: {
       super_admin: { create: true, read: true, update: true, delete: true },
@@ -199,6 +319,7 @@ function InputField({
   value,
   placeholder = "",
   type = "text",
+  readOnly = false,
   onChange,
 }: {
   label: string;
@@ -206,6 +327,7 @@ function InputField({
   value: string;
   placeholder?: string;
   type?: string;
+  readOnly?: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
@@ -219,7 +341,13 @@ function InputField({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0 bg-white"
+        readOnly={readOnly}
+        className={cn(
+          "w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0",
+          readOnly
+            ? "bg-gray-50 cursor-default text-muted-foreground"
+            : "bg-white",
+        )}
       />
     </div>
   );
@@ -231,6 +359,7 @@ function TextAreaField({
   value,
   placeholder = "",
   rows = 3,
+  readOnly = false,
   onChange,
 }: {
   label: string;
@@ -238,6 +367,7 @@ function TextAreaField({
   value: string;
   placeholder?: string;
   rows?: number;
+  readOnly?: boolean;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }) {
   return (
@@ -251,18 +381,25 @@ function TextAreaField({
         onChange={onChange}
         placeholder={placeholder}
         rows={rows}
-        className="w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0 bg-white resize-none"
+        readOnly={readOnly}
+        className={cn(
+          "w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0 resize-none",
+          readOnly
+            ? "bg-gray-50 cursor-default text-muted-foreground"
+            : "bg-white",
+        )}
       />
     </div>
   );
 }
 
 export default function SettingsPage() {
-  const { user, tenant } = useAuth();
+  const { user, tenant, refreshPermissions } = useAuth();
   const { toast } = useToast();
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPerms, setSavingPerms] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [permissions, setPermissions] =
     useState<ResourcePermissions[]>(INITIAL_PERMISSIONS);
@@ -281,11 +418,24 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       const res = await settingsAPI.get();
-      // Prefill companyName from tenant if not yet saved in settings
       setSettings({
         ...res.data,
         companyName: res.data?.companyName || tenant?.name || "",
       });
+      // Restore saved permissions matrix if admin has customised it
+      if (res.data?.permissions) {
+        const saved = res.data.permissions as Record<string, any>;
+        setPermissions((prev) =>
+          prev.map((r) =>
+            saved[r.resource]
+              ? {
+                  ...r,
+                  permissions: { ...r.permissions, ...saved[r.resource] },
+                }
+              : r,
+          ),
+        );
+      }
     } catch (error: any) {
       setSettings({
         companyName: tenant?.name || "",
@@ -306,6 +456,33 @@ export default function SettingsPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSavePermissions = async () => {
+    setSavingPerms(true);
+    try {
+      const permissionsMap: Record<
+        string,
+        Record<string, Record<string, boolean>>
+      > = {};
+      permissions.forEach((r) => {
+        permissionsMap[r.resource] = r.permissions;
+      });
+      await settingsAPI.update({ permissions: permissionsMap });
+      await refreshPermissions();
+      toast({
+        title: "Permissions saved",
+        description: "Role permissions updated successfully.",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to save permissions.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPerms(false);
     }
   };
 
@@ -396,13 +573,26 @@ export default function SettingsPage() {
     );
   }
 
-  const tabs = [
-    { id: "general", label: "General Info", icon: Building2 },
-    { id: "bank", label: "Bank Details", icon: Landmark },
-    { id: "terms", label: "Terms & Footer", icon: FileCheck },
-    { id: "template", label: "Quotation Template", icon: Layout },
-    { id: "permissions", label: "Permissions", icon: ShieldCheck },
+  const isAdminOrAbove = user?.role === "super_admin" || user?.role === "admin";
+
+  const allTabs = [
+    { id: "general", label: "General Info", icon: Building2, adminOnly: false },
+    { id: "bank", label: "Bank Details", icon: Landmark, adminOnly: true },
+    { id: "terms", label: "Terms & Footer", icon: FileCheck, adminOnly: true },
+    {
+      id: "template",
+      label: "Quotation Template",
+      icon: Layout,
+      adminOnly: false,
+    },
+    {
+      id: "permissions",
+      label: "Permissions",
+      icon: ShieldCheck,
+      adminOnly: true,
+    },
   ];
+  const tabs = allTabs.filter((t) => !t.adminOnly || isAdminOrAbove);
 
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -501,37 +691,46 @@ export default function SettingsPage() {
                 {tabs.find((t) => t.id === activeTab)?.label}
               </h2>
             </div>
-            {activeTab !== "permissions" && activeTab !== "template" && (
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className={cn(
-                  "nb-btn px-5 py-2 text-sm font-bold text-white border-2 border-black flex items-center gap-2",
-                  saving
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-[#024BAB] hover:bg-[#01368A]",
-                )}
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                Save Changes
-              </button>
-            )}
+            {activeTab !== "permissions" &&
+              activeTab !== "template" &&
+              isAdminOrAbove && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={cn(
+                    "nb-btn px-5 py-2 text-sm font-bold text-white border-2 border-black flex items-center gap-2",
+                    saving
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-[#024BAB] hover:bg-[#01368A]",
+                  )}
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save Changes
+                </button>
+              )}
           </div>
 
           <div className="p-6 max-w-3xl">
             {/* ── General Info ── */}
             {activeTab === "general" && (
               <div className="space-y-4">
+                {!isAdminOrAbove && (
+                  <div className="flex items-center gap-2 px-3 py-2 border-2 border-[#F59E0B] bg-[#FFF7ED] text-xs font-bold text-[#92400E]">
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    View only — contact your admin to update company settings.
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InputField
                     onChange={handleChange}
                     label="Company Name"
                     name="companyName"
                     value={settings?.companyName || ""}
+                    readOnly={!isAdminOrAbove}
                   />
                   <InputField
                     onChange={handleChange}
@@ -539,12 +738,14 @@ export default function SettingsPage() {
                     name="companyGST"
                     value={settings?.companyGST || ""}
                     placeholder="07AAAAA0000A1Z5"
+                    readOnly={!isAdminOrAbove}
                   />
                   <InputField
                     onChange={handleChange}
                     label="Phone Number"
                     name="companyPhone"
                     value={settings?.companyPhone || ""}
+                    readOnly={!isAdminOrAbove}
                   />
                   <InputField
                     onChange={handleChange}
@@ -552,6 +753,7 @@ export default function SettingsPage() {
                     name="companyEmail"
                     value={settings?.companyEmail || ""}
                     type="email"
+                    readOnly={!isAdminOrAbove}
                   />
                   <InputField
                     onChange={handleChange}
@@ -559,6 +761,7 @@ export default function SettingsPage() {
                     name="companyWebsite"
                     value={settings?.companyWebsite || ""}
                     placeholder="https://example.com"
+                    readOnly={!isAdminOrAbove}
                   />
                   <InputField
                     onChange={handleChange}
@@ -566,6 +769,7 @@ export default function SettingsPage() {
                     name="logoUrl"
                     value={settings?.logoUrl || ""}
                     placeholder="https://yourdomain.com/logo.png"
+                    readOnly={!isAdminOrAbove}
                   />
                 </div>
                 <TextAreaField
@@ -575,6 +779,7 @@ export default function SettingsPage() {
                   value={settings?.companyAddress || ""}
                   placeholder="Enter full company address"
                   rows={3}
+                  readOnly={!isAdminOrAbove}
                 />
               </div>
             )}
@@ -829,20 +1034,22 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Save button for template tab */}
-                <div className="flex justify-end pt-2 border-t-2 border-black">
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="nb-btn px-6 py-2.5 text-sm font-black text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    Save Template Settings
-                  </button>
-                </div>
+                {isAdminOrAbove && (
+                  <div className="flex justify-end pt-2 border-t-2 border-black">
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="nb-btn px-6 py-2.5 text-sm font-black text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {saving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      Save Template Settings
+                    </button>
+                  </div>
+                )}
 
                 {/* Info note */}
                 <div className="flex items-start gap-3 p-4 border-2 border-black bg-[#024BAB]/5">
@@ -998,17 +1205,15 @@ export default function SettingsPage() {
 
                 <div className="flex justify-end pt-2">
                   <button
-                    onClick={() => {
-                      setActionModal({
-                        show: true,
-                        type: "success",
-                        title: "Permissions Saved",
-                        message: "Role permissions have been updated.",
-                      });
-                    }}
-                    className="nb-btn px-5 py-2.5 text-sm font-bold text-white bg-[#024BAB] border-2 border-black flex items-center gap-2"
+                    onClick={handleSavePermissions}
+                    disabled={savingPerms}
+                    className="nb-btn px-5 py-2.5 text-sm font-bold text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
+                    {savingPerms ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
                     Save Permissions
                   </button>
                 </div>

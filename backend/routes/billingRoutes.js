@@ -218,7 +218,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (!["starter", "growth", "professional", "business", "pro"].includes(plan)) {
+    if (
+      !["starter", "growth", "professional", "business", "pro"].includes(plan)
+    ) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
@@ -329,7 +331,9 @@ router.post(
       );
     }
 
-    if (!["starter", "growth", "professional", "business", "pro"].includes(plan)) {
+    if (
+      !["starter", "growth", "professional", "business", "pro"].includes(plan)
+    ) {
       return res.redirect(
         `${frontendUrl}/billing?payment=failed&reason=invalid_plan`,
       );
@@ -395,7 +399,9 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (!["starter", "growth", "professional", "business", "pro"].includes(plan)) {
+    if (
+      !["starter", "growth", "professional", "business", "pro"].includes(plan)
+    ) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 

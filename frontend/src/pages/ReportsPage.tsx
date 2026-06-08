@@ -398,9 +398,15 @@ export default function ReportsPage() {
       try {
         const res = await settingsAPI.get();
         settings = res.data || {};
-      } catch { /* use defaults if settings unavailable */ }
+      } catch {
+        /* use defaults if settings unavailable */
+      }
 
-      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
       const pw = doc.internal.pageSize.getWidth();
 
       // ── Header band ──
@@ -412,24 +418,49 @@ export default function ReportsPage() {
       doc.text(settings.companyName || "Company", 8, 9);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
-      const meta = [settings.companyAddress, settings.companyPhone, settings.companyEmail]
-        .filter(Boolean).join("   |   ");
+      const meta = [
+        settings.companyAddress,
+        settings.companyPhone,
+        settings.companyEmail,
+      ]
+        .filter(Boolean)
+        .join("   |   ");
       if (meta) doc.text(meta, 8, 16);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.text(`LEADS REPORT  —  ${new Date().toLocaleDateString("en-IN")}`, pw - 8, 9, { align: "right" });
+      doc.text(
+        `LEADS REPORT  —  ${new Date().toLocaleDateString("en-IN")}`,
+        pw - 8,
+        9,
+        { align: "right" },
+      );
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.text(
         `Total: ${counts.total}   Won: ${counts.won}   Drop: ${counts.drop}   Pending: ${counts.pending}`,
-        pw - 8, 16, { align: "right" },
+        pw - 8,
+        16,
+        { align: "right" },
       );
       doc.setTextColor(0, 0, 0);
 
       // ── Table ──
       autoTable(doc, {
         startY: 25,
-        head: [["#", "Name", "Company / FB Page", "Phone", "Source", "Status", "Assigned To", "Follow-up", "Created", "Remarks"]],
+        head: [
+          [
+            "#",
+            "Name",
+            "Company / FB Page",
+            "Phone",
+            "Source",
+            "Status",
+            "Assigned To",
+            "Follow-up",
+            "Created",
+            "Remarks",
+          ],
+        ],
         body: leads.map((l, i) => [
           i + 1,
           l.name || "—",
@@ -438,14 +469,24 @@ export default function ReportsPage() {
           l.source || "—",
           l.status || "—",
           l.assignedTo?.name || "Unassigned",
-          l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "—",
+          l.followUpDate
+            ? new Date(l.followUpDate).toLocaleDateString("en-IN")
+            : "—",
           l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "—",
           l.remarks || "—",
         ]),
         styles: { fontSize: 7, cellPadding: 2.2, overflow: "linebreak" },
-        headStyles: { fillColor: [2, 75, 171], textColor: 255, fontStyle: "bold", fontSize: 7 },
+        headStyles: {
+          fillColor: [2, 75, 171],
+          textColor: 255,
+          fontStyle: "bold",
+          fontSize: 7,
+        },
         alternateRowStyles: { fillColor: [248, 248, 248] },
-        columnStyles: { 0: { cellWidth: 8, halign: "center" }, 9: { cellWidth: 35 } },
+        columnStyles: {
+          0: { cellWidth: 8, halign: "center" },
+          9: { cellWidth: 35 },
+        },
         margin: { left: 5, right: 5 },
       });
 
@@ -457,13 +498,20 @@ export default function ReportsPage() {
         doc.setFontSize(7);
         doc.setTextColor(150);
         doc.text(`Generated: ${new Date().toLocaleString("en-IN")}`, 8, ph - 4);
-        doc.text(`Page ${p} of ${totalPages}`, pw / 2, ph - 4, { align: "center" });
-        if (settings.companyName) doc.text(settings.companyName, pw - 8, ph - 4, { align: "right" });
+        doc.text(`Page ${p} of ${totalPages}`, pw / 2, ph - 4, {
+          align: "center",
+        });
+        if (settings.companyName)
+          doc.text(settings.companyName, pw - 8, ph - 4, { align: "right" });
       }
 
       doc.save(`leads-${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err: any) {
-      toast({ title: "PDF export failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "PDF export failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setExporting(false);
     }
@@ -749,7 +797,17 @@ export default function ReportsPage() {
               ].map(({ key, label }) => (
                 <button
                   key={key}
-                  onClick={() => activeDatePreset === key ? (setActiveDatePreset(""), fetchLeads({ ...filters, startDate: "", endDate: "" }), setFilters(f => ({ ...f, startDate: "", endDate: "" }))) : applyDatePreset(key)}
+                  onClick={() =>
+                    activeDatePreset === key
+                      ? (setActiveDatePreset(""),
+                        fetchLeads({ ...filters, startDate: "", endDate: "" }),
+                        setFilters((f) => ({
+                          ...f,
+                          startDate: "",
+                          endDate: "",
+                        })))
+                      : applyDatePreset(key)
+                  }
                   className={cn(
                     "px-3 py-1.5 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
                     activeDatePreset === key
@@ -886,15 +944,21 @@ export default function ReportsPage() {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {lead.contactTag ? (
-                              <span className={cn(
-                                "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
-                                lead.contactTag === "HOT" ? "bg-red-500 text-white border-red-700" :
-                                lead.contactTag === "WARM" ? "bg-orange-400 text-black border-orange-600" :
-                                "bg-blue-300 text-black border-blue-500",
-                              )}>
+                              <span
+                                className={cn(
+                                  "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                  lead.contactTag === "HOT"
+                                    ? "bg-red-500 text-white border-red-700"
+                                    : lead.contactTag === "WARM"
+                                      ? "bg-orange-400 text-black border-orange-600"
+                                      : "bg-blue-300 text-black border-blue-500",
+                                )}
+                              >
                                 {lead.contactTag}
                               </span>
-                            ) : <span className="text-gray-300">—</span>}
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
                             {lead.assignedTo?.name || (
@@ -933,7 +997,9 @@ export default function ReportsPage() {
                           </td>
                           <td className="px-4 py-3 text-xs text-black max-w-[160px]">
                             {lead.remarks ? (
-                              <span className="line-clamp-2">{lead.remarks}</span>
+                              <span className="line-clamp-2">
+                                {lead.remarks}
+                              </span>
                             ) : (
                               <span className="text-gray-300">—</span>
                             )}

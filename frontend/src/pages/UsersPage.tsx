@@ -356,7 +356,11 @@ export default function UsersPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] flex items-center justify-center">
                       {formData.avatar ? (
-                        <img src={formData.avatar} alt="Preview" className="w-full h-full object-cover" />
+                        <img
+                          src={formData.avatar}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <Camera className="w-5 h-5 text-white" />
                       )}
@@ -371,11 +375,19 @@ export default function UsersPage() {
                           const file = e.target.files?.[0];
                           if (!file) return;
                           if (file.size > 2 * 1024 * 1024) {
-                            toast({ title: "Image too large", description: "Max 2MB", variant: "destructive" });
+                            toast({
+                              title: "Image too large",
+                              description: "Max 2MB",
+                              variant: "destructive",
+                            });
                             return;
                           }
                           const reader = new FileReader();
-                          reader.onload = () => setFormData((f) => ({ ...f, avatar: reader.result as string }));
+                          reader.onload = () =>
+                            setFormData((f) => ({
+                              ...f,
+                              avatar: reader.result as string,
+                            }));
                           reader.readAsDataURL(file);
                         }}
                       />
@@ -383,7 +395,9 @@ export default function UsersPage() {
                     {formData.avatar && (
                       <button
                         type="button"
-                        onClick={() => setFormData((f) => ({ ...f, avatar: "" }))}
+                        onClick={() =>
+                          setFormData((f) => ({ ...f, avatar: "" }))
+                        }
                         className="text-xs font-bold text-red-500 underline"
                       >
                         Remove
@@ -508,7 +522,11 @@ export default function UsersPage() {
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 border-2 border-black shrink-0 overflow-hidden bg-[#024BAB]">
                             {user.avatar ? (
-                              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                              <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-xs font-black text-white">
                                 {initials}

@@ -7,19 +7,20 @@ const {
   updateService,
   deleteService,
 } = require("../controllers/serviceController");
-const { protect, authorize } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
+const { checkPermission } = require("../middleware/checkPermission");
 
 router.use(protect);
 
 router
   .route("/")
-  .get(getServices)
-  .post(authorize("super_admin", "admin", "service_manager"), createService);
+  .get(checkPermission("Services", "read"), getServices)
+  .post(checkPermission("Services", "create"), createService);
 
 router
   .route("/:id")
-  .get(getService)
-  .put(authorize("super_admin", "admin", "service_manager"), updateService)
-  .delete(authorize("super_admin", "admin"), deleteService);
+  .get(checkPermission("Services", "read"), getService)
+  .put(checkPermission("Services", "update"), updateService)
+  .delete(checkPermission("Services", "delete"), deleteService);
 
 module.exports = router;

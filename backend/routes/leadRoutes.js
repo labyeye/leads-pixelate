@@ -17,6 +17,7 @@ const {
   updateIndiamartSettings,
 } = require("../controllers/leadController");
 const { protect, authorize } = require("../middleware/auth");
+const { checkPermission } = require("../middleware/checkPermission");
 
 router.post("/indiamart/webhook", indiamartWebhook);
 
@@ -104,12 +105,12 @@ router
   .route("/:id")
   .get(getLead)
   .put(updateLead)
-  .delete(authorize("super_admin", "admin"), deleteLead);
+  .delete(checkPermission("Leads", "delete"), deleteLead);
 
 router.post("/:id/notes", addNote);
 router.post(
   "/:id/convert",
-  authorize("super_admin", "admin", "sales_executive"),
+  checkPermission("Leads", "update"),
   convertToClient,
 );
 

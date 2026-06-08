@@ -14,6 +14,7 @@ import {
 import { useState, useEffect } from "react";
 import { quotationsAPI, settingsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
+import { usePermission } from "@/hooks/usePermission";
 import {
   Dialog,
   DialogContent,
@@ -104,6 +105,7 @@ const NbInput = ({
 );
 
 export default function QuotationsPage() {
+  const { can } = usePermission();
   const [search, setSearch] = useState("");
   const [quotations, setQuotations] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
@@ -319,14 +321,16 @@ export default function QuotationsPage() {
             if (!open) resetForm();
           }}
         >
-          <DialogTrigger asChild>
-            <button
-              onClick={resetForm}
-              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" /> New Quotation
-            </button>
-          </DialogTrigger>
+          {can("Quotations", "create") && (
+            <DialogTrigger asChild>
+              <button
+                onClick={resetForm}
+                className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> New Quotation
+              </button>
+            </DialogTrigger>
+          )}
 
           <DialogContent className="sm:max-w-[700px] border-2 border-black rounded-none shadow-[6px_6px_0px_#000] p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
@@ -829,18 +833,22 @@ export default function QuotationsPage() {
                             )}
                             Preview PDF
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleEditClick(q)}
-                            className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
-                          >
-                            <Pencil className="w-4 h-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(q._id || q.id)}
-                            className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
+                          {can("Quotations", "update") && (
+                            <DropdownMenuItem
+                              onClick={() => handleEditClick(q)}
+                              className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                            >
+                              <Pencil className="w-4 h-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                          )}
+                          {can("Quotations", "delete") && (
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(q._id || q.id)}
+                              className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

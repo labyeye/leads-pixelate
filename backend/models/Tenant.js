@@ -21,7 +21,15 @@ const tenantSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["trial", "starter", "growth", "professional", "business", "enterprise", "pro"],
+      enum: [
+        "trial",
+        "starter",
+        "growth",
+        "professional",
+        "business",
+        "enterprise",
+        "pro",
+      ],
       default: "trial",
     },
     planExpiresAt: {

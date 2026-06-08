@@ -7,16 +7,20 @@ const {
   updateQuotation,
   deleteQuotation,
 } = require("../controllers/quotationController");
-const { protect, authorize } = require("../middleware/auth");
+const { protect } = require("../middleware/auth");
+const { checkPermission } = require("../middleware/checkPermission");
 
 router.use(protect);
 
-router.route("/").get(getQuotations).post(createQuotation);
+router
+  .route("/")
+  .get(checkPermission("Quotations", "read"), getQuotations)
+  .post(checkPermission("Quotations", "create"), createQuotation);
 
 router
   .route("/:id")
-  .get(getQuotation)
-  .put(updateQuotation)
-  .delete(authorize("super_admin", "admin"), deleteQuotation);
+  .get(checkPermission("Quotations", "read"), getQuotation)
+  .put(checkPermission("Quotations", "update"), updateQuotation)
+  .delete(checkPermission("Quotations", "delete"), deleteQuotation);
 
 module.exports = router;

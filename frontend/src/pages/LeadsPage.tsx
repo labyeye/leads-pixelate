@@ -3,7 +3,6 @@ import { useState, useEffect, Fragment } from "react";
 import {
   Search,
   Plus,
-
   MoreVertical,
   Phone,
   Mail,
@@ -177,7 +176,9 @@ export default function LeadsPage() {
     if (/^\d{6}$/.test(val.trim())) {
       setPincodeLoading(true);
       try {
-        const res = await fetch(`https://api.postalpincode.in/pincode/${val.trim()}`);
+        const res = await fetch(
+          `https://api.postalpincode.in/pincode/${val.trim()}`,
+        );
         const data = await res.json();
         const po = data?.[0]?.PostOffice?.[0];
         if (po) {
@@ -187,7 +188,9 @@ export default function LeadsPage() {
             state: po.State,
           }));
         }
-      } catch { /* silent */ } finally {
+      } catch {
+        /* silent */
+      } finally {
         setPincodeLoading(false);
       }
     }
@@ -1128,7 +1131,11 @@ export default function LeadsPage() {
                 {fbSyncing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <img src={fbLogo} alt="Facebook" className="w-4 h-4 object-contain" />
+                  <img
+                    src={fbLogo}
+                    alt="Facebook"
+                    className="w-4 h-4 object-contain"
+                  />
                 )}
                 {fbSyncing ? "Syncing..." : "Sync Facebook"}
               </button>
@@ -1145,7 +1152,11 @@ export default function LeadsPage() {
                   {syncing ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E07B39]" />
                   ) : (
-                    <img src={imLogo} alt="IndiaMART" className="w-4 h-4 object-contain" />
+                    <img
+                      src={imLogo}
+                      alt="IndiaMART"
+                      className="w-4 h-4 object-contain"
+                    />
                   )}
                   {syncing ? "Syncing..." : "Sync IndiaMART"}
                 </button>
@@ -1171,7 +1182,11 @@ export default function LeadsPage() {
               {tiSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <img src={tiLogo} alt="TradeIndia" className="w-4 h-4 object-contain" />
+                <img
+                  src={tiLogo}
+                  alt="TradeIndia"
+                  className="w-4 h-4 object-contain"
+                />
               )}
               {tiSyncing ? "Syncing..." : "Sync TradeIndia"}
             </button>
@@ -1185,7 +1200,11 @@ export default function LeadsPage() {
               {jdSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <img src={jdLogo} alt="Justdial" className="w-4 h-4 object-contain" />
+                <img
+                  src={jdLogo}
+                  alt="Justdial"
+                  className="w-4 h-4 object-contain"
+                />
               )}
               {jdSyncing ? "Syncing..." : "Sync Justdial"}
             </button>
@@ -2304,7 +2323,10 @@ export default function LeadsPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="state" className="text-xs font-semibold uppercase text-black">
+                  <Label
+                    htmlFor="state"
+                    className="text-xs font-semibold uppercase text-black"
+                  >
                     State
                   </Label>
                   <Input
@@ -2312,7 +2334,9 @@ export default function LeadsPage() {
                     type="text"
                     placeholder="State (auto-filled from pincode)"
                     value={newLead.state}
-                    onChange={(e) => setNewLead({ ...newLead, state: e.target.value })}
+                    onChange={(e) =>
+                      setNewLead({ ...newLead, state: e.target.value })
+                    }
                   />
                 </div>
               </div>

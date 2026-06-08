@@ -169,7 +169,13 @@ leadSchema.index({ tenantId: 1, createdAt: -1 }); // primary list: tenant + newe
 leadSchema.index({ tenantId: 1, status: 1, createdAt: -1 }); // category tab queries
 leadSchema.index({ tenantId: 1, source: 1 });
 leadSchema.index({ tenantId: 1, assignedTo: 1 });
-leadSchema.index({ tenantId: 1, indiamartQueryId: 1 }, { sparse: true, unique: true });
-leadSchema.index({ tenantId: 1, facebookLeadgenId: 1 }, { sparse: true, unique: true });
+leadSchema.index(
+  { tenantId: 1, indiamartQueryId: 1 },
+  { sparse: true, unique: true },
+);
+leadSchema.index(
+  { tenantId: 1, facebookLeadgenId: 1 },
+  { sparse: true, unique: true },
+);
 
 module.exports = mongoose.model("Lead", leadSchema);

@@ -775,8 +775,13 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
     const qid = record.UNIQUE_QUERY_ID;
 
     try {
-      const tenantFilter = tenant ? { tenantId: tenant._id } : { tenantId: null };
-      const existing = await Lead.findOne({ indiamartQueryId: qid, ...tenantFilter });
+      const tenantFilter = tenant
+        ? { tenantId: tenant._id }
+        : { tenantId: null };
+      const existing = await Lead.findOne({
+        indiamartQueryId: qid,
+        ...tenantFilter,
+      });
       if (!existing) {
         const assignToId = await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
@@ -888,9 +893,13 @@ const getStatusHistoryReport = asyncHandler(async (req, res) => {
 
 const updateIndiamartSettings = asyncHandler(async (req, res) => {
   const { assigneeIds } = req.body;
-  const query = req.user.tenantId ? { _id: req.user.tenantId } : { ownerUser: req.user._id };
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
   await Tenant.findOneAndUpdate(query, {
-    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
+    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds)
+      ? assigneeIds
+      : [],
   });
   res.json({ success: true, message: "IndiaMART settings updated" });
 });

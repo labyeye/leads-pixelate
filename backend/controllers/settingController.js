@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Setting = require("../models/Setting");
+const { invalidatePermissionsCache } = require("../middleware/checkPermission");
 
 const getSettings = asyncHandler(async (req, res) => {
   const tenantFilter = { tenantId: req.user.tenantId || null };
@@ -27,6 +28,8 @@ const updateSettings = asyncHandler(async (req, res) => {
       runValidators: true,
     });
   }
+
+  invalidatePermissionsCache(req.user.tenantId);
 
   res.json({
     success: true,

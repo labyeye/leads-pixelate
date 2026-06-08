@@ -91,9 +91,7 @@ export function SourceBadge({ source, size = "md" }: SourceBadgeProps) {
         cfg.bg,
         cfg.text,
         cfg.border,
-        size === "sm"
-          ? "text-[9px] px-1.5 py-0.5"
-          : "text-[10px] px-2 py-1",
+        size === "sm" ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-1",
       )}
     >
       {cfg.icon}

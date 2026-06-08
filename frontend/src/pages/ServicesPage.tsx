@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { servicesAPI, clientsAPI, productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
+import { usePermission } from "@/hooks/usePermission";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ServicesPage() {
+  const { can } = usePermission();
   const [search, setSearch] = useState("");
   const [services, setServices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -227,13 +229,15 @@ export default function ServicesPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={() => resetFormAndCloseModal()}
-            >
-              <Plus className="w-3.5 h-3.5" /> Allocate Service
-            </Button>
+            {can("Services", "create") && (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => resetFormAndCloseModal()}
+              >
+                <Plus className="w-3.5 h-3.5" /> Allocate Service
+              </Button>
+            )}
           </DialogTrigger>
           <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
@@ -482,19 +486,23 @@ export default function ServicesPage() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleEditClick(item)}
-                          >
-                            <Pencil className="w-4 h-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            onClick={() =>
-                              handleDeleteClick(item._id || item.id)
-                            }
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
+                          {can("Services", "update") && (
+                            <DropdownMenuItem
+                              onClick={() => handleEditClick(item)}
+                            >
+                              <Pencil className="w-4 h-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                          )}
+                          {can("Services", "delete") && (
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              onClick={() =>
+                                handleDeleteClick(item._id || item.id)
+                              }
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

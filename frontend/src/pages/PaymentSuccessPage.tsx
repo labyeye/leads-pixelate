@@ -5,12 +5,12 @@ const PLAN_META: Record<
   string,
   { label: string; color: string; emoji: string }
 > = {
-  starter:      { label: "Starter",      color: "#A3E635", emoji: "⚡" },
-  growth:       { label: "Growth",       color: "#024BAB", emoji: "🚀" },
+  starter: { label: "Starter", color: "#A3E635", emoji: "⚡" },
+  growth: { label: "Growth", color: "#024BAB", emoji: "🚀" },
   professional: { label: "Professional", color: "#FA731C", emoji: "🏆" },
-  business:     { label: "Business",     color: "#0EA5E9", emoji: "🏢" },
-  enterprise:   { label: "Enterprise",   color: "#A855F7", emoji: "👑" },
-  pro:          { label: "Professional", color: "#FA731C", emoji: "🏆" },
+  business: { label: "Business", color: "#0EA5E9", emoji: "🏢" },
+  enterprise: { label: "Enterprise", color: "#A855F7", emoji: "👑" },
+  pro: { label: "Professional", color: "#FA731C", emoji: "🏆" },
 };
 
 const PARTICLES = Array.from({ length: 60 }, (_, i) => ({

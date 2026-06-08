@@ -6,18 +6,32 @@ import React, {
   useCallback,
 } from "react";
 import { User } from "@/types/crm";
-import { authAPI, setToken, removeToken, getToken } from "@/services/api";
+import {
+  authAPI,
+  settingsAPI,
+  setToken,
+  removeToken,
+  getToken,
+} from "@/services/api";
 
 interface Tenant {
   _id: string;
   name: string;
-  plan: "trial" | "starter" | "growth" | "professional" | "business" | "enterprise" | "pro";
+  plan:
+    | "trial"
+    | "starter"
+    | "growth"
+    | "professional"
+    | "business"
+    | "enterprise"
+    | "pro";
   status: string;
 }
 
 interface AuthContextType {
   user: User | null;
   tenant: Tenant | null;
+  permissions: Record<string, Record<string, Record<string, boolean>>> | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (
@@ -33,6 +47,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   refreshTenant: () => Promise<void>;
+  refreshPermissions: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,6 +80,10 @@ function mapTenant(data: any): Tenant | null {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [permissions, setPermissions] = useState<Record<
+    string,
+    Record<string, Record<string, boolean>>
+  > | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -86,6 +105,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setTenant(tenantData);
           localStorage.setItem("user", JSON.stringify(userData));
           localStorage.setItem("tenant", JSON.stringify(tenantData));
+
+          // Load tenant permissions in background
+          settingsAPI
+            .get()
+            .then((res) => {
+              if (res.data?.permissions) setPermissions(res.data.permissions);
+            })
+            .catch(() => {});
         } catch (error: any) {
           if (error.status === 401) {
             removeToken();
@@ -161,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("tenant");
     setUser(null);
     setTenant(null);
+    setPermissions(null);
   }, []);
 
   const updateUser = useCallback((userData: Partial<User>) => {
@@ -183,17 +211,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshPermissions = useCallback(async () => {
+    try {
+      const res = await settingsAPI.get();
+      setPermissions(res.data?.permissions || null);
+    } catch {
+      // silent
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         tenant,
+        permissions,
         isAuthenticated: !!user,
         isLoading,
         login,
         register,
         logout,
         updateUser,
+        refreshPermissions,
         refreshTenant,
       }}
     >

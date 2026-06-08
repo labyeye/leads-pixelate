@@ -274,7 +274,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
 
 // ── HDFC payment form submitter ───────────────────────────────────────────────
 
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
@@ -355,8 +354,12 @@ export default function BillingPage() {
         leadsAPI.getAll({ startDate: monthStart }),
         usersAPI.getAll(),
       ]);
-      if (leadsRes.status === "fulfilled") setLeadsCount(leadsRes.value.count ?? leadsRes.value.data?.length ?? 0);
-      if (membersRes.status === "fulfilled") setMembersCount(membersRes.value.count ?? membersRes.value.data?.length ?? 0);
+      if (leadsRes.status === "fulfilled")
+        setLeadsCount(leadsRes.value.count ?? leadsRes.value.data?.length ?? 0);
+      if (membersRes.status === "fulfilled")
+        setMembersCount(
+          membersRes.value.count ?? membersRes.value.data?.length ?? 0,
+        );
     } finally {
       setLoading(false);
     }
@@ -366,11 +369,22 @@ export default function BillingPage() {
     setPayingPlan(planId);
     try {
       const res = await billingAPI.createOrder(planId, billing);
-      const { orderId, amount, currency, customerEmail, customerPhone, customerName, key } = res.data;
+      const {
+        orderId,
+        amount,
+        currency,
+        customerEmail,
+        customerPhone,
+        customerName,
+        key,
+      } = res.data;
 
       // Load Razorpay SDK if not already loaded
       await new Promise<void>((resolve, reject) => {
-        if ((window as any).Razorpay) { resolve(); return; }
+        if ((window as any).Razorpay) {
+          resolve();
+          return;
+        }
         const script = document.createElement("script");
         script.src = "https://checkout.razorpay.com/v1/checkout.js";
         script.onload = () => resolve();
@@ -385,7 +399,11 @@ export default function BillingPage() {
         name: "NestLeads CRM",
         description: `${capitalise(planId)} Plan — ${billing}`,
         order_id: orderId,
-        prefill: { name: customerName, email: customerEmail, contact: customerPhone },
+        prefill: {
+          name: customerName,
+          email: customerEmail,
+          contact: customerPhone,
+        },
         theme: { color: "#024BAB" },
         handler: async (response: any) => {
           try {
@@ -394,10 +412,18 @@ export default function BillingPage() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            toast({ title: "Payment Successful!", description: `Your ${capitalise(planId)} plan is now active.` });
+            toast({
+              title: "Payment Successful!",
+              description: `Your ${capitalise(planId)} plan is now active.`,
+            });
             loadAll();
           } catch {
-            toast({ title: "Verification Failed", description: "Payment was received but verification failed. Contact support.", variant: "destructive" });
+            toast({
+              title: "Verification Failed",
+              description:
+                "Payment was received but verification failed. Contact support.",
+              variant: "destructive",
+            });
           } finally {
             setPayingPlan(null);
           }
@@ -410,7 +436,8 @@ export default function BillingPage() {
     } catch (err: any) {
       toast({
         title: "Payment Error",
-        description: err.message || "Could not initiate payment. Please try again.",
+        description:
+          err.message || "Could not initiate payment. Please try again.",
         variant: "destructive",
       });
       setPayingPlan(null);
@@ -462,7 +489,13 @@ export default function BillingPage() {
   const billingCycle = subscription?.billingCycle || "monthly";
   const totalPeriodDays = billingCycle === "yearly" ? 365 : 31;
 
-  const planIds = ["starter", "growth", "professional", "business", "enterprise"];
+  const planIds = [
+    "starter",
+    "growth",
+    "professional",
+    "business",
+    "enterprise",
+  ];
 
   return (
     <AppLayout title="Billing">
@@ -522,21 +555,34 @@ export default function BillingPage() {
               {[
                 {
                   label: "Leads this month",
-                  value: leadsCount !== null ? leadsCount.toLocaleString() : "—",
+                  value:
+                    leadsCount !== null ? leadsCount.toLocaleString() : "—",
                   max: maxLeads === 999999 ? "∞" : maxLeads.toLocaleString(),
-                  pct: leadsCount !== null && maxLeads < 999999 ? Math.min(100, Math.round((leadsCount / maxLeads) * 100)) : 0,
+                  pct:
+                    leadsCount !== null && maxLeads < 999999
+                      ? Math.min(100, Math.round((leadsCount / maxLeads) * 100))
+                      : 0,
                 },
                 {
                   label: "Team members",
                   value: membersCount !== null ? membersCount.toString() : "—",
                   max: maxMembers === 999 ? "∞" : maxMembers.toString(),
-                  pct: membersCount !== null && maxMembers < 999 ? Math.min(100, Math.round((membersCount / maxMembers) * 100)) : 0,
+                  pct:
+                    membersCount !== null && maxMembers < 999
+                      ? Math.min(
+                          100,
+                          Math.round((membersCount / maxMembers) * 100),
+                        )
+                      : 0,
                 },
                 {
                   label: "Days remaining",
                   value: daysRemaining.toString(),
                   max: totalPeriodDays.toString(),
-                  pct: Math.min(100, Math.round((daysRemaining / totalPeriodDays) * 100)),
+                  pct: Math.min(
+                    100,
+                    Math.round((daysRemaining / totalPeriodDays) * 100),
+                  ),
                 },
               ].map((stat) => (
                 <div key={stat.label} className="nb-card p-4 bg-white">
@@ -649,7 +695,11 @@ export default function BillingPage() {
                             {meta.employees} employees
                           </span>
                         )}
-                        {planId === "professional" ? "Professional" : planId === "business" ? "Business" : capitalise(planId)}
+                        {planId === "professional"
+                          ? "Professional"
+                          : planId === "business"
+                            ? "Business"
+                            : capitalise(planId)}
                       </h3>
                       <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
                         {meta.description}
@@ -697,11 +747,16 @@ export default function BillingPage() {
                           )}
                         >
                           {isPaying ? (
-                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Redirecting…</>
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                              Redirecting…
+                            </>
                           ) : isCurrent ? (
                             "Current Plan"
                           ) : (
-                            <>Upgrade Now <ArrowRight className="w-3.5 h-3.5" /></>
+                            <>
+                              Upgrade Now <ArrowRight className="w-3.5 h-3.5" />
+                            </>
                           )}
                         </button>
                       )}
@@ -724,9 +779,7 @@ export default function BillingPage() {
                     </span>
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-black">
-                      Razorpay
-                    </p>
+                    <p className="font-bold text-sm text-black">Razorpay</p>
                     <p className="text-xs text-muted-foreground">
                       {subscription?.status === "active"
                         ? "Your subscription is managed securely via Razorpay"
@@ -743,7 +796,8 @@ export default function BillingPage() {
               </div>
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3 shrink-0" />
-                Payments processed securely via Razorpay. We never store your card details.
+                Payments processed securely via Razorpay. We never store your
+                card details.
               </p>
             </div>
 

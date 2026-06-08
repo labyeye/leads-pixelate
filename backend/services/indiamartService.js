@@ -256,8 +256,12 @@ async function getRoundRobinFromIds(userIds) {
     { $match: { assignedTo: { $in: ids } } },
     { $group: { _id: "$assignedTo", count: { $sum: 1 } } },
   ]);
-  const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.count]));
-  const sorted = ids.sort((a, b) => (countMap[a.toString()] || 0) - (countMap[b.toString()] || 0));
+  const countMap = Object.fromEntries(
+    counts.map((c) => [c._id.toString(), c.count]),
+  );
+  const sorted = ids.sort(
+    (a, b) => (countMap[a.toString()] || 0) - (countMap[b.toString()] || 0),
+  );
   return sorted[0];
 }
 
@@ -310,7 +314,10 @@ async function syncIndiamartLeads({
 
     try {
       const tenantFilter = tenantId ? { tenantId } : { tenantId: null };
-      const existing = await Lead.findOne({ indiamartQueryId: qid, ...tenantFilter });
+      const existing = await Lead.findOne({
+        indiamartQueryId: qid,
+        ...tenantFilter,
+      });
       if (existing) {
         if (updateExisting) {
           const parsedTime = record.QUERY_TIME
@@ -371,9 +378,10 @@ async function syncIndiamartLeads({
         }
       }
 
-      const assignedToId = assigneeIds.length > 0
-        ? await getRoundRobinFromIds(assigneeIds)
-        : await getRoundRobinAssigneeId(tenantId);
+      const assignedToId =
+        assigneeIds.length > 0
+          ? await getRoundRobinFromIds(assigneeIds)
+          : await getRoundRobinAssigneeId(tenantId);
       const leadData = mapIMLeadToModel(record, assignedToId);
       if (tenantId) leadData.tenantId = tenantId;
       await Lead.create(leadData);

@@ -4,14 +4,20 @@ import { Plus, Search, Pencil, Trash2, Loader2, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
+import { usePermission } from "@/hooks/usePermission";
 
-const CATEGORIES = ["Machines", "Services", "Raw Materials", "Spare Parts"] as const;
+const CATEGORIES = [
+  "Machines",
+  "Services",
+  "Raw Materials",
+  "Spare Parts",
+] as const;
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Machines:       "bg-blue-100 text-blue-800 border-blue-300",
-  Services:       "bg-purple-100 text-purple-800 border-purple-300",
-  "Raw Materials":"bg-yellow-100 text-yellow-800 border-yellow-300",
-  "Spare Parts":  "bg-gray-100 text-gray-700 border-gray-300",
+  Machines: "bg-blue-100 text-blue-800 border-blue-300",
+  Services: "bg-purple-100 text-purple-800 border-purple-300",
+  "Raw Materials": "bg-yellow-100 text-yellow-800 border-yellow-300",
+  "Spare Parts": "bg-gray-100 text-gray-700 border-gray-300",
 };
 
 const initialForm = {
@@ -23,19 +29,22 @@ const initialForm = {
 };
 
 export default function ProductsPage() {
+  const { can } = usePermission();
   const { toast } = useToast();
-  const [products, setProducts]   = useState<any[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [search, setSearch]       = useState("");
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editId, setEditId]       = useState<string | null>(null);
-  const [form, setForm]           = useState({ ...initialForm });
-  const [saving, setSaving]       = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...initialForm });
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -43,7 +52,11 @@ export default function ProductsPage() {
       const res = await productsAPI.getAll();
       setProducts(res.data || []);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -76,7 +89,11 @@ export default function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.price) {
-      toast({ title: "Validation Error", description: "Name and price are required.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Name and price are required.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -92,7 +109,11 @@ export default function ProductsPage() {
       closeModal();
       fetchProducts();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -106,7 +127,11 @@ export default function ProductsPage() {
       toast({ title: "Product deleted" });
       fetchProducts();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setDeletingId(null);
     }
@@ -120,22 +145,33 @@ export default function ProductsPage() {
     return matchSearch && matchCat;
   });
 
-  const totalActive   = products.filter((p) => p.status === "Active").length;
+  const totalActive = products.filter((p) => p.status === "Active").length;
   const totalInactive = products.filter((p) => p.status === "Inactive").length;
 
   return (
     <AppLayout title="Products">
       <div className="space-y-4">
-
         {/* ── KPI row ── */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Total Products", value: products.length, color: "bg-white" },
-            { label: "Active",         value: totalActive,      color: "bg-green-50" },
-            { label: "Inactive",       value: totalInactive,    color: "bg-red-50"  },
+            {
+              label: "Total Products",
+              value: products.length,
+              color: "bg-white",
+            },
+            { label: "Active", value: totalActive, color: "bg-green-50" },
+            { label: "Inactive", value: totalInactive, color: "bg-red-50" },
           ].map(({ label, value, color }) => (
-            <div key={label} className={cn("border-2 border-black p-4 shadow-[3px_3px_0px_#000]", color)}>
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">{label}</p>
+            <div
+              key={label}
+              className={cn(
+                "border-2 border-black p-4 shadow-[3px_3px_0px_#000]",
+                color,
+              )}
+            >
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                {label}
+              </p>
               <p className="text-3xl font-black text-black mt-1">{value}</p>
             </div>
           ))}
@@ -162,15 +198,21 @@ export default function ProductsPage() {
             className="h-10 border-2 border-black px-3 text-xs font-black uppercase tracking-widest bg-white outline-none shadow-[2px_2px_0px_#000] cursor-pointer"
           >
             <option value="all">All Categories</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
 
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all ml-auto"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add Product
-          </button>
+          {can("Products", "create") && (
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all ml-auto"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Product
+            </button>
+          )}
         </div>
 
         {/* ── Table ── */}
@@ -179,7 +221,15 @@ export default function ProductsPage() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#024BAB] text-white">
-                  {["#", "Product Name", "Category", "Price", "Description", "Status", "Actions"].map((h) => (
+                  {[
+                    "#",
+                    "Product Name",
+                    "Category",
+                    "Price",
+                    "Description",
+                    "Status",
+                    "Actions",
+                  ].map((h) => (
                     <th
                       key={h}
                       className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
@@ -194,14 +244,18 @@ export default function ProductsPage() {
                   <tr>
                     <td colSpan={7} className="text-center py-16">
                       <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                      <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">Loading...</p>
+                      <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
+                        Loading...
+                      </p>
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center py-16">
                       <Package className="w-10 h-10 mx-auto text-gray-200 mb-2" />
-                      <p className="text-sm font-black uppercase tracking-widest text-gray-400">No products found</p>
+                      <p className="text-sm font-black uppercase tracking-widest text-gray-400">
+                        No products found
+                      </p>
                     </td>
                   </tr>
                 ) : (
@@ -213,15 +267,22 @@ export default function ProductsPage() {
                         i % 2 === 0 ? "bg-white" : "bg-gray-50/60",
                       )}
                     >
-                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">{i + 1}</td>
+                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">
+                        {i + 1}
+                      </td>
 
-                      <td className="px-4 py-3 font-black text-black whitespace-nowrap">{item.name}</td>
+                      <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                        {item.name}
+                      </td>
 
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={cn(
-                          "text-[10px] font-black uppercase tracking-wide px-2 py-1 border",
-                          CATEGORY_COLORS[item.category] || "bg-gray-100 text-gray-700 border-gray-300",
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[10px] font-black uppercase tracking-wide px-2 py-1 border",
+                            CATEGORY_COLORS[item.category] ||
+                              "bg-gray-100 text-gray-700 border-gray-300",
+                          )}
+                        >
                           {item.category}
                         </span>
                       </td>
@@ -231,40 +292,52 @@ export default function ProductsPage() {
                       </td>
 
                       <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px]">
-                        {item.description
-                          ? <span className="line-clamp-2">{item.description}</span>
-                          : <span className="text-gray-300 italic">—</span>}
+                        {item.description ? (
+                          <span className="line-clamp-2">
+                            {item.description}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 italic">—</span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={cn(
-                          "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",
-                          item.status === "Active"
-                            ? "bg-green-100 text-green-800 border-green-400"
-                            : "bg-red-100 text-red-800 border-red-400",
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",
+                            item.status === "Active"
+                              ? "bg-green-100 text-green-800 border-green-400"
+                              : "bg-red-100 text-red-800 border-red-400",
+                          )}
+                        >
                           {item.status || "Active"}
                         </span>
                       </td>
 
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openEdit(item)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
-                          >
-                            <Pencil className="w-3 h-3" /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item._id)}
-                            disabled={deletingId === item._id}
-                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
-                          >
-                            {deletingId === item._id
-                              ? <Loader2 className="w-3 h-3 animate-spin" />
-                              : <Trash2 className="w-3 h-3" />}
-                            Delete
-                          </button>
+                          {can("Products", "update") && (
+                            <button
+                              onClick={() => openEdit(item)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                          {can("Products", "delete") && (
+                            <button
+                              onClick={() => handleDelete(item._id)}
+                              disabled={deletingId === item._id}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
+                            >
+                              {deletingId === item._id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -276,8 +349,12 @@ export default function ProductsPage() {
 
           {filtered.length > 0 && (
             <div className="border-t-2 border-black px-4 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest flex justify-between">
-              <span>{filtered.length} product{filtered.length !== 1 ? "s" : ""}</span>
-              <span>{totalActive} active · {totalInactive} inactive</span>
+              <span>
+                {filtered.length} product{filtered.length !== 1 ? "s" : ""}
+              </span>
+              <span>
+                {totalActive} active · {totalInactive} inactive
+              </span>
             </div>
           )}
         </div>
@@ -324,10 +401,16 @@ export default function ProductsPage() {
                   </label>
                   <select
                     value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, category: e.target.value })
+                    }
                     className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white shadow-[2px_2px_0px_#000] cursor-pointer"
                   >
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -339,7 +422,9 @@ export default function ProductsPage() {
                     min="0"
                     step="any"
                     value={form.price}
-                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, price: e.target.value })
+                    }
                     placeholder="0"
                     required
                     className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
@@ -349,7 +434,9 @@ export default function ProductsPage() {
 
               {/* Status */}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">Status</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  Status
+                </label>
                 <div className="flex gap-2">
                   {["Active", "Inactive"].map((s) => (
                     <button
@@ -374,11 +461,16 @@ export default function ProductsPage() {
               {/* Description */}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
-                  Description <span className="text-gray-400 font-medium normal-case">(optional)</span>
+                  Description{" "}
+                  <span className="text-gray-400 font-medium normal-case">
+                    (optional)
+                  </span>
                 </label>
                 <textarea
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   placeholder="Brief description of the product..."
                   rows={3}
                   className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all resize-none"

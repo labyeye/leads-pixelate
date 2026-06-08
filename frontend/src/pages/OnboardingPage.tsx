@@ -4,7 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { billingAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
-import { Check, Zap, Crown, Rocket, Building2, Building, LogOut, RefreshCw } from "lucide-react";
+import {
+  Check,
+  Zap,
+  Crown,
+  Rocket,
+  Building2,
+  Building,
+  LogOut,
+  RefreshCw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -237,7 +246,8 @@ export default function OnboardingPage() {
   const currentPlan = PLANS.find((p) => p.id === selectedPlan)!;
   const isCustom = currentPlan.custom;
   const yearlyTotal = currentPlan.priceYearly;
-  const monthlyTotal = currentPlan.priceMonthly != null ? currentPlan.priceMonthly * 12 : 0;
+  const monthlyTotal =
+    currentPlan.priceMonthly != null ? currentPlan.priceMonthly * 12 : 0;
   const yearlySaving = yearlyTotal != null ? monthlyTotal - yearlyTotal : 0;
   const price =
     billing === "yearly" && yearlyTotal != null
@@ -372,7 +382,9 @@ export default function OnboardingPage() {
 
                 <div className="mb-3">
                   {plan.custom ? (
-                    <span className="font-display font-bold text-2xl text-black">Custom</span>
+                    <span className="font-display font-bold text-2xl text-black">
+                      Custom
+                    </span>
                   ) : (
                     <>
                       <span className="font-display font-bold text-2xl text-black">
@@ -409,20 +421,30 @@ export default function OnboardingPage() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-black">
                 {currentPlan.name} Plan ·{" "}
-                {isCustom ? "Custom" : billing === "yearly" ? "Yearly" : "Monthly"}
+                {isCustom
+                  ? "Custom"
+                  : billing === "yearly"
+                    ? "Yearly"
+                    : "Monthly"}
               </span>
               {isCustom ? (
-                <span className="font-display font-bold text-xl text-black">Custom</span>
+                <span className="font-display font-bold text-xl text-black">
+                  Custom
+                </span>
               ) : (
                 <span className="font-display font-bold text-xl text-black">
                   ₹{price!.toLocaleString()}
-                  <span className="text-sm font-medium text-muted-foreground">/mo</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    /mo
+                  </span>
                 </span>
               )}
             </div>
             {!isCustom && billing === "yearly" && (
               <div className="bg-[#A3E635]/20 border-2 border-[#A3E635] px-3 py-2 flex items-center justify-between">
-                <span className="text-xs font-bold text-black">Yearly saving</span>
+                <span className="text-xs font-bold text-black">
+                  Yearly saving
+                </span>
                 <span className="text-xs font-bold text-[#16A34A]">
                   ₹{yearlySaving.toLocaleString()} / year
                 </span>
@@ -456,7 +478,10 @@ export default function OnboardingPage() {
               ) : (
                 <>
                   Pay ₹
-                  {(billing === "yearly" && yearlyTotal != null ? yearlyTotal : price!).toLocaleString()}{" "}
+                  {(billing === "yearly" && yearlyTotal != null
+                    ? yearlyTotal
+                    : price!
+                  ).toLocaleString()}{" "}
                   &amp; Start Now
                 </>
               )}

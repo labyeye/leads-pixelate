@@ -39,7 +39,9 @@ async function resolveAdPlatform(adId, token, cache) {
   if (!adId) return { source: "Facebook", platforms: [] };
   if (cache[adId]) return cache[adId];
   try {
-    const data = await fbGet(`/${adId}`, token, { fields: "publisher_platforms" });
+    const data = await fbGet(`/${adId}`, token, {
+      fields: "publisher_platforms",
+    });
     const platforms = data.publisher_platforms || [];
     const hasFb = platforms.includes("facebook");
     const hasIg = platforms.includes("instagram");
@@ -485,7 +487,6 @@ router.post(
     const pageResults = [];
     const adPlatformCache = {};
 
-
     for (const page of pagesToSync) {
       const pageResult = {
         pageName: page.pageName,
@@ -561,21 +562,34 @@ router.post(
                 m.location ||
                 "";
 
-              let stateRaw = (fMap.state || fMap.province || fMap.region || "").trim();
+              let stateRaw = (
+                fMap.state ||
+                fMap.province ||
+                fMap.region ||
+                ""
+              ).trim();
               let cityRaw = extractCity(fMap).trim();
               // If state/city looks like a pincode, resolve it first
               if (isPincode(stateRaw)) {
                 const resolved = await resolvePincode(stateRaw);
-                if (resolved) { stateRaw = resolved.state; if (!cityRaw) cityRaw = resolved.city; }
+                if (resolved) {
+                  stateRaw = resolved.state;
+                  if (!cityRaw) cityRaw = resolved.city;
+                }
               } else if (isPincode(cityRaw)) {
                 const resolved = await resolvePincode(cityRaw);
-                if (resolved) { cityRaw = resolved.city; if (!stateRaw) stateRaw = resolved.state; }
+                if (resolved) {
+                  cityRaw = resolved.city;
+                  if (!stateRaw) stateRaw = resolved.state;
+                }
               }
               const locationRaw = (stateRaw || cityRaw).toLowerCase().trim();
               const allowedStates = page.allowedStates || [];
               if (allowedStates.length > 0 && locationRaw) {
                 const matches = allowedStates.some(
-                  (s) => locationRaw.includes(s.toLowerCase()) || s.toLowerCase().includes(locationRaw),
+                  (s) =>
+                    locationRaw.includes(s.toLowerCase()) ||
+                    s.toLowerCase().includes(locationRaw),
                 );
                 if (!matches) {
                   totalFiltered++;
@@ -606,7 +620,9 @@ router.post(
               };
 
               const p = (lead.platform || "").toLowerCase();
-              console.log(`[FB sync] lead=${lead.id} platform="${lead.platform}" ad_id="${lead.ad_id}"`);
+              console.log(
+                `[FB sync] lead=${lead.id} platform="${lead.platform}" ad_id="${lead.ad_id}"`,
+              );
               let resolvedSource = "Facebook";
               let resolvedPlatforms = [];
               if (p === "ig" || p === "instagram") {
@@ -617,7 +633,11 @@ router.post(
                 resolvedPlatforms = ["fb"];
               } else if (lead.ad_id) {
                 // platform field missing — fall back to ad publisher_platforms lookup
-                const r = await resolveAdPlatform(lead.ad_id, page.accessToken, adPlatformCache);
+                const r = await resolveAdPlatform(
+                  lead.ad_id,
+                  page.accessToken,
+                  adPlatformCache,
+                );
                 resolvedSource = r.source;
                 resolvedPlatforms = r.platforms;
               }
@@ -821,17 +841,28 @@ router.post(
             "";
 
           let cityRaw = extractCity(fMap).trim();
-          let stateRaw = (fMap.state || fMap.province || fMap.region || "").trim();
+          let stateRaw = (
+            fMap.state ||
+            fMap.province ||
+            fMap.region ||
+            ""
+          ).trim();
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
 
           // Resolve pincode → city/state before location filter
           if (isPincode(stateRaw)) {
             const resolved = await resolvePincode(stateRaw);
-            if (resolved) { stateRaw = resolved.state; if (!cityRaw) cityRaw = resolved.city; }
+            if (resolved) {
+              stateRaw = resolved.state;
+              if (!cityRaw) cityRaw = resolved.city;
+            }
           } else if (isPincode(cityRaw)) {
             const resolved = await resolvePincode(cityRaw);
-            if (resolved) { cityRaw = resolved.city; if (!stateRaw) stateRaw = resolved.state; }
+            if (resolved) {
+              cityRaw = resolved.city;
+              if (!stateRaw) stateRaw = resolved.state;
+            }
           }
 
           // Location filter — only block if location is explicitly a non-matching city
@@ -839,7 +870,9 @@ router.post(
           const allowedStates = pageConfig.allowedStates || [];
           if (allowedStates.length > 0 && locationRaw) {
             const stateMatches = allowedStates.some(
-              (s) => locationRaw.includes(s.toLowerCase()) || s.toLowerCase().includes(locationRaw),
+              (s) =>
+                locationRaw.includes(s.toLowerCase()) ||
+                s.toLowerCase().includes(locationRaw),
             );
             if (!stateMatches) continue;
           }
