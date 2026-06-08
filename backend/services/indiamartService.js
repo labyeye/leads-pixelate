@@ -434,4 +434,5 @@ module.exports = {
   fetchFromIndiaMART,
   mapIMLeadToModel,
   getRoundRobinAssigneeId,
+  getRoundRobinFromIds,
 };

@@ -8,6 +8,7 @@ const {
   fetchFromIndiaMART,
   mapIMLeadToModel,
   getRoundRobinAssigneeId,
+  getRoundRobinFromIds,
 } = require("../services/indiamartService");
 const User = require("../models/User");
 const logActivity = require("../utils/activityLogger");
@@ -783,7 +784,10 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
         ...tenantFilter,
       });
       if (!existing) {
-        const assignToId = await getRoundRobinAssigneeId(tenant?._id);
+        const savedIds = tenant?.integrations?.indiamart?.assigneeIds || [];
+        const assignToId = savedIds.length > 0
+          ? await getRoundRobinFromIds(savedIds)
+          : await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
         if (tenant) {
           leadData.tenantId = tenant._id;
