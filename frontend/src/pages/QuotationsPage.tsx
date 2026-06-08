@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { quotationsAPI, settingsAPI } from "@/services/api";
-import { useToast } from "@/components/ui/use-toast";
+import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
 import {
   Dialog,
@@ -110,7 +110,7 @@ export default function QuotationsPage() {
   const [quotations, setQuotations] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const notify = useNotify();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -139,11 +139,7 @@ export default function QuotationsPage() {
       const res = await quotationsAPI.getAll();
       setQuotations(res.data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error fetching quotations", error.message);
     } finally {
       setLoading(false);
     }
@@ -178,15 +174,11 @@ export default function QuotationsPage() {
     try {
       const res = await quotationsAPI.delete(id);
       if (res.success) {
-        toast({ title: "Deleted" });
+        notify.success("Quotation Deleted", "The quotation has been removed.");
         fetchQuotations();
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Delete Failed", error.message);
     }
   };
 
@@ -206,18 +198,15 @@ export default function QuotationsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !formData.clientName ||
-      !formData.projectTitle ||
-      formData.services.some((s) => !s.name || s.price <= 0)
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Fill required fields & services",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!formData.clientName.trim())  { notify.error("Client Name is required"); return; }
+    if (!formData.projectTitle.trim()) { notify.error("Project Title is required"); return; }
+    if (formData.services.length === 0) { notify.error("Add at least one service item"); return; }
+    const badSvc = formData.services.find((s) => !s.name.trim());
+    if (badSvc) { notify.error("Service name missing", "Every line item must have a name."); return; }
+    const badPrice = formData.services.find((s) => Number(s.price) <= 0);
+    if (badPrice) { notify.error("Invalid price", "Each service item must have a price greater than 0."); return; }
+    const badQty = formData.services.find((s) => Number(s.quantity) < 1);
+    if (badQty) { notify.error("Invalid quantity", "Quantity must be at least 1 for each item."); return; }
     try {
       setSaving(true);
       const subtotal = formData.services.reduce(
@@ -231,16 +220,15 @@ export default function QuotationsPage() {
         ? await quotationsAPI.update(editingQId, payload)
         : await quotationsAPI.create(payload);
       if (res.success) {
-        toast({ title: "Saved!" });
+        notify.success(
+          editingQId ? "Quotation Updated" : "Quotation Created",
+          editingQId ? "Changes have been saved." : `Quotation for ${formData.clientName} has been created.`
+        );
         resetForm();
         fetchQuotations();
       }
     } catch (error: any) {
-      toast({
-        title: "Error saving",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Save Failed", error.message);
     } finally {
       setSaving(false);
     }
@@ -250,9 +238,9 @@ export default function QuotationsPage() {
     try {
       setPrintingId(q._id || q.id);
       await generateInvoicePDF(q, settings);
-      toast({ title: "PDF Downloaded" });
+      notify.success("PDF Downloaded");
     } catch {
-      toast({ title: "PDF Error", variant: "destructive" });
+      notify.error("PDF Error", "Could not generate PDF.");
     } finally {
       setPrintingId(null);
     }
@@ -267,11 +255,7 @@ export default function QuotationsPage() {
       setPreviewUrl(url);
       setIsPreviewOpen(true);
     } catch (err: any) {
-      toast({
-        title: "Preview Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      notify.error("Preview Error", err.message);
     } finally {
       setPreviewingId(null);
     }

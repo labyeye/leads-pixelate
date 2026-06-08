@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Plus, Search, Pencil, Trash2, Loader2, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { productsAPI } from "@/services/api";
-import { useToast } from "@/components/ui/use-toast";
+import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
 
 const CATEGORIES = [
@@ -31,7 +31,7 @@ const initialForm = {
 
 export default function ProductsPage() {
   const { can } = usePermission();
-  const { toast } = useToast();
+  const notify = useNotify();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -53,11 +53,7 @@ export default function ProductsPage() {
       const res = await productsAPI.getAll();
       setProducts(res.data || []);
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      notify.error("Error", err.message);
     } finally {
       setLoading(false);
     }
@@ -90,32 +86,22 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.price) {
-      toast({
-        title: "Validation Error",
-        description: "Name and price are required.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!form.name.trim())                 { notify.error("Product Name is required"); return; }
+    if (!form.price || Number(form.price) <= 0) { notify.error("Invalid Price", "Price must be greater than 0."); return; }
     try {
       setSaving(true);
       const payload = { ...form, price: Number(form.price) };
       if (editId) {
         await productsAPI.update(editId, payload);
-        toast({ title: "Product updated" });
+        notify.success("Product Updated", `"${form.name}" has been updated.`);
       } else {
         await productsAPI.create(payload);
-        toast({ title: "Product added" });
+        notify.success("Product Added", `"${form.name}" has been added to the catalog.`);
       }
       closeModal();
       fetchProducts();
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      notify.error("Error", err.message);
     } finally {
       setSaving(false);
     }
@@ -126,14 +112,10 @@ export default function ProductsPage() {
     try {
       setDeletingId(id);
       await productsAPI.delete(id);
-      toast({ title: "Product deleted" });
+      notify.success("Product Deleted", "The product has been removed.");
       fetchProducts();
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      notify.error("Delete Failed", err.message);
     } finally {
       setDeletingId(null);
     }

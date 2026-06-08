@@ -34,7 +34,9 @@ import {
 import { useState, useEffect } from "react";
 import { usersAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useNotify } from "@/components/ui/Notification";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const ROLE_NB: Record<string, string> = {
   super_admin: "bg-[#024BAB] text-white border-black",
@@ -85,9 +87,8 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { user: currentUser } = useAuth();
-
+  const notify = useNotify();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -95,6 +96,7 @@ export default function UsersPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "sales_executive" as UserRole,
     phone: "",
     department: "",
@@ -111,11 +113,7 @@ export default function UsersPage() {
       const res = await usersAPI.getAll();
       setUsers(res.data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching users",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error fetching users", error.message);
     } finally {
       setLoading(false);
     }
@@ -123,43 +121,39 @@ export default function UsersPage() {
 
   const handleSubmitUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !formData.name ||
-      !formData.email ||
-      (!editingUserId && !formData.password) ||
-      !formData.role
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required fields.",
-        variant: "destructive",
-      });
-      return;
+    if (!formData.name.trim())  { notify.error("Name is required"); return; }
+    if (!formData.email.trim()) { notify.error("Email is required"); return; }
+    if (!EMAIL_RE.test(formData.email)) { notify.error("Invalid email", "Please enter a valid email address."); return; }
+    if (!editingUserId) {
+      if (!formData.password)              { notify.error("Password is required"); return; }
+      if (formData.password.length < 6)    { notify.error("Password too short", "Password must be at least 6 characters."); return; }
+      if (!formData.confirmPassword)       { notify.error("Please confirm your password"); return; }
+      if (formData.password !== formData.confirmPassword) { notify.error("Passwords do not match"); return; }
     }
+    if (editingUserId && formData.password) {
+      if (formData.password.length < 6)    { notify.error("Password too short", "New password must be at least 6 characters."); return; }
+      if (formData.password !== formData.confirmPassword) { notify.error("Passwords do not match"); return; }
+    }
+    if (!formData.role) { notify.error("Role is required"); return; }
+
     try {
       setSaving(true);
       let res;
       if (editingUserId) {
-        const payload = { ...formData };
-        if (!payload.password) delete (payload as any).password;
+        const { confirmPassword: _, ...payload } = formData as any;
+        if (!payload.password) delete payload.password;
         res = await usersAPI.update(editingUserId, payload);
       } else {
-        res = await usersAPI.create(formData);
+        const { confirmPassword: _, ...payload } = formData as any;
+        res = await usersAPI.create(payload);
       }
       if (res.success) {
-        toast({
-          title: "Success",
-          description: editingUserId ? "User updated" : "User created",
-        });
+        notify.success(editingUserId ? "User Updated" : "User Created", editingUserId ? `${formData.name}'s profile has been updated.` : `${formData.name} has been added to the team.`);
         resetForm();
         fetchUsers();
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Save Failed", error.message);
     } finally {
       setSaving(false);
     }
@@ -172,6 +166,7 @@ export default function UsersPage() {
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "sales_executive",
       phone: "",
       department: "",
@@ -199,15 +194,11 @@ export default function UsersPage() {
     try {
       const res = await usersAPI.delete(id);
       if (res.success) {
-        toast({ title: "Deleted", description: "User permanently deleted" });
+        notify.success("User Deleted", "The user has been permanently removed.");
         fetchUsers();
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Delete Failed", error.message);
     }
   };
 
@@ -306,6 +297,19 @@ export default function UsersPage() {
                   }
                   required={!editingUserId}
                 />
+                {(!editingUserId || formData.password) && (
+                  <NbInput
+                    label="Confirm Password"
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e: any) =>
+                      setFormData({ ...formData, confirmPassword: e.target.value })
+                    }
+                    placeholder="Re-enter password"
+                    required={!editingUserId}
+                  />
+                )}
                 <div className="space-y-1">
                   <label className="block text-[10px] font-black uppercase tracking-widest text-black">
                     Role <span className="text-red-500">*</span>
@@ -375,11 +379,7 @@ export default function UsersPage() {
                           const file = e.target.files?.[0];
                           if (!file) return;
                           if (file.size > 2 * 1024 * 1024) {
-                            toast({
-                              title: "Image too large",
-                              description: "Max 2MB",
-                              variant: "destructive",
-                            });
+                            notify.error("Image Too Large", "Max file size is 2MB.");
                             return;
                           }
                           const reader = new FileReader();

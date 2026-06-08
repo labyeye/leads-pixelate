@@ -32,8 +32,11 @@ import {
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { clientsAPI } from "@/services/api";
-import { useToast } from "@/components/ui/use-toast";
+import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^[6-9]\d{9}$/;
 
 const PROJECT_NB: Record<string, string> = {
   Active: "bg-[#024BAB] text-white border-black",
@@ -113,7 +116,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState("");
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const notify = useNotify();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -141,11 +144,7 @@ export default function ClientsPage() {
       const res = await clientsAPI.getAll();
       setClients(res.data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching clients",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error fetching clients", error.message);
     } finally {
       setLoading(false);
     }
@@ -175,15 +174,11 @@ export default function ClientsPage() {
     try {
       const res = await clientsAPI.delete(id);
       if (res.success) {
-        toast({ title: "Deleted" });
+        notify.success("Client Deleted", "The client has been removed.");
         fetchClients();
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Delete Failed", error.message);
     }
   };
 
@@ -206,21 +201,14 @@ export default function ClientsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !formData.name ||
-      !formData.company ||
-      !formData.email ||
-      !formData.phone ||
-      !formData.address ||
-      !formData.businessType
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!formData.name.trim())         { notify.error("Name is required"); return; }
+    if (!formData.company.trim())      { notify.error("Company is required"); return; }
+    if (!formData.email.trim())        { notify.error("Email is required"); return; }
+    if (!EMAIL_RE.test(formData.email)) { notify.error("Invalid Email", "Please enter a valid email address."); return; }
+    if (!formData.phone.trim())        { notify.error("Phone is required"); return; }
+    if (!PHONE_RE.test(formData.phone.replace(/\s/g, ""))) { notify.error("Invalid Phone", "Enter a valid 10-digit Indian mobile number."); return; }
+    if (!formData.address.trim())      { notify.error("Address is required"); return; }
+    if (!formData.businessType.trim()) { notify.error("Business Type is required"); return; }
     try {
       setSaving(true);
       const payload = {
@@ -234,16 +222,15 @@ export default function ClientsPage() {
         ? await clientsAPI.update(editingClientId, payload)
         : await clientsAPI.create(payload);
       if (res.success) {
-        toast({ title: "Success" });
+        notify.success(
+          editingClientId ? "Client Updated" : "Client Added",
+          editingClientId ? `${formData.name}'s profile has been updated.` : `${formData.name} has been added as a client.`
+        );
         resetForm();
         fetchClients();
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Save Failed", error.message);
     } finally {
       setSaving(false);
     }

@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { servicesAPI, clientsAPI, productsAPI } from "@/services/api";
-import { useToast } from "@/components/ui/use-toast";
+import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
 import {
   Dialog,
@@ -53,7 +53,7 @@ export default function ServicesPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const notify = useNotify();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -99,11 +99,7 @@ export default function ServicesPage() {
       const res = await servicesAPI.getAll();
       setServices(res.data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
-      });
+      notify.error("Error fetching", error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -132,18 +128,11 @@ export default function ServicesPage() {
     try {
       const res = await servicesAPI.delete(id);
       if (res.success) {
-        toast({
-          title: "Success",
-          description: "Allocation deleted successfully",
-        });
+        notify.success("Allocation Deleted", "Service allocation has been removed.");
         fetchServices();
       }
     } catch (error: any) {
-      toast({
-        title: "Error deleting item",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Delete Failed", error.message);
     }
   };
 
@@ -155,17 +144,17 @@ export default function ServicesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !formData.allocatedClient ||
-      formData.allocatedClient === "none" ||
-      !formData.product ||
-      formData.product === "none"
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Please select both a valid Client and a Product.",
-        variant: "destructive",
-      });
+    if (!formData.allocatedClient || formData.allocatedClient === "none") {
+      notify.error("Client is required", "Please select a client.");
+      return;
+    }
+    if (!formData.product || formData.product === "none") {
+      notify.error("Product is required", "Please select a product or service.");
+      return;
+    }
+    const prog = Number(formData.progress);
+    if (isNaN(prog) || prog < 0 || prog > 100) {
+      notify.error("Invalid Progress", "Progress must be between 0 and 100.");
       return;
     }
 
@@ -179,21 +168,15 @@ export default function ServicesPage() {
       }
 
       if (res.success) {
-        toast({
-          title: "Success",
-          description: editingId
-            ? "Service updated successfully"
-            : "Service allocated successfully",
-        });
+        notify.success(
+          editingId ? "Allocation Updated" : "Service Allocated",
+          editingId ? "Service allocation has been updated." : "Service has been allocated to the client."
+        );
         resetFormAndCloseModal();
         fetchServices();
       }
     } catch (error: any) {
-      toast({
-        title: "Error saving item",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
-      });
+      notify.error("Save Failed", error.message || "Something went wrong");
     } finally {
       setSaving(false);
     }

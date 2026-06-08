@@ -58,7 +58,7 @@ import {
   productsAPI,
   authAPI,
 } from "@/services/api";
-import { useToast } from "@/components/ui/use-toast";
+import { useNotify } from "@/components/ui/Notification";
 import {
   Dialog,
   DialogContent,
@@ -101,7 +101,7 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
-  const { toast } = useToast();
+  const notify = useNotify();
 
   const [syncing, setSyncing] = useState(false);
   const [syncPanelOpen, setSyncPanelOpen] = useState(false);
@@ -274,11 +274,7 @@ export default function LeadsPage() {
       const res = await leadsAPI.getAll(params);
       setLeads(res.data || []);
     } catch (error: any) {
-      toast({
-        title: "Error fetching leads",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error fetching leads", error.message);
     } finally {
       setLoading(false);
     }
@@ -296,29 +292,14 @@ export default function LeadsPage() {
       setFbSyncing(true);
       const res = await facebookAPI.sync();
       const pageErrors = res.data?.pages?.filter((p: any) => p.error) || [];
-      const pageDetails =
-        res.data?.pages
-          ?.map((p: any) =>
-            p.error
-              ? `${p.pageName}: ❌ ${p.error}`
-              : `${p.pageName}: +${p.created} new`,
-          )
-          .join("\n") || "";
-      toast({
-        title: "Facebook Sync Complete",
-        description:
-          pageErrors.length > 0
-            ? `${res.message}\n\n${pageDetails}`
-            : res.message,
-        variant: pageErrors.length > 0 ? "destructive" : "default",
-      });
+      if (pageErrors.length > 0) {
+        notify.warning("Facebook Sync Complete", res.message);
+      } else {
+        notify.success("Facebook Sync Complete", res.message);
+      }
       fetchLeads();
     } catch (error: any) {
-      toast({
-        title: "Facebook Sync Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Facebook Sync Failed", error.message);
     } finally {
       setFbSyncing(false);
     }
@@ -329,18 +310,11 @@ export default function LeadsPage() {
       setSyncing(true);
       const res = await indiamartAPI.sync();
       setLastSyncResult(res.data);
-      toast({
-        title: "🟢 IndiaMART Sync Complete",
-        description: res.message,
-      });
+      notify.success("IndiaMART Sync Complete", res.message);
       fetchLeads();
       loadSyncStatus();
     } catch (error: any) {
-      toast({
-        title: "IndiaMART Sync Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("IndiaMART Sync Failed", error.message);
     } finally {
       setSyncing(false);
     }
@@ -350,14 +324,10 @@ export default function LeadsPage() {
     try {
       setTiSyncing(true);
       const res = await tradeindiaSyncAPI.sync();
-      toast({ title: "TradeIndia Sync Complete", description: res.message });
+      notify.success("TradeIndia Sync Complete", res.message);
       fetchLeads();
     } catch (error: any) {
-      toast({
-        title: "TradeIndia Sync",
-        description: error.message || "TradeIndia integration not configured.",
-        variant: "destructive",
-      });
+      notify.error("TradeIndia Sync Failed", error.message || "TradeIndia integration not configured.");
     } finally {
       setTiSyncing(false);
     }
@@ -367,14 +337,10 @@ export default function LeadsPage() {
     try {
       setJdSyncing(true);
       const res = await justdialSyncAPI.sync();
-      toast({ title: "Justdial Sync Complete", description: res.message });
+      notify.success("Justdial Sync Complete", res.message);
       fetchLeads();
     } catch (error: any) {
-      toast({
-        title: "Justdial Sync",
-        description: error.message || "Justdial integration not configured.",
-        variant: "destructive",
-      });
+      notify.error("Justdial Sync Failed", error.message || "Justdial integration not configured.");
     } finally {
       setJdSyncing(false);
     }
@@ -403,20 +369,15 @@ export default function LeadsPage() {
     try {
       setSavingAssignees(true);
       await usersAPI.updateAutoAssign(selectedExecIds);
-      toast({
-        title: "Settings updated",
-        description:
-          selectedExecIds.length > 0
-            ? `Leads will be assigned to ${selectedExecIds.length} selected executives.`
-            : "Leads will be assigned randomly among all active executives.",
-      });
+      notify.success(
+        "Settings Updated",
+        selectedExecIds.length > 0
+          ? `Leads will be assigned to ${selectedExecIds.length} selected executives.`
+          : "Leads will be assigned randomly among all active executives."
+      );
       setIsAssignModalOpen(false);
     } catch (error: any) {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Update Failed", error.message);
     } finally {
       setSavingAssignees(false);
     }
@@ -438,16 +399,9 @@ export default function LeadsPage() {
             : l,
         ),
       );
-      toast({
-        title: "Lead reassigned",
-        description: "The lead has been successfully reassigned.",
-      });
+      notify.success("Lead Reassigned", "The lead has been successfully reassigned.");
     } catch (error: any) {
-      toast({
-        title: "Reassignment failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Reassignment Failed", error.message);
     }
   };
 
@@ -826,10 +780,7 @@ export default function LeadsPage() {
       }
 
       await leadsAPI.update(lead._id || lead.id, updateData);
-      toast({
-        title: "Status Updated",
-        description: `Lead status changed to ${newStatus}${date ? ` for ${format(date, "PPP")}` : ""}`,
-      });
+      notify.success("Status Updated", `Lead status changed to ${newStatus}${date ? ` for ${format(date, "PPP")}` : ""}`);
       fetchLeads();
       if (selectedLeadId) fetchFullLead(selectedLeadId);
       setIsStatusModalOpen(false);
@@ -840,11 +791,7 @@ export default function LeadsPage() {
         setSelectedLeadId(null);
       }
     } catch (error: any) {
-      toast({
-        title: "Error updating status",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error Updating Status", error.message);
     } finally {
       setConverting(false);
     }
@@ -852,29 +799,16 @@ export default function LeadsPage() {
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !newLead.name ||
-      !newLead.company ||
-      !newLead.phone ||
-      !newLead.requirement
-    ) {
-      toast({
-        title: "Missing Fields",
-        description:
-          "Please fill in all required fields (Name, Company, Phone, Requirement).",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!newLead.name.trim())        { notify.error("Name is required"); return; }
+    if (!newLead.company.trim())     { notify.error("Company is required"); return; }
+    if (!newLead.phone.trim())       { notify.error("Phone is required"); return; }
+    if (!newLead.requirement.trim()) { notify.error("Requirement is required"); return; }
 
     try {
       setAddLeadLoading(true);
       const res = await leadsAPI.create(newLead);
       if (res.success) {
-        toast({
-          title: "Lead Created",
-          description: `${newLead.name} from ${newLead.company} has been added successfully.`,
-        });
+        notify.success("Lead Created", `${newLead.name} from ${newLead.company} has been added successfully.`);
         setIsAddModalOpen(false);
         setNewLead({
           name: "",
@@ -894,11 +828,7 @@ export default function LeadsPage() {
         fetchLeads();
       }
     } catch (error: any) {
-      toast({
-        title: "Error creating lead",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error Creating Lead", error.message);
     } finally {
       setAddLeadLoading(false);
     }
@@ -919,17 +849,10 @@ export default function LeadsPage() {
         setAllProducts((prev) => [...prev, res.data]);
         setSelectedProducts((prev) => [...prev, res.data.name]);
         setNewProductName("");
-        toast({
-          title: "Product added",
-          description: `${newProductName} has been added to the database.`,
-        });
+        notify.success("Product Added", `${newProductName} has been added to the database.`);
       }
     } catch (error: any) {
-      toast({
-        title: "Error adding product",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Error Adding Product", error.message);
     } finally {
       setIsAddingProduct(false);
     }
@@ -953,19 +876,12 @@ export default function LeadsPage() {
         remarks: remarks || remarksInput,
       });
       if (res.success) {
-        toast({
-          title: "Success",
-          description: "Lead converted to Client successfully!",
-        });
+        notify.success("Lead Converted", "Lead has been converted to a Client successfully!");
         fetchLeads();
         setSelectedLeadId(null);
       }
     } catch (error: any) {
-      toast({
-        title: "Error converting lead",
-        description: error.message,
-        variant: "destructive",
-      });
+      notify.error("Conversion Failed", error.message);
     } finally {
       setConverting(false);
     }
