@@ -59,6 +59,7 @@ const NbInput = ({
   required,
   as: As = "input",
   rows,
+  ...rest
 }: any) => (
   <div className="space-y-1">
     <label
@@ -86,6 +87,7 @@ const NbInput = ({
         placeholder={placeholder}
         required={required}
         className="border-2 w-full px-3 py-2 text-sm"
+        {...rest}
       />
     )}
   </div>
@@ -201,14 +203,51 @@ export default function ClientsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim())         { notify.error("Name is required"); return; }
-    if (!formData.company.trim())      { notify.error("Company is required"); return; }
-    if (!formData.email.trim())        { notify.error("Email is required"); return; }
-    if (!EMAIL_RE.test(formData.email)) { notify.error("Invalid Email", "Please enter a valid email address."); return; }
-    if (!formData.phone.trim())        { notify.error("Phone is required"); return; }
-    if (!PHONE_RE.test(formData.phone.replace(/\s/g, ""))) { notify.error("Invalid Phone", "Enter a valid 10-digit Indian mobile number."); return; }
-    if (!formData.address.trim())      { notify.error("Address is required"); return; }
-    if (!formData.businessType.trim()) { notify.error("Business Type is required"); return; }
+    if (!formData.name.trim()) {
+      notify.error("Name is required");
+      return;
+    }
+    if (!formData.company.trim()) {
+      notify.error("Company is required");
+      return;
+    }
+    if (!formData.email.trim()) {
+      notify.error("Email is required");
+      return;
+    }
+    if (!EMAIL_RE.test(formData.email)) {
+      notify.error("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+    if (!formData.phone.trim()) {
+      notify.error("Phone is required");
+      return;
+    }
+    if (!PHONE_RE.test(formData.phone.replace(/\s/g, ""))) {
+      notify.error(
+        "Invalid Phone",
+        "Enter a valid 10-digit Indian mobile number.",
+      );
+      return;
+    }
+    if (!formData.address.trim()) {
+      notify.error("Address is required");
+      return;
+    }
+    if (!formData.businessType.trim()) {
+      notify.error("Business Type is required");
+      return;
+    }
+    if (
+      formData.gst &&
+      !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(formData.gst)
+    ) {
+      notify.error(
+        "Invalid GST Number",
+        "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5).",
+      );
+      return;
+    }
     try {
       setSaving(true);
       const payload = {
@@ -224,7 +263,9 @@ export default function ClientsPage() {
       if (res.success) {
         notify.success(
           editingClientId ? "Client Updated" : "Client Added",
-          editingClientId ? `${formData.name}'s profile has been updated.` : `${formData.name} has been added as a client.`
+          editingClientId
+            ? `${formData.name}'s profile has been updated.`
+            : `${formData.name} has been added as a client.`,
         );
         resetForm();
         fetchClients();
@@ -244,7 +285,7 @@ export default function ClientsPage() {
 
   return (
     <AppLayout title="Clients">
-      {/* Top bar */}
+      {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
@@ -320,11 +361,14 @@ export default function ClientsPage() {
                     label="Phone"
                     id="phone"
                     value={formData.phone}
-                    onChange={(e: any) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    placeholder="+91..."
+                    onChange={(e: any) => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setFormData({ ...formData, phone: v });
+                    }}
+                    placeholder="10-digit mobile"
                     required
+                    maxLength={10}
+                    inputMode="numeric"
                   />
                 </div>
                 <NbInput
@@ -354,9 +398,13 @@ export default function ClientsPage() {
                     id="gst"
                     value={formData.gst}
                     onChange={(e: any) =>
-                      setFormData({ ...formData, gst: e.target.value })
+                      setFormData({
+                        ...formData,
+                        gst: e.target.value.toUpperCase().slice(0, 15),
+                      })
                     }
                     placeholder="07AAAAA0000A1Z5"
+                    maxLength={15}
                   />
                 </div>
                 <NbInput
@@ -409,7 +457,7 @@ export default function ClientsPage() {
         </Dialog>
       </div>
 
-      {/* Summary strip */}
+      {}
       <div className="grid grid-cols-2 gap-3 mb-5">
         {[
           {
@@ -435,7 +483,7 @@ export default function ClientsPage() {
         ))}
       </div>
 
-      {/* Table */}
+      {}
       <div className="border-2 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">

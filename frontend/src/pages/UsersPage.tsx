@@ -62,6 +62,7 @@ const NbInput = ({
   onChange,
   placeholder,
   required,
+  ...rest
 }: any) => (
   <div className="space-y-1">
     <label
@@ -79,6 +80,7 @@ const NbInput = ({
       placeholder={placeholder}
       required={required}
       className="border-2 w-full px-3 py-2 text-sm"
+      {...rest}
     />
   </div>
 );
@@ -121,20 +123,63 @@ export default function UsersPage() {
 
   const handleSubmitUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim())  { notify.error("Name is required"); return; }
-    if (!formData.email.trim()) { notify.error("Email is required"); return; }
-    if (!EMAIL_RE.test(formData.email)) { notify.error("Invalid email", "Please enter a valid email address."); return; }
+    if (!formData.name.trim()) {
+      notify.error("Name is required");
+      return;
+    }
+    if (!formData.email.trim()) {
+      notify.error("Email is required");
+      return;
+    }
+    if (!EMAIL_RE.test(formData.email)) {
+      notify.error("Invalid email", "Please enter a valid email address.");
+      return;
+    }
     if (!editingUserId) {
-      if (!formData.password)              { notify.error("Password is required"); return; }
-      if (formData.password.length < 6)    { notify.error("Password too short", "Password must be at least 6 characters."); return; }
-      if (!formData.confirmPassword)       { notify.error("Please confirm your password"); return; }
-      if (formData.password !== formData.confirmPassword) { notify.error("Passwords do not match"); return; }
+      if (!formData.password) {
+        notify.error("Password is required");
+        return;
+      }
+      if (formData.password.length < 6) {
+        notify.error(
+          "Password too short",
+          "Password must be at least 6 characters.",
+        );
+        return;
+      }
+      if (!formData.confirmPassword) {
+        notify.error("Please confirm your password");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        notify.error("Passwords do not match");
+        return;
+      }
     }
     if (editingUserId && formData.password) {
-      if (formData.password.length < 6)    { notify.error("Password too short", "New password must be at least 6 characters."); return; }
-      if (formData.password !== formData.confirmPassword) { notify.error("Passwords do not match"); return; }
+      if (formData.password.length < 6) {
+        notify.error(
+          "Password too short",
+          "New password must be at least 6 characters.",
+        );
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        notify.error("Passwords do not match");
+        return;
+      }
     }
-    if (!formData.role) { notify.error("Role is required"); return; }
+    if (formData.phone && !/^[6-9]\d{9}$/.test(formData.phone)) {
+      notify.error(
+        "Invalid Phone",
+        "Enter a valid 10-digit Indian mobile number.",
+      );
+      return;
+    }
+    if (!formData.role) {
+      notify.error("Role is required");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -148,7 +193,12 @@ export default function UsersPage() {
         res = await usersAPI.create(payload);
       }
       if (res.success) {
-        notify.success(editingUserId ? "User Updated" : "User Created", editingUserId ? `${formData.name}'s profile has been updated.` : `${formData.name} has been added to the team.`);
+        notify.success(
+          editingUserId ? "User Updated" : "User Created",
+          editingUserId
+            ? `${formData.name}'s profile has been updated.`
+            : `${formData.name} has been added to the team.`,
+        );
         resetForm();
         fetchUsers();
       }
@@ -194,7 +244,10 @@ export default function UsersPage() {
     try {
       const res = await usersAPI.delete(id);
       if (res.success) {
-        notify.success("User Deleted", "The user has been permanently removed.");
+        notify.success(
+          "User Deleted",
+          "The user has been permanently removed.",
+        );
         fetchUsers();
       }
     } catch (error: any) {
@@ -210,7 +263,7 @@ export default function UsersPage() {
 
   return (
     <AppLayout title="Team">
-      {/* Top bar */}
+      {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
@@ -304,7 +357,10 @@ export default function UsersPage() {
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e: any) =>
-                      setFormData({ ...formData, confirmPassword: e.target.value })
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
                     }
                     placeholder="Re-enter password"
                     required={!editingUserId}
@@ -337,10 +393,13 @@ export default function UsersPage() {
                     label="Phone"
                     id="phone"
                     value={formData.phone}
-                    onChange={(e: any) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    placeholder="+91..."
+                    onChange={(e: any) => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setFormData({ ...formData, phone: v });
+                    }}
+                    placeholder="10-digit mobile"
+                    maxLength={10}
+                    inputMode="numeric"
                   />
                   <NbInput
                     label="Department"
@@ -352,7 +411,7 @@ export default function UsersPage() {
                     placeholder="e.g. Sales"
                   />
                 </div>
-                {/* Photo upload */}
+                {}
                 <div className="space-y-1">
                   <label className="block text-[10px] font-black uppercase tracking-widest text-black">
                     Profile Photo
@@ -379,7 +438,10 @@ export default function UsersPage() {
                           const file = e.target.files?.[0];
                           if (!file) return;
                           if (file.size > 2 * 1024 * 1024) {
-                            notify.error("Image Too Large", "Max file size is 2MB.");
+                            notify.error(
+                              "Image Too Large",
+                              "Max file size is 2MB.",
+                            );
                             return;
                           }
                           const reader = new FileReader();
@@ -428,7 +490,7 @@ export default function UsersPage() {
         </Dialog>
       </div>
 
-      {/* Role count cards */}
+      {}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
         {ROLE_COUNTS.map((role) => {
           const count = users.filter((u) => u.role === role).length;
@@ -449,7 +511,7 @@ export default function UsersPage() {
         })}
       </div>
 
-      {/* Table */}
+      {}
       <div className="border-2 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">

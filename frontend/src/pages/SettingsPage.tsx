@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ── Permission matrix definition ────────────────────────────────────────────
 type CrudOp = "create" | "read" | "update" | "delete";
 type CrmRole =
   | "super_admin"
@@ -321,6 +320,8 @@ function InputField({
   type = "text",
   readOnly = false,
   onChange,
+  maxLength,
+  inputMode,
 }: {
   label: string;
   name: string;
@@ -329,6 +330,8 @@ function InputField({
   type?: string;
   readOnly?: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  maxLength?: number;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
   return (
     <div className="space-y-1.5">
@@ -342,6 +345,8 @@ function InputField({
         onChange={onChange}
         placeholder={placeholder}
         readOnly={readOnly}
+        maxLength={maxLength}
+        inputMode={inputMode}
         className={cn(
           "w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0",
           readOnly
@@ -422,7 +427,7 @@ export default function SettingsPage() {
         ...res.data,
         companyName: res.data?.companyName || tenant?.name || "",
       });
-      // Restore saved permissions matrix if admin has customised it
+
       if (res.data?.permissions) {
         const saved = res.data.permissions as Record<string, any>;
         setPermissions((prev) =>
@@ -493,7 +498,17 @@ export default function SettingsPage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let value = e.target.value;
+    if (["companyGST", "companyPAN", "bankIFSC"].includes(name)) {
+      value = value.toUpperCase();
+    }
+    if (name === "companyPhone" || name === "bankAccountNumber") {
+      value = value.replace(/\D/g, "");
+    }
+    if (name === "companyStateCode") {
+      value = value.replace(/\D/g, "");
+    }
     setSettings((prev: any) => ({ ...prev, [name]: value }));
   };
 
@@ -534,6 +549,37 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
+    const gst = settings?.companyGST?.trim();
+    const pan = settings?.companyPAN?.trim();
+    const phone = settings?.companyPhone?.trim();
+    const ifsc = settings?.bankIFSC?.trim();
+    const accNo = settings?.bankAccountNumber?.trim();
+    const stateCode = settings?.companyStateCode?.trim();
+
+    if (gst && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(gst)) {
+      setActionModal({ show: true, type: "error", title: "Invalid GSTIN", message: "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5)." });
+      return;
+    }
+    if (pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(pan)) {
+      setActionModal({ show: true, type: "error", title: "Invalid PAN", message: "PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)." });
+      return;
+    }
+    if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+      setActionModal({ show: true, type: "error", title: "Invalid Phone", message: "Enter a valid 10-digit Indian mobile number." });
+      return;
+    }
+    if (stateCode && !/^\d{1,2}$/.test(stateCode)) {
+      setActionModal({ show: true, type: "error", title: "Invalid State Code", message: "State code must be a 1-2 digit number (e.g. 07)." });
+      return;
+    }
+    if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+      setActionModal({ show: true, type: "error", title: "Invalid IFSC", message: "IFSC format: 4 letters, 0, 6 alphanumeric (e.g. SBIN0001234)." });
+      return;
+    }
+    if (accNo && !/^\d{9,18}$/.test(accNo)) {
+      setActionModal({ show: true, type: "error", title: "Invalid Account Number", message: "Account number must be 9–18 digits." });
+      return;
+    }
     try {
       setSaving(true);
       await settingsAPI.update(settings);
@@ -626,7 +672,7 @@ export default function SettingsPage() {
       canvas.height = height;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0, width, height);
-      // Use JPEG at 0.75 quality — logos compress to <30KB easily
+
       const compressed = canvas.toDataURL("image/jpeg", 0.75);
       setSettings((prev: any) => ({ ...prev, logoUrl: compressed }));
     };
@@ -644,7 +690,7 @@ export default function SettingsPage() {
   return (
     <AppLayout title="Settings">
       <div className="flex h-full">
-        {/* Sidebar */}
+        {}
         <div className="w-56 shrink-0 border-r-2 border-black bg-white overflow-y-auto">
           <div className="p-4 border-b-2 border-black">
             <h1 className="text-base font-display font-bold text-black">
@@ -706,9 +752,9 @@ export default function SettingsPage() {
           </nav>
         </div>
 
-        {/* Main content */}
+        {}
         <div className="flex-1 overflow-y-auto">
-          {/* Content header */}
+          {}
           <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-white sticky top-0 z-10">
             <div>
               <h2 className="font-display font-bold text-black">
@@ -739,7 +785,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="p-6 max-w-3xl">
-            {/* ── General Info ── */}
+            {}
             {activeTab === "general" && (
               <div className="space-y-4">
                 {!isAdminOrAbove && (
@@ -763,6 +809,7 @@ export default function SettingsPage() {
                     value={settings?.companyGST || ""}
                     placeholder="07AAAAA0000A1Z5"
                     readOnly={!isAdminOrAbove}
+                    maxLength={15}
                   />
                   <InputField
                     onChange={handleChange}
@@ -771,6 +818,7 @@ export default function SettingsPage() {
                     value={settings?.companyPAN || ""}
                     placeholder="ABCDE1234F"
                     readOnly={!isAdminOrAbove}
+                    maxLength={10}
                   />
                   <InputField
                     onChange={handleChange}
@@ -787,6 +835,8 @@ export default function SettingsPage() {
                     value={settings?.companyStateCode || ""}
                     placeholder="e.g. 10"
                     readOnly={!isAdminOrAbove}
+                    maxLength={2}
+                    inputMode="numeric"
                   />
                   <InputField
                     onChange={handleChange}
@@ -794,6 +844,8 @@ export default function SettingsPage() {
                     name="companyPhone"
                     value={settings?.companyPhone || ""}
                     readOnly={!isAdminOrAbove}
+                    maxLength={10}
+                    inputMode="numeric"
                   />
                   <InputField
                     onChange={handleChange}
@@ -832,7 +884,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* ── Bank Details ── */}
+            {}
             {activeTab === "bank" && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -847,12 +899,15 @@ export default function SettingsPage() {
                     label="Account Number"
                     name="bankAccountNumber"
                     value={settings?.bankAccountNumber || ""}
+                    maxLength={18}
+                    inputMode="numeric"
                   />
                   <InputField
                     onChange={handleChange}
                     label="IFSC Code"
                     name="bankIFSC"
                     value={settings?.bankIFSC || ""}
+                    maxLength={11}
                   />
                   <InputField
                     onChange={handleChange}
@@ -877,7 +932,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* ── Terms & Footer ── */}
+            {}
             {activeTab === "terms" && (
               <div className="space-y-6">
                 <div className="space-y-4">
@@ -945,10 +1000,10 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* ── Quotation Template ── */}
+            {}
             {activeTab === "template" && (
               <div className="space-y-6">
-                {/* Logo Upload */}
+                {}
                 <div>
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#024BAB]" />
@@ -961,7 +1016,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    {/* Upload zone */}
+                    {}
                     <div className="space-y-3">
                       <label
                         htmlFor="logo-upload"
@@ -997,13 +1052,13 @@ export default function SettingsPage() {
                       )}
                     </div>
 
-                    {/* Live preview of PDF header */}
+                    {}
                     <div className="space-y-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-black">
                         Preview — PDF Header
                       </p>
                       <div className="border-2 border-black bg-white p-4 nb-shadow-sm">
-                        {/* Mimics the PDF header layout */}
+                        {}
                         <div className="flex items-start gap-4 pb-3 border-b border-gray-200">
                           <div className="w-14 h-14 border-2 border-black bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {settings?.logoUrl ? (
@@ -1061,7 +1116,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Quotation Title */}
+                {}
                 <div>
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#FFDE00]" />
@@ -1088,7 +1143,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Save button for template tab */}
+                {}
                 {isAdminOrAbove && (
                   <div className="flex justify-end pt-2 border-t-2 border-black">
                     <button
@@ -1106,7 +1161,7 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Info note */}
+                {}
                 <div className="flex items-start gap-3 p-4 border-2 border-black bg-[#024BAB]/5">
                   <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center shrink-0">
                     <Layout className="w-4 h-4 text-white" />
@@ -1127,7 +1182,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* ── Permissions ── */}
+            {}
             {activeTab === "permissions" && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-2">
@@ -1278,7 +1333,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Success/Error Modal */}
+      {}
       {actionModal.show && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="nb-card bg-white w-full max-w-sm p-8 flex flex-col items-center justify-center text-center">

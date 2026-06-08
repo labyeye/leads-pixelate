@@ -187,7 +187,6 @@ export default function LeadsPage() {
           }));
         }
       } catch {
-        /* silent */
       } finally {
         setPincodeLoading(false);
       }
@@ -327,7 +326,10 @@ export default function LeadsPage() {
       notify.success("TradeIndia Sync Complete", res.message);
       fetchLeads();
     } catch (error: any) {
-      notify.error("TradeIndia Sync Failed", error.message || "TradeIndia integration not configured.");
+      notify.error(
+        "TradeIndia Sync Failed",
+        error.message || "TradeIndia integration not configured.",
+      );
     } finally {
       setTiSyncing(false);
     }
@@ -340,7 +342,10 @@ export default function LeadsPage() {
       notify.success("Justdial Sync Complete", res.message);
       fetchLeads();
     } catch (error: any) {
-      notify.error("Justdial Sync Failed", error.message || "Justdial integration not configured.");
+      notify.error(
+        "Justdial Sync Failed",
+        error.message || "Justdial integration not configured.",
+      );
     } finally {
       setJdSyncing(false);
     }
@@ -373,7 +378,7 @@ export default function LeadsPage() {
         "Settings Updated",
         selectedExecIds.length > 0
           ? `Leads will be assigned to ${selectedExecIds.length} selected executives.`
-          : "Leads will be assigned randomly among all active executives."
+          : "Leads will be assigned randomly among all active executives.",
       );
       setIsAssignModalOpen(false);
     } catch (error: any) {
@@ -399,7 +404,10 @@ export default function LeadsPage() {
             : l,
         ),
       );
-      notify.success("Lead Reassigned", "The lead has been successfully reassigned.");
+      notify.success(
+        "Lead Reassigned",
+        "The lead has been successfully reassigned.",
+      );
     } catch (error: any) {
       notify.error("Reassignment Failed", error.message);
     }
@@ -780,7 +788,10 @@ export default function LeadsPage() {
       }
 
       await leadsAPI.update(lead._id || lead.id, updateData);
-      notify.success("Status Updated", `Lead status changed to ${newStatus}${date ? ` for ${format(date, "PPP")}` : ""}`);
+      notify.success(
+        "Status Updated",
+        `Lead status changed to ${newStatus}${date ? ` for ${format(date, "PPP")}` : ""}`,
+      );
       fetchLeads();
       if (selectedLeadId) fetchFullLead(selectedLeadId);
       setIsStatusModalOpen(false);
@@ -799,16 +810,39 @@ export default function LeadsPage() {
 
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newLead.name.trim())        { notify.error("Name is required"); return; }
-    if (!newLead.company.trim())     { notify.error("Company is required"); return; }
-    if (!newLead.phone.trim())       { notify.error("Phone is required"); return; }
-    if (!newLead.requirement.trim()) { notify.error("Requirement is required"); return; }
+    if (!newLead.name.trim()) {
+      notify.error("Name is required");
+      return;
+    }
+    if (!newLead.company.trim()) {
+      notify.error("Company is required");
+      return;
+    }
+    if (!newLead.phone.trim()) {
+      notify.error("Phone is required");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(newLead.phone)) {
+      notify.error("Invalid Phone", "Enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+    if (newLead.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newLead.email)) {
+      notify.error("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+    if (!newLead.requirement.trim()) {
+      notify.error("Requirement is required");
+      return;
+    }
 
     try {
       setAddLeadLoading(true);
       const res = await leadsAPI.create(newLead);
       if (res.success) {
-        notify.success("Lead Created", `${newLead.name} from ${newLead.company} has been added successfully.`);
+        notify.success(
+          "Lead Created",
+          `${newLead.name} from ${newLead.company} has been added successfully.`,
+        );
         setIsAddModalOpen(false);
         setNewLead({
           name: "",
@@ -849,7 +883,10 @@ export default function LeadsPage() {
         setAllProducts((prev) => [...prev, res.data]);
         setSelectedProducts((prev) => [...prev, res.data.name]);
         setNewProductName("");
-        notify.success("Product Added", `${newProductName} has been added to the database.`);
+        notify.success(
+          "Product Added",
+          `${newProductName} has been added to the database.`,
+        );
       }
     } catch (error: any) {
       notify.error("Error Adding Product", error.message);
@@ -876,7 +913,10 @@ export default function LeadsPage() {
         remarks: remarks || remarksInput,
       });
       if (res.success) {
-        notify.success("Lead Converted", "Lead has been converted to a Client successfully!");
+        notify.success(
+          "Lead Converted",
+          "Lead has been converted to a Client successfully!",
+        );
         fetchLeads();
         setSelectedLeadId(null);
       }
@@ -906,7 +946,7 @@ export default function LeadsPage() {
       <div className="flex flex-col gap-5 mb-6 animate-fade-in">
         {}
         <div className="flex flex-col gap-2 w-full">
-          {/* Row 1 — actions + syncs */}
+          {}
           <div className="flex flex-wrap items-center gap-2">
             {currentUser?.role !== "sales_executive" && (
               <Dialog
@@ -1049,7 +1089,7 @@ export default function LeadsPage() {
               </div>
             )}
 
-            {/* TradeIndia Sync */}
+            {}
             <button
               onClick={handleTradeindiaSyncAttempt}
               disabled={tiSyncing}
@@ -1067,7 +1107,7 @@ export default function LeadsPage() {
               {tiSyncing ? "Syncing..." : "Sync TradeIndia"}
             </button>
 
-            {/* Justdial Sync */}
+            {}
             <button
               onClick={handleJustdialSyncAttempt}
               disabled={jdSyncing}
@@ -1086,7 +1126,7 @@ export default function LeadsPage() {
             </button>
           </div>
 
-          {/* Row 2 — date range + search */}
+          {}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white">
               <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
@@ -1247,7 +1287,7 @@ export default function LeadsPage() {
             ))}
           </div>
 
-          {/* View mode toggle */}
+          {}
           <div className="flex items-center border-2 border-black ml-auto">
             <button
               onClick={() => setViewMode("table")}
@@ -1388,7 +1428,7 @@ export default function LeadsPage() {
         )}
       </div>
 
-      {/* ── Kanban view ── */}
+      {}
       {viewMode === "kanban" && (
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-max">
@@ -1413,7 +1453,7 @@ export default function LeadsPage() {
                     key={cat}
                     className="w-72 shrink-0 border-2 border-black shadow-[4px_4px_0px_#000]"
                   >
-                    {/* Column header */}
+                    {}
                     <div
                       className={cn(
                         "flex items-center justify-between px-3 py-2.5 border-b-2 border-black",
@@ -1428,7 +1468,7 @@ export default function LeadsPage() {
                       </span>
                     </div>
 
-                    {/* Cards */}
+                    {}
                     <div
                       className={cn(
                         "p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto",
@@ -1458,7 +1498,7 @@ export default function LeadsPage() {
                                 "ring-2 ring-[#024BAB]",
                             )}
                           >
-                            {/* Score badge */}
+                            {}
                             {l.contactTag && (
                               <div className="flex justify-end mb-1.5">
                                 <span
@@ -1525,7 +1565,7 @@ export default function LeadsPage() {
         </div>
       )}
 
-      {/* ── Table view ── */}
+      {}
       {viewMode === "table" && (
         <div className="flex flex-col xl:flex-row gap-5 items-start">
           {}
@@ -1643,7 +1683,8 @@ export default function LeadsPage() {
                     </tr>
                   ) : (
                     <>
-                      {(rowVirtualizer.getVirtualItems()[0]?.start ?? 0) > 0 && (
+                      {(rowVirtualizer.getVirtualItems()[0]?.start ?? 0) >
+                        0 && (
                         <tr>
                           <td
                             colSpan={10}
@@ -1689,160 +1730,156 @@ export default function LeadsPage() {
                             )}
                             onClick={() => setSelectedLeadId(l._id || l.id)}
                           >
-                              <td className="px-5 py-3.5">
-                                <p className="font-medium text-foreground">
-                                  {l.name}
-                                </p>
-                                <p className="text-xs text-black">
-                                  {l.company}
-                                </p>
-                              </td>
-                              <td className="px-5 py-3.5">
-                                {l.contactTag ? (
-                                  <span
-                                    className={cn(
-                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
-                                      l.contactTag === "HOT" &&
-                                        "bg-red-500 text-white border-black",
-                                      l.contactTag === "WARM" &&
-                                        "bg-[#FFDE00] text-black border-black",
-                                      l.contactTag === "COLD" &&
-                                        "bg-[#024BAB] text-white border-black",
-                                    )}
-                                  >
-                                    {l.contactTag === "HOT" && (
-                                      <Flame className="w-3 h-3" />
-                                    )}
-                                    {l.contactTag === "WARM" && (
-                                      <Thermometer className="w-3 h-3" />
-                                    )}
-                                    {l.contactTag === "COLD" && (
-                                      <Snowflake className="w-3 h-3" />
-                                    )}
-                                    {l.contactTag}
-                                  </span>
-                                ) : (
-                                  <span className="text-black/20 text-xs">
-                                    —
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-5 py-3.5 hidden md:table-cell">
-                                <SourceBadge source={l.source} />
-                              </td>
-                              <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
-                                {l.indiamartQueryTime
-                                  ? format(
-                                      new Date(l.indiamartQueryTime),
-                                      "dd MMM, hh:mm a",
-                                    )
-                                  : format(
-                                      new Date(l.createdAt),
-                                      "dd MMM, hh:mm a",
-                                    )}
-                              </td>
-                              <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
-                                {l.phone || "-"}
-                              </td>
-                              <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
-                                {l.location || "-"}
-                              </td>
-                              <td
-                                className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
-                                title={l.facebookAdName || "-"}
-                              >
-                                {l.facebookAdName ? (
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
-                                    {l.facebookAdName}
-                                  </span>
-                                ) : (
-                                  "-"
-                                )}
-                              </td>
-                              <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
-                                {l.budget || "-"}
-                              </td>
-                              <td
-                                className="px-5 py-3.5 hidden xl:table-cell text-black truncate max-w-[150px]"
-                                title={l.interestedProducts?.join(", ") || "-"}
-                              >
-                                {l.interestedProducts &&
-                                l.interestedProducts.length > 0
-                                  ? l.interestedProducts.join(", ")
-                                  : "-"}
-                              </td>
-                              <td
-                                className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
-                                title={l.remarks || "-"}
-                              >
-                                {l.remarks || "-"}
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <div className="flex flex-col items-start gap-1">
-                                  <span
-                                    className={cn(
-                                      "text-xs font-medium px-2.5 py-1 rounded-full border text-nowrap",
-                                      statusColors[l.status] ||
-                                        "bg-muted text-black border-transparent",
-                                    )}
-                                  >
-                                    {l.status || "ALL"}
-                                  </span>
-                                  {activeCategory === "Quotation" &&
-                                    !l.status?.includes("QUOTATION") &&
-                                    l.stagePath?.some((s: string) =>
-                                      s.includes("QUOTATION"),
-                                    ) && (
-                                      <span className="text-[9px] text-purple-600 font-bold whitespace-nowrap bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-0.5">
-                                        <Check className="w-2 h-2" /> Quotation
-                                        Sent
-                                      </span>
-                                    )}
-                                </div>
-                              </td>
-                              {currentUser?.role !== "sales_executive" && (
-                                <td
-                                  className="px-5 py-3.5 hidden lg:table-cell"
-                                  onClick={(e) => e.stopPropagation()}
+                            <td className="px-5 py-3.5">
+                              <p className="font-medium text-foreground">
+                                {l.name}
+                              </p>
+                              <p className="text-xs text-black">{l.company}</p>
+                            </td>
+                            <td className="px-5 py-3.5">
+                              {l.contactTag ? (
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
+                                    l.contactTag === "HOT" &&
+                                      "bg-red-500 text-white border-black",
+                                    l.contactTag === "WARM" &&
+                                      "bg-[#FFDE00] text-black border-black",
+                                    l.contactTag === "COLD" &&
+                                      "bg-[#024BAB] text-white border-black",
+                                  )}
                                 >
-                                  <Select
-                                    value={
-                                      typeof l.assignedTo === "object"
-                                        ? l.assignedTo?._id
-                                        : l.assignedTo || "unassigned"
-                                    }
-                                    onValueChange={(value) =>
-                                      handleUpdateAssignee(l._id || l.id, value)
-                                    }
-                                  >
-                                    <SelectTrigger className="h-8 w-[140px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0 px-2">
-                                      <SelectValue placeholder="Unassigned" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="unassigned" disabled>
-                                        Unassigned
-                                      </SelectItem>
-                                      {allUsers.map((u) => (
-                                        <SelectItem key={u._id} value={u._id}>
-                                          {u.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </td>
+                                  {l.contactTag === "HOT" && (
+                                    <Flame className="w-3 h-3" />
+                                  )}
+                                  {l.contactTag === "WARM" && (
+                                    <Thermometer className="w-3 h-3" />
+                                  )}
+                                  {l.contactTag === "COLD" && (
+                                    <Snowflake className="w-3 h-3" />
+                                  )}
+                                  {l.contactTag}
+                                </span>
+                              ) : (
+                                <span className="text-black/20 text-xs">—</span>
                               )}
-                              <td className="px-5 py-3.5 hidden lg:table-cell text-black">
-                                {l.followUpDate
-                                  ? new Date(l.followUpDate).toLocaleDateString(
-                                      "en-IN",
-                                      { day: "numeric", month: "short" },
-                                    )
-                                  : "-"}
+                            </td>
+                            <td className="px-5 py-3.5 hidden md:table-cell">
+                              <SourceBadge source={l.source} />
+                            </td>
+                            <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
+                              {l.indiamartQueryTime
+                                ? format(
+                                    new Date(l.indiamartQueryTime),
+                                    "dd MMM, hh:mm a",
+                                  )
+                                : format(
+                                    new Date(l.createdAt),
+                                    "dd MMM, hh:mm a",
+                                  )}
+                            </td>
+                            <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
+                              {l.phone || "-"}
+                            </td>
+                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
+                              {l.location || "-"}
+                            </td>
+                            <td
+                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
+                              title={l.facebookAdName || "-"}
+                            >
+                              {l.facebookAdName ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
+                                  {l.facebookAdName}
+                                </span>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
+                              {l.budget || "-"}
+                            </td>
+                            <td
+                              className="px-5 py-3.5 hidden xl:table-cell text-black truncate max-w-[150px]"
+                              title={l.interestedProducts?.join(", ") || "-"}
+                            >
+                              {l.interestedProducts &&
+                              l.interestedProducts.length > 0
+                                ? l.interestedProducts.join(", ")
+                                : "-"}
+                            </td>
+                            <td
+                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
+                              title={l.remarks || "-"}
+                            >
+                              {l.remarks || "-"}
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <div className="flex flex-col items-start gap-1">
+                                <span
+                                  className={cn(
+                                    "text-xs font-medium px-2.5 py-1 rounded-full border text-nowrap",
+                                    statusColors[l.status] ||
+                                      "bg-muted text-black border-transparent",
+                                  )}
+                                >
+                                  {l.status || "ALL"}
+                                </span>
+                                {activeCategory === "Quotation" &&
+                                  !l.status?.includes("QUOTATION") &&
+                                  l.stagePath?.some((s: string) =>
+                                    s.includes("QUOTATION"),
+                                  ) && (
+                                    <span className="text-[9px] text-purple-600 font-bold whitespace-nowrap bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-0.5">
+                                      <Check className="w-2 h-2" /> Quotation
+                                      Sent
+                                    </span>
+                                  )}
+                              </div>
+                            </td>
+                            {currentUser?.role !== "sales_executive" && (
+                              <td
+                                className="px-5 py-3.5 hidden lg:table-cell"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Select
+                                  value={
+                                    typeof l.assignedTo === "object"
+                                      ? l.assignedTo?._id
+                                      : l.assignedTo || "unassigned"
+                                  }
+                                  onValueChange={(value) =>
+                                    handleUpdateAssignee(l._id || l.id, value)
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 w-[140px] text-xs border-none bg-transparent hover:bg-muted focus:ring-0 px-2">
+                                    <SelectValue placeholder="Unassigned" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="unassigned" disabled>
+                                      Unassigned
+                                    </SelectItem>
+                                    {allUsers.map((u) => (
+                                      <SelectItem key={u._id} value={u._id}>
+                                        {u.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </td>
-                            </tr>
-                          );
-                        })}
+                            )}
+                            <td className="px-5 py-3.5 hidden lg:table-cell text-black">
+                              {l.followUpDate
+                                ? new Date(l.followUpDate).toLocaleDateString(
+                                    "en-IN",
+                                    { day: "numeric", month: "short" },
+                                  )
+                                : "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
                       {(() => {
                         const vItems = rowVirtualizer.getVirtualItems();
                         if (vItems.length === 0) return null;
@@ -1863,7 +1900,6 @@ export default function LeadsPage() {
                 </tbody>
               </table>
             </div>
-
           </div>
 
           {lead && (
@@ -1911,8 +1947,9 @@ export default function LeadsPage() {
                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black" />
                 <input
                   id="budget"
-                  type="text"
-                  placeholder="Enter budget (e.g. 50,000)"
+                  type="number"
+                  min="0"
+                  placeholder="0"
                   className="w-full rounded-lg border border-border bg-background pl-10 p-4 text-base focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                   value={budgetInput}
                   onChange={(e) => setBudgetInput(e.target.value)}
@@ -2129,11 +2166,16 @@ export default function LeadsPage() {
                   </Label>
                   <Input
                     id="phone"
-                    placeholder="Enter phone number"
+                    placeholder="10-digit mobile number"
                     value={newLead.phone}
                     onChange={(e) =>
-                      setNewLead({ ...newLead, phone: e.target.value })
+                      setNewLead({
+                        ...newLead,
+                        phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                      })
                     }
+                    maxLength={10}
+                    inputMode="numeric"
                     required
                   />
                 </div>
@@ -2152,6 +2194,7 @@ export default function LeadsPage() {
                     onChange={(e) =>
                       setNewLead({ ...newLead, email: e.target.value })
                     }
+                    maxLength={100}
                   />
                 </div>
                 <div className="space-y-2">
@@ -2168,6 +2211,7 @@ export default function LeadsPage() {
                       placeholder="City or 6-digit pincode"
                       value={newLead.location}
                       onChange={(e) => handleLocationChange(e.target.value)}
+                      maxLength={50}
                     />
                     {pincodeLoading && (
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-black/40 animate-pulse">

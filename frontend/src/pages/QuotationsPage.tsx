@@ -72,6 +72,7 @@ const NbInput = ({
   as: As = "input",
   rows,
   className: cls,
+  ...rest
 }: any) => (
   <div className="space-y-1">
     <label
@@ -99,6 +100,7 @@ const NbInput = ({
         placeholder={placeholder}
         required={required}
         className={cn("border-2 w-full px-3 py-2 text-sm", cls)}
+        {...rest}
       />
     )}
   </div>
@@ -198,15 +200,52 @@ export default function QuotationsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.clientName.trim())  { notify.error("Client Name is required"); return; }
-    if (!formData.projectTitle.trim()) { notify.error("Project Title is required"); return; }
-    if (formData.services.length === 0) { notify.error("Add at least one service item"); return; }
+    if (!formData.clientName.trim()) {
+      notify.error("Client Name is required");
+      return;
+    }
+    if (!formData.projectTitle.trim()) {
+      notify.error("Project Title is required");
+      return;
+    }
+    if (formData.services.length === 0) {
+      notify.error("Add at least one service item");
+      return;
+    }
     const badSvc = formData.services.find((s) => !s.name.trim());
-    if (badSvc) { notify.error("Service name missing", "Every line item must have a name."); return; }
+    if (badSvc) {
+      notify.error("Service name missing", "Every line item must have a name.");
+      return;
+    }
     const badPrice = formData.services.find((s) => Number(s.price) <= 0);
-    if (badPrice) { notify.error("Invalid price", "Each service item must have a price greater than 0."); return; }
+    if (badPrice) {
+      notify.error(
+        "Invalid price",
+        "Each service item must have a price greater than 0.",
+      );
+      return;
+    }
     const badQty = formData.services.find((s) => Number(s.quantity) < 1);
-    if (badQty) { notify.error("Invalid quantity", "Quantity must be at least 1 for each item."); return; }
+    if (badQty) {
+      notify.error("Invalid quantity", "Quantity must be at least 1 for each item.");
+      return;
+    }
+    if (formData.mobile && !/^[6-9]\d{9}$/.test(formData.mobile)) {
+      notify.error("Invalid Mobile", "Enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+    if (formData.gst && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(formData.gst)) {
+      notify.error("Invalid GST Number", "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5).");
+      return;
+    }
+    if (formData.aadhar && !/^\d{12}$/.test(formData.aadhar)) {
+      notify.error("Invalid Aadhar", "Aadhar must be exactly 12 digits.");
+      return;
+    }
+    if (formData.pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(formData.pan)) {
+      notify.error("Invalid PAN", "PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
+      return;
+    }
     try {
       setSaving(true);
       const subtotal = formData.services.reduce(
@@ -222,7 +261,9 @@ export default function QuotationsPage() {
       if (res.success) {
         notify.success(
           editingQId ? "Quotation Updated" : "Quotation Created",
-          editingQId ? "Changes have been saved." : `Quotation for ${formData.clientName} has been created.`
+          editingQId
+            ? "Changes have been saved."
+            : `Quotation for ${formData.clientName} has been created.`,
         );
         resetForm();
         fetchQuotations();
@@ -285,7 +326,7 @@ export default function QuotationsPage() {
 
   return (
     <AppLayout title="Quotations">
-      {/* Top bar */}
+      {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
@@ -325,7 +366,7 @@ export default function QuotationsPage() {
               </DialogHeader>
 
               <div className="p-5 bg-white space-y-5">
-                {/* Buyer Details */}
+                {}
                 <div>
                   <div className="flex items-center gap-3 mb-3 pb-2 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#024BAB]" />
@@ -369,34 +410,60 @@ export default function QuotationsPage() {
                       label="GST No (optional)"
                       id="gst"
                       value={formData.gst}
-                      onChange={(e: any) => setField("gst", e.target.value)}
+                      onChange={(e: any) =>
+                        setField(
+                          "gst",
+                          e.target.value.toUpperCase().slice(0, 15),
+                        )
+                      }
                       placeholder="09AAGCB9274N1ZW"
+                      maxLength={15}
                     />
                     <NbInput
                       label="Mobile (optional)"
                       id="mobile"
                       value={formData.mobile}
-                      onChange={(e: any) => setField("mobile", e.target.value)}
+                      onChange={(e: any) =>
+                        setField(
+                          "mobile",
+                          e.target.value.replace(/\D/g, "").slice(0, 10),
+                        )
+                      }
                       placeholder="9999999999"
+                      maxLength={10}
+                      inputMode="numeric"
                     />
                     <NbInput
                       label="Aadhar (optional)"
                       id="aadhar"
                       value={formData.aadhar}
-                      onChange={(e: any) => setField("aadhar", e.target.value)}
-                      placeholder="4832 3663 2950"
+                      onChange={(e: any) =>
+                        setField(
+                          "aadhar",
+                          e.target.value.replace(/\D/g, "").slice(0, 12),
+                        )
+                      }
+                      placeholder="481236632950"
+                      maxLength={12}
+                      inputMode="numeric"
                     />
                     <NbInput
                       label="PAN (optional)"
                       id="pan"
                       value={formData.pan}
-                      onChange={(e: any) => setField("pan", e.target.value)}
+                      onChange={(e: any) =>
+                        setField(
+                          "pan",
+                          e.target.value.toUpperCase().slice(0, 10),
+                        )
+                      }
                       placeholder="DGWPS1511K"
+                      maxLength={10}
                     />
                   </div>
                 </div>
 
-                {/* Quotation Details */}
+                {}
                 <div>
                   <div className="flex items-center gap-3 mb-3 pb-2 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#024BAB]" />
@@ -434,7 +501,7 @@ export default function QuotationsPage() {
                   </div>
                 </div>
 
-                {/* Line Items */}
+                {}
                 <div>
                   <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-black">
                     <div className="flex items-center gap-3">
@@ -496,7 +563,11 @@ export default function QuotationsPage() {
                           <input
                             value={item.hsnCode || ""}
                             onChange={(e) =>
-                              handleServiceChange(idx, "hsnCode", e.target.value)
+                              handleServiceChange(
+                                idx,
+                                "hsnCode",
+                                e.target.value,
+                              )
                             }
                             placeholder="998315"
                             className="w-full px-3 py-2.5 text-sm font-mono bg-white outline-none focus:bg-[#FFDE00]/20"
@@ -556,7 +627,7 @@ export default function QuotationsPage() {
                     ))}
                   </div>
 
-                  {/* Totals */}
+                  {}
                   <div className="mt-3 border-2 border-black bg-white">
                     <div className="flex justify-between items-center px-4 py-2 border-b border-black/20">
                       <span className="text-xs font-black uppercase tracking-widest text-black">
@@ -610,7 +681,7 @@ export default function QuotationsPage() {
                   </div>
                 </div>
 
-                {/* Status */}
+                {}
                 <div className="w-48">
                   <div className="space-y-1">
                     <label className="block text-[10px] font-black uppercase tracking-widest text-black">
@@ -674,7 +745,7 @@ export default function QuotationsPage() {
         </Dialog>
       </div>
 
-      {/* Summary strip */}
+      {}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
           {
@@ -710,7 +781,7 @@ export default function QuotationsPage() {
         ))}
       </div>
 
-      {/* Table */}
+      {}
       <div className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
@@ -857,7 +928,7 @@ export default function QuotationsPage() {
         </div>
       </div>
 
-      {/* PDF Preview Dialog */}
+      {}
       <Dialog
         open={isPreviewOpen}
         onOpenChange={(open) => !open && closePreview()}
