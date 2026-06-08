@@ -1,17 +1,17 @@
 import jsPDF from "jspdf";
 import logo from "@/assets/images/NestLeads_Logo_Name.png";
 
-const PRIMARY = "#1e3a8a";
+const PRIMARY = "#024BAB";
 const SECONDARY = "#111827";
 const MUTED = "#6b7280";
 const LINE = "#e5e7eb";
-const BG_SUBTLE = "#f9fafb";
+const BG_HEADER = "#f3f4f6";
 const WHITE = "#ffffff";
 
 const PW = 595.28;
 const PH = 841.89;
-const ML = 36;
-const MR = 36;
+const ML = 28;
+const MR = 28;
 const CW = PW - ML - MR;
 
 function toRgb(hex: string) {
@@ -51,9 +51,16 @@ function fillRect(
   } else doc.rect(x, y, w, h, "F");
 }
 
-function hline(doc: jsPDF, x: number, y: number, w: number, c: string) {
+function hline(doc: jsPDF, x: number, y: number, w: number, c: string, lw = 0.5) {
   setDraw(doc, c);
+  doc.setLineWidth(lw);
   doc.line(x, y, x + w, y);
+}
+
+function vline(doc: jsPDF, x: number, y: number, h: number, c: string, lw = 0.5) {
+  setDraw(doc, c);
+  doc.setLineWidth(lw);
+  doc.line(x, y, x, y + h);
 }
 
 async function loadFont(
@@ -87,36 +94,38 @@ export async function generateInvoicePDF(q: any, settings: any): Promise<void> {
 export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
 
-  const companyName = settings?.companyName || "BAGCLUES EXIM PRIVATE LIMITED";
-  const companyAddress =
-    settings?.companyAddress || "A-79, SECTOR 58, NOIDA(UP)-201301";
-  const companyPhone = settings?.companyPhone || "76540-44444, 76540-22222";
-  const companyEmail = settings?.companyEmail || "BAGCLUES@GMAIL.COM";
-  const companyGST = settings?.companyGST || "09AAGCB9274N1ZW";
-  const companyWebsite = settings?.companyWebsite || "WWW.SKYLYF.COM";
+  // ── Settings fields ──
+  const companyName = settings?.companyName || "YOUR COMPANY NAME";
+  const companyAddress = settings?.companyAddress || "";
+  const companyPhone = settings?.companyPhone || "";
+  const companyEmail = settings?.companyEmail || "";
+  const companyGST = settings?.companyGST || "";
+  const companyPAN = settings?.companyPAN || "";
+  const companyState = settings?.companyState || "";
+  const companyStateCode = settings?.companyStateCode || "";
+  const companyWebsite = settings?.companyWebsite || "";
 
   const bankAccountName = settings?.bankAccountName || companyName;
-  const bankAccountNumber = settings?.bankAccountNumber || "59207654044444";
-  const bankName = settings?.bankName || "HDFC BANK";
-  const bankIFSC = settings?.bankIFSC || "HDFC0002649";
-  const bankBranch =
-    settings?.bankBranch || "C-25, STELLAR IT PARK, NOIDA-201306, UP";
+  const bankAccountNumber = settings?.bankAccountNumber || "";
+  const bankName = settings?.bankName || "";
+  const bankIFSC = settings?.bankIFSC || "";
+  const bankBranch = settings?.bankBranch || "";
+  const bankAccountType = settings?.bankAccountType || "Current";
 
-  const termLines =
+  const termLines: string[] =
     settings?.quotationTerms?.length > 0
       ? settings.quotationTerms
       : [
-          "Delivery shall be from Noida; transportation and unloading at site shall be arranged and borne by the buyer.",
-          "Delivery Schedule: Within 30 days or subject to stock availability.",
-          "Payment Terms: An advance of 20% is payable at order confirmation, with the balance payable before dispatch.",
-          "Installation: Free installation and training at buyer's site; conveyance charges borne by buyer.",
-          "Validity: Prices valid for 30 days from issue date.",
-          "Cancellation: The company reserves the right to forfeit the advance payment.",
+          "Payment is due within 30 days of invoice date.",
+          "Quote invoice number in all payment references.",
+          "Goods/services remain property of seller until paid in full.",
+          "Interest @ 18% p.a. charged on overdue amounts.",
         ];
 
-  const quotationTitle = settings?.quotationTitle || "PROFORMA INVOICE";
+  const invoiceTitle = settings?.quotationTitle || "TAX INVOICE";
   const footerText =
-    settings?.quotationFooter || "Thank you for your business!";
+    settings?.quotationFooter ||
+    "This is a computer-generated invoice and does not require a physical signature.";
 
   const regularOk = await loadFont(
     doc,
@@ -128,18 +137,8 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const fontOk = regularOk && boldOk;
 
   const F = fontOk ? "NotoSans" : "helvetica";
-  const setN = (sz: number) => {
-    doc.setFont(F, "normal");
-    doc.setFontSize(sz);
-  };
-  const setB = (sz: number) => {
-    doc.setFont(F, "bold");
-    doc.setFontSize(sz);
-  };
-  const setI = (sz: number) => {
-    doc.setFont(F, fontOk ? "normal" : "italic");
-    doc.setFontSize(sz);
-  };
+  const setN = (sz: number) => { doc.setFont(F, "normal"); doc.setFontSize(sz); };
+  const setB = (sz: number) => { doc.setFont(F, "bold"); doc.setFontSize(sz); };
 
   const rupee = (n: number, dec = 2) =>
     (fontOk ? "₹" : "Rs.") +
@@ -148,44 +147,47 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       maximumFractionDigits: dec,
     });
 
+  // ── Tax logic: IGST when inter-state, CGST+SGST when intra-state ──
+  // Detect from first 2 chars of buyer GST vs seller state code
+  const buyerStateCode = q.gst?.slice(0, 2) || "";
+  const sellerStateCode = companyStateCode || companyGST?.slice(0, 2) || "";
+  const isInterState =
+    buyerStateCode && sellerStateCode
+      ? buyerStateCode !== sellerStateCode
+      : true; // default to IGST if unknown
+
   const subtotal = (q.services || []).reduce(
     (a: number, s: any) => a + Number(s.price) * Number(s.quantity),
     0,
   );
   const discount = Number(q.discount || 0);
-  const tax = (subtotal - discount) * 0.18;
-  const total = subtotal - discount + tax;
+  const taxableAmount = subtotal - discount;
+  const TAX_RATE = 0.18;
+  const igstAmt = isInterState ? taxableAmount * TAX_RATE : 0;
+  const cgstAmt = !isInterState ? taxableAmount * (TAX_RATE / 2) : 0;
+  const sgstAmt = !isInterState ? taxableAmount * (TAX_RATE / 2) : 0;
+  const totalTax = igstAmt + cgstAmt + sgstAmt;
+  const grandTotal = taxableAmount + totalTax;
 
-  const borderMargin = 15;
+  // ── Outer border ──
   setDraw(doc, LINE);
-  doc.setLineWidth(0.5);
-  doc.rect(
-    borderMargin,
-    borderMargin,
-    PW - borderMargin * 2,
-    PH - borderMargin * 2,
-    "S",
-  );
+  doc.setLineWidth(0.75);
+  doc.rect(14, 14, PW - 28, PH - 28, "S");
 
-  const HT = 32;
-  const logoW = 45;
-  const logoH = 60;
+  // ── Header section ──
+  const HY = 22;
+  const logoW = 40;
+  const logoH = 52;
+  const logoX = ML;
 
-  // Use company logo from settings if provided, else fall back to default
   try {
     const customLogo = settings?.logoUrl?.trim();
     if (customLogo) {
       if (customLogo.startsWith("data:")) {
-        // base64 data URL — detect format from MIME type
         const mime = customLogo.split(";")[0].split(":")[1] || "image/png";
-        const fmt = mime.includes("jpeg")
-          ? "JPEG"
-          : mime.includes("gif")
-            ? "GIF"
-            : "PNG";
-        doc.addImage(customLogo, fmt, ML, HT, logoW, logoH);
+        const fmt = mime.includes("jpeg") ? "JPEG" : mime.includes("gif") ? "GIF" : "PNG";
+        doc.addImage(customLogo, fmt, logoX, HY, logoW, logoH);
       } else {
-        // External URL — fetch and load
         const res = await fetch(customLogo);
         const blob = await res.blob();
         const b64 = await new Promise<string>((resolve) => {
@@ -193,311 +195,456 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
           reader.onload = () => resolve(reader.result as string);
           reader.readAsDataURL(blob);
         });
-        doc.addImage(b64, "PNG", ML, HT, logoW, logoH);
+        doc.addImage(b64, "PNG", logoX, HY, logoW, logoH);
       }
     } else {
-      doc.addImage(logo, "PNG", ML, HT, logoW, logoH);
+      doc.addImage(logo, "PNG", logoX, HY, logoW, logoH);
     }
-  } catch (err) {
-    // Silently fall back to default logo
-    try {
-      doc.addImage(logo, "PNG", ML, HT, logoW, logoH);
-    } catch {}
+  } catch {
+    try { doc.addImage(logo, "PNG", logoX, HY, logoW, logoH); } catch {}
   }
 
-  const textX = ML + logoW + 20;
+  const tX = logoX + logoW + 12;
+  let tY = HY + 10;
 
+  setB(11);
+  setTextClr(doc, PRIMARY);
+  doc.text(companyName.toUpperCase(), tX, tY);
+  tY += 13;
+
+  setN(7.5);
+  setTextClr(doc, MUTED);
+  if (companyAddress) {
+    doc.splitTextToSize(companyAddress, 200).forEach((l: string) => {
+      doc.text(l, tX, tY); tY += 9;
+    });
+  }
+  if (companyEmail || companyPhone) {
+    const line = [companyEmail, companyPhone ? `Ph: ${companyPhone}` : ""].filter(Boolean).join("  |  ");
+    doc.text(line, tX, tY); tY += 9;
+  }
+  if (companyWebsite) { doc.text(companyWebsite, tX, tY); tY += 9; }
+
+  setB(7.5);
+  setTextClr(doc, SECONDARY);
+  if (companyGST) { doc.text(`GSTIN: ${companyGST}`, tX, tY); tY += 9; }
+  if (companyPAN) { doc.text(`PAN: ${companyPAN}`, tX, tY); tY += 9; }
+  if (companyState) {
+    doc.text(`State: ${companyState}${companyStateCode ? ` (Code: ${companyStateCode})` : ""}`, tX, tY);
+  }
+
+  // ── Invoice meta box (top-right) ──
+  const metaBoxW = 195;
+  const metaBoxX = PW - MR - metaBoxW;
+  const metaBoxY = HY;
+
+  // Title
   setB(13);
   setTextClr(doc, PRIMARY);
-  doc.text(companyName.toUpperCase(), textX, HT + 10);
+  doc.text(invoiceTitle.toUpperCase(), PW - MR, metaBoxY + 12, { align: "right" });
 
-  setN(8.5);
+  // "Original for Recipient" subtitle
+  setN(7);
   setTextClr(doc, MUTED);
+  doc.text("Original for Recipient", PW - MR, metaBoxY + 22, { align: "right" });
 
-  const headerLines = [
-    companyAddress,
-    `M.NO: ${companyPhone}`,
-    `EMAIL: ${companyEmail}`,
+  const metaRows: [string, string][] = [
+    ["Invoice No.", q.number || "—"],
+    ["Invoice Date", new Date(q.date || Date.now()).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })],
+    ["Due Date", new Date(q.date || Date.now()).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })],
+    ["Place of Service", q.companyName || q.clientName || "—"],
   ];
-  headerLines.forEach((l, i) =>
-    doc.text(l.toUpperCase(), textX, HT + 24 + i * 11),
-  );
 
-  setB(8.5);
-  setTextClr(doc, SECONDARY);
-  doc.text(`GST NO: ${companyGST.toUpperCase()}`, textX, HT + 58);
+  const mRowH = 14;
+  let mY = metaBoxY + 30;
+  const colLW = 90;
+  const colVW = metaBoxW - colLW;
 
-  setB(14);
-  setTextClr(doc, PRIMARY);
-  doc.text(quotationTitle.toUpperCase(), PW - MR, HT + 12, { align: "right" });
-
-  const tX = PW - MR - 165;
-  const tY = HT + 35;
-  const cW1 = 58;
-  const cW2 = 107;
-  const rH = 16;
-  [
-    ["DATE", new Date(q.date).toLocaleDateString("en-GB")],
-    ["REF. NO.", q.number || "SKF-0001"],
-  ].forEach(([lbl, val], i) => {
-    const ry = tY + i * rH;
-    fillRect(doc, tX, ry, cW1, rH, BG_SUBTLE, LINE);
-    fillRect(doc, tX + cW1, ry, cW2, rH, WHITE, LINE);
-    setB(7.5);
-    setTextClr(doc, PRIMARY);
-    doc.text(lbl, tX + 4, ry + 10.5);
-    setN(7.5);
+  metaRows.forEach(([lbl, val]) => {
+    fillRect(doc, metaBoxX, mY, colLW, mRowH, BG_HEADER, LINE);
+    fillRect(doc, metaBoxX + colLW, mY, colVW, mRowH, WHITE, LINE);
+    setB(7);
+    setTextClr(doc, MUTED);
+    doc.text(lbl, metaBoxX + 4, mY + 9);
+    setN(7);
     setTextClr(doc, SECONDARY);
-    doc.text(val, tX + cW1 + 4, ry + 10.5);
+    doc.text(val.toString(), metaBoxX + colLW + 4, mY + 9);
+    mY += mRowH;
   });
 
-  const ST = HT + 78;
-  const halfW = CW / 2 - 8;
-  const sectionLbl = (lbl: string, x: number, y: number, w: number) => {
-    setB(8.5);
-    setTextClr(doc, PRIMARY);
-    doc.text(lbl, x + 6, y);
-    hline(doc, x + 6, y + 4, w - 12, LINE);
-  };
+  // ── Horizontal rule ──
+  const HR1 = Math.max(HY + logoH + 8, mY + 8);
+  hline(doc, ML, HR1, CW, LINE, 0.75);
 
-  let cy = ST + 40;
+  // ── Bill To / Ship To ──
+  const billY = HR1 + 8;
+  const halfCW = CW / 2 - 4;
 
-  const buyerRow = (label: string, value: string | undefined) => {
-    const v = (value || "").trim();
-    if (!v) return;
-    setB(8.5);
-    setTextClr(doc, MUTED);
-    doc.text(label.toUpperCase(), ML + 8, cy);
-    setN(8.5);
-    setTextClr(doc, SECONDARY);
-    const labelW = doc.getTextWidth(label.toUpperCase()) + 4;
-    doc.text("- " + v, ML + 8 + labelW, cy);
-    cy += 11;
-  };
-
-  if (q.companyName?.trim()) {
-    setB(11);
-    setTextClr(doc, SECONDARY);
-    doc.text(q.companyName.toUpperCase(), ML + 8, cy);
-    cy += 14;
-    setN(9);
-    setTextClr(doc, MUTED);
-    doc.text(q.clientName || "", ML + 8, cy);
-    cy += 12;
-  } else {
-    setB(11);
-    setTextClr(doc, SECONDARY);
-    doc.text((q.clientName || "").toUpperCase(), ML + 8, cy);
-    cy += 14;
-  }
-
-  if ((q.address || "").trim()) {
-    setN(9);
-    setTextClr(doc, MUTED);
-    doc
-      .splitTextToSize(q.address as string, halfW - 16)
-      .forEach((l: string) => {
-        doc.text(l, ML + 8, cy);
-        cy += 10;
-      });
-    cy += 4;
-  }
-
-  buyerRow("Aadhar Number", q.aadhar);
-  buyerRow("PAN Number", q.pan);
-  buyerRow("GST No", q.gst);
-  buyerRow("Mobile No", q.mobile);
-
-  const bankRows: [string, string][] = [
-    ["BENEFICIARY", bankAccountName.toUpperCase()],
-    ["A/C NO.", bankAccountNumber],
-    ["BANK", bankName.toUpperCase()],
-    ["IFSC", bankIFSC.toUpperCase()],
-    ["BRANCH", bankBranch.toUpperCase()],
-  ];
-
-  const bkBH = bankRows.length * 15 + 10;
-  const by_end_calc = ST + 6 + bkBH;
-
-  const sectionH = Math.max(cy, by_end_calc) - ST + 20;
-
+  // Bill To box
   setDraw(doc, LINE);
   doc.setLineWidth(0.5);
-  doc.rect(ML, ST, halfW, sectionH, "S");
-  sectionLbl("CONSIGNEE / BUYER", ML, ST + 10, halfW);
 
-  const bkX = ML + halfW + 16;
-  const bkW = halfW;
-  doc.rect(bkX, ST, bkW, sectionH, "S");
-  sectionLbl("SUPPLIER BANK DETAILS", bkX, ST + 10, bkW);
+  const billLines: string[] = [];
+  if (q.companyName) billLines.push(q.companyName.toUpperCase());
+  if (q.clientName && q.companyName) billLines.push(q.clientName);
+  else if (q.clientName) billLines.push(q.clientName.toUpperCase());
+  if (q.address) {
+    doc.splitTextToSize(q.address, halfCW - 12).forEach((l: string) => billLines.push(l));
+  }
+  if (q.mobile) billLines.push(`Phone: ${q.mobile}`);
+  if (q.gst) billLines.push(`GSTIN: ${q.gst}`);
 
-  let by = ST + 40;
-  bankRows.forEach(([lbl, val]) => {
-    setB(7.5);
-    setTextClr(doc, MUTED);
-    doc.text(lbl, bkX + 8, by);
-    setB(8);
-    setTextClr(doc, SECONDARY);
-    const w2 = doc.splitTextToSize(val, bkW - 85);
-    doc.text(w2[0], bkX + bkW - 8, by, { align: "right" });
-    if (w2[1]) doc.text(w2[1], bkX + bkW - 8, by + 8, { align: "right" });
-    hline(doc, bkX + 8, by + 4, bkW - 16, BG_SUBTLE);
-    by += 15;
-  });
+  const billBoxH = Math.max(55, billLines.length * 10 + 20);
 
-  const finalSectionY = ST - 12 + sectionH;
-
-  const tableTop = finalSectionY + 20;
-
-  const C_D = CW * 0.5;
-  const C_Q = CW * 0.1;
-  const C_P = CW * 0.2;
-  const C_T = CW * 0.2;
-  const colX = [ML, ML + C_D, ML + C_D + C_Q, ML + C_D + C_Q + C_P];
-  const colW = [C_D, C_Q, C_P, C_T];
-  const HDR_H = 20;
-
-  fillRect(doc, ML, tableTop, CW, HDR_H, BG_SUBTLE, LINE);
-  setB(8);
+  doc.rect(ML, billY, halfCW, billBoxH, "S");
+  setB(7);
   setTextClr(doc, PRIMARY);
-  (
-    [
-      ["DESCRIPTION", "left"],
-      ["QTY", "center"],
-      ["UNIT PRICE", "right"],
-      ["TOTAL AMOUNT", "right"],
-    ] as [string, "left" | "center" | "right"][]
-  ).forEach(([h, al], i) => {
-    const cx =
-      al === "center"
-        ? colX[i] + colW[i] / 2
-        : al === "right"
-          ? colX[i] + colW[i] - 6
-          : colX[i] + 6;
-    doc.text(h, cx, tableTop + 13, { align: al });
+  doc.text("BILL TO", ML + 5, billY + 10);
+  hline(doc, ML + 5, billY + 13, halfCW - 10, LINE);
+
+  let bly = billY + 22;
+  billLines.forEach((l, i) => {
+    if (i === 0) { setB(9); setTextClr(doc, SECONDARY); }
+    else { setN(8); setTextClr(doc, MUTED); }
+    doc.text(l, ML + 5, bly);
+    bly += 10;
   });
 
-  const ROW_H = 22;
-  const SPEC_H = 12;
-  let rowY = tableTop + HDR_H;
+  // Ship To box (same content as Bill To for now)
+  const shipX = ML + halfCW + 8;
+  doc.rect(shipX, billY, halfCW, billBoxH, "S");
+  setB(7);
+  setTextClr(doc, PRIMARY);
+  doc.text("SHIP TO / DELIVER TO", shipX + 5, billY + 10);
+  hline(doc, shipX + 5, billY + 13, halfCW - 10, LINE);
+
+  let sly = billY + 22;
+  billLines.forEach((l, i) => {
+    if (i === 0) { setB(9); setTextClr(doc, SECONDARY); }
+    else { setN(8); setTextClr(doc, MUTED); }
+    doc.text(l, shipX + 5, sly);
+    sly += 10;
+  });
+
+  // ── Items table ──
+  const tableY = billY + billBoxH + 10;
+
+  // Column widths: S.No | Description | HSN/SAC | Qty | Unit | Rate | Disc. | Amount
+  const cols = {
+    sno:  CW * 0.05,
+    desc: CW * 0.30,
+    hsn:  CW * 0.12,
+    qty:  CW * 0.07,
+    unit: CW * 0.07,
+    rate: CW * 0.13,
+    disc: CW * 0.10,
+    amt:  CW * 0.16,
+  };
+  const colXs = {
+    sno:  ML,
+    desc: ML + cols.sno,
+    hsn:  ML + cols.sno + cols.desc,
+    qty:  ML + cols.sno + cols.desc + cols.hsn,
+    unit: ML + cols.sno + cols.desc + cols.hsn + cols.qty,
+    rate: ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit,
+    disc: ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit + cols.rate,
+    amt:  ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit + cols.rate + cols.disc,
+  };
+
+  const HDR_H = 18;
+  fillRect(doc, ML, tableY, CW, HDR_H, PRIMARY);
+
+  const headers: [keyof typeof colXs, string, "left" | "center" | "right"][] = [
+    ["sno",  "S.No",        "center"],
+    ["desc", "Description of Services / Goods", "left"],
+    ["hsn",  "HSN/SAC",     "center"],
+    ["qty",  "Qty",         "center"],
+    ["unit", "Unit",        "center"],
+    ["rate", "Rate (Rs.)",  "right"],
+    ["disc", "Disc.",       "center"],
+    ["amt",  "Amount (Rs.)", "right"],
+  ];
+
+  headers.forEach(([key, label, align]) => {
+    setB(7);
+    setTextClr(doc, "#ffffff");
+    const cx =
+      align === "center"
+        ? colXs[key] + cols[key] / 2
+        : align === "right"
+        ? colXs[key] + cols[key] - 4
+        : colXs[key] + 4;
+    doc.text(label, cx, tableY + 12, { align });
+  });
+
+  const ROW_H = 20;
+  let rowY = tableY + HDR_H;
 
   (q.services || []).forEach((s: any, i: number) => {
-    const bg = i % 2 === 0 ? WHITE : "#f8fafc";
+    const bg = i % 2 === 0 ? WHITE : BG_HEADER;
     const lineTotal = Number(s.price) * Number(s.quantity);
-
     fillRect(doc, ML, rowY, CW, ROW_H, bg, LINE);
 
-    setB(9);
+    setN(7.5);
     setTextClr(doc, SECONDARY);
-    doc.text((s.name || "").toUpperCase(), colX[0] + 6, rowY + 14);
+    doc.text(String(i + 1), colXs.sno + cols.sno / 2, rowY + 13, { align: "center" });
 
-    setN(9);
-    doc.text(String(s.quantity), colX[1] + colW[1] / 2, rowY + 14, {
-      align: "center",
-    });
-    doc.text(rupee(Number(s.price)), colX[2] + colW[2] - 6, rowY + 14, {
-      align: "right",
-    });
-    setB(9);
-    doc.text(rupee(lineTotal), colX[3] + colW[3] - 6, rowY + 14, {
-      align: "right",
-    });
+    setN(8);
+    doc.text(s.name || "", colXs.desc + 4, rowY + 13);
+
+    setN(7.5);
+    if (s.hsnCode) doc.text(s.hsnCode, colXs.hsn + cols.hsn / 2, rowY + 13, { align: "center" });
+
+    doc.text(String(s.quantity), colXs.qty + cols.qty / 2, rowY + 13, { align: "center" });
+    doc.text("Nos", colXs.unit + cols.unit / 2, rowY + 13, { align: "center" });
+
+    setB(8);
+    doc.text(rupee(Number(s.price)), colXs.rate + cols.rate - 4, rowY + 13, { align: "right" });
+
+    setN(7.5);
+    doc.text("—", colXs.disc + cols.disc / 2, rowY + 13, { align: "center" });
+
+    setB(8);
+    doc.text(rupee(lineTotal), colXs.amt + cols.amt - 4, rowY + 13, { align: "right" });
+
     rowY += ROW_H;
   });
 
+  // Empty rows filler (minimum 3 rows visible)
   for (let i = 0; i < Math.max(0, 3 - (q.services || []).length); i++) {
-    fillRect(doc, ML, rowY, CW, ROW_H + SPEC_H, WHITE, "#e5e7eb");
-    rowY += ROW_H + SPEC_H;
+    fillRect(doc, ML, rowY, CW, ROW_H, i % 2 === 0 ? WHITE : BG_HEADER, LINE);
+    rowY += ROW_H;
   }
-  hline(doc, ML, rowY, CW, "#d1d5db");
 
-  const bottomY = rowY + 60;
-  const trmW = CW * 0.47;
-  const totW = CW * 0.47;
-  const totX = ML + CW - totW;
+  hline(doc, ML, rowY, CW, LINE, 0.75);
 
-  setN(7);
-  let tBoxH = 40;
-  termLines.forEach((t: string, i: number) => {
-    tBoxH += doc.splitTextToSize(`${i + 1}. ${t}`, trmW - 10).length * 8 + 3;
-  });
+  // ── Amount in Words ──
+  const amtWordsY = rowY + 6;
+  setN(7.5);
+  setTextClr(doc, MUTED);
+  doc.text(`Amount in Words: ${numberToWords(Math.round(grandTotal))} Rupees Only`, ML + 4, amtWordsY + 8);
+  hline(doc, ML, amtWordsY + 14, CW, LINE);
 
+  // ── Bottom section: Bank Details (left) + Totals (right) ──
+  const bottomY = amtWordsY + 18;
+  const leftW = CW * 0.52;
+  const rightW = CW * 0.46;
+  const rightX = ML + leftW + CW * 0.02;
+
+  // Bank Details
   setDraw(doc, LINE);
-  doc.rect(ML, bottomY, trmW, tBoxH, "S");
-  setB(8.5);
-  setTextClr(doc, SECONDARY);
-  doc.text("Terms & Conditions", ML + 8, bottomY + 12);
-  hline(doc, ML + 8, bottomY + 16, trmW - 10, LINE);
-
-  let tty = bottomY + 28;
-  termLines.forEach((t: string, i: number) => {
-    setN(7.5);
-    setTextClr(doc, MUTED);
-    doc.splitTextToSize(`${i + 1}. ${t}`, trmW - 16).forEach((l: string) => {
-      doc.text(l, ML + 8, tty);
-      tty += 9;
-    });
-    tty += 3;
-  });
-
-  let trY = bottomY + 2;
-
-  const totRows: [string, string, boolean][] = [
-    ["SUBTOTAL", rupee(subtotal), false],
-    ["DISCOUNT", "-" + rupee(discount), false],
-    ["SUBTOTAL LESS DISCOUNT", rupee(subtotal - discount), true],
-    ["GST (18%)", rupee(tax), false],
+  const bankRows: [string, string][] = [
+    ["Bank Name", bankName || "—"],
+    ["Account No.", bankAccountNumber || "—"],
+    ["Account Name", bankAccountName],
+    ["IFSC Code", bankIFSC || "—"],
+    ["Branch", bankBranch || "—"],
+    ["Account Type", bankAccountType || "Current"],
   ];
+  const bankBoxH = bankRows.length * 14 + 20;
+  doc.rect(ML, bottomY, leftW, bankBoxH, "S");
+  setB(7.5);
+  setTextClr(doc, PRIMARY);
+  doc.text("BANK DETAILS", ML + 5, bottomY + 10);
+  hline(doc, ML + 5, bottomY + 13, leftW - 10, LINE);
 
-  totRows.forEach(([lbl, val, highlight]) => {
-    setB(8.5);
-    setTextClr(doc, highlight ? PRIMARY : SECONDARY);
-    doc.text(lbl, totX, trY + 10);
-    setN(8.5);
+  let bankY = bottomY + 22;
+  bankRows.forEach(([lbl, val]) => {
+    setB(7.5);
+    setTextClr(doc, MUTED);
+    doc.text(lbl, ML + 5, bankY);
+    setN(7.5);
     setTextClr(doc, SECONDARY);
-    doc.text(val, totX + totW - 4, trY + 10, { align: "right" });
-    if (lbl === "DISCOUNT") hline(doc, totX, trY + 14, totW, LINE);
-    trY += 16;
+    doc.text(val, ML + leftW - 5, bankY, { align: "right" });
+    hline(doc, ML + 5, bankY + 3, leftW - 10, BG_HEADER);
+    bankY += 14;
   });
 
-  trY += 6;
-  hline(doc, totX, trY, totW, PRIMARY);
-  setB(10);
+  // Terms & Notes below bank details
+  const termsY = bottomY + bankBoxH + 6;
+  const termsBoxH = termLines.length * 10 + 22;
+  doc.rect(ML, termsY, leftW, termsBoxH, "S");
+  setB(7.5);
   setTextClr(doc, PRIMARY);
-  doc.text("QUOTE TOTAL", totX + 6, trY + 16);
-  setB(16);
-  setTextClr(doc, SECONDARY);
-  doc.text(
-    (fontOk ? "₹" : "Rs.") +
-      total.toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-    totX + totW - 6,
-    trY + 19,
-    { align: "right" },
-  );
+  doc.text("TERMS & NOTES", ML + 5, termsY + 10);
+  hline(doc, ML + 5, termsY + 13, leftW - 10, LINE);
+  let termY = termsY + 22;
+  termLines.forEach((t, i) => {
+    setN(7);
+    setTextClr(doc, MUTED);
+    doc.splitTextToSize(`${i + 1}. ${t}`, leftW - 12).forEach((l: string) => {
+      doc.text(l, ML + 5, termY);
+      termY += 9;
+    });
+  });
 
-  const sigY = trY + 45;
+  // Totals box (right side)
+  const totRows: [string, string, boolean][] = [
+    ["Subtotal", rupee(subtotal), false],
+    ["Taxable Amount", rupee(taxableAmount), false],
+  ];
+  if (isInterState) {
+    totRows.push([`IGST (18%)`, rupee(igstAmt), false]);
+  } else {
+    totRows.push([`CGST (9%)`, rupee(cgstAmt), false]);
+    totRows.push([`SGST (9%)`, rupee(sgstAmt), false]);
+  }
+  totRows.push(["Grand Total", rupee(grandTotal), true]);
+  totRows.push(["(-) Amount Paid", rupee(Number(q.amountPaid || 0)), false]);
+
+  const balanceDue = grandTotal - Number(q.amountPaid || 0);
+  const totRowH = 16;
+  const totBoxH = totRows.length * totRowH + totRowH + 16 + 40; // extra for sig area
+
+  doc.rect(rightX, bottomY, rightW, totBoxH, "S");
+
+  let trY = bottomY + 4;
+  totRows.forEach(([lbl, val, bold]) => {
+    hline(doc, rightX, trY + totRowH - 1, rightW, LINE);
+    if (bold) {
+      setB(9);
+      setTextClr(doc, PRIMARY);
+    } else {
+      setN(8);
+      setTextClr(doc, SECONDARY);
+    }
+    doc.text(lbl, rightX + 5, trY + totRowH - 4);
+    doc.text(val, rightX + rightW - 5, trY + totRowH - 4, { align: "right" });
+    trY += totRowH;
+  });
+
+  // Balance Due highlighted
+  trY += 2;
+  fillRect(doc, rightX, trY, rightW, totRowH + 2, BG_HEADER, LINE);
   setB(9);
   setTextClr(doc, PRIMARY);
-  doc.text(`FOR ${companyName.toUpperCase()}`, totX + totW / 2, sigY, {
-    align: "center",
+  doc.text("Balance Due", rightX + 5, trY + 12);
+  setB(11);
+  setTextClr(doc, balanceDue > 0 ? "#dc2626" : PRIMARY);
+  doc.text(rupee(balanceDue), rightX + rightW - 5, trY + 12, { align: "right" });
+  trY += totRowH + 8;
+
+  // Authorized Signatory
+  setN(8);
+  setTextClr(doc, MUTED);
+  doc.text(`For ${companyName.toUpperCase()}`, rightX + rightW / 2, trY + 8, { align: "center" });
+  hline(doc, rightX + rightW / 2 - 40, trY + 28, 80, LINE);
+  setB(7.5);
+  setTextClr(doc, SECONDARY);
+  doc.text("Authorised Signatory", rightX + rightW / 2, trY + 36, { align: "center" });
+
+  // ── HSN/SAC Summary table ──
+  const hsnY = Math.max(termsY + termsBoxH, bottomY + totBoxH) + 12;
+  const hsnCols = { code: CW * 0.2, taxable: CW * 0.25, rate: CW * 0.15, amt: CW * 0.2, total: CW * 0.2 };
+  const hsnXs = {
+    code: ML,
+    taxable: ML + hsnCols.code,
+    rate: ML + hsnCols.code + hsnCols.taxable,
+    amt: ML + hsnCols.code + hsnCols.taxable + hsnCols.rate,
+    total: ML + hsnCols.code + hsnCols.taxable + hsnCols.rate + hsnCols.amt,
+  };
+
+  fillRect(doc, ML, hsnY, CW, 16, PRIMARY);
+  const hsnHeaders: [keyof typeof hsnXs, string, number, "left"|"center"|"right"][] = [
+    ["code",    "HSN / SAC Code",  hsnCols.code,    "left"],
+    ["taxable", "Taxable Value",   hsnCols.taxable, "right"],
+    [isInterState ? "rate" : "rate", isInterState ? "IGST Rate" : "CGST Rate", hsnCols.rate, "center"],
+    ["amt",     isInterState ? "IGST Amt" : "CGST Amt", hsnCols.amt, "right"],
+    ["total",   "Total Tax",       hsnCols.total,   "right"],
+  ];
+  hsnHeaders.forEach(([key, label, w, align]) => {
+    setB(7);
+    setTextClr(doc, WHITE);
+    const cx = align === "center" ? hsnXs[key] + w / 2
+      : align === "right" ? hsnXs[key] + w - 4
+      : hsnXs[key] + 4;
+    doc.text(label, cx, hsnY + 11, { align });
   });
 
-  hline(doc, totX + totW / 2 - 50, sigY + 35, 100, LINE);
+  // Aggregate by HSN code
+  const hsnMap: Record<string, number> = {};
+  (q.services || []).forEach((s: any) => {
+    const key = s.hsnCode || "—";
+    hsnMap[key] = (hsnMap[key] || 0) + Number(s.price) * Number(s.quantity);
+  });
 
+  let hsnRowY = hsnY + 16;
+  Object.entries(hsnMap).forEach(([code, val]) => {
+    const tv = val - (discount * val / subtotal);
+    const taxAmt = tv * (isInterState ? TAX_RATE : TAX_RATE / 2);
+    fillRect(doc, ML, hsnRowY, CW, 14, WHITE, LINE);
+    setN(7.5);
+    setTextClr(doc, SECONDARY);
+    doc.text(code, hsnXs.code + 4, hsnRowY + 10);
+    doc.text(rupee(tv), hsnXs.taxable + hsnCols.taxable - 4, hsnRowY + 10, { align: "right" });
+    doc.text(isInterState ? "18%" : "9%", hsnXs.rate + hsnCols.rate / 2, hsnRowY + 10, { align: "center" });
+    doc.text(rupee(taxAmt), hsnXs.amt + hsnCols.amt - 4, hsnRowY + 10, { align: "right" });
+    doc.text(rupee(taxAmt), hsnXs.total + hsnCols.total - 4, hsnRowY + 10, { align: "right" });
+    hsnRowY += 14;
+  });
+
+  // Total row
+  fillRect(doc, ML, hsnRowY, CW, 15, BG_HEADER, LINE);
   setB(8);
   setTextClr(doc, SECONDARY);
-  doc.text("AUTHORIZED SIGNATORY / DIRECTOR", totX + totW / 2, sigY + 45, {
-    align: "center",
+  doc.text("Total", hsnXs.code + 4, hsnRowY + 10);
+  doc.text(rupee(taxableAmount), hsnXs.taxable + hsnCols.taxable - 4, hsnRowY + 10, { align: "right" });
+  doc.text(rupee(totalTax), hsnXs.amt + hsnCols.amt - 4, hsnRowY + 10, { align: "right" });
+  doc.text(rupee(totalTax), hsnXs.total + hsnCols.total - 4, hsnRowY + 10, { align: "right" });
+  hsnRowY += 15;
+
+  // ── Declaration + Footer ──
+  const declY = hsnRowY + 10;
+  const declW = CW * 0.6;
+  setN(7.5);
+  setTextClr(doc, MUTED);
+  doc.splitTextToSize(
+    "DECLARATION: We declare that this invoice shows the actual price of the goods/services described and that all particulars are true and correct. All disputes are subject to " + (companyState || "local") + " jurisdiction only.",
+    declW,
+  ).forEach((l: string, i: number) => {
+    doc.text(l, ML, declY + i * 9);
   });
 
-  const FY = PH - 35;
-  setN(8.5);
+  const footerY = PH - 26;
+  setN(7);
   setTextClr(doc, MUTED);
-  doc.text(companyWebsite.toLowerCase(), PW / 2, FY, { align: "center" });
+  doc.text(footerText, PW / 2, footerY, { align: "center" });
 
-  setDraw(doc, PRIMARY);
-  doc.setLineWidth(1);
-  doc.rect(15, 15, PW - 30, PH - 30, "S");
+  // Re-draw outer border on top
+  setDraw(doc, LINE);
+  doc.setLineWidth(0.75);
+  doc.rect(14, 14, PW - 28, PH - 28, "S");
 
   return doc;
+}
+
+// ── Simple number-to-words for invoice ──
+function numberToWords(n: number): string {
+  if (n === 0) return "Zero";
+  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+    "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  function below100(num: number): string {
+    if (num < 20) return ones[num];
+    return tens[Math.floor(num / 10)] + (num % 10 ? " " + ones[num % 10] : "");
+  }
+  function below1000(num: number): string {
+    if (num < 100) return below100(num);
+    return ones[Math.floor(num / 100)] + " Hundred" + (num % 100 ? " " + below100(num % 100) : "");
+  }
+
+  const crore = Math.floor(n / 10000000);
+  const lakh = Math.floor((n % 10000000) / 100000);
+  const thousand = Math.floor((n % 100000) / 1000);
+  const rest = n % 1000;
+
+  let result = "";
+  if (crore) result += below1000(crore) + " Crore ";
+  if (lakh) result += below1000(lakh) + " Lakh ";
+  if (thousand) result += below1000(thousand) + " Thousand ";
+  if (rest) result += below1000(rest);
+
+  return result.trim();
 }

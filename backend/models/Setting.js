@@ -23,6 +23,18 @@ const settingSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    companyPAN: {
+      type: String,
+      default: "",
+    },
+    companyState: {
+      type: String,
+      default: "",
+    },
+    companyStateCode: {
+      type: String,
+      default: "",
+    },
     companyWebsite: {
       type: String,
       default: "",
@@ -46,6 +58,10 @@ const settingSchema = new mongoose.Schema(
     bankBranch: {
       type: String,
       default: "",
+    },
+    bankAccountType: {
+      type: String,
+      default: "Current",
     },
     quotationTerms: {
       type: [String],

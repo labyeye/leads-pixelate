@@ -56,7 +56,7 @@ const initialFormState = {
   projectTitle: "",
   leadTag: "",
   date: new Date().toISOString().split("T")[0],
-  services: [{ name: "", price: 0, quantity: 1 }],
+  services: [{ name: "", hsnCode: "", price: 0, quantity: 1 }],
   discount: 0,
   status: "Draft",
 };
@@ -164,8 +164,8 @@ export default function QuotationsPage() {
         ? new Date(q.date).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0],
       services: q.services?.length
-        ? q.services
-        : [{ name: "", price: 0, quantity: 1 }],
+        ? q.services.map((s: any) => ({ ...s, hsnCode: s.hsnCode || "" }))
+        : [{ name: "", hsnCode: "", price: 0, quantity: 1 }],
       discount: q.discount || 0,
       status: q.status || "Draft",
     });
@@ -464,7 +464,7 @@ export default function QuotationsPage() {
                       onClick={() =>
                         setField("services", [
                           ...formData.services,
-                          { name: "", price: 0, quantity: 1 },
+                          { name: "", hsnCode: "", price: 0, quantity: 1 },
                         ])
                       }
                       className="border-2 bg-primary text-white px-3 py-1 text-xs font-black"
@@ -474,8 +474,11 @@ export default function QuotationsPage() {
                   </div>
                   <div className="border-2 border-black bg-white">
                     <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-primary">
-                      <div className="col-span-6 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
+                      <div className="col-span-4 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
                         Description
+                      </div>
+                      <div className="col-span-2 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
+                        HSN/SAC
                       </div>
                       <div className="col-span-3 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
                         Price ₹
@@ -494,7 +497,7 @@ export default function QuotationsPage() {
                             "border-b-2 border-black",
                         )}
                       >
-                        <div className="col-span-6 border-r-2 border-black">
+                        <div className="col-span-4 border-r-2 border-black">
                           <input
                             value={item.name}
                             onChange={(e) =>
@@ -503,6 +506,16 @@ export default function QuotationsPage() {
                             placeholder="Item description"
                             required
                             className="w-full px-3 py-2.5 text-sm font-medium bg-white outline-none focus:bg-[#FFDE00]/20"
+                          />
+                        </div>
+                        <div className="col-span-2 border-r-2 border-black">
+                          <input
+                            value={item.hsnCode || ""}
+                            onChange={(e) =>
+                              handleServiceChange(idx, "hsnCode", e.target.value)
+                            }
+                            placeholder="998315"
+                            className="w-full px-3 py-2.5 text-sm font-mono bg-white outline-none focus:bg-[#FFDE00]/20"
                           />
                         </div>
                         <div className="col-span-3 border-r-2 border-black">

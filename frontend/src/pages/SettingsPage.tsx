@@ -440,6 +440,9 @@ export default function SettingsPage() {
       setSettings({
         companyName: tenant?.name || "",
         companyGST: "",
+        companyPAN: "",
+        companyState: "",
+        companyStateCode: "",
         companyAddress: "",
         companyPhone: "",
         companyEmail: user?.email || "",
@@ -450,6 +453,7 @@ export default function SettingsPage() {
         bankIFSC: "",
         bankName: "",
         bankBranch: "",
+        bankAccountType: "Current",
         quotationTitle: "PROFORMA INVOICE",
         quotationFooter: "",
         quotationTerms: [],
@@ -597,20 +601,40 @@ export default function SettingsPage() {
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Logo must be under 2 MB.",
+        description: "Logo must be under 10 MB.",
         variant: "destructive",
       });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      setSettings((prev: any) => ({ ...prev, logoUrl: base64 }));
+
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const MAX = 300;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        const ratio = Math.min(MAX / width, MAX / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      // Use JPEG at 0.75 quality — logos compress to <30KB easily
+      const compressed = canvas.toDataURL("image/jpeg", 0.75);
+      setSettings((prev: any) => ({ ...prev, logoUrl: compressed }));
     };
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      toast({ title: "Could not read image", variant: "destructive" });
+    };
+    img.src = objectUrl;
   };
 
   const handleRemoveLogo = () => {
@@ -734,10 +758,34 @@ export default function SettingsPage() {
                   />
                   <InputField
                     onChange={handleChange}
-                    label="GST Number"
+                    label="GST Number (GSTIN)"
                     name="companyGST"
                     value={settings?.companyGST || ""}
                     placeholder="07AAAAA0000A1Z5"
+                    readOnly={!isAdminOrAbove}
+                  />
+                  <InputField
+                    onChange={handleChange}
+                    label="PAN Number"
+                    name="companyPAN"
+                    value={settings?.companyPAN || ""}
+                    placeholder="ABCDE1234F"
+                    readOnly={!isAdminOrAbove}
+                  />
+                  <InputField
+                    onChange={handleChange}
+                    label="State"
+                    name="companyState"
+                    value={settings?.companyState || ""}
+                    placeholder="e.g. Bihar"
+                    readOnly={!isAdminOrAbove}
+                  />
+                  <InputField
+                    onChange={handleChange}
+                    label="State Code"
+                    name="companyStateCode"
+                    value={settings?.companyStateCode || ""}
+                    placeholder="e.g. 10"
                     readOnly={!isAdminOrAbove}
                   />
                   <InputField
@@ -817,6 +865,13 @@ export default function SettingsPage() {
                     label="Branch Name"
                     name="bankBranch"
                     value={settings?.bankBranch || ""}
+                  />
+                  <InputField
+                    onChange={handleChange}
+                    label="Account Type"
+                    name="bankAccountType"
+                    value={settings?.bankAccountType || "Current"}
+                    placeholder="e.g. Current"
                   />
                 </div>
               </div>

@@ -22,6 +22,10 @@ const productSchema = new mongoose.Schema(
       enum: ["Active", "Inactive"],
       default: "Active",
     },
+    hsnCode: {
+      type: String,
+      default: "",
+    },
     description: {
       type: String,
     },

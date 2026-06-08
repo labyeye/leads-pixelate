@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const quotationServiceSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  hsnCode: { type: String, default: "" },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, min: 1 },
 });

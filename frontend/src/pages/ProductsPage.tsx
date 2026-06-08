@@ -24,6 +24,7 @@ const initialForm = {
   name: "",
   category: "Machines",
   price: "",
+  hsnCode: "",
   status: "Active",
   description: "",
 };
@@ -74,6 +75,7 @@ export default function ProductsPage() {
       name: item.name || "",
       category: item.category || "Machines",
       price: item.price?.toString() || "",
+      hsnCode: item.hsnCode || "",
       status: item.status || "Active",
       description: item.description || "",
     });
@@ -226,6 +228,7 @@ export default function ProductsPage() {
                     "Product Name",
                     "Category",
                     "Price",
+                    "HSN/SAC",
                     "Description",
                     "Status",
                     "Actions",
@@ -289,6 +292,16 @@ export default function ProductsPage() {
 
                       <td className="px-4 py-3 font-black text-black whitespace-nowrap">
                         ₹{(item.price || 0).toLocaleString("en-IN")}
+                      </td>
+
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {item.hsnCode ? (
+                          <span className="text-[10px] font-black font-mono tracking-wider bg-gray-100 border border-gray-300 px-2 py-1 text-gray-700">
+                            {item.hsnCode}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 italic text-xs">—</span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px]">
@@ -430,6 +443,25 @@ export default function ProductsPage() {
                     className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
                   />
                 </div>
+              </div>
+
+              {/* HSN / SAC Code */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  HSN / SAC Code{" "}
+                  <span className="text-gray-400 font-medium normal-case">
+                    (for GST invoicing)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={form.hsnCode}
+                  onChange={(e) =>
+                    setForm({ ...form, hsnCode: e.target.value })
+                  }
+                  placeholder="e.g. 998315"
+                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
+                />
               </div>
 
               {/* Status */}
