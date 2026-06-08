@@ -665,6 +665,7 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
     startTime,
     endTime,
     updateExisting: false,
+    assigneeIds: tenant?.integrations?.indiamart?.assigneeIds || [],
   });
 
   // Update lastSync timestamp on tenant
@@ -725,6 +726,7 @@ const getIndiamartSyncStatus = asyncHandler(async (req, res) => {
       totalIndiamartLeads: total,
       last7DaysLeads: recentCount,
       recentSyncs: syncLogs.slice(0, 10),
+      assigneeIds: integration.assigneeIds || [],
     },
   });
 });
@@ -884,6 +886,15 @@ const getStatusHistoryReport = asyncHandler(async (req, res) => {
   res.json({ success: true, count: results.length, data: results });
 });
 
+const updateIndiamartSettings = asyncHandler(async (req, res) => {
+  const { assigneeIds } = req.body;
+  const query = req.user.tenantId ? { _id: req.user.tenantId } : { ownerUser: req.user._id };
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
+  });
+  res.json({ success: true, message: "IndiaMART settings updated" });
+});
+
 module.exports = {
   getLeads,
   getLead,
@@ -898,4 +909,5 @@ module.exports = {
   getIndiamartSyncStatus,
   indiamartWebhook,
   getStatusHistoryReport,
+  updateIndiamartSettings,
 };

@@ -54,6 +54,7 @@ const tenantSchema = new mongoose.Schema(
         enabled: { type: Boolean, default: false },
         apiKey: { type: String, default: "" },
         lastSync: { type: Date, default: null },
+        assigneeIds: { type: [String], default: [] }, // empty = global round-robin
       },
       facebook: {
         enabled: { type: Boolean, default: false },

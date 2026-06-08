@@ -14,6 +14,7 @@ const {
   getIndiamartSyncStatus,
   indiamartWebhook,
   getStatusHistoryReport,
+  updateIndiamartSettings,
 } = require("../controllers/leadController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -39,6 +40,11 @@ router.post(
   "/indiamart/sync",
   authorize("super_admin", "admin"),
   syncFromIndiamart,
+);
+router.post(
+  "/indiamart/settings",
+  authorize("super_admin", "admin"),
+  updateIndiamartSettings,
 );
 
 // TradeIndia stub — replace handler when integration is ready

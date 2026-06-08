@@ -45,6 +45,7 @@ connectDB().then(async () => {
         await runScheduledSync(
           tenant._id,
           tenant.integrations.indiamart.apiKey,
+          tenant.integrations.indiamart.assigneeIds || [],
         );
         await Tenant.findByIdAndUpdate(tenant._id, {
           "integrations.indiamart.lastSync": new Date(),

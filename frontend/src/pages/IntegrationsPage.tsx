@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
-import { facebookAPI, indiamartAPI } from "@/services/api";
+import { facebookAPI, indiamartAPI, usersAPI } from "@/services/api";
 import companylogo from "../assets/images/Logo.png";
 import indiamartLogo from "../assets/images/logos/indiamart.png";
 import facebookLogo from "../assets/images/logos/facebook.png";
@@ -930,6 +930,11 @@ export default function IntegrationsPage() {
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [fbHasToken, setFbHasToken] = useState(false);
 
+  // IndiaMART assignee state
+  const [imUsers, setImUsers] = useState<{ _id: string; name: string }[]>([]);
+  const [imAssigneeIds, setImAssigneeIds] = useState<string[]>([]);
+  const [imSavingAssignees, setImSavingAssignees] = useState(false);
+
   // Check DB on mount for existing connections
   useEffect(() => {
     facebookAPI
@@ -947,7 +952,16 @@ export default function IntegrationsPage() {
       .then((res) => {
         if (res.data?.connected) {
           setConnectedIds((prev) => new Set([...prev, "indiamart"]));
+          setImAssigneeIds(res.data?.assigneeIds || []);
         }
+      })
+      .catch(() => {});
+
+    usersAPI
+      .getAll()
+      .then((res) => {
+        const list = (res.data || []).map((u: any) => ({ _id: u._id, name: u.name }));
+        setImUsers(list);
       })
       .catch(() => {});
   }, []);
@@ -1151,6 +1165,69 @@ export default function IntegrationsPage() {
                     </>
                   )}
                 </button>
+
+                {/* IndiaMART: Lead Assignment panel (shown only when connected) */}
+                {integ.id === "indiamart" && isConnected && (
+                  <div className="mt-4 pt-4 border-t-2 border-black">
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      Lead Assignment
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mb-3">
+                      Select who receives IndiaMART leads. One person = all leads go there. Multiple = round-robin. None = auto round-robin among all sales team.
+                    </p>
+                    <div className="flex flex-col gap-1 mb-3 max-h-40 overflow-y-auto border-2 border-black p-2 bg-[#F9FAFB]">
+                      {imUsers.map((u) => {
+                        const checked = imAssigneeIds.includes(u._id);
+                        return (
+                          <label
+                            key={u._id}
+                            className="flex items-center gap-2 cursor-pointer text-sm font-medium text-black hover:bg-[#024BAB]/10 px-2 py-1"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setImAssigneeIds((prev) =>
+                                  checked
+                                    ? prev.filter((id) => id !== u._id)
+                                    : [...prev, u._id],
+                                );
+                              }}
+                              className="accent-[#024BAB] w-4 h-4"
+                            />
+                            {u.name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <button
+                      disabled={imSavingAssignees}
+                      onClick={async () => {
+                        setImSavingAssignees(true);
+                        try {
+                          await indiamartAPI.updateSettings(imAssigneeIds);
+                          toast({
+                            title: "Saved!",
+                            description:
+                              imAssigneeIds.length === 0
+                                ? "Using auto round-robin for all sales team."
+                                : `Leads will be assigned to ${imAssigneeIds.length} selected user(s).`,
+                          });
+                        } catch {
+                          toast({
+                            title: "Error",
+                            description: "Could not save assignment settings.",
+                            variant: "destructive",
+                          });
+                        }
+                        setImSavingAssignees(false);
+                      }}
+                      className="nb-btn w-full py-2 text-sm font-bold bg-[#024BAB] text-white"
+                    >
+                      {imSavingAssignees ? "Saving…" : "Save Assignment"}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -516,6 +516,11 @@ export const indiamartAPI = {
       "/leads/indiamart/sync",
       { method: "POST", body: JSON.stringify(body || {}) },
     ),
+  updateSettings: (assigneeIds: string[]) =>
+    request<{ success: boolean; message: string }>(
+      "/leads/indiamart/settings",
+      { method: "POST", body: JSON.stringify({ assigneeIds }) },
+    ),
 };
 
 export const whatsappAPI = {

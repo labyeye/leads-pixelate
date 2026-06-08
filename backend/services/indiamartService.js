@@ -244,12 +244,30 @@ async function getRoundRobinAssigneeId(tenantId = null) {
   return winner;
 }
 
+async function getRoundRobinFromIds(userIds) {
+  if (!userIds || userIds.length === 0) return null;
+  if (userIds.length === 1) {
+    const u = await User.findById(userIds[0]).catch(() => null);
+    return u?._id || null;
+  }
+  const mongoose = require("mongoose");
+  const ids = userIds.map((id) => new mongoose.Types.ObjectId(id));
+  const counts = await Lead.aggregate([
+    { $match: { assignedTo: { $in: ids } } },
+    { $group: { _id: "$assignedTo", count: { $sum: 1 } } },
+  ]);
+  const countMap = Object.fromEntries(counts.map((c) => [c._id.toString(), c.count]));
+  const sorted = ids.sort((a, b) => (countMap[a.toString()] || 0) - (countMap[b.toString()] || 0));
+  return sorted[0];
+}
+
 async function syncIndiamartLeads({
   apiKey,
   tenantId = null,
   startTime,
   endTime,
   updateExisting = true,
+  assigneeIds = [],
 }) {
   const result = {
     fetched: 0,
@@ -353,7 +371,9 @@ async function syncIndiamartLeads({
         }
       }
 
-      const assignedToId = await getRoundRobinAssigneeId(tenantId);
+      const assignedToId = assigneeIds.length > 0
+        ? await getRoundRobinFromIds(assigneeIds)
+        : await getRoundRobinAssigneeId(tenantId);
       const leadData = mapIMLeadToModel(record, assignedToId);
       if (tenantId) leadData.tenantId = tenantId;
       await Lead.create(leadData);
@@ -368,7 +388,7 @@ async function syncIndiamartLeads({
 
 let lastSyncEndTime = null;
 
-async function runScheduledSync(tenantId, apiKey) {
+async function runScheduledSync(tenantId, apiKey, assigneeIds = []) {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -384,6 +404,7 @@ async function runScheduledSync(tenantId, apiKey) {
     tenantId,
     startTime,
     endTime,
+    assigneeIds,
   });
 
   lastSyncEndTime = now.toISOString();
