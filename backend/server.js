@@ -121,6 +121,7 @@ app.use("/api/quotations", require("./routes/quotationRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/settings", require("./routes/settingRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
+app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/billing", require("./routes/billingRoutes"));
 app.use("/api/facebook", require("./routes/facebookRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));

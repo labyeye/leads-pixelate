@@ -459,6 +459,27 @@ export const clientsAPI = {
     }),
 };
 
+export const servicesAPI = {
+  getAll: () =>
+    request<{ success: boolean; count: number; data: any[] }>("/services"),
+  getById: (id: string) =>
+    request<{ success: boolean; data: any }>(`/services/${id}`),
+  create: (data: any) =>
+    request<{ success: boolean; data: any }>("/services", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/services/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/services/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 export const quotationsAPI = {
   getAll: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
