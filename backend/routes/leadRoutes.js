@@ -48,7 +48,6 @@ router.post(
   updateIndiamartSettings,
 );
 
-// TradeIndia stub — replace handler when integration is ready
 router.get(
   "/tradeindia/status",
   authorize("super_admin", "admin"),
@@ -75,7 +74,6 @@ router.post(
   },
 );
 
-// Justdial stub — replace handler when integration is ready
 router.get(
   "/justdial/status",
   authorize("super_admin", "admin"),

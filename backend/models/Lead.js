@@ -165,8 +165,8 @@ leadSchema.index({
   email: "text",
   phone: "text",
 });
-leadSchema.index({ tenantId: 1, createdAt: -1 }); // primary list: tenant + newest first
-leadSchema.index({ tenantId: 1, status: 1, createdAt: -1 }); // category tab queries
+leadSchema.index({ tenantId: 1, createdAt: -1 });
+leadSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
 leadSchema.index({ tenantId: 1, source: 1 });
 leadSchema.index({ tenantId: 1, assignedTo: 1 });
 leadSchema.index(

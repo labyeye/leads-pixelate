@@ -40,7 +40,7 @@ const campaignSchema = new mongoose.Schema(
       enum: ["DRAFT", "RUNNING", "COMPLETED", "PAUSED", "CANCELLED"],
       default: "DRAFT",
     },
-    // Audience definition
+
     audience: {
       targetType: {
         type: String,
@@ -55,7 +55,7 @@ const campaignSchema = new mongoose.Schema(
       contacts: [contactSchema],
       totalContacts: { type: Number, default: 0 },
     },
-    // WhatsApp config
+
     whatsapp: {
       templateId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -89,7 +89,7 @@ const campaignSchema = new mongoose.Schema(
       ],
       phoneNumberId: { type: String, default: "" },
     },
-    // Denormalized metrics
+
     metrics: {
       total: { type: Number, default: 0 },
       sent: { type: Number, default: 0 },
@@ -98,7 +98,7 @@ const campaignSchema = new mongoose.Schema(
       replied: { type: Number, default: 0 },
       failed: { type: Number, default: 0 },
     },
-    // Reference to the launched WhatsApp campaign execution
+
     whatsappCampaignId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "WhatsappCampaign",

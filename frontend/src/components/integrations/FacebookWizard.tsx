@@ -22,8 +22,6 @@ import { cn } from "@/lib/utils";
 import { facebookAPI, usersAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 interface FbPage {
   id: string;
   name: string;
@@ -35,13 +33,11 @@ interface FbPage {
 interface FbForm {
   id: string;
   name: string;
-  status: string; // ACTIVE | ARCHIVED
+  status: string;
   leadsCount: number;
 }
 
 type WizardStep = "login" | "select_page" | "select_forms" | "done";
-
-// ─── Step indicators ─────────────────────────────────────────────────────────
 
 const STEPS: { id: WizardStep; label: string; icon: React.ElementType }[] = [
   { id: "login", label: "Login", icon: LogIn },
@@ -54,12 +50,10 @@ function stepIndex(s: WizardStep) {
   return STEPS.findIndex((x) => x.id === s);
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
 interface Props {
   onClose: () => void;
   onConnected: () => void;
-  /** If the user just came back from Facebook OAuth (fb_step=select_page in URL) */
+
   startAtStep?: WizardStep;
 }
 
@@ -71,32 +65,28 @@ export function FacebookWizard({
   const { toast } = useToast();
   const [step, setStep] = useState<WizardStep>(startAtStep);
 
-  // Page selection state
   const [pages, setPages] = useState<FbPage[]>([]);
   const [pagesLoading, setPagesLoading] = useState(false);
   const [selectedPage, setSelectedPage] = useState<FbPage | null>(null);
 
-  // Forms selection state
   const [forms, setForms] = useState<FbForm[]>([]);
   const [formsLoading, setFormsLoading] = useState(false);
   const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(
     new Set(),
   );
-  const [allForms, setAllForms] = useState(true); // "capture all forms" toggle
-  const [allowedStates, setAllowedStates] = useState<string[]>([]); // empty = all states
+  const [allForms, setAllForms] = useState(true);
+  const [allowedStates, setAllowedStates] = useState<string[]>([]);
   const [stateInput, setStateInput] = useState("");
 
   const [oauthLoading, setOauthLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
 
-  // Users for assignee dropdown
   const [users, setUsers] = useState<
     Array<{ _id: string; name: string; role: string }>
   >([]);
   const [defaultAssigneeId, setDefaultAssigneeId] = useState("");
 
-  // Connected pages (multi-page)
   const [connectedPages, setConnectedPages] = useState<
     Array<{
       pageId: string;
@@ -109,7 +99,6 @@ export function FacebookWizard({
   >([]);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
 
-  // Inline filter editing on Done step
   const [editingFilterPageId, setEditingFilterPageId] = useState<string | null>(
     null,
   );
@@ -118,12 +107,10 @@ export function FacebookWizard({
   const [editAssigneeId, setEditAssigneeId] = useState("");
   const [savingFilter, setSavingFilter] = useState(false);
 
-  // Load pages when arriving at select_page step
   useEffect(() => {
     if (step === "select_page") loadPages();
   }, [step]);
 
-  // Load users when arriving at select_forms step
   useEffect(() => {
     if (step === "select_forms" && users.length === 0) {
       usersAPI
@@ -133,12 +120,10 @@ export function FacebookWizard({
     }
   }, [step]);
 
-  // Load forms when page is selected
   useEffect(() => {
     if (selectedPage) loadForms(selectedPage.id);
   }, [selectedPage]);
 
-  // Load connected pages when on done step
   useEffect(() => {
     if (step === "done") {
       loadConnectedPages();
@@ -155,9 +140,7 @@ export function FacebookWizard({
     try {
       const res = await facebookAPI.getConnectedPages();
       setConnectedPages(res.data);
-    } catch (_e) {
-      // silently ignore
-    }
+    } catch (_e) {}
   };
 
   const handleSaveFilter = async (cp: {
@@ -238,7 +221,7 @@ export function FacebookWizard({
     setOauthLoading(true);
     try {
       const res = await facebookAPI.getAuthUrl();
-      // Open in same tab — Facebook requires this for prod (popup blocked on mobile)
+
       window.location.href = res.data.authUrl;
     } catch (err: unknown) {
       toast({
@@ -306,7 +289,7 @@ export function FacebookWizard({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {}
       <div className="border-b-2 border-black p-5 flex items-center gap-4 bg-[#EFF6FF]">
         <div className="w-12 h-12 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
           <span className="text-white font-display font-bold text-lg">f</span>
@@ -327,7 +310,7 @@ export function FacebookWizard({
         </button>
       </div>
 
-      {/* Step progress */}
+      {}
       <div className="px-5 pt-4 pb-3 border-b-2 border-black bg-white">
         <div className="flex items-center">
           {STEPS.map((s, i) => {
@@ -421,7 +404,7 @@ export function FacebookWizard({
               ))}
             </div>
 
-            {/* What you need */}
+            {}
             <div className="border-2 border-black p-4 bg-[#024BAB]/10 nb-shadow-sm">
               <p className="text-xs font-bold text-black uppercase tracking-wider mb-3 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> What you need before
@@ -445,7 +428,7 @@ export function FacebookWizard({
               </ul>
             </div>
 
-            {/* Permissions info */}
+            {}
             <div className="border-2 border-black p-4 bg-white nb-shadow-sm">
               <p className="text-xs font-bold text-black uppercase tracking-wider mb-2">
                 <ShieldCheck className="w-3.5 h-3.5 inline mr-1" /> Permissions
@@ -486,7 +469,7 @@ export function FacebookWizard({
               </p>
             </div>
 
-            {/* CTA */}
+            {}
             <button
               onClick={handleLoginWithFacebook}
               disabled={oauthLoading}

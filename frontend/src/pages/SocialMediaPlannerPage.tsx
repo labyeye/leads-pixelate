@@ -61,7 +61,6 @@ import {
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import { useSearchParams } from "react-router-dom";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface SocialPost {
   _id: string;
   caption: string;
@@ -150,35 +149,29 @@ const FILTER_TABS = [
   { id: "FAILED", label: "Failed" },
 ];
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function SocialMediaPlannerPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
-  // Tab: "posts" | "accounts"
   const [activeTab, setActiveTab] = useState<"posts" | "accounts">(
     searchParams.get("tab") === "accounts" ? "accounts" : "posts",
   );
 
-  // Stats
   const [stats, setStats] = useState<any>(null);
 
   const fetchStats = useCallback(async () => {
     try {
       const res = await socialAPI.getStats();
       setStats(res.data);
-    } catch {
-      /* silent */
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
-  // Handle OAuth redirect params
   useEffect(() => {
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
@@ -199,7 +192,7 @@ export default function SocialMediaPlannerPage() {
   return (
     <AppLayout title="Social Media Planner">
       <div className="flex flex-col h-full">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-background">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-purple-600 border-2 border-black nb-shadow flex items-center justify-center">
@@ -214,7 +207,7 @@ export default function SocialMediaPlannerPage() {
           </div>
         </div>
 
-        {/* Stats row */}
+        {}
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-6 py-3 border-b border-border bg-muted/20">
             {[
@@ -248,7 +241,7 @@ export default function SocialMediaPlannerPage() {
           </div>
         )}
 
-        {/* Page tabs */}
+        {}
         <div className="flex border-b-2 border-black px-6 bg-background">
           {[
             { id: "posts", label: "Posts" },
@@ -285,7 +278,6 @@ export default function SocialMediaPlannerPage() {
   );
 }
 
-// ─── Posts Tab ────────────────────────────────────────────────────────────────
 function PostsTab({
   isAdmin,
   toast,
@@ -427,7 +419,7 @@ function PostsTab({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Toolbar */}
+      {}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div className="flex gap-1 overflow-x-auto">
           {FILTER_TABS.map((t) => (
@@ -466,7 +458,7 @@ function PostsTab({
         </div>
       </div>
 
-      {/* Post list */}
+      {}
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -506,7 +498,7 @@ function PostsTab({
         )}
       </div>
 
-      {/* New / Edit Post Wizard */}
+      {}
       {wizardOpen && (
         <PostWizard
           open={wizardOpen}
@@ -520,7 +512,7 @@ function PostsTab({
         />
       )}
 
-      {/* Approve confirm */}
+      {}
       <AlertDialog
         open={!!approvalDialogPost}
         onOpenChange={() => setApprovalDialogPost(null)}
@@ -559,7 +551,7 @@ function PostsTab({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reject dialog */}
+      {}
       <Dialog
         open={!!rejectionDialogPost}
         onOpenChange={() => setRejectionDialogPost(null)}
@@ -603,7 +595,7 @@ function PostsTab({
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
+      {}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -629,7 +621,6 @@ function PostsTab({
   );
 }
 
-// ─── Post Card ────────────────────────────────────────────────────────────────
 function PostCard({
   post,
   isAdmin,
@@ -661,7 +652,7 @@ function PostCard({
     <div className="nb-card nb-card-hover overflow-hidden border-l-4 border-l-purple-600">
       <div className="px-5 py-4">
         <div className="flex items-start gap-4">
-          {/* Image thumbnail */}
+          {}
           {post.imageUrl ? (
             <img
               src={post.imageUrl}
@@ -675,7 +666,7 @@ function PostCard({
           )}
 
           <div className="flex-1 min-w-0">
-            {/* Status + platforms */}
+            {}
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
               <span
                 className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}
@@ -697,12 +688,12 @@ function PostCard({
               )}
             </div>
 
-            {/* Caption */}
+            {}
             <p className="text-sm text-foreground line-clamp-2">
               {post.caption}
             </p>
 
-            {/* Hashtags */}
+            {}
             {post.hashtags.length > 0 && (
               <p className="text-xs text-purple-600 mt-1 truncate">
                 {post.hashtags
@@ -711,7 +702,7 @@ function PostCard({
               </p>
             )}
 
-            {/* Schedule info */}
+            {}
             <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -725,21 +716,21 @@ function PostCard({
               )}
             </div>
 
-            {/* Rejection reason */}
+            {}
             {post.status === "REJECTED" && post.rejectionReason && (
               <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
                 <strong>Rejected:</strong> {post.rejectionReason}
               </div>
             )}
 
-            {/* Failure reason */}
+            {}
             {post.status === "FAILED" && post.failureReason && (
               <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
                 <strong>Failed:</strong> {post.failureReason}
               </div>
             )}
 
-            {/* Posted result */}
+            {}
             {post.status === "POSTED" && (
               <div className="mt-2 flex items-center gap-3 text-xs text-green-600">
                 <Check className="w-3 h-3" />
@@ -759,9 +750,9 @@ function PostCard({
             )}
           </div>
 
-          {/* Actions */}
+          {}
           <div className="flex flex-col gap-1.5 shrink-0">
-            {/* Edit — available for all editable statuses */}
+            {}
             {!["POSTING", "POSTED"].includes(post.status) && (
               <Button
                 size="sm"
@@ -773,7 +764,7 @@ function PostCard({
               </Button>
             )}
 
-            {/* Submit for approval — DRAFT or REJECTED */}
+            {}
             {["DRAFT", "REJECTED"].includes(post.status) && (
               <Button
                 size="sm"
@@ -785,7 +776,7 @@ function PostCard({
               </Button>
             )}
 
-            {/* Admin approval actions — PENDING */}
+            {}
             {isAdmin && post.status === "PENDING_APPROVAL" && (
               <>
                 <Button
@@ -808,7 +799,7 @@ function PostCard({
               </>
             )}
 
-            {/* Admin: post now for SCHEDULED / FAILED */}
+            {}
             {isAdmin &&
               ["SCHEDULED", "FAILED", "APPROVED"].includes(post.status) && (
                 <Button
@@ -821,7 +812,7 @@ function PostCard({
                 </Button>
               )}
 
-            {/* Delete */}
+            {}
             {!["POSTING", "POSTED"].includes(post.status) && (
               <Button
                 size="sm"
@@ -839,7 +830,6 @@ function PostCard({
   );
 }
 
-// ─── Post Wizard ──────────────────────────────────────────────────────────────
 function PostWizard({
   open,
   onClose,
@@ -947,7 +937,7 @@ function PostWizard({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0 space-y-4">
-          {/* Step 1: Content */}
+          {}
           {step === 1 && (
             <>
               <div>
@@ -1020,7 +1010,7 @@ function PostWizard({
             </>
           )}
 
-          {/* Step 2: Platforms & Schedule */}
+          {}
           {step === 2 && (
             <>
               <div>
@@ -1113,19 +1103,19 @@ function PostWizard({
             </>
           )}
 
-          {/* Step 3: Preview & Confirm */}
+          {}
           {step === 3 && (
             <>
               <p className="text-sm font-medium mb-1">Post Preview</p>
-              {/* Phone mockup */}
+              {}
               <div className="bg-gray-50 rounded-2xl p-4 border border-border">
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-xs mx-auto shadow-sm">
-                  {/* Header */}
+                  {}
                   <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400" />
                     <span className="text-xs font-semibold">Your Page</span>
                   </div>
-                  {/* Image */}
+                  {}
                   {imageUrl && (
                     <img
                       src={imageUrl}
@@ -1136,7 +1126,7 @@ function PostWizard({
                       }
                     />
                   )}
-                  {/* Caption */}
+                  {}
                   <div className="px-3 py-2">
                     <p className="text-xs text-gray-800 whitespace-pre-wrap">
                       {fullCaption || (
@@ -1155,7 +1145,7 @@ function PostWizard({
                 </div>
               </div>
 
-              {/* Summary */}
+              {}
               <div className="bg-muted/30 rounded-lg p-4 space-y-2">
                 <SummaryRow
                   label="Platforms"
@@ -1243,7 +1233,6 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ─── Accounts Tab ─────────────────────────────────────────────────────────────
 function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1252,7 +1241,6 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  // Manual connect form
   const [manualForm, setManualForm] = useState({
     platform: "facebook",
     accountId: "",
@@ -1356,9 +1344,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </Button>
       </div>
 
-      {/* Connect buttons */}
+      {}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        {/* OAuth */}
+        {}
         <button
           onClick={handleOAuthConnect}
           disabled={oauthLoading}
@@ -1382,7 +1370,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           </span>
         </button>
 
-        {/* Manual */}
+        {}
         <button
           onClick={() => setManualDialogOpen(true)}
           className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50/30 transition-all"
@@ -1402,7 +1390,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </button>
       </div>
 
-      {/* Setup guide */}
+      {}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <h3 className="text-sm font-semibold text-blue-800 mb-2">
           Setup Requirements
@@ -1429,7 +1417,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </ol>
       </div>
 
-      {/* Connected accounts list */}
+      {}
       {loading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -1513,7 +1501,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </div>
       )}
 
-      {/* Manual connect dialog */}
+      {}
       <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1629,7 +1617,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </DialogContent>
       </Dialog>
 
-      {/* Disconnect confirm */}
+      {}
       <AlertDialog
         open={!!disconnectId}
         onOpenChange={() => setDisconnectId(null)}

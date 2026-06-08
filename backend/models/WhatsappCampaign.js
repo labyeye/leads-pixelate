@@ -70,7 +70,7 @@ const whatsappCampaignSchema = new mongoose.Schema(
       headerText: String,
       footerText: String,
     },
-    // Variable mapping: [{ position: 1, fieldKey: "name" }, { position: 2, fieldKey: "company" }]
+
     variableMapping: [
       {
         position: Number,
@@ -96,7 +96,7 @@ const whatsappCampaignSchema = new mongoose.Schema(
       enum: ["DRAFT", "SENDING", "COMPLETED", "PARTIAL", "FAILED"],
       default: "DRAFT",
     },
-    // Denormalized counters for quick access
+
     totalCount: { type: Number, default: 0 },
     sentCount: { type: Number, default: 0 },
     deliveredCount: { type: Number, default: 0 },

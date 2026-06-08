@@ -362,7 +362,6 @@ async function syncIndiamartLeads({
         continue;
       }
 
-      // Resolve pincode → city/state if SENDER_CITY or SENDER_STATE is a 6-digit pin
       if (isPincode(record.SENDER_CITY)) {
         const resolved = await resolvePincode(record.SENDER_CITY);
         if (resolved) {

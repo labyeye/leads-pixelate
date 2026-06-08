@@ -1,7 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Setting = require("../models/Setting");
 
-// Default permissions matrix — used as fallback when tenant hasn't saved custom permissions
 const DEFAULT_PERMISSIONS = {
   Leads: {
     super_admin: { create: true, read: true, update: true, delete: true },
@@ -186,9 +185,8 @@ const DEFAULT_PERMISSIONS = {
   },
 };
 
-// Simple in-memory cache per tenantId so we don't hit DB on every request
-const permissionsCache = new Map(); // tenantId -> { data, expiresAt }
-const CACHE_TTL_MS = 60 * 1000; // 1 minute
+const permissionsCache = new Map();
+const CACHE_TTL_MS = 60 * 1000;
 
 async function getTenantPermissions(tenantId) {
   const key = tenantId ? tenantId.toString() : "global";
@@ -201,13 +199,11 @@ async function getTenantPermissions(tenantId) {
   return data;
 }
 
-// Call this after saving settings to invalidate cache
 function invalidatePermissionsCache(tenantId) {
   const key = tenantId ? tenantId.toString() : "global";
   permissionsCache.delete(key);
 }
 
-// Middleware factory: checkPermission("Products", "create")
 function checkPermission(resource, op) {
   return asyncHandler(async (req, res, next) => {
     const role = req.user?.role;
@@ -216,7 +212,6 @@ function checkPermission(resource, op) {
       throw new Error("Not authorized");
     }
 
-    // super_admin always allowed
     if (role === "super_admin") return next();
 
     const tenantPerms = await getTenantPermissions(req.user.tenantId);
@@ -224,7 +219,6 @@ function checkPermission(resource, op) {
 
     const resourcePerms = matrix[resource];
     if (!resourcePerms) {
-      // Resource not in matrix — fall back to admin-only for writes, allow all for reads
       if (op === "read") return next();
       if (role === "admin") return next();
       res.status(403);

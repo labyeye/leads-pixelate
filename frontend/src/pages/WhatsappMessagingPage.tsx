@@ -40,7 +40,6 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Campaign {
   _id: string;
   name: string;
@@ -102,7 +101,6 @@ const STATUS_COLORS: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
-// ─── Helper: preview body with variable values ─────────────────────────────
 function previewBody(
   bodyText: string,
   mapping: { position: number; fieldKey: string; customValue?: string }[],
@@ -130,7 +128,6 @@ function previewBody(
   return preview;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function WhatsappMessagingPage() {
   const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -138,7 +135,6 @@ export default function WhatsappMessagingPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  // Wizard state
   const [wizardOpen, setWizardOpen] = useState(false);
   const [step, setStep] = useState<WizardStep>(1);
   const [campaignName, setCampaignName] = useState("");
@@ -160,7 +156,6 @@ export default function WhatsappMessagingPage() {
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [loadingLeads, setLoadingLeads] = useState(false);
 
-  // ── Fetch campaigns ────────────────────────────────────────────────────────
   const fetchCampaigns = useCallback(async () => {
     setLoadingCampaigns(true);
     try {
@@ -177,7 +172,6 @@ export default function WhatsappMessagingPage() {
     fetchCampaigns();
   }, [fetchCampaigns]);
 
-  // ── Wizard open ────────────────────────────────────────────────────────────
   const openWizard = async () => {
     setStep(1);
     setCampaignName("");
@@ -188,7 +182,6 @@ export default function WhatsappMessagingPage() {
     setVariableMapping([]);
     setWizardOpen(true);
 
-    // Pre-fetch templates and leads
     setLoadingTemplates(true);
     setLoadingLeads(true);
     try {
@@ -211,7 +204,6 @@ export default function WhatsappMessagingPage() {
     }
   };
 
-  // ── Lead filtering ─────────────────────────────────────────────────────────
   useEffect(() => {
     let filtered = leads;
     if (leadSearch.trim()) {
@@ -229,7 +221,6 @@ export default function WhatsappMessagingPage() {
     setFilteredLeads(filtered);
   }, [leads, leadSearch, leadStatusFilter]);
 
-  // ── Template selection updates variable mapping ────────────────────────────
   const selectTemplate = (t: Template) => {
     setSelectedTemplate(t);
     const vars: { position: number; fieldKey: string; customValue: string }[] =
@@ -241,7 +232,6 @@ export default function WhatsappMessagingPage() {
     setVariableMapping(vars);
   };
 
-  // ── Lead select all ────────────────────────────────────────────────────────
   const toggleAllLeads = () => {
     if (selectedLeadIds.size === filteredLeads.length) {
       setSelectedLeadIds(new Set());
@@ -259,7 +249,6 @@ export default function WhatsappMessagingPage() {
     });
   };
 
-  // ── Send campaign ──────────────────────────────────────────────────────────
   const sendCampaign = async () => {
     if (!selectedTemplate || selectedLeadIds.size === 0 || !campaignName.trim())
       return;
@@ -288,7 +277,6 @@ export default function WhatsappMessagingPage() {
     }
   };
 
-  // ── View campaign detail ───────────────────────────────────────────────────
   const viewCampaign = async (id: string) => {
     setLoadingDetail(true);
     setSelectedCampaign(null);
@@ -302,11 +290,10 @@ export default function WhatsappMessagingPage() {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <AppLayout title="WhatsApp Messaging">
       <div className="flex flex-col h-full">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -342,9 +329,9 @@ export default function WhatsappMessagingPage() {
           </div>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex flex-1 overflow-hidden">
-          {/* Campaign list */}
+          {}
           <div className="w-full md:w-1/2 xl:w-2/5 border-r border-border overflow-y-auto">
             {loadingCampaigns ? (
               <div className="flex items-center justify-center h-40">
@@ -425,7 +412,7 @@ export default function WhatsappMessagingPage() {
             )}
           </div>
 
-          {/* Campaign detail */}
+          {}
           <div className="hidden md:flex flex-1 flex-col overflow-y-auto">
             {loadingDetail ? (
               <div className="flex items-center justify-center h-40">
@@ -445,7 +432,7 @@ export default function WhatsappMessagingPage() {
         </div>
       </div>
 
-      {/* New Campaign Wizard Dialog */}
+      {}
       <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
@@ -456,7 +443,7 @@ export default function WhatsappMessagingPage() {
                 Step {step} of 4
               </span>
             </DialogTitle>
-            {/* Step indicators */}
+            {}
             <div className="flex gap-1 mt-3">
               {[1, 2, 3, 4].map((s) => (
                 <div
@@ -468,7 +455,7 @@ export default function WhatsappMessagingPage() {
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">
-            {/* Step 1: Name */}
+            {}
             {step === 1 && (
               <div className="space-y-4">
                 <div>
@@ -486,7 +473,7 @@ export default function WhatsappMessagingPage() {
               </div>
             )}
 
-            {/* Step 2: Select template */}
+            {}
             {step === 2 && (
               <div className="space-y-3">
                 <p className="text-sm font-medium">Select Template</p>
@@ -550,7 +537,7 @@ export default function WhatsappMessagingPage() {
               </div>
             )}
 
-            {/* Step 3: Select leads */}
+            {}
             {step === 3 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -594,7 +581,7 @@ export default function WhatsappMessagingPage() {
                   </div>
                 ) : (
                   <div className="border border-border rounded-lg overflow-hidden">
-                    {/* Select all row */}
+                    {}
                     <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/30 border-b border-border">
                       <Checkbox
                         checked={
@@ -645,7 +632,7 @@ export default function WhatsappMessagingPage() {
               </div>
             )}
 
-            {/* Step 4: Variable mapping + preview */}
+            {}
             {step === 4 && selectedTemplate && (
               <div className="space-y-4">
                 {variableMapping.length > 0 && (
@@ -697,7 +684,7 @@ export default function WhatsappMessagingPage() {
                   </div>
                 )}
 
-                {/* Preview */}
+                {}
                 <div>
                   <p className="text-sm font-medium mb-2">Message Preview</p>
                   <div className="bg-[#e5ddd5] rounded-xl p-4">
@@ -729,7 +716,7 @@ export default function WhatsappMessagingPage() {
                   </p>
                 </div>
 
-                {/* Summary */}
+                {}
                 <div className="bg-muted/40 rounded-lg p-4 space-y-1.5">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Campaign</span>

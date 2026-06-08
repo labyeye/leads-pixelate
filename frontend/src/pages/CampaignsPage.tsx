@@ -62,7 +62,6 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface WaCampaign {
   _id: string;
   name: string;
@@ -152,7 +151,6 @@ interface MyCampaign {
 type ActiveTab = "meta" | "whatsapp" | "mine";
 type MetaView = "campaigns" | "adsets" | "ads";
 
-// ─── Status colors (neubrutalism: thick black border + solid bg) ─────────────
 const META_STATUS: Record<string, { cls: string; label: string }> = {
   ACTIVE: { cls: "bg-[#00C48C] text-black border-black", label: "Active" },
   PAUSED: { cls: "bg-[#FFDE00] text-black border-black", label: "Paused" },
@@ -188,7 +186,6 @@ const META_OBJECTIVES: Record<string, string> = {
   OUTCOME_SALES: "Sales",
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CampaignsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -204,7 +201,6 @@ export default function CampaignsPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [crmDeleteId, setCrmDeleteId] = useState<string | null>(null);
 
-  // Meta hierarchy
   const [metaView, setMetaView] = useState<MetaView>("campaigns");
   const [selectedCampaign, setSelectedCampaign] = useState<MetaCampaign | null>(
     null,
@@ -215,7 +211,6 @@ export default function CampaignsPage() {
   const [adSetsLoading, setAdSetsLoading] = useState(false);
   const [adsLoading, setAdsLoading] = useState(false);
 
-  // Meta CRUD dialogs
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
   const [editCampaign, setEditCampaign] = useState<MetaCampaign | null>(null);
   const [adSetDialogOpen, setAdSetDialogOpen] = useState(false);
@@ -227,7 +222,6 @@ export default function CampaignsPage() {
     id: string;
   } | null>(null);
 
-  // ── Fetch functions ──────────────────────────────────────────────────────────
   const fetchMeta = useCallback(async () => {
     setLoading(true);
     setMetaError(null);
@@ -312,7 +306,6 @@ export default function CampaignsPage() {
     else fetchMine();
   }, [tab]);
 
-  // ── Meta navigation ──────────────────────────────────────────────────────────
   const drillToAdSets = (campaign: MetaCampaign) => {
     setSelectedCampaign(campaign);
     setMetaView("adsets");
@@ -335,7 +328,6 @@ export default function CampaignsPage() {
     }
   };
 
-  // ── Meta status toggle ───────────────────────────────────────────────────────
   const toggleMetaStatus = async (
     type: "campaign" | "adset" | "ad",
     id: string,
@@ -369,7 +361,6 @@ export default function CampaignsPage() {
     }
   };
 
-  // ── Meta delete ──────────────────────────────────────────────────────────────
   const handleMetaDelete = async () => {
     if (!metaDeleteDialog) return;
     try {
@@ -395,7 +386,6 @@ export default function CampaignsPage() {
     }
   };
 
-  // ── CRM actions ──────────────────────────────────────────────────────────────
   const handleLaunch = async (id: string) => {
     setActionId(id);
     try {
@@ -447,7 +437,7 @@ export default function CampaignsPage() {
   return (
     <AppLayout title="Campaigns">
       <div className="flex flex-col h-full">
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        {}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-background">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-[#FA731C] border-2 border-black nb-shadow flex items-center justify-center shrink-0">
@@ -520,7 +510,7 @@ export default function CampaignsPage() {
           </div>
         </div>
 
-        {/* ── Stats ──────────────────────────────────────────────────────────── */}
+        {}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-3 border-b-2 border-black bg-[#fafafa]">
           {[
             {
@@ -560,7 +550,7 @@ export default function CampaignsPage() {
           ))}
         </div>
 
-        {/* ── Tabs ───────────────────────────────────────────────────────────── */}
+        {}
         <div className="flex border-b-2 border-black px-6 bg-background">
           {(
             [
@@ -609,7 +599,7 @@ export default function CampaignsPage() {
           ))}
         </div>
 
-        {/* ── Content ────────────────────────────────────────────────────────── */}
+        {}
         <div className="flex-1 overflow-y-auto p-6">
           {loading && tab !== "meta" ? (
             <div className="flex justify-center py-16">
@@ -617,7 +607,7 @@ export default function CampaignsPage() {
             </div>
           ) : (
             <div className="max-w-3xl space-y-3">
-              {/* ── META ADS ── */}
+              {}
               {tab === "meta" && (
                 <MetaAdsContent
                   error={metaError}
@@ -651,7 +641,7 @@ export default function CampaignsPage() {
                 />
               )}
 
-              {/* ── WHATSAPP ── */}
+              {}
               {tab === "whatsapp" && (
                 <>
                   {waCampaigns.length === 0 ? (
@@ -762,7 +752,7 @@ export default function CampaignsPage() {
                 </>
               )}
 
-              {/* ── CRM CAMPAIGNS ── */}
+              {}
               {tab === "mine" && (
                 <>
                   {myCampaigns.length === 0 ? (
@@ -895,7 +885,7 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      {/* ── CRM Delete Dialog ────────────────────────────────────────────────── */}
+      {}
       <AlertDialog
         open={!!crmDeleteId}
         onOpenChange={() => setCrmDeleteId(null)}
@@ -919,7 +909,7 @@ export default function CampaignsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Meta Delete Dialog ───────────────────────────────────────────────── */}
+      {}
       <AlertDialog
         open={!!metaDeleteDialog}
         onOpenChange={() => setMetaDeleteDialog(null)}
@@ -951,7 +941,7 @@ export default function CampaignsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Campaign Form ────────────────────────────────────────────────────── */}
+      {}
       <CampaignFormDialog
         open={campaignDialogOpen}
         onClose={() => {
@@ -963,7 +953,7 @@ export default function CampaignsPage() {
         onSaved={fetchMeta}
       />
 
-      {/* ── Ad Set Form ──────────────────────────────────────────────────────── */}
+      {}
       {selectedCampaign && (
         <AdSetFormDialog
           open={adSetDialogOpen}
@@ -978,7 +968,7 @@ export default function CampaignsPage() {
         />
       )}
 
-      {/* ── Ad Form ──────────────────────────────────────────────────────────── */}
+      {}
       {selectedAdSet && (
         <AdFormDialog
           open={adDialogOpen}
@@ -997,7 +987,6 @@ export default function CampaignsPage() {
   );
 }
 
-// ─── Meta Ads Content (hierarchy renderer) ───────────────────────────────────
 function MetaAdsContent({
   error,
   view,
@@ -1084,7 +1073,7 @@ function MetaAdsContent({
 
   return (
     <>
-      {/* Breadcrumb */}
+      {}
       {view !== "campaigns" && (
         <div className="flex items-center gap-2 mb-3 p-2.5 bg-[#f0f0f0] border-2 border-black nb-shadow-sm">
           <button
@@ -1123,7 +1112,7 @@ function MetaAdsContent({
         </div>
       )}
 
-      {/* ── Level: Campaigns ─────────────────────────────────── */}
+      {}
       {view === "campaigns" &&
         (loading ? (
           <div className="flex justify-center py-16">
@@ -1209,7 +1198,7 @@ function MetaAdsContent({
           })
         ))}
 
-      {/* ── Level: Ad Sets ───────────────────────────────────── */}
+      {}
       {view === "adsets" &&
         (adSetsLoading ? (
           <div className="flex justify-center py-16">
@@ -1290,7 +1279,7 @@ function MetaAdsContent({
           })
         ))}
 
-      {/* ── Level: Ads ───────────────────────────────────────── */}
+      {}
       {view === "ads" &&
         (adsLoading ? (
           <div className="flex justify-center py-16">
@@ -1360,7 +1349,6 @@ function MetaAdsContent({
   );
 }
 
-// ─── Action Buttons (reusable row actions) ────────────────────────────────────
 function ActionButtons({
   status,
   onToggle,
@@ -1430,7 +1418,6 @@ function ActionButtons({
   );
 }
 
-// ─── Campaign Form Dialog ─────────────────────────────────────────────────────
 function CampaignFormDialog({
   open,
   onClose,
@@ -1634,7 +1621,6 @@ function CampaignFormDialog({
   );
 }
 
-// ─── Ad Set Form Dialog ───────────────────────────────────────────────────────
 function AdSetFormDialog({
   open,
   onClose,
@@ -1895,7 +1881,6 @@ function AdSetFormDialog({
   );
 }
 
-// ─── Ad Form Dialog ───────────────────────────────────────────────────────────
 function AdFormDialog({
   open,
   onClose,
@@ -1999,7 +1984,7 @@ function AdFormDialog({
             </Select>
           </div>
 
-          {/* Creative section */}
+          {}
           <div className="border-t-2 border-black pt-4">
             <p className="text-xs font-bold uppercase tracking-wide mb-3">
               Creative
@@ -2106,7 +2091,6 @@ function AdFormDialog({
   );
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
 function EmptyState({
   icon: Icon,
   title,

@@ -2,14 +2,6 @@ const asyncHandler = require("express-async-handler");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 
-/*
- * Actual Lead statuses (from Lead model enum):
- * "PENDING CONTACT", "1", "2", "3", "COMPLETED",
- * "DISCUSSION", "DISCUSSION 1", "DISCUSSION 2", "DISCUSSION 3", "DISCUSSION COMPLETED",
- * "QUOTATION", "QUOTATION 1", "QUOTATION 2", "QUOTATION 3", "QUOTATION COMPLETED",
- * "VISIT SCHEDULED", "VISITED", "DROP", "WON"
- */
-
 const CLOSED_STATUSES = ["WON", "DROP"];
 
 const getDashboardStats = asyncHandler(async (req, res) => {
@@ -32,7 +24,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   const twoDaysAgo = new Date(now);
   twoDaysAgo.setDate(now.getDate() - 2);
 
-  // "Hot" leads = actively in discussion, quotation, or visit stage
   const HOT_STATUSES = [
     "DISCUSSION",
     "DISCUSSION 1",
@@ -84,10 +75,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       { $group: { _id: "$source", count: { $sum: 1 } } },
     ]),
 
-    // Hot leads
     Lead.countDocuments({ ...tf, status: { $in: HOT_STATUSES } }),
 
-    // Today's follow-ups
     Lead.find({
       ...tf,
       followUpDate: { $gte: todayStart, $lte: todayEnd },
@@ -98,21 +87,18 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       .limit(10)
       .lean(),
 
-    // Overdue follow-ups (past due, not closed)
     Lead.countDocuments({
       ...tf,
       followUpDate: { $lt: todayStart },
       status: { $nin: CLOSED_STATUSES },
     }),
 
-    // Uncontacted leads (PENDING CONTACT for 48h+)
     Lead.countDocuments({
       ...tf,
       status: "PENDING CONTACT",
       createdAt: { $lt: twoDaysAgo },
     }),
 
-    // Team leaderboard
     User.aggregate([
       { $match: { ...tf, status: "active" } },
       {
@@ -150,7 +136,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       ? Math.round(((leadsThisMonth - leadsLastMonth) / leadsLastMonth) * 100)
       : 0;
 
-  // 6-month chart data
   const monthBoundaries = Array.from({ length: 6 }, (_, i) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
     const monthEnd = new Date(
@@ -195,7 +180,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     return acc;
   }, {});
 
-  // Funnel stages mapped to actual Lead statuses
   const funnelStages = [
     {
       label: "New",

@@ -12,8 +12,6 @@ function createTransport() {
   });
 }
 
-// ── Number to words (Indian format) ──────────────────────────────────────────
-
 const ONES = [
   "",
   "One",
@@ -84,8 +82,6 @@ function numberToWords(amount) {
   return (_toWords(rounded) || "Zero") + " Rupees Only";
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function fmt(n) {
   return `&#8377;${Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -145,8 +141,6 @@ function getPlanFeatures(plan) {
   return map[plan] || [];
 }
 
-// ── Invoice HTML (Pixelate Nest template) ─────────────────────────────────────
-
 function buildInvoiceHtml({
   invoiceNumber,
   invoiceDate,
@@ -162,7 +156,6 @@ function buildInvoiceHtml({
   const planLabel = getPlanLabel(plan);
   const cycleLabel = billingCycle === "yearly" ? "Yearly" : "Monthly";
 
-  // GST reverse-calculation (amount charged is GST-inclusive at 18% IGST)
   const taxable = parseFloat((amountRupees / 1.18).toFixed(2));
   const igst = parseFloat((amountRupees - taxable).toFixed(2));
   const total = amountRupees;
@@ -412,8 +405,6 @@ function buildInvoiceHtml({
 </html>`;
 }
 
-// ── Welcome email wrapper ─────────────────────────────────────────────────────
-
 function buildWelcomeHtml({
   companyName,
   userName,
@@ -492,8 +483,6 @@ function buildWelcomeHtml({
 </body>
 </html>`;
 }
-
-// ── Public API ────────────────────────────────────────────────────────────────
 
 async function sendWelcomeEmail({
   to,

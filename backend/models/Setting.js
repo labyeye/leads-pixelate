@@ -89,7 +89,7 @@ const settingSchema = new mongoose.Schema(
       ref: "Tenant",
       default: null,
     },
-    // Permissions matrix: { "Leads": { "sales_executive": { create: true, read: true, update: true, delete: false }, ... }, ... }
+
     permissions: {
       type: mongoose.Schema.Types.Mixed,
       default: null,

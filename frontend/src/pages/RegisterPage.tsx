@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle, Zap, Eye, EyeOff, Check } from "lucide-react";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -12,8 +14,10 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,12 +29,43 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.companyName || !form.name || !form.email || !form.password) {
-      setError("Please fill in all fields");
+
+    if (!form.companyName.trim()) {
+      setError("Company / Business Name is required.");
       return;
     }
+    if (!form.name.trim()) {
+      setError("Your name is required.");
+      return;
+    }
+    if (!form.email.trim()) {
+      setError("Email address is required.");
+      return;
+    }
+    if (!EMAIL_RE.test(form.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (!form.password) {
+      setError("Password is required.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (!form.confirmPassword) {
+      setError("Please confirm your password.");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
-    const result = await register(form);
+    const { confirmPassword: _, ...payload } = form;
+    const result = await register(payload);
     setLoading(false);
     if (result.success) {
       navigate("/onboarding");
@@ -120,7 +155,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-black mb-1.5">
-                Company / Business Name
+                Company / Business Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -128,14 +163,13 @@ export default function RegisterPage() {
                 onChange={set("companyName")}
                 placeholder="Acme Pvt Ltd"
                 className="nb-input w-full px-3 py-2.5 text-sm"
-                required
                 autoFocus
               />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-black mb-1.5">
-                Your Name
+                Your Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -143,14 +177,13 @@ export default function RegisterPage() {
                 onChange={set("name")}
                 placeholder="Rahul Sharma"
                 className="nb-input w-full px-3 py-2.5 text-sm"
-                required
                 autoComplete="name"
               />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-black mb-1.5">
-                Work Email
+                Work Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -158,14 +191,13 @@ export default function RegisterPage() {
                 onChange={set("email")}
                 placeholder="rahul@company.com"
                 className="nb-input w-full px-3 py-2.5 text-sm"
-                required
                 autoComplete="email"
               />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-black mb-1.5">
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <div className="flex items-center border-2 border-black nb-shadow-sm">
                 <input
@@ -174,9 +206,7 @@ export default function RegisterPage() {
                   onChange={set("password")}
                   placeholder="Min. 8 characters"
                   className="flex-1 px-3 py-2.5 bg-white text-sm outline-none font-medium"
-                  required
                   autoComplete="new-password"
-                  minLength={8}
                 />
                 <button
                   type="button"
@@ -190,9 +220,44 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Must be at least 8 characters
-              </p>
+              {form.password && form.password.length < 8 && (
+                <p className="text-[11px] text-red-500 mt-1">
+                  Must be at least 8 characters
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-black mb-1.5">
+                Confirm Password <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center border-2 border-black nb-shadow-sm">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={form.confirmPassword}
+                  onChange={set("confirmPassword")}
+                  placeholder="Re-enter password"
+                  className="flex-1 px-3 py-2.5 bg-white text-sm outline-none font-medium"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="px-3 py-2.5 border-l-2 border-black hover:bg-[#024BAB]/20 transition-colors"
+                >
+                  {showConfirm ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+              {form.confirmPassword &&
+                form.password !== form.confirmPassword && (
+                  <p className="text-[11px] text-red-500 mt-1">
+                    Passwords do not match
+                  </p>
+                )}
             </div>
 
             <button

@@ -6,7 +6,6 @@
 
 @layer base {
   :root {
-    /* #024BAB as primary blue — matches HRMS */
     --background: 213 60% 97%;
     --foreground: 0 0% 4%;
 
@@ -19,7 +18,6 @@
     --primary: 213 96% 37%;
     --primary-foreground: 0 0% 100%;
 
-    /* #FA731C as accent/secondary orange — matches HRMS */
     --secondary: 26 95% 55%;
     --secondary-foreground: 0 0% 100%;
 
@@ -87,7 +85,6 @@
 }
 
 @layer utilities {
-  /* Neubrutalism core shadows */
   .nb-shadow {
     box-shadow: 4px 4px 0px #0a0a0a;
   }
@@ -104,7 +101,6 @@
     box-shadow: 4px 4px 0px #fa731c;
   }
 
-  /* Neubrutalism card */
   .nb-card {
     @apply bg-white border-2 border-black;
     box-shadow: 4px 4px 0px #0a0a0a;
@@ -117,7 +113,6 @@
     box-shadow: 6px 6px 0px #0a0a0a;
   }
 
-  /* Neubrutalism button */
   .nb-btn {
     @apply border-2 border-black font-bold transition-all duration-100;
     box-shadow: 3px 3px 0px #0a0a0a;
@@ -131,7 +126,6 @@
     box-shadow: 0px 0px 0px #0a0a0a;
   }
 
-  /* Neubrutalism input */
   .nb-input {
     @apply border-2 border-black bg-white font-medium rounded-none;
     box-shadow: 2px 2px 0px #0a0a0a;
@@ -141,13 +135,11 @@
     box-shadow: 3px 3px 0px #024bab;
   }
 
-  /* Status badges */
   .nb-badge {
     @apply border-2 border-black font-bold text-xs px-2 py-0.5;
     box-shadow: 2px 2px 0px #0a0a0a;
   }
 
-  /* Tag color variants */
   .nb-tag-blue {
     @apply bg-[#024BAB] text-white;
   }

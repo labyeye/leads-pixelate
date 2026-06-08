@@ -2,10 +2,6 @@ const asyncHandler = require("express-async-handler");
 const SocialPost = require("../models/SocialPost");
 const SocialAccount = require("../models/SocialAccount");
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 function getSocialConfig() {
   return {
     fbAppId: process.env.FACEBOOK_APP_ID,
@@ -45,7 +41,6 @@ async function postToInstagram(igAccountId, accessToken, caption, imageUrl) {
     throw new Error("Instagram requires an image URL");
   }
 
-  // Step 1: Create media container
   const createRes = await fetch(
     `https://graph.facebook.com/v18.0/${igAccountId}/media`,
     {
@@ -67,7 +62,6 @@ async function postToInstagram(igAccountId, accessToken, caption, imageUrl) {
 
   const creationId = createData.id;
 
-  // Step 2: Publish
   const publishRes = await fetch(
     `https://graph.facebook.com/v18.0/${igAccountId}/media_publish`,
     {
@@ -87,7 +81,6 @@ async function postToInstagram(igAccountId, accessToken, caption, imageUrl) {
   return publishData.id || "";
 }
 
-// Core publish function — called by cron and manual trigger
 async function executePublish(post) {
   post.status = "POSTING";
   await post.save();
@@ -143,7 +136,6 @@ async function executePublish(post) {
     }
   }
 
-  // Determine final status
   const successCount = (fbPostId ? 1 : 0) + (igPostId ? 1 : 0);
   const attemptCount = post.platforms.length;
 
@@ -155,16 +147,12 @@ async function executePublish(post) {
     successCount === 0
       ? "FAILED"
       : successCount < attemptCount
-        ? "POSTED" // partial — treat as posted with errors noted
+        ? "POSTED"
         : "POSTED";
 
   await post.save();
   return post;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Posts CRUD
-// ─────────────────────────────────────────────────────────────────────────────
 
 exports.getPosts = asyncHandler(async (req, res) => {
   const filter = {};
@@ -228,7 +216,6 @@ exports.updatePost = asyncHandler(async (req, res) => {
     throw new Error("Post not found");
   }
 
-  // Can only edit DRAFT or REJECTED posts
   if (!["DRAFT", "REJECTED"].includes(post.status)) {
     res.status(400);
     throw new Error("Only DRAFT or REJECTED posts can be edited");
@@ -245,7 +232,6 @@ exports.updatePost = asyncHandler(async (req, res) => {
     if (req.body[key] !== undefined) post[key] = req.body[key];
   }
 
-  // Reset to draft on edit
   if (post.status === "REJECTED") post.status = "DRAFT";
 
   await post.save();
@@ -275,7 +261,6 @@ exports.deletePost = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Post deleted" });
 });
 
-// Submit for approval
 exports.submitPost = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const post = await SocialPost.findOne({
@@ -300,7 +285,6 @@ exports.submitPost = asyncHandler(async (req, res) => {
   res.json({ success: true, data: post });
 });
 
-// Approve post
 exports.approvePost = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const post = await SocialPost.findOne({
@@ -322,8 +306,6 @@ exports.approvePost = asyncHandler(async (req, res) => {
   post.approvedAt = new Date();
   post.approvalNote = req.body.note || "";
 
-  // If scheduled time is in the future, mark as SCHEDULED
-  // If it's now or in the past, trigger publish immediately
   if (new Date(post.scheduledAt) > new Date()) {
     post.status = "SCHEDULED";
     await post.save();
@@ -333,7 +315,6 @@ exports.approvePost = asyncHandler(async (req, res) => {
 
   await post.save();
 
-  // Fire publish immediately (non-blocking)
   executePublish(post).catch((err) =>
     console.error("[SocialPost Publish]", err.message),
   );
@@ -341,7 +322,6 @@ exports.approvePost = asyncHandler(async (req, res) => {
   res.json({ success: true, data: post });
 });
 
-// Reject post
 exports.rejectPost = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const post = await SocialPost.findOne({
@@ -367,7 +347,6 @@ exports.rejectPost = asyncHandler(async (req, res) => {
   res.json({ success: true, data: post });
 });
 
-// Manual publish trigger
 exports.publishPost = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const post = await SocialPost.findOne({
@@ -387,10 +366,6 @@ exports.publishPost = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Publishing started", data: post });
   await executePublish(post);
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Cron — called from server.js every minute
-// ─────────────────────────────────────────────────────────────────────────────
 
 exports.runScheduledPosts = async () => {
   try {
@@ -414,10 +389,6 @@ exports.runScheduledPosts = async () => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Connected Accounts
-// ─────────────────────────────────────────────────────────────────────────────
-
 exports.getAccounts = asyncHandler(async (req, res) => {
   const accounts = await SocialAccount.find()
     .sort({ createdAt: -1 })
@@ -427,7 +398,6 @@ exports.getAccounts = asyncHandler(async (req, res) => {
   res.json({ success: true, count: accounts.length, data: accounts });
 });
 
-// Manual connect — user pastes a Page Access Token + Page ID
 exports.connectAccount = asyncHandler(async (req, res) => {
   const {
     platform,
@@ -445,7 +415,6 @@ exports.connectAccount = asyncHandler(async (req, res) => {
     );
   }
 
-  // Upsert by platform + accountId
   const account = await SocialAccount.findOneAndUpdate(
     { platform, accountId },
     {
@@ -475,10 +444,6 @@ exports.disconnectAccount = asyncHandler(async (req, res) => {
   await account.deleteOne();
   res.json({ success: true, message: "Account disconnected" });
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// OAuth — Facebook Login flow
-// ─────────────────────────────────────────────────────────────────────────────
 
 exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
   const config = getSocialConfig();
@@ -513,7 +478,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
     );
   }
 
-  // Exchange code for user access token
   const tokenRes = await fetch(
     `https://graph.facebook.com/v18.0/oauth/access_token` +
       `?client_id=${config.fbAppId}` +
@@ -531,7 +495,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
 
   const userAccessToken = tokenData.access_token;
 
-  // Get long-lived token
   const longLivedRes = await fetch(
     `https://graph.facebook.com/v18.0/oauth/access_token` +
       `?grant_type=fb_exchange_token` +
@@ -542,7 +505,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
   const longLivedData = await longLivedRes.json();
   const finalUserToken = longLivedData.access_token || userAccessToken;
 
-  // Get managed pages
   const pagesRes = await fetch(
     `https://graph.facebook.com/v18.0/me/accounts?access_token=${finalUserToken}&fields=id,name,picture,access_token`,
   );
@@ -551,7 +513,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
 
   let savedCount = 0;
   for (const page of pages) {
-    // Check for linked Instagram Business Account
     let igId = "";
     try {
       const igRes = await fetch(
@@ -561,7 +522,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
       igId = igData?.instagram_business_account?.id || "";
     } catch (_) {}
 
-    // Save Facebook page account
     await SocialAccount.findOneAndUpdate(
       { platform: "facebook", accountId: page.id },
       {
@@ -577,7 +537,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
     );
     savedCount++;
 
-    // If there's a linked Instagram account, save it separately
     if (igId) {
       let igName = page.name + " (Instagram)";
       let igPicture = "";
@@ -594,7 +553,7 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
         { platform: "instagram", accountId: igId },
         {
           accountName: igName,
-          accessToken: page.access_token, // IG uses the page's access token
+          accessToken: page.access_token,
           profilePicture: igPicture,
           isActive: true,
           connectedBy: userId,
@@ -608,7 +567,6 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
   res.redirect(`${frontendUrl}?tab=accounts&connected=${savedCount}`);
 });
 
-// Fetch pages after manual token entry
 exports.fetchFacebookPages = asyncHandler(async (req, res) => {
   const { userToken } = req.body;
   if (!userToken) {
@@ -636,7 +594,6 @@ exports.fetchFacebookPages = asyncHandler(async (req, res) => {
   res.json({ success: true, data: pages });
 });
 
-// Stats for dashboard
 exports.getStats = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const [total, pending, scheduled, posted, failed, accounts] =

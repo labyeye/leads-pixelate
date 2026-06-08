@@ -2,7 +2,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type CrudOp = "create" | "read" | "update" | "delete";
 
-// Mirrors DEFAULT_PERMISSIONS in backend/middleware/checkPermission.js
 const DEFAULT_PERMISSIONS: Record<
   string,
   Record<string, Record<CrudOp, boolean>>

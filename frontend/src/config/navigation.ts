@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 
-// Accept both LucideIcon and custom React components (e.g. Font Awesome wrappers)
 export type NavIconComponent =
   | LucideIcon
   | React.ComponentType<{ className?: string }>;

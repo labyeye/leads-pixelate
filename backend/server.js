@@ -17,14 +17,12 @@ connectDB().then(async () => {
   const { runScheduledPosts } = require("./controllers/socialController");
   const User = require("./models/User");
 
-  // Publish scheduled social posts every minute
   cron.schedule("* * * * *", runScheduledPosts);
 
   cron.schedule("*/5 * * * *", async () => {
     try {
       const Tenant = require("./models/Tenant");
 
-      // Global env key (legacy / single-tenant setup)
       if (process.env.INDIAMART_API_KEY) {
         const adminUser = await User.findOne({
           role: { $in: ["super_admin", "admin"] },
@@ -35,7 +33,6 @@ connectDB().then(async () => {
         return;
       }
 
-      // Multi-tenant: sync each tenant that has IndiaMART connected
       const tenants = await Tenant.find({
         "integrations.indiamart.enabled": true,
         "integrations.indiamart.apiKey": { $nin: ["", null] },

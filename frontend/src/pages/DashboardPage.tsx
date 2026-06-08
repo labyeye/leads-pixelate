@@ -552,7 +552,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Today's follow-ups */}
+        {}
         <div className="border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div>

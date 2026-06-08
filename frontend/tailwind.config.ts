@@ -97,6 +97,14 @@ export default {
           from: { opacity: "0", transform: "translateX(-12px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        slideInRight: {
+          from: { opacity: "0", transform: "translateX(110%)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        slideOutRight: {
+          from: { opacity: "1", transform: "translateX(0)" },
+          to: { opacity: "0", transform: "translateX(110%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

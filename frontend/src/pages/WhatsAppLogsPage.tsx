@@ -98,7 +98,6 @@ export default function WhatsAppLogsPage() {
         .includes(search.toLowerCase()),
   );
 
-  // Summary stats
   const totalSent = campaigns.reduce((s, c) => s + c.sentCount, 0);
   const totalDelivered = campaigns.reduce((s, c) => s + c.deliveredCount, 0);
   const totalRead = campaigns.reduce((s, c) => s + c.readCount, 0);
@@ -107,7 +106,7 @@ export default function WhatsAppLogsPage() {
   return (
     <AppLayout title="WhatsApp Logs">
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Header */}
+        {}
         <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-black bg-white shrink-0">
           <div className="w-9 h-9 rounded-lg bg-[#25D366]/10 border-2 border-[#25D366]/20 flex items-center justify-center">
             <FontAwesomeIcon
@@ -132,7 +131,7 @@ export default function WhatsAppLogsPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {/* Stats row */}
+          {}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-6 pb-0">
             {[
               {
@@ -180,7 +179,7 @@ export default function WhatsAppLogsPage() {
             ))}
           </div>
 
-          {/* Search */}
+          {}
           <div className="px-6 pt-4 pb-2">
             <div className="relative max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -193,7 +192,7 @@ export default function WhatsAppLogsPage() {
             </div>
           </div>
 
-          {/* Campaign list */}
+          {}
           <div className="px-6 pb-6 space-y-3">
             {loading ? (
               <div className="flex justify-center py-16">
@@ -263,7 +262,7 @@ export default function WhatsAppLogsPage() {
                               : format(new Date(c.createdAt), "dd MMM yyyy")}
                           </p>
 
-                          {/* Stats row */}
+                          {}
                           <div className="flex items-center gap-4 mt-2 flex-wrap">
                             {[
                               {
@@ -319,7 +318,7 @@ export default function WhatsAppLogsPage() {
                             ))}
                           </div>
 
-                          {/* Progress bar */}
+                          {}
                           {c.totalCount > 0 && (
                             <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
                               <div
@@ -374,7 +373,7 @@ export default function WhatsAppLogsPage() {
                       </div>
                     </button>
 
-                    {/* Expanded detail */}
+                    {}
                     {isOpen && (
                       <div className="border-t-2 border-black bg-gray-50 px-5 py-4">
                         {loadingDetail ? (

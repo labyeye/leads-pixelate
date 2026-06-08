@@ -102,7 +102,7 @@ const PLAN_META: Record<
       "On-premise option",
     ],
   },
-  // legacy aliases
+
   pro: {
     color: "#024BAB",
     description: "For scaling teams with advanced needs",
@@ -133,19 +133,15 @@ function capitalise(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
 
-// ── PDF generator ─────────────────────────────────────────────────────────────
-
 function downloadInvoicePDF(invoice: any, settings: any) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 15;
   let y = margin;
 
-  // Header bar
   doc.setFillColor(2, 75, 171);
   doc.rect(0, 0, pageW, 18, "F");
 
-  // Company name on header
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
@@ -158,7 +154,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
 
   y = 28;
 
-  // Company details (left)
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
@@ -173,7 +168,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
     y += 5;
   });
 
-  // Invoice details (right)
   const rightX = pageW - margin;
   let ry = 28;
   doc.setFont("helvetica", "bold");
@@ -197,13 +191,11 @@ function downloadInvoicePDF(invoice: any, settings: any) {
 
   y = Math.max(y, ry) + 8;
 
-  // Divider
   doc.setDrawColor(2, 75, 171);
   doc.setLineWidth(0.5);
   doc.line(margin, y, pageW - margin, y);
   y += 6;
 
-  // Table header
   doc.setFillColor(2, 75, 171);
   doc.rect(margin, y, pageW - margin * 2, 8, "F");
   doc.setTextColor(255, 255, 255);
@@ -214,7 +206,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
   doc.text("Amount", pageW - margin - 3, y + 5.5, { align: "right" });
   y += 8;
 
-  // Table row
   doc.setFillColor(245, 247, 255);
   doc.rect(margin, y, pageW - margin * 2, 10, "F");
   doc.setDrawColor(200, 200, 200);
@@ -236,7 +227,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
   });
   y += 16;
 
-  // Total
   doc.setFillColor(2, 75, 171);
   doc.rect(pageW - margin - 55, y, 55, 10, "F");
   doc.setTextColor(255, 255, 255);
@@ -248,14 +238,12 @@ function downloadInvoicePDF(invoice: any, settings: any) {
   });
   y += 18;
 
-  // Status badge
   doc.setTextColor(0, 196, 140);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.text("✓ PAID", margin, y);
   y += 10;
 
-  // Footer
   const footerY = doc.internal.pageSize.getHeight() - 18;
   doc.setDrawColor(2, 75, 171);
   doc.setLineWidth(0.3);
@@ -271,10 +259,6 @@ function downloadInvoicePDF(invoice: any, settings: any) {
 
   doc.save(`${invoice.invoiceNumber}.pdf`);
 }
-
-// ── HDFC payment form submitter ───────────────────────────────────────────────
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
@@ -292,7 +276,6 @@ export default function BillingPage() {
   const { toast } = useToast();
   const notifiedRef = useRef(false);
 
-  // Handle redirect back from HDFC
   useEffect(() => {
     if (notifiedRef.current) return;
     const payment = searchParams.get("payment");
@@ -339,15 +322,11 @@ export default function BillingPage() {
       if (plansRes.status === "fulfilled") setPlans(plansRes.value.data);
       if (invRes.status === "fulfilled") setInvoices(invRes.value.data || []);
 
-      // Load settings for PDF
       try {
         const settingsRes = await settingsAPI.get();
         setSettings(settingsRes.data);
-      } catch {
-        // settings not critical
-      }
+      } catch {}
 
-      // Fetch actual usage: leads this month + team members
       const now = new Date();
       const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
       const [leadsRes, membersRes] = await Promise.allSettled([
@@ -379,7 +358,6 @@ export default function BillingPage() {
         key,
       } = res.data;
 
-      // Load Razorpay SDK if not already loaded
       await new Promise<void>((resolve, reject) => {
         if ((window as any).Razorpay) {
           resolve();
@@ -476,7 +454,6 @@ export default function BillingPage() {
   const currentPlanId = subscription?.plan || tenant?.plan || "trial";
   const periodEnd = subscription?.currentPeriodEnd || tenant?.planExpiresAt;
 
-  // Usage stats derived from tenant limits
   const planLimits = plans?.[currentPlanId] || {};
   const maxLeads = planLimits?.limits?.leadsPerMonth ?? 100;
   const maxMembers = planLimits?.limits?.teamMembers ?? 2;
@@ -506,7 +483,7 @@ export default function BillingPage() {
           </div>
         ) : (
           <>
-            {/* Current plan banner */}
+            {}
             <div className="nb-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#024BAB]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white border-2 border-black flex items-center justify-center shrink-0">
@@ -550,7 +527,7 @@ export default function BillingPage() {
               </div>
             </div>
 
-            {/* Usage stats */}
+            {}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 {
@@ -605,7 +582,7 @@ export default function BillingPage() {
               ))}
             </div>
 
-            {/* Plan selector */}
+            {}
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <h2 className="font-display font-bold text-2xl text-black">
@@ -766,7 +743,7 @@ export default function BillingPage() {
               </div>
             </div>
 
-            {/* Payment method */}
+            {}
             <div className="nb-card p-4 sm:p-5 bg-white">
               <h3 className="font-display font-bold text-lg text-black mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5" /> Payment Method
@@ -801,7 +778,7 @@ export default function BillingPage() {
               </p>
             </div>
 
-            {/* Invoice history */}
+            {}
             <div className="nb-card p-4 sm:p-5 bg-white">
               <h3 className="font-display font-bold text-lg text-black mb-4 flex items-center gap-2">
                 <Building2 className="w-5 h-5" /> Invoice History

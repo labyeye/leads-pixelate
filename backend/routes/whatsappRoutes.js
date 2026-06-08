@@ -39,13 +39,11 @@ const upload = multer({
   },
 });
 
-// Webhook — no auth
 router.get("/webhook", verifyWebhook);
 router.post("/webhook", handleWebhook);
 
 router.use(protect);
 
-// Connection setup
 router.post("/setup", authorize("super_admin", "admin"), setup);
 router.post(
   "/phone-numbers",
@@ -61,7 +59,6 @@ router.post("/disconnect", authorize("super_admin", "admin"), disconnect);
 router.get("/status", getStatus);
 router.get("/config", getConfig);
 
-// Media
 router.post(
   "/upload-media",
   authorize("super_admin", "admin"),
@@ -69,7 +66,6 @@ router.post(
   uploadMedia,
 );
 
-// Templates
 router
   .route("/templates")
   .get(getTemplates)
@@ -84,14 +80,11 @@ router.post(
   syncTemplates,
 );
 
-// Campaigns
 router.route("/campaigns").get(getCampaigns).post(createCampaign);
 router.route("/campaigns/:id").get(getCampaign);
 
-// Single message
 router.post("/send", sendMessage);
 
-// Replies
 router.get("/replies", getReplies);
 
 module.exports = router;

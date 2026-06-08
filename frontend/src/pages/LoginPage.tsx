@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex">
-      {/* Left panel — branding */}
+      {}
       <div className="hidden lg:flex w-1/2 bg-[#024BAB] border-r-2 border-black flex-col justify-between p-12">
         <div className="flex items-center gap-3">
           <img src={logoimg} alt="NestLeads" className="w-14 h-14" />
@@ -77,10 +77,10 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel — form */}
+      {}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
+          {}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <img src="/logo.png" alt="NestLeads" className="w-8 h-8" />
             <span className="font-display font-bold text-xl text-black">

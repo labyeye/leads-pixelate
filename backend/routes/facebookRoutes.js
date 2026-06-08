@@ -30,11 +30,6 @@ async function fbGet(path, token, params = {}) {
   return data;
 }
 
-/**
- * Resolve publisher_platforms for an ad_id.
- * Returns "Instagram" if only IG, "Facebook" if only FB, "Meta" if both.
- * Uses an in-memory cache per sync run to avoid duplicate API calls.
- */
 async function resolveAdPlatform(adId, token, cache) {
   if (!adId) return { source: "Facebook", platforms: [] };
   if (cache[adId]) return cache[adId];
@@ -52,7 +47,6 @@ async function resolveAdPlatform(adId, token, cache) {
     cache[adId] = result;
     return result;
   } catch {
-    // If ad lookup fails (e.g. ad deleted), default to Facebook
     cache[adId] = { source: "Facebook", platforms: [] };
     return cache[adId];
   }
@@ -204,13 +198,11 @@ router.get(
 
     const token = tenant.integrations.facebook.userAccessToken;
 
-    // Fetch personal account pages
     const personalData = await fbGet("/me/accounts", token, {
       fields: "id,name,picture,fan_count,category",
     });
     const personalPages = personalData.data || [];
 
-    // Fetch Business Manager pages
     let businessPages = [];
     try {
       const businesses = await fbGet("/me/businesses", token, {
@@ -226,7 +218,6 @@ router.get(
       }
     } catch (_) {}
 
-    // Merge and deduplicate by page id
     const seen = new Set();
     const allPages = [...personalPages, ...businessPages].filter((p) => {
       if (seen.has(p.id)) return false;
@@ -340,7 +331,6 @@ router.post(
       connectedAt: new Date(),
     };
 
-    // Upsert: update existing page entry or push new one
     const existingPage = tenant.integrations.facebook.pages?.find(
       (p) => p.pageId === pageId,
     );
@@ -386,11 +376,10 @@ router.post(
       : { ownerUser: req.user._id };
 
     if (pageId) {
-      // Remove a specific page
       await Tenant.findOneAndUpdate(query, {
         $pull: { "integrations.facebook.pages": { pageId } },
       });
-      // Disable if no pages remain
+
       const tenant = await Tenant.findOne(query);
       if (!tenant?.integrations?.facebook?.pages?.length) {
         await Tenant.findOneAndUpdate(query, {
@@ -399,7 +388,6 @@ router.post(
         });
       }
     } else {
-      // Disconnect everything
       await Tenant.findOneAndUpdate(query, {
         "integrations.facebook.enabled": false,
         "integrations.facebook.userAccessToken": "",
@@ -470,7 +458,6 @@ router.post(
         .json({ success: false, message: "No admin user found" });
     }
 
-    // Cache resolved assignees to avoid repeated DB hits per page
     const assigneeCache = {};
     const resolveAssignee = async (defaultAssigneeId) => {
       if (!defaultAssigneeId) return adminUser._id;
@@ -569,7 +556,7 @@ router.post(
                 ""
               ).trim();
               let cityRaw = extractCity(fMap).trim();
-              // If state/city looks like a pincode, resolve it first
+
               if (isPincode(stateRaw)) {
                 const resolved = await resolvePincode(stateRaw);
                 if (resolved) {
@@ -632,7 +619,6 @@ router.post(
                 resolvedSource = "Facebook";
                 resolvedPlatforms = ["fb"];
               } else if (lead.ad_id) {
-                // platform field missing — fall back to ad publisher_platforms lookup
                 const r = await resolveAdPlatform(
                   lead.ad_id,
                   page.accessToken,
@@ -673,7 +659,6 @@ router.post(
                   totalCreated++;
                   pageResult.created++;
                 } catch (createErr) {
-                  // Handle duplicate key error
                   if (createErr.code === 11000) {
                     console.warn(
                       `[FB sync] Duplicate lead detected for ${leadData.name} (${leadData.phone}) - skipping`,
@@ -850,7 +835,6 @@ router.post(
           const product =
             fMap.product || fMap.product_interest || fMap.interested_in || "";
 
-          // Resolve pincode → city/state before location filter
           if (isPincode(stateRaw)) {
             const resolved = await resolvePincode(stateRaw);
             if (resolved) {
@@ -865,7 +849,6 @@ router.post(
             }
           }
 
-          // Location filter — only block if location is explicitly a non-matching city
           const locationRaw = (stateRaw || cityRaw).toLowerCase().trim();
           const allowedStates = pageConfig.allowedStates || [];
           if (allowedStates.length > 0 && locationRaw) {
@@ -933,15 +916,11 @@ router.post(
             facebookLeadgenId: leadgen_id,
             facebookFormId: form_id,
           });
-        } catch {
-          // Silently continue — don't let one failed lead stop processing others
-        }
+        } catch {}
       }
     }
   }),
 );
-
-// ─── Meta Ads Campaigns ───────────────────────────────────────────────────────
 
 router.get(
   "/meta-campaigns",
@@ -959,7 +938,6 @@ router.get(
         .json({ success: false, message: "Facebook not connected" });
     }
 
-    // Fetch ad accounts
     let adAccounts = [];
     try {
       const acData = await fbGet("/me/adaccounts", userToken, {
@@ -981,7 +959,6 @@ router.get(
       });
     }
 
-    // Fetch campaigns for every active ad account
     const allCampaigns = [];
     for (const account of adAccounts) {
       try {
@@ -998,9 +975,7 @@ router.get(
             currency: account.currency || "INR",
           });
         }
-      } catch {
-        // skip accounts with insufficient permissions
-      }
+      } catch {}
     }
 
     res.json({

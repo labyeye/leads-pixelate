@@ -21,13 +21,12 @@ const socialPostSchema = new mongoose.Schema(
       enum: ["facebook", "instagram"],
       required: true,
     },
-    // ── Scheduling ──────────────────────────────────────────────
+
     scheduledAt: {
       type: Date,
       required: true,
     },
-    // ── Status workflow ─────────────────────────────────────────
-    // DRAFT → PENDING_APPROVAL → APPROVED / REJECTED → SCHEDULED → POSTING → POSTED / FAILED
+
     status: {
       type: String,
       enum: [
@@ -42,7 +41,7 @@ const socialPostSchema = new mongoose.Schema(
       ],
       default: "DRAFT",
     },
-    // ── Approval ─────────────────────────────────────────────────
+
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -57,12 +56,12 @@ const socialPostSchema = new mongoose.Schema(
     },
     rejectedAt: { type: Date, default: null },
     rejectionReason: { type: String, default: "" },
-    // ── Post results ─────────────────────────────────────────────
+
     facebookPostId: { type: String, default: "" },
     instagramPostId: { type: String, default: "" },
     postedAt: { type: Date, default: null },
     failureReason: { type: String, default: "" },
-    // ── Author ───────────────────────────────────────────────────
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

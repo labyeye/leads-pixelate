@@ -29,6 +29,7 @@ import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import CampaignBuilderPage from "./pages/CampaignBuilderPage";
 import NotFound from "./pages/NotFound";
+import { NotificationProvider } from "@/components/ui/Notification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -290,7 +291,9 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <AppRoutes />
+          <NotificationProvider>
+            <AppRoutes />
+          </NotificationProvider>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

@@ -128,7 +128,10 @@ export default function ServicesPage() {
     try {
       const res = await servicesAPI.delete(id);
       if (res.success) {
-        notify.success("Allocation Deleted", "Service allocation has been removed.");
+        notify.success(
+          "Allocation Deleted",
+          "Service allocation has been removed.",
+        );
         fetchServices();
       }
     } catch (error: any) {
@@ -149,7 +152,10 @@ export default function ServicesPage() {
       return;
     }
     if (!formData.product || formData.product === "none") {
-      notify.error("Product is required", "Please select a product or service.");
+      notify.error(
+        "Product is required",
+        "Please select a product or service.",
+      );
       return;
     }
     const prog = Number(formData.progress);
@@ -170,7 +176,9 @@ export default function ServicesPage() {
       if (res.success) {
         notify.success(
           editingId ? "Allocation Updated" : "Service Allocated",
-          editingId ? "Service allocation has been updated." : "Service has been allocated to the client."
+          editingId
+            ? "Service allocation has been updated."
+            : "Service has been allocated to the client.",
         );
         resetFormAndCloseModal();
         fetchServices();

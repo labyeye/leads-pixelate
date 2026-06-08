@@ -5,10 +5,10 @@ const invoiceSchema = new mongoose.Schema(
     hdfcPaymentId: { type: String },
     hdfcOrderId: { type: String },
     hdfcTrackingId: { type: String },
-    // kept for backward compat with old Razorpay records
+
     razorpayPaymentId: { type: String },
     razorpayOrderId: { type: String },
-    amount: { type: Number }, // in paise
+    amount: { type: Number },
     currency: { type: String, default: "INR" },
     plan: { type: String },
     billingCycle: { type: String },
@@ -56,7 +56,7 @@ const subscriptionSchema = new mongoose.Schema(
     },
     startDate: { type: Date },
     nextBillingDate: { type: Date },
-    amount: { type: Number }, // amount in rupees
+    amount: { type: Number },
     paymentMethod: {
       type: String,
       enum: ["hdfc", "razorpay"],
@@ -89,25 +89,25 @@ const PLAN_LIMITS = {
   professional: { leadsPerMonth: 50000, teamMembers: 100 },
   business: { leadsPerMonth: 200000, teamMembers: 250 },
   enterprise: { leadsPerMonth: 999999, teamMembers: 999 },
-  pro: { leadsPerMonth: 50000, teamMembers: 100 }, // legacy alias → professional
+  pro: { leadsPerMonth: 50000, teamMembers: 100 },
 };
 
 const PLAN_PRICES_MONTHLY = {
-  starter: 49900, // ₹499
-  growth: 99900, // ₹999
-  professional: 199900, // ₹1,999
-  business: 449900, // ₹4,499
-  enterprise: 0, // custom
-  pro: 199900, // legacy alias → professional pricing
+  starter: 49900,
+  growth: 99900,
+  professional: 199900,
+  business: 449900,
+  enterprise: 0,
+  pro: 199900,
 };
 
 const PLAN_PRICES_YEARLY = {
-  starter: 499900, // ₹4,999  (2 months free)
-  growth: 999900, // ₹9,999  (2 months free)
-  professional: 1999900, // ₹19,999 (2 months free)
-  business: 4499900, // ₹44,999 (2 months free)
-  enterprise: 0, // custom
-  pro: 1999900, // legacy alias → professional pricing
+  starter: 499900,
+  growth: 999900,
+  professional: 1999900,
+  business: 4499900,
+  enterprise: 0,
+  pro: 1999900,
 };
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);

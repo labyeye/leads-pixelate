@@ -8,8 +8,6 @@ const { encrypt, decrypt } = require("../utils/encryption");
 
 const WA_API = "https://graph.facebook.com/v20.0";
 
-// ─── Shared helpers (mirrored from whatsappController) ───────────────────────
-
 function getTenantQuery(user) {
   return user.tenantId ? { _id: user.tenantId } : { ownerUser: user._id };
 }
@@ -125,8 +123,6 @@ async function sendWaMessage(
   return data;
 }
 
-// ─── Audience resolver ───────────────────────────────────────────────────────
-
 async function resolveLeads(audience, tenantId) {
   const tenantFilter = tenantId ? { tenantId } : {};
   const query = { ...tenantFilter };
@@ -140,8 +136,6 @@ async function resolveLeads(audience, tenantId) {
 
   return Lead.find(query).select("_id name company phone email");
 }
-
-// ─── Stats helper ─────────────────────────────────────────────────────────────
 
 async function syncMetricsFromWa(campaign) {
   if (!campaign.whatsappCampaignId) return campaign;
@@ -165,8 +159,6 @@ async function syncMetricsFromWa(campaign) {
   await campaign.save();
   return campaign;
 }
-
-// ─── Controllers ─────────────────────────────────────────────────────────────
 
 exports.getCampaigns = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
@@ -194,7 +186,6 @@ exports.getCampaign = asyncHandler(async (req, res) => {
     throw new Error("Campaign not found");
   }
 
-  // Lazy-sync metrics from WhatsappCampaign
   if (campaign.whatsappCampaignId && campaign.status === "RUNNING") {
     campaign = await syncMetricsFromWa(campaign);
   }
@@ -330,7 +321,6 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
       throw new Error("No contacts match the selected audience filters");
     }
 
-    // Build WhatsappCampaign messages list
     const messages = leads.map((lead) => ({
       lead: lead._id,
       leadName: lead.name,
@@ -359,7 +349,6 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
       sentAt: new Date(),
     });
 
-    // Update Campaign
     campaign.whatsappCampaignId = waCampaign._id;
     campaign.status = "RUNNING";
     campaign.launchedAt = new Date();
@@ -375,14 +364,12 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
     }));
     await campaign.save();
 
-    // Respond immediately; send messages in background
     res.json({
       success: true,
       message: `Campaign launched — sending to ${leads.length} contacts`,
       data: campaign,
     });
 
-    // Background send
     (async () => {
       let sentCount = 0,
         failedCount = 0;
@@ -432,7 +419,6 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
       waCampaign.status = failedCount === leads.length ? "FAILED" : "COMPLETED";
       await waCampaign.save();
 
-      // Sync back to Campaign
       campaign.metrics.sent = sentCount;
       campaign.metrics.failed = failedCount;
       campaign.status = "COMPLETED";
@@ -500,7 +486,6 @@ exports.getStats = asyncHandler(async (req, res) => {
     Campaign.countDocuments({ ...tenantFilter, status: "CANCELLED" }),
   ]);
 
-  // Aggregate total contacts reached
   const agg = await Campaign.aggregate([
     { $match: { ...tenantFilter, status: "COMPLETED" } },
     {

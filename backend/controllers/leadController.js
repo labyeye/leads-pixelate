@@ -273,7 +273,6 @@ const createLead = asyncHandler(async (req, res) => {
     location,
   } = req.body;
 
-  // Auto-resolve pincode → city/state
   let resolvedLocation = location || "";
   let resolvedState = req.body.state || "";
   const pinResolved = await resolvePincode(location);
@@ -375,7 +374,6 @@ const updateLead = asyncHandler(async (req, res) => {
     }
   }
 
-  // Auto-resolve pincode in location field
   if (req.body.location) {
     const pinResolved = await resolvePincode(req.body.location);
     if (pinResolved) {
@@ -572,7 +570,6 @@ const connectIndiamart = asyncHandler(async (req, res) => {
     throw new Error("API key is required");
   }
 
-  // Verify the key with a live call (204 = valid but no leads, 200 = valid with leads)
   try {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -658,7 +655,6 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
     assigneeIds: tenant?.integrations?.indiamart?.assigneeIds || [],
   });
 
-  // Update lastSync timestamp on tenant
   await Tenant.findOneAndUpdate(query, {
     "integrations.indiamart.lastSync": new Date(),
   });
@@ -746,7 +742,6 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
     });
   }
 
-  // Find the tenant with active IndiaMART integration
   const tenant = await Tenant.findOne({
     "integrations.indiamart.enabled": true,
     "integrations.indiamart.apiKey": { $exists: true, $ne: "" },
@@ -774,9 +769,10 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
       });
       if (!existing) {
         const savedIds = tenant?.integrations?.indiamart?.assigneeIds || [];
-        const assignToId = savedIds.length > 0
-          ? await getRoundRobinFromIds(savedIds)
-          : await getRoundRobinAssigneeId(tenant?._id);
+        const assignToId =
+          savedIds.length > 0
+            ? await getRoundRobinFromIds(savedIds)
+            : await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
         if (tenant) {
           leadData.tenantId = tenant._id;

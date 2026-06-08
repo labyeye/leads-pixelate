@@ -8,15 +8,10 @@ const { encrypt, decrypt } = require("../utils/encryption");
 
 const WA_API = "https://graph.facebook.com/v20.0";
 
-// ---------------------------------------------------------------------------
-// Tenant helpers
-// ---------------------------------------------------------------------------
-
 function getTenantQuery(user) {
   return user.tenantId ? { _id: user.tenantId } : { ownerUser: user._id };
 }
 
-// Returns wa config: accessToken decrypted, phoneNumbers array, wabaId etc.
 async function getWaBase(user) {
   const tenant = await Tenant.findOne(getTenantQuery(user));
   const wa = tenant?.integrations?.whatsapp;
@@ -31,8 +26,6 @@ async function getWaBase(user) {
   };
 }
 
-// Resolve which phoneNumberId to use for a send operation.
-// If only one number → use it. If multiple → caller must supply phoneNumberId.
 function resolvePhoneNumberId(wa, requestedId) {
   if (!wa || !wa.phoneNumbers.length) return null;
   if (requestedId) {
@@ -40,12 +33,8 @@ function resolvePhoneNumberId(wa, requestedId) {
     return found ? requestedId : null;
   }
   if (wa.phoneNumbers.length === 1) return wa.phoneNumbers[0].phoneNumberId;
-  return null; // multiple numbers — caller must pick one
+  return null;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function formatPhone(raw) {
   let digits = String(raw || "").replace(/\D/g, "");
@@ -139,12 +128,6 @@ async function sendWaMessage(
   return data;
 }
 
-// ---------------------------------------------------------------------------
-// Connection — setup WABA (access token) once, then add phone numbers
-// ---------------------------------------------------------------------------
-
-// POST /api/whatsapp/setup
-// Sets up the shared access token + WABA ID for this tenant. No phone number yet.
 exports.setup = asyncHandler(async (req, res) => {
   const { accessToken, wabaId } = req.body;
   if (!accessToken) {
@@ -152,7 +135,6 @@ exports.setup = asyncHandler(async (req, res) => {
     throw new Error("accessToken is required");
   }
 
-  // Validate token
   const testRes = await fetch(`${WA_API}/me?access_token=${accessToken}`);
   const testData = await testRes.json();
   if (testData.error) {
@@ -181,8 +163,6 @@ exports.setup = asyncHandler(async (req, res) => {
   });
 });
 
-// POST /api/whatsapp/phone-numbers
-// Add a phone number ID to this tenant's WhatsApp config.
 exports.addPhoneNumber = asyncHandler(async (req, res) => {
   const { phoneNumberId, label, businessName, phoneNumber } = req.body;
   if (!phoneNumberId) {
@@ -199,7 +179,6 @@ exports.addPhoneNumber = asyncHandler(async (req, res) => {
 
   const accessToken = decrypt(wa.accessToken);
 
-  // Validate phone number ID against Meta
   const checkRes = await fetch(
     `${WA_API}/${phoneNumberId}?fields=display_phone_number,verified_name&access_token=${accessToken}`,
   );
@@ -209,7 +188,6 @@ exports.addPhoneNumber = asyncHandler(async (req, res) => {
     throw new Error("Invalid Phone Number ID: " + checkData.error.message);
   }
 
-  // Check duplicate
   if (wa.phoneNumbers?.some((p) => p.phoneNumberId === phoneNumberId)) {
     res.status(400);
     throw new Error("This phone number is already connected");
@@ -238,7 +216,6 @@ exports.addPhoneNumber = asyncHandler(async (req, res) => {
   });
 });
 
-// DELETE /api/whatsapp/phone-numbers/:phoneNumberId
 exports.removePhoneNumber = asyncHandler(async (req, res) => {
   const { phoneNumberId } = req.params;
   await Tenant.findOneAndUpdate(getTenantQuery(req.user), {
@@ -247,7 +224,6 @@ exports.removePhoneNumber = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Phone number removed" });
 });
 
-// POST /api/whatsapp/disconnect
 exports.disconnect = asyncHandler(async (req, res) => {
   await Tenant.findOneAndUpdate(getTenantQuery(req.user), {
     "integrations.whatsapp.enabled": false,
@@ -259,7 +235,6 @@ exports.disconnect = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "WhatsApp disconnected" });
 });
 
-// GET /api/whatsapp/status
 exports.getStatus = asyncHandler(async (req, res) => {
   const tenant = await Tenant.findOne(getTenantQuery(req.user));
   const wa = tenant?.integrations?.whatsapp || {};
@@ -282,7 +257,6 @@ exports.getStatus = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/whatsapp/config (legacy compat)
 exports.getConfig = asyncHandler(async (req, res) => {
   const tenant = await Tenant.findOne(getTenantQuery(req.user));
   const wa = tenant?.integrations?.whatsapp || {};
@@ -300,10 +274,6 @@ exports.getConfig = asyncHandler(async (req, res) => {
     },
   });
 });
-
-// ---------------------------------------------------------------------------
-// Templates
-// ---------------------------------------------------------------------------
 
 exports.getTemplates = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
@@ -382,7 +352,6 @@ exports.deleteTemplate = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Template deleted" });
 });
 
-// POST /api/whatsapp/templates/sync — pull approved templates from Meta
 exports.syncTemplates = asyncHandler(async (req, res) => {
   const wa = await getWaBase(req.user);
   if (!wa) {
@@ -454,10 +423,6 @@ exports.syncTemplates = asyncHandler(async (req, res) => {
     data: { synced, approved: approvedCount },
   });
 });
-
-// ---------------------------------------------------------------------------
-// Campaigns
-// ---------------------------------------------------------------------------
 
 exports.getCampaigns = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
@@ -605,12 +570,6 @@ exports.createCampaign = asyncHandler(async (req, res) => {
   })().catch((err) => console.error("[WA Campaign]", err.message));
 });
 
-// ---------------------------------------------------------------------------
-// Send single message to a lead
-// ---------------------------------------------------------------------------
-
-// POST /api/whatsapp/send
-// phoneNumberId: optional — required only when multiple numbers are connected
 exports.sendMessage = asyncHandler(async (req, res) => {
   const {
     leadId,
@@ -705,10 +664,6 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     data: { messageId: waResult?.messages?.[0]?.id || "" },
   });
 });
-
-// ---------------------------------------------------------------------------
-// Webhook
-// ---------------------------------------------------------------------------
 
 exports.verifyWebhook = asyncHandler(async (req, res) => {
   const mode = req.query["hub.mode"];
@@ -816,10 +771,6 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
   }
 });
 
-// ---------------------------------------------------------------------------
-// Replies & Media
-// ---------------------------------------------------------------------------
-
 exports.getReplies = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const campaigns = await WhatsappCampaign.find({
@@ -850,7 +801,6 @@ exports.uploadMedia = asyncHandler(async (req, res) => {
     throw new Error("WhatsApp is not connected");
   }
 
-  // Use first phone number for media upload
   const phoneNumberId = wa.phoneNumbers[0].phoneNumberId;
   const { buffer, mimetype, originalname } = req.file;
   const form = new FormData();

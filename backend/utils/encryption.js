@@ -6,13 +6,10 @@ const KEY_LENGTH = 32;
 function getKey() {
   const secret = process.env.ENCRYPTION_SECRET;
   if (!secret) throw new Error("ENCRYPTION_SECRET env var is not set");
-  // Derive a 32-byte key from the secret using SHA-256
+
   return crypto.createHash("sha256").update(secret).digest();
 }
 
-/**
- * Encrypt plaintext string. Returns "iv:authTag:ciphertext" hex string.
- */
 function encrypt(plaintext) {
   if (!plaintext) return "";
   const key = getKey();
@@ -30,13 +27,10 @@ function encrypt(plaintext) {
   ].join(":");
 }
 
-/**
- * Decrypt "iv:authTag:ciphertext" hex string. Returns plaintext.
- */
 function decrypt(encoded) {
   if (!encoded) return "";
   const parts = encoded.split(":");
-  if (parts.length !== 3) return encoded; // not encrypted — return as-is (migration safety)
+  if (parts.length !== 3) return encoded;
   const [ivHex, authTagHex, encHex] = parts;
   const key = getKey();
   const decipher = crypto.createDecipheriv(

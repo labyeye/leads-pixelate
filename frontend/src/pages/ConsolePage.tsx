@@ -36,7 +36,6 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Log {
   _id: string;
   userName: string;
@@ -50,7 +49,6 @@ interface Log {
   timestamp: string;
 }
 
-// ─── Config ───────────────────────────────────────────────────────────────────
 const ACTION_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; border: string; Icon: any }
@@ -169,20 +167,16 @@ const ROLE_BADGE: Record<string, string> = {
   accountant: "bg-orange-100 text-orange-700 border-orange-300",
 };
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ConsolePage() {
   const { toast } = useToast();
 
-  // Stats
   const [stats, setStats] = useState<any>(null);
 
-  // Logs
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
 
-  // Filters
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -252,7 +246,7 @@ export default function ConsolePage() {
   return (
     <AppLayout title="NestLeads Console">
       <div className="flex flex-col h-full overflow-hidden bg-[#fafafa]">
-        {/* ── Header ── */}
+        {}
         <div className="flex items-center gap-4 px-6 py-4 bg-black border-b-2 border-black shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-[#024BAB] border-2 border-white flex items-center justify-center">
@@ -287,7 +281,7 @@ export default function ConsolePage() {
           </div>
         </div>
 
-        {/* ── Stats bar ── */}
+        {}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-0 border-b-2 border-black shrink-0">
             {[
@@ -345,9 +339,9 @@ export default function ConsolePage() {
           </div>
         )}
 
-        {/* ── Filters ── */}
+        {}
         <div className="flex flex-wrap items-center gap-2 px-6 py-3 border-b-2 border-black bg-white shrink-0">
-          {/* Search */}
+          {}
           <div className="flex gap-0 border-2 border-black">
             <input
               placeholder="Search user, description..."
@@ -364,7 +358,7 @@ export default function ConsolePage() {
             </button>
           </div>
 
-          {/* Action filter */}
+          {}
           <div className="border-2 border-black">
             <Select
               value={filterAction}
@@ -389,7 +383,7 @@ export default function ConsolePage() {
             </Select>
           </div>
 
-          {/* Module filter */}
+          {}
           <div className="border-2 border-black">
             <Select
               value={filterModule}
@@ -414,7 +408,7 @@ export default function ConsolePage() {
             </Select>
           </div>
 
-          {/* Date filter */}
+          {}
           <div className="border-2 border-black">
             <input
               type="date"
@@ -427,7 +421,7 @@ export default function ConsolePage() {
             />
           </div>
 
-          {/* Clear */}
+          {}
           {hasFilters && (
             <button
               onClick={clearFilters}
@@ -442,7 +436,7 @@ export default function ConsolePage() {
           </span>
         </div>
 
-        {/* ── Log table ── */}
+        {}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-20 gap-3">
@@ -526,7 +520,7 @@ export default function ConsolePage() {
                         log.action === "DELETE" && "bg-red-50/20",
                       )}
                     >
-                      {/* Timestamp */}
+                      {}
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3 h-3 text-gray-400 shrink-0" />
@@ -541,7 +535,7 @@ export default function ConsolePage() {
                         </div>
                       </td>
 
-                      {/* Action badge */}
+                      {}
                       <td className="px-4 py-2.5">
                         <span
                           className={cn(
@@ -556,7 +550,7 @@ export default function ConsolePage() {
                         </span>
                       </td>
 
-                      {/* Module */}
+                      {}
                       <td className="px-4 py-2.5">
                         {log.module ? (
                           <span
@@ -573,7 +567,7 @@ export default function ConsolePage() {
                         )}
                       </td>
 
-                      {/* User */}
+                      {}
                       <td className="px-4 py-2.5">
                         <div>
                           <p className="font-bold text-[11px] text-black">
@@ -596,7 +590,7 @@ export default function ConsolePage() {
                         </div>
                       </td>
 
-                      {/* Description */}
+                      {}
                       <td className="px-4 py-2.5 max-w-xs">
                         <p className="text-[11px] text-gray-700 leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
                           {log.description || "—"}
@@ -608,7 +602,7 @@ export default function ConsolePage() {
                         )}
                       </td>
 
-                      {/* IP */}
+                      {}
                       <td className="px-4 py-2.5">
                         <span className="text-[10px] text-gray-400 font-mono">
                           {log.ip || "—"}
@@ -622,7 +616,7 @@ export default function ConsolePage() {
           )}
         </div>
 
-        {/* ── Pagination ── */}
+        {}
         {pages > 1 && (
           <div className="flex items-center justify-between px-6 py-3 border-t-2 border-black bg-white shrink-0">
             <button

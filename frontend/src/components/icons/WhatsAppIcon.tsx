@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface WhatsAppIconProps {
   className?: string;
-  colored?: boolean; // true = green brand color, false = inherit current color
+  colored?: boolean;
 }
 
 export function WhatsAppIcon({
@@ -19,8 +19,6 @@ export function WhatsAppIcon({
   );
 }
 
-// Wrapper that matches the LucideIcon interface (className only)
-// Used in navigation config
 export function WhatsAppNavIcon({ className }: { className?: string }) {
   return <FontAwesomeIcon icon={faWhatsapp} className={className} />;
 }

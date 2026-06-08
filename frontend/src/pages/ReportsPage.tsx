@@ -96,7 +96,6 @@ export default function ReportsPage() {
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [activeDatePreset, setActiveDatePreset] = useState<string>("");
 
-  // ── Leads tab filters ──
   const [filters, setFilters] = useState({
     search: "",
     status: "all",
@@ -106,7 +105,6 @@ export default function ReportsPage() {
     endDate: "",
   });
 
-  // ── Activity tab state ──
   const [activityPeriod, setActivityPeriod] = useState<Period>("today");
   const [activityUser, setActivityUser] = useState("all");
   const [activityCustomFrom, setActivityCustomFrom] = useState("");
@@ -114,7 +112,6 @@ export default function ReportsPage() {
   const [activityData, setActivityData] = useState<any[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
 
-  // ── Team tab state ──
   const [teamPeriod, setTeamPeriod] = useState<Period>("month");
   const [teamLeads, setTeamLeads] = useState<any[]>([]);
   const [teamLoading, setTeamLoading] = useState(false);
@@ -124,17 +121,14 @@ export default function ReportsPage() {
     fetchLeads();
   }, []);
 
-  // Fetch activity when Activity tab is active or filters change
   useEffect(() => {
     if (activeTab === "activity") fetchActivity();
   }, [activeTab, activityPeriod, activityUser]);
 
-  // Fetch team data when Team tab is active or period changes
   useEffect(() => {
     if (activeTab === "team") fetchTeamLeads();
   }, [activeTab, teamPeriod]);
 
-  // ── Leads tab ──
   const fetchLeads = async (overrides?: Partial<typeof filters>) => {
     const f = { ...filters, ...overrides };
     try {
@@ -210,7 +204,6 @@ export default function ReportsPage() {
     fetchLeads(updated);
   };
 
-  // ── Activity tab ──
   const fetchActivity = async () => {
     if (
       activityPeriod === "custom" &&
@@ -240,7 +233,6 @@ export default function ReportsPage() {
     }
   };
 
-  // ── Team tab ──
   const fetchTeamLeads = async () => {
     try {
       setTeamLoading(true);
@@ -277,7 +269,6 @@ export default function ReportsPage() {
     }
   };
 
-  // ── Team stats computation ──
   const teamStats = (() => {
     const map: Record<
       string,
@@ -318,7 +309,6 @@ export default function ReportsPage() {
     return Object.values(map).sort((a, b) => b.total - a.total);
   })();
 
-  // ── Exports ──
   const exportCSV = () => {
     const headers = [
       "Name",
@@ -398,9 +388,7 @@ export default function ReportsPage() {
       try {
         const res = await settingsAPI.get();
         settings = res.data || {};
-      } catch {
-        /* use defaults if settings unavailable */
-      }
+      } catch {}
 
       const doc = new jsPDF({
         orientation: "landscape",
@@ -409,7 +397,6 @@ export default function ReportsPage() {
       });
       const pw = doc.internal.pageSize.getWidth();
 
-      // ── Header band ──
       doc.setFillColor(2, 75, 171);
       doc.rect(0, 0, pw, 22, "F");
       doc.setTextColor(255, 255, 255);
@@ -444,7 +431,6 @@ export default function ReportsPage() {
       );
       doc.setTextColor(0, 0, 0);
 
-      // ── Table ──
       autoTable(doc, {
         startY: 25,
         head: [
@@ -490,7 +476,6 @@ export default function ReportsPage() {
         margin: { left: 5, right: 5 },
       });
 
-      // ── Per-page footer ──
       const totalPages = (doc as any).internal.getNumberOfPages();
       for (let p = 1; p <= totalPages; p++) {
         doc.setPage(p);
@@ -554,7 +539,7 @@ export default function ReportsPage() {
   return (
     <AppLayout title="Reports">
       <div className="space-y-5">
-        {/* ── Tab bar ── */}
+        {}
         <div className="flex border-2 border-black overflow-hidden">
           {TABS.map((t) => (
             <button
@@ -573,12 +558,10 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        {/* ════════════════════════════════════════
-            TAB 1 — LEADS REPORT
-        ════════════════════════════════════════ */}
+        {}
         {activeTab === "leads" && (
           <>
-            {/* Summary cards */}
+            {}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { key: "total", label: "Total Leads", text: "text-primary" },
@@ -609,7 +592,7 @@ export default function ReportsPage() {
               ))}
             </div>
 
-            {/* Filter panel */}
+            {}
             <div className="border-2 border-black bg-white">
               <button
                 onClick={() => setFiltersOpen((v) => !v)}
@@ -785,7 +768,7 @@ export default function ReportsPage() {
               )}
             </div>
 
-            {/* Date quick-select bar */}
+            {}
             <div className="flex items-center gap-2 px-1 py-2 flex-wrap">
               {[
                 { key: "today", label: "Today" },
@@ -820,7 +803,7 @@ export default function ReportsPage() {
               ))}
             </div>
 
-            {/* Table */}
+            {}
             <div className="border-2 border-black bg-white overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
                 <p className="text-xs font-black uppercase tracking-widest text-black">
@@ -1024,18 +1007,16 @@ export default function ReportsPage() {
           </>
         )}
 
-        {/* ════════════════════════════════════════
-            TAB 2 — STATUS ACTIVITY
-        ════════════════════════════════════════ */}
+        {}
         {activeTab === "activity" && (
           <>
-            {/* Period + Person filters */}
+            {}
             <div className="border-2 border-black bg-white">
               <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <Activity className="w-3.5 h-3.5" /> Status Activity Filters
               </div>
               <div className="p-4 space-y-4">
-                {/* Period buttons */}
+                {}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-black">
                     Period
@@ -1134,7 +1115,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Activity table */}
+            {}
             <div className="border-2 border-black bg-white overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
                 <p className="text-xs font-black uppercase tracking-widest text-black">
@@ -1286,12 +1267,10 @@ export default function ReportsPage() {
           </>
         )}
 
-        {/* ════════════════════════════════════════
-            TAB 3 — TEAM REPORT
-        ════════════════════════════════════════ */}
+        {}
         {activeTab === "team" && (
           <>
-            {/* Period selector */}
+            {}
             <div className="border-2 border-black bg-white">
               <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
                 <BarChart3 className="w-3.5 h-3.5" /> Team Performance Period
@@ -1316,7 +1295,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Team stats table */}
+            {}
             <div className="border-2 border-black bg-white overflow-hidden">
               <div className="px-4 py-3 border-b-2 border-black bg-white flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-widest text-black">
@@ -1447,7 +1426,7 @@ export default function ReportsPage() {
               )}
             </div>
 
-            {/* Per-person mini cards */}
+            {}
             {!teamLoading && teamStats.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {teamStats.map((member, i) => (

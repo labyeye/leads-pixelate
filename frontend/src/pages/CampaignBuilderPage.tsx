@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Step = 1 | 2 | 3 | 4;
 
 interface Template {
@@ -80,7 +79,6 @@ const VARIABLE_FIELDS = [
   { value: "custom", label: "Custom Text" },
 ];
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CampaignBuilderPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -93,11 +91,9 @@ export default function CampaignBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(isEdit);
 
-  // Step 1 — Basics
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  // Step 2 — Audience
   const [targetType, setTargetType] = useState<"ALL_LEADS" | "SEGMENT">(
     "ALL_LEADS",
   );
@@ -109,7 +105,6 @@ export default function CampaignBuilderPage() {
   } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  // Step 3 — Template
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -119,10 +114,8 @@ export default function CampaignBuilderPage() {
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
 
-  // Step 4 — Review
   const selectedTemplate = templates.find((t) => t._id === selectedTemplateId);
 
-  // Load templates + phone config
   useEffect(() => {
     const load = async () => {
       setTemplatesLoading(true);
@@ -137,7 +130,6 @@ export default function CampaignBuilderPage() {
         if (numbers.length === 1)
           setSelectedPhoneNumberId(numbers[0].phoneNumberId);
       } catch {
-        // WhatsApp may not be configured — silent
       } finally {
         setTemplatesLoading(false);
       }
@@ -145,7 +137,6 @@ export default function CampaignBuilderPage() {
     load();
   }, []);
 
-  // Auto-initialize variable mapping when template changes
   useEffect(() => {
     if (!selectedTemplate) return;
     const varCount = (selectedTemplate.bodyText?.match(/\{\{(\d+)\}\}/g) || [])
@@ -159,7 +150,6 @@ export default function CampaignBuilderPage() {
     );
   }, [selectedTemplateId]);
 
-  // Load existing campaign if editing
   useEffect(() => {
     if (!isEdit) return;
     campaignAPI
@@ -193,7 +183,6 @@ export default function CampaignBuilderPage() {
       });
       setAudiencePreview(res.data);
     } catch {
-      // silent
     } finally {
       setPreviewLoading(false);
     }
@@ -285,7 +274,7 @@ export default function CampaignBuilderPage() {
   return (
     <AppLayout title={isEdit ? "Edit Campaign" : "New Campaign"}>
       <div className="flex flex-col h-full max-w-2xl mx-auto">
-        {/* Header */}
+        {}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-border">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
             <Megaphone className="w-4 h-4 text-orange-600" />
@@ -298,7 +287,7 @@ export default function CampaignBuilderPage() {
           </div>
         </div>
 
-        {/* Progress */}
+        {}
         <div className="flex gap-1 px-6 pt-3">
           {[1, 2, 3, 4].map((s) => (
             <div
@@ -308,7 +297,7 @@ export default function CampaignBuilderPage() {
           ))}
         </div>
 
-        {/* Step labels */}
+        {}
         <div className="grid grid-cols-4 px-6 pt-1 pb-3 text-center">
           {["Basics", "Audience", "Template", "Review"].map((label, i) => (
             <span
@@ -320,9 +309,9 @@ export default function CampaignBuilderPage() {
           ))}
         </div>
 
-        {/* Step content */}
+        {}
         <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-5">
-          {/* ─── Step 1: Basics ──────────────────────────────────────── */}
+          {}
           {step === 1 && (
             <>
               <div>

@@ -6,7 +6,6 @@ function isPincode(val) {
   return typeof val === "string" && PINCODE_RE.test(val.trim());
 }
 
-// Calls India Post free API — returns { city, state } or null on failure
 function lookupPincode(pin) {
   return new Promise((resolve) => {
     const url = `https://api.postalpincode.in/pincode/${pin}`;
@@ -34,8 +33,6 @@ function lookupPincode(pin) {
   });
 }
 
-// Resolves a value: if it's a 6-digit pincode, returns { city, state }
-// Otherwise returns null so caller can skip
 async function resolvePincode(val) {
   if (!val || !isPincode(val)) return null;
   return lookupPincode(val.trim());

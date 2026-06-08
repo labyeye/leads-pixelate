@@ -10,8 +10,6 @@ const Subscription = require("../models/Subscription");
 const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
 const { sendWelcomeEmail } = require("../utils/emailService");
 
-// ── HDFC Smart Gateway helpers ────────────────────────────────────────────────
-
 function hdfcEncrypt(plainText, workingKey) {
   const keyBytes = crypto.createHash("md5").update(workingKey).digest();
   const iv = Buffer.alloc(16, 0);
@@ -40,8 +38,6 @@ function getHdfcConfig() {
   return { merchantId, workingKey, accessCode, gatewayUrl };
 }
 
-// ── Razorpay helpers ──────────────────────────────────────────────────────────
-
 function getRazorpayInstance() {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -63,8 +59,6 @@ function verifyRazorpaySignature(orderId, paymentId, signature) {
     .digest("hex");
   return expectedSignature === signature;
 }
-
-// ── Plans (public) ────────────────────────────────────────────────────────────
 
 router.get("/plans", (req, res) => {
   res.json({
@@ -161,8 +155,6 @@ router.get("/plans", (req, res) => {
   });
 });
 
-// ── Current subscription ──────────────────────────────────────────────────────
-
 router.get(
   "/subscription",
   protect,
@@ -177,8 +169,6 @@ router.get(
     res.json({ success: true, data: { tenant, subscription } });
   }),
 );
-
-// ── Invoice list ──────────────────────────────────────────────────────────────
 
 router.get(
   "/invoices",
@@ -209,8 +199,6 @@ router.get(
     res.json({ success: true, data: invoices });
   }),
 );
-
-// ── HDFC: create order ────────────────────────────────────────────────────────
 
 router.post(
   "/hdfc/create-order",
@@ -278,8 +266,6 @@ router.post(
   }),
 );
 
-// ── HDFC: payment response (redirect from HDFC) ───────────────────────────────
-
 router.post(
   "/hdfc/response",
   asyncHandler(async (req, res) => {
@@ -318,7 +304,7 @@ router.post(
       tenantId = params.merchant_param3;
       trackingId = params.tracking_id;
       orderId = params.order_id;
-      amount = parseFloat(params.amount) * 100; // convert back to paise
+      amount = parseFloat(params.amount) * 100;
     } catch {
       return res.redirect(
         `${frontendUrl}/billing?payment=failed&reason=decrypt_error`,
@@ -391,8 +377,6 @@ router.post(
   }),
 );
 
-// ── Razorpay: Create Order ────────────────────────────────────────────────────
-
 router.post(
   "/razorpay/create-order",
   protect,
@@ -406,7 +390,7 @@ router.post(
     }
 
     const razorpay = getRazorpayInstance();
-    const basePrice = PLAN_PRICES_MONTHLY[plan]; // already in paise
+    const basePrice = PLAN_PRICES_MONTHLY[plan];
     const amountPaise =
       billingCycle === "yearly" ? Math.round(basePrice * 12 * 0.8) : basePrice;
 
@@ -429,7 +413,6 @@ router.post(
         },
       });
 
-      // Store order info for verification later
       const subscription = await Subscription.findOneAndUpdate(
         { tenant: req.user.tenantId },
         {
@@ -469,8 +452,6 @@ router.post(
   }),
 );
 
-// ── Razorpay: Verify Payment ──────────────────────────────────────────────────
-
 router.post(
   "/razorpay/verify",
   protect,
@@ -484,7 +465,6 @@ router.post(
       });
     }
 
-    // Verify signature
     const isSignatureValid = verifyRazorpaySignature(
       razorpayOrderId,
       razorpayPaymentId,
@@ -517,7 +497,6 @@ router.post(
         const { plan, billingCycle, amount } = subscription.pendingOrder;
         const amountPaise = Math.round(amount * 100);
 
-        // Get sequential invoice number across all tenants
         const countResult = await Subscription.aggregate([
           { $unwind: { path: "$invoices", preserveNullAndEmptyArrays: false } },
           { $match: { "invoices.status": "paid" } },
@@ -526,7 +505,6 @@ router.post(
         const invoiceSeq = (countResult[0]?.total || 0) + 1;
         const invoiceNumber = `KHT/${String(invoiceSeq).padStart(4, "0")}`;
 
-        // Update subscription + push invoice record
         const updatedSubscription = await Subscription.findOneAndUpdate(
           { tenant: req.user.tenantId },
           {
@@ -561,14 +539,12 @@ router.post(
           { new: true },
         );
 
-        // Update tenant plan
         const updatedTenant = await Tenant.findByIdAndUpdate(
           req.user.tenantId,
           { plan, planStartDate: new Date() },
           { new: true },
         );
 
-        // Send welcome email with invoice (non-blocking)
         sendWelcomeEmail({
           to: updatedTenant?.email || req.user.email,
           companyName: updatedTenant?.name || req.user.name || "Team",
@@ -604,8 +580,6 @@ router.post(
     }
   }),
 );
-
-// ── Cancel subscription ───────────────────────────────────────────────────────
 
 router.post(
   "/cancel",

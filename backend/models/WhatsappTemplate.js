@@ -26,7 +26,7 @@ const whatsappTemplateSchema = new mongoose.Schema(
       type: String,
       default: "en",
     },
-    // "NONE" | "TEXT" | "DOCUMENT" | "IMAGE"
+
     headerType: {
       type: String,
       enum: ["NONE", "TEXT", "DOCUMENT", "IMAGE"],
@@ -37,7 +37,7 @@ const whatsappTemplateSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
-    // WhatsApp media ID returned after uploading via /media endpoint
+
     headerMediaId: {
       type: String,
       default: "",
@@ -67,18 +67,18 @@ const whatsappTemplateSchema = new mongoose.Schema(
         phoneNumber: String,
       },
     ],
-    // Variables extracted from body text like {{1}}, {{2}}
+
     variableCount: {
       type: Number,
       default: 0,
     },
-    // Status tracks approval in Meta Business Manager
+
     status: {
       type: String,
       enum: ["DRAFT", "PENDING", "APPROVED", "REJECTED"],
       default: "DRAFT",
     },
-    // The exact name registered in Meta Business Manager
+
     metaTemplateName: {
       type: String,
       trim: true,

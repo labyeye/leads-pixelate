@@ -106,7 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("user", JSON.stringify(userData));
           localStorage.setItem("tenant", JSON.stringify(tenantData));
 
-          // Load tenant permissions in background
           settingsAPI
             .get()
             .then((res) => {
@@ -206,18 +205,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const tenantData = mapTenant(response.data.tenant);
       setTenant(tenantData);
       localStorage.setItem("tenant", JSON.stringify(tenantData));
-    } catch {
-      // silent
-    }
+    } catch {}
   }, []);
 
   const refreshPermissions = useCallback(async () => {
     try {
       const res = await settingsAPI.get();
       setPermissions(res.data?.permissions || null);
-    } catch {
-      // silent
-    }
+    } catch {}
   }, []);
 
   return (

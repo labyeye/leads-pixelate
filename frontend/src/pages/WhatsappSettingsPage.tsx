@@ -61,7 +61,6 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Template {
   _id: string;
   name: string;
@@ -145,7 +144,6 @@ const CAMPAIGN_STATUS_COLORS: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-600",
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function WhatsappSettingsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<
@@ -155,7 +153,7 @@ export default function WhatsappSettingsPage() {
   return (
     <AppLayout title="WhatsApp Setup">
       <div className="flex flex-col h-full">
-        {/* Header */}
+        {}
         <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-black bg-white">
           <div className="w-9 h-9 rounded-lg bg-[#25D366]/10 border-2 border-[#25D366]/20 flex items-center justify-center">
             <FontAwesomeIcon
@@ -171,7 +169,7 @@ export default function WhatsappSettingsPage() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {}
         <div className="flex gap-0 border-b border-border px-6 bg-background">
           {[
             { id: "connection", label: "Connection" },
@@ -189,7 +187,7 @@ export default function WhatsappSettingsPage() {
           ))}
         </div>
 
-        {/* Tab content */}
+        {}
         <div className="flex-1 overflow-y-auto">
           {activeTab === "connection" && <ConnectionTab toast={toast} />}
           {activeTab === "templates" && <TemplatesTab toast={toast} />}
@@ -201,7 +199,6 @@ export default function WhatsappSettingsPage() {
   );
 }
 
-// ─── Templates Tab ─────────────────────────────────────────────────────────────
 function TemplatesTab({ toast }: { toast: any }) {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -301,7 +298,6 @@ function TemplatesTab({ toast }: { toast: any }) {
     }
   };
 
-  // Auto-generate name from displayName
   const handleDisplayNameChange = (val: string) => {
     const autoName = val
       .toLowerCase()
@@ -384,7 +380,7 @@ function TemplatesTab({ toast }: { toast: any }) {
         </div>
       )}
 
-      {/* Create/Edit Dialog */}
+      {}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -493,7 +489,7 @@ function TemplatesTab({ toast }: { toast: any }) {
               </div>
             </div>
 
-            {/* Header section */}
+            {}
             <div className="space-y-3">
               <div>
                 <Label>
@@ -670,7 +666,7 @@ function TemplatesTab({ toast }: { toast: any }) {
               />
             </div>
 
-            {/* Live preview */}
+            {}
             <div>
               <Label className="mb-2 block">Preview</Label>
               <div className="bg-[#e5ddd5] rounded-xl p-4">
@@ -735,7 +731,7 @@ function TemplatesTab({ toast }: { toast: any }) {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
+      {}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -898,7 +894,6 @@ function TemplateCard({
   );
 }
 
-// ─── Analytics Tab ─────────────────────────────────────────────────────────────
 function AnalyticsTab({ toast }: { toast: any }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1004,7 +999,7 @@ function AnalyticsTab({ toast }: { toast: any }) {
                           : format(new Date(c.createdAt), "dd MMM yyyy")}
                       </p>
 
-                      {/* Mini stats row */}
+                      {}
                       <div className="flex items-center gap-4 mt-2">
                         <StatPill
                           icon={Users}
@@ -1044,7 +1039,7 @@ function AnalyticsTab({ toast }: { toast: any }) {
                         />
                       </div>
 
-                      {/* Progress bar */}
+                      {}
                       {c.totalCount > 0 && (
                         <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden flex">
                           <div
@@ -1089,7 +1084,7 @@ function AnalyticsTab({ toast }: { toast: any }) {
                   </div>
                 </button>
 
-                {/* Expanded detail */}
+                {}
                 {isOpen && (
                   <div className="border-t border-border bg-muted/20 px-5 py-4">
                     {loadingDetail ? (
@@ -1193,7 +1188,6 @@ function MsgStatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Replies Tab ──────────────────────────────────────────────────────────────
 function RepliesTab({ toast }: { toast: any }) {
   const [replies, setReplies] = useState<Reply[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1277,7 +1271,6 @@ function RepliesTab({ toast }: { toast: any }) {
   );
 }
 
-// ─── Connection Tab ────────────────────────────────────────────────────────────
 function ConnectionTab({ toast }: { toast: any }) {
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -1285,12 +1278,10 @@ function ConnectionTab({ toast }: { toast: any }) {
   const [disconnecting, setDisconnecting] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
-  // Step 1: setup access token
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupSaving, setSetupSaving] = useState(false);
   const [setupForm, setSetupForm] = useState({ accessToken: "", wabaId: "" });
 
-  // Step 2: add phone number
   const [addPhoneOpen, setAddPhoneOpen] = useState(false);
   const [addingSaving, setAddingSaving] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -1444,7 +1435,7 @@ function ConnectionTab({ toast }: { toast: any }) {
         </div>
       ) : (
         <>
-          {/* Step 1 — Access Token */}
+          {}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1512,7 +1503,7 @@ function ConnectionTab({ toast }: { toast: any }) {
             )}
           </div>
 
-          {/* Step 2 — Phone Numbers */}
+          {}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1596,7 +1587,7 @@ function ConnectionTab({ toast }: { toast: any }) {
             )}
           </div>
 
-          {/* Webhook */}
+          {}
           <div>
             <h3 className="text-sm font-semibold mb-2">
               Webhook Configuration
@@ -1657,7 +1648,7 @@ function ConnectionTab({ toast }: { toast: any }) {
         </>
       )}
 
-      {/* Setup access token dialog */}
+      {}
       <Dialog open={setupOpen} onOpenChange={setSetupOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -1734,7 +1725,7 @@ function ConnectionTab({ toast }: { toast: any }) {
         </DialogContent>
       </Dialog>
 
-      {/* Add phone number dialog */}
+      {}
       <Dialog open={addPhoneOpen} onOpenChange={setAddPhoneOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

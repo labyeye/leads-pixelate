@@ -268,7 +268,7 @@ export function LeadDetailPanel({
           Actions
         </h4>
 
-        {/* WhatsApp quick action */}
+        {}
         {lead.phone && (
           <Button
             variant="outline"
@@ -280,7 +280,7 @@ export function LeadDetailPanel({
           </Button>
         )}
 
-        {/* WhatsApp send dialog */}
+        {}
         <WhatsAppSendDialog
           open={waDialogOpen}
           onClose={() => setWaDialogOpen(false)}
@@ -640,7 +640,6 @@ export function LeadDetailPanel({
   );
 }
 
-// ─── WhatsApp Send Dialog ──────────────────────────────────────────────────────
 function WhatsAppSendDialog({
   open,
   onClose,
@@ -659,7 +658,6 @@ function WhatsAppSendDialog({
   const [loadingInit, setLoadingInit] = useState(false);
   const [sending, setSending] = useState(false);
 
-  // Phone number selection — only shown when >1 number connected
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
 
@@ -674,7 +672,7 @@ function WhatsAppSendDialog({
         );
         const nums = sRes.data?.phoneNumbers || [];
         setPhoneNumbers(nums);
-        // Auto-select if only one
+
         if (nums.length === 1) setSelectedPhoneNumberId(nums[0].phoneNumberId);
         else setSelectedPhoneNumberId("");
       })
@@ -741,7 +739,7 @@ function WhatsAppSendDialog({
               </span>
             </p>
 
-            {/* Phone number selector — only if multiple numbers connected */}
+            {}
             {needsPhonePick && (
               <div>
                 <Label className="text-xs">
@@ -775,7 +773,7 @@ function WhatsAppSendDialog({
               </div>
             )}
 
-            {/* Mode toggle */}
+            {}
             <div className="flex bg-muted rounded-lg p-1 gap-1">
               <button
                 onClick={() => setMode("text")}

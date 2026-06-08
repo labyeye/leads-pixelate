@@ -27,7 +27,6 @@ import indiamartLogo from "../assets/images/logos/indiamart.png";
 import facebookLogo from "../assets/images/logos/facebook.png";
 import tradeindiLogo from "../assets/images/logos/tradeindia.webp";
 import justdiallogo from "../assets/images/logos/justdial.webp";
-// ─── Types ──────────────────────────────────────────────────────────────────
 
 type IntegrationId = "indiamart" | "facebook" | "tradeindia" | "justdial";
 
@@ -37,7 +36,7 @@ interface StepField {
   type: "text" | "password" | "readonly";
   placeholder?: string;
   help?: string;
-  value?: string; // for readonly pre-filled fields
+  value?: string;
 }
 
 interface WizardStep {
@@ -63,8 +62,6 @@ interface Integration {
   steps: WizardStep[];
   docsUrl: string;
 }
-
-// ─── Visual helpers ─────────────────────────────────────────────────────────
 
 function MockBrowser({ children }: { children: React.ReactNode }) {
   return (
@@ -104,8 +101,6 @@ function HighlightBox({
     </div>
   );
 }
-
-// ─── IndiaMART step visuals ──────────────────────────────────────────────────
 
 const IndiamartStep1Visual = () => (
   <MockBrowser>
@@ -190,8 +185,6 @@ const IndiamartStep3Visual = () => (
   </div>
 );
 
-// ─── Facebook step visuals ───────────────────────────────────────────────────
-
 const FacebookStep1Visual = () => (
   <div className="border-2 border-black nb-shadow-sm overflow-hidden">
     <div className="bg-[#1877F2] p-4 text-center">
@@ -228,7 +221,7 @@ const FacebookStep2Visual = () => (
       <div className="text-[11px] text-gray-600">Subscribe URL:</div>
       <HighlightBox label="Paste your webhook URL here">
         <div className="font-mono text-[10px] text-gray-700 break-all">
-          https://api.nestleads.app/api/facebook/webhook
+          https:
         </div>
       </HighlightBox>
       <div className="text-[11px] text-gray-600 mt-2">Verify Token:</div>
@@ -279,8 +272,6 @@ const FacebookStep4Visual = () => (
     </div>
   </div>
 );
-
-// ─── Integration definitions ─────────────────────────────────────────────────
 
 const INTEGRATIONS: Integration[] = [
   {
@@ -591,8 +582,6 @@ const INTEGRATIONS: Integration[] = [
   },
 ];
 
-// ─── Wizard Component ────────────────────────────────────────────────────────
-
 function IntegrationWizard({
   integration,
   onClose,
@@ -638,7 +627,6 @@ function IntegrationWizard({
             description: "IndiaMART is now syncing leads every 5 minutes.",
           });
         } else {
-          // Other integrations: no real API yet
           await new Promise((r) => setTimeout(r, 800));
           toast({ title: "Saved!", description: "Connection verified." });
         }

@@ -37,7 +37,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
             collapsed ? "lg:justify-center lg:px-2 px-4 gap-3" : "px-4 gap-3",
           )}
         >
-          {/* Full logo — shown when expanded or on mobile */}
+          {}
           <img
             src={nestleadslogo}
             alt="NestLeads"

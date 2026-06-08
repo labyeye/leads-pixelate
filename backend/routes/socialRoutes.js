@@ -20,16 +20,12 @@ const {
 } = require("../controllers/socialController");
 const { protect, authorize } = require("../middleware/auth");
 
-// OAuth callback — no auth (Facebook redirects here)
 router.get("/auth/facebook/callback", facebookCallback);
 
-// All other routes require login
 router.use(protect);
 
-// Stats
 router.get("/stats", getStats);
 
-// Posts
 router.route("/posts").get(getPosts).post(createPost);
 router.route("/posts/:id").get(getPost).put(updatePost).delete(deletePost);
 
@@ -46,7 +42,6 @@ router.post(
   publishPost,
 );
 
-// Connected accounts
 router.route("/accounts").get(getAccounts).post(connectAccount);
 router.delete(
   "/accounts/:id",
@@ -54,7 +49,6 @@ router.delete(
   disconnectAccount,
 );
 
-// OAuth
 router.get("/auth/facebook", getFacebookAuthUrl);
 router.post("/auth/facebook/pages", fetchFacebookPages);
 

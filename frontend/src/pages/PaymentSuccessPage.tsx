@@ -108,7 +108,7 @@ export default function PaymentSuccessPage() {
         .btn-dashboard:active { transform: translateY(0); }
       `}</style>
 
-      {/* Confetti */}
+      {}
       {PARTICLES.map((p) => (
         <div
           key={p.id}
@@ -126,7 +126,7 @@ export default function PaymentSuccessPage() {
         />
       ))}
 
-      {/* Checkmark */}
+      {}
       <div
         style={{
           width: 100,
@@ -158,7 +158,7 @@ export default function PaymentSuccessPage() {
         </svg>
       </div>
 
-      {/* Headline */}
+      {}
       <div
         style={{
           textAlign: "center",
@@ -198,7 +198,7 @@ export default function PaymentSuccessPage() {
         </p>
       </div>
 
-      {/* Plan badge */}
+      {}
       <div
         style={{
           background: "rgba(255,255,255,0.05)",
@@ -254,7 +254,7 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
 
-      {/* CTA */}
+      {}
       <div
         style={{
           animation: cardVisible ? "fade-in 0.6s 0.3s ease forwards" : "none",

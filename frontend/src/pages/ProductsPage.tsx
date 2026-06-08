@@ -86,8 +86,14 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim())                 { notify.error("Product Name is required"); return; }
-    if (!form.price || Number(form.price) <= 0) { notify.error("Invalid Price", "Price must be greater than 0."); return; }
+    if (!form.name.trim()) {
+      notify.error("Product Name is required");
+      return;
+    }
+    if (!form.price || Number(form.price) <= 0) {
+      notify.error("Invalid Price", "Price must be greater than 0.");
+      return;
+    }
     try {
       setSaving(true);
       const payload = { ...form, price: Number(form.price) };
@@ -96,7 +102,10 @@ export default function ProductsPage() {
         notify.success("Product Updated", `"${form.name}" has been updated.`);
       } else {
         await productsAPI.create(payload);
-        notify.success("Product Added", `"${form.name}" has been added to the catalog.`);
+        notify.success(
+          "Product Added",
+          `"${form.name}" has been added to the catalog.`,
+        );
       }
       closeModal();
       fetchProducts();
@@ -135,7 +144,7 @@ export default function ProductsPage() {
   return (
     <AppLayout title="Products">
       <div className="space-y-4">
-        {/* ── KPI row ── */}
+        {}
         <div className="grid grid-cols-3 gap-3">
           {[
             {
@@ -161,9 +170,9 @@ export default function ProductsPage() {
           ))}
         </div>
 
-        {/* ── Toolbar ── */}
+        {}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
+          {}
           <div className="flex items-center gap-2 border-2 border-black px-3 h-10 bg-white flex-1 min-w-[180px] max-w-xs shadow-[2px_2px_0px_#000]">
             <Search className="w-3.5 h-3.5 text-gray-500 shrink-0" />
             <input
@@ -175,7 +184,7 @@ export default function ProductsPage() {
             />
           </div>
 
-          {/* Category filter */}
+          {}
           <select
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
@@ -199,7 +208,7 @@ export default function ProductsPage() {
           )}
         </div>
 
-        {/* ── Table ── */}
+        {}
         <div className="border-2 border-black bg-white overflow-hidden shadow-[4px_4px_0px_#000]">
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
@@ -282,7 +291,9 @@ export default function ProductsPage() {
                             {item.hsnCode}
                           </span>
                         ) : (
-                          <span className="text-gray-300 italic text-xs">—</span>
+                          <span className="text-gray-300 italic text-xs">
+                            —
+                          </span>
                         )}
                       </td>
 
@@ -355,11 +366,11 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {/* ── Add / Edit Modal ── */}
+      {}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-md mx-4">
-            {/* Modal header */}
+            {}
             <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-[#024BAB]">
               <h2 className="text-sm font-black uppercase tracking-widest text-white">
                 {editId ? "Edit Product" : "Add New Product"}
@@ -373,7 +384,7 @@ export default function ProductsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              {/* Name */}
+              {}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
                   Product Name <span className="text-red-500">*</span>
@@ -388,7 +399,7 @@ export default function ProductsPage() {
                 />
               </div>
 
-              {/* Category + Price */}
+              {}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
@@ -427,7 +438,7 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* HSN / SAC Code */}
+              {}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
                   HSN / SAC Code{" "}
@@ -446,7 +457,7 @@ export default function ProductsPage() {
                 />
               </div>
 
-              {/* Status */}
+              {}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
                   Status
@@ -472,7 +483,7 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Description */}
+              {}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
                   Description{" "}
@@ -491,7 +502,7 @@ export default function ProductsPage() {
                 />
               </div>
 
-              {/* Footer */}
+              {}
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"

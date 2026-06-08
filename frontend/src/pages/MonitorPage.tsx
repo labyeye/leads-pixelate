@@ -185,7 +185,6 @@ function timeAgo(ts: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-// ─── Stat Card ────────────────────────────────────────────────
 function StatCard({
   icon: Icon,
   label,
@@ -220,7 +219,6 @@ function StatCard({
   );
 }
 
-// ─── Log Row ──────────────────────────────────────────────────
 function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
   const actionMeta = ACTION_META[log.action] || {
     label: log.action,
@@ -246,7 +244,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         log.action === "DELETE" && "bg-destructive/[0.02]",
       )}
     >
-      {/* Timestamp */}
+      {}
       <div className="hidden sm:flex items-center gap-2 min-w-0">
         <div
           className={cn("w-1.5 h-1.5 rounded-full shrink-0", actionMeta.dot)}
@@ -256,7 +254,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         </span>
       </div>
 
-      {/* On mobile: dot + timeago */}
+      {}
       <div className="flex sm:hidden items-center gap-2">
         <div
           className={cn("w-1.5 h-1.5 rounded-full shrink-0", actionMeta.dot)}
@@ -266,7 +264,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         </span>
       </div>
 
-      {/* Action badge */}
+      {}
       <div className="hidden sm:block">
         <span
           className={cn(
@@ -279,7 +277,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         </span>
       </div>
 
-      {/* Module */}
+      {}
       <div
         className={cn(
           "hidden sm:flex items-center gap-1.5 text-xs font-medium",
@@ -290,9 +288,9 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         <span className="truncate">{log.module}</span>
       </div>
 
-      {/* Description (full width on mobile) */}
+      {}
       <div className="col-span-1 sm:col-span-1 min-w-0">
-        {/* Mobile: show action + module inline */}
+        {}
         <div className="flex items-center gap-1.5 mb-0.5 sm:hidden">
           <span
             className={cn(
@@ -314,7 +312,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         </p>
       </div>
 
-      {/* User */}
+      {}
       <div className="hidden sm:block text-right min-w-0">
         <p className="text-xs font-medium text-foreground truncate">
           {log.userName}
@@ -327,7 +325,6 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────
 export default function MonitorPage() {
   const { toast } = useToast();
 
@@ -339,14 +336,12 @@ export default function MonitorPage() {
   const [liveMode, setLiveMode] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-  // Filters
   const [search, setSearch] = useState("");
   const [filterModule, setFilterModule] = useState("all");
   const [filterAction, setFilterAction] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Pagination
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -354,7 +349,6 @@ export default function MonitorPage() {
   const pollerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const knownIdsRef = useRef<Set<string>>(new Set());
 
-  // ── Fetch Logs ────────────────────────────────────────────
   const fetchLogs = useCallback(
     async (resetPage = false, silent = false) => {
       try {
@@ -375,7 +369,6 @@ export default function MonitorPage() {
         const res = await activityAPI.getLogs(params);
         const incoming: ActivityLog[] = res.data || [];
 
-        // Detect truly new entries (not seen before)
         if (knownIdsRef.current.size > 0) {
           const freshIds = new Set<string>();
           incoming.forEach((l) => {
@@ -385,7 +378,6 @@ export default function MonitorPage() {
           setTimeout(() => setNewIds(new Set()), 3000);
         }
 
-        // Update known ids
         incoming.forEach((l) => knownIdsRef.current.add(l._id));
 
         setLogs(incoming);
@@ -413,33 +405,25 @@ export default function MonitorPage() {
       const res = await activityAPI.getStats();
       setStats(res.data);
     } catch {
-      /* silent */
     } finally {
       setStatsLoading(false);
     }
   }, []);
 
-  // Initial + filter change
   useEffect(() => {
     fetchLogs(true);
     fetchStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterModule, filterAction, startDate, endDate]);
 
-  // Search debounce
   useEffect(() => {
     const t = setTimeout(() => fetchLogs(true), 400);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // Pagination refetch
   useEffect(() => {
     fetchLogs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Live poll
   useEffect(() => {
     if (liveMode) {
       pollerRef.current = setInterval(() => {
@@ -468,10 +452,9 @@ export default function MonitorPage() {
     startDate ||
     endDate;
 
-  // ─── Render ───────────────────────────────────────────────
   return (
     <AppLayout title="Activity Monitor">
-      {/* ── Header ── */}
+      {}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-5 animate-fade-in">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
@@ -527,7 +510,7 @@ export default function MonitorPage() {
         </div>
       </div>
 
-      {/* ── Stats ── */}
+      {}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 animate-fade-in">
         <StatCard
           icon={Activity}
@@ -556,14 +539,14 @@ export default function MonitorPage() {
         />
       </div>
 
-      {/* ── Filters ── */}
+      {}
       <div
         className="bg-card border border-border rounded-xl px-5 py-3.5 mb-4 animate-fade-in flex flex-wrap items-center gap-3"
         style={{ animationDelay: "50ms" }}
       >
         <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
 
-        {/* Search */}
+        {}
         <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-1.5 w-52">
           <Search className="w-3.5 h-3.5 text-muted-foreground" />
           <input
@@ -575,7 +558,7 @@ export default function MonitorPage() {
           />
         </div>
 
-        {/* Module */}
+        {}
         <Select value={filterModule} onValueChange={setFilterModule}>
           <SelectTrigger className="h-8 w-36 text-xs">
             <SelectValue placeholder="Module" />
@@ -592,7 +575,7 @@ export default function MonitorPage() {
           </SelectContent>
         </Select>
 
-        {/* Action */}
+        {}
         <Select value={filterAction} onValueChange={setFilterAction}>
           <SelectTrigger className="h-8 w-36 text-xs">
             <SelectValue placeholder="Action" />
@@ -609,7 +592,7 @@ export default function MonitorPage() {
           </SelectContent>
         </Select>
 
-        {/* Dates */}
+        {}
         <Input
           type="date"
           value={startDate}
@@ -638,12 +621,12 @@ export default function MonitorPage() {
         </span>
       </div>
 
-      {/* ── Log Table ── */}
+      {}
       <div
         className="bg-card border border-border rounded-xl card-shadow overflow-hidden animate-fade-in"
         style={{ animationDelay: "100ms" }}
       >
-        {/* Column headers — desktop */}
+        {}
         <div className="hidden sm:grid grid-cols-[160px_90px_120px_1fr_100px] gap-x-4 px-5 py-2.5 bg-muted/30 border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
           <span>Timestamp</span>
           <span>Action</span>
@@ -652,7 +635,7 @@ export default function MonitorPage() {
           <span className="text-right">User</span>
         </div>
 
-        {/* Log rows */}
+        {}
         <div
           className="overflow-y-auto"
           style={{ maxHeight: "calc(100vh - 420px)", minHeight: "300px" }}
@@ -686,7 +669,7 @@ export default function MonitorPage() {
               {logs.map((log) => (
                 <LogRow key={log._id} log={log} isNew={newIds.has(log._id)} />
               ))}
-              {/* Refresh indicator */}
+              {}
               {loading && (
                 <div className="flex items-center justify-center gap-2 py-2 bg-muted/40 border-t border-border">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
@@ -699,7 +682,7 @@ export default function MonitorPage() {
           )}
         </div>
 
-        {/* Pagination */}
+        {}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-muted/20">
             <span className="text-xs text-muted-foreground">
@@ -729,13 +712,13 @@ export default function MonitorPage() {
         )}
       </div>
 
-      {/* ── Breakdown charts ── */}
+      {}
       {stats && !statsLoading && (
         <div
           className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5 animate-fade-in"
           style={{ animationDelay: "150ms" }}
         >
-          {/* By Module */}
+          {}
           <div className="bg-card border border-border rounded-xl card-shadow p-5">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-4 h-4 text-primary" />
@@ -785,7 +768,7 @@ export default function MonitorPage() {
             </div>
           </div>
 
-          {/* By Action */}
+          {}
           <div className="bg-card border border-border rounded-xl card-shadow p-5">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="w-4 h-4 text-secondary" />

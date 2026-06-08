@@ -34,7 +34,7 @@ const tenantSchema = new mongoose.Schema(
     },
     planExpiresAt: {
       type: Date,
-      default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial
+      default: () => new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     },
     status: {
       type: String,
@@ -42,7 +42,7 @@ const tenantSchema = new mongoose.Schema(
       default: "active",
     },
     limits: {
-      leadsPerMonth: { type: Number, default: 100 }, // trial limit
+      leadsPerMonth: { type: Number, default: 100 },
       teamMembers: { type: Number, default: 2 },
     },
     usage: {
@@ -62,20 +62,20 @@ const tenantSchema = new mongoose.Schema(
         enabled: { type: Boolean, default: false },
         apiKey: { type: String, default: "" },
         lastSync: { type: Date, default: null },
-        assigneeIds: { type: [String], default: [] }, // empty = global round-robin
+        assigneeIds: { type: [String], default: [] },
       },
       facebook: {
         enabled: { type: Boolean, default: false },
         userAccessToken: { type: String, default: "" },
         oauthUserId: { type: String, default: "" },
-        // Multi-page support — each connected page stored separately
+
         pages: [
           {
             pageId: { type: String, required: true },
             pageName: { type: String, default: "" },
             accessToken: { type: String, default: "" },
             selectedFormIds: { type: [String], default: [] },
-            // Empty = accept leads from all states; non-empty = only these states
+
             allowedStates: { type: [String], default: [] },
             defaultAssigneeId: { type: String, default: "" },
             webhookVerified: { type: Boolean, default: false },
@@ -96,18 +96,17 @@ const tenantSchema = new mongoose.Schema(
         enabled: { type: Boolean, default: false },
         isConnected: { type: Boolean, default: false },
         wabaId: { type: String, default: "" },
-        // One access token shared across all phone numbers under the same WABA
-        // AES-256-GCM encrypted: iv:authTag:ciphertext (hex)
+
         accessToken: { type: String, default: "" },
         webhookVerifyToken: { type: String, default: "" },
         lastSyncAt: { type: Date, default: null },
-        // Multiple phone numbers under one WABA / one access token
+
         phoneNumbers: [
           {
             phoneNumberId: { type: String, required: true },
-            label: { type: String, default: "" }, // e.g. "Company A", "Sales"
+            label: { type: String, default: "" },
             businessName: { type: String, default: "" },
-            phoneNumber: { type: String, default: "" }, // display number e.g. +91 98001
+            phoneNumber: { type: String, default: "" },
             approvedTemplateCount: { type: Number, default: 0 },
             addedAt: { type: Date, default: Date.now },
           },

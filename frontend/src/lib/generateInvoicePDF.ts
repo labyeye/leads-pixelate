@@ -51,13 +51,27 @@ function fillRect(
   } else doc.rect(x, y, w, h, "F");
 }
 
-function hline(doc: jsPDF, x: number, y: number, w: number, c: string, lw = 0.5) {
+function hline(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  w: number,
+  c: string,
+  lw = 0.5,
+) {
   setDraw(doc, c);
   doc.setLineWidth(lw);
   doc.line(x, y, x + w, y);
 }
 
-function vline(doc: jsPDF, x: number, y: number, h: number, c: string, lw = 0.5) {
+function vline(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  h: number,
+  c: string,
+  lw = 0.5,
+) {
   setDraw(doc, c);
   doc.setLineWidth(lw);
   doc.line(x, y, x, y + h);
@@ -94,7 +108,6 @@ export async function generateInvoicePDF(q: any, settings: any): Promise<void> {
 export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
 
-  // ── Settings fields ──
   const companyName = settings?.companyName || "YOUR COMPANY NAME";
   const companyAddress = settings?.companyAddress || "";
   const companyPhone = settings?.companyPhone || "";
@@ -137,8 +150,14 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const fontOk = regularOk && boldOk;
 
   const F = fontOk ? "NotoSans" : "helvetica";
-  const setN = (sz: number) => { doc.setFont(F, "normal"); doc.setFontSize(sz); };
-  const setB = (sz: number) => { doc.setFont(F, "bold"); doc.setFontSize(sz); };
+  const setN = (sz: number) => {
+    doc.setFont(F, "normal");
+    doc.setFontSize(sz);
+  };
+  const setB = (sz: number) => {
+    doc.setFont(F, "bold");
+    doc.setFontSize(sz);
+  };
 
   const rupee = (n: number, dec = 2) =>
     (fontOk ? "₹" : "Rs.") +
@@ -147,14 +166,12 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       maximumFractionDigits: dec,
     });
 
-  // ── Tax logic: IGST when inter-state, CGST+SGST when intra-state ──
-  // Detect from first 2 chars of buyer GST vs seller state code
   const buyerStateCode = q.gst?.slice(0, 2) || "";
   const sellerStateCode = companyStateCode || companyGST?.slice(0, 2) || "";
   const isInterState =
     buyerStateCode && sellerStateCode
       ? buyerStateCode !== sellerStateCode
-      : true; // default to IGST if unknown
+      : true;
 
   const subtotal = (q.services || []).reduce(
     (a: number, s: any) => a + Number(s.price) * Number(s.quantity),
@@ -169,12 +186,10 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const totalTax = igstAmt + cgstAmt + sgstAmt;
   const grandTotal = taxableAmount + totalTax;
 
-  // ── Outer border ──
   setDraw(doc, LINE);
   doc.setLineWidth(0.75);
   doc.rect(14, 14, PW - 28, PH - 28, "S");
 
-  // ── Header section ──
   const HY = 22;
   const logoW = 40;
   const logoH = 52;
@@ -185,7 +200,11 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     if (customLogo) {
       if (customLogo.startsWith("data:")) {
         const mime = customLogo.split(";")[0].split(":")[1] || "image/png";
-        const fmt = mime.includes("jpeg") ? "JPEG" : mime.includes("gif") ? "GIF" : "PNG";
+        const fmt = mime.includes("jpeg")
+          ? "JPEG"
+          : mime.includes("gif")
+            ? "GIF"
+            : "PNG";
         doc.addImage(customLogo, fmt, logoX, HY, logoW, logoH);
       } else {
         const res = await fetch(customLogo);
@@ -201,7 +220,9 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       doc.addImage(logo, "PNG", logoX, HY, logoW, logoH);
     }
   } catch {
-    try { doc.addImage(logo, "PNG", logoX, HY, logoW, logoH); } catch {}
+    try {
+      doc.addImage(logo, "PNG", logoX, HY, logoW, logoH);
+    } catch {}
   }
 
   const tX = logoX + logoW + 12;
@@ -216,42 +237,74 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   setTextClr(doc, MUTED);
   if (companyAddress) {
     doc.splitTextToSize(companyAddress, 200).forEach((l: string) => {
-      doc.text(l, tX, tY); tY += 9;
+      doc.text(l, tX, tY);
+      tY += 9;
     });
   }
   if (companyEmail || companyPhone) {
-    const line = [companyEmail, companyPhone ? `Ph: ${companyPhone}` : ""].filter(Boolean).join("  |  ");
-    doc.text(line, tX, tY); tY += 9;
+    const line = [companyEmail, companyPhone ? `Ph: ${companyPhone}` : ""]
+      .filter(Boolean)
+      .join("  |  ");
+    doc.text(line, tX, tY);
+    tY += 9;
   }
-  if (companyWebsite) { doc.text(companyWebsite, tX, tY); tY += 9; }
+  if (companyWebsite) {
+    doc.text(companyWebsite, tX, tY);
+    tY += 9;
+  }
 
   setB(7.5);
   setTextClr(doc, SECONDARY);
-  if (companyGST) { doc.text(`GSTIN: ${companyGST}`, tX, tY); tY += 9; }
-  if (companyPAN) { doc.text(`PAN: ${companyPAN}`, tX, tY); tY += 9; }
+  if (companyGST) {
+    doc.text(`GSTIN: ${companyGST}`, tX, tY);
+    tY += 9;
+  }
+  if (companyPAN) {
+    doc.text(`PAN: ${companyPAN}`, tX, tY);
+    tY += 9;
+  }
   if (companyState) {
-    doc.text(`State: ${companyState}${companyStateCode ? ` (Code: ${companyStateCode})` : ""}`, tX, tY);
+    doc.text(
+      `State: ${companyState}${companyStateCode ? ` (Code: ${companyStateCode})` : ""}`,
+      tX,
+      tY,
+    );
   }
 
-  // ── Invoice meta box (top-right) ──
   const metaBoxW = 195;
   const metaBoxX = PW - MR - metaBoxW;
   const metaBoxY = HY;
 
-  // Title
   setB(13);
   setTextClr(doc, PRIMARY);
-  doc.text(invoiceTitle.toUpperCase(), PW - MR, metaBoxY + 12, { align: "right" });
+  doc.text(invoiceTitle.toUpperCase(), PW - MR, metaBoxY + 12, {
+    align: "right",
+  });
 
-  // "Original for Recipient" subtitle
   setN(7);
   setTextClr(doc, MUTED);
-  doc.text("Original for Recipient", PW - MR, metaBoxY + 22, { align: "right" });
+  doc.text("Original for Recipient", PW - MR, metaBoxY + 22, {
+    align: "right",
+  });
 
   const metaRows: [string, string][] = [
     ["Invoice No.", q.number || "—"],
-    ["Invoice Date", new Date(q.date || Date.now()).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })],
-    ["Due Date", new Date(q.date || Date.now()).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })],
+    [
+      "Invoice Date",
+      new Date(q.date || Date.now()).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    ],
+    [
+      "Due Date",
+      new Date(q.date || Date.now()).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+    ],
     ["Place of Service", q.companyName || q.clientName || "—"],
   ];
 
@@ -272,15 +325,12 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     mY += mRowH;
   });
 
-  // ── Horizontal rule ──
   const HR1 = Math.max(HY + logoH + 8, mY + 8);
   hline(doc, ML, HR1, CW, LINE, 0.75);
 
-  // ── Bill To / Ship To ──
   const billY = HR1 + 8;
   const halfCW = CW / 2 - 4;
 
-  // Bill To box
   setDraw(doc, LINE);
   doc.setLineWidth(0.5);
 
@@ -289,7 +339,9 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   if (q.clientName && q.companyName) billLines.push(q.clientName);
   else if (q.clientName) billLines.push(q.clientName.toUpperCase());
   if (q.address) {
-    doc.splitTextToSize(q.address, halfCW - 12).forEach((l: string) => billLines.push(l));
+    doc
+      .splitTextToSize(q.address, halfCW - 12)
+      .forEach((l: string) => billLines.push(l));
   }
   if (q.mobile) billLines.push(`Phone: ${q.mobile}`);
   if (q.gst) billLines.push(`GSTIN: ${q.gst}`);
@@ -304,13 +356,17 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
   let bly = billY + 22;
   billLines.forEach((l, i) => {
-    if (i === 0) { setB(9); setTextClr(doc, SECONDARY); }
-    else { setN(8); setTextClr(doc, MUTED); }
+    if (i === 0) {
+      setB(9);
+      setTextClr(doc, SECONDARY);
+    } else {
+      setN(8);
+      setTextClr(doc, MUTED);
+    }
     doc.text(l, ML + 5, bly);
     bly += 10;
   });
 
-  // Ship To box (same content as Bill To for now)
   const shipX = ML + halfCW + 8;
   doc.rect(shipX, billY, halfCW, billBoxH, "S");
   setB(7);
@@ -320,49 +376,61 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
   let sly = billY + 22;
   billLines.forEach((l, i) => {
-    if (i === 0) { setB(9); setTextClr(doc, SECONDARY); }
-    else { setN(8); setTextClr(doc, MUTED); }
+    if (i === 0) {
+      setB(9);
+      setTextClr(doc, SECONDARY);
+    } else {
+      setN(8);
+      setTextClr(doc, MUTED);
+    }
     doc.text(l, shipX + 5, sly);
     sly += 10;
   });
 
-  // ── Items table ──
   const tableY = billY + billBoxH + 10;
 
-  // Column widths: S.No | Description | HSN/SAC | Qty | Unit | Rate | Disc. | Amount
   const cols = {
-    sno:  CW * 0.05,
-    desc: CW * 0.30,
-    hsn:  CW * 0.12,
-    qty:  CW * 0.07,
+    sno: CW * 0.05,
+    desc: CW * 0.3,
+    hsn: CW * 0.12,
+    qty: CW * 0.07,
     unit: CW * 0.07,
     rate: CW * 0.13,
-    disc: CW * 0.10,
-    amt:  CW * 0.16,
+    disc: CW * 0.1,
+    amt: CW * 0.16,
   };
   const colXs = {
-    sno:  ML,
+    sno: ML,
     desc: ML + cols.sno,
-    hsn:  ML + cols.sno + cols.desc,
-    qty:  ML + cols.sno + cols.desc + cols.hsn,
+    hsn: ML + cols.sno + cols.desc,
+    qty: ML + cols.sno + cols.desc + cols.hsn,
     unit: ML + cols.sno + cols.desc + cols.hsn + cols.qty,
     rate: ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit,
-    disc: ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit + cols.rate,
-    amt:  ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit + cols.rate + cols.disc,
+    disc:
+      ML + cols.sno + cols.desc + cols.hsn + cols.qty + cols.unit + cols.rate,
+    amt:
+      ML +
+      cols.sno +
+      cols.desc +
+      cols.hsn +
+      cols.qty +
+      cols.unit +
+      cols.rate +
+      cols.disc,
   };
 
   const HDR_H = 18;
   fillRect(doc, ML, tableY, CW, HDR_H, PRIMARY);
 
   const headers: [keyof typeof colXs, string, "left" | "center" | "right"][] = [
-    ["sno",  "S.No",        "center"],
+    ["sno", "S.No", "center"],
     ["desc", "Description of Services / Goods", "left"],
-    ["hsn",  "HSN/SAC",     "center"],
-    ["qty",  "Qty",         "center"],
-    ["unit", "Unit",        "center"],
-    ["rate", "Rate (Rs.)",  "right"],
-    ["disc", "Disc.",       "center"],
-    ["amt",  "Amount (Rs.)", "right"],
+    ["hsn", "HSN/SAC", "center"],
+    ["qty", "Qty", "center"],
+    ["unit", "Unit", "center"],
+    ["rate", "Rate (Rs.)", "right"],
+    ["disc", "Disc.", "center"],
+    ["amt", "Amount (Rs.)", "right"],
   ];
 
   headers.forEach(([key, label, align]) => {
@@ -372,8 +440,8 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       align === "center"
         ? colXs[key] + cols[key] / 2
         : align === "right"
-        ? colXs[key] + cols[key] - 4
-        : colXs[key] + 4;
+          ? colXs[key] + cols[key] - 4
+          : colXs[key] + 4;
     doc.text(label, cx, tableY + 12, { align });
   });
 
@@ -387,30 +455,40 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
     setN(7.5);
     setTextClr(doc, SECONDARY);
-    doc.text(String(i + 1), colXs.sno + cols.sno / 2, rowY + 13, { align: "center" });
+    doc.text(String(i + 1), colXs.sno + cols.sno / 2, rowY + 13, {
+      align: "center",
+    });
 
     setN(8);
     doc.text(s.name || "", colXs.desc + 4, rowY + 13);
 
     setN(7.5);
-    if (s.hsnCode) doc.text(s.hsnCode, colXs.hsn + cols.hsn / 2, rowY + 13, { align: "center" });
+    if (s.hsnCode)
+      doc.text(s.hsnCode, colXs.hsn + cols.hsn / 2, rowY + 13, {
+        align: "center",
+      });
 
-    doc.text(String(s.quantity), colXs.qty + cols.qty / 2, rowY + 13, { align: "center" });
+    doc.text(String(s.quantity), colXs.qty + cols.qty / 2, rowY + 13, {
+      align: "center",
+    });
     doc.text("Nos", colXs.unit + cols.unit / 2, rowY + 13, { align: "center" });
 
     setB(8);
-    doc.text(rupee(Number(s.price)), colXs.rate + cols.rate - 4, rowY + 13, { align: "right" });
+    doc.text(rupee(Number(s.price)), colXs.rate + cols.rate - 4, rowY + 13, {
+      align: "right",
+    });
 
     setN(7.5);
     doc.text("—", colXs.disc + cols.disc / 2, rowY + 13, { align: "center" });
 
     setB(8);
-    doc.text(rupee(lineTotal), colXs.amt + cols.amt - 4, rowY + 13, { align: "right" });
+    doc.text(rupee(lineTotal), colXs.amt + cols.amt - 4, rowY + 13, {
+      align: "right",
+    });
 
     rowY += ROW_H;
   });
 
-  // Empty rows filler (minimum 3 rows visible)
   for (let i = 0; i < Math.max(0, 3 - (q.services || []).length); i++) {
     fillRect(doc, ML, rowY, CW, ROW_H, i % 2 === 0 ? WHITE : BG_HEADER, LINE);
     rowY += ROW_H;
@@ -418,20 +496,21 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
   hline(doc, ML, rowY, CW, LINE, 0.75);
 
-  // ── Amount in Words ──
   const amtWordsY = rowY + 6;
   setN(7.5);
   setTextClr(doc, MUTED);
-  doc.text(`Amount in Words: ${numberToWords(Math.round(grandTotal))} Rupees Only`, ML + 4, amtWordsY + 8);
+  doc.text(
+    `Amount in Words: ${numberToWords(Math.round(grandTotal))} Rupees Only`,
+    ML + 4,
+    amtWordsY + 8,
+  );
   hline(doc, ML, amtWordsY + 14, CW, LINE);
 
-  // ── Bottom section: Bank Details (left) + Totals (right) ──
   const bottomY = amtWordsY + 18;
   const leftW = CW * 0.52;
   const rightW = CW * 0.46;
   const rightX = ML + leftW + CW * 0.02;
 
-  // Bank Details
   setDraw(doc, LINE);
   const bankRows: [string, string][] = [
     ["Bank Name", bankName || "—"],
@@ -460,7 +539,6 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     bankY += 14;
   });
 
-  // Terms & Notes below bank details
   const termsY = bottomY + bankBoxH + 6;
   const termsBoxH = termLines.length * 10 + 22;
   doc.rect(ML, termsY, leftW, termsBoxH, "S");
@@ -478,7 +556,6 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     });
   });
 
-  // Totals box (right side)
   const totRows: [string, string, boolean][] = [
     ["Subtotal", rupee(subtotal), false],
     ["Taxable Amount", rupee(taxableAmount), false],
@@ -494,7 +571,7 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
   const balanceDue = grandTotal - Number(q.amountPaid || 0);
   const totRowH = 16;
-  const totBoxH = totRows.length * totRowH + totRowH + 16 + 40; // extra for sig area
+  const totBoxH = totRows.length * totRowH + totRowH + 16 + 40;
 
   doc.rect(rightX, bottomY, rightW, totBoxH, "S");
 
@@ -513,7 +590,6 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     trY += totRowH;
   });
 
-  // Balance Due highlighted
   trY += 2;
   fillRect(doc, rightX, trY, rightW, totRowH + 2, BG_HEADER, LINE);
   setB(9);
@@ -521,21 +597,31 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   doc.text("Balance Due", rightX + 5, trY + 12);
   setB(11);
   setTextClr(doc, balanceDue > 0 ? "#dc2626" : PRIMARY);
-  doc.text(rupee(balanceDue), rightX + rightW - 5, trY + 12, { align: "right" });
+  doc.text(rupee(balanceDue), rightX + rightW - 5, trY + 12, {
+    align: "right",
+  });
   trY += totRowH + 8;
 
-  // Authorized Signatory
   setN(8);
   setTextClr(doc, MUTED);
-  doc.text(`For ${companyName.toUpperCase()}`, rightX + rightW / 2, trY + 8, { align: "center" });
+  doc.text(`For ${companyName.toUpperCase()}`, rightX + rightW / 2, trY + 8, {
+    align: "center",
+  });
   hline(doc, rightX + rightW / 2 - 40, trY + 28, 80, LINE);
   setB(7.5);
   setTextClr(doc, SECONDARY);
-  doc.text("Authorised Signatory", rightX + rightW / 2, trY + 36, { align: "center" });
+  doc.text("Authorised Signatory", rightX + rightW / 2, trY + 36, {
+    align: "center",
+  });
 
-  // ── HSN/SAC Summary table ──
   const hsnY = Math.max(termsY + termsBoxH, bottomY + totBoxH) + 12;
-  const hsnCols = { code: CW * 0.2, taxable: CW * 0.25, rate: CW * 0.15, amt: CW * 0.2, total: CW * 0.2 };
+  const hsnCols = {
+    code: CW * 0.2,
+    taxable: CW * 0.25,
+    rate: CW * 0.15,
+    amt: CW * 0.2,
+    total: CW * 0.2,
+  };
   const hsnXs = {
     code: ML,
     taxable: ML + hsnCols.code,
@@ -545,23 +631,35 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   };
 
   fillRect(doc, ML, hsnY, CW, 16, PRIMARY);
-  const hsnHeaders: [keyof typeof hsnXs, string, number, "left"|"center"|"right"][] = [
-    ["code",    "HSN / SAC Code",  hsnCols.code,    "left"],
-    ["taxable", "Taxable Value",   hsnCols.taxable, "right"],
-    [isInterState ? "rate" : "rate", isInterState ? "IGST Rate" : "CGST Rate", hsnCols.rate, "center"],
-    ["amt",     isInterState ? "IGST Amt" : "CGST Amt", hsnCols.amt, "right"],
-    ["total",   "Total Tax",       hsnCols.total,   "right"],
+  const hsnHeaders: [
+    keyof typeof hsnXs,
+    string,
+    number,
+    "left" | "center" | "right",
+  ][] = [
+    ["code", "HSN / SAC Code", hsnCols.code, "left"],
+    ["taxable", "Taxable Value", hsnCols.taxable, "right"],
+    [
+      isInterState ? "rate" : "rate",
+      isInterState ? "IGST Rate" : "CGST Rate",
+      hsnCols.rate,
+      "center",
+    ],
+    ["amt", isInterState ? "IGST Amt" : "CGST Amt", hsnCols.amt, "right"],
+    ["total", "Total Tax", hsnCols.total, "right"],
   ];
   hsnHeaders.forEach(([key, label, w, align]) => {
     setB(7);
     setTextClr(doc, WHITE);
-    const cx = align === "center" ? hsnXs[key] + w / 2
-      : align === "right" ? hsnXs[key] + w - 4
-      : hsnXs[key] + 4;
+    const cx =
+      align === "center"
+        ? hsnXs[key] + w / 2
+        : align === "right"
+          ? hsnXs[key] + w - 4
+          : hsnXs[key] + 4;
     doc.text(label, cx, hsnY + 11, { align });
   });
 
-  // Aggregate by HSN code
   const hsnMap: Record<string, number> = {};
   (q.services || []).forEach((s: any) => {
     const key = s.hsnCode || "—";
@@ -570,47 +668,68 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
   let hsnRowY = hsnY + 16;
   Object.entries(hsnMap).forEach(([code, val]) => {
-    const tv = val - (discount * val / subtotal);
+    const tv = val - (discount * val) / subtotal;
     const taxAmt = tv * (isInterState ? TAX_RATE : TAX_RATE / 2);
     fillRect(doc, ML, hsnRowY, CW, 14, WHITE, LINE);
     setN(7.5);
     setTextClr(doc, SECONDARY);
     doc.text(code, hsnXs.code + 4, hsnRowY + 10);
-    doc.text(rupee(tv), hsnXs.taxable + hsnCols.taxable - 4, hsnRowY + 10, { align: "right" });
-    doc.text(isInterState ? "18%" : "9%", hsnXs.rate + hsnCols.rate / 2, hsnRowY + 10, { align: "center" });
-    doc.text(rupee(taxAmt), hsnXs.amt + hsnCols.amt - 4, hsnRowY + 10, { align: "right" });
-    doc.text(rupee(taxAmt), hsnXs.total + hsnCols.total - 4, hsnRowY + 10, { align: "right" });
+    doc.text(rupee(tv), hsnXs.taxable + hsnCols.taxable - 4, hsnRowY + 10, {
+      align: "right",
+    });
+    doc.text(
+      isInterState ? "18%" : "9%",
+      hsnXs.rate + hsnCols.rate / 2,
+      hsnRowY + 10,
+      { align: "center" },
+    );
+    doc.text(rupee(taxAmt), hsnXs.amt + hsnCols.amt - 4, hsnRowY + 10, {
+      align: "right",
+    });
+    doc.text(rupee(taxAmt), hsnXs.total + hsnCols.total - 4, hsnRowY + 10, {
+      align: "right",
+    });
     hsnRowY += 14;
   });
 
-  // Total row
   fillRect(doc, ML, hsnRowY, CW, 15, BG_HEADER, LINE);
   setB(8);
   setTextClr(doc, SECONDARY);
   doc.text("Total", hsnXs.code + 4, hsnRowY + 10);
-  doc.text(rupee(taxableAmount), hsnXs.taxable + hsnCols.taxable - 4, hsnRowY + 10, { align: "right" });
-  doc.text(rupee(totalTax), hsnXs.amt + hsnCols.amt - 4, hsnRowY + 10, { align: "right" });
-  doc.text(rupee(totalTax), hsnXs.total + hsnCols.total - 4, hsnRowY + 10, { align: "right" });
+  doc.text(
+    rupee(taxableAmount),
+    hsnXs.taxable + hsnCols.taxable - 4,
+    hsnRowY + 10,
+    { align: "right" },
+  );
+  doc.text(rupee(totalTax), hsnXs.amt + hsnCols.amt - 4, hsnRowY + 10, {
+    align: "right",
+  });
+  doc.text(rupee(totalTax), hsnXs.total + hsnCols.total - 4, hsnRowY + 10, {
+    align: "right",
+  });
   hsnRowY += 15;
 
-  // ── Declaration + Footer ──
   const declY = hsnRowY + 10;
   const declW = CW * 0.6;
   setN(7.5);
   setTextClr(doc, MUTED);
-  doc.splitTextToSize(
-    "DECLARATION: We declare that this invoice shows the actual price of the goods/services described and that all particulars are true and correct. All disputes are subject to " + (companyState || "local") + " jurisdiction only.",
-    declW,
-  ).forEach((l: string, i: number) => {
-    doc.text(l, ML, declY + i * 9);
-  });
+  doc
+    .splitTextToSize(
+      "DECLARATION: We declare that this invoice shows the actual price of the goods/services described and that all particulars are true and correct. All disputes are subject to " +
+        (companyState || "local") +
+        " jurisdiction only.",
+      declW,
+    )
+    .forEach((l: string, i: number) => {
+      doc.text(l, ML, declY + i * 9);
+    });
 
   const footerY = PH - 26;
   setN(7);
   setTextClr(doc, MUTED);
   doc.text(footerText, PW / 2, footerY, { align: "center" });
 
-  // Re-draw outer border on top
   setDraw(doc, LINE);
   doc.setLineWidth(0.75);
   doc.rect(14, 14, PW - 28, PH - 28, "S");
@@ -618,13 +737,42 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   return doc;
 }
 
-// ── Simple number-to-words for invoice ──
 function numberToWords(n: number): string {
   if (n === 0) return "Zero";
-  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
-    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
-    "Seventeen", "Eighteen", "Nineteen"];
-  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const ones = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
 
   function below100(num: number): string {
     if (num < 20) return ones[num];
@@ -632,7 +780,11 @@ function numberToWords(n: number): string {
   }
   function below1000(num: number): string {
     if (num < 100) return below100(num);
-    return ones[Math.floor(num / 100)] + " Hundred" + (num % 100 ? " " + below100(num % 100) : "");
+    return (
+      ones[Math.floor(num / 100)] +
+      " Hundred" +
+      (num % 100 ? " " + below100(num % 100) : "")
+    );
   }
 
   const crore = Math.floor(n / 10000000);

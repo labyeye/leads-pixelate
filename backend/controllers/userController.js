@@ -50,7 +50,6 @@ const createUser = asyncHandler(async (req, res) => {
     throw new Error("User with this email already exists");
   }
 
-  // Auto-generate employee ID scoped to tenant
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const count = await User.countDocuments(tenantFilter);
   const employeeId = `EMP-${String(count + 1).padStart(3, "0")}`;

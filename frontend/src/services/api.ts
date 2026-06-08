@@ -45,9 +45,7 @@ async function request<T>(
   try {
     const text = await response.text();
     if (text) data = JSON.parse(text);
-  } catch {
-    // Non-JSON response (e.g. HTML error page from crashed server)
-  }
+  } catch {}
 
   if (!response.ok) {
     if (response.status === 401) {
@@ -545,7 +543,6 @@ export const indiamartAPI = {
 };
 
 export const whatsappAPI = {
-  // Connection
   getStatus: () => request<{ success: boolean; data: any }>("/whatsapp/status"),
   getConfig: () => request<{ success: boolean; data: any }>("/whatsapp/config"),
   setup: (data: { accessToken: string; wabaId?: string }) =>
@@ -583,7 +580,6 @@ export const whatsappAPI = {
       { method: "POST" },
     ),
 
-  // Templates
   getTemplates: () =>
     request<{ success: boolean; count: number; data: any[] }>(
       "/whatsapp/templates",
@@ -604,7 +600,6 @@ export const whatsappAPI = {
       { method: "DELETE" },
     ),
 
-  // Campaigns
   getCampaigns: () =>
     request<{ success: boolean; count: number; data: any[] }>(
       "/whatsapp/campaigns",
@@ -617,7 +612,6 @@ export const whatsappAPI = {
       body: JSON.stringify(data),
     }),
 
-  // Single message
   sendMessage: (data: {
     leadId: string;
     templateId?: string;
@@ -631,13 +625,11 @@ export const whatsappAPI = {
       body: JSON.stringify(data),
     }),
 
-  // Replies
   getReplies: () =>
     request<{ success: boolean; count: number; data: any[] }>(
       "/whatsapp/replies",
     ),
 
-  // Media
   uploadMedia: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
