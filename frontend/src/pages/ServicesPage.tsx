@@ -290,7 +290,7 @@ export default function ServicesPage() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="status">Status</Label>
                     <Select
@@ -371,10 +371,9 @@ export default function ServicesPage() {
       </div>
 
       <div
-        className="bg-card rounded-xl border border-border card-shadow overflow-hidden animate-fade-in"
+        className="bg-card rounded-xl border border-border card-shadow overflow-x-auto animate-fade-in"
         style={{ animationDelay: "100ms" }}
       >
-        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
@@ -502,7 +501,6 @@ export default function ServicesPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </AppLayout>
   );

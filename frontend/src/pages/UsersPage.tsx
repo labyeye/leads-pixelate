@@ -297,7 +297,7 @@ export default function UsersPage() {
                   avatar: "",
                 });
               }}
-              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+              className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Add User
             </button>
@@ -388,7 +388,7 @@ export default function UsersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <NbInput
                     label="Phone"
                     id="phone"
@@ -512,8 +512,7 @@ export default function UsersPage() {
       </div>
 
       {}
-      <div className="border-2 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="border-2 overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
@@ -686,7 +685,6 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </AppLayout>
   );

@@ -350,7 +350,7 @@ export default function QuotationsPage() {
             <DialogTrigger asChild>
               <button
                 onClick={resetForm}
-                className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+                className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" /> New Quotation
               </button>
@@ -374,7 +374,7 @@ export default function QuotationsPage() {
                       Buyer Details
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <NbInput
                       label="Name"
                       id="clientName"
@@ -394,7 +394,7 @@ export default function QuotationsPage() {
                       }
                       placeholder="e.g. Raj Enterprises"
                     />
-                    <div className="col-span-2">
+                    <div className="col-span-1 sm:col-span-2">
                       <NbInput
                         label="Address (optional)"
                         id="address"
@@ -471,7 +471,7 @@ export default function QuotationsPage() {
                       Quotation Details
                     </p>
                   </div>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="col-span-2">
                       <NbInput
                         label="Project / Title"
@@ -523,8 +523,8 @@ export default function QuotationsPage() {
                       + Add Item
                     </button>
                   </div>
-                  <div className="border-2 border-black bg-white">
-                    <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-primary">
+                  <div className="border-2 border-black bg-white overflow-x-auto">
+                    <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-primary min-w-[480px]">
                       <div className="col-span-4 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
                         Description
                       </div>
@@ -543,7 +543,7 @@ export default function QuotationsPage() {
                       <div
                         key={idx}
                         className={cn(
-                          "grid grid-cols-12 gap-0",
+                          "grid grid-cols-12 gap-0 min-w-[480px]",
                           idx < formData.services.length - 1 &&
                             "border-b-2 border-black",
                         )}
@@ -746,7 +746,7 @@ export default function QuotationsPage() {
       </div>
 
       {}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
           {
             label: "Total",
@@ -782,23 +782,23 @@ export default function QuotationsPage() {
       </div>
 
       {}
-      <div className="overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-2 border-black bg-[#024BAB]">
                 {[
-                  "Number & Date",
-                  "Buyer / Project",
-                  "Total (incl. Tax)",
-                  "Status",
-                  "",
-                ].map((h, i) => (
+                  { h: "Number & Date", cls: "", align: "text-left" },
+                  { h: "Buyer / Project", cls: "", align: "text-left" },
+                  { h: "Total (incl. Tax)", cls: "hidden sm:table-cell", align: "text-right" },
+                  { h: "Status", cls: "hidden md:table-cell", align: "text-right" },
+                  { h: "", cls: "", align: "text-right" },
+                ].map(({ h, cls, align }, i) => (
                   <th
                     key={i}
                     className={cn(
                       "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest",
-                      i >= 2 ? "text-right" : "text-left",
+                      align,
+                      cls,
                     )}
                   >
                     {h}
@@ -851,13 +851,13 @@ export default function QuotationsPage() {
                         {q.projectTitle}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5 text-right font-black text-black text-sm">
+                    <td className="px-5 py-3.5 text-right font-black text-black text-sm hidden sm:table-cell">
                       ₹
                       {Number(q.total || 0).toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
                       })}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-5 py-3.5 text-right hidden md:table-cell">
                       <span
                         className={cn(
                           "text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider",
@@ -925,7 +925,6 @@ export default function QuotationsPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
 
       {}

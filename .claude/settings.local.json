@@ -30,7 +30,8 @@
       "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate add frontend/src/pages/LeadsPage.tsx frontend/src/pages/ClientsPage.tsx frontend/src/pages/QuotationsPage.tsx frontend/src/pages/UsersPage.tsx frontend/src/pages/SettingsPage.tsx)",
       "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate commit -m ' *)",
       "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate push)",
-      "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate add frontend/src/vite-env.d.ts)"
+      "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate add frontend/src/vite-env.d.ts)",
+      "Bash(xargs -I{} basename {})"
     ],
     "additionalDirectories": [
       "/Users/labh/Desktop/Projects/nestgst/backend/src",

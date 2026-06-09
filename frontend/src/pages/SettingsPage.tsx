@@ -689,10 +689,10 @@ export default function SettingsPage() {
 
   return (
     <AppLayout title="Settings">
-      <div className="flex h-full">
+      <div className="flex flex-col lg:flex-row h-full">
         {}
-        <div className="w-56 shrink-0 border-r-2 border-black bg-white overflow-y-auto">
-          <div className="p-4 border-b-2 border-black">
+        <div className="lg:w-56 lg:shrink-0 border-b-2 lg:border-b-0 lg:border-r-2 border-black bg-white lg:overflow-y-auto">
+          <div className="hidden lg:block p-4 border-b-2 border-black">
             <h1 className="text-base font-display font-bold text-black">
               Settings
             </h1>
@@ -700,8 +700,8 @@ export default function SettingsPage() {
               Company & system config
             </p>
           </div>
-          <nav className="p-2">
-            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-3 pb-1">
+          <nav className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible p-2 gap-1 lg:gap-0">
+            <p className="hidden lg:block text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-3 pb-1">
               Company
             </p>
             {tabs
@@ -715,7 +715,7 @@ export default function SettingsPage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-left rounded transition-colors mb-0.5",
+                      "flex items-center gap-2 lg:gap-2.5 px-3 py-2 lg:py-2.5 text-xs font-bold whitespace-nowrap rounded transition-colors lg:w-full lg:text-left lg:mb-0.5",
                       activeTab === tab.id
                         ? "bg-[#024BAB] text-white"
                         : "text-black hover:bg-[#024BAB]/10",
@@ -726,7 +726,7 @@ export default function SettingsPage() {
                   </button>
                 );
               })}
-            <p className="text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-4 pb-1">
+            <p className="hidden lg:block text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-4 pb-1">
               System
             </p>
             {tabs
@@ -738,7 +738,7 @@ export default function SettingsPage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-left rounded transition-colors mb-0.5",
+                      "flex items-center gap-2 lg:gap-2.5 px-3 py-2 lg:py-2.5 text-xs font-bold whitespace-nowrap rounded transition-colors lg:w-full lg:text-left lg:mb-0.5",
                       activeTab === tab.id
                         ? "bg-[#024BAB] text-white"
                         : "text-black hover:bg-[#024BAB]/10",
@@ -755,7 +755,7 @@ export default function SettingsPage() {
         {}
         <div className="flex-1 overflow-y-auto">
           {}
-          <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-white sticky top-0 z-10">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b-2 border-black bg-white sticky top-0 z-10">
             <div>
               <h2 className="font-display font-bold text-black">
                 {tabs.find((t) => t.id === activeTab)?.label}
@@ -784,7 +784,7 @@ export default function SettingsPage() {
               )}
           </div>
 
-          <div className="p-6 max-w-3xl">
+          <div className="p-4 sm:p-6 max-w-3xl">
             {}
             {activeTab === "general" && (
               <div className="space-y-4">

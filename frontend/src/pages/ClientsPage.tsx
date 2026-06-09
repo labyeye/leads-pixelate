@@ -309,7 +309,7 @@ export default function ClientsPage() {
             <DialogTrigger asChild>
               <button
                 onClick={resetForm}
-                className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5"
+                className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" /> Add Client
               </button>
@@ -323,7 +323,7 @@ export default function ClientsPage() {
                 </DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 p-5 bg-white">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <NbInput
                     label="Client Name"
                     id="name"
@@ -345,7 +345,7 @@ export default function ClientsPage() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <NbInput
                     label="Email"
                     id="email"
@@ -382,7 +382,7 @@ export default function ClientsPage() {
                   required
                   as="textarea"
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <NbInput
                     label="Business Type"
                     id="bizType"
@@ -416,7 +416,7 @@ export default function ClientsPage() {
                   }
                   placeholder="SEO, Web Design, Hosting"
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <NbSelect
                     label="Project Status"
                     value={formData.projectStatus}
@@ -484,8 +484,7 @@ export default function ClientsPage() {
       </div>
 
       {}
-      <div className="border-2 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="border-2 overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
@@ -620,7 +619,6 @@ export default function ClientsPage() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </AppLayout>
   );

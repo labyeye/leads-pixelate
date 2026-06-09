@@ -26,7 +26,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0">
         <AppHeader title={title} onMenuOpen={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

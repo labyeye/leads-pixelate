@@ -1570,7 +1570,7 @@ export default function LeadsPage() {
         <div className="flex flex-col xl:flex-row gap-5 items-start">
           {}
           <div
-            className="flex-1 bg-white border-2 border-black overflow-hidden animate-fade-in min-h-[500px]"
+            className="flex-1 bg-white border-2 border-black animate-fade-in min-h-[500px]"
             style={{ animationDelay: "100ms" }}
           >
             <div

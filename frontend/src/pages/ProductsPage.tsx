@@ -145,7 +145,7 @@ export default function ProductsPage() {
     <AppLayout title="Products">
       <div className="space-y-4">
         {}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             {
               label: "Total Products",
@@ -201,7 +201,7 @@ export default function ProductsPage() {
           {can("Products", "create") && (
             <button
               onClick={openAdd}
-              className="flex items-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all ml-auto"
+              className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
             >
               <Plus className="w-3.5 h-3.5" /> Add Product
             </button>
@@ -209,24 +209,23 @@ export default function ProductsPage() {
         </div>
 
         {}
-        <div className="border-2 border-black bg-white overflow-hidden shadow-[4px_4px_0px_#000]">
-          <div className="overflow-x-auto">
+        <div className="border-2 border-black bg-white overflow-x-auto shadow-[4px_4px_0px_#000]">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#024BAB] text-white">
                   {[
-                    "#",
-                    "Product Name",
-                    "Category",
-                    "Price",
-                    "HSN/SAC",
-                    "Description",
-                    "Status",
-                    "Actions",
-                  ].map((h) => (
+                    { h: "#", cls: "hidden sm:table-cell" },
+                    { h: "Product Name", cls: "" },
+                    { h: "Category", cls: "hidden md:table-cell" },
+                    { h: "Price", cls: "" },
+                    { h: "HSN/SAC", cls: "hidden lg:table-cell" },
+                    { h: "Description", cls: "hidden xl:table-cell" },
+                    { h: "Status", cls: "hidden sm:table-cell" },
+                    { h: "Actions", cls: "" },
+                  ].map(({ h, cls }) => (
                     <th
                       key={h}
-                      className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                      className={cn("text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0", cls)}
                     >
                       {h}
                     </th>
@@ -236,7 +235,7 @@ export default function ProductsPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-16">
+                    <td colSpan={8} className="text-center py-16">
                       <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                       <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
                         Loading...
@@ -245,7 +244,7 @@ export default function ProductsPage() {
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-16">
+                    <td colSpan={8} className="text-center py-16">
                       <Package className="w-10 h-10 mx-auto text-gray-200 mb-2" />
                       <p className="text-sm font-black uppercase tracking-widest text-gray-400">
                         No products found
@@ -261,7 +260,7 @@ export default function ProductsPage() {
                         i % 2 === 0 ? "bg-white" : "bg-gray-50/60",
                       )}
                     >
-                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">
+                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10 hidden sm:table-cell">
                         {i + 1}
                       </td>
 
@@ -269,7 +268,7 @@ export default function ProductsPage() {
                         {item.name}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
                         <span
                           className={cn(
                             "text-[10px] font-black uppercase tracking-wide px-2 py-1 border",
@@ -285,7 +284,7 @@ export default function ProductsPage() {
                         ₹{(item.price || 0).toLocaleString("en-IN")}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
                         {item.hsnCode ? (
                           <span className="text-[10px] font-black font-mono tracking-wider bg-gray-100 border border-gray-300 px-2 py-1 text-gray-700">
                             {item.hsnCode}
@@ -297,7 +296,7 @@ export default function ProductsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px]">
+                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px] hidden xl:table-cell">
                         {item.description ? (
                           <span className="line-clamp-2">
                             {item.description}
@@ -307,7 +306,7 @@ export default function ProductsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
                         <span
                           className={cn(
                             "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",
@@ -364,7 +363,6 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
-      </div>
 
       {}
       {modalOpen && (
@@ -400,7 +398,7 @@ export default function ProductsPage() {
               </div>
 
               {}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
                     Category <span className="text-red-500">*</span>
