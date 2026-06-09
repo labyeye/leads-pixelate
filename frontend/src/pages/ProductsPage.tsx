@@ -209,8 +209,9 @@ export default function ProductsPage() {
         </div>
 
         {}
-        <div className="border-2 border-black bg-white overflow-x-auto shadow-[4px_4px_0px_#000]">
-            <table className="w-full min-w-[700px] text-sm border-collapse">
+        <div className="border-2 border-black bg-white overflow-hidden shadow-[4px_4px_0px_#000]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#024BAB] text-white">
                   {[
@@ -235,7 +236,7 @@ export default function ProductsPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-16">
+                    <td colSpan={7} className="text-center py-16">
                       <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                       <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
                         Loading...
@@ -244,7 +245,7 @@ export default function ProductsPage() {
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-16">
+                    <td colSpan={7} className="text-center py-16">
                       <Package className="w-10 h-10 mx-auto text-gray-200 mb-2" />
                       <p className="text-sm font-black uppercase tracking-widest text-gray-400">
                         No products found
@@ -363,6 +364,7 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
+      </div>
 
       {}
       {modalOpen && (

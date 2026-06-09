@@ -782,22 +782,23 @@ export default function QuotationsPage() {
       </div>
 
       {}
-      <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm border-collapse">
+      <div className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-2 border-black bg-[#024BAB]">
                 {[
-                  { h: "Number & Date", align: "text-left" },
-                  { h: "Buyer / Project", align: "text-left" },
-                  { h: "Total (incl. Tax)", align: "text-right" },
-                  { h: "Status", align: "text-right" },
-                  { h: "", align: "text-right" },
-                ].map(({ h, align }, i) => (
+                  "Number & Date",
+                  "Buyer / Project",
+                  "Total (incl. Tax)",
+                  "Status",
+                  "",
+                ].map((h, i) => (
                   <th
                     key={i}
                     className={cn(
-                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap",
-                      align,
+                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest",
+                      i >= 2 ? "text-right" : "text-left",
                     )}
                   >
                     {h}
@@ -924,6 +925,7 @@ export default function QuotationsPage() {
               )}
             </tbody>
           </table>
+        </div>
       </div>
 
       {}

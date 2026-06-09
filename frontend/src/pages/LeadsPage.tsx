@@ -1570,7 +1570,7 @@ export default function LeadsPage() {
         <div className="flex flex-col xl:flex-row gap-5 items-start">
           {}
           <div
-            className="flex-1 bg-white border-2 border-black animate-fade-in min-h-[500px]"
+            className="flex-1 bg-white border-2 border-black overflow-hidden animate-fade-in min-h-[500px]"
             style={{ animationDelay: "100ms" }}
           >
             <div
@@ -1578,7 +1578,7 @@ export default function LeadsPage() {
               className="overflow-x-auto overflow-y-auto relative"
               style={{ maxHeight: "calc(100vh - 250px)" }}
             >
-              <table className="w-full min-w-[800px] text-sm border-collapse">
+              <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-20">
                   <tr className="border-b-2 border-black bg-[#024BAB]">
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">

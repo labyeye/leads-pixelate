@@ -512,8 +512,9 @@ export default function UsersPage() {
       </div>
 
       {}
-      <div className="border-2 overflow-x-auto">
-          <table className="w-full min-w-[700px] text-sm border-collapse">
+      <div className="border-2 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
                 {[
@@ -685,6 +686,7 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
+        </div>
       </div>
     </AppLayout>
   );
