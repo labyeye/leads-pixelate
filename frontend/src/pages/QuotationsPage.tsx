@@ -783,22 +783,21 @@ export default function QuotationsPage() {
 
       {}
       <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full min-w-[600px] text-sm border-collapse">
             <thead>
               <tr className="border-2 border-black bg-[#024BAB]">
                 {[
-                  { h: "Number & Date", cls: "", align: "text-left" },
-                  { h: "Buyer / Project", cls: "", align: "text-left" },
-                  { h: "Total (incl. Tax)", cls: "hidden sm:table-cell", align: "text-right" },
-                  { h: "Status", cls: "hidden md:table-cell", align: "text-right" },
-                  { h: "", cls: "", align: "text-right" },
-                ].map(({ h, cls, align }, i) => (
+                  { h: "Number & Date", align: "text-left" },
+                  { h: "Buyer / Project", align: "text-left" },
+                  { h: "Total (incl. Tax)", align: "text-right" },
+                  { h: "Status", align: "text-right" },
+                  { h: "", align: "text-right" },
+                ].map(({ h, align }, i) => (
                   <th
                     key={i}
                     className={cn(
-                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest",
+                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap",
                       align,
-                      cls,
                     )}
                   >
                     {h}
@@ -851,13 +850,13 @@ export default function QuotationsPage() {
                         {q.projectTitle}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5 text-right font-black text-black text-sm hidden sm:table-cell">
+                    <td className="px-5 py-3.5 text-right font-black text-black text-sm">
                       ₹
                       {Number(q.total || 0).toLocaleString("en-IN", {
                         maximumFractionDigits: 0,
                       })}
                     </td>
-                    <td className="px-5 py-3.5 text-right hidden md:table-cell">
+                    <td className="px-5 py-3.5 text-right">
                       <span
                         className={cn(
                           "text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider",

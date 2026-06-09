@@ -1578,7 +1578,7 @@ export default function LeadsPage() {
               className="overflow-x-auto overflow-y-auto relative"
               style={{ maxHeight: "calc(100vh - 250px)" }}
             >
-              <table className="w-full text-sm border-collapse">
+              <table className="w-full min-w-[800px] text-sm border-collapse">
                 <thead className="sticky top-0 z-20">
                   <tr className="border-b-2 border-black bg-[#024BAB]">
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">

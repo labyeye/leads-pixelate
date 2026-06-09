@@ -210,22 +210,22 @@ export default function ProductsPage() {
 
         {}
         <div className="border-2 border-black bg-white overflow-x-auto shadow-[4px_4px_0px_#000]">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full min-w-[700px] text-sm border-collapse">
               <thead>
                 <tr className="bg-[#024BAB] text-white">
                   {[
-                    { h: "#", cls: "hidden sm:table-cell" },
-                    { h: "Product Name", cls: "" },
-                    { h: "Category", cls: "hidden md:table-cell" },
-                    { h: "Price", cls: "" },
-                    { h: "HSN/SAC", cls: "hidden lg:table-cell" },
-                    { h: "Description", cls: "hidden xl:table-cell" },
-                    { h: "Status", cls: "hidden sm:table-cell" },
-                    { h: "Actions", cls: "" },
-                  ].map(({ h, cls }) => (
+                    "#",
+                    "Product Name",
+                    "Category",
+                    "Price",
+                    "HSN/SAC",
+                    "Description",
+                    "Status",
+                    "Actions",
+                  ].map((h) => (
                     <th
                       key={h}
-                      className={cn("text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0", cls)}
+                      className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                     >
                       {h}
                     </th>
@@ -260,7 +260,7 @@ export default function ProductsPage() {
                         i % 2 === 0 ? "bg-white" : "bg-gray-50/60",
                       )}
                     >
-                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10 hidden sm:table-cell">
+                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">
                         {i + 1}
                       </td>
 
@@ -268,7 +268,7 @@ export default function ProductsPage() {
                         {item.name}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={cn(
                             "text-[10px] font-black uppercase tracking-wide px-2 py-1 border",
@@ -284,7 +284,7 @@ export default function ProductsPage() {
                         ₹{(item.price || 0).toLocaleString("en-IN")}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {item.hsnCode ? (
                           <span className="text-[10px] font-black font-mono tracking-wider bg-gray-100 border border-gray-300 px-2 py-1 text-gray-700">
                             {item.hsnCode}
@@ -296,7 +296,7 @@ export default function ProductsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px] hidden xl:table-cell">
+                      <td className="px-4 py-3 text-xs text-gray-600 max-w-[220px]">
                         {item.description ? (
                           <span className="line-clamp-2">
                             {item.description}
@@ -306,7 +306,7 @@ export default function ProductsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={cn(
                             "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",

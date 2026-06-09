@@ -513,7 +513,7 @@ export default function UsersPage() {
 
       {}
       <div className="border-2 overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full min-w-[700px] text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
                 {[

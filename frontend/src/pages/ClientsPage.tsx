@@ -485,7 +485,7 @@ export default function ClientsPage() {
 
       {}
       <div className="border-2 overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full min-w-[640px] text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
                 {[

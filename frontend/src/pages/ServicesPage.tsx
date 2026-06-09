@@ -374,7 +374,7 @@ export default function ServicesPage() {
         className="bg-card rounded-xl border border-border card-shadow overflow-x-auto animate-fade-in"
         style={{ animationDelay: "100ms" }}
       >
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
