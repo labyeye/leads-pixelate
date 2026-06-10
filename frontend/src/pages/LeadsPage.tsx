@@ -120,6 +120,7 @@ export default function LeadsPage() {
   const [importing, setImporting] = useState(false);
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
+  const [fbSyncModalOpen, setFbSyncModalOpen] = useState(false);
   const [tiSyncing, setTiSyncing] = useState(false);
   const [jdSyncing, setJdSyncing] = useState(false);
 
@@ -1154,7 +1155,7 @@ export default function LeadsPage() {
 
             {fbConnected && (
               <button
-                onClick={handleFacebookSync}
+                onClick={() => setFbSyncModalOpen(true)}
                 disabled={fbSyncing}
                 className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#1877F2] font-black uppercase text-xs tracking-widest border-2 border-[#1877F2] shadow-[2px_2px_0px_#1877F2] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
               >
@@ -2648,6 +2649,41 @@ export default function LeadsPage() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Facebook Sync Modal */}
+      {fbSyncModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-sm mx-4 p-6">
+            <div className="flex items-center gap-3 border-b-2 border-black pb-3 mb-4">
+              <img src={fbLogo} alt="Facebook" className="w-6 h-6 object-contain" />
+              <h2 className="text-lg font-black uppercase tracking-widest">
+                Sync Facebook
+              </h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">
+              This will fetch all new leads from your connected Facebook pages and forms.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setFbSyncModalOpen(false)}
+                className="flex-1 px-4 py-2 border-2 border-black font-black uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setFbSyncModalOpen(false);
+                  handleFacebookSync();
+                }}
+                disabled={fbSyncing}
+                className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50"
+              >
+                {fbSyncing ? "Syncing..." : "Sync Now"}
+              </button>
             </div>
           </div>
         </div>
