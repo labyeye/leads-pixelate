@@ -171,6 +171,11 @@ export const leadsAPI = {
         body: JSON.stringify(data),
       },
     ),
+  importBulk: (leads: any[]) =>
+    request<{ success: boolean; count: number; message: string }>(
+      "/leads/import",
+      { method: "POST", body: JSON.stringify({ leads }) },
+    ),
 };
 
 export const reportsAPI = {

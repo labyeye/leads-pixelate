@@ -32,7 +32,9 @@
       "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate push)",
       "Bash(git -C /Users/labh/Desktop/Projects/leads-pixelate add frontend/src/vite-env.d.ts)",
       "Bash(xargs -I{} basename {})",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=2\\)\\)\")",
+      "Bash(node -e \"require\\('xlsx'\\); console.log\\('xlsx ok'\\)\")"
     ],
     "additionalDirectories": [
       "/Users/labh/Desktop/Projects/nestgst/backend/src",

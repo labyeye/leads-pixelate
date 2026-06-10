@@ -90,6 +90,7 @@ import imLogo from "@/assets/images/logos/indiamart.png";
 import tiLogo from "@/assets/images/logos/tradeindia.webp";
 import jdLogo from "@/assets/images/logos/justdial.webp";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import * as XLSX from "xlsx";
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
@@ -113,6 +114,10 @@ export default function LeadsPage() {
   >("today");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importing, setImporting] = useState(false);
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
   const [tiSyncing, setTiSyncing] = useState(false);
@@ -349,6 +354,71 @@ export default function LeadsPage() {
       notify.error("IndiaMART Sync Failed", error.message);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const REQUIRED_HEADERS = ["name", "company", "phone", "requirement"];
+  const EXCEL_HEADERS = [
+    { key: "name", label: "Name", required: true },
+    { key: "company", label: "Company", required: true },
+    { key: "phone", label: "Phone", required: true },
+    { key: "requirement", label: "Requirement", required: true },
+    { key: "email", label: "Email", required: false },
+    { key: "location", label: "Location", required: false },
+    { key: "state", label: "State", required: false },
+    { key: "budget", label: "Budget", required: false },
+    { key: "remarks", label: "Remarks", required: false },
+  ];
+
+  const handleExcelFile = (file: File) => {
+    setImportFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target!.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        // Normalise keys to lowercase trimmed
+        const normalised = rows.map((row) => {
+          const n: any = {};
+          Object.entries(row).forEach(([k, v]) => {
+            n[k.toLowerCase().trim()] = v;
+          });
+          return n;
+        });
+        setImportPreview(normalised);
+      } catch {
+        notify.error("Invalid File", "Could not parse the Excel file.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleImport = async () => {
+    if (importPreview.length === 0) return;
+    const missing = REQUIRED_HEADERS.filter(
+      (h) => !Object.keys(importPreview[0] || {}).includes(h),
+    );
+    if (missing.length > 0) {
+      notify.error(
+        "Missing Columns",
+        `Required columns not found: ${missing.join(", ")}`,
+      );
+      return;
+    }
+    try {
+      setImporting(true);
+      const res = await leadsAPI.importBulk(importPreview);
+      notify.success("Import Complete", res.message);
+      setImportModalOpen(false);
+      setImportFile(null);
+      setImportPreview([]);
+      fetchLeads();
+    } catch (error: any) {
+      notify.error("Import Failed", error.message);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -1065,6 +1135,14 @@ export default function LeadsPage() {
                 </DialogContent>
               </Dialog>
             )}
+
+            <button
+              onClick={() => setImportModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-emerald-700 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Import Excel
+            </button>
 
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -2461,6 +2539,120 @@ export default function LeadsPage() {
           </form>
         </DialogContent>
       </Dialog>
+      {/* Excel Import Modal */}
+      {importModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b-2 border-black px-5 py-4">
+              <h2 className="text-base font-black uppercase tracking-widest">
+                Import Leads via Excel
+              </h2>
+              <button
+                onClick={() => {
+                  setImportModalOpen(false);
+                  setImportFile(null);
+                  setImportPreview([]);
+                }}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {/* Expected headers */}
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                  Required Excel Columns
+                </p>
+                <div className="border-2 border-black overflow-x-auto">
+                  <table className="w-full min-w-[340px] text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100 border-b-2 border-black">
+                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider border-r border-black">Column Header</th>
+                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider">Required?</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {EXCEL_HEADERS.map((h, i) => (
+                        <tr key={h.key} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                          <td className="px-3 py-1.5 font-bold border-r border-black font-mono">{h.label}</td>
+                          <td className={`px-3 py-1.5 font-black text-xs ${h.required ? "text-red-600" : "text-gray-400"}`}>
+                            {h.required ? "Required" : "Optional"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  Source will be set to <span className="font-bold text-black">Manual</span> for all imported leads. Column names are case-insensitive.
+                </p>
+              </div>
+
+              {/* File upload */}
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                  Upload File (.xlsx / .xls)
+                </p>
+                <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-black bg-gray-50 hover:bg-gray-100 cursor-pointer py-6 transition-colors">
+                  <FileText className="w-6 h-6 mb-2 text-emerald-700" />
+                  <span className="text-xs font-bold">
+                    {importFile ? importFile.name : "Click to select Excel file"}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleExcelFile(f);
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Preview count */}
+              {importPreview.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border-2 border-emerald-600">
+                  <Check className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span className="text-xs font-black text-emerald-700">
+                    {importPreview.length} rows ready to import
+                  </span>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => {
+                    setImportModalOpen(false);
+                    setImportFile(null);
+                    setImportPreview([]);
+                  }}
+                  className="flex-1 px-4 py-2 border-2 border-black font-black uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={importing || importPreview.length === 0}
+                  className="flex-1 px-4 py-2 bg-emerald-600 border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {importing ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Importing...
+                    </span>
+                  ) : (
+                    `Import ${importPreview.length > 0 ? importPreview.length + " Leads" : ""}`
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* IndiaMART Sync Date Range Modal */}
       {syncModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

@@ -893,10 +893,54 @@ const updateIndiamartSettings = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "IndiaMART settings updated" });
 });
 
+const importLeads = asyncHandler(async (req, res) => {
+  const { leads } = req.body;
+  if (!Array.isArray(leads) || leads.length === 0) {
+    res.status(400);
+    throw new Error("No leads provided");
+  }
+
+  const docs = leads.map((row) => ({
+    name: (row.name || "").trim(),
+    company: (row.company || "").trim(),
+    phone: (row.phone || "").toString().trim(),
+    email: (row.email || "").toString().trim().toLowerCase(),
+    requirement: (row.requirement || "").trim(),
+    remarks: (row.remarks || "").trim(),
+    budget: (row.budget || "").toString().trim(),
+    location: (row.location || "").trim(),
+    state: (row.state || "").trim(),
+    source: "Manual",
+    tenantId: req.user.tenantId || null,
+    assignedTo: req.user._id,
+    status: "PENDING CONTACT",
+    statusHistory: [
+      {
+        status: "PENDING CONTACT",
+        timestamp: new Date(),
+        changedBy: req.user._id,
+        remarks: "Imported via Excel",
+      },
+    ],
+  }));
+
+  const invalid = docs
+    .map((d, i) => (!d.name || !d.company || !d.phone || !d.requirement ? i + 1 : null))
+    .filter(Boolean);
+  if (invalid.length > 0) {
+    res.status(400);
+    throw new Error(`Rows missing required fields (Name/Company/Phone/Requirement): ${invalid.join(", ")}`);
+  }
+
+  const inserted = await Lead.insertMany(docs, { ordered: false });
+  res.json({ success: true, count: inserted.length, message: `${inserted.length} leads imported successfully` });
+});
+
 module.exports = {
   getLeads,
   getLead,
   createLead,
+  importLeads,
   updateLead,
   deleteLead,
   addNote,

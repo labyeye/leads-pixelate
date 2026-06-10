@@ -4,6 +4,7 @@ const {
   getLeads,
   getLead,
   createLead,
+  importLeads,
   updateLead,
   deleteLead,
   addNote,
@@ -97,6 +98,7 @@ router.post("/justdial/sync", authorize("super_admin", "admin"), (req, res) => {
 });
 
 router.get("/reports/status-history", getStatusHistoryReport);
+router.post("/import", checkPermission("Leads", "create"), importLeads);
 router.route("/").get(getLeads).post(createLead);
 
 router
