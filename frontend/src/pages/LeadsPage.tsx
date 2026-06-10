@@ -121,8 +121,9 @@ export default function LeadsPage() {
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
   const [fbSyncModalOpen, setFbSyncModalOpen] = useState(false);
-  const [fbSyncDateOption, setFbSyncDateOption] = useState<"3days" | "7days" | "30days" | "custom">("3days");
+  const [fbSyncDateOption, setFbSyncDateOption] = useState<"today" | "3days" | "7days" | "30days" | "custom">("today");
   const [fbCustomFrom, setFbCustomFrom] = useState("");
+  const [fbCustomTo, setFbCustomTo] = useState("");
   const [tiSyncing, setTiSyncing] = useState(false);
   const [jdSyncing, setJdSyncing] = useState(false);
 
@@ -300,10 +301,10 @@ export default function LeadsPage() {
     } catch {}
   };
 
-  const handleFacebookSync = async (since?: string) => {
+  const handleFacebookSync = async (since?: string, until?: string) => {
     try {
       setFbSyncing(true);
-      const res = await facebookAPI.sync(undefined, since);
+      const res = await facebookAPI.sync(undefined, since, until);
       const pageErrors = res.data?.pages?.filter((p: any) => p.error) || [];
       if (pageErrors.length > 0) {
         notify.warning("Facebook Sync Complete", res.message);
@@ -2672,10 +2673,11 @@ export default function LeadsPage() {
             <div className="flex flex-col gap-2 mb-5">
               {(
                 [
-                  { value: "3days", label: "Last 3 Days" },
-                  { value: "7days", label: "Last 7 Days" },
+                  { value: "today",  label: "Today Only" },
+                  { value: "3days",  label: "Last 3 Days" },
+                  { value: "7days",  label: "Last 7 Days" },
                   { value: "30days", label: "Last 30 Days" },
-                  { value: "custom", label: "Custom Date (From)" },
+                  { value: "custom", label: "Custom Date Range" },
                 ] as const
               ).map((opt) => (
                 <button
@@ -2692,16 +2694,25 @@ export default function LeadsPage() {
               ))}
             </div>
             {fbSyncDateOption === "custom" && (
-              <div className="mb-5">
-                <label className="block text-xs font-black uppercase tracking-wider mb-1">
-                  Fetch leads from
-                </label>
-                <input
-                  type="date"
-                  value={fbCustomFrom}
-                  onChange={(e) => setFbCustomFrom(e.target.value)}
-                  className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1">From</label>
+                  <input
+                    type="date"
+                    value={fbCustomFrom}
+                    onChange={(e) => setFbCustomFrom(e.target.value)}
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1">To</label>
+                  <input
+                    type="date"
+                    value={fbCustomTo}
+                    onChange={(e) => setFbCustomTo(e.target.value)}
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                  />
+                </div>
               </div>
             )}
             <div className="flex gap-3">
@@ -2713,13 +2724,17 @@ export default function LeadsPage() {
               </button>
               <button
                 onClick={() => {
-                  if (fbSyncDateOption === "custom" && !fbCustomFrom) {
-                    notify.error("Select Date", "Please pick a start date.");
+                  if (fbSyncDateOption === "custom" && (!fbCustomFrom || !fbCustomTo)) {
+                    notify.error("Select Date Range", "Please pick both from and to dates.");
                     return;
                   }
                   const today = new Date();
                   let since: string;
-                  if (fbSyncDateOption === "3days") {
+                  let until: string | undefined;
+                  if (fbSyncDateOption === "today") {
+                    const d = new Date(today); d.setHours(0, 0, 0, 0);
+                    since = d.toISOString();
+                  } else if (fbSyncDateOption === "3days") {
                     const d = new Date(today); d.setDate(d.getDate() - 3);
                     since = d.toISOString();
                   } else if (fbSyncDateOption === "7days") {
@@ -2730,9 +2745,10 @@ export default function LeadsPage() {
                     since = d.toISOString();
                   } else {
                     since = new Date(fbCustomFrom).toISOString();
+                    until = new Date(fbCustomTo + "T23:59:59").toISOString();
                   }
                   setFbSyncModalOpen(false);
-                  handleFacebookSync(since);
+                  handleFacebookSync(since, until);
                 }}
                 disabled={fbSyncing}
                 className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50"

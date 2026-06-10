@@ -426,7 +426,7 @@ router.post(
   "/sync",
   protect,
   asyncHandler(async (req, res) => {
-    const { pageId, since } = req.body;
+    const { pageId, since, until } = req.body;
     const query = req.user.tenantId
       ? { _id: req.user.tenantId }
       : { ownerUser: req.user._id };
@@ -514,16 +514,15 @@ router.post(
           const sinceTs = since
             ? Math.floor(new Date(since).getTime() / 1000)
             : Math.floor((Date.now() - 3 * 24 * 60 * 60 * 1000) / 1000);
+          const filtering = [{ field: "time_created", operator: "GREATER_THAN", value: sinceTs }];
+          if (until) {
+            const untilTs = Math.floor(new Date(until).getTime() / 1000);
+            filtering.push({ field: "time_created", operator: "LESS_THAN", value: untilTs });
+          }
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id,platform",
             limit: "100",
-            filtering: JSON.stringify([
-              {
-                field: "time_created",
-                operator: "GREATER_THAN",
-                value: sinceTs,
-              },
-            ]),
+            filtering: JSON.stringify(filtering),
           });
 
           for (const lead of data.data || []) {

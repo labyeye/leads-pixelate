@@ -333,7 +333,7 @@ export const facebookAPI = {
         }),
       },
     ),
-  sync: (pageId?: string, since?: string) =>
+  sync: (pageId?: string, since?: string, until?: string) =>
     request<{
       success: boolean;
       message: string;
@@ -349,7 +349,7 @@ export const facebookAPI = {
       };
     }>("/facebook/sync", {
       method: "POST",
-      body: JSON.stringify({ pageId, since }),
+      body: JSON.stringify({ pageId, since, until }),
     }),
   getConnectedPages: () =>
     request<{
