@@ -557,27 +557,58 @@ export default function SettingsPage() {
     const stateCode = settings?.companyStateCode?.trim();
 
     if (gst && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(gst)) {
-      setActionModal({ show: true, type: "error", title: "Invalid GSTIN", message: "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5)." });
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Invalid GSTIN",
+        message: "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5).",
+      });
       return;
     }
     if (pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(pan)) {
-      setActionModal({ show: true, type: "error", title: "Invalid PAN", message: "PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F)." });
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Invalid PAN",
+        message: "PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).",
+      });
       return;
     }
     if (phone && !/^[6-9]\d{9}$/.test(phone)) {
-      setActionModal({ show: true, type: "error", title: "Invalid Phone", message: "Enter a valid 10-digit Indian mobile number." });
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Invalid Phone",
+        message: "Enter a valid 10-digit Indian mobile number.",
+      });
       return;
     }
     if (stateCode && !/^\d{1,2}$/.test(stateCode)) {
-      setActionModal({ show: true, type: "error", title: "Invalid State Code", message: "State code must be a 1-2 digit number (e.g. 07)." });
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Invalid State Code",
+        message: "State code must be a 1-2 digit number (e.g. 07).",
+      });
       return;
     }
     if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
-      setActionModal({ show: true, type: "error", title: "Invalid IFSC", message: "IFSC format: 4 letters, 0, 6 alphanumeric (e.g. SBIN0001234)." });
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Invalid IFSC",
+        message:
+          "IFSC format: 4 letters, 0, 6 alphanumeric (e.g. SBIN0001234).",
+      });
       return;
     }
     if (accNo && !/^\d{9,18}$/.test(accNo)) {
-      setActionModal({ show: true, type: "error", title: "Invalid Account Number", message: "Account number must be 9–18 digits." });
+      setActionModal({
+        show: true,
+        type: "error",
+        title: "Invalid Account Number",
+        message: "Account number must be 9–18 digits.",
+      });
       return;
     }
     try {

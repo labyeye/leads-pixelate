@@ -227,15 +227,27 @@ export default function QuotationsPage() {
     }
     const badQty = formData.services.find((s) => Number(s.quantity) < 1);
     if (badQty) {
-      notify.error("Invalid quantity", "Quantity must be at least 1 for each item.");
+      notify.error(
+        "Invalid quantity",
+        "Quantity must be at least 1 for each item.",
+      );
       return;
     }
     if (formData.mobile && !/^[6-9]\d{9}$/.test(formData.mobile)) {
-      notify.error("Invalid Mobile", "Enter a valid 10-digit Indian mobile number.");
+      notify.error(
+        "Invalid Mobile",
+        "Enter a valid 10-digit Indian mobile number.",
+      );
       return;
     }
-    if (formData.gst && !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(formData.gst)) {
-      notify.error("Invalid GST Number", "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5).");
+    if (
+      formData.gst &&
+      !/^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/.test(formData.gst)
+    ) {
+      notify.error(
+        "Invalid GST Number",
+        "GSTIN must be 15 characters (e.g. 07AAAAA0000A1Z5).",
+      );
       return;
     }
     if (formData.aadhar && !/^\d{12}$/.test(formData.aadhar)) {
@@ -243,7 +255,10 @@ export default function QuotationsPage() {
       return;
     }
     if (formData.pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(formData.pan)) {
-      notify.error("Invalid PAN", "PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).");
+      notify.error(
+        "Invalid PAN",
+        "PAN format: 5 letters, 4 digits, 1 letter (e.g. ABCDE1234F).",
+      );
       return;
     }
     try {

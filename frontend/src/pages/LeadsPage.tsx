@@ -107,6 +107,12 @@ export default function LeadsPage() {
   const [syncPanelOpen, setSyncPanelOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState<any>(null);
   const [lastSyncResult, setLastSyncResult] = useState<any>(null);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [syncDateOption, setSyncDateOption] = useState<
+    "today" | "yesterday" | "custom"
+  >("today");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
   const [tiSyncing, setTiSyncing] = useState(false);
@@ -305,9 +311,36 @@ export default function LeadsPage() {
   };
 
   const handleIndiamartSync = async () => {
+    const today = new Date();
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+    let start_time: string | undefined;
+    let end_time: string | undefined;
+
+    if (syncDateOption === "today") {
+      start_time = fmt(today);
+      end_time = fmt(today);
+    } else if (syncDateOption === "yesterday") {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      start_time = fmt(y);
+      end_time = fmt(today);
+    } else {
+      if (!customFrom || !customTo) {
+        notify.error(
+          "Select Date Range",
+          "Please pick both start and end dates.",
+        );
+        return;
+      }
+      start_time = customFrom;
+      end_time = customTo;
+    }
+
+    setSyncModalOpen(false);
     try {
       setSyncing(true);
-      const res = await indiamartAPI.sync();
+      const res = await indiamartAPI.sync({ start_time, end_time });
       setLastSyncResult(res.data);
       notify.success("IndiaMART Sync Complete", res.message);
       fetchLeads();
@@ -823,7 +856,10 @@ export default function LeadsPage() {
       return;
     }
     if (!/^[6-9]\d{9}$/.test(newLead.phone)) {
-      notify.error("Invalid Phone", "Enter a valid 10-digit Indian mobile number.");
+      notify.error(
+        "Invalid Phone",
+        "Enter a valid 10-digit Indian mobile number.",
+      );
       return;
     }
     if (newLead.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newLead.email)) {
@@ -1061,7 +1097,7 @@ export default function LeadsPage() {
               <div className="flex items-center border-2 border-black">
                 <button
                   id="indiamart-sync-btn"
-                  onClick={handleIndiamartSync}
+                  onClick={() => setSyncModalOpen(true)}
                   disabled={syncing}
                   className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#E07B39] font-black uppercase text-xs tracking-widest border-r-2 border-[#E07B39] hover:bg-orange-50 transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
@@ -2425,6 +2461,80 @@ export default function LeadsPage() {
           </form>
         </DialogContent>
       </Dialog>
+      {/* IndiaMART Sync Date Range Modal */}
+      {syncModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-sm mx-4 p-6">
+            <h2 className="text-lg font-black uppercase tracking-widest mb-4 border-b-2 border-black pb-2">
+              Sync IndiaMART
+            </h2>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              Select Date Range
+            </p>
+            <div className="flex flex-col gap-2 mb-5">
+              {(
+                [
+                  { value: "today", label: "Today Only" },
+                  { value: "yesterday", label: "Today + Yesterday" },
+                  { value: "custom", label: "Custom Date Range" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSyncDateOption(opt.value)}
+                  className={`w-full text-left px-4 py-2.5 border-2 border-black font-bold text-sm transition-colors ${
+                    syncDateOption === opt.value
+                      ? "bg-[#E07B39] text-white"
+                      : "bg-white hover:bg-orange-50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {syncDateOption === "custom" && (
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                    From
+                  </label>
+                  <input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                    To
+                  </label>
+                  <input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSyncModalOpen(false)}
+                className="flex-1 px-4 py-2 border-2 border-black font-black uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleIndiamartSync}
+                className="flex-1 px-4 py-2 bg-[#E07B39] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-orange-600 transition-colors shadow-[3px_3px_0px_#000]"
+              >
+                Sync
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
