@@ -121,6 +121,8 @@ export default function LeadsPage() {
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
   const [fbSyncModalOpen, setFbSyncModalOpen] = useState(false);
+  const [fbSyncDateOption, setFbSyncDateOption] = useState<"3days" | "7days" | "30days" | "custom">("3days");
+  const [fbCustomFrom, setFbCustomFrom] = useState("");
   const [tiSyncing, setTiSyncing] = useState(false);
   const [jdSyncing, setJdSyncing] = useState(false);
 
@@ -298,10 +300,10 @@ export default function LeadsPage() {
     } catch {}
   };
 
-  const handleFacebookSync = async () => {
+  const handleFacebookSync = async (since?: string) => {
     try {
       setFbSyncing(true);
-      const res = await facebookAPI.sync();
+      const res = await facebookAPI.sync(undefined, since);
       const pageErrors = res.data?.pages?.filter((p: any) => p.error) || [];
       if (pageErrors.length > 0) {
         notify.warning("Facebook Sync Complete", res.message);
@@ -2664,9 +2666,44 @@ export default function LeadsPage() {
                 Sync Facebook
               </h2>
             </div>
-            <p className="text-sm text-gray-600 mb-5">
-              This will fetch all new leads from your connected Facebook pages and forms.
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              Leads Fetch Range
             </p>
+            <div className="flex flex-col gap-2 mb-5">
+              {(
+                [
+                  { value: "3days", label: "Last 3 Days" },
+                  { value: "7days", label: "Last 7 Days" },
+                  { value: "30days", label: "Last 30 Days" },
+                  { value: "custom", label: "Custom Date (From)" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setFbSyncDateOption(opt.value)}
+                  className={`w-full text-left px-4 py-2.5 border-2 border-black font-bold text-sm transition-colors ${
+                    fbSyncDateOption === opt.value
+                      ? "bg-[#1877F2] text-white"
+                      : "bg-white hover:bg-blue-50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {fbSyncDateOption === "custom" && (
+              <div className="mb-5">
+                <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                  Fetch leads from
+                </label>
+                <input
+                  type="date"
+                  value={fbCustomFrom}
+                  onChange={(e) => setFbCustomFrom(e.target.value)}
+                  className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                />
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setFbSyncModalOpen(false)}
@@ -2676,8 +2713,26 @@ export default function LeadsPage() {
               </button>
               <button
                 onClick={() => {
+                  if (fbSyncDateOption === "custom" && !fbCustomFrom) {
+                    notify.error("Select Date", "Please pick a start date.");
+                    return;
+                  }
+                  const today = new Date();
+                  let since: string;
+                  if (fbSyncDateOption === "3days") {
+                    const d = new Date(today); d.setDate(d.getDate() - 3);
+                    since = d.toISOString();
+                  } else if (fbSyncDateOption === "7days") {
+                    const d = new Date(today); d.setDate(d.getDate() - 7);
+                    since = d.toISOString();
+                  } else if (fbSyncDateOption === "30days") {
+                    const d = new Date(today); d.setDate(d.getDate() - 30);
+                    since = d.toISOString();
+                  } else {
+                    since = new Date(fbCustomFrom).toISOString();
+                  }
                   setFbSyncModalOpen(false);
-                  handleFacebookSync();
+                  handleFacebookSync(since);
                 }}
                 disabled={fbSyncing}
                 className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50"
