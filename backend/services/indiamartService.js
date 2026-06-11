@@ -314,10 +314,36 @@ async function syncIndiamartLeads({
 
     try {
       const tenantFilter = tenantId ? { tenantId } : { tenantId: null };
-      const existing = await Lead.findOne({
+      let existing = await Lead.findOne({
         indiamartQueryId: qid,
         ...tenantFilter,
       });
+
+      // Fallback: migrated leads may have no indiamartQueryId — match by phone
+      if (!existing) {
+        const phoneFromRecord =
+          record.SENDER_MOBILE || record.SENDER_MOBILE_ALT;
+        if (phoneFromRecord) {
+          existing = await Lead.findOne({
+            phone: phoneFromRecord,
+            source: "IndiaMART",
+            indiamartQueryId: { $exists: false },
+            ...tenantFilter,
+          });
+          // Stamp the queryId so future syncs hit the primary index
+          if (existing) {
+            await Lead.findByIdAndUpdate(existing._id, {
+              indiamartQueryId: qid,
+              indiamartQueryType:
+                QUERY_TYPE_MAP[record.QUERY_TYPE] || record.QUERY_TYPE,
+              indiamartQueryTime: record.QUERY_TIME
+                ? parseIMDate(record.QUERY_TIME)
+                : existing.indiamartQueryTime,
+            });
+          }
+        }
+      }
+
       if (existing) {
         if (updateExisting) {
           const parsedTime = record.QUERY_TIME
