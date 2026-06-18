@@ -514,10 +514,16 @@ router.post(
           const sinceTs = since
             ? Math.floor(new Date(since).getTime() / 1000)
             : Math.floor((Date.now() - 3 * 24 * 60 * 60 * 1000) / 1000);
-          const filtering = [{ field: "time_created", operator: "GREATER_THAN", value: sinceTs }];
+          const filtering = [
+            { field: "time_created", operator: "GREATER_THAN", value: sinceTs },
+          ];
           if (until) {
             const untilTs = Math.floor(new Date(until).getTime() / 1000);
-            filtering.push({ field: "time_created", operator: "LESS_THAN", value: untilTs });
+            filtering.push({
+              field: "time_created",
+              operator: "LESS_THAN",
+              value: untilTs,
+            });
           }
           const data = await fbGet(`/${formId}/leads`, page.accessToken, {
             fields: "field_data,created_time,ad_id,ad_name,form_id,platform",

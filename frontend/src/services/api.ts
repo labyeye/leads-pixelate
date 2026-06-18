@@ -778,12 +778,11 @@ export const activityAPI = {
 };
 
 export const apiKeysAPI = {
-  list: () =>
-    request<{ success: boolean; data: any[] }>("/api-keys"),
-  generate: (name: string) =>
+  list: () => request<{ success: boolean; data: any[] }>("/api-keys"),
+  generate: (name: string, fields?: any[]) =>
     request<{ success: boolean; data: any }>("/api-keys", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, fields: fields || [] }),
     }),
   revoke: (id: string) =>
     request<{ success: boolean; message: string }>(`/api-keys/${id}`, {

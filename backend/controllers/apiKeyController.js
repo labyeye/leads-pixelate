@@ -2,15 +2,42 @@ const crypto = require("crypto");
 const asyncHandler = require("express-async-handler");
 const Tenant = require("../models/Tenant");
 
+// Fields that are always collected — not configurable
+const FIXED_FIELDS = ["name", "phone"];
+
+// All fields the owner can add to the form
+const ALLOWED_FIELD_KEYS = [
+  "company",
+  "email",
+  "requirement",
+  "budget",
+  "location",
+  "product",
+];
+
 const hashKey = (rawKey) =>
   crypto.createHash("sha256").update(rawKey).digest("hex");
 
 // POST /api/api-keys
 const generateApiKey = asyncHandler(async (req, res) => {
-  const { name } = req.body;
+  const { name, fields } = req.body;
+
   if (!name || !name.trim()) {
     res.status(400);
     throw new Error("Key name is required");
+  }
+
+  // Validate field config
+  const fieldConfig = Array.isArray(fields) ? fields : [];
+  for (const f of fieldConfig) {
+    if (!ALLOWED_FIELD_KEYS.includes(f.key)) {
+      res.status(400);
+      throw new Error(`Invalid field key: ${f.key}`);
+    }
+    if (!f.label || !f.label.trim()) {
+      res.status(400);
+      throw new Error(`Label is required for field: ${f.key}`);
+    }
   }
 
   const tenant = await Tenant.findById(req.user.tenantId);
@@ -28,7 +55,19 @@ const generateApiKey = asyncHandler(async (req, res) => {
   const keyHash = hashKey(rawKey);
   const keyPrefix = rawKey.substring(0, 16); // "nlk_live_" + 7 chars
 
-  tenant.apiKeys.push({ name: name.trim(), keyHash, keyPrefix });
+  const sanitizedFields = fieldConfig.map((f) => ({
+    key: f.key,
+    label: f.label.trim(),
+    type: f.type || "text",
+    required: !!f.required,
+  }));
+
+  tenant.apiKeys.push({
+    name: name.trim(),
+    keyHash,
+    keyPrefix,
+    fields: sanitizedFields,
+  });
   await tenant.save();
 
   const newKey = tenant.apiKeys[tenant.apiKeys.length - 1];
@@ -38,8 +77,9 @@ const generateApiKey = asyncHandler(async (req, res) => {
     data: {
       id: newKey._id,
       name: newKey.name,
-      key: rawKey, // shown only once
+      key: rawKey, // shown ONLY ONCE — never stored in plain text
       keyPrefix,
+      fields: newKey.fields,
       createdAt: newKey.createdAt,
     },
   });
@@ -58,6 +98,7 @@ const listApiKeys = asyncHandler(async (req, res) => {
     name: k.name,
     keyPrefix: k.keyPrefix,
     active: k.active,
+    fields: k.fields || [],
     createdAt: k.createdAt,
     lastUsedAt: k.lastUsedAt,
   }));
@@ -65,7 +106,7 @@ const listApiKeys = asyncHandler(async (req, res) => {
   res.json({ success: true, data: keys });
 });
 
-// DELETE /api/api-keys/:id
+// DELETE /api/api-keys/:id  — revoke (soft delete)
 const revokeApiKey = asyncHandler(async (req, res) => {
   const tenant = await Tenant.findById(req.user.tenantId);
   if (!tenant) {
@@ -85,4 +126,4 @@ const revokeApiKey = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "API key revoked" });
 });
 
-module.exports = { generateApiKey, listApiKeys, revokeApiKey };
+module.exports = { generateApiKey, listApiKeys, revokeApiKey, FIXED_FIELDS };

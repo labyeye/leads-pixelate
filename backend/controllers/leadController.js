@@ -925,15 +925,23 @@ const importLeads = asyncHandler(async (req, res) => {
   }));
 
   const invalid = docs
-    .map((d, i) => (!d.name || !d.company || !d.phone || !d.requirement ? i + 1 : null))
+    .map((d, i) =>
+      !d.name || !d.company || !d.phone || !d.requirement ? i + 1 : null,
+    )
     .filter(Boolean);
   if (invalid.length > 0) {
     res.status(400);
-    throw new Error(`Rows missing required fields (Name/Company/Phone/Requirement): ${invalid.join(", ")}`);
+    throw new Error(
+      `Rows missing required fields (Name/Company/Phone/Requirement): ${invalid.join(", ")}`,
+    );
   }
 
   const inserted = await Lead.insertMany(docs, { ordered: false });
-  res.json({ success: true, count: inserted.length, message: `${inserted.length} leads imported successfully` });
+  res.json({
+    success: true,
+    count: inserted.length,
+    message: `${inserted.length} leads imported successfully`,
+  });
 });
 
 module.exports = {

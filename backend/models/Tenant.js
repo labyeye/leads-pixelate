@@ -125,6 +125,15 @@ const tenantSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now },
         lastUsedAt: { type: Date, default: null },
         active: { type: Boolean, default: true },
+        // Owner-configured fields for the website form
+        fields: [
+          {
+            key: { type: String, required: true }, // 'email','company','requirement','budget','location','product'
+            label: { type: String, required: true }, // display label
+            type: { type: String, default: "text" }, // 'text','textarea','email','tel'
+            required: { type: Boolean, default: false },
+          },
+        ],
       },
     ],
   },

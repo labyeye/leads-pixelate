@@ -121,7 +121,9 @@ export default function LeadsPage() {
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
   const [fbSyncModalOpen, setFbSyncModalOpen] = useState(false);
-  const [fbSyncDateOption, setFbSyncDateOption] = useState<"today" | "3days" | "7days" | "30days" | "custom">("today");
+  const [fbSyncDateOption, setFbSyncDateOption] = useState<
+    "today" | "3days" | "7days" | "30days" | "custom"
+  >("today");
   const [fbCustomFrom, setFbCustomFrom] = useState("");
   const [fbCustomTo, setFbCustomTo] = useState("");
   const [tiSyncing, setTiSyncing] = useState(false);
@@ -2573,15 +2575,26 @@ export default function LeadsPage() {
                   <table className="w-full min-w-[340px] text-xs border-collapse">
                     <thead>
                       <tr className="bg-gray-100 border-b-2 border-black">
-                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider border-r border-black">Column Header</th>
-                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider">Required?</th>
+                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider border-r border-black">
+                          Column Header
+                        </th>
+                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider">
+                          Required?
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {EXCEL_HEADERS.map((h, i) => (
-                        <tr key={h.key} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                          <td className="px-3 py-1.5 font-bold border-r border-black font-mono">{h.label}</td>
-                          <td className={`px-3 py-1.5 font-black text-xs ${h.required ? "text-red-600" : "text-gray-400"}`}>
+                        <tr
+                          key={h.key}
+                          className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                        >
+                          <td className="px-3 py-1.5 font-bold border-r border-black font-mono">
+                            {h.label}
+                          </td>
+                          <td
+                            className={`px-3 py-1.5 font-black text-xs ${h.required ? "text-red-600" : "text-gray-400"}`}
+                          >
                             {h.required ? "Required" : "Optional"}
                           </td>
                         </tr>
@@ -2590,7 +2603,9 @@ export default function LeadsPage() {
                   </table>
                 </div>
                 <p className="text-xs text-gray-500 mt-1.5">
-                  Source will be set to <span className="font-bold text-black">Manual</span> for all imported leads. Column names are case-insensitive.
+                  Source will be set to{" "}
+                  <span className="font-bold text-black">Manual</span> for all
+                  imported leads. Column names are case-insensitive.
                 </p>
               </div>
 
@@ -2602,7 +2617,9 @@ export default function LeadsPage() {
                 <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-black bg-gray-50 hover:bg-gray-100 cursor-pointer py-6 transition-colors">
                   <FileText className="w-6 h-6 mb-2 text-emerald-700" />
                   <span className="text-xs font-bold">
-                    {importFile ? importFile.name : "Click to select Excel file"}
+                    {importFile
+                      ? importFile.name
+                      : "Click to select Excel file"}
                   </span>
                   <input
                     type="file"
@@ -2662,7 +2679,11 @@ export default function LeadsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-sm mx-4 p-6">
             <div className="flex items-center gap-3 border-b-2 border-black pb-3 mb-4">
-              <img src={fbLogo} alt="Facebook" className="w-6 h-6 object-contain" />
+              <img
+                src={fbLogo}
+                alt="Facebook"
+                className="w-6 h-6 object-contain"
+              />
               <h2 className="text-lg font-black uppercase tracking-widest">
                 Sync Facebook
               </h2>
@@ -2673,9 +2694,9 @@ export default function LeadsPage() {
             <div className="flex flex-col gap-2 mb-5">
               {(
                 [
-                  { value: "today",  label: "Today Only" },
-                  { value: "3days",  label: "Last 3 Days" },
-                  { value: "7days",  label: "Last 7 Days" },
+                  { value: "today", label: "Today Only" },
+                  { value: "3days", label: "Last 3 Days" },
+                  { value: "7days", label: "Last 7 Days" },
                   { value: "30days", label: "Last 30 Days" },
                   { value: "custom", label: "Custom Date Range" },
                 ] as const
@@ -2696,7 +2717,9 @@ export default function LeadsPage() {
             {fbSyncDateOption === "custom" && (
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider mb-1">From</label>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                    From
+                  </label>
                   <input
                     type="date"
                     value={fbCustomFrom}
@@ -2705,7 +2728,9 @@ export default function LeadsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider mb-1">To</label>
+                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                    To
+                  </label>
                   <input
                     type="date"
                     value={fbCustomTo}
@@ -2724,24 +2749,34 @@ export default function LeadsPage() {
               </button>
               <button
                 onClick={() => {
-                  if (fbSyncDateOption === "custom" && (!fbCustomFrom || !fbCustomTo)) {
-                    notify.error("Select Date Range", "Please pick both from and to dates.");
+                  if (
+                    fbSyncDateOption === "custom" &&
+                    (!fbCustomFrom || !fbCustomTo)
+                  ) {
+                    notify.error(
+                      "Select Date Range",
+                      "Please pick both from and to dates.",
+                    );
                     return;
                   }
                   const today = new Date();
                   let since: string;
                   let until: string | undefined;
                   if (fbSyncDateOption === "today") {
-                    const d = new Date(today); d.setHours(0, 0, 0, 0);
+                    const d = new Date(today);
+                    d.setHours(0, 0, 0, 0);
                     since = d.toISOString();
                   } else if (fbSyncDateOption === "3days") {
-                    const d = new Date(today); d.setDate(d.getDate() - 3);
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - 3);
                     since = d.toISOString();
                   } else if (fbSyncDateOption === "7days") {
-                    const d = new Date(today); d.setDate(d.getDate() - 7);
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - 7);
                     since = d.toISOString();
                   } else if (fbSyncDateOption === "30days") {
-                    const d = new Date(today); d.setDate(d.getDate() - 30);
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - 30);
                     since = d.toISOString();
                   } else {
                     since = new Date(fbCustomFrom).toISOString();
