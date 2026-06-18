@@ -18,6 +18,7 @@ import {
   Megaphone,
   Package,
   Briefcase,
+  KeyRound,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -177,6 +178,12 @@ const allGroups: NavGroup[] = [
         title: "Integrations",
         href: "/integrations",
         icon: Plug,
+        roles: ["super_admin", "admin"],
+      },
+      {
+        title: "API Keys",
+        href: "/api-keys",
+        icon: KeyRound,
         roles: ["super_admin", "admin"],
       },
     ],

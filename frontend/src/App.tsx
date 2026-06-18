@@ -28,6 +28,7 @@ import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import CampaignBuilderPage from "./pages/CampaignBuilderPage";
+import ApiKeysPage from "./pages/ApiKeysPage";
 import NotFound from "./pages/NotFound";
 import { NotificationProvider } from "@/components/ui/Notification";
 
@@ -275,6 +276,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CampaignBuilderPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/api-keys"
+        element={
+          <ProtectedRoute>
+            <ApiKeysPage />
           </ProtectedRoute>
         }
       />

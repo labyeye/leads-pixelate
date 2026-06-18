@@ -117,6 +117,16 @@ const tenantSchema = new mongoose.Schema(
       customerId: { type: String, default: null },
       subscriptionId: { type: String, default: null },
     },
+    apiKeys: [
+      {
+        name: { type: String, required: true },
+        keyHash: { type: String, required: true },
+        keyPrefix: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        lastUsedAt: { type: Date, default: null },
+        active: { type: Boolean, default: true },
+      },
+    ],
   },
   { timestamps: true },
 );

@@ -777,4 +777,18 @@ export const activityAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/activity/stats"),
 };
 
+export const apiKeysAPI = {
+  list: () =>
+    request<{ success: boolean; data: any[] }>("/api-keys"),
+  generate: (name: string) =>
+    request<{ success: boolean; data: any }>("/api-keys", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+  revoke: (id: string) =>
+    request<{ success: boolean; message: string }>(`/api-keys/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 export { getToken, setToken, removeToken, ApiError };

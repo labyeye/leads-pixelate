@@ -69,10 +69,16 @@ app.use(
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:8081",
+    origin: (origin, callback) => {
+      // Allow the CRM frontend and all origins for the public API
+      const allowed = process.env.CLIENT_URL || "http://localhost:8081";
+      if (!origin || origin === allowed) return callback(null, true);
+      // Public endpoints are called from any website
+      callback(null, true);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key"],
   }),
 );
 
@@ -125,6 +131,8 @@ app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));
 app.use("/api/campaigns", require("./routes/campaignRoutes"));
+app.use("/api/api-keys", require("./routes/apiKeyRoutes"));
+app.use("/api/public", require("./routes/publicRoutes"));
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, status: "ok" });
