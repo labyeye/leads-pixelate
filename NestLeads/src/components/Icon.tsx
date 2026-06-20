@@ -1,0 +1,103 @@
+import React from 'react';
+import {
+  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, ArrowLeftRight,
+  BarChart2, Bell, Box, Briefcase, Building2, Calendar,
+  Check, CheckCircle, ChevronLeft, ChevronRight,
+  Clock, DollarSign, Edit2, Eye, EyeOff,
+  FileText, Filter, Flame, GitBranch, Info, LayoutGrid,
+  LogIn, Lock, LogOut, Mail, Megaphone, MessageCircle, MessageSquare,
+  Pause, PauseCircle, Pencil, Phone,
+  Play, PlayCircle, Plus, Search,
+  Server, Settings, ShieldCheck, Square, Star,
+  Trash2, User, Users, X, XCircle, Zap,
+  LucideIcon,
+} from 'lucide-react-native';
+
+const MAP: Record<string, LucideIcon> = {
+  'add':                      Plus,
+  'alert-circle-outline':     AlertCircle,
+  'alert-circle':             AlertCircle,
+  'apps':                     LayoutGrid,
+  'apps-outline':             LayoutGrid,
+  'arrow-back':               ArrowLeft,
+  'arrow-forward':            ArrowRight,
+  'chatbubbles-outline':      MessageSquare,
+  'chatbubbles':              MessageSquare,
+  'funnel-outline':           Filter,
+  'funnel':                   Filter,
+  'git-network-outline':      GitBranch,
+  'git-network':              GitBranch,
+  'log-in-outline':           LogIn,
+  'log-in':                   LogIn,
+  'notifications-outline':    Bell,
+  'notifications':            Bell,
+  'star-outline':             Star,
+  'star':                     Star,
+  'swap-horizontal-outline':  ArrowLeftRight,
+  'swap-horizontal':          ArrowLeftRight,
+  'bar-chart-outline':        BarChart2,
+  'briefcase':                Briefcase,
+  'briefcase-outline':        Briefcase,
+  'business-outline':         Building2,
+  'calendar':                 Calendar,
+  'calendar-outline':         Calendar,
+  'call-outline':             Phone,
+  'checkmark':                Check,
+  'checkmark-circle':         CheckCircle,
+  'checkmark-circle-outline': CheckCircle,
+  'chevron-back':             ChevronLeft,
+  'chevron-forward':          ChevronRight,
+  'close':                    X,
+  'close-circle-outline':     XCircle,
+  'create-outline':           Edit2,
+  'cube-outline':             Box,
+  'document-text':            FileText,
+  'document-text-outline':    FileText,
+  'eye-outline':              Eye,
+  'eye-off-outline':          EyeOff,
+  'flame':                    Flame,
+  'flame-outline':            Flame,
+  'flash':                    Zap,
+  'flash-outline':            Zap,
+  'grid':                     LayoutGrid,
+  'grid-outline':             LayoutGrid,
+  'information-circle-outline': Info,
+  'lock-closed-outline':      Lock,
+  'log-out-outline':          LogOut,
+  'logo-usd':                 DollarSign,
+  'logo-whatsapp':            MessageCircle,
+  'mail-outline':             Mail,
+  'megaphone-outline':        Megaphone,
+  'megaphone':                Megaphone,
+  'options-outline':          Settings,
+  'pause':                    Pause,
+  'pause-circle-outline':     PauseCircle,
+  'pencil-outline':           Pencil,
+  'people':                   Users,
+  'people-outline':           Users,
+  'person-outline':           User,
+  'play':                     Play,
+  'play-circle-outline':      PlayCircle,
+  'search-outline':           Search,
+  'server-outline':           Server,
+  'settings-outline':         Settings,
+  'shield-checkmark-outline': ShieldCheck,
+  'stop':                     Square,
+  'time-outline':             Clock,
+  'trash-outline':            Trash2,
+  'warning':                  AlertTriangle,
+  'warning-outline':          AlertTriangle,
+};
+
+interface Props {
+  name: string;
+  size?: number;
+  color?: string;
+  style?: any;
+}
+
+export default function Icon({name, size = 20, color = '#000', style}: Props) {
+  const LucideComponent = MAP[name];
+  if (!LucideComponent) return null;
+  return <LucideComponent size={size} color={color} style={style} />;
+}
