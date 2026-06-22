@@ -33,6 +33,14 @@ import {
   ALL_STATUSES,
 } from '../constants/statusConstants';
 import SourceBadge from '../components/SourceBadge';
+import {
+  Building2,
+  Calendar,
+  CalendarCheck,
+  IdCard,
+  PhoneCall,
+  UserIcon,
+} from 'lucide-react-native';
 
 const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
@@ -112,10 +120,15 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [dateModalSource, setDateModalSource] = useState<
     'indiamart' | 'facebook' | null
   >(null);
-  const [productsList, setProductsList] = useState<{ _id: string; name: string }[]>([]);
+  const [productsList, setProductsList] = useState<
+    { _id: string; name: string }[]
+  >([]);
 
   useEffect(() => {
-    productsAPI.getAll().then(res => setProductsList(res.data || [])).catch(() => {});
+    productsAPI
+      .getAll()
+      .then(res => setProductsList(res.data || []))
+      .catch(() => {});
   }, []);
 
   const fetchLeads = useCallback(
@@ -303,34 +316,95 @@ export default function LeadsListScreen({ navigation }: Props) {
       >
         <View style={styles.cardTop}>
           <View style={styles.cardTopLeft}>
-            <Text style={styles.leadName} numberOfLines={1}>
-              {l.name || '—'}
-            </Text>
-            {l.company ? (
-              <Text style={styles.leadCompany} numberOfLines={1}>
-                {l.company}
-              </Text>
+            {' '}
+            <View style={styles.leadDetailRow}>
+              <View
+                style={{
+                  backgroundColor: '#044bab',
+                  padding: 4,
+                  borderRadius: 50,
+                }}
+              >
+                <UserIcon size={18} color="#fff" />
+              </View>
+              <View>
+                <Text style={styles.leadName} numberOfLines={1}>
+                  {l.name || '—'}
+                </Text>
+                <View style={{ flexDirection: 'row', flex: 1, gap: 5 }}>
+                  {l.company ? (
+                    <View style={styles.leadDetailRow}>
+                      <Text style={styles.leadCompany} numberOfLines={1}>
+                        {l.company}
+                      </Text>
+                    </View>
+                  ) : null}
+                  {l.phone ? (
+                    <View style={styles.leadDetailRow}>
+                      <Text style={styles.leadPhone}>|  {l.phone}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+            <View
+              style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}
+            ></View>
+            {l.createdAt ? (
+              <View style={styles.leadDetailRow}>
+                <CalendarCheck size={12} color="#000" />
+                <Text style={styles.inquiryDate}>
+                  {new Date(l.createdAt).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </Text>
+              </View>
             ) : null}
           </View>
-          {tag && (
-            <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
-              <Text style={[styles.tagPillText, { color: tag.text }]}>
-                {l.contactTag}
-              </Text>
-            </View>
-          )}
+          <View style={styles.cardTopRight}>
+            <SourceBadge source={l.source} size="md" />
+            {tag && (
+              <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
+                <Text style={[styles.tagPillText, { color: tag.text }]}>
+                  {l.contactTag}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
-        {l.phone ? (
-          <View style={styles.phoneRow}>
-            <Icon name="call-outline" size={12} color="#475569" />
-            <Text style={styles.leadPhone}>{l.phone}</Text>
+        {l.followUpDate ? (
+          <View style={styles.followUpRow}>
+            <Icon name="calendar-outline" size={11} color={PRIMARY} />
+            <Text style={styles.followUpText}>
+              {new Date(l.followUpDate).toLocaleDateString('en-IN')}
+            </Text>
           </View>
         ) : null}
 
         <View style={styles.cardFooter}>
-          {/* Bigger source badge */}
-          <SourceBadge source={l.source} size="md" />
+          <View style={styles.cardFooterLeft}>
+            {l.interestedProduct || l.product?.name ? (
+              <View style={styles.productRow}>
+                <Icon name="cube-outline" size={11} color="#7c3aed" />
+                <Text style={styles.productText} numberOfLines={1}>
+                  {l.interestedProduct || l.product?.name}
+                </Text>
+              </View>
+            ) : null}
+            {l.remarks ? (
+              <Text style={styles.remarksText} numberOfLines={2}>
+                {l.remarks}
+              </Text>
+            ) : null}
+            {l.assignedTo?.name ? (
+              <Text style={styles.assignedText}>
+                Assigned: {l.assignedTo.name}
+              </Text>
+            ) : null}
+          </View>
           <View
             style={[
               styles.statusPill,
@@ -342,18 +416,6 @@ export default function LeadsListScreen({ navigation }: Props) {
             </Text>
           </View>
         </View>
-
-        {l.assignedTo?.name ? (
-          <Text style={styles.assignedText}>Assigned: {l.assignedTo.name}</Text>
-        ) : null}
-        {l.followUpDate ? (
-          <View style={styles.followUpRow}>
-            <Icon name="calendar-outline" size={11} color={PRIMARY} />
-            <Text style={styles.followUpText}>
-              {new Date(l.followUpDate).toLocaleDateString('en-IN')}
-            </Text>
-          </View>
-        ) : null}
       </TouchableOpacity>
     );
   };
@@ -428,19 +490,19 @@ export default function LeadsListScreen({ navigation }: Props) {
           <Icon
             name="search-outline"
             size={14}
-            color="#94a3b8"
+            color="#000"
             style={{ marginRight: 6 }}
           />
           <TextInput
             style={styles.searchInput}
             placeholder="Search leads..."
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#000"
             value={search}
             onChangeText={setSearch}
           />
           {!!search && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Icon name="close" size={14} color="#94a3b8" />
+              <Icon name="close" size={14} color="#000" />
             </TouchableOpacity>
           )}
         </View>
@@ -465,23 +527,59 @@ export default function LeadsListScreen({ navigation }: Props) {
       <View style={styles.syncRow}>
         {(
           [
-            {key: 'indiamart',  label: 'IndiaMART',  logo: require('../assets/images/logos/indiamart.png'),   color: '#FF6B2B'},
-            {key: 'facebook',   label: 'Facebook',   logo: require('../assets/images/logos/facebook.png'),    color: '#1877F2'},
-            {key: 'tradeindia', label: 'TradeIndia', logo: require('../assets/images/logos/tradeindia.webp'), color: '#e11d48'},
-            {key: 'justdial',   label: 'JustDial',   logo: require('../assets/images/logos/justdial.webp'),   color: '#f59e0b'},
+            {
+              key: 'indiamart',
+              label: 'IndiaMART',
+              logo: require('../assets/images/logos/indiamart.png'),
+              color: '#FF6B2B',
+            },
+            {
+              key: 'facebook',
+              label: 'Facebook',
+              logo: require('../assets/images/logos/facebook.png'),
+              color: '#1877F2',
+            },
+            {
+              key: 'tradeindia',
+              label: 'TradeIndia',
+              logo: require('../assets/images/logos/tradeindia.webp'),
+              color: '#e11d48',
+            },
+            {
+              key: 'justdial',
+              label: 'JustDial',
+              logo: require('../assets/images/logos/justdial.webp'),
+              color: '#f59e0b',
+            },
           ] as const
         ).map(s => {
           const isSyncing = syncingSource === s.key;
           return (
             <TouchableOpacity
               key={s.key}
-              style={[styles.syncChip, {borderColor: s.color}, isSyncing && {opacity: 0.6}]}
+              style={[
+                styles.syncChip,
+                { borderColor: s.color },
+                isSyncing && { opacity: 0.6 },
+              ]}
               onPress={() => handleSyncPress(s.key)}
-              disabled={syncingSource !== null}>
-              {isSyncing
-                ? <ActivityIndicator size={14} color={s.color} />
-                : <Image source={s.logo} style={styles.syncLogo} resizeMode="contain" />}
-              <Text style={[styles.syncChipText, {color: s.color}]} numberOfLines={1}>{s.label}</Text>
+              disabled={syncingSource !== null}
+            >
+              {isSyncing ? (
+                <ActivityIndicator size={14} color={s.color} />
+              ) : (
+                <Image
+                  source={s.logo}
+                  style={styles.syncLogo}
+                  resizeMode="contain"
+                />
+              )}
+              <Text
+                style={[styles.syncChipText, { color: s.color }]}
+                numberOfLines={1}
+              >
+                {s.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -617,7 +715,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                       value={customFrom}
                       onChangeText={setCustomFrom}
                       placeholder="2024-01-01"
-                      placeholderTextColor="#94a3b8"
+                      placeholderTextColor="#000"
                     />
                   </View>
                   <View style={styles.customDateField}>
@@ -627,7 +725,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                       value={customTo}
                       onChangeText={setCustomTo}
                       placeholder="2024-01-31"
-                      placeholderTextColor="#94a3b8"
+                      placeholderTextColor="#000"
                     />
                   </View>
                 </View>
@@ -703,8 +801,17 @@ export default function LeadsListScreen({ navigation }: Props) {
                     style={[styles.allBtn, isClean && styles.allBtnActive]}
                     onPress={() => setDraftFilters(BLANK_FILTER)}
                   >
-                    <Icon name="apps-outline" size={16} color={isClean ? '#fff' : '#000'} />
-                    <Text style={[styles.allBtnText, isClean && styles.allBtnTextActive]}>
+                    <Icon
+                      name="apps-outline"
+                      size={16}
+                      color={isClean ? '#fff' : '#000'}
+                    />
+                    <Text
+                      style={[
+                        styles.allBtnText,
+                        isClean && styles.allBtnTextActive,
+                      ]}
+                    >
                       All (Show Everything)
                     </Text>
                   </TouchableOpacity>
@@ -719,11 +826,22 @@ export default function LeadsListScreen({ navigation }: Props) {
                   return (
                     <TouchableOpacity
                       key={s}
-                      style={[styles.sourceChip, active && styles.sourceChipActive]}
-                      onPress={() => toggleDraftSource(s)}>
+                      style={[
+                        styles.sourceChip,
+                        active && styles.sourceChipActive,
+                      ]}
+                      onPress={() => toggleDraftSource(s)}
+                    >
                       <SourceBadge source={s} size="md" />
-                     
-                      {active && <Icon name="checkmark-circle" size={16} color={PRIMARY} style={{marginLeft: 'auto'}} />}
+
+                      {active && (
+                        <Icon
+                          name="checkmark-circle"
+                          size={16}
+                          color={PRIMARY}
+                          style={{ marginLeft: 'auto' }}
+                        />
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -740,14 +858,24 @@ export default function LeadsListScreen({ navigation }: Props) {
                       key={s}
                       style={[
                         styles.statusChip,
-                        active && { backgroundColor: c.bg, borderColor: '#000' },
+                        active && {
+                          backgroundColor: c.bg,
+                          borderColor: '#000',
+                        },
                       ]}
                       onPress={() => toggleDraftStatus(s)}
                     >
-                      <Text style={[styles.statusChipText, active && { color: c.text }]}>
+                      <Text
+                        style={[
+                          styles.statusChipText,
+                          active && { color: c.text },
+                        ]}
+                      >
                         {s}
                       </Text>
-                      {active && <Icon name="checkmark" size={10} color={c.text} />}
+                      {active && (
+                        <Icon name="checkmark" size={10} color={c.text} />
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -761,9 +889,11 @@ export default function LeadsListScreen({ navigation }: Props) {
                   <TextInput
                     style={styles.dateRangeInput}
                     value={draftFilters.startDate}
-                    onChangeText={v => setDraftFilters(f => ({ ...f, startDate: v }))}
+                    onChangeText={v =>
+                      setDraftFilters(f => ({ ...f, startDate: v }))
+                    }
                     placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor="#000"
                   />
                 </View>
                 <View style={styles.dateRangeSep}>
@@ -774,9 +904,11 @@ export default function LeadsListScreen({ navigation }: Props) {
                   <TextInput
                     style={styles.dateRangeInput}
                     value={draftFilters.endDate}
-                    onChangeText={v => setDraftFilters(f => ({ ...f, endDate: v }))}
+                    onChangeText={v =>
+                      setDraftFilters(f => ({ ...f, endDate: v }))
+                    }
                     placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor="#000"
                   />
                 </View>
               </View>
@@ -791,21 +923,41 @@ export default function LeadsListScreen({ navigation }: Props) {
                   return (
                     <TouchableOpacity
                       key={bp.label}
-                      style={[styles.sourceChip, active && styles.sourceChipActive]}
+                      style={[
+                        styles.sourceChip,
+                        active && styles.sourceChipActive,
+                      ]}
                       onPress={() =>
                         active
-                          ? setDraftFilters(f => ({ ...f, budgetMin: '', budgetMax: '' }))
+                          ? setDraftFilters(f => ({
+                              ...f,
+                              budgetMin: '',
+                              budgetMax: '',
+                            }))
                           : applyBudgetPreset(bp.min, bp.max)
-                      }>
+                      }
+                    >
                       <Icon
                         name="cash-outline"
                         size={14}
                         color={active ? PRIMARY : '#64748b'}
                       />
-                      <Text style={[styles.sourceChipLabel, active && styles.sourceChipLabelActive]}>
+                      <Text
+                        style={[
+                          styles.sourceChipLabel,
+                          active && styles.sourceChipLabelActive,
+                        ]}
+                      >
                         {bp.label}
                       </Text>
-                      {active && <Icon name="checkmark-circle" size={14} color={PRIMARY} style={{ marginLeft: 'auto' }} />}
+                      {active && (
+                        <Icon
+                          name="checkmark-circle"
+                          size={14}
+                          color={PRIMARY}
+                          style={{ marginLeft: 'auto' }}
+                        />
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -816,9 +968,11 @@ export default function LeadsListScreen({ navigation }: Props) {
                   <TextInput
                     style={styles.dateRangeInput}
                     value={draftFilters.budgetMin}
-                    onChangeText={v => setDraftFilters(f => ({ ...f, budgetMin: v }))}
+                    onChangeText={v =>
+                      setDraftFilters(f => ({ ...f, budgetMin: v }))
+                    }
                     placeholder="0"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor="#000"
                     keyboardType="numeric"
                   />
                 </View>
@@ -830,9 +984,11 @@ export default function LeadsListScreen({ navigation }: Props) {
                   <TextInput
                     style={styles.dateRangeInput}
                     value={draftFilters.budgetMax}
-                    onChangeText={v => setDraftFilters(f => ({ ...f, budgetMax: v }))}
+                    onChangeText={v =>
+                      setDraftFilters(f => ({ ...f, budgetMax: v }))
+                    }
                     placeholder="Any"
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor="#000"
                     keyboardType="numeric"
                   />
                 </View>
@@ -849,13 +1005,34 @@ export default function LeadsListScreen({ navigation }: Props) {
                     return (
                       <TouchableOpacity
                         key={p._id}
-                        style={[styles.sourceChip, active && styles.sourceChipActive]}
-                        onPress={() => toggleDraftProduct(p._id)}>
-                        <Icon name="cube-outline" size={14} color={active ? PRIMARY : '#64748b'} />
-                        <Text style={[styles.sourceChipLabel, active && styles.sourceChipLabelActive]} numberOfLines={1}>
+                        style={[
+                          styles.sourceChip,
+                          active && styles.sourceChipActive,
+                        ]}
+                        onPress={() => toggleDraftProduct(p._id)}
+                      >
+                        <Icon
+                          name="cube-outline"
+                          size={14}
+                          color={active ? PRIMARY : '#64748b'}
+                        />
+                        <Text
+                          style={[
+                            styles.sourceChipLabel,
+                            active && styles.sourceChipLabelActive,
+                          ]}
+                          numberOfLines={1}
+                        >
                           {p.name}
                         </Text>
-                        {active && <Icon name="checkmark-circle" size={14} color={PRIMARY} style={{ marginLeft: 'auto' }} />}
+                        {active && (
+                          <Icon
+                            name="checkmark-circle"
+                            size={14}
+                            color={PRIMARY}
+                            style={{ marginLeft: 'auto' }}
+                          />
+                        )}
                       </TouchableOpacity>
                     );
                   })}
@@ -1080,6 +1257,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardTopLeft: { flex: 1, marginRight: 8 },
+  cardTopRight: { alignItems: 'flex-end', gap: 4 },
+  inquiryDate: {
+    fontSize: 13,
+    color: '#059600',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  leadDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   leadName: { fontSize: 15, fontWeight: '900', color: '#000' },
   leadCompany: {
     fontSize: 12,
@@ -1087,13 +1272,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 1,
   },
-  phoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 8,
-  },
-  leadPhone: { fontSize: 12, color: '#475569', fontWeight: '500' },
+  leadPhone: { fontSize: 12, color: '#000', fontWeight: '500', marginTop: 1 },
   tagPill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -1103,9 +1282,23 @@ const styles = StyleSheet.create({
   tagPillText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
   cardFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
     marginTop: 6,
+  },
+  cardFooterLeft: { flex: 1, marginRight: 8 },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 3,
+  },
+  productText: { fontSize: 11, color: '#7c3aed', fontWeight: '700', flex: 1 },
+  remarksText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
+    lineHeight: 15,
   },
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2 },
   statusPillText: {
@@ -1115,9 +1308,9 @@ const styles = StyleSheet.create({
   },
   assignedText: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: '#000',
     fontWeight: '700',
-    marginTop: 6,
+    marginTop: 2,
   },
   followUpRow: {
     flexDirection: 'row',
@@ -1126,8 +1319,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   followUpText: { fontSize: 11, color: PRIMARY, fontWeight: '700' },
-
-  // States
   centerBox: {
     flex: 1,
     alignItems: 'center',
@@ -1222,12 +1413,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   sourceChipActive: { borderColor: PRIMARY, backgroundColor: '#eff6ff' },
-  sourceChipLabel: { flex: 1, fontSize: 12, fontWeight: '600', color: '#64748b' },
+  sourceChipLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+  },
   sourceChipLabelActive: { color: PRIMARY, fontWeight: '800' },
   // Date range in filter
-  dateRangeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginBottom: 4 },
+  dateRangeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    marginBottom: 4,
+  },
   dateRangeField: { flex: 1 },
-  dateRangeFieldLabel: { fontSize: 9, fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  dateRangeFieldLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
   dateRangeInput: {
     borderWidth: 2,
     borderColor: '#000',
@@ -1239,9 +1447,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   dateRangeSep: { paddingBottom: 10 },
-  dateRangeSepText: { fontSize: 16, fontWeight: '900', color: '#94a3b8' },
-  budgetCustomRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginTop: 8 },
-  filterEmptyText: { fontSize: 12, color: '#94a3b8', fontWeight: '600', marginBottom: 8 },
+  dateRangeSepText: { fontSize: 16, fontWeight: '900', color: '#000' },
+  budgetCustomRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    marginTop: 8,
+  },
+  filterEmptyText: {
+    fontSize: 12,
+    color: '#000',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
