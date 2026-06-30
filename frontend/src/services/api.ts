@@ -750,6 +750,11 @@ export const socialAPI = {
       method: "POST",
       body: JSON.stringify({ userToken }),
     }),
+  importFromIntegration: () =>
+    request<{ success: boolean; data: { connected: number } }>(
+      "/social/accounts/import-from-integration",
+      { method: "POST" },
+    ),
 };
 
 export const campaignAPI = {

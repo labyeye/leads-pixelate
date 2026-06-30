@@ -1249,6 +1249,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     instagramBusinessAccountId: "",
   });
   const [connecting, setConnecting] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true);
@@ -1278,6 +1279,25 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         variant: "destructive",
       });
       setOauthLoading(false);
+    }
+  };
+
+  const handleImportFromIntegration = async () => {
+    setImporting(true);
+    try {
+      const res = await socialAPI.importFromIntegration();
+      toast({
+        title: `Imported! ${res.data.connected} account(s) saved.`,
+      });
+      await fetchAccounts();
+    } catch (err: any) {
+      toast({
+        title: "Import failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -1345,7 +1365,32 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
       </div>
 
       {}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {}
+        <button
+          onClick={handleImportFromIntegration}
+          disabled={importing}
+          className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50/30 transition-all"
+        >
+          {importing ? (
+            <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+          ) : (
+            <RefreshCw className="w-8 h-8 text-green-600" />
+          )}
+          <div className="text-center">
+            <p className="text-sm font-semibold text-green-700">
+              Import from Integrations
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Already connected Facebook under Integrations? Reuse it — no
+              re-login needed
+            </p>
+          </div>
+          <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">
+            Recommended
+          </span>
+        </button>
+
         {}
         <button
           onClick={handleOAuthConnect}
@@ -1365,9 +1410,6 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               OAuth — connects all your Pages & Instagram accounts automatically
             </p>
           </div>
-          <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-            Recommended
-          </span>
         </button>
 
         {}

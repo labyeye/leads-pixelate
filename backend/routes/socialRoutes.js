@@ -16,6 +16,7 @@ const {
   getFacebookAuthUrl,
   facebookCallback,
   fetchFacebookPages,
+  importFromIntegration,
   getStats,
 } = require("../controllers/socialController");
 const { protect, authorize } = require("../middleware/auth");
@@ -51,5 +52,6 @@ router.delete(
 
 router.get("/auth/facebook", getFacebookAuthUrl);
 router.post("/auth/facebook/pages", fetchFacebookPages);
+router.post("/accounts/import-from-integration", importFromIntegration);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const SocialPost = require("../models/SocialPost");
 const SocialAccount = require("../models/SocialAccount");
+const Tenant = require("../models/Tenant");
 
 function getSocialConfig() {
   return {
@@ -466,49 +467,12 @@ exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { authUrl } });
 });
 
-exports.facebookCallback = asyncHandler(async (req, res) => {
-  const config = getSocialConfig();
-  const { code, state: userId, error } = req.query;
-
-  const frontendUrl = `${config.frontendUrl}/social-media-planner`;
-
-  if (error) {
-    return res.redirect(
-      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(error)}`,
-    );
-  }
-
-  const tokenRes = await fetch(
-    `https://graph.facebook.com/v18.0/oauth/access_token` +
-      `?client_id=${config.fbAppId}` +
-      `&client_secret=${config.fbAppSecret}` +
-      `&redirect_uri=${encodeURIComponent(config.callbackUrl)}` +
-      `&code=${code}`,
-  );
-  const tokenData = await tokenRes.json();
-
-  if (!tokenRes.ok || tokenData.error) {
-    return res.redirect(
-      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(tokenData?.error?.message || "Token exchange failed")}`,
-    );
-  }
-
-  const userAccessToken = tokenData.access_token;
-
-  const longLivedRes = await fetch(
-    `https://graph.facebook.com/v18.0/oauth/access_token` +
-      `?grant_type=fb_exchange_token` +
-      `&client_id=${config.fbAppId}` +
-      `&client_secret=${config.fbAppSecret}` +
-      `&fb_exchange_token=${userAccessToken}`,
-  );
-  const longLivedData = await longLivedRes.json();
-  const finalUserToken = longLivedData.access_token || userAccessToken;
-
+async function savePagesAsSocialAccounts(finalUserToken, userId) {
   const pagesRes = await fetch(
     `https://graph.facebook.com/v18.0/me/accounts?access_token=${finalUserToken}&fields=id,name,picture,access_token`,
   );
   const pagesData = await pagesRes.json();
+  if (pagesData.error) throw new Error(pagesData.error.message);
   const pages = pagesData.data || [];
 
   let savedCount = 0;
@@ -564,7 +528,85 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
     }
   }
 
+  return savedCount;
+}
+
+exports.facebookCallback = asyncHandler(async (req, res) => {
+  const config = getSocialConfig();
+  const { code, state: userId, error } = req.query;
+
+  const frontendUrl = `${config.frontendUrl}/social-media-planner`;
+
+  if (error) {
+    return res.redirect(
+      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(error)}`,
+    );
+  }
+
+  const tokenRes = await fetch(
+    `https://graph.facebook.com/v18.0/oauth/access_token` +
+      `?client_id=${config.fbAppId}` +
+      `&client_secret=${config.fbAppSecret}` +
+      `&redirect_uri=${encodeURIComponent(config.callbackUrl)}` +
+      `&code=${code}`,
+  );
+  const tokenData = await tokenRes.json();
+
+  if (!tokenRes.ok || tokenData.error) {
+    return res.redirect(
+      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(tokenData?.error?.message || "Token exchange failed")}`,
+    );
+  }
+
+  const userAccessToken = tokenData.access_token;
+
+  const longLivedRes = await fetch(
+    `https://graph.facebook.com/v18.0/oauth/access_token` +
+      `?grant_type=fb_exchange_token` +
+      `&client_id=${config.fbAppId}` +
+      `&client_secret=${config.fbAppSecret}` +
+      `&fb_exchange_token=${userAccessToken}`,
+  );
+  const longLivedData = await longLivedRes.json();
+  const finalUserToken = longLivedData.access_token || userAccessToken;
+
+  let savedCount = 0;
+  try {
+    savedCount = await savePagesAsSocialAccounts(finalUserToken, userId);
+  } catch (err) {
+    return res.redirect(
+      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(err.message)}`,
+    );
+  }
+
   res.redirect(`${frontendUrl}?tab=accounts&connected=${savedCount}`);
+});
+
+// Reuses the Facebook user token already captured by the Integrations →
+// Facebook (leads) connection, so the user doesn't have to OAuth twice.
+exports.importFromIntegration = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  const tenant = await Tenant.findOne(query);
+  const userToken = tenant?.integrations?.facebook?.userAccessToken;
+
+  if (!userToken) {
+    res.status(400);
+    throw new Error(
+      "No Facebook account connected yet. Connect Facebook from Integrations first.",
+    );
+  }
+
+  let savedCount;
+  try {
+    savedCount = await savePagesAsSocialAccounts(userToken, req.user._id);
+  } catch (err) {
+    res.status(400);
+    throw new Error(err.message || "Failed to import pages from Facebook");
+  }
+
+  res.json({ success: true, data: { connected: savedCount } });
 });
 
 exports.fetchFacebookPages = asyncHandler(async (req, res) => {
