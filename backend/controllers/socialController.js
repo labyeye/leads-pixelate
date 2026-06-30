@@ -14,142 +14,190 @@ function getSocialConfig() {
   };
 }
 
-async function postToFacebook(pageId, accessToken, caption, imageUrl) {
-  let url, body;
-
-  if (imageUrl) {
-    url = `https://graph.facebook.com/v18.0/${pageId}/photos`;
-    body = { caption, url: imageUrl, access_token: accessToken };
-  } else {
-    url = `https://graph.facebook.com/v18.0/${pageId}/feed`;
-    body = { message: caption, access_token: accessToken };
-  }
-
-  const res = await fetch(url, {
+async function fbCall(path, accessToken, body) {
+  const res = await fetch(`https://graph.facebook.com/v18.0/${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ ...body, access_token: accessToken }),
   });
   const data = await res.json();
   if (!res.ok || data.error) {
-    throw new Error(data?.error?.message || "Facebook post failed");
+    throw new Error(data?.error?.message || `Request to ${path} failed`);
   }
-  return data.id || data.post_id || "";
+  return data;
 }
 
-async function postToInstagram(igAccountId, accessToken, caption, imageUrl) {
+async function waitForMediaReady(creationId, accessToken, maxTries = 10) {
+  for (let i = 0; i < maxTries; i++) {
+    const res = await fetch(
+      `https://graph.facebook.com/v18.0/${creationId}?fields=status_code&access_token=${accessToken}`,
+    );
+    const data = await res.json();
+    if (data.status_code === "FINISHED") return;
+    if (data.status_code === "ERROR") {
+      throw new Error("Media processing failed on Facebook's side");
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+}
+
+async function postToFacebook(pageId, accessToken, caption, post) {
+  if (post.postType === "carousel" && post.mediaUrls?.length) {
+    const photoIds = [];
+    for (const url of post.mediaUrls) {
+      const photo = await fbCall(`${pageId}/photos`, accessToken, {
+        url,
+        published: false,
+      });
+      photoIds.push({ media_fbid: photo.id });
+    }
+    const feedPost = await fbCall(`${pageId}/feed`, accessToken, {
+      message: caption,
+      attached_media: photoIds,
+    });
+    return feedPost.id || "";
+  }
+
+  if (post.postType === "reel" && post.videoUrl) {
+    const video = await fbCall(`${pageId}/videos`, accessToken, {
+      file_url: post.videoUrl,
+      description: caption,
+    });
+    return video.id || "";
+  }
+
+  const imageUrl = post.imageUrl || post.mediaUrls?.[0];
+  if (imageUrl) {
+    const photo = await fbCall(`${pageId}/photos`, accessToken, {
+      caption,
+      url: imageUrl,
+    });
+    return photo.id || photo.post_id || "";
+  }
+
+  const feedPost = await fbCall(`${pageId}/feed`, accessToken, {
+    message: caption,
+  });
+  return feedPost.id || "";
+}
+
+async function postToInstagram(igAccountId, accessToken, caption, post) {
+  if (post.postType === "carousel") {
+    if (!post.mediaUrls || post.mediaUrls.length < 2) {
+      throw new Error("Carousel requires at least 2 image URLs");
+    }
+    const childIds = [];
+    for (const url of post.mediaUrls) {
+      const child = await fbCall(`${igAccountId}/media`, accessToken, {
+        image_url: url,
+        is_carousel_item: true,
+      });
+      childIds.push(child.id);
+    }
+    const container = await fbCall(`${igAccountId}/media`, accessToken, {
+      media_type: "CAROUSEL",
+      children: childIds,
+      caption,
+    });
+    const published = await fbCall(
+      `${igAccountId}/media_publish`,
+      accessToken,
+      { creation_id: container.id },
+    );
+    return published.id || "";
+  }
+
+  if (post.postType === "reel") {
+    if (!post.videoUrl) throw new Error("Reel requires a video URL");
+    const container = await fbCall(`${igAccountId}/media`, accessToken, {
+      media_type: "REELS",
+      video_url: post.videoUrl,
+      cover_url: post.coverImageUrl || undefined,
+      caption,
+    });
+    await waitForMediaReady(container.id, accessToken);
+    const published = await fbCall(
+      `${igAccountId}/media_publish`,
+      accessToken,
+      { creation_id: container.id },
+    );
+    return published.id || "";
+  }
+
+  const imageUrl = post.imageUrl || post.mediaUrls?.[0];
   if (!imageUrl) {
     throw new Error("Instagram requires an image URL");
   }
-
-  const createRes = await fetch(
-    `https://graph.facebook.com/v18.0/${igAccountId}/media`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_url: imageUrl,
-        caption,
-        access_token: accessToken,
-      }),
-    },
+  const container = await fbCall(`${igAccountId}/media`, accessToken, {
+    image_url: imageUrl,
+    caption,
+  });
+  const published = await fbCall(
+    `${igAccountId}/media_publish`,
+    accessToken,
+    { creation_id: container.id },
   );
-  const createData = await createRes.json();
-  if (!createRes.ok || createData.error) {
-    throw new Error(
-      createData?.error?.message || "Instagram media creation failed",
-    );
-  }
-
-  const creationId = createData.id;
-
-  const publishRes = await fetch(
-    `https://graph.facebook.com/v18.0/${igAccountId}/media_publish`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        creation_id: creationId,
-        access_token: accessToken,
-      }),
-    },
-  );
-  const publishData = await publishRes.json();
-  if (!publishRes.ok || publishData.error) {
-    throw new Error(publishData?.error?.message || "Instagram publish failed");
-  }
-
-  return publishData.id || "";
+  return published.id || "";
 }
 
 async function executePublish(post) {
   post.status = "POSTING";
   await post.save();
 
-  let fbPostId = "";
-  let igPostId = "";
   const errors = [];
+  const results = [];
 
   const fullCaption =
     post.hashtags && post.hashtags.length
       ? `${post.caption}\n\n${post.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}`
       : post.caption;
 
-  if (post.platforms.includes("facebook")) {
-    const fbAccount = await SocialAccount.findOne({
-      platform: "facebook",
+  let accounts = [];
+  if (post.accountIds?.length) {
+    accounts = await SocialAccount.find({
+      _id: { $in: post.accountIds },
       isActive: true,
     });
-    if (fbAccount) {
-      try {
-        fbPostId = await postToFacebook(
-          fbAccount.accountId,
-          fbAccount.accessToken,
-          fullCaption,
-          post.imageUrl,
-        );
-      } catch (err) {
-        errors.push(`Facebook: ${err.message}`);
-      }
-    } else {
-      errors.push("Facebook: No active account connected");
+  } else {
+    // Backward compatibility for posts created before account selection existed.
+    accounts = await SocialAccount.find({
+      platform: { $in: post.platforms },
+      isActive: true,
+    });
+  }
+
+  for (const account of accounts) {
+    try {
+      const postId =
+        account.platform === "facebook"
+          ? await postToFacebook(
+              account.accountId,
+              account.accessToken,
+              fullCaption,
+              post,
+            )
+          : await postToInstagram(
+              account.instagramBusinessAccountId || account.accountId,
+              account.accessToken,
+              fullCaption,
+              post,
+            );
+      results.push({ accountId: account._id, platform: account.platform, postId });
+    } catch (err) {
+      errors.push(`${account.accountName}: ${err.message}`);
     }
   }
 
-  if (post.platforms.includes("instagram")) {
-    const igAccount = await SocialAccount.findOne({
-      platform: "instagram",
-      isActive: true,
-    });
-    if (igAccount) {
-      try {
-        igPostId = await postToInstagram(
-          igAccount.accountId,
-          igAccount.accessToken,
-          fullCaption,
-          post.imageUrl,
-        );
-      } catch (err) {
-        errors.push(`Instagram: ${err.message}`);
-      }
-    } else {
-      errors.push("Instagram: No active account connected");
-    }
-  }
-
-  const successCount = (fbPostId ? 1 : 0) + (igPostId ? 1 : 0);
-  const attemptCount = post.platforms.length;
-
-  post.facebookPostId = fbPostId;
-  post.instagramPostId = igPostId;
-  post.postedAt = successCount > 0 ? new Date() : null;
+  post.facebookPostId =
+    results.find((r) => r.platform === "facebook")?.postId || "";
+  post.instagramPostId =
+    results.find((r) => r.platform === "instagram")?.postId || "";
+  post.postedAt = results.length > 0 ? new Date() : null;
   post.failureReason = errors.join("; ");
   post.status =
-    successCount === 0
+    results.length === 0
       ? "FAILED"
-      : successCount < attemptCount
-        ? "POSTED"
-        : "POSTED";
+      : "POSTED";
 
   await post.save();
   return post;
@@ -164,6 +212,7 @@ exports.getPosts = asyncHandler(async (req, res) => {
   const posts = await SocialPost.find(filter)
     .sort({ scheduledAt: 1, createdAt: -1 })
     .populate("createdBy", "name")
+    .populate("scheduledBy", "name")
     .populate("approvedBy", "name")
     .populate("rejectedBy", "name");
 
@@ -174,6 +223,7 @@ exports.getPost = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const post = await SocialPost.findOne({ _id: req.params.id, ...tenantFilter })
     .populate("createdBy", "name")
+    .populate("scheduledBy", "name")
     .populate("approvedBy", "name");
 
   if (!post) {
@@ -183,26 +233,62 @@ exports.getPost = asyncHandler(async (req, res) => {
   res.json({ success: true, data: post });
 });
 
+function validatePostMedia({ postType, imageUrl, mediaUrls, videoUrl }) {
+  if (postType === "carousel" && (!mediaUrls || mediaUrls.length < 2)) {
+    throw new Error("Carousel posts need at least 2 media URLs");
+  }
+  if (postType === "reel" && !videoUrl) {
+    throw new Error("Reel posts need a video URL");
+  }
+  if (postType === "image" && !imageUrl && !mediaUrls?.length) {
+    throw new Error("Image posts need an image URL");
+  }
+}
+
 exports.createPost = asyncHandler(async (req, res) => {
-  const { caption, imageUrl, hashtags, platforms, scheduledAt } = req.body;
+  const {
+    caption,
+    imageUrl,
+    hashtags,
+    platforms,
+    accountIds,
+    postType,
+    mediaUrls,
+    videoUrl,
+    coverImageUrl,
+    scheduledAt,
+    scheduledBy,
+  } = req.body;
 
   if (!caption || !platforms?.length || !scheduledAt) {
     res.status(400);
     throw new Error("caption, platforms, and scheduledAt are required");
   }
+  if (!accountIds?.length) {
+    res.status(400);
+    throw new Error("Select at least one account to post to");
+  }
+
+  validatePostMedia({ postType, imageUrl, mediaUrls, videoUrl });
 
   const post = await SocialPost.create({
     caption,
     imageUrl: imageUrl || "",
     hashtags: hashtags || [],
     platforms,
+    accountIds,
+    postType: postType || "image",
+    mediaUrls: mediaUrls || [],
+    videoUrl: videoUrl || "",
+    coverImageUrl: coverImageUrl || "",
     scheduledAt: new Date(scheduledAt),
+    scheduledBy: scheduledBy || req.user._id,
     status: "DRAFT",
     createdBy: req.user._id,
     tenantId: req.user.tenantId || null,
   });
 
-  await post.populate("createdBy", "name");
+  await post.populate("createdBy scheduledBy", "name");
   res.status(201).json({ success: true, data: post });
 });
 
@@ -227,16 +313,29 @@ exports.updatePost = asyncHandler(async (req, res) => {
     "imageUrl",
     "hashtags",
     "platforms",
+    "accountIds",
+    "postType",
+    "mediaUrls",
+    "videoUrl",
+    "coverImageUrl",
     "scheduledAt",
+    "scheduledBy",
   ];
   for (const key of allowed) {
     if (req.body[key] !== undefined) post[key] = req.body[key];
   }
 
+  validatePostMedia({
+    postType: post.postType,
+    imageUrl: post.imageUrl,
+    mediaUrls: post.mediaUrls,
+    videoUrl: post.videoUrl,
+  });
+
   if (post.status === "REJECTED") post.status = "DRAFT";
 
   await post.save();
-  await post.populate("createdBy", "name");
+  await post.populate("createdBy scheduledBy", "name");
   res.json({ success: true, data: post });
 });
 
@@ -478,6 +577,21 @@ exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
 });
 
 async function savePagesAsSocialAccounts(finalUserToken, userId) {
+  try {
+    const permRes = await fetch(
+      `https://graph.facebook.com/v18.0/me/permissions?access_token=${finalUserToken}`,
+    );
+    const permData = await permRes.json();
+    console.log(
+      "[Social Import] granted permissions on this token:",
+      (permData.data || [])
+        .map((p) => `${p.permission}:${p.status}`)
+        .join(", "),
+    );
+  } catch (err) {
+    console.error("[Social Import] permissions check failed:", err.message);
+  }
+
   const pagesRes = await fetch(
     `https://graph.facebook.com/v18.0/me/accounts?access_token=${finalUserToken}&fields=id,name,picture,access_token`,
   );
@@ -493,8 +607,24 @@ async function savePagesAsSocialAccounts(finalUserToken, userId) {
         `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`,
       );
       const igData = await igRes.json();
+      if (igData.error) {
+        console.error(
+          `[Social Import] instagram_business_account lookup failed for page ${page.id} (${page.name}):`,
+          igData.error,
+        );
+      } else {
+        console.log(
+          `[Social Import] page ${page.id} (${page.name}) instagram_business_account:`,
+          igData.instagram_business_account || null,
+        );
+      }
       igId = igData?.instagram_business_account?.id || "";
-    } catch (_) {}
+    } catch (err) {
+      console.error(
+        `[Social Import] instagram_business_account fetch threw for page ${page.id}:`,
+        err.message,
+      );
+    }
 
     await SocialAccount.findOneAndUpdate(
       { platform: "facebook", accountId: page.id },

@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { socialAPI } from "@/services/api";
+import { socialAPI, usersAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -67,7 +67,13 @@ interface SocialPost {
   imageUrl?: string;
   hashtags: string[];
   platforms: string[];
+  accountIds?: string[];
+  postType?: PostType;
+  mediaUrls?: string[];
+  videoUrl?: string;
+  coverImageUrl?: string;
   scheduledAt: string;
+  scheduledBy?: { _id: string; name: string };
   status: string;
   approvalNote?: string;
   rejectionReason?: string;
@@ -92,7 +98,8 @@ interface SocialAccount {
   createdAt: string;
 }
 
-type WizardStep = 1 | 2 | 3;
+type WizardStep = 1 | 2 | 3 | 4 | 5;
+type PostType = "image" | "carousel" | "reel";
 
 const STATUS_CONFIG: Record<
   string,
@@ -195,7 +202,7 @@ export default function SocialMediaPlannerPage() {
         {}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-background">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary-900 border-2 border-black nb-shadow flex items-center justify-center">
+            <div className="w-9 h-9 bg-primary border-2 border-black nb-shadow flex items-center justify-center">
               <Instagram className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -428,7 +435,7 @@ function PostsTab({
               onClick={() => setFilter(t.id)}
               className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all border-2 ${
                 filter === t.id
-                  ? "border-black bg-primary-900 text-white nb-shadow-sm"
+                  ? "border-black bg-primary text-white nb-shadow-sm"
                   : "border-transparent text-muted-foreground hover:border-black hover:bg-accent"
               }`}
             >
@@ -447,7 +454,7 @@ function PostsTab({
           </Button>
           <Button
             size="sm"
-            className="nb-btn bg-primary-900 text-white hover:bg-purple-700"
+            className="nb-btn bg-primary text-white hover:bg-purple-700"
             onClick={() => {
               setEditingPost(null);
               setWizardOpen(true);
@@ -768,7 +775,7 @@ function PostCard({
             {["DRAFT", "REJECTED"].includes(post.status) && (
               <Button
                 size="sm"
-                className="h-7 text-xs nb-btn bg-primary-900 text-white hover:bg-purple-700"
+                className="h-7 text-xs nb-btn bg-primary text-white hover:bg-purple-700"
                 onClick={onSubmit}
                 disabled={actionLoading}
               >
@@ -843,22 +850,74 @@ function PostWizard({
   toast: any;
   onSaved: () => void;
 }) {
+  const { user: currentUser } = useAuth();
   const [step, setStep] = useState<WizardStep>(1);
   const [saving, setSaving] = useState(false);
 
-  const [caption, setCaption] = useState(editingPost?.caption || "");
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
+  const [loadingMeta, setLoadingMeta] = useState(true);
+
+  const [accountIds, setAccountIds] = useState<string[]>(
+    editingPost?.accountIds || [],
+  );
+  const [postType, setPostType] = useState<PostType>(
+    editingPost?.postType || "image",
+  );
   const [imageUrl, setImageUrl] = useState(editingPost?.imageUrl || "");
+  const [mediaUrlInputs, setMediaUrlInputs] = useState<string[]>(
+    editingPost?.mediaUrls?.length ? editingPost.mediaUrls : ["", ""],
+  );
+  const [videoUrl, setVideoUrl] = useState(editingPost?.videoUrl || "");
+  const [coverImageUrl, setCoverImageUrl] = useState(
+    editingPost?.coverImageUrl || "",
+  );
+
+  const [caption, setCaption] = useState(editingPost?.caption || "");
   const [hashtagInput, setHashtagInput] = useState(
     editingPost?.hashtags.join(" ") || "",
   );
-  const [platforms, setPlatforms] = useState<string[]>(
-    editingPost?.platforms || ["facebook", "instagram"],
-  );
+
   const [scheduledDate, setScheduledDate] = useState(
     editingPost ? format(new Date(editingPost.scheduledAt), "yyyy-MM-dd") : "",
   );
   const [scheduledTime, setScheduledTime] = useState(
     editingPost ? format(new Date(editingPost.scheduledAt), "HH:mm") : "09:00",
+  );
+  const [scheduledBy, setScheduledBy] = useState(
+    editingPost?.scheduledBy?._id || currentUser?.id || "",
+  );
+
+  useEffect(() => {
+    (async () => {
+      setLoadingMeta(true);
+      try {
+        const [accRes, userRes] = await Promise.all([
+          socialAPI.getAccounts(),
+          usersAPI.getAll(),
+        ]);
+        setAccounts(accRes.data.filter((a: SocialAccount) => a.isActive));
+        setUsers(userRes.data);
+      } catch {
+        toast({ title: "Failed to load accounts/users", variant: "destructive" });
+      } finally {
+        setLoadingMeta(false);
+      }
+    })();
+  }, [toast]);
+
+  const toggleAccount = (id: string) => {
+    setAccountIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const platforms = Array.from(
+    new Set(
+      accounts
+        .filter((a) => accountIds.includes(a._id))
+        .map((a) => a.platform),
+    ),
   );
 
   const hashtags = hashtagInput
@@ -867,14 +926,27 @@ function PostWizard({
     .filter(Boolean)
     .map((h) => (h.startsWith("#") ? h : `#${h}`));
 
-  const togglePlatform = (p: string) => {
-    setPlatforms((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p],
+  const mediaUrls = mediaUrlInputs.map((m) => m.trim()).filter(Boolean);
+
+  const updateMediaUrl = (index: number, value: string) => {
+    setMediaUrlInputs((prev) =>
+      prev.map((m, i) => (i === index ? value : m)),
     );
   };
+  const addMediaUrlField = () =>
+    setMediaUrlInputs((prev) => [...prev, ""]);
+  const removeMediaUrlField = (index: number) =>
+    setMediaUrlInputs((prev) => prev.filter((_, i) => i !== index));
+
+  const mediaValid =
+    postType === "image"
+      ? !!imageUrl.trim()
+      : postType === "carousel"
+        ? mediaUrls.length >= 2
+        : !!videoUrl.trim();
 
   const handleSave = async () => {
-    if (!caption.trim() || !platforms.length || !scheduledDate) return;
+    if (!caption.trim() || !accountIds.length || !scheduledDate) return;
 
     setSaving(true);
     try {
@@ -883,10 +955,16 @@ function PostWizard({
       ).toISOString();
       const payload = {
         caption: caption.trim(),
-        imageUrl: imageUrl.trim(),
+        imageUrl: postType === "image" ? imageUrl.trim() : "",
         hashtags,
         platforms,
+        accountIds,
+        postType,
+        mediaUrls: postType === "carousel" ? mediaUrls : [],
+        videoUrl: postType === "reel" ? videoUrl.trim() : "",
+        coverImageUrl: postType === "reel" ? coverImageUrl.trim() : "",
         scheduledAt,
+        scheduledBy,
       };
 
       if (editingPost) {
@@ -913,271 +991,466 @@ function PostWizard({
     ? `${caption}\n\n${hashtags.join(" ")}`
     : caption;
 
+  const previewImage =
+    postType === "reel" ? coverImageUrl : postType === "image" ? imageUrl : mediaUrls[0];
+
+  const selectedAccounts = accounts.filter((a) => accountIds.includes(a._id));
+
+  const stepValid = (() => {
+    if (step === 1) return accountIds.length > 0;
+    if (step === 2) return mediaValid;
+    if (step === 3) return caption.trim().length > 0;
+    if (step === 4) return !!scheduledDate && !!scheduledBy;
+    return true;
+  })();
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-2 font-display">
-            <div className="w-6 h-6 bg-primary-900 border-2 border-black flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 bg-primary border-2 border-black flex items-center justify-center shrink-0">
               <Instagram className="w-3.5 h-3.5 text-white" />
             </div>
             {editingPost ? "Edit Post" : "New Post"}
             <span className="ml-auto text-xs font-bold text-muted-foreground border-2 border-black px-2 py-0.5">
-              Step {step} / 3
+              Step {step} / 5
             </span>
           </DialogTitle>
           <div className="flex gap-1 mt-2">
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div
                 key={s}
-                className={`h-2 flex-1 border border-black ${s <= step ? "bg-primary-900" : "bg-muted"}`}
+                className={`h-2 flex-1 border border-black ${s <= step ? "bg-primary" : "bg-muted"}`}
               />
             ))}
           </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0 space-y-4">
-          {}
-          {step === 1 && (
+          {loadingMeta ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
             <>
-              <div>
-                <Label>
-                  Caption <span className="text-red-500">*</span>
-                </Label>
-                <Textarea
-                  placeholder="Write your post caption here..."
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  rows={5}
-                  className="mt-1"
-                />
-                <p className="text-[11px] text-muted-foreground mt-1 text-right">
-                  {caption.length} chars
-                </p>
-              </div>
+              {}
+              {step === 1 && (
+                <>
+                  <Label className="mb-1 block">
+                    Post to which account(s)?{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  {accounts.length === 0 ? (
+                    <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-orange-700">
+                        No connected accounts yet. Go to "Connected Accounts"
+                        and connect Facebook/Instagram first.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {["facebook", "instagram"].map((platform) => {
+                        const list = accounts.filter(
+                          (a) => a.platform === platform,
+                        );
+                        if (!list.length) return null;
+                        return (
+                          <div key={platform}>
+                            <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">
+                              {platform === "facebook"
+                                ? "Facebook Pages"
+                                : "Instagram"}
+                            </p>
+                            <div className="space-y-1.5">
+                              {list.map((a) => (
+                                <button
+                                  key={a._id}
+                                  onClick={() => toggleAccount(a._id)}
+                                  className={`w-full flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left ${
+                                    accountIds.includes(a._id)
+                                      ? "border-primary-900 bg-primary/5"
+                                      : "border-border hover:border-muted-foreground/40"
+                                  }`}
+                                >
+                                  {platform === "facebook" ? (
+                                    <Facebook className="w-4 h-4 text-blue-600 shrink-0" />
+                                  ) : (
+                                    <Instagram className="w-4 h-4 text-purple-600 shrink-0" />
+                                  )}
+                                  <span className="text-sm font-medium truncate">
+                                    {a.accountName}
+                                  </span>
+                                  {accountIds.includes(a._id) && (
+                                    <Check className="w-3.5 h-3.5 ml-auto text-primary-900 shrink-0" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
 
-              <div>
-                <Label className="flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5" /> Hashtags
-                  <span className="text-muted-foreground text-xs font-normal">
-                    (optional)
-                  </span>
-                </Label>
-                <Input
-                  placeholder="#branding #marketing #growth"
-                  value={hashtagInput}
-                  onChange={(e) => setHashtagInput(e.target.value)}
-                  className="mt-1"
-                />
-                {hashtags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {hashtags.map((h) => (
-                      <span
-                        key={h}
-                        className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
-                      >
-                        {h}
-                      </span>
-                    ))}
+              {}
+              {step === 2 && (
+                <>
+                  <div>
+                    <Label className="mb-2 block">Post type</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(
+                        [
+                          { id: "image", label: "Image" },
+                          { id: "carousel", label: "Carousel" },
+                          { id: "reel", label: "Reel" },
+                        ] as { id: PostType; label: string }[]
+                      ).map(({ id, label }) => (
+                        <button
+                          key={id}
+                          onClick={() => setPostType(id)}
+                          className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                            postType === id
+                              ? "border-primary-900 bg-primary/5 text-primary-900"
+                              : "border-border text-muted-foreground hover:border-muted-foreground/40"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <div>
-                <Label className="flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5" /> Image URL
-                  <span className="text-muted-foreground text-xs font-normal">
-                    (optional — required for Instagram)
-                  </span>
-                </Label>
-                <Input
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="mt-1"
-                />
-                {imageUrl && (
-                  <img
-                    src={imageUrl}
-                    alt="preview"
-                    className="mt-2 rounded-lg border border-border max-h-40 object-cover w-full"
-                    onError={(e) =>
-                      ((e.target as HTMLImageElement).style.display = "none")
-                    }
-                  />
-                )}
-              </div>
-            </>
-          )}
-
-          {}
-          {step === 2 && (
-            <>
-              <div>
-                <Label className="mb-2 block">
-                  Post to <span className="text-red-500">*</span>
-                </Label>
-                <div className="flex gap-3">
-                  {[
-                    {
-                      id: "facebook",
-                      label: "Facebook",
-                      Icon: Facebook,
-                      color: "border-blue-200 bg-blue-50 text-blue-700",
-                    },
-                    {
-                      id: "instagram",
-                      label: "Instagram",
-                      Icon: Instagram,
-                      color: "border-purple-200 bg-purple-50 text-purple-700",
-                    },
-                  ].map(({ id, label, Icon, color }) => (
-                    <button
-                      key={id}
-                      onClick={() => togglePlatform(id)}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all font-medium text-sm ${platforms.includes(id) ? `border-2 ${color}` : "border-border text-muted-foreground hover:border-muted-foreground/40"}`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {label}
-                      {platforms.includes(id) && (
-                        <Check className="w-3.5 h-3.5 ml-auto" />
+                  {postType === "image" && (
+                    <div>
+                      <Label className="flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5" /> Image URL{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        placeholder="https://example.com/image.jpg"
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        className="mt-1"
+                      />
+                      {imageUrl && (
+                        <img
+                          src={imageUrl}
+                          alt="preview"
+                          className="mt-2 rounded-lg border border-border max-h-40 object-cover w-full"
+                          onError={(e) =>
+                            ((e.target as HTMLImageElement).style.display =
+                              "none")
+                          }
+                        />
                       )}
-                    </button>
-                  ))}
-                </div>
-                {platforms.includes("instagram") && !imageUrl && (
-                  <div className="mt-2 flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
-                    <p className="text-xs text-orange-700">
-                      Instagram requires an image URL. Go back to Step 1 to add
-                      one.
+                    </div>
+                  )}
+
+                  {postType === "carousel" && (
+                    <div>
+                      <Label className="flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5" /> Image URLs{" "}
+                        <span className="text-red-500">*</span>
+                        <span className="text-muted-foreground text-xs font-normal">
+                          (at least 2)
+                        </span>
+                      </Label>
+                      <div className="space-y-2 mt-1">
+                        {mediaUrlInputs.map((m, i) => (
+                          <div key={i} className="flex gap-2">
+                            <Input
+                              placeholder={`https://example.com/image-${i + 1}.jpg`}
+                              value={m}
+                              onChange={(e) =>
+                                updateMediaUrl(i, e.target.value)
+                              }
+                            />
+                            {mediaUrlInputs.length > 2 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500"
+                                onClick={() => removeMediaUrlField(i)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={addMediaUrlField}
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" /> Add image
+                      </Button>
+                    </div>
+                  )}
+
+                  {postType === "reel" && (
+                    <>
+                      <div>
+                        <Label>
+                          Video URL <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          placeholder="https://example.com/video.mp4"
+                          value={videoUrl}
+                          onChange={(e) => setVideoUrl(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5" /> Cover Image URL
+                          <span className="text-muted-foreground text-xs font-normal">
+                            (optional)
+                          </span>
+                        </Label>
+                        <Input
+                          placeholder="https://example.com/cover.jpg"
+                          value={coverImageUrl}
+                          onChange={(e) => setCoverImageUrl(e.target.value)}
+                          className="mt-1"
+                        />
+                        {coverImageUrl && (
+                          <img
+                            src={coverImageUrl}
+                            alt="preview"
+                            className="mt-2 rounded-lg border border-border max-h-40 object-cover w-full"
+                            onError={(e) =>
+                              ((e.target as HTMLImageElement).style.display =
+                                "none")
+                            }
+                          />
+                        )}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {}
+              {step === 3 && (
+                <>
+                  <div>
+                    <Label>
+                      Caption <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      placeholder="Write your post caption here..."
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      rows={5}
+                      className="mt-1"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1 text-right">
+                      {caption.length} chars
                     </p>
                   </div>
-                )}
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>
-                    Date <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    min={format(new Date(), "yyyy-MM-dd")}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Time</Label>
-                  <Input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              {scheduledDate && (
-                <div className="flex items-center gap-2 p-3 bg-purple-50 border border-purple-100 rounded-lg">
-                  <Clock className="w-4 h-4 text-primary-900 shrink-0" />
-                  <p className="text-xs text-purple-700">
-                    Will be published on{" "}
-                    <strong>
-                      {format(
-                        new Date(`${scheduledDate}T${scheduledTime}`),
-                        "EEEE, dd MMM yyyy 'at' h:mm a",
-                      )}
-                    </strong>
-                    {isPast(new Date(`${scheduledDate}T${scheduledTime}`)) && (
-                      <span className="text-orange-600 ml-1">
-                        (time is in the past — will post immediately after
-                        approval)
+                  <div>
+                    <Label className="flex items-center gap-1.5">
+                      <Hash className="w-3.5 h-3.5" /> Hashtags
+                      <span className="text-muted-foreground text-xs font-normal">
+                        (optional)
                       </span>
+                    </Label>
+                    <Input
+                      placeholder="#branding #marketing #growth"
+                      value={hashtagInput}
+                      onChange={(e) => setHashtagInput(e.target.value)}
+                      className="mt-1"
+                    />
+                    {hashtags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {hashtags.map((h) => (
+                          <span
+                            key={h}
+                            className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full"
+                          >
+                            {h}
+                          </span>
+                        ))}
+                      </div>
                     )}
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-
-          {}
-          {step === 3 && (
-            <>
-              <p className="text-sm font-medium mb-1">Post Preview</p>
-              {}
-              <div className="bg-gray-50 rounded-2xl p-4 border border-border">
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-xs mx-auto shadow-sm">
-                  {}
-                  <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400" />
-                    <span className="text-xs font-semibold">Your Page</span>
                   </div>
+                </>
+              )}
+
+              {}
+              {step === 4 && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>
+                        Date <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="date"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        min={format(new Date(), "yyyy-MM-dd")}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label>Time</Label>
+                      <Input
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" /> Scheduled by{" "}
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <select
+                      value={scheduledBy}
+                      onChange={(e) => setScheduledBy(e.target.value)}
+                      className="mt-1 w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="" disabled>
+                        Select a user
+                      </option>
+                      {users.map((u) => (
+                        <option key={u._id} value={u._id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {scheduledDate && (
+                    <div className="flex items-center gap-2 p-3 bg-purple-50 border border-purple-100 rounded-lg">
+                      <Clock className="w-4 h-4 text-primary-900 shrink-0" />
+                      <p className="text-xs text-purple-700">
+                        Will be published on{" "}
+                        <strong>
+                          {format(
+                            new Date(`${scheduledDate}T${scheduledTime}`),
+                            "EEEE, dd MMM yyyy 'at' h:mm a",
+                          )}
+                        </strong>
+                        {isPast(
+                          new Date(`${scheduledDate}T${scheduledTime}`),
+                        ) && (
+                          <span className="text-orange-600 ml-1">
+                            (time is in the past — will post immediately after
+                            approval)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {}
+              {step === 5 && (
+                <>
+                  <p className="text-sm font-medium mb-1">Post Preview</p>
                   {}
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt=""
-                      className="w-full object-cover max-h-48"
-                      onError={(e) =>
-                        ((e.target as HTMLImageElement).style.display = "none")
+                  <div className="bg-gray-50 rounded-2xl p-4 border border-border">
+                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-xs mx-auto shadow-sm">
+                      {}
+                      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400" />
+                        <span className="text-xs font-semibold">
+                          {selectedAccounts[0]?.accountName || "Your Page"}
+                        </span>
+                      </div>
+                      {}
+                      {previewImage && (
+                        <img
+                          src={previewImage}
+                          alt=""
+                          className="w-full object-cover max-h-48"
+                          onError={(e) =>
+                            ((e.target as HTMLImageElement).style.display =
+                              "none")
+                          }
+                        />
+                      )}
+                      {}
+                      <div className="px-3 py-2">
+                        <p className="text-xs text-gray-800 whitespace-pre-wrap">
+                          {fullCaption || (
+                            <span className="text-gray-400 italic">
+                              No caption
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          {scheduledDate
+                            ? format(
+                                new Date(`${scheduledDate}T${scheduledTime}`),
+                                "dd MMM yyyy",
+                              )
+                            : "Date TBD"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {}
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    <SummaryRow
+                      label="Accounts"
+                      value={
+                        selectedAccounts.map((a) => a.accountName).join(", ") ||
+                        "—"
                       }
                     />
-                  )}
-                  {}
-                  <div className="px-3 py-2">
-                    <p className="text-xs text-gray-800 whitespace-pre-wrap">
-                      {fullCaption || (
-                        <span className="text-gray-400 italic">No caption</span>
-                      )}
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      {scheduledDate
-                        ? format(
-                            new Date(`${scheduledDate}T${scheduledTime}`),
-                            "dd MMM yyyy",
-                          )
-                        : "Date TBD"}
+                    <SummaryRow
+                      label="Post type"
+                      value={
+                        postType.charAt(0).toUpperCase() + postType.slice(1)
+                      }
+                    />
+                    <SummaryRow
+                      label="Scheduled"
+                      value={
+                        scheduledDate
+                          ? format(
+                              new Date(`${scheduledDate}T${scheduledTime}`),
+                              "dd MMM yyyy, h:mm a",
+                            )
+                          : "—"
+                      }
+                    />
+                    <SummaryRow
+                      label="Scheduled by"
+                      value={
+                        users.find((u) => u._id === scheduledBy)?.name || "—"
+                      }
+                    />
+                    <SummaryRow
+                      label="Hashtags"
+                      value={hashtags.length ? hashtags.join(" ") : "None"}
+                    />
+                  </div>
+
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                    <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-700">
+                      Post will be saved as <strong>Draft</strong>. Submit it
+                      for approval before it can be published.
                     </p>
                   </div>
-                </div>
-              </div>
-
-              {}
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-                <SummaryRow
-                  label="Platforms"
-                  value={platforms
-                    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-                    .join(", ")}
-                />
-                <SummaryRow
-                  label="Scheduled"
-                  value={
-                    scheduledDate
-                      ? format(
-                          new Date(`${scheduledDate}T${scheduledTime}`),
-                          "dd MMM yyyy, h:mm a",
-                        )
-                      : "—"
-                  }
-                />
-                <SummaryRow
-                  label="Hashtags"
-                  value={hashtags.length ? hashtags.join(" ") : "None"}
-                />
-                <SummaryRow label="Image" value={imageUrl ? "Yes" : "No"} />
-              </div>
-
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">
-                  Post will be saved as <strong>Draft</strong>. Submit it for
-                  approval before it can be published.
-                </p>
-              </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -1196,17 +1469,13 @@ function PostWizard({
           <Button
             size="sm"
             className="bg-gradient-to-r from-primary-900 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-            disabled={
-              saving ||
-              (step === 1 && !caption.trim()) ||
-              (step === 2 && (!platforms.length || !scheduledDate))
-            }
+            disabled={saving || loadingMeta || !stepValid}
             onClick={() =>
-              step < 3 ? setStep((s) => (s + 1) as WizardStep) : handleSave()
+              step < 5 ? setStep((s) => (s + 1) as WizardStep) : handleSave()
             }
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
-            {step < 3 ? (
+            {step < 5 ? (
               <>
                 <span>Next</span>
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -1650,7 +1919,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                 !manualForm.accountName ||
                 !manualForm.accessToken
               }
-              className="bg-primary-900 hover:bg-purple-700 text-white"
+              className="bg-primary hover:bg-purple-700 text-white"
             >
               {connecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{" "}
               Connect

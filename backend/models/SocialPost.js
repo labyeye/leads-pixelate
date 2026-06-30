@@ -22,9 +22,31 @@ const socialPostSchema = new mongoose.Schema(
       required: true,
     },
 
+    accountIds: {
+      type: [String],
+      default: [],
+    },
+
+    postType: {
+      type: String,
+      enum: ["image", "carousel", "reel"],
+      default: "image",
+    },
+    mediaUrls: {
+      type: [String],
+      default: [],
+    },
+    videoUrl: { type: String, default: "" },
+    coverImageUrl: { type: String, default: "" },
+
     scheduledAt: {
       type: Date,
       required: true,
+    },
+    scheduledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
 
     status: {
