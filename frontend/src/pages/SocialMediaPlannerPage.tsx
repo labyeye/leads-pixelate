@@ -195,7 +195,7 @@ export default function SocialMediaPlannerPage() {
         {}
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-background">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-purple-600 border-2 border-black nb-shadow flex items-center justify-center">
+            <div className="w-9 h-9 bg-primary-900 border-2 border-black nb-shadow flex items-center justify-center">
               <Instagram className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -224,7 +224,7 @@ export default function SocialMediaPlannerPage() {
               {
                 label: "Scheduled",
                 value: stats.scheduled,
-                color: "text-purple-600",
+                color: "text-primary-900",
               },
               { label: "Posted", value: stats.posted, color: "text-green-600" },
               {
@@ -252,7 +252,7 @@ export default function SocialMediaPlannerPage() {
               onClick={() => setActiveTab(t.id as any)}
               className={`py-3 px-1 mr-6 text-sm font-bold border-b-2 transition-colors ${
                 activeTab === t.id
-                  ? "border-purple-600 text-foreground"
+                  ? "border-primary-900 text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -428,7 +428,7 @@ function PostsTab({
               onClick={() => setFilter(t.id)}
               className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all border-2 ${
                 filter === t.id
-                  ? "border-black bg-purple-600 text-white nb-shadow-sm"
+                  ? "border-black bg-primary-900 text-white nb-shadow-sm"
                   : "border-transparent text-muted-foreground hover:border-black hover:bg-accent"
               }`}
             >
@@ -447,7 +447,7 @@ function PostsTab({
           </Button>
           <Button
             size="sm"
-            className="nb-btn bg-purple-600 text-white hover:bg-purple-700"
+            className="nb-btn bg-primary-900 text-white hover:bg-purple-700"
             onClick={() => {
               setEditingPost(null);
               setWizardOpen(true);
@@ -649,7 +649,7 @@ function PostCard({
     post.status === "SCHEDULED" && isPast(new Date(post.scheduledAt));
 
   return (
-    <div className="nb-card nb-card-hover overflow-hidden border-l-4 border-l-purple-600">
+    <div className="nb-card nb-card-hover overflow-hidden border-l-4 border-l-primary-900">
       <div className="px-5 py-4">
         <div className="flex items-start gap-4">
           {}
@@ -695,7 +695,7 @@ function PostCard({
 
             {}
             {post.hashtags.length > 0 && (
-              <p className="text-xs text-purple-600 mt-1 truncate">
+              <p className="text-xs text-primary-900 mt-1 truncate">
                 {post.hashtags
                   .map((h) => (h.startsWith("#") ? h : `#${h}`))
                   .join(" ")}
@@ -744,7 +744,7 @@ function PostCard({
                   <span className="text-blue-600">FB ✓</span>
                 )}
                 {post.instagramPostId && (
-                  <span className="text-purple-600">IG ✓</span>
+                  <span className="text-primary-900">IG ✓</span>
                 )}
               </div>
             )}
@@ -768,7 +768,7 @@ function PostCard({
             {["DRAFT", "REJECTED"].includes(post.status) && (
               <Button
                 size="sm"
-                className="h-7 text-xs nb-btn bg-purple-600 text-white hover:bg-purple-700"
+                className="h-7 text-xs nb-btn bg-primary-900 text-white hover:bg-purple-700"
                 onClick={onSubmit}
                 disabled={actionLoading}
               >
@@ -918,7 +918,7 @@ function PostWizard({
       <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-2 font-display">
-            <div className="w-6 h-6 bg-purple-600 border-2 border-black flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 bg-primary-900 border-2 border-black flex items-center justify-center shrink-0">
               <Instagram className="w-3.5 h-3.5 text-white" />
             </div>
             {editingPost ? "Edit Post" : "New Post"}
@@ -930,7 +930,7 @@ function PostWizard({
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`h-2 flex-1 border border-black ${s <= step ? "bg-purple-600" : "bg-muted"}`}
+                className={`h-2 flex-1 border border-black ${s <= step ? "bg-primary-900" : "bg-muted"}`}
               />
             ))}
           </div>
@@ -1082,7 +1082,7 @@ function PostWizard({
 
               {scheduledDate && (
                 <div className="flex items-center gap-2 p-3 bg-purple-50 border border-purple-100 rounded-lg">
-                  <Clock className="w-4 h-4 text-purple-600 shrink-0" />
+                  <Clock className="w-4 h-4 text-primary-900 shrink-0" />
                   <p className="text-xs text-purple-700">
                     Will be published on{" "}
                     <strong>
@@ -1195,7 +1195,7 @@ function PostWizard({
           </Button>
           <Button
             size="sm"
-            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="bg-gradient-to-r from-primary-900 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
             disabled={
               saving ||
               (step === 1 && !caption.trim()) ||
@@ -1484,7 +1484,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               label: "Instagram Accounts",
               items: igAccounts,
               Icon: Instagram,
-              color: "text-purple-600 bg-purple-100",
+              color: "text-primary-900 bg-purple-100",
             },
           ].map(({ label, items, Icon, color }) =>
             items.length === 0 ? null : (
@@ -1650,7 +1650,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                 !manualForm.accountName ||
                 !manualForm.accessToken
               }
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-primary-900 hover:bg-purple-700 text-white"
             >
               {connecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{" "}
               Connect
