@@ -23,8 +23,7 @@ import {
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 
 export type NavIconComponent =
-  | LucideIcon
-  | React.ComponentType<{ className?: string }>;
+  LucideIcon | React.ComponentType<{ className?: string }>;
 
 export interface NavItem {
   title: string;

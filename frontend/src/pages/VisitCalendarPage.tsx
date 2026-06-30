@@ -77,7 +77,8 @@ export default function VisitCalendarPage() {
             const dateToUse = lead.visitScheduledDate || lead.followUpDate;
             if (!dateToUse) return false;
             return (
-              toLocalDate(dateToUse).toDateString() === selectedDate.toDateString()
+              toLocalDate(dateToUse).toDateString() ===
+              selectedDate.toDateString()
             );
           })
           .sort((a: any, b: any) => {

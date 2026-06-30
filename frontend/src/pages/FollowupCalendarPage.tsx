@@ -36,13 +36,7 @@ const toLocalDate = (dateStr: string): Date => {
 };
 
 type StatusFilter =
-  | "ALL"
-  | "1"
-  | "2"
-  | "3"
-  | "COMPLETED"
-  | "DISCUSSION"
-  | "QUOTATION";
+  "ALL" | "1" | "2" | "3" | "COMPLETED" | "DISCUSSION" | "QUOTATION";
 
 const FOLLOW_UP_STATUSES = [
   "1",

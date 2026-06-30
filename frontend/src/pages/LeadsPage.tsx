@@ -411,9 +411,19 @@ export default function LeadsPage() {
   };
 
   const sanitizePhone = (val: unknown): string =>
-    String(val ?? "").replace(/\D/g, "").slice(0, 15);
+    String(val ?? "")
+      .replace(/\D/g, "")
+      .slice(0, 15);
 
-  const STRING_FIELDS = ["name", "company", "requirement", "email", "location", "state", "remarks"];
+  const STRING_FIELDS = [
+    "name",
+    "company",
+    "requirement",
+    "email",
+    "location",
+    "state",
+    "remarks",
+  ];
 
   const handleImport = async () => {
     if (importPreview.length === 0) return;

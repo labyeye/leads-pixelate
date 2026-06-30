@@ -813,7 +813,9 @@ function IntegrationWizard({
                             {show[field.key] && val && (
                               <button
                                 type="button"
-                                onClick={() => copyToClipboard(val, field.label)}
+                                onClick={() =>
+                                  copyToClipboard(val, field.label)
+                                }
                                 className="px-3 border-l-2 border-black hover:bg-[#024BAB]/30 transition-colors flex items-center gap-1 text-xs font-bold text-black"
                                 title="Copy to clipboard"
                               >
