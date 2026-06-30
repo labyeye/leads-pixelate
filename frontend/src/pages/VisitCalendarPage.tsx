@@ -31,6 +31,12 @@ import { DateLeadModal } from "@/components/leads/DateLeadModal";
 
 type TagFilter = "ALL" | "HOT" | "WARM" | "COLD";
 
+// Parse a DB date string to a local-midnight Date to avoid UTC-offset day shifts
+const toLocalDate = (dateStr: string): Date => {
+  const d = new Date(dateStr);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
 export default function VisitCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [leads, setLeads] = useState<any[]>([]);
@@ -71,7 +77,7 @@ export default function VisitCalendarPage() {
             const dateToUse = lead.visitScheduledDate || lead.followUpDate;
             if (!dateToUse) return false;
             return (
-              new Date(dateToUse).toDateString() === selectedDate.toDateString()
+              toLocalDate(dateToUse).toDateString() === selectedDate.toDateString()
             );
           })
           .sort((a: any, b: any) => {
@@ -110,7 +116,7 @@ export default function VisitCalendarPage() {
       .filter((lead) => {
         const dateToUse = lead.visitScheduledDate || lead.followUpDate;
         if (!dateToUse) return false;
-        const visitDate = new Date(dateToUse);
+        const visitDate = toLocalDate(dateToUse);
         return (
           visitDate.toDateString() === date.toDateString() &&
           (tagFilter === "ALL" || lead.contactTag === tagFilter)
@@ -139,6 +145,7 @@ export default function VisitCalendarPage() {
     start: monthStart,
     end: monthEnd,
   });
+  const leadingEmptyDays = monthStart.getDay(); // 0=Sun … 6=Sat
 
   const totalVisits = leads.length;
   const filteredVisits = leads.filter(
@@ -273,6 +280,9 @@ export default function VisitCalendarPage() {
 
                 {}
                 <div className="grid grid-cols-7 gap-1 flex-1">
+                  {Array.from({ length: leadingEmptyDays }).map((_, i) => (
+                    <div key={`empty-${i}`} className="min-h-24" />
+                  ))}
                   {daysInMonth.map((date, idx) => {
                     const dayLeads = getLeadsForDate(date);
                     const isCurrentMonth = isSameMonth(date, currentDate);

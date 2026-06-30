@@ -133,6 +133,7 @@ app.use("/api/social", require("./routes/socialRoutes"));
 app.use("/api/campaigns", require("./routes/campaignRoutes"));
 app.use("/api/api-keys", require("./routes/apiKeyRoutes"));
 app.use("/api/public", require("./routes/publicRoutes"));
+app.use("/api/hrms", require("./routes/hrmsRoutes"));
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, status: "ok" });

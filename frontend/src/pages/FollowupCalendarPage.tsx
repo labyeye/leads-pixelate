@@ -29,6 +29,12 @@ import { useToast } from "@/hooks/use-toast";
 import { statusColors } from "@/components/leads/statusConstants";
 import { DateLeadModal } from "@/components/leads/DateLeadModal";
 
+// Parse a DB date string to a local-midnight Date to avoid UTC-offset day shifts
+const toLocalDate = (dateStr: string): Date => {
+  const d = new Date(dateStr);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
 type StatusFilter =
   | "ALL"
   | "1"
@@ -85,7 +91,7 @@ export default function FollowupCalendarPage() {
           .filter((lead: any) => {
             if (!lead.followUpDate) return false;
             return (
-              new Date(lead.followUpDate).toDateString() ===
+              toLocalDate(lead.followUpDate).toDateString() ===
               selectedDate.toDateString()
             );
           })
@@ -124,7 +130,7 @@ export default function FollowupCalendarPage() {
     return leads
       .filter((lead) => {
         if (!lead.followUpDate) return false;
-        const followUpDate = new Date(lead.followUpDate);
+        const followUpDate = toLocalDate(lead.followUpDate);
         const matches =
           followUpDate.toDateString() === date.toDateString() &&
           (statusFilter === "ALL" || lead.status === statusFilter);
@@ -149,6 +155,7 @@ export default function FollowupCalendarPage() {
     start: monthStart,
     end: monthEnd,
   });
+  const leadingEmptyDays = monthStart.getDay(); // 0=Sun … 6=Sat
 
   const totalFollowups = leads.length;
   const filteredFollowups = leads.filter(
@@ -284,6 +291,9 @@ export default function FollowupCalendarPage() {
 
                 {}
                 <div className="grid grid-cols-7 gap-1 flex-1">
+                  {Array.from({ length: leadingEmptyDays }).map((_, i) => (
+                    <div key={`empty-${i}`} className="min-h-24" />
+                  ))}
                   {daysInMonth.map((date, idx) => {
                     const dayLeads = getLeadsForDate(date);
                     const isCurrentMonth = isSameMonth(date, currentDate);

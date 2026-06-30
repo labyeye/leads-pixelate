@@ -32,6 +32,12 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
+// Parse a DB date string to a local-midnight Date to avoid UTC-offset day shifts
+const toLocalDate = (dateStr: string): Date => {
+  const d = new Date(dateStr);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
 type TabType = "overdue" | "today" | "tomorrow" | "week" | "custom";
 
 export default function FollowupsPage() {
@@ -98,7 +104,7 @@ export default function FollowupsPage() {
 
     return leads.filter((lead) => {
       if (!lead.followUpDate) return false;
-      const followupDate = new Date(lead.followUpDate);
+      const followupDate = toLocalDate(lead.followUpDate);
 
       switch (tab) {
         case "overdue":
@@ -117,7 +123,7 @@ export default function FollowupsPage() {
           if (!customDateValue) return false;
           return (
             followupDate.toDateString() ===
-            new Date(customDateValue).toDateString()
+            toLocalDate(customDateValue.toISOString()).toDateString()
           );
         default:
           return false;
@@ -364,7 +370,7 @@ export default function FollowupsPage() {
                         {lead.phone}
                       </td>
                       <td className="px-5 py-3 text-sm text-black">
-                        {format(new Date(lead.followUpDate), "MMM dd, h:mm a")}
+                        {format(toLocalDate(lead.followUpDate), "MMM dd, yyyy")}
                       </td>
                       <td className="px-5 py-3 hidden lg:table-cell text-sm text-black max-w-xs">
                         <span className="line-clamp-1">
