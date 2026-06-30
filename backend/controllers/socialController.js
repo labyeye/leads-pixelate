@@ -454,7 +454,17 @@ exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
     throw new Error("FACEBOOK_APP_ID is not configured");
   }
 
-  const scopes = ["email", "public_profile"].join(",");
+  const scopes = [
+    "email",
+    "public_profile",
+    "pages_show_list",
+    "pages_read_engagement",
+    "pages_manage_posts",
+    "pages_manage_metadata",
+    "business_management",
+    "instagram_basic",
+    "instagram_content_publish",
+  ].join(",");
 
   const authUrl =
     `https://www.facebook.com/v18.0/dialog/oauth` +

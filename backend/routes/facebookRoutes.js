@@ -15,11 +15,14 @@ const FB_SCOPES = [
   "pages_show_list",
   "pages_read_engagement",
   "pages_manage_ads",
+  "pages_manage_posts",
   "leads_retrieval",
   "pages_manage_metadata",
   "business_management",
   "ads_read",
   "ads_management",
+  "instagram_basic",
+  "instagram_content_publish",
 ].join(",");
 
 async function fbGet(path, token, params = {}) {
