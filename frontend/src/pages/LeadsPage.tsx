@@ -401,6 +401,20 @@ export default function LeadsPage() {
     reader.readAsArrayBuffer(file);
   };
 
+  const sanitizeCell = (val: unknown): string => {
+    if (val === null || val === undefined) return "";
+    return String(val)
+      .replace(/<[^>]*>/g, "")
+      .replace(/[<>"'`\\]/g, "")
+      .trim()
+      .slice(0, 500);
+  };
+
+  const sanitizePhone = (val: unknown): string =>
+    String(val ?? "").replace(/\D/g, "").slice(0, 15);
+
+  const STRING_FIELDS = ["name", "company", "requirement", "email", "location", "state", "remarks"];
+
   const handleImport = async () => {
     if (importPreview.length === 0) return;
     const missing = REQUIRED_HEADERS.filter(
@@ -413,9 +427,31 @@ export default function LeadsPage() {
       );
       return;
     }
+
+    const sanitized = importPreview.map((row) => {
+      const clean: any = {};
+      Object.entries(row).forEach(([k, v]) => {
+        if (k === "phone") clean[k] = sanitizePhone(v);
+        else if (STRING_FIELDS.includes(k)) clean[k] = sanitizeCell(v);
+        else clean[k] = v;
+      });
+      return clean;
+    });
+
+    const invalidPhones = sanitized.filter(
+      (r) => r.phone && (r.phone.length < 7 || r.phone.length > 15),
+    );
+    if (invalidPhones.length > 0) {
+      notify.error(
+        "Invalid Phone Numbers",
+        `${invalidPhones.length} row(s) have invalid phone numbers. Please fix and re-upload.`,
+      );
+      return;
+    }
+
     try {
       setImporting(true);
-      const res = await leadsAPI.importBulk(importPreview);
+      const res = await leadsAPI.importBulk(sanitized);
       notify.success("Import Complete", res.message);
       setImportModalOpen(false);
       setImportFile(null);

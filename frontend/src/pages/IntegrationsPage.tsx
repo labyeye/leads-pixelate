@@ -809,22 +809,35 @@ function IntegrationWizard({
                           </button>
                         )}
                         {field.type === "password" && !isReadonly && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShow((p) => ({
-                                ...p,
-                                [field.key]: !p[field.key],
-                              }))
-                            }
-                            className="px-3 border-l-2 border-black hover:bg-[#024BAB]/20 transition-colors"
-                          >
-                            {show[field.key] ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
+                          <>
+                            {show[field.key] && val && (
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(val, field.label)}
+                                className="px-3 border-l-2 border-black hover:bg-[#024BAB]/30 transition-colors flex items-center gap-1 text-xs font-bold text-black"
+                                title="Copy to clipboard"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
                             )}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShow((p) => ({
+                                  ...p,
+                                  [field.key]: !p[field.key],
+                                }))
+                              }
+                              className="px-3 border-l-2 border-black hover:bg-[#024BAB]/20 transition-colors"
+                              title={show[field.key] ? "Hide" : "Reveal"}
+                            >
+                              {show[field.key] ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>

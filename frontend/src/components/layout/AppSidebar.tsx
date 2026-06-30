@@ -25,7 +25,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
     <>
       <aside
         className={cn(
-          "h-screen bg-white border-r-2 border-black flex flex-col transition-all duration-300 ease-out z-50 shrink-0",
+          "h-screen min-h-screen bg-white border-r-2 border-black flex flex-col transition-all duration-300 ease-out z-50 shrink-0",
           "fixed inset-y-0 left-0 lg:sticky lg:top-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           collapsed ? "lg:w-16" : "w-60",
@@ -63,7 +63,7 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-4">
+        <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {groups.map((group) => (
             <div key={group.label}>
               {!collapsed && (

@@ -88,41 +88,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const restoreSession = async () => {
+      // Clear any legacy user/tenant data left in localStorage from older versions
+      localStorage.removeItem("user");
+      localStorage.removeItem("tenant");
+
       const token = getToken();
-      const storedUser = localStorage.getItem("user");
-      const storedTenant = localStorage.getItem("tenant");
-
-      if (token && storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-          if (storedTenant) setTenant(JSON.parse(storedTenant));
-          setIsLoading(false);
-
-          const response = await authAPI.getMe();
-          const userData = mapUser(response.data);
-          const tenantData = mapTenant(response.data.tenant);
-          setUser(userData);
-          setTenant(tenantData);
-          localStorage.setItem("user", JSON.stringify(userData));
-          localStorage.setItem("tenant", JSON.stringify(tenantData));
-
-          settingsAPI
-            .get()
-            .then((res) => {
-              if (res.data?.permissions) setPermissions(res.data.permissions);
-            })
-            .catch(() => {});
-        } catch (error: any) {
-          if (error.status === 401) {
-            removeToken();
-            localStorage.removeItem("user");
-            localStorage.removeItem("tenant");
-            setUser(null);
-            setTenant(null);
-          }
-        }
+      if (!token) {
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
+
+      try {
+        const response = await authAPI.getMe();
+        setUser(mapUser(response.data));
+        setTenant(mapTenant(response.data.tenant));
+        settingsAPI
+          .get()
+          .then((res) => {
+            if (res.data?.permissions) setPermissions(res.data.permissions);
+          })
+          .catch(() => {});
+      } catch (error: any) {
+        if (error.status === 401) {
+          removeToken();
+          setUser(null);
+          setTenant(null);
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     restoreSession();
@@ -133,12 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authAPI.login(email, password);
       const { token, tenant: tenantData, ...userData } = response.data;
       setToken(token);
-      const mappedUser = mapUser(userData);
-      const mappedTenant = mapTenant(tenantData);
-      setUser(mappedUser);
-      setTenant(mappedTenant);
-      localStorage.setItem("user", JSON.stringify(mappedUser));
-      localStorage.setItem("tenant", JSON.stringify(mappedTenant));
+      setUser(mapUser(userData));
+      setTenant(mapTenant(tenantData));
       return { success: true };
     } catch (error: any) {
       return {
@@ -164,12 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } as any);
         const { token, tenant: tenantData, ...userData } = response.data;
         setToken(token);
-        const mappedUser = mapUser(userData);
-        const mappedTenant = mapTenant(tenantData);
-        setUser(mappedUser);
-        setTenant(mappedTenant);
-        localStorage.setItem("user", JSON.stringify(mappedUser));
-        localStorage.setItem("tenant", JSON.stringify(mappedTenant));
+        setUser(mapUser(userData));
+        setTenant(mapTenant(tenantData));
         return { success: true };
       } catch (error: any) {
         return {
@@ -183,28 +169,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     removeToken();
-    localStorage.removeItem("user");
-    localStorage.removeItem("tenant");
     setUser(null);
     setTenant(null);
     setPermissions(null);
   }, []);
 
   const updateUser = useCallback((userData: Partial<User>) => {
-    setUser((prev) => {
-      if (!prev) return null;
-      const updated = { ...prev, ...userData };
-      localStorage.setItem("user", JSON.stringify(updated));
-      return updated;
-    });
+    setUser((prev) => (prev ? { ...prev, ...userData } : null));
   }, []);
 
   const refreshTenant = useCallback(async () => {
     try {
       const response = await authAPI.getMe();
-      const tenantData = mapTenant(response.data.tenant);
-      setTenant(tenantData);
-      localStorage.setItem("tenant", JSON.stringify(tenantData));
+      setTenant(mapTenant(response.data.tenant));
     } catch {}
   }, []);
 

@@ -9,31 +9,61 @@ class ApiError extends Error {
   }
 }
 
+// Token is kept in sessionStorage (cleared when the browser tab closes).
+// This prevents XSS scripts from reading the token via localStorage,
+// which persists indefinitely across sessions.
+let _memToken: string | null = sessionStorage.getItem("_aft") ?? null;
+
 function getToken(): string | null {
-  return localStorage.getItem("token");
+  return _memToken;
 }
 
 function setToken(token: string): void {
-  localStorage.setItem("token", token);
+  _memToken = token;
+  sessionStorage.setItem("_aft", token);
 }
 
 function removeToken(): void {
+  _memToken = null;
+  sessionStorage.removeItem("_aft");
+  // Clear any legacy localStorage tokens from older sessions
   localStorage.removeItem("token");
 }
+
+// One CSRF token per session — generated once, sent on every mutating request.
+// The backend should validate X-CSRF-Token matches the session's expected value.
+function getCsrfToken(): string {
+  let t = sessionStorage.getItem("_cst");
+  if (!t) {
+    t = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    sessionStorage.setItem("_cst", t);
+  }
+  return t;
+}
+
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
   const token = getToken();
+  const method = (options.method ?? "GET").toUpperCase();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
     ...(options.headers as Record<string, string>),
   };
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (MUTATING_METHODS.has(method)) {
+    headers["X-CSRF-Token"] = getCsrfToken();
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -641,7 +671,11 @@ export const whatsappAPI = {
     const token = getToken();
     return fetch(`${API_BASE}/whatsapp/upload-media`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-Requested-With": "XMLHttpRequest",
+        "X-CSRF-Token": getCsrfToken(),
+      },
       body: formData,
     }).then(async (res) => {
       const data = await res.json();
