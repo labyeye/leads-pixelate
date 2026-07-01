@@ -31,7 +31,7 @@ import CampaignBuilderPage from "./pages/CampaignBuilderPage";
 import ApiKeysPage from "./pages/ApiKeysPage";
 import NotFound from "./pages/NotFound";
 import { NotificationProvider } from "@/components/ui/Notification";
-
+import logonest from "@/assets/images/Logo.png";    
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -45,8 +45,8 @@ function LoadingScreen() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 bg-[#024BAB] border-2 border-black flex items-center justify-center nb-shadow animate-bounce">
-          <span className="text-black font-display font-bold text-lg">L</span>
+        <div className="w-12 h-12 border-2 border-black flex items-center justify-center nb-shadow animate-bounce">
+          <img src={logonest} alt="Logo" className="w-full h-full object-contain"  />
         </div>
         <p className="text-sm font-medium text-muted-foreground">Loading...</p>
       </div>

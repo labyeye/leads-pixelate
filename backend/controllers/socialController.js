@@ -637,31 +637,32 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
   if (pagesData.error) throw new Error(pagesData.error.message);
   const pages = pagesData.data || [];
 
+  // Build a quick lookup: pageId → page access token
+  const pageTokenMap = {};
+  for (const page of pages) pageTokenMap[page.id] = page.access_token;
+
   let savedCount = 0;
+
+  // ---------- Step 1: Save Facebook pages + page-linked IG accounts ----------
   for (const page of pages) {
     let igId = "";
     try {
+      // Try both instagram_business_account and instagram_accounts (plural)
       const igRes = await fetch(
-        `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`,
+        `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account,instagram_accounts&access_token=${page.access_token}`,
       );
       const igData = await igRes.json();
       if (igData.error) {
-        console.error(
-          `[Social Import] instagram_business_account lookup failed for page ${page.id} (${page.name}):`,
-          igData.error,
-        );
+        console.error(`[Social Import] IG lookup failed for page ${page.id} (${page.name}):`, igData.error);
       } else {
-        console.log(
-          `[Social Import] page ${page.id} (${page.name}) instagram_business_account:`,
-          igData.instagram_business_account || null,
-        );
+        igId =
+          igData?.instagram_business_account?.id ||
+          igData?.instagram_accounts?.data?.[0]?.id ||
+          "";
+        console.log(`[Social Import] page ${page.id} (${page.name}) instagram_id:`, igId || "null");
       }
-      igId = igData?.instagram_business_account?.id || "";
     } catch (err) {
-      console.error(
-        `[Social Import] instagram_business_account fetch threw for page ${page.id}:`,
-        err.message,
-      );
+      console.error(`[Social Import] IG fetch threw for page ${page.id}:`, err.message);
     }
 
     await SocialAccount.findOneAndUpdate(
@@ -681,34 +682,101 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
     savedCount++;
 
     if (igId) {
-      let igName = page.name + " (Instagram)";
-      let igPicture = "";
-      try {
-        const igInfoRes = await fetch(
-          `https://graph.facebook.com/v18.0/${igId}?fields=name,username,profile_picture_url&access_token=${page.access_token}`,
-        );
-        const igInfo = await igInfoRes.json();
-        igName = igInfo.username || igInfo.name || igName;
-        igPicture = igInfo.profile_picture_url || "";
-      } catch (_) {}
-
-      await SocialAccount.findOneAndUpdate(
-        { platform: "instagram", accountId: igId, tenantId: tenantId || null },
-        {
-          accountName: igName,
-          accessToken: page.access_token,
-          profilePicture: igPicture,
-          isActive: true,
-          connectedBy: userId,
-          tenantId: tenantId || null,
-        },
-        { upsert: true, new: true },
-      );
+      await saveInstagramAccount(igId, page.access_token, page.name, userId, tenantId);
       savedCount++;
     }
   }
 
+  // ---------- Step 2: Fetch IG accounts from Business Manager assets ----------
+  try {
+    const bizRes = await fetch(
+      `https://graph.facebook.com/v18.0/me/businesses?access_token=${finalUserToken}&fields=id,name`,
+    );
+    const bizData = await bizRes.json();
+    const businesses = bizData.data || [];
+    console.log(`[Social Import] found ${businesses.length} business(es) to scan for IG assets`);
+
+    for (const biz of businesses) {
+      // Try both instagram_accounts and owned_instagram_accounts
+      for (const edge of ["instagram_accounts", "owned_instagram_accounts"]) {
+        try {
+          const igRes = await fetch(
+            `https://graph.facebook.com/v18.0/${biz.id}/${edge}?fields=id,name,username,profile_picture_url,page&access_token=${finalUserToken}`,
+          );
+          const igData = await igRes.json();
+          if (igData.error) {
+            console.log(`[Social Import] biz ${biz.id} ${edge}:`, igData.error.message);
+            continue;
+          }
+          const igAccounts = igData.data || [];
+          console.log(`[Social Import] biz ${biz.id} (${biz.name}) ${edge}: found ${igAccounts.length}`);
+
+          for (const ig of igAccounts) {
+            // Check already saved by page-linking step
+            const exists = await SocialAccount.findOne({
+              platform: "instagram",
+              accountId: ig.id,
+              tenantId: tenantId || null,
+            });
+            if (exists) continue;
+
+            // Use the linked page token if available, else fall back to user token
+            const linkedPageToken =
+              (ig.page?.id && pageTokenMap[ig.page.id]) || finalUserToken;
+
+            await saveInstagramAccount(
+              ig.id,
+              linkedPageToken,
+              ig.name,
+              userId,
+              tenantId,
+              ig.username,
+              ig.profile_picture_url,
+            );
+            savedCount++;
+          }
+        } catch (err) {
+          console.error(`[Social Import] ${edge} fetch failed for biz ${biz.id}:`, err.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[Social Import] Business Manager IG fetch failed:", err.message);
+  }
+
   return savedCount;
+}
+
+async function saveInstagramAccount(igId, pageToken, fallbackName, userId, tenantId, username, profilePicture) {
+  let igName = (username ? `@${username}` : null) || fallbackName + " (Instagram)";
+  let igPicture = profilePicture || "";
+
+  if (!username || !profilePicture) {
+    try {
+      const igInfoRes = await fetch(
+        `https://graph.facebook.com/v18.0/${igId}?fields=name,username,profile_picture_url&access_token=${pageToken}`,
+      );
+      const igInfo = await igInfoRes.json();
+      if (!igInfo.error) {
+        igName = igInfo.username ? `@${igInfo.username}` : igInfo.name || igName;
+        igPicture = igInfo.profile_picture_url || igPicture;
+      }
+    } catch (_) {}
+  }
+
+  await SocialAccount.findOneAndUpdate(
+    { platform: "instagram", accountId: igId, tenantId: tenantId || null },
+    {
+      accountName: igName,
+      accessToken: pageToken,
+      profilePicture: igPicture,
+      isActive: true,
+      connectedBy: userId,
+      tenantId: tenantId || null,
+    },
+    { upsert: true, new: true },
+  );
+  console.log(`[Social Import] saved Instagram account ${igId} (${igName})`);
 }
 
 exports.facebookCallback = asyncHandler(async (req, res) => {
@@ -817,6 +885,67 @@ exports.fetchFacebookPages = asyncHandler(async (req, res) => {
   }));
 
   res.json({ success: true, data: pages });
+});
+
+exports.getAnalytics = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+
+  const [statusBreakdown, platformBreakdown, weeklyTrend, recentPosts] =
+    await Promise.all([
+      SocialPost.aggregate([
+        { $match: tenantFilter },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+      SocialPost.aggregate([
+        { $match: tenantFilter },
+        { $unwind: "$platforms" },
+        { $group: { _id: "$platforms", count: { $sum: 1 } } },
+      ]),
+      SocialPost.aggregate([
+        {
+          $match: {
+            ...tenantFilter,
+            status: { $in: ["POSTED", "PARTIALLY_POSTED"] },
+            postedAt: {
+              $gte: new Date(Date.now() - 84 * 24 * 60 * 60 * 1000),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%U", date: "$postedAt" } },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      SocialPost.find({
+        ...tenantFilter,
+        status: { $in: ["POSTED", "PARTIALLY_POSTED"] },
+      })
+        .sort({ postedAt: -1 })
+        .limit(20)
+        .populate("createdBy", "name")
+        .select(
+          "caption platforms facebookPostId instagramPostId postedAt postType imageUrl status",
+        ),
+    ]);
+
+  res.json({
+    success: true,
+    data: {
+      statusBreakdown: statusBreakdown.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {}),
+      platformBreakdown: platformBreakdown.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+      }, {}),
+      weeklyTrend,
+      recentPosts,
+    },
+  });
 });
 
 exports.getStats = asyncHandler(async (req, res) => {

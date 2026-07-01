@@ -687,6 +687,8 @@ export const whatsappAPI = {
 
 export const socialAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/social/stats"),
+  getAnalytics: () =>
+    request<{ success: boolean; data: any }>("/social/analytics"),
   getPosts: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<{ success: boolean; count: number; data: any[] }>(

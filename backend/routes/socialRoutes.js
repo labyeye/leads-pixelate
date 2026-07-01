@@ -18,6 +18,7 @@ const {
   fetchFacebookPages,
   importFromIntegration,
   getStats,
+  getAnalytics,
 } = require("../controllers/socialController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -26,6 +27,7 @@ router.get("/auth/facebook/callback", facebookCallback);
 router.use(protect);
 
 router.get("/stats", getStats);
+router.get("/analytics", getAnalytics);
 
 router.route("/posts").get(getPosts).post(createPost);
 router.route("/posts/:id").get(getPost).put(updatePost).delete(deletePost);

@@ -167,7 +167,7 @@ export default function SocialMediaPlannerPage() {
   const [searchParams] = useSearchParams();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
-  const [activeTab, setActiveTab] = useState<"posts" | "accounts">(
+  const [activeTab, setActiveTab] = useState<"posts" | "accounts" | "analytics">(
     searchParams.get("tab") === "accounts" ? "accounts" : "posts",
   );
 
@@ -221,33 +221,52 @@ export default function SocialMediaPlannerPage() {
 
         {}
         {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-6 py-3 border-b border-border bg-muted/20">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-6 py-4 border-b border-border bg-muted/20">
             {[
               {
                 label: "Total Posts",
                 value: stats.total,
-                color: "text-gray-700",
+                icon: BarChart3,
+                bg: "bg-gray-100",
+                iconColor: "text-gray-700",
               },
               {
                 label: "Pending",
                 value: stats.pending,
-                color: "text-orange-600",
+                icon: Clock,
+                bg: "bg-orange-100",
+                iconColor: "text-orange-600",
               },
               {
                 label: "Scheduled",
                 value: stats.scheduled,
-                color: "text-primary-900",
+                icon: Calendar,
+                bg: "bg-primary/10",
+                iconColor: "text-primary",
               },
-              { label: "Posted", value: stats.posted, color: "text-green-600" },
+              {
+                label: "Posted",
+                value: stats.posted,
+                icon: CheckCircle2,
+                bg: "bg-green-100",
+                iconColor: "text-green-600",
+              },
               {
                 label: "Connected",
                 value: stats.connectedAccounts,
-                color: "text-blue-600",
+                icon: Users,
+                bg: "bg-blue-100",
+                iconColor: "text-blue-600",
               },
             ].map((s) => (
-              <div key={s.label} className="text-center">
-                <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+              <div key={s.label} className="border-2 border-black p-3 flex flex-col gap-2 bg-white nb-card-hover">
+                <div className={`w-8 h-8 border-2 border-black flex items-center justify-center shrink-0 ${s.bg}`}>
+                  <s.icon className={`w-4 h-4 ${s.iconColor}`} />
+                </div>
+                <div>
+                  <p className="font-display font-bold text-2xl text-black">{s.value}</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -257,6 +276,7 @@ export default function SocialMediaPlannerPage() {
         <div className="flex border-b-2 border-black px-6 bg-background">
           {[
             { id: "posts", label: "Posts" },
+            { id: "analytics", label: "Analytics" },
             { id: "accounts", label: "Connected Accounts" },
           ].map((t) => (
             <button
@@ -281,6 +301,7 @@ export default function SocialMediaPlannerPage() {
               onStatsChange={fetchStats}
             />
           )}
+          {activeTab === "analytics" && <AnalyticsTab />}
           {activeTab === "accounts" && (
             <AccountsTab isAdmin={isAdmin} toast={toast} />
           )}
@@ -304,6 +325,7 @@ function PostsTab({
   const [filter, setFilter] = useState("ALL");
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<SocialPost | null>(null);
+  const [viewingPost, setViewingPost] = useState<SocialPost | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [approvalDialogPost, setApprovalDialogPost] =
@@ -504,6 +526,7 @@ function PostsTab({
                   setRejectionReason("");
                 }}
                 onPublishNow={() => handlePublishNow(post)}
+                onView={() => setViewingPost(post)}
               />
             ))}
           </div>
@@ -520,6 +543,24 @@ function PostsTab({
           onSaved={async () => {
             await fetchPosts();
             onStatsChange();
+          }}
+        />
+      )}
+
+      {}
+      {viewingPost && (
+        <PostDetailModal
+          post={viewingPost}
+          isAdmin={isAdmin}
+          onClose={() => setViewingPost(null)}
+          onApprove={() => {
+            setApprovalDialogPost(viewingPost);
+            setViewingPost(null);
+          }}
+          onReject={() => {
+            setRejectionDialogPost(viewingPost);
+            setRejectionReason("");
+            setViewingPost(null);
           }}
         />
       )}
@@ -643,6 +684,7 @@ function PostCard({
   onApprove,
   onReject,
   onPublishNow,
+  onView,
 }: {
   post: SocialPost;
   isAdmin: boolean;
@@ -653,6 +695,7 @@ function PostCard({
   onApprove: () => void;
   onReject: () => void;
   onPublishNow: () => void;
+  onView: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const cfg = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
@@ -765,6 +808,16 @@ function PostCard({
 
           {}
           <div className="flex flex-col gap-1.5 shrink-0">
+            {}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs nb-btn"
+              onClick={onView}
+            >
+              <Eye className="w-3 h-3 mr-1" /> View
+            </Button>
+
             {}
             {!["POSTING", "POSTED"].includes(post.status) && (
               <Button
@@ -1964,6 +2017,489 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function PostDetailModal({
+  post,
+  isAdmin,
+  onClose,
+  onApprove,
+  onReject,
+}: {
+  post: SocialPost;
+  isAdmin: boolean;
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const cfg = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
+  const StatusIcon = cfg.icon;
+
+  const fbLink = post.facebookPostId
+    ? (() => {
+        const parts = post.facebookPostId.split("_");
+        return parts.length === 2
+          ? `https://www.facebook.com/permalink.php?story_fbid=${parts[1]}&id=${parts[0]}`
+          : `https://www.facebook.com/${post.facebookPostId}`;
+      })()
+    : null;
+
+  const igLink = post.instagramPostId
+    ? `https://www.instagram.com/p/${post.instagramPostId}/`
+    : null;
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="w-5 h-5" /> Post Details
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-1">
+          {}
+          {(post.imageUrl || post.videoUrl) && (
+            <div className="w-full rounded-lg overflow-hidden border-2 border-black bg-black">
+              {post.videoUrl ? (
+                <video
+                  src={post.videoUrl}
+                  controls
+                  className="w-full max-h-64 object-contain"
+                  poster={post.coverImageUrl}
+                />
+              ) : (
+                <img
+                  src={post.imageUrl}
+                  alt=""
+                  className="w-full max-h-64 object-contain"
+                />
+              )}
+            </div>
+          )}
+          {post.mediaUrls && post.mediaUrls.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {post.mediaUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt=""
+                  className="w-20 h-20 object-cover shrink-0 border-2 border-black rounded"
+                />
+              ))}
+            </div>
+          )}
+
+          {}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}
+            >
+              <StatusIcon
+                className={`w-3 h-3 ${post.status === "POSTING" ? "animate-spin" : ""}`}
+              />
+              {cfg.label}
+            </span>
+            {post.platforms.includes("facebook") && (
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-semibold">
+                <Facebook className="w-3 h-3" /> Facebook
+              </span>
+            )}
+            {post.platforms.includes("instagram") && (
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-semibold">
+                <Instagram className="w-3 h-3" /> Instagram
+              </span>
+            )}
+            {post.postType && (
+              <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 font-semibold capitalize">
+                {post.postType}
+              </span>
+            )}
+          </div>
+
+          {}
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Caption</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
+          </div>
+
+          {}
+          {post.hashtags.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Hashtags</p>
+              <p className="text-xs text-primary-900">
+                {post.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+              </p>
+            </div>
+          )}
+
+          {}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Scheduled</p>
+              <p>{format(new Date(post.scheduledAt), "dd MMM yyyy, h:mm a")}</p>
+            </div>
+            {post.createdBy && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Created By</p>
+                <p>{post.createdBy.name}</p>
+              </div>
+            )}
+            {post.approvedBy && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Approved By</p>
+                <p>{post.approvedBy.name}</p>
+              </div>
+            )}
+            {post.rejectedBy && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Rejected By</p>
+                <p>{post.rejectedBy.name}</p>
+              </div>
+            )}
+            {post.postedAt && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Posted At</p>
+                <p>{format(new Date(post.postedAt), "dd MMM yyyy, h:mm a")}</p>
+              </div>
+            )}
+          </div>
+
+          {}
+          {post.approvalNote && (
+            <div className="p-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-700">
+              <strong>Approval Note:</strong> {post.approvalNote}
+            </div>
+          )}
+          {post.status === "REJECTED" && post.rejectionReason && (
+            <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
+              <strong>Rejection Reason:</strong> {post.rejectionReason}
+            </div>
+          )}
+          {post.failureReason && (
+            <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
+              <strong>Failure Reason:</strong> {post.failureReason}
+            </div>
+          )}
+
+          {}
+          {(fbLink || igLink) && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Published Links</p>
+              <div className="flex flex-col gap-2">
+                {fbLink && (
+                  <a
+                    href={fbLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 px-3 py-2 rounded hover:bg-blue-100 transition-colors"
+                  >
+                    <Facebook className="w-3.5 h-3.5" />
+                    View on Facebook
+                    <ExternalLink className="w-3 h-3 ml-auto" />
+                  </a>
+                )}
+                {igLink && (
+                  <a
+                    href={igLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs text-purple-700 bg-purple-50 border border-purple-200 px-3 py-2 rounded hover:bg-purple-100 transition-colors"
+                  >
+                    <Instagram className="w-3.5 h-3.5" />
+                    View on Instagram
+                    <ExternalLink className="w-3 h-3 ml-auto" />
+                  </a>
+                )}
+                <a
+                  href="https://business.facebook.com/latest/insights/posts/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-xs text-gray-700 bg-gray-50 border border-gray-200 px-3 py-2 rounded hover:bg-gray-100 transition-colors"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  View Analytics in Meta Business Suite
+                  <ExternalLink className="w-3 h-3 ml-auto" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {}
+          {(post.facebookPostId || post.instagramPostId) && (
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Post IDs</p>
+              {post.facebookPostId && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground w-16">Facebook:</span>
+                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">{post.facebookPostId}</code>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 w-5 p-0"
+                    onClick={() => navigator.clipboard.writeText(post.facebookPostId!)}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+              {post.instagramPostId && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground w-16">Instagram:</span>
+                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">{post.instagramPostId}</code>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 w-5 p-0"
+                    onClick={() => navigator.clipboard.writeText(post.instagramPostId!)}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {}
+        {isAdmin && post.status === "PENDING_APPROVAL" && (
+          <DialogFooter className="gap-2 flex-row justify-end">
+            <Button
+              variant="outline"
+              className="text-red-600 border-red-300 hover:bg-red-50"
+              onClick={onReject}
+            >
+              <ThumbsDown className="w-4 h-4 mr-1" /> Reject
+            </Button>
+            <Button
+              className="bg-[#00C48C] text-black hover:bg-[#00C48C]/90"
+              onClick={onApprove}
+            >
+              <ThumbsUp className="w-4 h-4 mr-1" /> Approve
+            </Button>
+          </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AnalyticsTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    socialAPI
+      .getAnalytics()
+      .then((res) => setData(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex justify-center py-16 text-sm text-muted-foreground">
+        Failed to load analytics.
+      </div>
+    );
+  }
+
+  const statuses = data.statusBreakdown as Record<string, number>;
+  const platforms = data.platformBreakdown as Record<string, number>;
+  const weekly = data.weeklyTrend as { _id: string; count: number }[];
+  const recentPosts = data.recentPosts as any[];
+  const maxWeeklyCount = Math.max(...weekly.map((w) => w.count), 1);
+
+  const statusOrder = [
+    { key: "POSTED", label: "Posted", color: "bg-green-500" },
+    { key: "SCHEDULED", label: "Scheduled", color: "bg-purple-500" },
+    { key: "PENDING_APPROVAL", label: "Pending", color: "bg-orange-400" },
+    { key: "DRAFT", label: "Draft", color: "bg-gray-400" },
+    { key: "FAILED", label: "Failed", color: "bg-red-500" },
+    { key: "PARTIALLY_POSTED", label: "Partial", color: "bg-amber-400" },
+    { key: "REJECTED", label: "Rejected", color: "bg-red-300" },
+  ];
+
+  return (
+    <div className="p-6 overflow-y-auto h-full space-y-6 max-w-4xl">
+      {}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {statusOrder.slice(0, 4).map((s) => (
+          <div key={s.key} className="nb-card p-4 space-y-1">
+            <p className="text-2xl font-bold">{statuses[s.key] ?? 0}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {}
+      <div className="grid md:grid-cols-2 gap-6">
+        {}
+        <div className="nb-card p-4">
+          <p className="text-sm font-bold mb-4">Posts by Status</p>
+          <div className="space-y-2.5">
+            {statusOrder.filter((s) => statuses[s.key]).map((s) => {
+              const total = Object.values(statuses).reduce((a, b) => a + b, 0) || 1;
+              const pct = Math.round(((statuses[s.key] ?? 0) / total) * 100);
+              return (
+                <div key={s.key} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium">{s.label}</span>
+                    <span className="text-muted-foreground">{statuses[s.key]} ({pct}%)</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full ${s.color} rounded-full`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {}
+        <div className="nb-card p-4">
+          <p className="text-sm font-bold mb-4">Platform Breakdown</p>
+          <div className="space-y-3">
+            {Object.entries(platforms).map(([platform, count]) => (
+              <div key={platform} className="flex items-center gap-3">
+                {platform === "facebook" ? (
+                  <Facebook className="w-4 h-4 text-blue-600 shrink-0" />
+                ) : (
+                  <Instagram className="w-4 h-4 text-purple-600 shrink-0" />
+                )}
+                <div className="flex-1">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium capitalize">{platform}</span>
+                    <span className="text-muted-foreground">{count} posts</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${platform === "facebook" ? "bg-blue-500" : "bg-purple-500"}`}
+                      style={{
+                        width: `${Math.round((count / (Object.values(platforms).reduce((a, b) => a + b, 0) || 1)) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            {Object.keys(platforms).length === 0 && (
+              <p className="text-sm text-muted-foreground">No data yet.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {}
+      {weekly.length > 0 && (
+        <div className="nb-card p-4">
+          <p className="text-sm font-bold mb-4">Weekly Posting Activity (last 12 weeks)</p>
+          <div className="flex items-end gap-2 h-24">
+            {weekly.map((w) => (
+              <div key={w._id} className="flex-1 flex flex-col items-center gap-1">
+                <div
+                  className="w-full bg-primary rounded-t"
+                  style={{ height: `${Math.round((w.count / maxWeeklyCount) * 72)}px` }}
+                  title={`Week ${w._id}: ${w.count} post(s)`}
+                />
+                <span className="text-[9px] text-muted-foreground">{w._id.split("-")[1]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {}
+      {recentPosts.length > 0 && (
+        <div className="nb-card p-4">
+          <p className="text-sm font-bold mb-4">Recently Published Posts</p>
+          <div className="space-y-3">
+            {recentPosts.map((post: any) => {
+              const fbLink = post.facebookPostId
+                ? (() => {
+                    const parts = post.facebookPostId.split("_");
+                    return parts.length === 2
+                      ? `https://www.facebook.com/permalink.php?story_fbid=${parts[1]}&id=${parts[0]}`
+                      : `https://www.facebook.com/${post.facebookPostId}`;
+                  })()
+                : null;
+              const igLink = post.instagramPostId
+                ? `https://www.instagram.com/p/${post.instagramPostId}/`
+                : null;
+
+              return (
+                <div key={post._id} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background hover:bg-muted/30 transition-colors">
+                  {post.imageUrl ? (
+                    <img src={post.imageUrl} alt="" className="w-10 h-10 object-cover shrink-0 border border-border rounded" />
+                  ) : (
+                    <div className="w-10 h-10 shrink-0 bg-muted rounded flex items-center justify-center">
+                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate">{post.caption}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {post.postedAt ? formatDistanceToNow(new Date(post.postedAt), { addSuffix: true }) : ""}
+                      {" · "}
+                      <span className="capitalize">{post.postType || "image"}</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    {fbLink && (
+                      <a
+                        href={fbLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-7 w-7 flex items-center justify-center rounded border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                        title="View on Facebook"
+                      >
+                        <Facebook className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {igLink && (
+                      <a
+                        href={igLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-7 w-7 flex items-center justify-center rounded border border-purple-200 bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+                        title="View on Instagram"
+                      >
+                        <Instagram className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    <a
+                      href="https://business.facebook.com/latest/insights/posts/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-7 w-7 flex items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                      title="View Analytics in Meta Business Suite"
+                    >
+                      <BarChart3 className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {recentPosts.length === 0 && (
+        <div className="flex flex-col items-center py-12 gap-2 text-center">
+          <BarChart3 className="w-10 h-10 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">No published posts yet. Analytics will appear here once posts are published.</p>
+        </div>
+      )}
     </div>
   );
 }
