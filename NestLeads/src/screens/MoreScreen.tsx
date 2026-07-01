@@ -79,7 +79,14 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Campaigns',
     sub: 'WhatsApp broadcast campaigns',
     screen: 'Campaigns',
-    color: SECONDARY  ,
+    color: SECONDARY,
+  },
+  {
+    icon: 'logo-instagram',
+    label: 'Social Planner',
+    sub: 'Schedule & approve social posts',
+    screen: 'SocialPlanner',
+    color: '#7c3aed',
   },
   {
     icon: 'people-outline',

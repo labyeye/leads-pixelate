@@ -167,9 +167,9 @@ export default function SocialMediaPlannerPage() {
   const [searchParams] = useSearchParams();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
-  const [activeTab, setActiveTab] = useState<"posts" | "accounts" | "analytics">(
-    searchParams.get("tab") === "accounts" ? "accounts" : "posts",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "posts" | "accounts" | "analytics"
+  >(searchParams.get("tab") === "accounts" ? "accounts" : "posts");
 
   const [stats, setStats] = useState<any>(null);
 
@@ -259,13 +259,22 @@ export default function SocialMediaPlannerPage() {
                 iconColor: "text-blue-600",
               },
             ].map((s) => (
-              <div key={s.label} className="border-2 border-black p-3 flex flex-col gap-2 bg-white nb-card-hover">
-                <div className={`w-8 h-8 border-2 border-black flex items-center justify-center shrink-0 ${s.bg}`}>
+              <div
+                key={s.label}
+                className="border-2 border-black p-3 flex flex-col gap-2 bg-white nb-card-hover"
+              >
+                <div
+                  className={`w-8 h-8 border-2 border-black flex items-center justify-center shrink-0 ${s.bg}`}
+                >
                   <s.icon className={`w-4 h-4 ${s.iconColor}`} />
                 </div>
                 <div>
-                  <p className="font-display font-bold text-2xl text-black">{s.value}</p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                  <p className="font-display font-bold text-2xl text-black">
+                    {s.value}
+                  </p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    {s.label}
+                  </p>
                 </div>
               </div>
             ))}
@@ -914,40 +923,112 @@ function PostWizard({
   const { user: currentUser } = useAuth();
   const [step, setStep] = useState<WizardStep>(1);
   const [saving, setSaving] = useState(false);
+  const [draftRecovered, setDraftRecovered] = useState(false);
+
+  const DRAFT_KEY = "social_wizard_draft";
+  const isNew = !editingPost;
 
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
+  // Restore from localStorage for new posts only
+  const savedDraft = isNew
+    ? (() => {
+        try {
+          return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+        } catch {
+          return null;
+        }
+      })()
+    : null;
+
   const [accountIds, setAccountIds] = useState<string[]>(
-    editingPost?.accountIds || [],
+    editingPost?.accountIds || savedDraft?.accountIds || [],
   );
   const [postType, setPostType] = useState<PostType>(
-    editingPost?.postType || "image",
+    editingPost?.postType || savedDraft?.postType || "image",
   );
-  const [imageUrl, setImageUrl] = useState(editingPost?.imageUrl || "");
+  const [imageUrl, setImageUrl] = useState(
+    editingPost?.imageUrl || savedDraft?.imageUrl || "",
+  );
   const [mediaUrlInputs, setMediaUrlInputs] = useState<string[]>(
-    editingPost?.mediaUrls?.length ? editingPost.mediaUrls : ["", ""],
+    editingPost?.mediaUrls?.length
+      ? editingPost.mediaUrls
+      : savedDraft?.mediaUrlInputs || ["", ""],
   );
-  const [videoUrl, setVideoUrl] = useState(editingPost?.videoUrl || "");
+  const [videoUrl, setVideoUrl] = useState(
+    editingPost?.videoUrl || savedDraft?.videoUrl || "",
+  );
   const [coverImageUrl, setCoverImageUrl] = useState(
-    editingPost?.coverImageUrl || "",
+    editingPost?.coverImageUrl || savedDraft?.coverImageUrl || "",
   );
 
-  const [caption, setCaption] = useState(editingPost?.caption || "");
+  const [caption, setCaption] = useState(
+    editingPost?.caption || savedDraft?.caption || "",
+  );
   const [hashtagInput, setHashtagInput] = useState(
-    editingPost?.hashtags.join(" ") || "",
+    editingPost?.hashtags.join(" ") || savedDraft?.hashtagInput || "",
   );
 
   const [scheduledDate, setScheduledDate] = useState(
-    editingPost ? format(new Date(editingPost.scheduledAt), "yyyy-MM-dd") : "",
+    editingPost
+      ? format(new Date(editingPost.scheduledAt), "yyyy-MM-dd")
+      : savedDraft?.scheduledDate || "",
   );
   const [scheduledTime, setScheduledTime] = useState(
-    editingPost ? format(new Date(editingPost.scheduledAt), "HH:mm") : "09:00",
+    editingPost
+      ? format(new Date(editingPost.scheduledAt), "HH:mm")
+      : savedDraft?.scheduledTime || "09:00",
   );
   const [scheduledBy, setScheduledBy] = useState(
-    editingPost?.scheduledBy?._id || currentUser?.id || "",
+    editingPost?.scheduledBy?._id ||
+      savedDraft?.scheduledBy ||
+      currentUser?.id ||
+      "",
   );
+
+  // Show recovery banner if draft had meaningful content
+  useEffect(() => {
+    if (
+      savedDraft &&
+      (savedDraft.caption || savedDraft.imageUrl || savedDraft.videoUrl)
+    ) {
+      setDraftRecovered(true);
+    }
+  }, []); // eslint-disable-line
+
+  // Auto-save to localStorage on every change (new posts only)
+  useEffect(() => {
+    if (!isNew) return;
+    const draft = {
+      accountIds,
+      postType,
+      imageUrl,
+      mediaUrlInputs,
+      videoUrl,
+      coverImageUrl,
+      caption,
+      hashtagInput,
+      scheduledDate,
+      scheduledTime,
+      scheduledBy,
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }, [
+    accountIds,
+    postType,
+    imageUrl,
+    mediaUrlInputs,
+    videoUrl,
+    coverImageUrl,
+    caption,
+    hashtagInput,
+    scheduledDate,
+    scheduledTime,
+    scheduledBy,
+    isNew,
+  ]);
 
   useEffect(() => {
     (async () => {
@@ -960,7 +1041,10 @@ function PostWizard({
         setAccounts(accRes.data.filter((a: SocialAccount) => a.isActive));
         setUsers(userRes.data);
       } catch {
-        toast({ title: "Failed to load accounts/users", variant: "destructive" });
+        toast({
+          title: "Failed to load accounts/users",
+          variant: "destructive",
+        });
       } finally {
         setLoadingMeta(false);
       }
@@ -975,9 +1059,7 @@ function PostWizard({
 
   const platforms = Array.from(
     new Set(
-      accounts
-        .filter((a) => accountIds.includes(a._id))
-        .map((a) => a.platform),
+      accounts.filter((a) => accountIds.includes(a._id)).map((a) => a.platform),
     ),
   );
 
@@ -990,12 +1072,9 @@ function PostWizard({
   const mediaUrls = mediaUrlInputs.map((m) => m.trim()).filter(Boolean);
 
   const updateMediaUrl = (index: number, value: string) => {
-    setMediaUrlInputs((prev) =>
-      prev.map((m, i) => (i === index ? value : m)),
-    );
+    setMediaUrlInputs((prev) => prev.map((m, i) => (i === index ? value : m)));
   };
-  const addMediaUrlField = () =>
-    setMediaUrlInputs((prev) => [...prev, ""]);
+  const addMediaUrlField = () => setMediaUrlInputs((prev) => [...prev, ""]);
   const removeMediaUrlField = (index: number) =>
     setMediaUrlInputs((prev) => prev.filter((_, i) => i !== index));
 
@@ -1033,6 +1112,7 @@ function PostWizard({
         toast({ title: "Post updated" });
       } else {
         await socialAPI.createPost(payload);
+        localStorage.removeItem(DRAFT_KEY);
         toast({ title: "Post created as Draft" });
       }
       onClose();
@@ -1053,7 +1133,11 @@ function PostWizard({
     : caption;
 
   const previewImage =
-    postType === "reel" ? coverImageUrl : postType === "image" ? imageUrl : mediaUrls[0];
+    postType === "reel"
+      ? coverImageUrl
+      : postType === "image"
+        ? imageUrl
+        : mediaUrls[0];
 
   const selectedAccounts = accounts.filter((a) => accountIds.includes(a._id));
 
@@ -1087,6 +1171,34 @@ function PostWizard({
             ))}
           </div>
         </DialogHeader>
+
+        {draftRecovered && isNew && (
+          <div className="mx-6 mt-3 flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-300 rounded text-xs text-amber-800">
+            <Info className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+            <span className="flex-1">
+              Draft recovered from your last session.
+            </span>
+            <button
+              className="font-bold underline shrink-0"
+              onClick={() => {
+                localStorage.removeItem(DRAFT_KEY);
+                setDraftRecovered(false);
+                setAccountIds([]);
+                setPostType("image");
+                setImageUrl("");
+                setMediaUrlInputs(["", ""]);
+                setVideoUrl("");
+                setCoverImageUrl("");
+                setCaption("");
+                setHashtagInput("");
+                setScheduledDate("");
+                setScheduledTime("09:00");
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0 space-y-4">
           {loadingMeta ? (
@@ -2121,16 +2233,24 @@ function PostDetailModal({
 
           {}
           <div className="space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Caption</p>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{post.caption}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Caption
+            </p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">
+              {post.caption}
+            </p>
           </div>
 
           {}
           {post.hashtags.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Hashtags</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Hashtags
+              </p>
               <p className="text-xs text-primary-900">
-                {post.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+                {post.hashtags
+                  .map((h) => (h.startsWith("#") ? h : `#${h}`))
+                  .join(" ")}
               </p>
             </div>
           )}
@@ -2138,30 +2258,40 @@ function PostDetailModal({
           {}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Scheduled</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                Scheduled
+              </p>
               <p>{format(new Date(post.scheduledAt), "dd MMM yyyy, h:mm a")}</p>
             </div>
             {post.createdBy && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Created By</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                  Created By
+                </p>
                 <p>{post.createdBy.name}</p>
               </div>
             )}
             {post.approvedBy && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Approved By</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                  Approved By
+                </p>
                 <p>{post.approvedBy.name}</p>
               </div>
             )}
             {post.rejectedBy && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Rejected By</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                  Rejected By
+                </p>
                 <p>{post.rejectedBy.name}</p>
               </div>
             )}
             {post.postedAt && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Posted At</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                  Posted At
+                </p>
                 <p>{format(new Date(post.postedAt), "dd MMM yyyy, h:mm a")}</p>
               </div>
             )}
@@ -2187,7 +2317,9 @@ function PostDetailModal({
           {}
           {(fbLink || igLink) && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Published Links</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Published Links
+              </p>
               <div className="flex flex-col gap-2">
                 {fbLink && (
                   <a
@@ -2230,16 +2362,24 @@ function PostDetailModal({
           {}
           {(post.facebookPostId || post.instagramPostId) && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Post IDs</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Post IDs
+              </p>
               {post.facebookPostId && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground w-16">Facebook:</span>
-                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">{post.facebookPostId}</code>
+                  <span className="text-[10px] text-muted-foreground w-16">
+                    Facebook:
+                  </span>
+                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">
+                    {post.facebookPostId}
+                  </code>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-5 w-5 p-0"
-                    onClick={() => navigator.clipboard.writeText(post.facebookPostId!)}
+                    onClick={() =>
+                      navigator.clipboard.writeText(post.facebookPostId!)
+                    }
                   >
                     <Copy className="w-3 h-3" />
                   </Button>
@@ -2247,13 +2387,19 @@ function PostDetailModal({
               )}
               {post.instagramPostId && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground w-16">Instagram:</span>
-                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">{post.instagramPostId}</code>
+                  <span className="text-[10px] text-muted-foreground w-16">
+                    Instagram:
+                  </span>
+                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">
+                    {post.instagramPostId}
+                  </code>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-5 w-5 p-0"
-                    onClick={() => navigator.clipboard.writeText(post.instagramPostId!)}
+                    onClick={() =>
+                      navigator.clipboard.writeText(post.instagramPostId!)
+                    }
                   >
                     <Copy className="w-3 h-3" />
                   </Button>
@@ -2337,7 +2483,9 @@ function AnalyticsTab() {
         {statusOrder.slice(0, 4).map((s) => (
           <div key={s.key} className="nb-card p-4 space-y-1">
             <p className="text-2xl font-bold">{statuses[s.key] ?? 0}</p>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{s.label}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {s.label}
+            </p>
           </div>
         ))}
       </div>
@@ -2348,21 +2496,29 @@ function AnalyticsTab() {
         <div className="nb-card p-4">
           <p className="text-sm font-bold mb-4">Posts by Status</p>
           <div className="space-y-2.5">
-            {statusOrder.filter((s) => statuses[s.key]).map((s) => {
-              const total = Object.values(statuses).reduce((a, b) => a + b, 0) || 1;
-              const pct = Math.round(((statuses[s.key] ?? 0) / total) * 100);
-              return (
-                <div key={s.key} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-medium">{s.label}</span>
-                    <span className="text-muted-foreground">{statuses[s.key]} ({pct}%)</span>
+            {statusOrder
+              .filter((s) => statuses[s.key])
+              .map((s) => {
+                const total =
+                  Object.values(statuses).reduce((a, b) => a + b, 0) || 1;
+                const pct = Math.round(((statuses[s.key] ?? 0) / total) * 100);
+                return (
+                  <div key={s.key} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="font-medium">{s.label}</span>
+                      <span className="text-muted-foreground">
+                        {statuses[s.key]} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${s.color} rounded-full`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className={`h-full ${s.color} rounded-full`} style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
 
@@ -2403,16 +2559,25 @@ function AnalyticsTab() {
       {}
       {weekly.length > 0 && (
         <div className="nb-card p-4">
-          <p className="text-sm font-bold mb-4">Weekly Posting Activity (last 12 weeks)</p>
+          <p className="text-sm font-bold mb-4">
+            Weekly Posting Activity (last 12 weeks)
+          </p>
           <div className="flex items-end gap-2 h-24">
             {weekly.map((w) => (
-              <div key={w._id} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                key={w._id}
+                className="flex-1 flex flex-col items-center gap-1"
+              >
                 <div
                   className="w-full bg-primary rounded-t"
-                  style={{ height: `${Math.round((w.count / maxWeeklyCount) * 72)}px` }}
+                  style={{
+                    height: `${Math.round((w.count / maxWeeklyCount) * 72)}px`,
+                  }}
                   title={`Week ${w._id}: ${w.count} post(s)`}
                 />
-                <span className="text-[9px] text-muted-foreground">{w._id.split("-")[1]}</span>
+                <span className="text-[9px] text-muted-foreground">
+                  {w._id.split("-")[1]}
+                </span>
               </div>
             ))}
           </div>
@@ -2438,9 +2603,16 @@ function AnalyticsTab() {
                 : null;
 
               return (
-                <div key={post._id} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background hover:bg-muted/30 transition-colors">
+                <div
+                  key={post._id}
+                  className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background hover:bg-muted/30 transition-colors"
+                >
                   {post.imageUrl ? (
-                    <img src={post.imageUrl} alt="" className="w-10 h-10 object-cover shrink-0 border border-border rounded" />
+                    <img
+                      src={post.imageUrl}
+                      alt=""
+                      className="w-10 h-10 object-cover shrink-0 border border-border rounded"
+                    />
                   ) : (
                     <div className="w-10 h-10 shrink-0 bg-muted rounded flex items-center justify-center">
                       <ImageIcon className="w-4 h-4 text-muted-foreground" />
@@ -2449,9 +2621,15 @@ function AnalyticsTab() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">{post.caption}</p>
                     <p className="text-xs text-muted-foreground">
-                      {post.postedAt ? formatDistanceToNow(new Date(post.postedAt), { addSuffix: true }) : ""}
+                      {post.postedAt
+                        ? formatDistanceToNow(new Date(post.postedAt), {
+                            addSuffix: true,
+                          })
+                        : ""}
                       {" · "}
-                      <span className="capitalize">{post.postType || "image"}</span>
+                      <span className="capitalize">
+                        {post.postType || "image"}
+                      </span>
                     </p>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
@@ -2497,7 +2675,10 @@ function AnalyticsTab() {
       {recentPosts.length === 0 && (
         <div className="flex flex-col items-center py-12 gap-2 text-center">
           <BarChart3 className="w-10 h-10 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">No published posts yet. Analytics will appear here once posts are published.</p>
+          <p className="text-sm text-muted-foreground">
+            No published posts yet. Analytics will appear here once posts are
+            published.
+          </p>
         </div>
       )}
     </div>

@@ -22,6 +22,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import CampaignsScreen from '../screens/CampaignsScreen';
 import UsersScreen from '../screens/UsersScreen';
 import IntegrationsScreen from '../screens/IntegrationsScreen';
+import SocialPlannerScreen from '../screens/SocialPlannerScreen';
+import CreatePostScreen from '../screens/CreatePostScreen';
 
 export type LeadsStackParamList = {
   LeadsList: undefined;
@@ -51,6 +53,8 @@ export type MoreStackParamList = {
   Integrations: undefined;
   Clients: undefined;
   Quotations: undefined;
+  SocialPlanner: undefined;
+  CreatePost: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -83,6 +87,8 @@ function MoreNavigator() {
       <MoreStack.Screen name="Integrations" component={IntegrationsScreen} />
       <MoreStack.Screen name="Clients" component={ClientsScreen} />
       <MoreStack.Screen name="Quotations" component={QuotationsScreen} />
+      <MoreStack.Screen name="SocialPlanner" component={SocialPlannerScreen} />
+      <MoreStack.Screen name="CreatePost" component={CreatePostScreen} />
     </MoreStack.Navigator>
   );
 }

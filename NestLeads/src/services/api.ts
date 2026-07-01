@@ -252,6 +252,48 @@ export const deviceAPI = {
     }),
 };
 
+export const socialAPI = {
+  getStats: () => request<{success: boolean; data: any}>('/social/stats'),
+  getPosts: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{success: boolean; data: any[]}>(`/social/posts${qs}`);
+  },
+  getAccounts: () => request<{success: boolean; data: any[]}>('/social/accounts'),
+  createPost: (data: any) =>
+    request<{success: boolean; data: any}>('/social/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  approvePost: (id: string, note?: string) =>
+    request<{success: boolean; data: any}>(`/social/posts/${id}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify({note}),
+    }),
+  rejectPost: (id: string, reason: string) =>
+    request<{success: boolean; data: any}>(`/social/posts/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({reason}),
+    }),
+  publishPost: (id: string) =>
+    request<{success: boolean; data: any; message: string}>(`/social/posts/${id}/publish`, {
+      method: 'POST',
+    }),
+};
+
+export async function uploadFile(fileUri: string, fileName: string, mimeType: string): Promise<string> {
+  const token = await getToken();
+  const formData = new FormData();
+  formData.append('file', {uri: fileUri, name: fileName, type: mimeType} as any);
+  const res = await fetch(`${API_BASE}/upload`, {
+    method: 'POST',
+    headers: {Authorization: `Bearer ${token}`},
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed');
+  return data.url;
+}
+
 export const whatsappAPI = {
   getConversations: () =>
     request<{ success: boolean; data: any[] }>('/whatsapp/conversations'),
