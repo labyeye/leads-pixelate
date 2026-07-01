@@ -99,6 +99,7 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
       children: childIds,
       caption,
     });
+    await waitForMediaReady(container.id, accessToken);
     const published = await fbCall(
       `${igAccountId}/media_publish`,
       accessToken,
@@ -132,6 +133,7 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
     image_url: imageUrl,
     caption,
   });
+  await waitForMediaReady(container.id, accessToken);
   const published = await fbCall(
     `${igAccountId}/media_publish`,
     accessToken,
@@ -303,9 +305,9 @@ exports.updatePost = asyncHandler(async (req, res) => {
     throw new Error("Post not found");
   }
 
-  if (!["DRAFT", "REJECTED"].includes(post.status)) {
+  if (!["DRAFT", "REJECTED", "FAILED"].includes(post.status)) {
     res.status(400);
-    throw new Error("Only DRAFT or REJECTED posts can be edited");
+    throw new Error("Only DRAFT, REJECTED or FAILED posts can be edited");
   }
 
   const allowed = [
@@ -332,7 +334,7 @@ exports.updatePost = asyncHandler(async (req, res) => {
     videoUrl: post.videoUrl,
   });
 
-  if (post.status === "REJECTED") post.status = "DRAFT";
+  if (["REJECTED", "FAILED"].includes(post.status)) post.status = "DRAFT";
 
   await post.save();
   await post.populate("createdBy scheduledBy", "name");
