@@ -27,7 +27,7 @@ async function fbCall(path, accessToken, body) {
   return data;
 }
 
-async function waitForMediaReady(creationId, accessToken, maxTries = 10) {
+async function waitForMediaReady(creationId, accessToken, maxTries = 60) {
   for (let i = 0; i < maxTries; i++) {
     const res = await fetch(
       `https://graph.facebook.com/v18.0/${creationId}?fields=status_code&access_token=${accessToken}`,
@@ -42,7 +42,7 @@ async function waitForMediaReady(creationId, accessToken, maxTries = 10) {
     if (data.status_code === "ERROR" || data.status_code === "EXPIRED") {
       throw new Error("Media processing failed on Facebook's side");
     }
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 5000));
   }
   throw new Error("Timed out waiting for media to finish processing");
 }
