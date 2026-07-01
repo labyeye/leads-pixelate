@@ -33,12 +33,18 @@ async function waitForMediaReady(creationId, accessToken, maxTries = 10) {
       `https://graph.facebook.com/v18.0/${creationId}?fields=status_code&access_token=${accessToken}`,
     );
     const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(
+        data?.error?.message || "Failed to check media processing status",
+      );
+    }
     if (data.status_code === "FINISHED") return;
-    if (data.status_code === "ERROR") {
+    if (data.status_code === "ERROR" || data.status_code === "EXPIRED") {
       throw new Error("Media processing failed on Facebook's side");
     }
     await new Promise((r) => setTimeout(r, 3000));
   }
+  throw new Error("Timed out waiting for media to finish processing");
 }
 
 async function postToFacebook(pageId, accessToken, caption, post) {
