@@ -24,6 +24,12 @@ const socialAccountSchema = new mongoose.Schema(
     instagramBusinessAccountId: { type: String, default: "" },
 
     userAccessToken: { type: String, default: "" },
+
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   { timestamps: true },
 );

@@ -490,7 +490,8 @@ exports.runScheduledPosts = async () => {
 };
 
 exports.getAccounts = asyncHandler(async (req, res) => {
-  const accounts = await SocialAccount.find()
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const accounts = await SocialAccount.find(tenantFilter)
     .sort({ createdAt: -1 })
     .populate("connectedBy", "name")
     .select("-accessToken -userAccessToken");
@@ -516,7 +517,7 @@ exports.connectAccount = asyncHandler(async (req, res) => {
   }
 
   const account = await SocialAccount.findOneAndUpdate(
-    { platform, accountId },
+    { platform, accountId, tenantId: req.user.tenantId || null },
     {
       accountName,
       accessToken,
@@ -524,6 +525,7 @@ exports.connectAccount = asyncHandler(async (req, res) => {
       instagramBusinessAccountId: instagramBusinessAccountId || "",
       isActive: true,
       connectedBy: req.user._id,
+      tenantId: req.user.tenantId || null,
     },
     { upsert: true, new: true, runValidators: true },
   );
@@ -535,7 +537,8 @@ exports.connectAccount = asyncHandler(async (req, res) => {
 });
 
 exports.disconnectAccount = asyncHandler(async (req, res) => {
-  const account = await SocialAccount.findById(req.params.id);
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const account = await SocialAccount.findOne({ _id: req.params.id, ...tenantFilter });
   if (!account) {
     res.status(404);
     throw new Error("Account not found");
@@ -576,7 +579,7 @@ exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { authUrl } });
 });
 
-async function savePagesAsSocialAccounts(finalUserToken, userId) {
+async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null) {
   try {
     const permRes = await fetch(
       `https://graph.facebook.com/v18.0/me/permissions?access_token=${finalUserToken}`,
@@ -627,7 +630,7 @@ async function savePagesAsSocialAccounts(finalUserToken, userId) {
     }
 
     await SocialAccount.findOneAndUpdate(
-      { platform: "facebook", accountId: page.id },
+      { platform: "facebook", accountId: page.id, tenantId: tenantId || null },
       {
         accountName: page.name,
         accessToken: page.access_token,
@@ -636,6 +639,7 @@ async function savePagesAsSocialAccounts(finalUserToken, userId) {
         userAccessToken: finalUserToken,
         isActive: true,
         connectedBy: userId,
+        tenantId: tenantId || null,
       },
       { upsert: true, new: true },
     );
@@ -654,13 +658,14 @@ async function savePagesAsSocialAccounts(finalUserToken, userId) {
       } catch (_) {}
 
       await SocialAccount.findOneAndUpdate(
-        { platform: "instagram", accountId: igId },
+        { platform: "instagram", accountId: igId, tenantId: tenantId || null },
         {
           accountName: igName,
           accessToken: page.access_token,
           profilePicture: igPicture,
           isActive: true,
           connectedBy: userId,
+          tenantId: tenantId || null,
         },
         { upsert: true, new: true },
       );
@@ -710,9 +715,12 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
   const longLivedData = await longLivedRes.json();
   const finalUserToken = longLivedData.access_token || userAccessToken;
 
+  const user = await require("../models/User").findById(userId).select("tenantId");
+  const tenantId = user?.tenantId || null;
+
   let savedCount = 0;
   try {
-    savedCount = await savePagesAsSocialAccounts(finalUserToken, userId);
+    savedCount = await savePagesAsSocialAccounts(finalUserToken, userId, tenantId);
   } catch (err) {
     return res.redirect(
       `${frontendUrl}?tab=accounts&error=${encodeURIComponent(err.message)}`,
@@ -740,7 +748,7 @@ exports.importFromIntegration = asyncHandler(async (req, res) => {
 
   let savedCount;
   try {
-    savedCount = await savePagesAsSocialAccounts(userToken, req.user._id);
+    savedCount = await savePagesAsSocialAccounts(userToken, req.user._id, req.user.tenantId || null);
   } catch (err) {
     res.status(400);
     throw new Error(err.message || "Failed to import pages from Facebook");
@@ -788,7 +796,7 @@ exports.getStats = asyncHandler(async (req, res) => {
       SocialPost.countDocuments({ ...tenantFilter, status: "SCHEDULED" }),
       SocialPost.countDocuments({ ...tenantFilter, status: "POSTED" }),
       SocialPost.countDocuments({ ...tenantFilter, status: "FAILED" }),
-      SocialAccount.countDocuments({ isActive: true }),
+      SocialAccount.countDocuments({ ...tenantFilter, isActive: true }),
     ]);
 
   res.json({
