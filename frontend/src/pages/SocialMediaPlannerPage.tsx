@@ -140,6 +140,11 @@ const STATUS_CONFIG: Record<
     color: "bg-green-100 text-green-700 border-green-200",
     icon: CheckCircle2,
   },
+  PARTIALLY_POSTED: {
+    label: "Partially Posted",
+    color: "bg-amber-100 text-amber-700 border-amber-200",
+    icon: AlertCircle,
+  },
   FAILED: {
     label: "Failed",
     color: "bg-red-100 text-red-700 border-red-200",
@@ -731,14 +736,15 @@ function PostCard({
             )}
 
             {}
-            {post.status === "FAILED" && post.failureReason && (
-              <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
-                <strong>Failed:</strong> {post.failureReason}
-              </div>
-            )}
+            {["FAILED", "PARTIALLY_POSTED"].includes(post.status) &&
+              post.failureReason && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
+                  <strong>Failed:</strong> {post.failureReason}
+                </div>
+              )}
 
             {}
-            {post.status === "POSTED" && (
+            {["POSTED", "PARTIALLY_POSTED"].includes(post.status) && (
               <div className="mt-2 flex items-center gap-3 text-xs text-green-600">
                 <Check className="w-3 h-3" />
                 Posted{" "}
@@ -808,7 +814,9 @@ function PostCard({
 
             {}
             {isAdmin &&
-              ["SCHEDULED", "FAILED", "APPROVED"].includes(post.status) && (
+              ["SCHEDULED", "FAILED", "APPROVED", "PARTIALLY_POSTED"].includes(
+                post.status,
+              ) && (
                 <Button
                   size="sm"
                   className="h-7 text-xs nb-btn bg-[#024BAB] text-white hover:bg-[#024BAB]/90"

@@ -149,6 +149,12 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
 }
 
 async function executePublish(post) {
+  // Platforms that already succeeded on a previous attempt (e.g. retrying a
+  // PARTIALLY_POSTED post) must not be posted to again.
+  const alreadyPostedPlatforms = new Set();
+  if (post.facebookPostId) alreadyPostedPlatforms.add("facebook");
+  if (post.instagramPostId) alreadyPostedPlatforms.add("instagram");
+
   post.status = "POSTING";
   await post.save();
 
@@ -174,6 +180,10 @@ async function executePublish(post) {
     });
   }
 
+  accounts = accounts.filter(
+    (account) => !alreadyPostedPlatforms.has(account.platform),
+  );
+
   for (const account of accounts) {
     try {
       const postId =
@@ -197,14 +207,20 @@ async function executePublish(post) {
   }
 
   post.facebookPostId =
-    results.find((r) => r.platform === "facebook")?.postId || "";
+    results.find((r) => r.platform === "facebook")?.postId ||
+    post.facebookPostId ||
+    "";
   post.instagramPostId =
-    results.find((r) => r.platform === "instagram")?.postId || "";
-  post.postedAt = results.length > 0 ? new Date() : null;
+    results.find((r) => r.platform === "instagram")?.postId ||
+    post.instagramPostId ||
+    "";
+  const anySuccess = results.length > 0 || alreadyPostedPlatforms.size > 0;
+  post.postedAt = anySuccess ? new Date() : null;
   post.failureReason = errors.join("; ");
-  post.status =
-    results.length === 0
-      ? "FAILED"
+  post.status = !anySuccess
+    ? "FAILED"
+    : errors.length > 0
+      ? "PARTIALLY_POSTED"
       : "POSTED";
 
   await post.save();
@@ -277,7 +293,7 @@ exports.createPost = asyncHandler(async (req, res) => {
     throw new Error("Select at least one account to post to");
   }
 
-  validatePostMedia({ postType, imageUrl, mediaUrls, videoUrl });
+  validatePostMedia({ postType: postType || "image", imageUrl, mediaUrls, videoUrl });
 
   const post = await SocialPost.create({
     caption,
@@ -311,9 +327,13 @@ exports.updatePost = asyncHandler(async (req, res) => {
     throw new Error("Post not found");
   }
 
-  if (!["DRAFT", "REJECTED", "FAILED"].includes(post.status)) {
+  if (
+    !["DRAFT", "REJECTED", "FAILED", "PARTIALLY_POSTED"].includes(post.status)
+  ) {
     res.status(400);
-    throw new Error("Only DRAFT, REJECTED or FAILED posts can be edited");
+    throw new Error(
+      "Only DRAFT, REJECTED, FAILED or PARTIALLY_POSTED posts can be edited",
+    );
   }
 
   const allowed = [
@@ -340,7 +360,8 @@ exports.updatePost = asyncHandler(async (req, res) => {
     videoUrl: post.videoUrl,
   });
 
-  if (["REJECTED", "FAILED"].includes(post.status)) post.status = "DRAFT";
+  if (["REJECTED", "FAILED", "PARTIALLY_POSTED"].includes(post.status))
+    post.status = "DRAFT";
 
   await post.save();
   await post.populate("createdBy scheduledBy", "name");
@@ -466,9 +487,15 @@ exports.publishPost = asyncHandler(async (req, res) => {
     throw new Error("Post not found");
   }
 
-  if (!["APPROVED", "SCHEDULED", "FAILED"].includes(post.status)) {
+  if (
+    !["APPROVED", "SCHEDULED", "FAILED", "PARTIALLY_POSTED"].includes(
+      post.status,
+    )
+  ) {
     res.status(400);
-    throw new Error("Post must be APPROVED, SCHEDULED, or FAILED to publish");
+    throw new Error(
+      "Post must be APPROVED, SCHEDULED, FAILED, or PARTIALLY_POSTED to publish",
+    );
   }
 
   res.json({ success: true, message: "Publishing started", data: post });

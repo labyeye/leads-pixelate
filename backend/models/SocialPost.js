@@ -59,6 +59,7 @@ const socialPostSchema = new mongoose.Schema(
         "SCHEDULED",
         "POSTING",
         "POSTED",
+        "PARTIALLY_POSTED",
         "FAILED",
       ],
       default: "DRAFT",
