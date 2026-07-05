@@ -2184,12 +2184,13 @@ export default function LeadsPage() {
                             {isColVisible("followup") && (
                               <td className="px-5 py-3.5 text-black">
                                 {l.followUpDate
-                                  ? new Date(
-                                      l.followUpDate,
-                                    ).toLocaleDateString("en-IN", {
-                                      day: "numeric",
-                                      month: "short",
-                                    })
+                                  ? new Date(l.followUpDate).toLocaleDateString(
+                                      "en-IN",
+                                      {
+                                        day: "numeric",
+                                        month: "short",
+                                      },
+                                    )
                                   : "-"}
                               </td>
                             )}
