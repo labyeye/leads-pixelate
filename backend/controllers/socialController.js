@@ -712,13 +712,13 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
           console.log(`[Social Import] biz ${biz.id} (${biz.name}) ${edge}: found ${igAccounts.length}`);
 
           for (const ig of igAccounts) {
-            // Check already saved by page-linking step
-            const exists = await SocialAccount.findOne({
+            // Refresh the token even if already saved — reconnecting must
+            // update Instagram accounts too, not just Facebook pages.
+            const isNew = !(await SocialAccount.findOne({
               platform: "instagram",
               accountId: ig.id,
               tenantId: tenantId || null,
-            });
-            if (exists) continue;
+            }));
 
             // Use the linked page token if available, else fall back to user token
             const linkedPageToken =
@@ -733,7 +733,7 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
               ig.username,
               ig.profile_picture_url,
             );
-            savedCount++;
+            if (isNew) savedCount++;
           }
         } catch (err) {
           console.error(`[Social Import] ${edge} fetch failed for biz ${biz.id}:`, err.message);
