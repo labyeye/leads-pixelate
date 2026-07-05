@@ -873,7 +873,7 @@ router.post(
             company: company || "N/A",
             phone,
             email,
-            location: city,
+            location: cityRaw,
             requirement:
               product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
             facebookAdId: ad_id || "",

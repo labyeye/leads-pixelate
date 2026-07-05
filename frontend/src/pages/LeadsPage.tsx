@@ -880,6 +880,88 @@ export default function LeadsPage() {
     </Popover>
   );
 
+  const ALL_COLUMNS: { id: string; label: string; alwaysOn?: boolean }[] = [
+    { id: "name", label: "Name", alwaysOn: true },
+    { id: "score", label: "Score" },
+    { id: "source", label: "Source" },
+    { id: "inquiryDate", label: "Inquiry Date" },
+    { id: "phone", label: "Phone" },
+    { id: "city", label: "City" },
+    { id: "state", label: "State" },
+    { id: "campaign", label: "Campaign" },
+    { id: "budget", label: "Budget" },
+    { id: "product", label: "Interested Product" },
+    { id: "remarks", label: "Remarks" },
+    { id: "status", label: "Status", alwaysOn: true },
+    { id: "assigned", label: "Assigned" },
+    { id: "followup", label: "Follow-up" },
+  ];
+
+  const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(
+    () => {
+      try {
+        const stored = localStorage.getItem("leadsTableColumns");
+        if (stored) return JSON.parse(stored);
+      } catch {}
+      return Object.fromEntries(ALL_COLUMNS.map((c) => [c.id, true]));
+    },
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("leadsTableColumns", JSON.stringify(visibleCols));
+    } catch {}
+  }, [visibleCols]);
+
+  const isColVisible = (id: string) => visibleCols[id] !== false;
+  const toggleCol = (id: string) =>
+    setVisibleCols((prev) => ({ ...prev, [id]: !isColVisible(id) }));
+
+  const showAssignedCol =
+    isColVisible("assigned") && currentUser?.role !== "sales_executive";
+  const visibleColumnCount =
+    ALL_COLUMNS.filter(
+      (c) => isColVisible(c.id) && (c.id !== "assigned" || showAssignedCol),
+    ).length || 1;
+
+  const renderColumnConfigurator = () => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          title="Configure columns"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-2 border-black bg-white text-black hover:bg-[#FFDE00] transition-colors"
+        >
+          <Filter className="w-3.5 h-3.5" /> Columns
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2" align="end">
+        <p className="text-[10px] font-black uppercase tracking-widest text-black px-2 pb-1">
+          Show Columns
+        </p>
+        <div className="max-h-72 overflow-y-auto space-y-0.5">
+          {ALL_COLUMNS.map((col) => (
+            <label
+              key={col.id}
+              className={cn(
+                "flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs",
+                col.alwaysOn
+                  ? "opacity-50 cursor-not-allowed"
+                  : "cursor-pointer hover:bg-muted",
+              )}
+            >
+              <Checkbox
+                checked={isColVisible(col.id)}
+                disabled={col.alwaysOn}
+                onCheckedChange={() => toggleCol(col.id)}
+              />
+              <span>{col.label}</span>
+            </label>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
   const lead =
     fullLead &&
     (fullLead._id === selectedLeadId || fullLead.id === selectedLeadId)
@@ -1454,7 +1536,15 @@ export default function LeadsPage() {
           </div>
 
           {}
-          <div className="flex items-center border-2 border-black ml-auto">
+          {viewMode === "table" && (
+            <div className="ml-auto">{renderColumnConfigurator()}</div>
+          )}
+          <div
+            className={cn(
+              "flex items-center border-2 border-black",
+              viewMode !== "table" && "ml-auto",
+            )}
+          >
             <button
               onClick={() => setViewMode("table")}
               title="Table view"
@@ -1750,61 +1840,84 @@ export default function LeadsPage() {
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                       Name
                     </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                      Score
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden md:table-cell group">
-                      <div className="flex items-center gap-1">
-                        Source
-                        {renderHeaderFilter(
-                          "source",
-                          [
-                            "IndiaMART",
-                            "TradeIndia",
-                            "Justdial",
-                            "Facebook",
-                            "Instagram",
-                            "Meta",
-                            "Website",
-                            "Manual",
-                          ],
-                          sourceFilters,
-                          setSourceFilters,
-                        )}
-                      </div>
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                      Inquiry Date
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                      Phone
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                      City
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                      Campaign
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                      <div className="flex items-center gap-1">
-                        Budget
-                        {renderBudgetRangeFilter()}
-                      </div>
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                      <div className="flex items-center gap-1">
-                        Interested Product
-                        {renderHeaderFilter(
-                          "interestedProducts",
-                          getUniqueValues("interestedProducts"),
-                          productFilters,
-                          setProductFilters,
-                        )}
-                      </div>
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden xl:table-cell">
-                      Remarks
-                    </th>
+                    {isColVisible("score") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Score
+                      </th>
+                    )}
+                    {isColVisible("source") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest group">
+                        <div className="flex items-center gap-1">
+                          Source
+                          {renderHeaderFilter(
+                            "source",
+                            [
+                              "IndiaMART",
+                              "TradeIndia",
+                              "Justdial",
+                              "Facebook",
+                              "Instagram",
+                              "Meta",
+                              "Website",
+                              "Manual",
+                            ],
+                            sourceFilters,
+                            setSourceFilters,
+                          )}
+                        </div>
+                      </th>
+                    )}
+                    {isColVisible("inquiryDate") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Inquiry Date
+                      </th>
+                    )}
+                    {isColVisible("phone") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Phone
+                      </th>
+                    )}
+                    {isColVisible("city") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        City
+                      </th>
+                    )}
+                    {isColVisible("state") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        State
+                      </th>
+                    )}
+                    {isColVisible("campaign") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Campaign
+                      </th>
+                    )}
+                    {isColVisible("budget") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        <div className="flex items-center gap-1">
+                          Budget
+                          {renderBudgetRangeFilter()}
+                        </div>
+                      </th>
+                    )}
+                    {isColVisible("product") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        <div className="flex items-center gap-1">
+                          Interested Product
+                          {renderHeaderFilter(
+                            "interestedProducts",
+                            getUniqueValues("interestedProducts"),
+                            productFilters,
+                            setProductFilters,
+                          )}
+                        </div>
+                      </th>
+                    )}
+                    {isColVisible("remarks") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Remarks
+                      </th>
+                    )}
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                       <div className="flex items-center gap-1">
                         Status
@@ -1816,23 +1929,28 @@ export default function LeadsPage() {
                         )}
                       </div>
                     </th>
-                    {currentUser?.role !== "sales_executive" && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
+                    {showAssignedCol && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                         Assigned
                       </th>
                     )}
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest hidden lg:table-cell">
-                      <div className="flex items-center gap-1">
-                        Follow-up
-                        {renderFollowUpDateFilter()}
-                      </div>
-                    </th>
+                    {isColVisible("followup") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        <div className="flex items-center gap-1">
+                          Follow-up
+                          {renderFollowUpDateFilter()}
+                        </div>
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={10} className="text-center py-10">
+                      <td
+                        colSpan={visibleColumnCount}
+                        className="text-center py-10"
+                      >
                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-black" />
                         <p className="text-sm text-black mt-2">
                           Loading leads...
@@ -1841,7 +1959,10 @@ export default function LeadsPage() {
                     </tr>
                   ) : filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="text-center py-10">
+                      <td
+                        colSpan={visibleColumnCount}
+                        className="text-center py-10"
+                      >
                         <p className="text-sm text-black">
                           No {activeCategory.toLowerCase()} leads found.
                         </p>
@@ -1853,7 +1974,7 @@ export default function LeadsPage() {
                         0 && (
                         <tr>
                           <td
-                            colSpan={10}
+                            colSpan={visibleColumnCount}
                             style={{
                               height: rowVirtualizer.getVirtualItems()[0].start,
                               padding: 0,
@@ -1870,7 +1991,7 @@ export default function LeadsPage() {
                               className="bg-muted/40 border-y border-border/50 shadow-sm group"
                             >
                               <td
-                                colSpan={10}
+                                colSpan={visibleColumnCount}
                                 className="px-5 py-2.5 text-xs font-bold text-black uppercase tracking-widest"
                               >
                                 <div className="flex items-center gap-2">
@@ -1902,85 +2023,110 @@ export default function LeadsPage() {
                               </p>
                               <p className="text-xs text-black">{l.company}</p>
                             </td>
-                            <td className="px-5 py-3.5">
-                              {l.contactTag ? (
-                                <span
-                                  className={cn(
-                                    "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
-                                    l.contactTag === "HOT" &&
-                                      "bg-red-500 text-white border-black",
-                                    l.contactTag === "WARM" &&
-                                      "bg-[#FFDE00] text-black border-black",
-                                    l.contactTag === "COLD" &&
-                                      "bg-[#024BAB] text-white border-black",
-                                  )}
-                                >
-                                  {l.contactTag === "HOT" && (
-                                    <Flame className="w-3 h-3" />
-                                  )}
-                                  {l.contactTag === "WARM" && (
-                                    <Thermometer className="w-3 h-3" />
-                                  )}
-                                  {l.contactTag === "COLD" && (
-                                    <Snowflake className="w-3 h-3" />
-                                  )}
-                                  {l.contactTag}
-                                </span>
-                              ) : (
-                                <span className="text-black/20 text-xs">—</span>
-                              )}
-                            </td>
-                            <td className="px-5 py-3.5 hidden md:table-cell">
-                              <SourceBadge source={l.source} />
-                            </td>
-                            <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
-                              {l.indiamartQueryTime
-                                ? format(
-                                    new Date(l.indiamartQueryTime),
-                                    "dd MMM, hh:mm a",
-                                  )
-                                : format(
-                                    new Date(l.createdAt),
-                                    "dd MMM, hh:mm a",
-                                  )}
-                            </td>
-                            <td className="px-5 py-3.5 hidden lg:table-cell text-black text-nowrap">
-                              {l.phone || "-"}
-                            </td>
-                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
-                              {l.location || "-"}
-                            </td>
-                            <td
-                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
-                              title={l.facebookAdName || "-"}
-                            >
-                              {l.facebookAdName ? (
-                                <span className="flex items-center gap-1">
-                                  <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
-                                  {l.facebookAdName}
-                                </span>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap">
-                              {l.budget || "-"}
-                            </td>
-                            <td
-                              className="px-5 py-3.5 hidden xl:table-cell text-black truncate max-w-[150px]"
-                              title={l.interestedProducts?.join(", ") || "-"}
-                            >
-                              {l.interestedProducts &&
-                              l.interestedProducts.length > 0
-                                ? l.interestedProducts.join(", ")
-                                : "-"}
-                            </td>
-                            <td
-                              className="px-5 py-3.5 hidden xl:table-cell text-black text-nowrap truncate max-w-[150px]"
-                              title={l.remarks || "-"}
-                            >
-                              {l.remarks || "-"}
-                            </td>
+                            {isColVisible("score") && (
+                              <td className="px-5 py-3.5">
+                                {l.contactTag ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
+                                      l.contactTag === "HOT" &&
+                                        "bg-red-500 text-white border-black",
+                                      l.contactTag === "WARM" &&
+                                        "bg-[#FFDE00] text-black border-black",
+                                      l.contactTag === "COLD" &&
+                                        "bg-[#024BAB] text-white border-black",
+                                    )}
+                                  >
+                                    {l.contactTag === "HOT" && (
+                                      <Flame className="w-3 h-3" />
+                                    )}
+                                    {l.contactTag === "WARM" && (
+                                      <Thermometer className="w-3 h-3" />
+                                    )}
+                                    {l.contactTag === "COLD" && (
+                                      <Snowflake className="w-3 h-3" />
+                                    )}
+                                    {l.contactTag}
+                                  </span>
+                                ) : (
+                                  <span className="text-black/20 text-xs">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                            )}
+                            {isColVisible("source") && (
+                              <td className="px-5 py-3.5">
+                                <SourceBadge source={l.source} />
+                              </td>
+                            )}
+                            {isColVisible("inquiryDate") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.indiamartQueryTime
+                                  ? format(
+                                      new Date(l.indiamartQueryTime),
+                                      "dd MMM, hh:mm a",
+                                    )
+                                  : format(
+                                      new Date(l.createdAt),
+                                      "dd MMM, hh:mm a",
+                                    )}
+                              </td>
+                            )}
+                            {isColVisible("phone") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.phone || "-"}
+                              </td>
+                            )}
+                            {isColVisible("city") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.location || "-"}
+                              </td>
+                            )}
+                            {isColVisible("state") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.state || "-"}
+                              </td>
+                            )}
+                            {isColVisible("campaign") && (
+                              <td
+                                className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]"
+                                title={l.facebookAdName || "-"}
+                              >
+                                {l.facebookAdName ? (
+                                  <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-[#1877F2] shrink-0 inline-block" />
+                                    {l.facebookAdName}
+                                  </span>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                            )}
+                            {isColVisible("budget") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.budget || "-"}
+                              </td>
+                            )}
+                            {isColVisible("product") && (
+                              <td
+                                className="px-5 py-3.5 text-black truncate max-w-[150px]"
+                                title={l.interestedProducts?.join(", ") || "-"}
+                              >
+                                {l.interestedProducts &&
+                                l.interestedProducts.length > 0
+                                  ? l.interestedProducts.join(", ")
+                                  : "-"}
+                              </td>
+                            )}
+                            {isColVisible("remarks") && (
+                              <td
+                                className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]"
+                                title={l.remarks || "-"}
+                              >
+                                {l.remarks || "-"}
+                              </td>
+                            )}
                             <td className="px-5 py-3.5">
                               <div className="flex flex-col items-start gap-1">
                                 <span
@@ -2004,9 +2150,9 @@ export default function LeadsPage() {
                                   )}
                               </div>
                             </td>
-                            {currentUser?.role !== "sales_executive" && (
+                            {showAssignedCol && (
                               <td
-                                className="px-5 py-3.5 hidden lg:table-cell"
+                                className="px-5 py-3.5"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Select
@@ -2035,14 +2181,18 @@ export default function LeadsPage() {
                                 </Select>
                               </td>
                             )}
-                            <td className="px-5 py-3.5 hidden lg:table-cell text-black">
-                              {l.followUpDate
-                                ? new Date(l.followUpDate).toLocaleDateString(
-                                    "en-IN",
-                                    { day: "numeric", month: "short" },
-                                  )
-                                : "-"}
-                            </td>
+                            {isColVisible("followup") && (
+                              <td className="px-5 py-3.5 text-black">
+                                {l.followUpDate
+                                  ? new Date(
+                                      l.followUpDate,
+                                    ).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                    })
+                                  : "-"}
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
@@ -2055,7 +2205,7 @@ export default function LeadsPage() {
                         return bottomPad > 0 ? (
                           <tr>
                             <td
-                              colSpan={10}
+                              colSpan={visibleColumnCount}
                               style={{ height: bottomPad, padding: 0 }}
                             />
                           </tr>
