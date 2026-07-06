@@ -205,6 +205,39 @@ const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    key: 'googleAds',
+    label: 'Google Ads Lead Forms',
+    desc: 'Capture leads from Google Ads Lead Form Extensions',
+    fallbackIcon: 'logo-google',
+    color: '#4285F4',
+    bgColor: '#fff',
+    steps: [
+      {
+        title: 'Connect your Google account',
+        subtitle: 'Step 1 of 2 — Use the NestLeads web dashboard',
+        instructions: [
+          'This connection uses Google sign-in, which needs to be done from the web dashboard',
+          'Open leads.pixelatenest.com on a computer or browser and log in',
+          'Go to Integrations → Google Ads Lead Forms → Connect with Google',
+          'Sign in with the Google account that manages your Ads account',
+        ],
+        actionLabel: "I'll connect from the web",
+      },
+      {
+        title: 'Select account & campaigns',
+        subtitle: 'Step 2 of 2 — Choose what to sync',
+        instructions: [
+          'On the web dashboard, pick your Google Ads account',
+          'Select the campaigns with Lead Form assets you want to sync',
+          'Optionally set allowed states to filter leads by location',
+          'Once connected, leads will appear here in the Leads tab automatically',
+          'Leads are tagged with source "Google Ads" so you can filter them',
+        ],
+        actionLabel: 'Done',
+      },
+    ],
+  },
+  {
     key: 'tradeindia',
     label: 'TradeIndia',
     desc: 'Import leads from your TradeIndia listings',

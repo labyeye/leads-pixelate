@@ -15,6 +15,7 @@ const SOURCE_CONFIG: Record<string, SourceCfg> = {
   Facebook:  {bg: '#1877F2', border: '#0d65d9', logo: fbLogo},
   Instagram: {bg: '#E1306C', border: '#E1306C', logo: igLogo},
   Meta:      {bg: '#0668E1', border: '#0557c2', logo: metaLogo},
+  'Google Ads': {bg: '#4285F4', border: '#3367d6', iconName: 'logo-google'},
   IndiaMART: {bg: '#FB923C', border: '#ea7d22', logo: imLogo},
   TradeIndia:{bg: '#22C55E', border: '#16a34a', logo: tiLogo},
   Justdial:  {bg: '#EF4444', border: '#dc2626', logo: jdLogo},

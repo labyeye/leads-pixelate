@@ -21,14 +21,20 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
-import { facebookAPI, indiamartAPI, usersAPI } from "@/services/api";
+import { GoogleAdsWizard } from "@/components/integrations/GoogleAdsWizard";
+import { facebookAPI, googleAdsAPI, indiamartAPI, usersAPI } from "@/services/api";
 import companylogo from "../assets/images/Logo.png";
 import indiamartLogo from "../assets/images/logos/indiamart.png";
 import facebookLogo from "../assets/images/logos/facebook.png";
 import tradeindiLogo from "../assets/images/logos/tradeindia.webp";
 import justdiallogo from "../assets/images/logos/justdial.webp";
 
-type IntegrationId = "indiamart" | "facebook" | "tradeindia" | "justdial";
+type IntegrationId =
+  | "indiamart"
+  | "facebook"
+  | "googleAds"
+  | "tradeindia"
+  | "justdial";
 
 interface StepField {
   key: string;
@@ -429,6 +435,18 @@ const INTEGRATIONS: Integration[] = [
         actionLabel: "Go to Leads →",
       },
     ],
+  },
+  {
+    id: "googleAds",
+    name: "Google Ads Lead Forms",
+    shortDesc: "Capture leads from Google Ads Lead Form Extensions",
+    color: "#4285F4",
+    bgColor: "#EFF6FF",
+    icon: "GA",
+    connected: false,
+    docsUrl:
+      "https://support.google.com/google-ads/answer/9358723",
+    steps: [],
   },
   {
     id: "tradeindia",
@@ -933,6 +951,12 @@ export default function IntegrationsPage() {
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
   const [fbHasToken, setFbHasToken] = useState(false);
 
+  const [showGadsWizard, setShowGadsWizard] = useState(false);
+  const [gadsStartStep, setGadsStartStep] = useState<
+    "login" | "select_account" | "select_campaigns" | "done"
+  >("login");
+  const [gadsHasToken, setGadsHasToken] = useState(false);
+
   // IndiaMART assignee state
   const [imUsers, setImUsers] = useState<{ _id: string; name: string }[]>([]);
   const [imAssigneeIds, setImAssigneeIds] = useState<string[]>([]);
@@ -946,6 +970,16 @@ export default function IntegrationsPage() {
         if (res.hasToken) setFbHasToken(true);
         if (res.data.length > 0) {
           setConnectedIds((prev) => new Set([...prev, "facebook"]));
+        }
+      })
+      .catch(() => {});
+
+    googleAdsAPI
+      .getConnectedAccounts()
+      .then((res) => {
+        if (res.hasToken) setGadsHasToken(true);
+        if (res.data.length > 0) {
+          setConnectedIds((prev) => new Set([...prev, "googleAds"]));
         }
       })
       .catch(() => {});
@@ -995,6 +1029,30 @@ export default function IntegrationsPage() {
       });
       setSearchParams({}, { replace: true });
     }
+
+    const gadsStep = searchParams.get("gads_step");
+    const gadsError = searchParams.get("gads_error");
+
+    if (gadsStep === "select_account") {
+      setGadsStartStep("select_account");
+      setShowGadsWizard(true);
+      setSearchParams({}, { replace: true });
+    } else if (gadsError) {
+      const msg =
+        gadsError === "access_denied"
+          ? "You cancelled the Google login."
+          : gadsError === "token_exchange_failed"
+            ? "Google login failed. Please try again."
+            : gadsError === "no_refresh_token"
+              ? "Google didn't return a refresh token — try disconnecting app access in your Google account and reconnecting."
+              : `Google Ads error: ${gadsError}`;
+      toast({
+        title: "Google Ads connection failed",
+        description: msg,
+        variant: "destructive",
+      });
+      setSearchParams({}, { replace: true });
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOpen = (integ: Integration) => {
@@ -1007,6 +1065,15 @@ export default function IntegrationsPage() {
             : "login",
       );
       setShowFbWizard(true);
+    } else if (integ.id === "googleAds") {
+      setGadsStartStep(
+        connectedIds.has("googleAds")
+          ? "done"
+          : gadsHasToken
+            ? "select_account"
+            : "login",
+      );
+      setShowGadsWizard(true);
     } else {
       setSelected(integ);
     }
@@ -1027,6 +1094,14 @@ export default function IntegrationsPage() {
     setConnectedIds((prev) => new Set([...prev, "facebook"]));
   };
 
+  const handleGadsClose = () => {
+    setShowGadsWizard(false);
+  };
+
+  const handleGadsConnected = () => {
+    setConnectedIds((prev) => new Set([...prev, "googleAds"]));
+  };
+
   // Show Facebook wizard full-screen
   if (showFbWizard) {
     return (
@@ -1036,6 +1111,21 @@ export default function IntegrationsPage() {
             onClose={handleFbClose}
             onConnected={handleFbConnected}
             startAtStep={fbStartStep}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Show Google Ads wizard full-screen
+  if (showGadsWizard) {
+    return (
+      <AppLayout title="Integrations">
+        <div className="max-w-5xl mx-auto border-2 bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
+          <GoogleAdsWizard
+            onClose={handleGadsClose}
+            onConnected={handleGadsConnected}
+            startAtStep={gadsStartStep}
           />
         </div>
       </AppLayout>

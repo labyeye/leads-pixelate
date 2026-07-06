@@ -20,6 +20,7 @@ import {
   leadsAPI,
   indiamartAPI,
   facebookAPI,
+  googleAdsAPI,
   tradeindiaSyncAPI,
   justdialSyncAPI,
   productsAPI,
@@ -118,7 +119,7 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [dateModalSource, setDateModalSource] = useState<
-    'indiamart' | 'facebook' | null
+    'indiamart' | 'facebook' | 'googleAds' | null
   >(null);
   const [productsList, setProductsList] = useState<
     { _id: string; name: string }[]
@@ -237,7 +238,7 @@ export default function LeadsListScreen({ navigation }: Props) {
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
 
   const runSync = async (
-    source: 'indiamart' | 'facebook' | 'tradeindia' | 'justdial',
+    source: 'indiamart' | 'facebook' | 'googleAds' | 'tradeindia' | 'justdial',
     from?: string,
     to?: string,
   ) => {
@@ -251,6 +252,8 @@ export default function LeadsListScreen({ navigation }: Props) {
         });
       } else if (source === 'facebook') {
         await facebookAPI.sync(undefined, from ?? fmt(today), to ?? fmt(today));
+      } else if (source === 'googleAds') {
+        await googleAdsAPI.sync(undefined, from ?? fmt(today));
       } else if (source === 'tradeindia') {
         await tradeindiaSyncAPI.sync();
       } else if (source === 'justdial') {
@@ -266,9 +269,9 @@ export default function LeadsListScreen({ navigation }: Props) {
   };
 
   const handleSyncPress = (
-    source: 'indiamart' | 'facebook' | 'tradeindia' | 'justdial',
+    source: 'indiamart' | 'facebook' | 'googleAds' | 'tradeindia' | 'justdial',
   ) => {
-    if (source === 'indiamart' || source === 'facebook') {
+    if (source === 'indiamart' || source === 'facebook' || source === 'googleAds') {
       setDateModalSource(source);
       setSyncDateOption('today');
       setCustomFrom('');
@@ -523,7 +526,7 @@ export default function LeadsListScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {/* Sync row — all 4 equal width, no scroll */}
+      {/* Sync row — equal width chips, no scroll */}
       <View style={styles.syncRow}>
         {(
           [
@@ -538,6 +541,13 @@ export default function LeadsListScreen({ navigation }: Props) {
               label: 'Facebook',
               logo: require('../assets/images/logos/facebook.png'),
               color: '#1877F2',
+            },
+            {
+              key: 'googleAds',
+              label: 'Google Ads',
+              logo: null,
+              iconName: 'logo-google',
+              color: '#4285F4',
             },
             {
               key: 'tradeindia',
@@ -567,12 +577,14 @@ export default function LeadsListScreen({ navigation }: Props) {
             >
               {isSyncing ? (
                 <ActivityIndicator size={14} color={s.color} />
-              ) : (
+              ) : 'logo' in s && s.logo ? (
                 <Image
                   source={s.logo}
                   style={styles.syncLogo}
                   resizeMode="contain"
                 />
+              ) : (
+                <Icon name={(s as any).iconName} size={14} color={s.color} />
               )}
               <Text
                 style={[styles.syncChipText, { color: s.color }]}
@@ -666,7 +678,11 @@ export default function LeadsListScreen({ navigation }: Props) {
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {dateModalSource === 'indiamart' ? 'IndiaMART' : 'Facebook'}{' '}
+                {dateModalSource === 'indiamart'
+                  ? 'IndiaMART'
+                  : dateModalSource === 'googleAds'
+                    ? 'Google Ads'
+                    : 'Facebook'}{' '}
                 Sync
               </Text>
               <TouchableOpacity

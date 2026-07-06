@@ -68,6 +68,7 @@ export const sourceColors: Record<string, {bg: string; text: string}> = {
   Facebook: {bg: '#3b82f6', text: '#fff'},
   Instagram: {bg: '#ec4899', text: '#fff'},
   Meta: {bg: '#1d4ed8', text: '#fff'},
+  'Google Ads': {bg: '#4285F4', text: '#fff'},
 };
 
 export const ALL_STATUSES = Object.keys(statusColors);

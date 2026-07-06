@@ -473,6 +473,83 @@ export const facebookAPI = {
     }),
 };
 
+export const googleAdsAPI = {
+  getAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>(
+      "/google-ads/auth-url",
+    ),
+  getAccounts: () =>
+    request<{
+      success: boolean;
+      data: Array<{ id: string; name: string; error?: string }>;
+    }>("/google-ads/accounts"),
+  getCampaigns: (customerId: string) =>
+    request<{
+      success: boolean;
+      data: Array<{ id: string; name: string; status: string }>;
+    }>(`/google-ads/campaigns?customerId=${customerId}`),
+  connectAccount: (
+    customerId: string,
+    customerName: string,
+    selectedCampaignIds: string[] = [],
+    allowedStates: string[] = [],
+    defaultAssigneeId: string = "",
+    loginCustomerId: string = "",
+  ) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/google-ads/connect-account",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          customerId,
+          customerName,
+          selectedCampaignIds,
+          allowedStates,
+          defaultAssigneeId,
+          loginCustomerId,
+        }),
+      },
+    ),
+  sync: (customerId?: string, since?: string) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        created: number;
+        updated: number;
+        filtered: number;
+        accounts?: Array<{
+          customerName: string;
+          created: number;
+          updated: number;
+          filtered: number;
+          error?: string;
+        }>;
+      };
+    }>("/google-ads/sync", {
+      method: "POST",
+      body: JSON.stringify({ customerId, since }),
+    }),
+  getConnectedAccounts: () =>
+    request<{
+      success: boolean;
+      hasToken: boolean;
+      data: Array<{
+        customerId: string;
+        customerName: string;
+        selectedCampaignIds: string[];
+        allowedStates: string[];
+        connectedAt: string;
+        webhookUrl: string;
+      }>;
+    }>("/google-ads/connected-accounts"),
+  disconnect: (customerId?: string) =>
+    request<{ success: boolean; message: string }>("/google-ads/disconnect", {
+      method: "POST",
+      body: JSON.stringify({ customerId }),
+    }),
+};
+
 export const clientsAPI = {
   getAll: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";

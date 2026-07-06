@@ -88,6 +88,25 @@ const tenantSchema = new mongoose.Schema(
         userId: { type: String, default: "" },
         apiKey: { type: String, default: "" },
       },
+      googleAds: {
+        enabled: { type: Boolean, default: false },
+        refreshToken: { type: String, default: "" },
+        oauthUserId: { type: String, default: "" },
+        loginCustomerId: { type: String, default: "" },
+
+        accounts: [
+          {
+            customerId: { type: String, required: true },
+            customerName: { type: String, default: "" },
+            selectedCampaignIds: { type: [String], default: [] },
+
+            allowedStates: { type: [String], default: [] },
+            defaultAssigneeId: { type: String, default: "" },
+            webhookKey: { type: String, default: "" },
+            connectedAt: { type: Date, default: null },
+          },
+        ],
+      },
       justdial: {
         enabled: { type: Boolean, default: false },
         apiKey: { type: String, default: "" },

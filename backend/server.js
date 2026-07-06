@@ -128,6 +128,7 @@ app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/billing", require("./routes/billingRoutes"));
 app.use("/api/facebook", require("./routes/facebookRoutes"));
+app.use("/api/google-ads", require("./routes/googleAdsRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));

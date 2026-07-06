@@ -230,6 +230,14 @@ export const facebookAPI = {
     }),
 };
 
+export const googleAdsAPI = {
+  sync: (customerId?: string, since?: string) =>
+    request<{ success: boolean; data: any; message: string }>('/google-ads/sync', {
+      method: 'POST',
+      body: JSON.stringify({ customerId, since }),
+    }),
+};
+
 export const tradeindiaSyncAPI = {
   sync: () =>
     request<{ success: boolean; data: any; message: string }>('/tradeindia/sync', {
