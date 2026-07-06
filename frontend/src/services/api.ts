@@ -206,6 +206,15 @@ export const leadsAPI = {
       "/leads/import",
       { method: "POST", body: JSON.stringify({ leads }) },
     ),
+  getColumnPreferences: () =>
+    request<{ success: boolean; data: Record<string, boolean> }>(
+      "/leads/column-preferences",
+    ),
+  updateColumnPreferences: (columns: Record<string, boolean>) =>
+    request<{ success: boolean; data: Record<string, boolean> }>(
+      "/leads/column-preferences",
+      { method: "PUT", body: JSON.stringify({ columns }) },
+    ),
 };
 
 export const reportsAPI = {

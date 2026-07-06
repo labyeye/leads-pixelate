@@ -38,7 +38,7 @@ async function resolveAdPlatform(adId, token, cache) {
   if (cache[adId]) return cache[adId];
   try {
     const data = await fbGet(`/${adId}`, token, {
-      fields: "publisher_platforms",
+      fields: "publisher_platforms,adset{name},campaign{name}",
     });
     const platforms = data.publisher_platforms || [];
     const hasFb = platforms.includes("facebook");
@@ -46,13 +46,69 @@ async function resolveAdPlatform(adId, token, cache) {
     let source = "Facebook";
     if (hasIg && !hasFb) source = "Instagram";
     else if (hasIg && hasFb) source = "Meta";
-    const result = { source, platforms };
+    const result = {
+      source,
+      platforms,
+      adsetName: data.adset?.name || "",
+      campaignName: data.campaign?.name || "",
+    };
     cache[adId] = result;
     return result;
   } catch {
-    cache[adId] = { source: "Facebook", platforms: [] };
+    cache[adId] = {
+      source: "Facebook",
+      platforms: [],
+      adsetName: "",
+      campaignName: "",
+    };
     return cache[adId];
   }
+}
+
+async function resolveFormName(formId, token, cache) {
+  if (!formId) return "";
+  if (cache[formId] !== undefined) return cache[formId];
+  try {
+    const data = await fbGet(`/${formId}`, token, { fields: "name" });
+    cache[formId] = data.name || "";
+  } catch {
+    cache[formId] = "";
+  }
+  return cache[formId];
+}
+
+const KNOWN_FIELD_KEYS = new Set([
+  "full_name",
+  "name",
+  "first_name",
+  "last_name",
+  "company_name",
+  "company",
+  "phone_number",
+  "phone",
+  "mobile",
+  "email",
+  "email_address",
+  "city",
+  "city_town",
+  "city/town",
+  "district",
+  "town",
+  "location",
+  "state",
+  "province",
+  "region",
+  "product",
+  "product_interest",
+  "interested_in",
+]);
+
+function extractCustomFields(fMap) {
+  const custom = {};
+  for (const [k, v] of Object.entries(fMap)) {
+    if (!KNOWN_FIELD_KEYS.has(k) && v) custom[k] = String(v);
+  }
+  return custom;
 }
 
 async function getLongLivedToken(shortToken) {
@@ -476,6 +532,7 @@ router.post(
     let totalFiltered = 0;
     const pageResults = [];
     const adPlatformCache = {};
+    const formNameCache = {};
 
     for (const page of pagesToSync) {
       const pageResult = {
@@ -599,12 +656,33 @@ router.post(
                 `${fMap.first_name || ""} ${fMap.last_name || ""}`.trim() ||
                 "Facebook Lead";
 
+              const formName = await resolveFormName(
+                formId,
+                page.accessToken,
+                formNameCache,
+              );
+
+              let adMeta = {
+                source: "Facebook",
+                platforms: [],
+                adsetName: "",
+                campaignName: "",
+              };
+              if (lead.ad_id) {
+                adMeta = await resolveAdPlatform(
+                  lead.ad_id,
+                  page.accessToken,
+                  adPlatformCache,
+                );
+              }
+
               const leadData = {
                 name,
                 company: fMap.company_name || fMap.company || "N/A",
                 phone: fMap.phone_number || fMap.phone || fMap.mobile || "",
                 email: fMap.email || fMap.email_address || "",
                 location: extractCity(fMap),
+                state: stateRaw,
                 requirement:
                   fMap.product ||
                   fMap.product_interest ||
@@ -612,28 +690,24 @@ router.post(
                 facebookAdId: lead.ad_id || "",
                 facebookAdName: lead.ad_name || "",
                 facebookPageName: page.pageName || "",
+                facebookFormName: formName,
+                facebookAdsetName: adMeta.adsetName,
+                facebookCampaignName: adMeta.campaignName,
+                customFields: extractCustomFields(fMap),
               };
 
               const p = (lead.platform || "").toLowerCase();
               console.log(
                 `[FB sync] lead=${lead.id} platform="${lead.platform}" ad_id="${lead.ad_id}"`,
               );
-              let resolvedSource = "Facebook";
-              let resolvedPlatforms = [];
+              let resolvedSource = adMeta.source;
+              let resolvedPlatforms = adMeta.platforms;
               if (p === "ig" || p === "instagram") {
                 resolvedSource = "Instagram";
                 resolvedPlatforms = ["ig"];
               } else if (p === "fb" || p === "facebook") {
                 resolvedSource = "Facebook";
                 resolvedPlatforms = ["fb"];
-              } else if (lead.ad_id) {
-                const r = await resolveAdPlatform(
-                  lead.ad_id,
-                  page.accessToken,
-                  adPlatformCache,
-                );
-                resolvedSource = r.source;
-                resolvedPlatforms = r.platforms;
               }
 
               const exists = await Lead.findOne({
@@ -868,21 +942,37 @@ router.post(
             if (!stateMatches) continue;
           }
 
+          const formName = await resolveFormName(
+            form_id,
+            pageConfig.accessToken,
+            {},
+          );
+          const adMeta = await resolveAdPlatform(
+            ad_id,
+            pageConfig.accessToken,
+            {},
+          );
+
           const updatableFields = {
             name,
             company: company || "N/A",
             phone,
             email,
             location: cityRaw,
+            state: stateRaw,
             requirement:
               product || `Via Facebook Lead Ad: ${ad_name || form_id}`,
             facebookAdId: ad_id || "",
             facebookAdName: ad_name || "",
             facebookPageName: pageConfig.pageName || "",
+            facebookFormName: formName,
+            facebookAdsetName: adMeta.adsetName,
+            facebookCampaignName: adMeta.campaignName,
+            customFields: extractCustomFields(fMap),
           };
 
           const { source: resolvedSource, platforms: resolvedPlatforms } =
-            await resolveAdPlatform(ad_id, pageConfig.accessToken, {});
+            adMeta;
 
           const existing = await Lead.findOne({
             facebookLeadgenId: leadgen_id,

@@ -16,6 +16,8 @@ const {
   indiamartWebhook,
   getStatusHistoryReport,
   updateIndiamartSettings,
+  getLeadColumnPreferences,
+  updateLeadColumnPreferences,
 } = require("../controllers/leadController");
 const { protect, authorize } = require("../middleware/auth");
 const { checkPermission } = require("../middleware/checkPermission");
@@ -98,6 +100,10 @@ router.post("/justdial/sync", authorize("super_admin", "admin"), (req, res) => {
 });
 
 router.get("/reports/status-history", getStatusHistoryReport);
+router
+  .route("/column-preferences")
+  .get(getLeadColumnPreferences)
+  .put(updateLeadColumnPreferences);
 router.post("/import", checkPermission("Leads", "create"), importLeads);
 router.route("/").get(getLeads).post(createLead);
 

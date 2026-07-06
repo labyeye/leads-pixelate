@@ -880,22 +880,57 @@ export default function LeadsPage() {
     </Popover>
   );
 
-  const ALL_COLUMNS: { id: string; label: string; alwaysOn?: boolean }[] = [
-    { id: "name", label: "Name", alwaysOn: true },
-    { id: "score", label: "Score" },
-    { id: "source", label: "Source" },
-    { id: "inquiryDate", label: "Inquiry Date" },
-    { id: "phone", label: "Phone" },
-    { id: "city", label: "City" },
-    { id: "state", label: "State" },
-    { id: "campaign", label: "Campaign" },
-    { id: "budget", label: "Budget" },
-    { id: "product", label: "Interested Product" },
-    { id: "remarks", label: "Remarks" },
-    { id: "status", label: "Status", alwaysOn: true },
-    { id: "assigned", label: "Assigned" },
-    { id: "followup", label: "Follow-up" },
-  ];
+  const STATIC_COLUMNS: { id: string; label: string; alwaysOn?: boolean }[] =
+    [
+      { id: "name", label: "Name", alwaysOn: true },
+      { id: "score", label: "Score" },
+      { id: "source", label: "Source" },
+      { id: "adPlatform", label: "Ad Platform (FB/IG)" },
+      { id: "inquiryDate", label: "Inquiry Date" },
+      { id: "createdAt", label: "Created At" },
+      { id: "phone", label: "Phone" },
+      { id: "email", label: "Email" },
+      { id: "city", label: "City" },
+      { id: "state", label: "State" },
+      { id: "pageName", label: "Facebook Page" },
+      { id: "campaign", label: "Ad Name" },
+      { id: "campaignName", label: "Campaign Name" },
+      { id: "adsetName", label: "Ad Set Name" },
+      { id: "formName", label: "Lead Form Name" },
+      { id: "budget", label: "Budget" },
+      { id: "product", label: "Interested Product" },
+      { id: "remarks", label: "Remarks" },
+      { id: "status", label: "Status", alwaysOn: true },
+      { id: "assigned", label: "Assigned" },
+      { id: "followup", label: "Follow-up" },
+      { id: "visitScheduled", label: "Visit Scheduled" },
+      { id: "visitActual", label: "Visit Completed" },
+    ];
+
+  const titleCase = (s: string) =>
+    s
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+
+  const customColumns = useMemo(() => {
+    const keys = new Set<string>();
+    leads.forEach((l) => {
+      const cf = l.customFields;
+      if (cf && typeof cf === "object") {
+        Object.keys(cf).forEach((k) => keys.add(k));
+      }
+    });
+    return Array.from(keys).map((k) => ({
+      id: `custom:${k}`,
+      label: titleCase(k),
+    }));
+  }, [leads]);
+
+  const ALL_COLUMNS = useMemo(
+    () => [...STATIC_COLUMNS, ...customColumns],
+    [customColumns],
+  );
 
   const [visibleCols, setVisibleCols] = useState<Record<string, boolean>>(
     () => {
@@ -903,19 +938,38 @@ export default function LeadsPage() {
         const stored = localStorage.getItem("leadsTableColumns");
         if (stored) return JSON.parse(stored);
       } catch {}
-      return Object.fromEntries(ALL_COLUMNS.map((c) => [c.id, true]));
+      return {};
     },
   );
 
   useEffect(() => {
-    try {
-      localStorage.setItem("leadsTableColumns", JSON.stringify(visibleCols));
-    } catch {}
-  }, [visibleCols]);
+    leadsAPI
+      .getColumnPreferences()
+      .then((res) => {
+        if (res.data && Object.keys(res.data).length > 0) {
+          setVisibleCols(res.data);
+          try {
+            localStorage.setItem(
+              "leadsTableColumns",
+              JSON.stringify(res.data),
+            );
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const isColVisible = (id: string) => visibleCols[id] !== false;
-  const toggleCol = (id: string) =>
-    setVisibleCols((prev) => ({ ...prev, [id]: !isColVisible(id) }));
+  const toggleCol = (id: string) => {
+    setVisibleCols((prev) => {
+      const next = { ...prev, [id]: !isColVisible(id) };
+      try {
+        localStorage.setItem("leadsTableColumns", JSON.stringify(next));
+      } catch {}
+      leadsAPI.updateColumnPreferences(next).catch(() => {});
+      return next;
+    });
+  };
 
   const showAssignedCol =
     isColVisible("assigned") && currentUser?.role !== "sales_executive";
@@ -934,11 +988,14 @@ export default function LeadsPage() {
           <Filter className="w-3.5 h-3.5" /> Columns
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2" align="end">
+      <PopoverContent className="w-64 p-2" align="end">
         <p className="text-[10px] font-black uppercase tracking-widest text-black px-2 pb-1">
           Show Columns
         </p>
-        <div className="max-h-72 overflow-y-auto space-y-0.5">
+        <p className="text-[10px] text-black/50 px-2 pb-2">
+          Saved for your whole team.
+        </p>
+        <div className="max-h-80 overflow-y-auto space-y-0.5">
           {ALL_COLUMNS.map((col) => (
             <label
               key={col.id}
@@ -1867,14 +1924,29 @@ export default function LeadsPage() {
                         </div>
                       </th>
                     )}
+                    {isColVisible("adPlatform") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Ad Platform
+                      </th>
+                    )}
                     {isColVisible("inquiryDate") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                         Inquiry Date
                       </th>
                     )}
+                    {isColVisible("createdAt") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Created At
+                      </th>
+                    )}
                     {isColVisible("phone") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                         Phone
+                      </th>
+                    )}
+                    {isColVisible("email") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Email
                       </th>
                     )}
                     {isColVisible("city") && (
@@ -1887,9 +1959,29 @@ export default function LeadsPage() {
                         State
                       </th>
                     )}
+                    {isColVisible("pageName") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Facebook Page
+                      </th>
+                    )}
                     {isColVisible("campaign") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                        Campaign
+                        Ad Name
+                      </th>
+                    )}
+                    {isColVisible("campaignName") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Campaign Name
+                      </th>
+                    )}
+                    {isColVisible("adsetName") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Ad Set Name
+                      </th>
+                    )}
+                    {isColVisible("formName") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Lead Form Name
                       </th>
                     )}
                     {isColVisible("budget") && (
@@ -1918,6 +2010,16 @@ export default function LeadsPage() {
                         Remarks
                       </th>
                     )}
+                    {customColumns
+                      .filter((c) => isColVisible(c.id))
+                      .map((c) => (
+                        <th
+                          key={c.id}
+                          className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest"
+                        >
+                          {c.label}
+                        </th>
+                      ))}
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                       <div className="flex items-center gap-1">
                         Status
@@ -1940,6 +2042,16 @@ export default function LeadsPage() {
                           Follow-up
                           {renderFollowUpDateFilter()}
                         </div>
+                      </th>
+                    )}
+                    {isColVisible("visitScheduled") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Visit Scheduled
+                      </th>
+                    )}
+                    {isColVisible("visitActual") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Visit Completed
                       </th>
                     )}
                   </tr>
@@ -2060,6 +2172,17 @@ export default function LeadsPage() {
                                 <SourceBadge source={l.source} />
                               </td>
                             )}
+                            {isColVisible("adPlatform") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.adPlatforms && l.adPlatforms.length > 0
+                                  ? l.adPlatforms
+                                      .map((p: string) =>
+                                        p === "ig" ? "Instagram" : "Facebook",
+                                      )
+                                      .join(", ")
+                                  : "-"}
+                              </td>
+                            )}
                             {isColVisible("inquiryDate") && (
                               <td className="px-5 py-3.5 text-black text-nowrap">
                                 {l.indiamartQueryTime
@@ -2073,9 +2196,24 @@ export default function LeadsPage() {
                                     )}
                               </td>
                             )}
+                            {isColVisible("createdAt") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.createdAt
+                                  ? format(
+                                      new Date(l.createdAt),
+                                      "dd MMM, hh:mm a",
+                                    )
+                                  : "-"}
+                              </td>
+                            )}
                             {isColVisible("phone") && (
                               <td className="px-5 py-3.5 text-black text-nowrap">
                                 {l.phone || "-"}
+                              </td>
+                            )}
+                            {isColVisible("email") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.email || "-"}
                               </td>
                             )}
                             {isColVisible("city") && (
@@ -2086,6 +2224,11 @@ export default function LeadsPage() {
                             {isColVisible("state") && (
                               <td className="px-5 py-3.5 text-black text-nowrap">
                                 {l.state || "-"}
+                              </td>
+                            )}
+                            {isColVisible("pageName") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]">
+                                {l.facebookPageName || "-"}
                               </td>
                             )}
                             {isColVisible("campaign") && (
@@ -2101,6 +2244,30 @@ export default function LeadsPage() {
                                 ) : (
                                   "-"
                                 )}
+                              </td>
+                            )}
+                            {isColVisible("campaignName") && (
+                              <td
+                                className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]"
+                                title={l.facebookCampaignName || "-"}
+                              >
+                                {l.facebookCampaignName || "-"}
+                              </td>
+                            )}
+                            {isColVisible("adsetName") && (
+                              <td
+                                className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]"
+                                title={l.facebookAdsetName || "-"}
+                              >
+                                {l.facebookAdsetName || "-"}
+                              </td>
+                            )}
+                            {isColVisible("formName") && (
+                              <td
+                                className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]"
+                                title={l.facebookFormName || "-"}
+                              >
+                                {l.facebookFormName || "-"}
                               </td>
                             )}
                             {isColVisible("budget") && (
@@ -2127,6 +2294,21 @@ export default function LeadsPage() {
                                 {l.remarks || "-"}
                               </td>
                             )}
+                            {customColumns
+                              .filter((c) => isColVisible(c.id))
+                              .map((c) => {
+                                const key = c.id.slice("custom:".length);
+                                const val = l.customFields?.[key];
+                                return (
+                                  <td
+                                    key={c.id}
+                                    className="px-5 py-3.5 text-black text-nowrap truncate max-w-[150px]"
+                                    title={val || "-"}
+                                  >
+                                    {val || "-"}
+                                  </td>
+                                );
+                              })}
                             <td className="px-5 py-3.5">
                               <div className="flex flex-col items-start gap-1">
                                 <span
@@ -2191,6 +2373,30 @@ export default function LeadsPage() {
                                         month: "short",
                                       },
                                     )
+                                  : "-"}
+                              </td>
+                            )}
+                            {isColVisible("visitScheduled") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.visitScheduledDate
+                                  ? new Date(
+                                      l.visitScheduledDate,
+                                    ).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                    })
+                                  : "-"}
+                              </td>
+                            )}
+                            {isColVisible("visitActual") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.visitActualDate
+                                  ? new Date(
+                                      l.visitActualDate,
+                                    ).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                    })
                                   : "-"}
                               </td>
                             )}

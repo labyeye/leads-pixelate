@@ -40,6 +40,14 @@ const leadSchema = new mongoose.Schema(
     facebookAdId: { type: String, default: null },
     facebookAdName: { type: String, default: null },
     facebookPageName: { type: String, default: null },
+    facebookAdsetName: { type: String, default: null },
+    facebookCampaignName: { type: String, default: null },
+    facebookFormName: { type: String, default: null },
+    customFields: {
+      type: Map,
+      of: String,
+      default: {},
+    },
     phone: {
       type: String,
       required: [true, "Please add a phone number"],

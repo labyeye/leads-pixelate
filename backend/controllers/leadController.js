@@ -944,6 +944,35 @@ const importLeads = asyncHandler(async (req, res) => {
   });
 });
 
+const getLeadColumnPreferences = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  const tenant = await Tenant.findOne(query).select("leadsTableColumns");
+  res.json({ success: true, data: tenant?.leadsTableColumns || {} });
+});
+
+const updateLeadColumnPreferences = asyncHandler(async (req, res) => {
+  const { columns } = req.body;
+  if (!columns || typeof columns !== "object" || Array.isArray(columns)) {
+    res.status(400);
+    throw new Error("columns must be an object of columnId -> boolean");
+  }
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  const tenant = await Tenant.findOneAndUpdate(
+    query,
+    { leadsTableColumns: columns },
+    { new: true },
+  ).select("leadsTableColumns");
+  if (!tenant) {
+    res.status(404);
+    throw new Error("Tenant not found");
+  }
+  res.json({ success: true, data: tenant.leadsTableColumns || {} });
+});
+
 module.exports = {
   getLeads,
   getLead,
@@ -960,4 +989,6 @@ module.exports = {
   indiamartWebhook,
   getStatusHistoryReport,
   updateIndiamartSettings,
+  getLeadColumnPreferences,
+  updateLeadColumnPreferences,
 };

@@ -113,6 +113,10 @@ const tenantSchema = new mongoose.Schema(
         ],
       },
     },
+    leadsTableColumns: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     razorpay: {
       customerId: { type: String, default: null },
       subscriptionId: { type: String, default: null },
