@@ -56,7 +56,7 @@ const leadSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: [true, "Please add a phone number"],
+      default: "",
       trim: true,
     },
     email: {

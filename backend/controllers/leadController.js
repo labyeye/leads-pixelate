@@ -928,12 +928,12 @@ const importLeads = asyncHandler(async (req, res) => {
   }));
 
   const invalid = docs
-    .map((d, i) => (!d.name || !d.phone ? i + 1 : null))
+    .map((d, i) => (!d.name ? i + 1 : null))
     .filter(Boolean);
   if (invalid.length > 0) {
     res.status(400);
     throw new Error(
-      `Rows missing required fields (Name/Phone): ${invalid.join(", ")}`,
+      `Rows missing required fields (Name): ${invalid.join(", ")}`,
     );
   }
 

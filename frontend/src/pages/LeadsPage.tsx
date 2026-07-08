@@ -352,10 +352,10 @@ export default function LeadsPage() {
     }
   };
 
-  const REQUIRED_HEADERS = ["name", "phone"];
+  const REQUIRED_HEADERS = ["name"];
   const EXCEL_HEADERS = [
     { key: "name", label: "Name", required: true },
-    { key: "phone", label: "Phone", required: true },
+    { key: "phone", label: "Phone", required: false },
     { key: "company", label: "Company", required: false },
     { key: "requirement", label: "Requirement", required: false },
     { key: "website", label: "Website", required: false },
