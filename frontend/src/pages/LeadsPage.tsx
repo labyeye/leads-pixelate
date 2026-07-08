@@ -376,13 +376,18 @@ export default function LeadsPage() {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
         // Normalise keys to lowercase trimmed
-        const normalised = rows.map((row) => {
-          const n: any = {};
-          Object.entries(row).forEach(([k, v]) => {
-            n[k.toLowerCase().trim()] = v;
-          });
-          return n;
-        });
+        const normalised = rows
+          .map((row) => {
+            const n: any = {};
+            Object.entries(row).forEach(([k, v]) => {
+              n[k.toLowerCase().trim()] = v;
+            });
+            return n;
+          })
+          // Drop fully blank rows (e.g. trailing/hidden rows from Excel exports)
+          .filter((row) =>
+            Object.values(row).some((v) => String(v ?? "").trim() !== ""),
+          );
         setImportPreview(normalised);
       } catch {
         notify.error("Invalid File", "Could not parse the Excel file.");

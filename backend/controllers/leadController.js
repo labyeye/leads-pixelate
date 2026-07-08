@@ -902,7 +902,16 @@ const importLeads = asyncHandler(async (req, res) => {
     throw new Error("No leads provided");
   }
 
-  const docs = leads.map((row) => ({
+  // Drop fully blank rows (e.g. trailing/hidden rows from Excel exports)
+  const nonBlankLeads = leads.filter((row) =>
+    Object.values(row || {}).some((v) => String(v ?? "").trim() !== ""),
+  );
+  if (nonBlankLeads.length === 0) {
+    res.status(400);
+    throw new Error("No leads provided");
+  }
+
+  const docs = nonBlankLeads.map((row) => ({
     name: (row.name || "").trim(),
     company: (row.company || "").trim(),
     phone: (row.phone || "").toString().trim(),
