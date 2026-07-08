@@ -264,6 +264,7 @@ const createLead = asyncHandler(async (req, res) => {
     source,
     phone,
     email,
+    website,
     requirement,
     assignedTo,
     followUpDate,
@@ -287,6 +288,7 @@ const createLead = asyncHandler(async (req, res) => {
     source,
     phone,
     email,
+    website,
     requirement,
     remarks,
     budget,
@@ -910,6 +912,7 @@ const importLeads = asyncHandler(async (req, res) => {
     budget: (row.budget || "").toString().trim(),
     location: (row.location || "").trim(),
     state: (row.state || "").trim(),
+    website: (row.website || "").toString().trim(),
     source: "Manual",
     tenantId: req.user.tenantId || null,
     assignedTo: req.user._id,
@@ -925,14 +928,12 @@ const importLeads = asyncHandler(async (req, res) => {
   }));
 
   const invalid = docs
-    .map((d, i) =>
-      !d.name || !d.company || !d.phone || !d.requirement ? i + 1 : null,
-    )
+    .map((d, i) => (!d.name || !d.phone ? i + 1 : null))
     .filter(Boolean);
   if (invalid.length > 0) {
     res.status(400);
     throw new Error(
-      `Rows missing required fields (Name/Company/Phone/Requirement): ${invalid.join(", ")}`,
+      `Rows missing required fields (Name/Phone): ${invalid.join(", ")}`,
     );
   }
 

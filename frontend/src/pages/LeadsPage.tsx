@@ -3,24 +3,17 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Search,
   Plus,
-  MoreVertical,
-  Phone,
-  Mail,
   Calendar as CalendarIcon,
   DollarSign,
   FileText,
   UserCheck,
   Zap,
   Loader2,
-  AlertCircle,
   Filter,
   Check,
   ChevronDown,
   X,
   ChevronUp,
-  MoreHorizontal,
-  MapPin,
-  Ban,
   IndianRupee,
   LayoutGrid,
   List,
@@ -38,7 +31,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -82,7 +74,6 @@ import {
   categories,
   getCategoryByStatus,
   statusColors,
-  sourceColors,
 } from "@/components/leads/statusConstants";
 import { SourceBadge } from "@/components/leads/SourceBadge";
 import fbLogo from "@/assets/images/logos/facebook.png";
@@ -97,7 +88,7 @@ export default function LeadsPage() {
   const [activeCategory, setActiveCategory] = useState("New Lead");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [fullLead, setFullLead] = useState<any>(null);
-  const [loadingFullLead, setLoadingFullLead] = useState(false);
+  const [, setLoadingFullLead] = useState(false);
 
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,9 +127,6 @@ export default function LeadsPage() {
   const [loadingExecs, setLoadingExecs] = useState(false);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
-
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [sourceFilters, setSourceFilters] = useState<string[]>([]);
   const [budgetFilters, setBudgetFilters] = useState<string[]>([]);
@@ -175,6 +163,7 @@ export default function LeadsPage() {
     company: "",
     phone: "",
     email: "",
+    website: "",
     requirement: "",
     budget: "",
     source: "Manual",
@@ -363,12 +352,13 @@ export default function LeadsPage() {
     }
   };
 
-  const REQUIRED_HEADERS = ["name", "company", "phone", "requirement"];
+  const REQUIRED_HEADERS = ["name", "phone"];
   const EXCEL_HEADERS = [
     { key: "name", label: "Name", required: true },
-    { key: "company", label: "Company", required: true },
     { key: "phone", label: "Phone", required: true },
-    { key: "requirement", label: "Requirement", required: true },
+    { key: "company", label: "Company", required: false },
+    { key: "requirement", label: "Requirement", required: false },
+    { key: "website", label: "Website", required: false },
     { key: "email", label: "Email", required: false },
     { key: "location", label: "Location", required: false },
     { key: "state", label: "State", required: false },
@@ -419,6 +409,7 @@ export default function LeadsPage() {
     "name",
     "company",
     "requirement",
+    "website",
     "email",
     "location",
     "state",
@@ -890,6 +881,7 @@ export default function LeadsPage() {
       { id: "createdAt", label: "Created At" },
       { id: "phone", label: "Phone" },
       { id: "email", label: "Email" },
+      { id: "website", label: "Website" },
       { id: "city", label: "City" },
       { id: "state", label: "State" },
       { id: "pageName", label: "Facebook Page" },
@@ -924,6 +916,7 @@ export default function LeadsPage() {
     return Array.from(keys).map((k) => ({
       id: `custom:${k}`,
       label: titleCase(k),
+      alwaysOn: false as boolean | undefined,
     }));
   }, [leads]);
 
@@ -1146,6 +1139,7 @@ export default function LeadsPage() {
           company: "",
           phone: "",
           email: "",
+          website: "",
           requirement: "",
           budget: "",
           source: "Manual",
@@ -1949,6 +1943,11 @@ export default function LeadsPage() {
                         Email
                       </th>
                     )}
+                    {isColVisible("website") && (
+                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                        Website
+                      </th>
+                    )}
                     {isColVisible("city") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                         City
@@ -2214,6 +2213,29 @@ export default function LeadsPage() {
                             {isColVisible("email") && (
                               <td className="px-5 py-3.5 text-black text-nowrap">
                                 {l.email || "-"}
+                              </td>
+                            )}
+                            {isColVisible("website") && (
+                              <td className="px-5 py-3.5 text-black text-nowrap">
+                                {l.website ? (
+                                  <a
+                                    href={
+                                      /^https?:\/\//i.test(l.website)
+                                        ? l.website
+                                        : `https://${l.website}`
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-800 border border-green-300 hover:underline"
+                                  >
+                                    Yes
+                                  </a>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500 border border-gray-300">
+                                    No
+                                  </span>
+                                )}
                               </td>
                             )}
                             {isColVisible("city") && (
@@ -2718,6 +2740,23 @@ export default function LeadsPage() {
                       setNewLead({ ...newLead, email: e.target.value })
                     }
                     maxLength={100}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="website"
+                    className="text-xs font-semibold uppercase text-black"
+                  >
+                    Website
+                  </Label>
+                  <Input
+                    id="website"
+                    placeholder="Enter website URL"
+                    value={newLead.website}
+                    onChange={(e) =>
+                      setNewLead({ ...newLead, website: e.target.value })
+                    }
+                    maxLength={200}
                   />
                 </div>
                 <div className="space-y-2">

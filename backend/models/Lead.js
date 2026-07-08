@@ -9,7 +9,7 @@ const leadSchema = new mongoose.Schema(
     },
     company: {
       type: String,
-      required: [true, "Please add the company name"],
+      default: "",
       trim: true,
     },
     source: {
@@ -87,7 +87,12 @@ const leadSchema = new mongoose.Schema(
     },
     requirement: {
       type: String,
-      required: [true, "Please describe the requirement"],
+      default: "",
+    },
+    website: {
+      type: String,
+      default: "",
+      trim: true,
     },
     interestedProducts: {
       type: [String],

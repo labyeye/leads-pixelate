@@ -26,6 +26,7 @@ export interface Lead {
   source: "IndiaMART" | "TradeIndia" | "Justdial" | "Website" | "Manual";
   phone: string;
   email: string;
+  website?: string;
   requirement: string;
   status:
     | "PENDING CONTACT"
