@@ -1,4 +1,4 @@
-const API_BASE = "https://leads-pixelate-backend.vercel.app";
+const API_BASE = "https://leads-pixelate-backend.vercel.app/api";
 
 class ApiError extends Error {
   status: number;
