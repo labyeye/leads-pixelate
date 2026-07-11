@@ -5,10 +5,15 @@ const isProd = process.env.NODE_ENV === "production";
 const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+// Frontend and backend are separate origins in production (Vercel), so the
+// browser only sends cookies on that cross-site fetch if SameSite=None —
+// Lax is silently dropped on XHR/fetch, only surviving top-level navigation.
+// Locally, Vite's dev proxy makes requests same-origin, where Lax is fine
+// (and required, since SameSite=None mandates Secure, i.e. HTTPS).
 const baseCookieOpts = {
   httpOnly: true,
   secure: isProd,
-  sameSite: "lax",
+  sameSite: isProd ? "none" : "lax",
   path: "/",
 };
 
