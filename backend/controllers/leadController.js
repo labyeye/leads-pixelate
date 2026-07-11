@@ -1018,7 +1018,7 @@ const connectJustdial = asyncHandler(async (req, res) => {
     "integrations.justdial.webhookToken": token,
   });
 
-  const backendUrl = process.env.BACKEND_URL || "https://leads-pixelate-backend.vercel.app";
+  const backendUrl = process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
   res.json({
     success: true,
     message: "Webhook URL generated — share it with Justdial business support to activate.",
@@ -1059,7 +1059,7 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
     createdAt: { $gte: lastWeek },
   });
 
-  const backendUrl = process.env.BACKEND_URL || "https://leads-pixelate-backend.vercel.app";
+  const backendUrl = process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
 
   res.json({
     success: true,

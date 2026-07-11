@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
       "/api": {
         target:
           process.env.VITE_BACKEND_URL ||
-          "https://leads-pixelate-backend.vercel.app",
+          "https://leads-backend.pixelatenest.com",
         changeOrigin: true,
         secure: false,
       },

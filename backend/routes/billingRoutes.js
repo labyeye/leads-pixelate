@@ -221,7 +221,7 @@ router.post(
 
     const orderId = `ORD_${req.user.tenantId}_${Date.now()}`;
     const backendUrl =
-      process.env.BACKEND_URL || `https://leads-pixelate-backend.vercel.app`;
+      process.env.BACKEND_URL || `https://leads-backend.pixelatenest.com`;
     const frontendUrl =
       process.env.CLIENT_URL || `https://leads.pixelatenest.com`;
 

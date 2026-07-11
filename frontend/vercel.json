@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://leads-pixelate-backend.vercel.app/api/:path*"
+      "destination": "https://leads-backend.pixelatenest.com/api/:path*"
     },
     {
       "source": "/(.*)",
