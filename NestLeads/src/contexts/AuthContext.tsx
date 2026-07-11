@@ -5,8 +5,22 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import {authAPI, setToken, removeToken} from '../services/api';
+import {authAPI, settingsAPI, setToken, removeToken} from '../services/api';
 import storage from '../utils/storage';
+import {
+  setStatusOverrides,
+  setCustomLeadStatuses,
+} from '../constants/statusConstants';
+
+function loadStatusSettings() {
+  settingsAPI
+    .get()
+    .then(res => {
+      setStatusOverrides(res.data?.leadStatusLabels);
+      setCustomLeadStatuses(res.data?.customLeadStatuses);
+    })
+    .catch(() => {});
+}
 
 interface AuthContextType {
   user: any | null;
@@ -33,6 +47,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
         if (token) {
           const res = await authAPI.getMe();
           setUser(res.data);
+          loadStatusSettings();
         }
       } catch {
         await removeToken();
@@ -51,6 +66,7 @@ export function AuthProvider({children}: {children: ReactNode}) {
     await setToken(token);
     await storage.setItem('user', JSON.stringify(res.data));
     setUser(res.data);
+    loadStatusSettings();
   };
 
   const logout = async () => {

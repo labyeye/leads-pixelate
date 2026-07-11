@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
   Plus,
   Search,
@@ -8,6 +9,7 @@ import {
   Pencil,
   Trash2,
   Building2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -459,28 +461,23 @@ export default function ClientsPage() {
 
       {}
       <div className="grid grid-cols-2 gap-3 mb-5">
-        {[
-          {
-            label: "Total",
-            val: clients.length,
-            bg: "bg-white text-primary",
-          },
-          {
-            label: "Active",
-            val: clients.filter((c) => c.projectStatus === "Active").length,
-            bg: "bg-white text-green-600",
-          },
-        ].map(({ label, val, bg }) => (
-          <div
-            key={label}
-            className={cn("border-2 border-black p-4 text-center", bg)}
-          >
-            <p className="text-3xl font-black">{loading ? "—" : val}</p>
-            <p className="text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">
-              {label}
-            </p>
-          </div>
-        ))}
+        <KpiCard
+          title="Total Clients"
+          value={loading ? "—" : clients.length}
+          icon={Building2}
+          bg="bg-[#024BAB]"
+        />
+        <KpiCard
+          title="Active"
+          value={
+            loading
+              ? "—"
+              : clients.filter((c) => c.projectStatus === "Active").length
+          }
+          sub="Ongoing projects"
+          icon={CheckCircle2}
+          bg="bg-[#00C48C]"
+        />
       </div>
 
       {}

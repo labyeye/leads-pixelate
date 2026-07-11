@@ -536,4 +536,105 @@ async function sendWelcomeEmail({
   });
 }
 
-module.exports = { sendWelcomeEmail };
+function buildPasswordResetHtml({ userName, resetUrl }) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Reset your NESTLeads password</title></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">
+<tr><td align="center">
+<table width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+  <tr>
+    <td style="background:linear-gradient(135deg,#024BAB 0%,#0369a1 60%,#0c4a6e 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;">
+      <div style="display:inline-block;width:48px;height:48px;background:#fff;border-radius:12px;text-align:center;line-height:48px;font-size:24px;font-weight:900;color:#024BAB;margin-bottom:14px;">N</div>
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;">Reset your password</h1>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="background:#fff;padding:36px 40px;">
+      <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">Hi ${userName},</p>
+      <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">We received a request to reset the password for your NESTLeads account. Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.</p>
+
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="${resetUrl}" style="display:inline-block;background:#024BAB;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:13px 32px;border-radius:10px;">Reset Password &rarr;</a>
+      </div>
+
+      <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;line-height:1.6;">If the button doesn't work, copy and paste this link into your browser:</p>
+      <p style="margin:0 0 24px;font-size:12px;color:#024BAB;word-break:break-all;">${resetUrl}</p>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 20px;"/>
+      <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">If you didn't request this, you can safely ignore this email — your password won't be changed.</p>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="background:#1e293b;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;">
+      <p style="margin:0;font-size:11px;color:#64748b;">&copy; ${new Date().getFullYear()} Kalahanu Tech Studios LLP. All rights reserved.</p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function sendPasswordResetEmail({ to, userName, resetUrl }) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("Email not configured — skipping password reset email.");
+    return;
+  }
+
+  const transporter = createTransport();
+
+  await transporter.sendMail({
+    from: `"NESTLeads" <${process.env.SMTP_USER}>`,
+    to,
+    subject: "Reset your NESTLeads password",
+    html: buildPasswordResetHtml({ userName, resetUrl }),
+  });
+}
+
+async function sendBulkLeadEmail({ to, subject, message, fromName }) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn("Email not configured — skipping bulk lead email.");
+    return { skipped: true };
+  }
+
+  const escapeHtml = (str) =>
+    String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+  const transporter = createTransport();
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">
+<tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:12px;overflow:hidden;">
+  <tr>
+    <td style="padding:32px 40px;white-space:pre-wrap;font-size:14px;color:#374151;line-height:1.7;">${escapeHtml(message)}</td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"${fromName || "NESTLeads"}" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+  });
+
+  return { skipped: false };
+}
+
+module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendBulkLeadEmail };

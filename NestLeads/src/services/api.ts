@@ -100,7 +100,26 @@ export const leadsAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  getSavedViews: () =>
+    request<{ success: boolean; data: SavedView[] }>('/leads/saved-views'),
+  createSavedView: (name: string, filters: Record<string, any>) =>
+    request<{ success: boolean; data: SavedView }>('/leads/saved-views', {
+      method: 'POST',
+      body: JSON.stringify({ name, filters }),
+    }),
+  deleteSavedView: (id: string) =>
+    request<{ success: boolean }>(`/leads/saved-views/${id}`, {
+      method: 'DELETE',
+    }),
 };
+
+export interface SavedView {
+  _id: string;
+  name: string;
+  filters: Record<string, any>;
+  createdBy: string;
+  createdAt: string;
+}
 
 export const clientsAPI = {
   getAll: (params?: Record<string, string>) => {
@@ -310,4 +329,79 @@ export const whatsappAPI = {
       method: 'POST',
       body: JSON.stringify({ phone, message }),
     }),
+  getStatus: () => request<{success: boolean; data: any}>('/whatsapp/status'),
+  getConfig: () => request<{success: boolean; data: any}>('/whatsapp/config'),
+  getTemplates: () =>
+    request<{success: boolean; data: any[]}>('/whatsapp/templates'),
+  getCampaigns: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{success: boolean; data: any[]}>(`/whatsapp/campaigns${qs}`);
+  },
+  getCampaign: (id: string) =>
+    request<{success: boolean; data: any}>(`/whatsapp/campaigns/${id}`),
+};
+
+export const apiKeysAPI = {
+  list: () => request<{success: boolean; data: any[]}>('/api-keys'),
+  generate: (name: string, fields?: any[]) =>
+    request<{success: boolean; data: any}>('/api-keys', {
+      method: 'POST',
+      body: JSON.stringify({name, fields: fields || []}),
+    }),
+  revoke: (id: string) =>
+    request<{success: boolean; message: string}>(`/api-keys/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const supportAPI = {
+  getAll: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{success: boolean; count: number; data: any[]}>(
+      `/support${qs}`,
+    );
+  },
+  getById: (id: string) =>
+    request<{success: boolean; data: any}>(`/support/${id}`),
+  create: (data: {subject: string; description: string; priority?: string}) =>
+    request<{success: boolean; data: any}>('/support', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
+export const billingAPI = {
+  getPlans: () => request<{success: boolean; data: any}>('/billing/plans'),
+  getSubscription: () =>
+    request<{success: boolean; data: any}>('/billing/subscription'),
+  getInvoices: () =>
+    request<{success: boolean; data: any[]}>('/billing/invoices'),
+};
+
+export const settingsAPI = {
+  get: () => request<{success: boolean; data: any}>('/settings'),
+  update: (data: any) =>
+    request<{success: boolean; data: any}>('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+};
+
+export const servicesAPI = {
+  getAll: () =>
+    request<{success: boolean; count: number; data: any[]}>('/services'),
+  getById: (id: string) =>
+    request<{success: boolean; data: any}>(`/services/${id}`),
+  create: (data: any) =>
+    request<{success: boolean; data: any}>('/services', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    request<{success: boolean; data: any}>(`/services/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{success: boolean}>(`/services/${id}`, {method: 'DELETE'}),
 };

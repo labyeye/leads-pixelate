@@ -2,6 +2,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { socialAPI, usersAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +60,16 @@ import {
   Info,
   Users,
 } from "lucide-react";
-import { format, formatDistanceToNow, isPast } from "date-fns";
+import {
+  format,
+  formatDistanceToNow,
+  isPast,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isToday,
+} from "date-fns";
 import { useSearchParams } from "react-router-dom";
 
 interface SocialPost {
@@ -168,7 +179,7 @@ export default function SocialMediaPlannerPage() {
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
   const [activeTab, setActiveTab] = useState<
-    "posts" | "accounts" | "analytics"
+    "posts" | "calendar" | "accounts" | "analytics"
   >(searchParams.get("tab") === "accounts" ? "accounts" : "posts");
 
   const [stats, setStats] = useState<any>(null);
@@ -222,62 +233,36 @@ export default function SocialMediaPlannerPage() {
         {}
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-6 py-4 border-b border-border bg-muted/20">
-            {[
-              {
-                label: "Total Posts",
-                value: stats.total,
-                icon: BarChart3,
-                bg: "bg-gray-100",
-                iconColor: "text-gray-700",
-              },
-              {
-                label: "Pending",
-                value: stats.pending,
-                icon: Clock,
-                bg: "bg-orange-100",
-                iconColor: "text-orange-600",
-              },
-              {
-                label: "Scheduled",
-                value: stats.scheduled,
-                icon: Calendar,
-                bg: "bg-primary/10",
-                iconColor: "text-primary",
-              },
-              {
-                label: "Posted",
-                value: stats.posted,
-                icon: CheckCircle2,
-                bg: "bg-green-100",
-                iconColor: "text-green-600",
-              },
-              {
-                label: "Connected",
-                value: stats.connectedAccounts,
-                icon: Users,
-                bg: "bg-blue-100",
-                iconColor: "text-blue-600",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="border-2 border-black p-3 flex flex-col gap-2 bg-white nb-card-hover"
-              >
-                <div
-                  className={`w-8 h-8 border-2 border-black flex items-center justify-center shrink-0 ${s.bg}`}
-                >
-                  <s.icon className={`w-4 h-4 ${s.iconColor}`} />
-                </div>
-                <div>
-                  <p className="font-display font-bold text-2xl text-black">
-                    {s.value}
-                  </p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    {s.label}
-                  </p>
-                </div>
-              </div>
-            ))}
+            <KpiCard
+              title="Total Posts"
+              value={stats.total}
+              icon={BarChart3}
+              bg="bg-gray-200"
+            />
+            <KpiCard
+              title="Pending"
+              value={stats.pending}
+              icon={Clock}
+              bg="bg-[#FB923C]"
+            />
+            <KpiCard
+              title="Scheduled"
+              value={stats.scheduled}
+              icon={Calendar}
+              bg="bg-[#024BAB]"
+            />
+            <KpiCard
+              title="Posted"
+              value={stats.posted}
+              icon={CheckCircle2}
+              bg="bg-[#00C48C]"
+            />
+            <KpiCard
+              title="Connected"
+              value={stats.connectedAccounts}
+              icon={Users}
+              bg="bg-[#0EA5E9]"
+            />
           </div>
         )}
 
@@ -285,6 +270,7 @@ export default function SocialMediaPlannerPage() {
         <div className="flex border-b-2 border-black px-6 bg-background">
           {[
             { id: "posts", label: "Posts" },
+            { id: "calendar", label: "Calendar" },
             { id: "analytics", label: "Analytics" },
             { id: "accounts", label: "Connected Accounts" },
           ].map((t) => (
@@ -310,6 +296,7 @@ export default function SocialMediaPlannerPage() {
               onStatsChange={fetchStats}
             />
           )}
+          {activeTab === "calendar" && <CalendarTab toast={toast} />}
           {activeTab === "analytics" && <AnalyticsTab />}
           {activeTab === "accounts" && (
             <AccountsTab isAdmin={isAdmin} toast={toast} />
@@ -471,7 +458,7 @@ function PostsTab({
               onClick={() => setFilter(t.id)}
               className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all border-2 ${
                 filter === t.id
-                  ? "border-black bg-primary text-white nb-shadow-sm"
+                  ? "border-black bg-primary text-white"
                   : "border-transparent text-muted-foreground hover:border-black hover:bg-accent"
               }`}
             >
@@ -484,13 +471,13 @@ function PostsTab({
             variant="outline"
             size="sm"
             onClick={fetchPosts}
-            className="nb-btn"
+            className=""
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
             size="sm"
-            className="nb-btn bg-primary text-white hover:bg-purple-700"
+            className=" bg-primary text-white hover:bg-purple-700"
             onClick={() => {
               setEditingPost(null);
               setWizardOpen(true);
@@ -683,6 +670,281 @@ function PostsTab({
   );
 }
 
+const CAL_STATUS_DOT: Record<string, string> = {
+  DRAFT: "bg-gray-400",
+  PENDING_APPROVAL: "bg-[#FB923C]",
+  APPROVED: "bg-[#0EA5E9]",
+  REJECTED: "bg-[#EF4444]",
+  SCHEDULED: "bg-[#A855F7]",
+  POSTING: "bg-[#0EA5E9]",
+  POSTED: "bg-[#00C48C]",
+  PARTIALLY_POSTED: "bg-[#FBBF24]",
+  FAILED: "bg-[#EF4444]",
+};
+
+function CalendarTab({ toast }: { toast: any }) {
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [viewingPost, setViewingPost] = useState<SocialPost | null>(null);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await socialAPI.getPosts({});
+      setPosts(res.data);
+    } catch {
+      toast({ title: "Failed to load posts", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const getPostsForDate = (date: Date) =>
+    posts
+      .filter(
+        (p) =>
+          new Date(p.scheduledAt).toDateString() === date.toDateString(),
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+      );
+
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const leadingEmptyDays = monthStart.getDay();
+
+  const upcomingCount = posts.filter(
+    (p) =>
+      ["SCHEDULED", "APPROVED"].includes(p.status) &&
+      !isPast(new Date(p.scheduledAt)),
+  ).length;
+  const draftCount = posts.filter((p) =>
+    ["DRAFT", "PENDING_APPROVAL"].includes(p.status),
+  ).length;
+
+  const selectedDayPosts = selectedDate ? getPostsForDate(selectedDate) : [];
+
+  return (
+    <div className="p-6 overflow-y-auto h-full space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <span className="border-2 border-black bg-[#A855F7] text-white px-3 py-1.5 text-xs font-bold flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5" /> {upcomingCount} Upcoming
+          </span>
+          <span className="border-2 border-black bg-gray-200 text-black px-3 py-1.5 text-xs font-bold flex items-center gap-1.5">
+            <Pencil className="w-3.5 h-3.5" /> {draftCount} In Draft/Review
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              setCurrentDate(
+                new Date(currentDate.getFullYear(), currentDate.getMonth() - 1),
+              )
+            }
+            className="w-8 h-8 border-2 border-black bg-white hover:bg-black hover:text-white transition-colors flex items-center justify-center"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="font-display font-bold text-base text-black min-w-[130px] text-center">
+            {format(currentDate, "MMMM yyyy")}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentDate(
+                new Date(currentDate.getFullYear(), currentDate.getMonth() + 1),
+              )
+            }
+            className="w-8 h-8 border-2 border-black bg-white hover:bg-black hover:text-white transition-colors flex items-center justify-center"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setCurrentDate(new Date())}
+            className="border-2 border-black bg-white px-3 py-1.5 text-xs font-bold hover:bg-black hover:text-white transition-colors"
+          >
+            Today
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="border-2 border-black bg-white">
+          <div className="grid grid-cols-7 border-b-2 border-black bg-primary">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              <div
+                key={d}
+                className="text-center text-[10px] font-black uppercase tracking-widest text-white py-2 border-r border-white/10 last:border-r-0"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {Array.from({ length: leadingEmptyDays }).map((_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="min-h-24 border-r border-b border-black/10 bg-gray-50/50"
+              />
+            ))}
+            {daysInMonth.map((date, idx) => {
+              const dayPosts = getPostsForDate(date);
+              const isCurrentDay = isToday(date);
+              return (
+                <div
+                  key={`day-${idx}`}
+                  onClick={() => setSelectedDate(date)}
+                  className={cn(
+                    "min-h-24 border-r border-b border-black/10 p-1.5 flex flex-col gap-1 cursor-pointer transition-colors hover:bg-primary/5",
+                    isCurrentDay && "bg-[#FFDE00]/20",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-xs font-bold w-5 h-5 flex items-center justify-center shrink-0",
+                      isCurrentDay && "bg-primary text-white",
+                    )}
+                  >
+                    {format(date, "d")}
+                  </span>
+                  <div className="space-y-0.5 flex-1 overflow-hidden">
+                    {dayPosts.slice(0, 3).map((p) => (
+                      <div
+                        key={p._id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewingPost(p);
+                        }}
+                        className="flex items-center gap-1 text-[10px] font-bold truncate px-1 py-0.5 border border-black/10 bg-white hover:border-black transition-colors"
+                        title={p.caption}
+                      >
+                        <span
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full shrink-0",
+                            CAL_STATUS_DOT[p.status] || "bg-gray-400",
+                          )}
+                        />
+                        <span className="truncate">
+                          {format(new Date(p.scheduledAt), "h:mma")} ·{" "}
+                          {p.caption || "Untitled"}
+                        </span>
+                      </div>
+                    ))}
+                    {dayPosts.length > 3 && (
+                      <div className="text-[9px] text-muted-foreground font-bold px-1">
+                        +{dayPosts.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {}
+      <div className="flex items-center gap-3 flex-wrap text-[11px] font-bold text-black">
+        {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+          <span key={key} className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "w-2.5 h-2.5 rounded-full",
+                CAL_STATUS_DOT[key] || "bg-gray-400",
+              )}
+            />
+            {cfg.label}
+          </span>
+        ))}
+      </div>
+
+      {}
+      {selectedDate && (
+        <Dialog open onOpenChange={() => setSelectedDate(null)}>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {format(selectedDate, "EEEE, dd MMM yyyy")}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedDayPosts.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">
+                No posts scheduled on this day.
+              </p>
+            ) : (
+              <div className="space-y-2 py-1">
+                {selectedDayPosts.map((p) => {
+                  const cfg = STATUS_CONFIG[p.status] || STATUS_CONFIG.DRAFT;
+                  const StatusIcon = cfg.icon;
+                  return (
+                    <button
+                      key={p._id}
+                      onClick={() => {
+                        setViewingPost(p);
+                        setSelectedDate(null);
+                      }}
+                      className="w-full flex items-center gap-3 p-2.5 border-2 border-black hover:bg-primary/5 transition-colors text-left"
+                    >
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt=""
+                          className="w-10 h-10 object-cover shrink-0 border border-black"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 shrink-0 bg-purple-100 border border-black flex items-center justify-center">
+                          <ImageIcon className="w-4 h-4 text-purple-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold truncate">
+                          {p.caption || "Untitled"}
+                        </p>
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border mt-1 ${cfg.color}`}
+                        >
+                          <StatusIcon className="w-2.5 h-2.5" />
+                          {cfg.label}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                        {format(new Date(p.scheduledAt), "h:mm a")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {viewingPost && (
+        <PostDetailModal
+          post={viewingPost}
+          isAdmin={false}
+          onClose={() => setViewingPost(null)}
+          onApprove={() => setViewingPost(null)}
+          onReject={() => setViewingPost(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 function PostCard({
   post,
   isAdmin,
@@ -713,7 +975,7 @@ function PostCard({
     post.status === "SCHEDULED" && isPast(new Date(post.scheduledAt));
 
   return (
-    <div className="nb-card nb-card-hover overflow-hidden border-l-4 border-l-primary-900">
+    <div className="border-2 border-2-hover overflow-hidden border-l-4 border-l-primary-900">
       <div className="px-5 py-4">
         <div className="flex items-start gap-4">
           {}
@@ -821,7 +1083,7 @@ function PostCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-xs nb-btn"
+              className="h-7 text-xs "
               onClick={onView}
             >
               <Eye className="w-3 h-3 mr-1" /> View
@@ -832,7 +1094,7 @@ function PostCard({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-7 text-xs nb-btn"
+                className="h-7 text-xs "
                 onClick={onEdit}
               >
                 <Pencil className="w-3 h-3 mr-1" /> Edit
@@ -843,7 +1105,7 @@ function PostCard({
             {["DRAFT", "REJECTED"].includes(post.status) && (
               <Button
                 size="sm"
-                className="h-7 text-xs nb-btn bg-primary text-white hover:bg-purple-700"
+                className="h-7 text-xs  bg-primary text-white hover:bg-purple-700"
                 onClick={onSubmit}
                 disabled={actionLoading}
               >
@@ -856,7 +1118,7 @@ function PostCard({
               <>
                 <Button
                   size="sm"
-                  className="h-7 text-xs nb-btn bg-[#00C48C] text-black hover:bg-[#00C48C]/90"
+                  className="h-7 text-xs  bg-[#00C48C] text-black hover:bg-[#00C48C]/90"
                   onClick={onApprove}
                   disabled={actionLoading}
                 >
@@ -865,7 +1127,7 @@ function PostCard({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs nb-btn text-red-600 border-red-300 hover:bg-red-50"
+                  className="h-7 text-xs  text-red-600 border-red-300 hover:bg-red-50"
                   onClick={onReject}
                   disabled={actionLoading}
                 >
@@ -881,7 +1143,7 @@ function PostCard({
               ) && (
                 <Button
                   size="sm"
-                  className="h-7 text-xs nb-btn bg-[#024BAB] text-white hover:bg-[#024BAB]/90"
+                  className="h-7 text-xs  bg-[#024BAB] text-white hover:bg-[#024BAB]/90"
                   onClick={onPublishNow}
                   disabled={actionLoading}
                 >
@@ -2481,7 +2743,7 @@ function AnalyticsTab() {
       {}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statusOrder.slice(0, 4).map((s) => (
-          <div key={s.key} className="nb-card p-4 space-y-1">
+          <div key={s.key} className="border-2 p-4 space-y-1">
             <p className="text-2xl font-bold">{statuses[s.key] ?? 0}</p>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               {s.label}
@@ -2493,7 +2755,7 @@ function AnalyticsTab() {
       {}
       <div className="grid md:grid-cols-2 gap-6">
         {}
-        <div className="nb-card p-4">
+        <div className="border-2 p-4">
           <p className="text-sm font-bold mb-4">Posts by Status</p>
           <div className="space-y-2.5">
             {statusOrder
@@ -2523,7 +2785,7 @@ function AnalyticsTab() {
         </div>
 
         {}
-        <div className="nb-card p-4">
+        <div className="border-2 p-4">
           <p className="text-sm font-bold mb-4">Platform Breakdown</p>
           <div className="space-y-3">
             {Object.entries(platforms).map(([platform, count]) => (
@@ -2558,7 +2820,7 @@ function AnalyticsTab() {
 
       {}
       {weekly.length > 0 && (
-        <div className="nb-card p-4">
+        <div className="border-2 p-4">
           <p className="text-sm font-bold mb-4">
             Weekly Posting Activity (last 12 weeks)
           </p>
@@ -2586,7 +2848,7 @@ function AnalyticsTab() {
 
       {}
       {recentPosts.length > 0 && (
-        <div className="nb-card p-4">
+        <div className="border-2 p-4">
           <p className="text-sm font-bold mb-4">Recently Published Posts</p>
           <div className="space-y-3">
             {recentPosts.map((post: any) => {

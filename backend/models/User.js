@@ -68,6 +68,37 @@ const userSchema = new mongoose.Schema(
       ref: "Tenant",
       default: null,
     },
+    refreshTokenHash: {
+      type: String,
+      select: false,
+    },
+    refreshTokenExpires: {
+      type: Date,
+      select: false,
+    },
+    resetPasswordTokenHash: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+    },
+    // Per-rep Gmail connection for in-CRM email (send + two-way sync via
+    // polling). Tokens are select:false like the other secrets on this
+    // model — only pulled in explicitly by the email OAuth/send flow.
+    emailIntegration: {
+      gmail: {
+        connected: { type: Boolean, default: false },
+        emailAddress: { type: String, default: "" },
+        accessToken: { type: String, default: "", select: false },
+        refreshToken: { type: String, default: "", select: false },
+        tokenExpiresAt: { type: Date, default: null, select: false },
+        historyId: { type: String, default: "" },
+        lastSyncedAt: { type: Date, default: null },
+        connectedAt: { type: Date, default: null },
+      },
+    },
   },
   {
     timestamps: true,

@@ -9,47 +9,53 @@ class ApiError extends Error {
   }
 }
 
-// Token is kept in sessionStorage (cleared when the browser tab closes).
-// This prevents XSS scripts from reading the token via localStorage,
-// which persists indefinitely across sessions.
-let _memToken: string | null = sessionStorage.getItem("_aft") ?? null;
-
-function getToken(): string | null {
-  return _memToken;
+// Auth is an httpOnly cookie set by the backend — invisible to JS, so there
+// is nothing for an XSS payload to read here. Every request just needs to
+// carry cookies (credentials: "include") and echo the CSRF cookie back as a
+// header (double-submit pattern) on mutating requests.
+function readCookie(name: string): string | null {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name}=([^;]*)`),
+  );
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-function setToken(token: string): void {
-  _memToken = token;
-  sessionStorage.setItem("_aft", token);
+function getCsrfToken(): string | null {
+  return readCookie("csrf_token");
 }
 
-function removeToken(): void {
-  _memToken = null;
-  sessionStorage.removeItem("_aft");
-  // Clear any legacy localStorage tokens from older sessions
-  localStorage.removeItem("token");
-}
-
-// One CSRF token per session — generated once, sent on every mutating request.
-// The backend should validate X-CSRF-Token matches the session's expected value.
-function getCsrfToken(): string {
-  let t = sessionStorage.getItem("_cst");
-  if (!t) {
-    t = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    sessionStorage.setItem("_cst", t);
-  }
-  return t;
+function hasSession(): boolean {
+  // access_token is httpOnly (unreadable); csrf_token is set alongside it
+  // in the same response, so its presence is a reliable "might be logged in"
+  // signal without needing a network round trip.
+  return !!readCookie("csrf_token");
 }
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function tryRefresh(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then((res) => res.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
+  _retried = false,
 ): Promise<T> {
-  const token = getToken();
   const method = (options.method ?? "GET").toUpperCase();
 
   const headers: Record<string, string> = {
@@ -58,17 +64,15 @@ async function request<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   if (MUTATING_METHODS.has(method)) {
-    headers["X-CSRF-Token"] = getCsrfToken();
+    const csrf = getCsrfToken();
+    if (csrf) headers["X-CSRF-Token"] = csrf;
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   let data: any = {};
@@ -78,9 +82,13 @@ async function request<T>(
   } catch {}
 
   if (!response.ok) {
-    if (response.status === 401) {
-      removeToken();
-      localStorage.removeItem("user");
+    if (response.status === 401 && endpoint !== "/auth/me" && !_retried) {
+      // Access token cookie likely expired (15 min lifetime) — refresh once
+      // silently and retry before giving up and bouncing to /login.
+      const refreshed = await tryRefresh();
+      if (refreshed) {
+        return request<T>(endpoint, options, true);
+      }
       window.location.href = "/login";
     }
     throw new ApiError(data.message || "Something went wrong", response.status);
@@ -127,6 +135,26 @@ export const authAPI = {
       method: "PUT",
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
+
+  logout: () =>
+    request<{ success: boolean; message: string }>("/auth/logout", {
+      method: "POST",
+    }),
+
+  forgotPassword: (email: string) =>
+    request<{ success: boolean; message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, password: string) =>
+    request<{ success: boolean; message: string }>(
+      `/auth/reset-password/${token}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ password }),
+      },
+    ),
 };
 
 export const usersAPI = {
@@ -201,6 +229,32 @@ export const leadsAPI = {
         body: JSON.stringify(data),
       },
     ),
+  bulkAssign: (leadIds: string[], assignedTo: string) =>
+    request<{ success: boolean; updatedCount: number; skippedCount: number }>(
+      "/leads/bulk-assign",
+      {
+        method: "POST",
+        body: JSON.stringify({ leadIds, assignedTo }),
+      },
+    ),
+  bulkUpdateStatus: (leadIds: string[], status: string, remarks?: string) =>
+    request<{
+      success: boolean;
+      updatedCount: number;
+      skipped: { id: string; name: string; reason: string }[];
+    }>("/leads/bulk-status", {
+      method: "POST",
+      body: JSON.stringify({ leadIds, status, remarks }),
+    }),
+  bulkEmail: (leadIds: string[], subject: string, message: string) =>
+    request<{
+      success: boolean;
+      sentCount: number;
+      skipped: { id: string; name: string; reason: string }[];
+    }>("/leads/bulk-email", {
+      method: "POST",
+      body: JSON.stringify({ leadIds, subject, message }),
+    }),
   importBulk: (leads: any[]) =>
     request<{ success: boolean; count: number; message: string }>(
       "/leads/import",
@@ -215,7 +269,33 @@ export const leadsAPI = {
       "/leads/column-preferences",
       { method: "PUT", body: JSON.stringify({ columns }) },
     ),
+  getSavedViews: () =>
+    request<{ success: boolean; data: SavedView[] }>("/leads/saved-views"),
+  createSavedView: (name: string, filters: Record<string, any>) =>
+    request<{ success: boolean; data: SavedView }>("/leads/saved-views", {
+      method: "POST",
+      body: JSON.stringify({ name, filters }),
+    }),
+  updateSavedView: (id: string, updates: Partial<{ name: string; filters: Record<string, any> }>) =>
+    request<{ success: boolean; data: SavedView }>(`/leads/saved-views/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    }),
+  deleteSavedView: (id: string) =>
+    request<{ success: boolean; data: {} }>(`/leads/saved-views/${id}`, {
+      method: "DELETE",
+    }),
 };
+
+export interface SavedView {
+  _id: string;
+  tenantId: string;
+  name: string;
+  filters: Record<string, any>;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const reportsAPI = {
   getStatusHistory: (params?: Record<string, string>) => {
@@ -234,16 +314,31 @@ export const tradeindiaSyncAPI = {
     ),
   getStatus: () =>
     request<{ success: boolean; data: any }>("/leads/tradeindia/status"),
+  connect: (userId: string, profileId: string, apiKey: string, apiUrl: string) =>
+    request<{ success: boolean; message: string }>(
+      "/leads/tradeindia/connect",
+      { method: "POST", body: JSON.stringify({ userId, profileId, apiKey, apiUrl }) },
+    ),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>(
+      "/leads/tradeindia/disconnect",
+      { method: "POST" },
+    ),
 };
 
 export const justdialSyncAPI = {
-  sync: () =>
-    request<{ success: boolean; message: string; data: any }>(
-      "/leads/justdial/sync",
-      { method: "POST", body: JSON.stringify({}) },
-    ),
   getStatus: () =>
     request<{ success: boolean; data: any }>("/leads/justdial/status"),
+  connect: (apiKey?: string) =>
+    request<{ success: boolean; message: string; data: { webhookUrl: string } }>(
+      "/leads/justdial/connect",
+      { method: "POST", body: JSON.stringify({ apiKey: apiKey || "" }) },
+    ),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>(
+      "/leads/justdial/disconnect",
+      { method: "POST" },
+    ),
 };
 
 export const dashboardAPI = {
@@ -550,6 +645,47 @@ export const googleAdsAPI = {
     }),
 };
 
+export interface LeadEmail {
+  _id: string;
+  leadId: string;
+  userId: { _id: string; name: string; email: string } | string;
+  provider: "gmail";
+  direction: "outbound" | "inbound";
+  from: string;
+  to: string[];
+  subject: string;
+  bodyHtml: string;
+  bodyText: string;
+  snippet: string;
+  sentAt: string;
+}
+
+export const emailAPI = {
+  getAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>(
+      "/email/gmail/auth-url",
+    ),
+  getStatus: () =>
+    request<{
+      success: boolean;
+      data: { connected: boolean; emailAddress: string; lastSyncedAt: string | null };
+    }>("/email/gmail/status"),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>("/email/gmail/disconnect", {
+      method: "POST",
+    }),
+  getThread: (leadId: string) =>
+    request<{ success: boolean; data: LeadEmail[] }>(`/email/leads/${leadId}`),
+  send: (
+    leadId: string,
+    data: { subject: string; bodyHtml: string; bodyText?: string },
+  ) =>
+    request<{ success: boolean; data: LeadEmail }>(
+      `/email/leads/${leadId}/send`,
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+};
+
 export const clientsAPI = {
   getAll: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
@@ -754,13 +890,13 @@ export const whatsappAPI = {
   uploadMedia: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const token = getToken();
+    const csrf = getCsrfToken();
     return fetch(`${API_BASE}/whatsapp/upload-media`, {
       method: "POST",
+      credentials: "include",
       headers: {
-        Authorization: `Bearer ${token}`,
         "X-Requested-With": "XMLHttpRequest",
-        "X-CSRF-Token": getCsrfToken(),
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
     }).then(async (res) => {
@@ -917,4 +1053,20 @@ export const apiKeysAPI = {
     }),
 };
 
-export { getToken, setToken, removeToken, ApiError };
+export const supportAPI = {
+  getAll: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request<{ success: boolean; count: number; data: any[] }>(
+      `/support${query}`,
+    );
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: any }>(`/support/${id}`),
+  create: (data: { subject: string; description: string; priority?: string }) =>
+    request<{ success: boolean; data: any }>("/support", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+export { hasSession, getCsrfToken, ApiError };

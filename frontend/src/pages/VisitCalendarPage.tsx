@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { leadsAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { statusColors } from "@/components/leads/statusConstants";
+import { statusColors, getStatusColorClasses } from "@/components/leads/statusConstants";
 import { DateLeadModal } from "@/components/leads/DateLeadModal";
 
 type TagFilter = "ALL" | "HOT" | "WARM" | "COLD";
@@ -213,7 +213,7 @@ export default function VisitCalendarPage() {
         {}
         <div className="flex flex-col lg:flex-row gap-5 flex-1 overflow-hidden">
           {}
-          <div className="flex-1 flex flex-col bg-card rounded-xl border border-border p-6 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-card border border-border p-6 overflow-hidden">
             {}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold">

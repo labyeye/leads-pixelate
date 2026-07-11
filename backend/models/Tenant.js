@@ -86,7 +86,14 @@ const tenantSchema = new mongoose.Schema(
       tradeindia: {
         enabled: { type: Boolean, default: false },
         userId: { type: String, default: "" },
+        profileId: { type: String, default: "" },
         apiKey: { type: String, default: "" },
+        // TradeIndia hands each seller a ready-made request URL from their
+        // "My Inquiry API" panel rather than publishing one fixed endpoint
+        // — we store whatever they were given instead of guessing it.
+        apiUrl: { type: String, default: "" },
+        lastSync: { type: Date, default: null },
+        assigneeIds: { type: [String], default: [] },
       },
       googleAds: {
         enabled: { type: Boolean, default: false },
@@ -110,6 +117,12 @@ const tenantSchema = new mongoose.Schema(
       justdial: {
         enabled: { type: Boolean, default: false },
         apiKey: { type: String, default: "" },
+        // Justdial has no self-serve pull API — their business support
+        // team pushes leads to a webhook URL we hand them. This token
+        // identifies the tenant on that inbound (unauthenticated) request.
+        webhookToken: { type: String, default: "" },
+        lastLeadAt: { type: Date, default: null },
+        assigneeIds: { type: [String], default: [] },
       },
       whatsapp: {
         enabled: { type: Boolean, default: false },

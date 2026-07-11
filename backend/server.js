@@ -6,8 +6,10 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const hpp = require("hpp");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
+const { verifyCsrf } = require("./middleware/csrf");
 
 dotenv.config();
 
@@ -51,6 +53,23 @@ connectDB().then(async () => {
     } catch (err) {
       if (process.env.NODE_ENV === "development") {
         console.error("[IndiaMART Cron]", err.message);
+      }
+    }
+  });
+
+  cron.schedule("*/5 * * * *", async () => {
+    if (!process.env.GOOGLE_GMAIL_CLIENT_ID) return;
+    const { syncGmailForUser } = require("./services/gmailService");
+
+    const connectedUsers = await User.find({
+      "emailIntegration.gmail.connected": true,
+    }).select("+emailIntegration.gmail.accessToken +emailIntegration.gmail.refreshToken +emailIntegration.gmail.tokenExpiresAt");
+
+    for (const user of connectedUsers) {
+      try {
+        await syncGmailForUser(user);
+      } catch (err) {
+        console.error(`[Gmail Cron] Failed for user ${user._id}:`, err.message);
       }
     }
   });
@@ -108,10 +127,12 @@ app.use("/api/", generalLimiter);
 
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(cookieParser());
 app.use("/uploads", require("express").static(require("path").join(__dirname, "uploads")));
 
 app.use(mongoSanitize({ allowDots: true }));
 app.use(hpp());
+app.use(verifyCsrf);
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
@@ -129,6 +150,7 @@ app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/billing", require("./routes/billingRoutes"));
 app.use("/api/facebook", require("./routes/facebookRoutes"));
 app.use("/api/google-ads", require("./routes/googleAdsRoutes"));
+app.use("/api/email", require("./routes/emailRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));
@@ -136,6 +158,7 @@ app.use("/api/campaigns", require("./routes/campaignRoutes"));
 app.use("/api/api-keys", require("./routes/apiKeyRoutes"));
 app.use("/api/public", require("./routes/publicRoutes"));
 app.use("/api/hrms", require("./routes/hrmsRoutes"));
+app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
 
 app.get("/api/health", (req, res) => {

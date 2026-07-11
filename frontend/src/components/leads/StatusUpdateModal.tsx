@@ -27,7 +27,7 @@ import {
   IndianRupee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { statusColors } from "./statusConstants";
+import { statusColors, getStatusColorClasses, getStatusLabel } from "./statusConstants";
 import { leadsAPI, productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -301,10 +301,10 @@ export function StatusUpdateModal({
             <span
               className={cn(
                 "text-xs font-medium px-2.5 py-1 rounded-full border",
-                statusColors[pendingStatus || "ALL"],
+                getStatusColorClasses(pendingStatus || "ALL"),
               )}
             >
-              {pendingStatus}
+              {getStatusLabel(pendingStatus)}
             </span>
           </DialogTitle>
         </DialogHeader>

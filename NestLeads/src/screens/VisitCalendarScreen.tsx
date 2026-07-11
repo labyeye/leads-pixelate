@@ -6,7 +6,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {leadsAPI} from '../services/api';
-import {statusColors} from '../constants/statusConstants';
+import {getStatusColor, getStatusLabel} from '../constants/statusConstants';
 import UserAvatar from '../components/UserAvatar';
 
 const PRIMARY   = '#024BAB';
@@ -186,7 +186,7 @@ export default function VisitCalendarScreen({navigation}: any) {
                 </View>
               ) : (
                 selectedLeads.map((l: any, idx: number) => {
-                  const sc = statusColors[l.status] || {bg: '#e2e8f0', text: '#000'};
+                  const sc = getStatusColor(l.status);
                   const visitTime = l.visitScheduledDate
                     ? new Date(l.visitScheduledDate).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit'})
                     : null;
@@ -200,7 +200,7 @@ export default function VisitCalendarScreen({navigation}: any) {
                         <Text style={styles.leadName} numberOfLines={1}>{l.name}</Text>
                         <Text style={styles.leadSub} numberOfLines={1}>{l.company || l.phone || '—'}</Text>
                         <View style={[styles.statusPill, {backgroundColor: sc.bg}]}>
-                          <Text style={[styles.statusPillText, {color: sc.text}]}>{l.status}</Text>
+                          <Text style={[styles.statusPillText, {color: sc.text}]}>{getStatusLabel(l.status)}</Text>
                         </View>
                       </View>
                       <View style={styles.leadActions}>

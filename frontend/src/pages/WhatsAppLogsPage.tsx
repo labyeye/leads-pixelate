@@ -26,8 +26,8 @@ interface Campaign {
   _id: string;
   name: string;
   status: string;
-  templateSnapshot?: { displayName: string };
-  template?: { displayName: string };
+  templateSnapshot?: { displayName: string; bodyText?: string };
+  template?: { displayName: string; bodyText?: string };
   totalCount: number;
   sentCount: number;
   deliveredCount: number;
@@ -382,6 +382,20 @@ export default function WhatsAppLogsPage() {
                           </div>
                         ) : detail ? (
                           <div className="overflow-x-auto">
+                            {(detail.template?.bodyText ||
+                              detail.templateSnapshot?.bodyText) && (
+                              <div className="mb-4 bg-primary/5 border border-primary/10 rounded-xl p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                                  Template Preview
+                                </p>
+                                <div className="relative bg-white border-2 border-secondary/30 rounded-xl rounded-tl-sm p-3 shadow-sm max-w-md">
+                                  <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                    {detail.template?.bodyText ||
+                                      detail.templateSnapshot?.bodyText}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="text-xs text-muted-foreground border-b border-gray-200">

@@ -1,4 +1,4 @@
-﻿import React, {useState} from 'react';
+﻿import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   ScrollView,
   TextInput,
   StatusBar,
+  Alert,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import {ALL_SOURCES, ALL_STATUSES, statusColors} from '../constants/statusConstants';
+import {ALL_SOURCES, ALL_STATUSES, getStatusColor, getStatusLabel} from '../constants/statusConstants';
 import {FilterState} from './LeadsListScreen';
 import SourceBadge from '../components/SourceBadge';
+import {leadsAPI, SavedView} from '../services/api';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -27,6 +29,67 @@ export default function FiltersScreen({navigation, route}: any) {
   const filters: FilterState = route?.params?.filters || {sources: [], statuses: [], startDate: '', endDate: ''};
   const onApply: (f: FilterState) => void = route?.params?.onApply || (() => {});
   const [local, setLocal] = useState<FilterState>({...filters});
+
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
+  const [savingView, setSavingView] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+  const [savingViewLoading, setSavingViewLoading] = useState(false);
+
+  const fetchSavedViews = useCallback(() => {
+    leadsAPI
+      .getSavedViews()
+      .then(res => setSavedViews(res.data || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchSavedViews();
+  }, [fetchSavedViews]);
+
+  const applySavedView = (view: SavedView) => {
+    setLocal({
+      sources: view.filters.sources || [],
+      statuses: view.filters.statuses || [],
+      startDate: view.filters.startDate || '',
+      endDate: view.filters.endDate || '',
+      budgetMin: view.filters.budgetMin || '',
+      budgetMax: view.filters.budgetMax || '',
+      products: view.filters.products || [],
+    });
+  };
+
+  const handleSaveView = async () => {
+    if (!newViewName.trim()) return;
+    try {
+      setSavingViewLoading(true);
+      const res = await leadsAPI.createSavedView(newViewName.trim(), local);
+      setSavedViews(prev => [...prev, res.data]);
+      setNewViewName('');
+      setSavingView(false);
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to save view');
+    } finally {
+      setSavingViewLoading(false);
+    }
+  };
+
+  const handleDeleteView = (id: string) => {
+    Alert.alert('Delete View', 'Remove this saved view for your team?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leadsAPI.deleteSavedView(id);
+            setSavedViews(prev => prev.filter(v => v._id !== id));
+          } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to delete view');
+          }
+        },
+      },
+    ]);
+  };
 
   const toggleSource = (s: string) =>
     setLocal(f => ({
@@ -72,6 +135,59 @@ export default function FiltersScreen({navigation, route}: any) {
 
       <ScrollView
         contentContainerStyle={[styles.scroll, {paddingBottom: insets.bottom + 90}]}>
+
+        {/* Saved Views */}
+        <View style={styles.section}>
+          <View style={styles.savedViewsHeader}>
+            <Text style={styles.sectionLabel}>SAVED VIEWS</Text>
+            <TouchableOpacity onPress={() => setSavingView(v => !v)}>
+              <Text style={styles.savedViewAddText}>
+                {savingView ? 'Cancel' : '+ Save Current'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {savingView && (
+            <View style={styles.saveViewRow}>
+              <View style={[styles.inputBorder, {flex: 1}]}>
+                <TextInput
+                  style={styles.dateInput}
+                  placeholder="View name"
+                  placeholderTextColor="#94a3b8"
+                  value={newViewName}
+                  onChangeText={setNewViewName}
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.saveViewBtn}
+                disabled={savingViewLoading || !newViewName.trim()}
+                onPress={handleSaveView}>
+                <Text style={styles.saveViewBtnText}>
+                  {savingViewLoading ? '...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {savedViews.length === 0 ? (
+            <Text style={styles.noViewsText}>
+              No saved views yet — filters you save are shared with your team.
+            </Text>
+          ) : (
+            <View style={styles.chipWrap}>
+              {savedViews.map(v => (
+                <TouchableOpacity
+                  key={v._id}
+                  style={styles.viewChip}
+                  onPress={() => applySavedView(v)}
+                  onLongPress={() => handleDeleteView(v._id)}>
+                  <Icon name="star" size={11} color="#000" />
+                  <Text style={styles.viewChipText}>{v.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Date Range */}
         <View style={styles.section}>
@@ -130,7 +246,7 @@ export default function FiltersScreen({navigation, route}: any) {
           <View style={styles.chipWrap}>
             {ALL_STATUSES.map(s => {
               const active = local.statuses.includes(s);
-              const c = statusColors[s] || {bg: '#e2e8f0', text: '#000', border: '#000'};
+              const c = getStatusColor(s);
               return (
                 <TouchableOpacity
                   key={s}
@@ -142,7 +258,7 @@ export default function FiltersScreen({navigation, route}: any) {
                   ]}
                   onPress={() => toggleStatus(s)}>
                   <Text style={[styles.chipText, {color: active ? c.text : '#000'}]}>
-                    {s}
+                    {getStatusLabel(s)}
                   </Text>
                   {active && (
                     <Text style={[styles.chipCheck, {color: c.text}]}>âœ"</Text>
@@ -218,6 +334,35 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
+  savedViewsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  savedViewAddText: {fontSize: 11, fontWeight: '800', color: '#024BAB'},
+  saveViewRow: {flexDirection: 'row', gap: 8, marginBottom: 10},
+  saveViewBtn: {
+    backgroundColor: '#FFDE00',
+    borderWidth: 2,
+    borderColor: '#000',
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveViewBtnText: {fontSize: 12, fontWeight: '900', color: '#000'},
+  noViewsText: {fontSize: 12, color: '#64748b', fontWeight: '500'},
+  viewChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+  },
+  viewChipText: {fontSize: 11, fontWeight: '700', color: '#000'},
   chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
   chip: {
     flexDirection: 'row',

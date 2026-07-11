@@ -12,6 +12,8 @@ import UsersPage from "./pages/UsersPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import BillingPage from "./pages/BillingPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
@@ -29,6 +31,7 @@ import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
 import CampaignsPage from "./pages/CampaignsPage";
 import CampaignBuilderPage from "./pages/CampaignBuilderPage";
 import ApiKeysPage from "./pages/ApiKeysPage";
+import SupportPage from "./pages/SupportPage";
 import NotFound from "./pages/NotFound";
 import { NotificationProvider } from "@/components/ui/Notification";
 import logonest from "@/assets/images/Logo.png";    
@@ -96,6 +99,26 @@ function AppRoutes() {
             <Navigate to="/" replace />
           ) : (
             <Navigate to="/onboarding" replace />
+          )
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          !isAuthenticated ? (
+            <ForgotPasswordPage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route
+        path="/reset-password/:token"
+        element={
+          !isAuthenticated ? (
+            <ResetPasswordPage />
+          ) : (
+            <Navigate to="/" replace />
           )
         }
       />
@@ -284,6 +307,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ApiKeysPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/support"
+        element={
+          <ProtectedRoute>
+            <SupportPage />
           </ProtectedRoute>
         }
       />

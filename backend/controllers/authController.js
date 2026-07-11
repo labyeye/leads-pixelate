@@ -1,9 +1,32 @@
 const asyncHandler = require("express-async-handler");
 const validator = require("validator");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Tenant = require("../models/Tenant");
-const generateToken = require("../utils/generateToken");
+const {
+  generateToken,
+  generateAccessToken,
+  generateRefreshToken,
+} = require("../utils/generateToken");
+const { setAuthCookies, clearAuthCookies } = require("../utils/authCookies");
 const logActivity = require("../utils/activityLogger");
+const { sendPasswordResetEmail } = require("../utils/emailService");
+
+// Issues the web-app cookie session (access + refresh + csrf) alongside the
+// existing bearer token in the JSON body used by the mobile app.
+async function issueWebSession(res, user) {
+  const accessToken = generateAccessToken(user._id);
+  const { raw: refreshToken, hash: refreshTokenHash } =
+    await generateRefreshToken(user._id);
+
+  user.refreshTokenHash = refreshTokenHash;
+  user.refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await user.save({ validateBeforeSave: false });
+
+  setAuthCookies(res, { accessToken, refreshToken });
+}
 
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, companyName, phone, department } = req.body;
@@ -76,6 +99,8 @@ const register = asyncHandler(async (req, res) => {
     targetId: user._id,
     ip: req.ip,
   });
+
+  await issueWebSession(res, user);
 
   res.status(201).json({
     success: true,
@@ -160,6 +185,8 @@ const login = asyncHandler(async (req, res) => {
     description: `${user.name} logged in`,
     ip: req.ip,
   });
+
+  await issueWebSession(res, user);
 
   res.json({
     success: true,
@@ -284,4 +311,198 @@ const changePassword = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { register, login, getMe, updateProfile, changePassword };
+// Rotates the httpOnly refresh-token cookie for a new short-lived access
+// token. Only used by the web app — the mobile app's long-lived bearer
+// token needs no refresh cycle.
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refresh_token;
+  if (!token) {
+    res.status(401);
+    throw new Error("Not authorized");
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    clearAuthCookies(res);
+    res.status(401);
+    throw new Error("Session expired, please log in again");
+  }
+
+  if (decoded.scope !== "refresh") {
+    clearAuthCookies(res);
+    res.status(401);
+    throw new Error("Not authorized");
+  }
+
+  const user = await User.findById(decoded.id).select(
+    "+refreshTokenHash +refreshTokenExpires",
+  );
+
+  if (
+    !user ||
+    !user.refreshTokenHash ||
+    !user.refreshTokenExpires ||
+    user.refreshTokenExpires < new Date()
+  ) {
+    clearAuthCookies(res);
+    res.status(401);
+    throw new Error("Session expired, please log in again");
+  }
+
+  const isValid = await bcrypt.compare(token, user.refreshTokenHash);
+  if (!isValid) {
+    // Reused/stale refresh token — revoke the session outright.
+    user.refreshTokenHash = undefined;
+    user.refreshTokenExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    clearAuthCookies(res);
+    res.status(401);
+    throw new Error("Session expired, please log in again");
+  }
+
+  if (user.status === "inactive") {
+    clearAuthCookies(res);
+    res.status(403);
+    throw new Error("Account is deactivated. Contact your administrator.");
+  }
+
+  await issueWebSession(res, user);
+
+  res.json({ success: true, message: "Session refreshed" });
+});
+
+const logout = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refresh_token;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      await User.findByIdAndUpdate(decoded.id, {
+        $unset: { refreshTokenHash: 1, refreshTokenExpires: 1 },
+      });
+    } catch {
+      // Token already invalid/expired — nothing to revoke.
+    }
+  }
+
+  clearAuthCookies(res);
+  res.json({ success: true, message: "Logged out" });
+});
+
+// Always responds with a generic success message, whether or not the email
+// is registered, so the endpoint can't be used to enumerate accounts.
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !validator.isEmail(email)) {
+    res.status(400);
+    throw new Error("Please provide a valid email address");
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await User.findOne({ email: normalizedEmail });
+
+  if (user) {
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordTokenHash = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${process.env.CLIENT_URL || "http://localhost:8080"}/reset-password/${rawToken}`;
+
+    try {
+      await sendPasswordResetEmail({
+        to: user.email,
+        userName: user.name,
+        resetUrl,
+      });
+    } catch (err) {
+      // Don't leak email delivery failures to the caller — log and still
+      // return the generic success response.
+      if (process.env.NODE_ENV === "development") {
+        console.error("[forgotPassword] email send failed", err.message);
+      }
+    }
+
+    logActivity({
+      user,
+      action: "PASSWORD_RESET_REQUESTED",
+      module: "Auth",
+      description: `${user.name} requested a password reset`,
+      targetId: user._id,
+      ip: req.ip,
+    });
+  }
+
+  res.json({
+    success: true,
+    message:
+      "If an account exists for that email, a password reset link has been sent.",
+  });
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!token) {
+    res.status(400);
+    throw new Error("Reset token is required");
+  }
+
+  if (!password || password.length < 8) {
+    res.status(400);
+    throw new Error("Password must be at least 8 characters");
+  }
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordTokenHash: tokenHash,
+    resetPasswordExpires: { $gt: new Date() },
+  }).select("+resetPasswordTokenHash +resetPasswordExpires");
+
+  if (!user) {
+    res.status(400);
+    throw new Error("This reset link is invalid or has expired");
+  }
+
+  user.password = password;
+  user.resetPasswordTokenHash = undefined;
+  user.resetPasswordExpires = undefined;
+  // Force re-login everywhere else — a password reset should invalidate any
+  // existing session cookies too.
+  user.refreshTokenHash = undefined;
+  user.refreshTokenExpires = undefined;
+  await user.save();
+
+  clearAuthCookies(res);
+
+  logActivity({
+    user,
+    action: "PASSWORD_RESET",
+    module: "Auth",
+    description: `${user.name} reset their password`,
+    targetId: user._id,
+    ip: req.ip,
+  });
+
+  res.json({ success: true, message: "Password has been reset. Please log in." });
+});
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  changePassword,
+  refreshAccessToken,
+  logout,
+  forgotPassword,
+  resetPassword,
+};

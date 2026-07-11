@@ -26,6 +26,7 @@ import {
   MessageCircle,
   Send,
   Mail,
+  AlertCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -42,16 +43,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { whatsappAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { statusColors, getCategoryByStatus } from "./statusConstants";
+import { statusColors, getCategoryByStatus, getStatusColorClasses, getStatusLabel } from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
 import { WhatsAppIcon } from "../icons/WhatsAppIcon";
+
+const VARIABLE_FIELDS = [
+  { value: "name", label: "Contact Name" },
+  { value: "company", label: "Company" },
+  { value: "phone", label: "Phone" },
+  { value: "location", label: "Location" },
+  { value: "requirement", label: "Requirement" },
+  { value: "budget", label: "Budget" },
+  { value: "custom", label: "Custom Text" },
+];
+
+const TEMPLATE_STATUS_LABEL: Record<string, string> = {
+  APPROVED: "Approved",
+  PENDING: "Pending review",
+  DRAFT: "Draft",
+  REJECTED: "Rejected",
+};
+
+function renderTemplatePreview(
+  bodyText: string,
+  variableMapping: Array<{
+    position: number;
+    fieldKey: string;
+    customValue: string;
+  }>,
+  lead: any,
+) {
+  const leadFieldMap: Record<string, string> = {
+    name: lead.name,
+    company: lead.company,
+    phone: lead.phone,
+    location: lead.location,
+    requirement: lead.requirement,
+    budget: lead.budget,
+  };
+  return (bodyText || "").replace(/\{\{(\d+)\}\}/g, (match, num) => {
+    const vm = variableMapping.find((v) => v.position === Number(num));
+    if (!vm) return match;
+    const value =
+      vm.fieldKey === "custom" ? vm.customValue : leadFieldMap[vm.fieldKey];
+    return value || match;
+  });
+}
 
 interface LeadDetailPanelProps {
   lead: any;
@@ -126,10 +171,10 @@ export function LeadDetailPanel({
             <span
               className={cn(
                 "text-[11px] font-medium px-2 py-0.5 rounded-full border inline-block",
-                statusColors[lead.status] || "bg-muted",
+                getStatusColorClasses(lead.status) || "bg-muted",
               )}
             >
-              {lead.status || "PENDING CONTACT"}
+              {getStatusLabel(lead.status) || "PENDING CONTACT"}
             </span>
           </div>
           {lead.contactTag && (
@@ -140,7 +185,7 @@ export function LeadDetailPanel({
               <span
                 className={cn(
                   "text-[11px] font-medium px-2 py-0.5 rounded-full border inline-flex items-center gap-1",
-                  statusColors[lead.contactTag] || "bg-muted",
+                  getStatusColorClasses(lead.contactTag) || "bg-muted",
                 )}
               >
                 {lead.contactTag === "HOT" && <Flame className="w-3 h-3" />}
@@ -655,11 +700,33 @@ function WhatsAppSendDialog({
   const [messageText, setMessageText] = useState("");
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateId, setTemplateId] = useState("");
+  const [variableMapping, setVariableMapping] = useState<
+    Array<{ position: number; fieldKey: string; customValue: string }>
+  >([]);
   const [loadingInit, setLoadingInit] = useState(false);
   const [sending, setSending] = useState(false);
 
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
+
+  const selectedTemplate = templates.find((t: any) => t._id === templateId);
+
+  useEffect(() => {
+    if (!selectedTemplate) {
+      setVariableMapping([]);
+      return;
+    }
+    const varCount = new Set(
+      (selectedTemplate.bodyText?.match(/\{\{\d+\}\}/g) || []) as string[],
+    ).size;
+    setVariableMapping(
+      Array.from({ length: varCount }, (_, i) => ({
+        position: i + 1,
+        fieldKey: i === 0 ? "name" : "company",
+        customValue: "",
+      })),
+    );
+  }, [templateId]);
 
   useEffect(() => {
     if (!open) return;
@@ -667,9 +734,7 @@ function WhatsAppSendDialog({
 
     Promise.all([whatsappAPI.getTemplates(), whatsappAPI.getStatus()])
       .then(([tRes, sRes]) => {
-        setTemplates(
-          (tRes.data || []).filter((t: any) => t.status === "APPROVED"),
-        );
+        setTemplates(tRes.data || []);
         const nums = sRes.data?.phoneNumbers || [];
         setPhoneNumbers(nums);
 
@@ -693,7 +758,7 @@ function WhatsAppSendDialog({
       await whatsappAPI.sendMessage({
         leadId: lead._id,
         ...(mode === "template"
-          ? { templateId }
+          ? { templateId, variableMapping }
           : { messageType: "text", messageText }),
         ...(selectedPhoneNumberId
           ? { phoneNumberId: selectedPhoneNumberId }
@@ -702,6 +767,7 @@ function WhatsAppSendDialog({
       toast({ title: "Message sent successfully" });
       setMessageText("");
       setTemplateId("");
+      setVariableMapping([]);
       onClose();
     } catch (err: any) {
       toast({
@@ -809,8 +875,8 @@ function WhatsAppSendDialog({
                 <Label className="text-xs">Select Template</Label>
                 {templates.length === 0 ? (
                   <p className="text-xs text-muted-foreground mt-2 p-3 bg-muted/50 rounded-lg">
-                    No approved templates. Go to Settings → WhatsApp → Templates
-                    to sync.
+                    No templates yet. Go to Settings → WhatsApp → Templates to
+                    create or sync one.
                   </p>
                 ) : (
                   <Select value={templateId} onValueChange={setTemplateId}>
@@ -820,16 +886,101 @@ function WhatsAppSendDialog({
                     <SelectContent>
                       {templates.map((t) => (
                         <SelectItem key={t._id} value={t._id}>
-                          {t.displayName}
+                          <div className="flex items-center gap-2">
+                            <span>{t.displayName}</span>
+                            <span
+                              className={cn(
+                                "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                                t.status === "APPROVED"
+                                  ? "bg-green-100 text-green-700"
+                                  : t.status === "REJECTED"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700",
+                              )}
+                            >
+                              {TEMPLATE_STATUS_LABEL[t.status] || t.status}
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
-                {templateId && templates.find((t) => t._id === templateId) && (
+
+                {selectedTemplate && selectedTemplate.status !== "APPROVED" && (
+                  <div className="mt-2 flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-amber-700">
+                      This template isn't approved by Meta yet — sending may
+                      fail until it's synced/approved in Settings → WhatsApp.
+                    </p>
+                  </div>
+                )}
+
+                {variableMapping.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <Label className="text-xs">Fill Variables</Label>
+                    {variableMapping.map((vm, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-9 shrink-0">
+                          {"{{"}
+                          {vm.position}
+                          {"}}"}
+                        </span>
+                        <Select
+                          value={vm.fieldKey}
+                          onValueChange={(v) =>
+                            setVariableMapping((prev) =>
+                              prev.map((x, j) =>
+                                j === i ? { ...x, fieldKey: v } : x,
+                              ),
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VARIABLE_FIELDS.map((f) => (
+                              <SelectItem
+                                key={f.value}
+                                value={f.value}
+                                className="text-xs"
+                              >
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {vm.fieldKey === "custom" && (
+                          <Input
+                            placeholder="Custom text..."
+                            value={vm.customValue}
+                            onChange={(e) =>
+                              setVariableMapping((prev) =>
+                                prev.map((x, j) =>
+                                  j === i
+                                    ? { ...x, customValue: e.target.value }
+                                    : x,
+                                ),
+                              )
+                            }
+                            className="h-8 text-xs flex-1"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedTemplate && (
                   <div className="mt-3 bg-[#e5ddd5] rounded-xl p-3">
                     <div className="bg-white rounded-lg p-3 shadow-sm text-sm text-gray-800 whitespace-pre-wrap">
-                      {templates.find((t) => t._id === templateId)?.bodyText}
+                      {renderTemplatePreview(
+                        selectedTemplate.bodyText,
+                        variableMapping,
+                        lead,
+                      )}
                     </div>
                   </div>
                 )}

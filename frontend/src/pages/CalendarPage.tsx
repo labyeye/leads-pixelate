@@ -50,7 +50,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
-import { statusColors } from "@/components/leads/statusConstants";
+import { statusColors, getStatusColorClasses, getStatusLabel } from "@/components/leads/statusConstants";
 import { useToast } from "@/components/ui/use-toast";
 
 const categories = {
@@ -439,14 +439,14 @@ export default function CalendarPage() {
                         key={lIdx}
                         className={cn(
                           "px-1.5 py-0.5 rounded text-[9px] font-bold truncate border shadow-sm",
-                          statusColors[lead.displayStatus] ||
+                          getStatusColorClasses(lead.displayStatus) ||
                             "bg-muted text-black border-transparent",
                         )}
                         title={`${lead.displayStatus}: ${lead.name}${lead.historyRemarks ? ` - ${lead.historyRemarks}` : ""}`}
                       >
                         {lead.displayStatus.includes("FOLLOW")
                           ? "F/Up"
-                          : lead.displayStatus}
+                          : getStatusLabel(lead.displayStatus)}
                         : {lead.name}
                       </div>
                     ))}
@@ -586,11 +586,11 @@ export default function CalendarPage() {
                                   variant="outline"
                                   className={cn(
                                     "text-[10px] uppercase font-bold px-2 py-0.5 border-none",
-                                    statusColors[lead.status] ||
+                                    getStatusColorClasses(lead.status) ||
                                       "bg-muted text-black",
                                   )}
                                 >
-                                  {lead.status}
+                                  {getStatusLabel(lead.status)}
                                 </Badge>
                                 {lead.displayStatus !== lead.status && (
                                   <span className="text-[10px] text-black font-medium italic">

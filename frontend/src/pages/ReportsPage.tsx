@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { leadsAPI, reportsAPI, settingsAPI, usersAPI } from "@/services/api";
 import { cn } from "@/lib/utils";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
   Activity,
   BarChart3,
@@ -10,6 +11,10 @@ import {
   Loader2,
   Search,
   SlidersHorizontal,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  Clock,
   Users,
   X,
 } from "lucide-react";
@@ -563,33 +568,30 @@ export default function ReportsPage() {
           <>
             {}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { key: "total", label: "Total Leads", text: "text-primary" },
-                { key: "won", label: "Won", text: "text-green-600" },
-                { key: "drop", label: "Dropped", text: "text-red-600" },
-                {
-                  key: "pending",
-                  label: "Pending Contact",
-                  text: "text-black",
-                },
-              ].map(({ key, label, text }) => (
-                <div
-                  key={key}
-                  className="border-2 border-black p-4 text-center bg-white transition-all hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]"
-                >
-                  <p className={cn("text-4xl font-black tabular-nums", text)}>
-                    {loading ? "—" : counts[key as keyof typeof counts]}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-xs font-bold uppercase tracking-widest mt-1",
-                      text,
-                    )}
-                  >
-                    {label}
-                  </p>
-                </div>
-              ))}
+              <KpiCard
+                title="Total Leads"
+                value={loading ? "—" : counts.total}
+                icon={Target}
+                bg="bg-[#024BAB]"
+              />
+              <KpiCard
+                title="Won"
+                value={loading ? "—" : counts.won}
+                icon={TrendingUp}
+                bg="bg-[#00C48C]"
+              />
+              <KpiCard
+                title="Dropped"
+                value={loading ? "—" : counts.drop}
+                icon={TrendingDown}
+                bg="bg-[#EF4444]"
+              />
+              <KpiCard
+                title="Pending Contact"
+                value={loading ? "—" : counts.pending}
+                icon={Clock}
+                bg="bg-[#FFDE00]"
+              />
             </div>
 
             {}

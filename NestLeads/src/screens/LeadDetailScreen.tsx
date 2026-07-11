@@ -16,7 +16,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {leadsAPI} from '../services/api';
 import {
-  statusColors,
+  getStatusColor,
+  getStatusLabel,
   getCategoryByStatus,
   categories,
 } from '../constants/statusConstants';
@@ -140,18 +141,21 @@ export default function LeadDetailScreen({navigation, route}: any) {
 
   if (!lead) return null;
 
-  const sc = statusColors[lead.status] || {bg: '#e2e8f0', text: '#000', border: '#000'};
+  const sc = getStatusColor(lead.status);
   const tag = lead.contactTag ? TAG_COLORS[lead.contactTag] : null;
   const activeCategory = getCategoryByStatus(lead.status || 'PENDING CONTACT');
 
-  // Next status options per category
+  // Next status options per category. Pulls from `categories` (which
+  // includes tenant custom stages) rather than a hardcoded list, so newly
+  // added stages show up here automatically — the backend is still the
+  // source of truth on which transitions are actually allowed.
   const nextStatuses: string[] = [];
   if (activeCategory === 'New Lead') {
-    nextStatuses.push('DISCUSSION', '1', '2', '3', 'COMPLETED', 'DROP');
+    nextStatuses.push('DISCUSSION', ...categories['New Lead'].slice(1), 'DROP');
   } else if (activeCategory === 'Discussion/Requirement') {
-    nextStatuses.push('DISCUSSION 1', 'DISCUSSION 2', 'DISCUSSION 3', 'DISCUSSION COMPLETED', 'QUOTATION', 'VISIT SCHEDULED', 'DROP');
+    nextStatuses.push(...categories['Discussion/Requirement'].slice(1), 'QUOTATION', 'VISIT SCHEDULED', 'DROP');
   } else if (activeCategory === 'Quotation') {
-    nextStatuses.push('QUOTATION 1', 'QUOTATION 2', 'QUOTATION 3', 'QUOTATION COMPLETED', 'VISIT SCHEDULED', 'WON', 'DROP');
+    nextStatuses.push(...categories['Quotation'].slice(1), 'VISIT SCHEDULED', 'WON', 'DROP');
   } else if (activeCategory === 'Visit Scheduled' || activeCategory === 'Visited') {
     nextStatuses.push('VISITED', 'WON', 'DROP');
   }
@@ -198,7 +202,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
           <View style={styles.badgesRow}>
             <View style={[styles.statusPill, {backgroundColor: sc.bg, borderColor: '#000'}]}>
               <Text style={[styles.statusPillText, {color: sc.text}]}>
-                {lead.status || 'PENDING CONTACT'}
+                {getStatusLabel(lead.status) || 'PENDING CONTACT'}
               </Text>
             </View>
             <View>
@@ -314,13 +318,13 @@ export default function LeadDetailScreen({navigation, route}: any) {
             <Text style={styles.sectionLabel}>UPDATE STATUS</Text>
             <View style={styles.statusGrid}>
               {nextStatuses.map(s => {
-                const c = statusColors[s] || {bg: '#e2e8f0', text: '#000', border: '#000'};
+                const c = getStatusColor(s);
                 return (
                   <TouchableOpacity
                     key={s}
                     style={[styles.statusOption, {backgroundColor: c.bg, borderColor: '#000'}]}
                     onPress={() => handleStatusSelect(s)}>
-                    <Text style={[styles.statusOptionText, {color: c.text}]}>{s}</Text>
+                    <Text style={[styles.statusOptionText, {color: c.text}]}>{getStatusLabel(s)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -380,7 +384,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>STATUS HISTORY</Text>
             {[...lead.statusHistory].reverse().map((h: any, i: number) => {
-              const hsc = statusColors[h.status] || {bg: '#e2e8f0', text: '#000', border: '#000'};
+              const hsc = getStatusColor(h.status);
               const STATUS_ICON: Record<string, string> = {
                 'PENDING CONTACT': 'time-outline',
                 'DISCUSSION': 'chatbubbles-outline',
@@ -399,7 +403,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
                   </View>
                   <View style={styles.historyContent}>
                     <View style={styles.historyTop}>
-                      <Text style={styles.historyStatus}>{h.status}</Text>
+                      <Text style={styles.historyStatus}>{getStatusLabel(h.status)}</Text>
                       <Text style={styles.historyDate}>
                         {new Date(h.changedAt).toLocaleDateString('en-IN', {
                           day: 'numeric',

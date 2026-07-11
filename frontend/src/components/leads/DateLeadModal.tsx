@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { statusColors } from "./statusConstants";
+import { statusColors, getStatusColorClasses, getStatusLabel } from "./statusConstants";
 import { LeadDetailPanel } from "./LeadDetailPanel";
 
 interface DateLeadModalProps {
@@ -122,11 +122,11 @@ export function DateLeadModal({
                           <span
                             className={cn(
                               "text-[10px] font-medium px-2 py-0.5 rounded-full border",
-                              statusColors[label] ||
+                              getStatusColorClasses(label) ||
                                 "bg-muted text-foreground border-border",
                             )}
                           >
-                            {label}
+                            {getStatusLabel(label)}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
@@ -157,7 +157,7 @@ export function DateLeadModal({
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-0.5">
                                           <span className="text-[9px] font-bold text-primary/80 bg-primary/5 px-1 rounded truncate uppercase">
-                                            {h.status}
+                                            {getStatusLabel(h.status)}
                                           </span>
                                           <span className="text-[8px] text-muted-foreground font-medium">
                                             {h.timestamp

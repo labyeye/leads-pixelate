@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { leadsAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { statusColors } from "@/components/leads/statusConstants";
+import { statusColors, getStatusColorClasses, getStatusLabel } from "@/components/leads/statusConstants";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
 import {
   Popover,
@@ -381,10 +381,10 @@ export default function FollowupsPage() {
                         <span
                           className={cn(
                             "text-[10px] px-2 py-1 rounded-full border inline-block",
-                            statusColors[lead.status] || "bg-muted",
+                            getStatusColorClasses(lead.status) || "bg-muted",
                           )}
                         >
-                          {lead.status || "ALL"}
+                          {getStatusLabel(lead.status) || "ALL"}
                         </span>
                       </td>
                       <td

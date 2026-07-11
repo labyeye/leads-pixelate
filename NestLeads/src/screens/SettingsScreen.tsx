@@ -25,6 +25,7 @@ export default function SettingsScreen({navigation}: any) {
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.avatar || null);
 
   const isSuperAdmin = user?.role === 'super_admin';
+  const canManageStatuses = ['super_admin', 'admin'].includes(user?.role);
 
   const handlePickPhoto = () => {
     launchImageLibrary({mediaType: 'photo', quality: 0.8, includeBase64: false}, res => {
@@ -221,6 +222,19 @@ export default function SettingsScreen({navigation}: any) {
           </View>
         )}
 
+        {/* Admin: Lead Statuses */}
+        {canManageStatuses && (
+          <View style={styles.logoutSection}>
+            <TouchableOpacity
+              style={styles.leadStatusesBtn}
+              onPress={() => navigation.navigate('LeadStatuses')}>
+              <Icon name="pricetag-outline" size={18} color="#024BAB" />
+              <Text style={styles.leadStatusesBtnText}>Manage Lead Statuses</Text>
+              <Icon name="chevron-forward" size={16} color="#94a3b8" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* App info */}
         <View style={styles.infoSection}>
           <Text style={styles.infoLabel}>ABOUT</Text>
@@ -292,6 +306,8 @@ const styles = StyleSheet.create({
   infoRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   infoText: {flex: 1, fontSize: 13, color: '#000', fontWeight: '600'},
   infoValue: {fontSize: 12, color: '#64748b'},
+  leadStatusesBtn: {flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 2, borderColor: '#000', padding: 14, ...NB_SHADOW},
+  leadStatusesBtnText: {flex: 1, fontSize: 13, fontWeight: '800', color: '#000'},
   logoutSection: {marginHorizontal: 16, marginTop: 8},
   logoutBtn: {flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 2, borderColor: '#EF4444', padding: 14, justifyContent: 'center'},
   logoutText: {fontSize: 14, fontWeight: '900', color: '#EF4444'},

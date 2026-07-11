@@ -18,8 +18,25 @@ import {
   Upload,
   X,
   Layout,
+  Tag,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  categories as statusCategories,
+  PROTECTED_STATUSES,
+  COLOR_PRESETS,
+  setStatusOverrides,
+  setCustomLeadStatuses,
+  isCustomLeadStatus,
+  type CustomLeadStatus,
+} from "@/components/leads/statusConstants";
+
+const EXTENDABLE_STATUS_CATEGORIES = [
+  "New Lead",
+  "Discussion/Requirement",
+  "Quotation",
+];
 
 type CrudOp = "create" | "read" | "update" | "delete";
 type CrmRole =
@@ -427,6 +444,7 @@ export default function SettingsPage() {
         ...res.data,
         companyName: res.data?.companyName || tenant?.name || "",
       });
+      setCustomLeadStatuses(res.data?.customLeadStatuses);
 
       if (res.data?.permissions) {
         const saved = res.data.permissions as Record<string, any>;
@@ -510,6 +528,68 @@ export default function SettingsPage() {
       value = value.replace(/\D/g, "");
     }
     setSettings((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const updateStatusOverride = (
+    status: string,
+    patch: { label?: string; color?: string },
+  ) => {
+    setSettings((prev: any) => ({
+      ...prev,
+      leadStatusLabels: {
+        ...(prev.leadStatusLabels || {}),
+        [status]: { ...(prev.leadStatusLabels?.[status] || {}), ...patch },
+      },
+    }));
+  };
+
+  const resetStatusOverride = (status: string) => {
+    setSettings((prev: any) => {
+      const next = { ...(prev.leadStatusLabels || {}) };
+      delete next[status];
+      return { ...prev, leadStatusLabels: next };
+    });
+  };
+
+  const updateCustomStatus = (
+    value: string,
+    patch: Partial<CustomLeadStatus>,
+  ) => {
+    setSettings((prev: any) => ({
+      ...prev,
+      customLeadStatuses: (prev.customLeadStatuses || []).map(
+        (s: CustomLeadStatus) => (s.value === value ? { ...s, ...patch } : s),
+      ),
+    }));
+  };
+
+  const removeCustomStatus = (value: string) => {
+    setSettings((prev: any) => ({
+      ...prev,
+      customLeadStatuses: (prev.customLeadStatuses || []).filter(
+        (s: CustomLeadStatus) => s.value !== value,
+      ),
+    }));
+  };
+
+  const addCustomStatus = (category: string) => {
+    setSettings((prev: any) => {
+      const existing: CustomLeadStatus[] = prev.customLeadStatuses || [];
+      const tempValue = `NEW_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      return {
+        ...prev,
+        customLeadStatuses: [
+          ...existing,
+          {
+            value: tempValue,
+            category,
+            label: "New Stage",
+            colorKey: "slate",
+            order: existing.filter((s) => s.category === category).length,
+          },
+        ],
+      };
+    });
   };
 
   const handleTermsChange = (index: number, value: string) => {
@@ -613,7 +693,13 @@ export default function SettingsPage() {
     }
     try {
       setSaving(true);
-      await settingsAPI.update(settings);
+      const res = await settingsAPI.update(settings);
+      setStatusOverrides(res.data?.leadStatusLabels);
+      setCustomLeadStatuses(res.data?.customLeadStatuses);
+      setSettings((prev: any) => ({
+        ...prev,
+        customLeadStatuses: res.data?.customLeadStatuses || [],
+      }));
       setActionModal({
         show: true,
         type: "success",
@@ -665,6 +751,12 @@ export default function SettingsPage() {
       label: "Quotation Template",
       icon: Layout,
       adminOnly: false,
+    },
+    {
+      id: "statuses",
+      label: "Lead Statuses",
+      icon: Tag,
+      adminOnly: true,
     },
     {
       id: "permissions",
@@ -737,7 +829,9 @@ export default function SettingsPage() {
             </p>
             {tabs
               .filter((t) =>
-                ["general", "bank", "terms", "template"].includes(t.id),
+                ["general", "bank", "terms", "template", "statuses"].includes(
+                  t.id,
+                ),
               )
               .map((tab) => {
                 const Icon = tab.icon;
@@ -1210,6 +1304,187 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {}
+            {activeTab === "statuses" && (
+              <div className="space-y-6">
+                <div className="flex items-start gap-3 p-3 border-2 border-[#024BAB] bg-[#024BAB]/5">
+                  <Tag className="w-4 h-4 text-[#024BAB] shrink-0 mt-0.5" />
+                  <p className="text-xs text-black">
+                    Rename and recolor the fixed pipeline stages, or add
+                    brand-new stages of your own within New Lead, Discussion,
+                    or Quotation. New stages inherit that category's
+                    transition rules (drop, jump to Discussion/Quotation,
+                    etc.) automatically.
+                  </p>
+                </div>
+
+                {Object.entries(statusCategories).map(([cat, values]) => (
+                  <div key={cat} className="space-y-2">
+                    <p className="text-[11px] font-black text-black/50 uppercase tracking-widest">
+                      {cat}
+                    </p>
+                    <div className="border-2 border-black divide-y-2 divide-black">
+                      {values.map((status) => {
+                        const isProtected =
+                          PROTECTED_STATUSES.includes(status);
+                        const isCustom = isCustomLeadStatus(status);
+                        const override =
+                          settings?.leadStatusLabels?.[status] || {};
+                        const custom = (
+                          settings?.customLeadStatuses || []
+                        ).find((s: CustomLeadStatus) => s.value === status);
+
+                        if (isCustom && custom) {
+                          return (
+                            <div
+                              key={status}
+                              className="flex flex-wrap items-center gap-3 p-3 bg-[#024BAB]/5"
+                            >
+                              <div className="w-40 shrink-0">
+                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                  Custom Stage
+                                </p>
+                                <p className="text-xs font-mono font-semibold text-[#024BAB] truncate">
+                                  {status}
+                                </p>
+                              </div>
+                              <div className="flex-1 min-w-[160px]">
+                                <input
+                                  value={custom.label}
+                                  onChange={(e) =>
+                                    updateCustomStatus(status, {
+                                      label: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Stage name"
+                                  maxLength={40}
+                                  className="w-full text-xs px-2 py-1.5 border-2 border-black focus:outline-none focus:ring-1 focus:ring-[#024BAB]"
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {COLOR_PRESETS.map((preset) => {
+                                  const key = preset.name.toLowerCase();
+                                  return (
+                                    <button
+                                      key={preset.name}
+                                      type="button"
+                                      title={preset.name}
+                                      onClick={() =>
+                                        updateCustomStatus(status, {
+                                          colorKey: key,
+                                        })
+                                      }
+                                      className={cn(
+                                        "w-5 h-5 border-2",
+                                        preset.classes.split(" ")[0],
+                                        custom.colorKey === key
+                                          ? "border-black ring-2 ring-offset-1 ring-[#024BAB]"
+                                          : "border-black/30",
+                                      )}
+                                    />
+                                  );
+                                })}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeCustomStatus(status)}
+                                className="flex items-center gap-1 text-[10px] font-bold text-destructive hover:underline"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                Remove
+                              </button>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={status}
+                            className={cn(
+                              "flex flex-wrap items-center gap-3 p-3",
+                              isProtected && "bg-zinc-50",
+                            )}
+                          >
+                            <div className="w-40 shrink-0">
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                Value
+                              </p>
+                              <p className="text-xs font-mono font-semibold text-black truncate">
+                                {status}
+                              </p>
+                            </div>
+
+                            {isProtected ? (
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground italic">
+                                <Lock className="w-3 h-3" />
+                                Fixed — used by other CRM features
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex-1 min-w-[160px]">
+                                  <input
+                                    value={override.label || ""}
+                                    onChange={(e) =>
+                                      updateStatusOverride(status, {
+                                        label: e.target.value,
+                                      })
+                                    }
+                                    placeholder={status}
+                                    maxLength={40}
+                                    className="w-full text-xs px-2 py-1.5 border-2 border-black focus:outline-none focus:ring-1 focus:ring-[#024BAB]"
+                                  />
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {COLOR_PRESETS.map((preset) => (
+                                    <button
+                                      key={preset.name}
+                                      type="button"
+                                      title={preset.name}
+                                      onClick={() =>
+                                        updateStatusOverride(status, {
+                                          color: preset.classes,
+                                        })
+                                      }
+                                      className={cn(
+                                        "w-5 h-5 border-2",
+                                        preset.classes.split(" ")[0],
+                                        override.color === preset.classes
+                                          ? "border-black ring-2 ring-offset-1 ring-[#024BAB]"
+                                          : "border-black/30",
+                                      )}
+                                    />
+                                  ))}
+                                </div>
+                                {(override.label || override.color) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => resetStatusOverride(status)}
+                                    className="text-[10px] font-bold text-muted-foreground hover:text-destructive underline"
+                                  >
+                                    Reset
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {EXTENDABLE_STATUS_CATEGORIES.includes(cat) && (
+                      <button
+                        type="button"
+                        onClick={() => addCustomStatus(cat)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-[#024BAB] hover:underline"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Stage to {cat}
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 

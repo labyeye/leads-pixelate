@@ -2,6 +2,8 @@ const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
+const Setting = require("../models/Setting");
+const SavedView = require("../models/SavedView");
 const {
   syncIndiamartLeads,
   formatIMDate,
@@ -10,141 +12,42 @@ const {
   getRoundRobinAssigneeId,
   getRoundRobinFromIds,
 } = require("../services/indiamartService");
+const { syncTradeIndiaLeads } = require("../services/tradeindiaService");
+const {
+  generateWebhookToken,
+  mapJDLeadToModel,
+  pickField: pickJDField,
+} = require("../services/justdialService");
 const User = require("../models/User");
 const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
+const { buildTransitionMaps } = require("../utils/leadStatuses");
+const { sendBulkLeadEmail } = require("../utils/emailService");
 
-const VALID_TRANSITIONS = {
-  "PENDING CONTACT": ["1", "DISCUSSION", "DROP"],
-  1: ["2", "DISCUSSION", "DROP"],
-  2: ["3", "DISCUSSION", "DROP"],
-  3: ["COMPLETED", "DISCUSSION", "DROP"],
-  COMPLETED: ["COMPLETED", "DISCUSSION", "DROP"],
-  DISCUSSION: [
-    "DISCUSSION 1",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DISCUSSION",
-    "DROP",
-  ],
-  "DISCUSSION 1": [
-    "DISCUSSION 1",
-    "DISCUSSION 2",
-    "DISCUSSION",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "DISCUSSION 2": [
-    "DISCUSSION 2",
-    "DISCUSSION 3",
-    "DISCUSSION",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "DISCUSSION 3": [
-    "DISCUSSION 3",
-    "DISCUSSION COMPLETED",
-    "DISCUSSION",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "DISCUSSION COMPLETED": [
-    "DISCUSSION COMPLETED",
-    "DISCUSSION",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  QUOTATION: [
-    "QUOTATION 1",
-    "VISIT SCHEDULED",
-    "DISCUSSION",
-    "QUOTATION",
-    "DROP",
-  ],
-  "QUOTATION 1": [
-    "QUOTATION 1",
-    "QUOTATION 2",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "QUOTATION 2": [
-    "QUOTATION 2",
-    "QUOTATION 3",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "QUOTATION 3": [
-    "QUOTATION 3",
-    "QUOTATION COMPLETED",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "QUOTATION COMPLETED": [
-    "QUOTATION COMPLETED",
-    "QUOTATION",
-    "VISIT SCHEDULED",
-    "DROP",
-  ],
-  "VISIT SCHEDULED": ["VISIT SCHEDULED", "VISITED", "DISCUSSION", "DROP"],
-  VISITED: ["WON", "DISCUSSION", "DROP"],
-  WON: [],
-  DROP: ["PENDING CONTACT"],
-};
+// Tenant custom pipeline stages (Setting.customLeadStatuses) extend the
+// fixed transition graph — fetch them per-request and splice them in via
+// buildTransitionMaps() rather than hardcoding a single global map.
+async function getTransitionMapsForTenant(tenantId) {
+  const setting = await Setting.findOne({ tenantId: tenantId || null })
+    .select("customLeadStatuses")
+    .lean();
+  return buildTransitionMaps(setting?.customLeadStatuses || []);
+}
 
-const MANDATORY_FIELDS = {
-  1: ["remarks"],
-  2: ["remarks"],
-  3: ["remarks"],
-  COMPLETED: ["remarks"],
-  DISCUSSION: ["remarks"],
-  "DISCUSSION 1": ["remarks"],
-  "DISCUSSION 2": ["remarks"],
-  "DISCUSSION 3": ["remarks"],
-  "DISCUSSION COMPLETED": ["remarks"],
-  QUOTATION: ["remarks"],
-  "QUOTATION 1": ["remarks"],
-  "QUOTATION 2": ["remarks"],
-  "QUOTATION 3": ["remarks"],
-  "QUOTATION COMPLETED": ["remarks"],
-  "VISIT SCHEDULED": ["remarks"],
-  VISITED: ["remarks"],
-  WON: ["remarks"],
-  DROP: [],
-};
-
-const REQUIRES_DATE = [
-  "1",
-  "2",
-  "3",
-  "COMPLETED",
-  "DISCUSSION",
-  "DISCUSSION 1",
-  "DISCUSSION 2",
-  "DISCUSSION 3",
-  "DISCUSSION COMPLETED",
-  "QUOTATION",
-  "QUOTATION 1",
-  "QUOTATION 2",
-  "QUOTATION 3",
-  "QUOTATION COMPLETED",
-  "VISIT SCHEDULED",
-];
-
-function isValidTransition(currentStatus, newStatus) {
+function isValidTransition(currentStatus, newStatus, VALID_TRANSITIONS) {
   if (!VALID_TRANSITIONS[currentStatus]) {
     return false;
   }
   return VALID_TRANSITIONS[currentStatus].includes(newStatus);
 }
 
-function validateMandatoryFields(newStatus, updateData, currentStatus) {
+function validateMandatoryFields(
+  newStatus,
+  updateData,
+  currentStatus,
+  MANDATORY_FIELDS,
+  REQUIRES_DATE,
+) {
   const isSameStatus = newStatus === currentStatus;
   const required = MANDATORY_FIELDS[newStatus] || [];
 
@@ -340,7 +243,10 @@ const updateLead = asyncHandler(async (req, res) => {
   const statusChanged = req.body.status !== undefined;
 
   if (statusChanged) {
-    if (!isValidTransition(lead.status, req.body.status)) {
+    const { VALID_TRANSITIONS, MANDATORY_FIELDS, REQUIRES_DATE } =
+      await getTransitionMapsForTenant(req.user.tenantId);
+
+    if (!isValidTransition(lead.status, req.body.status, VALID_TRANSITIONS)) {
       res.status(400);
       throw new Error(
         `Invalid status transition from "${lead.status}" to "${req.body.status}"`,
@@ -351,6 +257,8 @@ const updateLead = asyncHandler(async (req, res) => {
       req.body.status,
       req.body,
       lead.status,
+      MANDATORY_FIELDS,
+      REQUIRES_DATE,
     );
     if (fieldError) {
       res.status(400);
@@ -442,6 +350,172 @@ const updateLead = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: lead,
+  });
+});
+
+const bulkAssignLeads = asyncHandler(async (req, res) => {
+  const { leadIds, assignedTo } = req.body;
+
+  if (!Array.isArray(leadIds) || leadIds.length === 0) {
+    res.status(400);
+    throw new Error("leadIds must be a non-empty array");
+  }
+  if (!assignedTo) {
+    res.status(400);
+    throw new Error("assignedTo is required");
+  }
+
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter }).select("name");
+
+  if (leads.length === 0) {
+    res.status(404);
+    throw new Error("No matching leads found");
+  }
+
+  const foundIds = leads.map((l) => l._id);
+  await Lead.updateMany(
+    { _id: { $in: foundIds } },
+    { $set: { assignedTo } },
+  );
+
+  logActivity({
+    user: req.user,
+    action: "UPDATE",
+    module: "Lead",
+    description: `Bulk reassigned ${foundIds.length} lead(s)`,
+    ip: req.ip,
+  });
+
+  res.json({
+    success: true,
+    updatedCount: foundIds.length,
+    skippedCount: leadIds.length - foundIds.length,
+  });
+});
+
+const bulkUpdateStatus = asyncHandler(async (req, res) => {
+  const { leadIds, status, remarks } = req.body;
+
+  if (!Array.isArray(leadIds) || leadIds.length === 0) {
+    res.status(400);
+    throw new Error("leadIds must be a non-empty array");
+  }
+  if (!status) {
+    res.status(400);
+    throw new Error("status is required");
+  }
+
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter });
+
+  const { VALID_TRANSITIONS, MANDATORY_FIELDS, REQUIRES_DATE } =
+    await getTransitionMapsForTenant(req.user.tenantId);
+
+  const updated = [];
+  const skipped = [];
+
+  for (const lead of leads) {
+    if (!isValidTransition(lead.status, status, VALID_TRANSITIONS)) {
+      skipped.push({ id: lead._id, name: lead.name, reason: `Invalid transition from "${lead.status}"` });
+      continue;
+    }
+
+    const fieldError = validateMandatoryFields(
+      status,
+      { status, remarks },
+      lead.status,
+      MANDATORY_FIELDS,
+      REQUIRES_DATE,
+    );
+    if (fieldError) {
+      skipped.push({ id: lead._id, name: lead.name, reason: fieldError });
+      continue;
+    }
+
+    const newStagePath = lead.stagePath ? [...lead.stagePath] : [lead.status];
+    if (!newStagePath.includes(status)) {
+      newStagePath.push(status);
+    }
+
+    await Lead.findByIdAndUpdate(lead._id, {
+      $set: { status, stagePath: newStagePath },
+      $push: {
+        statusHistory: {
+          status,
+          timestamp: new Date(),
+          changedBy: req.user._id,
+          remarks: remarks || "",
+        },
+      },
+    });
+
+    updated.push(lead._id);
+  }
+
+  logActivity({
+    user: req.user,
+    action: "STATUS_UPDATED",
+    module: "Lead",
+    description: `Bulk updated status of ${updated.length} lead(s) to ${status}`,
+    ip: req.ip,
+  });
+
+  res.json({
+    success: true,
+    updatedCount: updated.length,
+    skipped,
+  });
+});
+
+const bulkEmailLeads = asyncHandler(async (req, res) => {
+  const { leadIds, subject, message } = req.body;
+
+  if (!Array.isArray(leadIds) || leadIds.length === 0) {
+    res.status(400);
+    throw new Error("leadIds must be a non-empty array");
+  }
+  if (!subject || !message) {
+    res.status(400);
+    throw new Error("subject and message are required");
+  }
+
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter }).select("name email");
+
+  const sent = [];
+  const skipped = [];
+
+  for (const lead of leads) {
+    if (!lead.email) {
+      skipped.push({ id: lead._id, name: lead.name, reason: "No email on file" });
+      continue;
+    }
+    try {
+      await sendBulkLeadEmail({
+        to: lead.email,
+        subject,
+        message,
+        fromName: req.user?.tenantId ? undefined : "NESTLeads",
+      });
+      sent.push(lead._id);
+    } catch (err) {
+      skipped.push({ id: lead._id, name: lead.name, reason: "Failed to send" });
+    }
+  }
+
+  logActivity({
+    user: req.user,
+    action: "UPDATE",
+    module: "Lead",
+    description: `Sent bulk email to ${sent.length} lead(s): "${subject}"`,
+    ip: req.ip,
+  });
+
+  res.json({
+    success: true,
+    sentCount: sent.length,
+    skipped,
   });
 });
 
@@ -799,6 +873,257 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
   });
 });
 
+// ─── TradeIndia ──────────────────────────────────────────────────────────
+// Pull-style, mirroring IndiaMART, but against a tenant-supplied API URL
+// (see backend/services/tradeindiaService.js for why).
+
+const connectTradeindia = asyncHandler(async (req, res) => {
+  const { userId, profileId, apiKey, apiUrl } = req.body;
+  if (!userId?.trim() || !apiKey?.trim() || !apiUrl?.trim()) {
+    res.status(400);
+    throw new Error("User ID, API Key, and API Link are all required");
+  }
+
+  try {
+    // eslint-disable-next-line no-new
+    new URL(apiUrl.trim());
+  } catch {
+    res.status(400);
+    throw new Error(
+      "That doesn't look like a valid URL — copy the exact API Link from TradeIndia's My Inquiry API panel.",
+    );
+  }
+
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.tradeindia.enabled": true,
+    "integrations.tradeindia.userId": userId.trim(),
+    "integrations.tradeindia.profileId": (profileId || "").trim(),
+    "integrations.tradeindia.apiKey": apiKey.trim(),
+    "integrations.tradeindia.apiUrl": apiUrl.trim(),
+  });
+
+  res.json({
+    success: true,
+    message:
+      "TradeIndia details saved. Run a sync from the Integrations page to pull in your first batch of leads and confirm it's working.",
+  });
+});
+
+const disconnectTradeindia = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.tradeindia.enabled": false,
+    "integrations.tradeindia.apiKey": "",
+    "integrations.tradeindia.apiUrl": "",
+  });
+
+  res.json({ success: true, message: "TradeIndia disconnected" });
+});
+
+const syncFromTradeindia = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  const tenant = await Tenant.findOne(query);
+  const ti = tenant?.integrations?.tradeindia;
+
+  if (!ti?.enabled || !ti?.apiUrl) {
+    res.status(400);
+    throw new Error(
+      "TradeIndia not connected. Add your API details from the Integrations page.",
+    );
+  }
+
+  const result = await syncTradeIndiaLeads({
+    apiUrl: ti.apiUrl,
+    userId: ti.userId,
+    profileId: ti.profileId,
+    apiKey: ti.apiKey,
+    tenantId: req.user.tenantId || tenant?._id || null,
+    startDate: req.body.start_date,
+    endDate: req.body.end_date,
+    assigneeIds: ti.assigneeIds || [],
+    getRoundRobinFromIds,
+    getRoundRobinAssigneeId,
+  });
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.tradeindia.lastSync": new Date(),
+  });
+
+  res.json({
+    success: true,
+    message: `Sync complete. ${result.created} new lead(s) imported, ${result.skipped} already existed.`,
+    data: result,
+  });
+});
+
+const getTradeindiaSyncStatus = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  const tenant = await Tenant.findOne(query);
+  const integration = tenant?.integrations?.tradeindia || {};
+  const connected = !!(integration.enabled && integration.apiUrl);
+
+  const leadFilter = { source: "TradeIndia" };
+  if (req.user.tenantId) leadFilter.tenantId = req.user.tenantId;
+
+  const total = await Lead.countDocuments(leadFilter);
+  const lastWeek = new Date();
+  lastWeek.setDate(lastWeek.getDate() - 7);
+  const recentCount = await Lead.countDocuments({
+    ...leadFilter,
+    createdAt: { $gte: lastWeek },
+  });
+
+  res.json({
+    success: true,
+    data: {
+      connected,
+      configured: connected,
+      lastSync: integration.lastSync || null,
+      totalTradeindiaLeads: total,
+      last7DaysLeads: recentCount,
+      assigneeIds: integration.assigneeIds || [],
+    },
+  });
+});
+
+// ─── Justdial ────────────────────────────────────────────────────────────
+// No self-serve pull API — Justdial's business support team pushes leads
+// to a webhook URL we hand them. "Connect" here just generates that URL.
+
+const connectJustdial = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  const existing = await Tenant.findOne(query);
+  const token =
+    existing?.integrations?.justdial?.webhookToken || generateWebhookToken();
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.justdial.enabled": true,
+    "integrations.justdial.apiKey": (req.body.apiKey || "").trim(),
+    "integrations.justdial.webhookToken": token,
+  });
+
+  const backendUrl = process.env.BACKEND_URL || "https://leads-pixelate-backend.vercel.app";
+  res.json({
+    success: true,
+    message: "Webhook URL generated — share it with Justdial business support to activate.",
+    data: { webhookUrl: `${backendUrl}/api/leads/justdial/webhook/${token}` },
+  });
+});
+
+const disconnectJustdial = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.justdial.enabled": false,
+    "integrations.justdial.webhookToken": "",
+  });
+
+  res.json({ success: true, message: "Justdial disconnected" });
+});
+
+const getJustdialStatus = asyncHandler(async (req, res) => {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+
+  const tenant = await Tenant.findOne(query);
+  const integration = tenant?.integrations?.justdial || {};
+  const connected = !!(integration.enabled && integration.webhookToken);
+
+  const leadFilter = { source: "Justdial" };
+  if (req.user.tenantId) leadFilter.tenantId = req.user.tenantId;
+
+  const total = await Lead.countDocuments(leadFilter);
+  const lastWeek = new Date();
+  lastWeek.setDate(lastWeek.getDate() - 7);
+  const recentCount = await Lead.countDocuments({
+    ...leadFilter,
+    createdAt: { $gte: lastWeek },
+  });
+
+  const backendUrl = process.env.BACKEND_URL || "https://leads-pixelate-backend.vercel.app";
+
+  res.json({
+    success: true,
+    data: {
+      connected,
+      configured: connected,
+      webhookUrl: connected
+        ? `${backendUrl}/api/leads/justdial/webhook/${integration.webhookToken}`
+        : null,
+      lastLeadAt: integration.lastLeadAt || null,
+      totalJustdialLeads: total,
+      last7DaysLeads: recentCount,
+      assigneeIds: integration.assigneeIds || [],
+    },
+  });
+});
+
+const justdialWebhook = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  console.log("🔔 [Justdial Webhook] Received:", req.body);
+
+  const tenant = await Tenant.findOne({
+    "integrations.justdial.enabled": true,
+    "integrations.justdial.webhookToken": token,
+  });
+
+  if (!tenant) {
+    return res.status(404).json({ success: false, message: "Unknown webhook token" });
+  }
+
+  const leadId = pickJDField(req.body, ["lead_id", "leadid", "id", "call_id", "enquiry_id"]);
+
+  try {
+    if (leadId) {
+      const existing = await Lead.findOne({
+        justdialLeadId: String(leadId),
+        tenantId: tenant._id,
+      });
+      if (existing) {
+        return res.status(200).json({ success: true, message: "Already recorded" });
+      }
+    }
+
+    const savedIds = tenant.integrations?.justdial?.assigneeIds || [];
+    const assignToId =
+      savedIds.length > 0
+        ? await getRoundRobinFromIds(savedIds)
+        : await getRoundRobinAssigneeId(tenant._id);
+
+    const leadData = mapJDLeadToModel(req.body, assignToId);
+    leadData.tenantId = tenant._id;
+    await Lead.create(leadData);
+
+    await Tenant.findByIdAndUpdate(tenant._id, {
+      "integrations.justdial.lastLeadAt": new Date(),
+    });
+
+    res.status(200).json({ success: true, message: "Lead recorded" });
+  } catch (err) {
+    console.error("[Justdial Webhook] Error:", err.message);
+    res.status(200).json({ success: false, message: err.message });
+  }
+});
+
 const getStatusHistoryReport = asyncHandler(async (req, res) => {
   const { period, userId, fromDate, toDate } = req.query;
 
@@ -983,6 +1308,85 @@ const updateLeadColumnPreferences = asyncHandler(async (req, res) => {
   res.json({ success: true, data: tenant.leadsTableColumns || {} });
 });
 
+const resolveTenantId = async (req) => {
+  if (req.user.tenantId) return req.user.tenantId;
+  const tenant = await Tenant.findOne({ ownerUser: req.user._id }).select(
+    "_id",
+  );
+  return tenant?._id || null;
+};
+
+const getSavedViews = asyncHandler(async (req, res) => {
+  const tenantId = await resolveTenantId(req);
+  const views = tenantId
+    ? await SavedView.find({ tenantId }).sort("name")
+    : [];
+  res.json({ success: true, data: views });
+});
+
+const createSavedView = asyncHandler(async (req, res) => {
+  const { name, filters } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    res.status(400);
+    throw new Error("View name is required");
+  }
+  const tenantId = await resolveTenantId(req);
+  if (!tenantId) {
+    res.status(404);
+    throw new Error("Tenant not found");
+  }
+  const view = await SavedView.create({
+    tenantId,
+    name: name.trim(),
+    filters: filters && typeof filters === "object" ? filters : {},
+    createdBy: req.user._id,
+  });
+  res.status(201).json({ success: true, data: view });
+});
+
+const updateSavedView = asyncHandler(async (req, res) => {
+  const { name, filters } = req.body;
+  const tenantId = await resolveTenantId(req);
+  const update = {};
+  if (name !== undefined) {
+    if (typeof name !== "string" || !name.trim()) {
+      res.status(400);
+      throw new Error("View name is required");
+    }
+    update.name = name.trim();
+  }
+  if (filters !== undefined) {
+    if (typeof filters !== "object" || Array.isArray(filters)) {
+      res.status(400);
+      throw new Error("filters must be an object");
+    }
+    update.filters = filters;
+  }
+  const view = await SavedView.findOneAndUpdate(
+    { _id: req.params.viewId, tenantId },
+    update,
+    { new: true },
+  );
+  if (!view) {
+    res.status(404);
+    throw new Error("Saved view not found");
+  }
+  res.json({ success: true, data: view });
+});
+
+const deleteSavedView = asyncHandler(async (req, res) => {
+  const tenantId = await resolveTenantId(req);
+  const view = await SavedView.findOneAndDelete({
+    _id: req.params.viewId,
+    tenantId,
+  });
+  if (!view) {
+    res.status(404);
+    throw new Error("Saved view not found");
+  }
+  res.json({ success: true, data: {} });
+});
+
 module.exports = {
   getLeads,
   getLead,
@@ -990,6 +1394,9 @@ module.exports = {
   importLeads,
   updateLead,
   deleteLead,
+  bulkAssignLeads,
+  bulkUpdateStatus,
+  bulkEmailLeads,
   addNote,
   convertToClient,
   connectIndiamart,
@@ -997,8 +1404,20 @@ module.exports = {
   syncFromIndiamart,
   getIndiamartSyncStatus,
   indiamartWebhook,
+  connectTradeindia,
+  disconnectTradeindia,
+  syncFromTradeindia,
+  getTradeindiaSyncStatus,
+  connectJustdial,
+  disconnectJustdial,
+  getJustdialStatus,
+  justdialWebhook,
   getStatusHistoryReport,
   updateIndiamartSettings,
   getLeadColumnPreferences,
   updateLeadColumnPreferences,
+  getSavedViews,
+  createSavedView,
+  updateSavedView,
+  deleteSavedView,
 };

@@ -6,13 +6,11 @@ import React, {
   useCallback,
 } from "react";
 import { User } from "@/types/crm";
+import { authAPI, settingsAPI, hasSession } from "@/services/api";
 import {
-  authAPI,
-  settingsAPI,
-  setToken,
-  removeToken,
-  getToken,
-} from "@/services/api";
+  setStatusOverrides,
+  setCustomLeadStatuses,
+} from "@/components/leads/statusConstants";
 
 interface Tenant {
   _id: string;
@@ -88,12 +86,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const restoreSession = async () => {
-      // Clear any legacy user/tenant data left in localStorage from older versions
+      // Clear any legacy user/tenant/token data left over from older versions
+      // that stored the JWT in localStorage/sessionStorage.
       localStorage.removeItem("user");
       localStorage.removeItem("tenant");
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("_aft");
+      sessionStorage.removeItem("_cst");
 
-      const token = getToken();
-      if (!token) {
+      if (!hasSession()) {
         setIsLoading(false);
         return;
       }
@@ -106,14 +107,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .get()
           .then((res) => {
             if (res.data?.permissions) setPermissions(res.data.permissions);
+            setStatusOverrides(res.data?.leadStatusLabels);
+            setCustomLeadStatuses(res.data?.customLeadStatuses);
           })
           .catch(() => {});
       } catch (error: any) {
-        if (error.status === 401) {
-          removeToken();
-          setUser(null);
-          setTenant(null);
-        }
+        setUser(null);
+        setTenant(null);
       } finally {
         setIsLoading(false);
       }
@@ -125,8 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await authAPI.login(email, password);
-      const { token, tenant: tenantData, ...userData } = response.data;
-      setToken(token);
+      const { tenant: tenantData, ...userData } = response.data;
       setUser(mapUser(userData));
       setTenant(mapTenant(tenantData));
       return { success: true };
@@ -152,8 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password: data.password,
           companyName: data.companyName,
         } as any);
-        const { token, tenant: tenantData, ...userData } = response.data;
-        setToken(token);
+        const { tenant: tenantData, ...userData } = response.data;
         setUser(mapUser(userData));
         setTenant(mapTenant(tenantData));
         return { success: true };
@@ -168,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    removeToken();
+    authAPI.logout().catch(() => {});
     setUser(null);
     setTenant(null);
     setPermissions(null);

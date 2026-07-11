@@ -8,7 +8,7 @@ import Icon from '../components/Icon';
 import UserAvatar from '../components/UserAvatar';
 import SourceBadge from '../components/SourceBadge';
 import {leadsAPI, usersAPI} from '../services/api';
-import {statusColors, sourceColors, getCategoryByStatus} from '../constants/statusConstants';
+import {getStatusColor, getStatusLabel, sourceColors, getCategoryByStatus} from '../constants/statusConstants';
 
 const PRIMARY   = '#024BAB';
 const SECONDARY = '#FF751F';
@@ -282,12 +282,12 @@ export default function ReportsScreen({navigation}: any) {
             <View style={styles.section}>
               <SectionHeader title="LEADS BY STATUS" count={stats.statusSorted.length} />
               {stats.statusSorted.map(([st, count], i) => {
-                const c = statusColors[st as string] || {bg: '#e2e8f0', text: '#000'};
+                const c = getStatusColor(st as string);
                 const pct = ((count as number) / maxSt) * 100;
                 return (
                   <View key={st} style={styles.statusDetailRow}>
                     <View style={[styles.statusBadge, {backgroundColor: c.bg}]}>
-                      <Text style={[styles.statusBadgeText, {color: c.text}]} numberOfLines={1}>{st}</Text>
+                      <Text style={[styles.statusBadgeText, {color: c.text}]} numberOfLines={1}>{getStatusLabel(st as string)}</Text>
                     </View>
                     <View style={{flex: 1}}>
                       <Bar pct={pct} color={i % 2 === 0 ? PRIMARY : SECONDARY} height={22} />
@@ -497,7 +497,7 @@ export default function ReportsScreen({navigation}: any) {
               <View style={styles.section}>
                 <SectionHeader title="UPCOMING (NEXT 7 DAYS)" count={stats.upcomingLeads.length} />
                 {stats.upcomingLeads.slice(0, 10).map((l, i) => {
-                  const sc = statusColors[l.status] || {bg: '#e2e8f0', text: '#000'};
+                  const sc = getStatusColor(l.status);
                   const dateStr = new Date(l.followUpDate).toLocaleDateString('en-IN', {day: 'numeric', month: 'short'});
                   return (
                     <View key={l._id} style={styles.fuRow}>
@@ -505,7 +505,7 @@ export default function ReportsScreen({navigation}: any) {
                       <View style={styles.fuInfo}>
                         <Text style={styles.fuName}>{l.name}</Text>
                         <View style={[styles.fuStatusPill, {backgroundColor: sc.bg}]}>
-                          <Text style={[styles.fuStatusText, {color: sc.text}]}>{l.status}</Text>
+                          <Text style={[styles.fuStatusText, {color: sc.text}]}>{getStatusLabel(l.status)}</Text>
                         </View>
                       </View>
                       <View style={styles.fuDatePill}>

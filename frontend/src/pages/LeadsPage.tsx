@@ -20,6 +20,9 @@ import {
   Flame,
   Thermometer,
   Snowflake,
+  Bookmark,
+  BookmarkPlus,
+  Trash2,
 } from "lucide-react";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
 import { cn } from "@/lib/utils";
@@ -49,6 +52,7 @@ import {
   usersAPI,
   productsAPI,
   authAPI,
+  type SavedView,
 } from "@/services/api";
 import { useNotify } from "@/components/ui/Notification";
 import {
@@ -73,10 +77,13 @@ import { Input } from "@/components/ui/input";
 import {
   categories,
   getCategoryByStatus,
-  statusColors,
+  getStatusColorClasses,
+  getStatusLabel,
+  ALL_STATUSES,
 } from "@/components/leads/statusConstants";
 import { SourceBadge } from "@/components/leads/SourceBadge";
 import fbLogo from "@/assets/images/logos/facebook.png";
+import metaLogo from "@/assets/images/logos/meta.png";
 import imLogo from "@/assets/images/logos/indiamart.png";
 import tiLogo from "@/assets/images/logos/tradeindia.webp";
 import jdLogo from "@/assets/images/logos/justdial.webp";
@@ -141,6 +148,12 @@ export default function LeadsPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
+  const [activeSavedViewId, setActiveSavedViewId] = useState<string>("");
+  const [saveViewDialogOpen, setSaveViewDialogOpen] = useState(false);
+  const [newViewName, setNewViewName] = useState("");
+  const [savingView, setSavingView] = useState(false);
+
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [remarksInput, setRemarksInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
@@ -154,6 +167,18 @@ export default function LeadsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [newProductName, setNewProductName] = useState("");
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [bulkReassignTo, setBulkReassignTo] = useState("");
+  const [bulkReassigning, setBulkReassigning] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkStatusRemarks, setBulkStatusRemarks] = useState("");
+  const [bulkStatusModalOpen, setBulkStatusModalOpen] = useState(false);
+  const [bulkStatusSaving, setBulkStatusSaving] = useState(false);
+  const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
+  const [bulkEmailSubject, setBulkEmailSubject] = useState("");
+  const [bulkEmailMessage, setBulkEmailMessage] = useState("");
+  const [bulkEmailSending, setBulkEmailSending] = useState(false);
 
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -209,6 +234,7 @@ export default function LeadsPage() {
     fetchAllUsers();
     fetchProducts();
     fetchCurrentUser();
+    fetchSavedViews();
     facebookAPI
       .getConnectedPages()
       .then((res) => {
@@ -290,6 +316,76 @@ export default function LeadsPage() {
       const res = await indiamartAPI.getStatus();
       setSyncStatus(res.data);
     } catch {}
+  };
+
+  const fetchSavedViews = async () => {
+    try {
+      const res = await leadsAPI.getSavedViews();
+      setSavedViews(res.data || []);
+    } catch (error) {
+      console.error("Error fetching saved views:", error);
+    }
+  };
+
+  const currentFilters = () => ({
+    statusFilters,
+    sourceFilters,
+    budgetFilters,
+    productFilters,
+    budgetMin,
+    budgetMax,
+    followUpDateFilter: followUpDateFilter
+      ? followUpDateFilter.toISOString()
+      : null,
+    startDate,
+    endDate,
+  });
+
+  const applySavedView = (view: SavedView) => {
+    const f = view.filters || {};
+    setStatusFilters(f.statusFilters || []);
+    setSourceFilters(f.sourceFilters || []);
+    setBudgetFilters(f.budgetFilters || []);
+    setProductFilters(f.productFilters || []);
+    setBudgetMin(f.budgetMin || "");
+    setBudgetMax(f.budgetMax || "");
+    setFollowUpDateFilter(
+      f.followUpDateFilter ? new Date(f.followUpDateFilter) : undefined,
+    );
+    setStartDate(f.startDate || "");
+    setEndDate(f.endDate || "");
+    setActiveSavedViewId(view._id);
+  };
+
+  const handleSaveView = async () => {
+    if (!newViewName.trim()) return;
+    try {
+      setSavingView(true);
+      const res = await leadsAPI.createSavedView(
+        newViewName.trim(),
+        currentFilters(),
+      );
+      setSavedViews((prev) => [...prev, res.data]);
+      setActiveSavedViewId(res.data._id);
+      setNewViewName("");
+      setSaveViewDialogOpen(false);
+      notify.success("View saved", `"${res.data.name}" is now available to your team`);
+    } catch (error: any) {
+      notify.error("Error saving view", error.message);
+    } finally {
+      setSavingView(false);
+    }
+  };
+
+  const handleDeleteView = async (id: string) => {
+    try {
+      await leadsAPI.deleteSavedView(id);
+      setSavedViews((prev) => prev.filter((v) => v._id !== id));
+      if (activeSavedViewId === id) setActiveSavedViewId("");
+      notify.success("View deleted", "");
+    } catch (error: any) {
+      notify.error("Error deleting view", error.message);
+    }
   };
 
   const handleFacebookSync = async (since?: string, until?: string) => {
@@ -487,16 +583,28 @@ export default function LeadsPage() {
   };
 
   const handleJustdialSyncAttempt = async () => {
+    // Justdial has no pull API — leads arrive via a webhook Justdial's
+    // business support team pushes to, so there's nothing to "sync" here.
+    // This just reports whether that webhook is set up and receiving leads.
     try {
       setJdSyncing(true);
-      const res = await justdialSyncAPI.sync();
-      notify.success("Justdial Sync Complete", res.message);
+      const res = await justdialSyncAPI.getStatus();
+      if (res.data?.connected) {
+        notify.success(
+          "Justdial Webhook Active",
+          res.data.lastLeadAt
+            ? `Last lead received ${new Date(res.data.lastLeadAt).toLocaleString("en-IN")}.`
+            : "Connected, but no leads received yet.",
+        );
+      } else {
+        notify.error(
+          "Justdial Not Connected",
+          "Set it up from the Integrations page — Justdial pushes leads to a webhook URL rather than being synced manually.",
+        );
+      }
       fetchLeads();
     } catch (error: any) {
-      notify.error(
-        "Justdial Sync Failed",
-        error.message || "Justdial integration not configured.",
-      );
+      notify.error("Couldn't Check Justdial Status", error.message);
     } finally {
       setJdSyncing(false);
     }
@@ -561,6 +669,97 @@ export default function LeadsPage() {
       );
     } catch (error: any) {
       notify.error("Reassignment Failed", error.message);
+    }
+  };
+
+  const toggleLeadSelected = (id: string) => {
+    setSelectedLeadIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const clearSelection = () => setSelectedLeadIds([]);
+
+  const handleBulkReassign = async () => {
+    if (!bulkReassignTo || selectedLeadIds.length === 0) return;
+    setBulkReassigning(true);
+    try {
+      const res = await leadsAPI.bulkAssign(selectedLeadIds, bulkReassignTo);
+      const assignedUser = allUsers.find((u) => u._id === bulkReassignTo);
+      setLeads((prev) =>
+        prev.map((l) =>
+          selectedLeadIds.includes(l._id || l.id)
+            ? { ...l, assignedTo: assignedUser }
+            : l,
+        ),
+      );
+      notify.success(
+        "Leads Reassigned",
+        `${res.updatedCount} lead(s) reassigned${
+          res.skippedCount ? `, ${res.skippedCount} skipped` : ""
+        }.`,
+      );
+      setSelectedLeadIds([]);
+      setBulkReassignTo("");
+    } catch (error: any) {
+      notify.error("Bulk Reassignment Failed", error.message);
+    } finally {
+      setBulkReassigning(false);
+    }
+  };
+
+  const handleBulkStatusChange = async () => {
+    if (!bulkStatus || selectedLeadIds.length === 0) return;
+    setBulkStatusSaving(true);
+    try {
+      const res = await leadsAPI.bulkUpdateStatus(
+        selectedLeadIds,
+        bulkStatus,
+        bulkStatusRemarks,
+      );
+      notify.success(
+        "Bulk Status Update",
+        `${res.updatedCount} lead(s) updated${
+          res.skipped.length
+            ? `, ${res.skipped.length} skipped (invalid transition or missing fields)`
+            : ""
+        }.`,
+      );
+      fetchLeads();
+      setSelectedLeadIds([]);
+      setBulkStatus("");
+      setBulkStatusRemarks("");
+      setBulkStatusModalOpen(false);
+    } catch (error: any) {
+      notify.error("Bulk Status Update Failed", error.message);
+    } finally {
+      setBulkStatusSaving(false);
+    }
+  };
+
+  const handleBulkEmail = async () => {
+    if (!bulkEmailSubject.trim() || !bulkEmailMessage.trim()) return;
+    setBulkEmailSending(true);
+    try {
+      const res = await leadsAPI.bulkEmail(
+        selectedLeadIds,
+        bulkEmailSubject,
+        bulkEmailMessage,
+      );
+      notify.success(
+        "Bulk Email Sent",
+        `Sent to ${res.sentCount} lead(s)${
+          res.skipped.length ? `, ${res.skipped.length} skipped` : ""
+        }.`,
+      );
+      setSelectedLeadIds([]);
+      setBulkEmailSubject("");
+      setBulkEmailMessage("");
+      setBulkEmailModalOpen(false);
+    } catch (error: any) {
+      notify.error("Bulk Email Failed", error.message);
+    } finally {
+      setBulkEmailSending(false);
     }
   };
 
@@ -754,7 +953,9 @@ export default function LeadsPage() {
                   >
                     <Check className="h-2.5 w-2.5" />
                   </div>
-                  <span className="truncate">{opt}</span>
+                  <span className="truncate">
+                    {field === "status" ? getStatusLabel(opt) : opt}
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -876,33 +1077,32 @@ export default function LeadsPage() {
     </Popover>
   );
 
-  const STATIC_COLUMNS: { id: string; label: string; alwaysOn?: boolean }[] =
-    [
-      { id: "name", label: "Name", alwaysOn: true },
-      { id: "score", label: "Score" },
-      { id: "source", label: "Source" },
-      { id: "adPlatform", label: "Ad Platform (FB/IG)" },
-      { id: "inquiryDate", label: "Inquiry Date" },
-      { id: "createdAt", label: "Created At" },
-      { id: "phone", label: "Phone" },
-      { id: "email", label: "Email" },
-      { id: "website", label: "Website" },
-      { id: "city", label: "City" },
-      { id: "state", label: "State" },
-      { id: "pageName", label: "Facebook Page" },
-      { id: "campaign", label: "Ad Name" },
-      { id: "campaignName", label: "Campaign Name" },
-      { id: "adsetName", label: "Ad Set Name" },
-      { id: "formName", label: "Lead Form Name" },
-      { id: "budget", label: "Budget" },
-      { id: "product", label: "Interested Product" },
-      { id: "remarks", label: "Remarks" },
-      { id: "status", label: "Status", alwaysOn: true },
-      { id: "assigned", label: "Assigned" },
-      { id: "followup", label: "Follow-up" },
-      { id: "visitScheduled", label: "Visit Scheduled" },
-      { id: "visitActual", label: "Visit Completed" },
-    ];
+  const STATIC_COLUMNS: { id: string; label: string; alwaysOn?: boolean }[] = [
+    { id: "name", label: "Name", alwaysOn: true },
+    { id: "score", label: "Score" },
+    { id: "source", label: "Source" },
+    { id: "adPlatform", label: "Ad Platform (FB/IG)" },
+    { id: "inquiryDate", label: "Inquiry Date" },
+    { id: "createdAt", label: "Created At" },
+    { id: "phone", label: "Phone" },
+    { id: "email", label: "Email" },
+    { id: "website", label: "Website" },
+    { id: "city", label: "City" },
+    { id: "state", label: "State" },
+    { id: "pageName", label: "Facebook Page" },
+    { id: "campaign", label: "Ad Name" },
+    { id: "campaignName", label: "Campaign Name" },
+    { id: "adsetName", label: "Ad Set Name" },
+    { id: "formName", label: "Lead Form" },
+    { id: "budget", label: "Budget" },
+    { id: "product", label: "Interested" },
+    { id: "remarks", label: "Remarks" },
+    { id: "status", label: "Status", alwaysOn: true },
+    { id: "assigned", label: "Assigned" },
+    { id: "followup", label: "Follow-up" },
+    { id: "visitScheduled", label: "Visit Scheduled" },
+    { id: "visitActual", label: "Visit Completed" },
+  ];
 
   const titleCase = (s: string) =>
     s
@@ -947,10 +1147,7 @@ export default function LeadsPage() {
         if (res.data && Object.keys(res.data).length > 0) {
           setVisibleCols(res.data);
           try {
-            localStorage.setItem(
-              "leadsTableColumns",
-              JSON.stringify(res.data),
-            );
+            localStorage.setItem("leadsTableColumns", JSON.stringify(res.data));
           } catch {}
         }
       })
@@ -1239,7 +1436,7 @@ export default function LeadsPage() {
   return (
     <AppLayout title="Leads">
       {}
-      <div className="flex flex-col gap-5 mb-6 animate-fade-in">
+      <div className="flex flex-col gap-2 mb-4 animate-fade-in">
         {}
         <div className="flex flex-col gap-2 w-full">
           {}
@@ -1346,18 +1543,18 @@ export default function LeadsPage() {
               <button
                 onClick={() => setFbSyncModalOpen(true)}
                 disabled={fbSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#1877F2] font-black uppercase text-xs tracking-widest border-2 border-[#1877F2] shadow-[2px_2px_0px_#1877F2] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#1877F2] font-black uppercase text-xs tracking-widest border-2 border-[#000000]  hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
               >
                 {fbSyncing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <img
-                    src={fbLogo}
-                    alt="Facebook"
+                    src={metaLogo}
+                    alt="Meta"
                     className="w-4 h-4 object-contain"
                   />
                 )}
-                {fbSyncing ? "Syncing..." : "Sync Facebook"}
+                {fbSyncing ? "Syncing..." : "Sync Meta"}
               </button>
             )}
 
@@ -1397,7 +1594,7 @@ export default function LeadsPage() {
             <button
               onClick={handleTradeindiaSyncAttempt}
               disabled={tiSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#22C55E] font-black uppercase text-xs tracking-widest border-2 border-[#22C55E] shadow-[2px_2px_0px_#22C55E] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#22C55E] font-black uppercase text-xs tracking-widest border-2 border-[#000000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {tiSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1415,7 +1612,7 @@ export default function LeadsPage() {
             <button
               onClick={handleJustdialSyncAttempt}
               disabled={jdSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#EF4444] font-black uppercase text-xs tracking-widest border-2 border-[#EF4444] shadow-[2px_2px_0px_#EF4444] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#EF4444] font-black uppercase text-xs tracking-widest border-2 border-[#000000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
             >
               {jdSyncing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1426,7 +1623,7 @@ export default function LeadsPage() {
                   className="w-4 h-4 object-contain"
                 />
               )}
-              {jdSyncing ? "Syncing..." : "Sync Justdial"}
+              {jdSyncing ? "Checking..." : "Justdial Status"}
             </button>
           </div>
 
@@ -1513,11 +1710,11 @@ export default function LeadsPage() {
                             <span
                               className={cn(
                                 "text-[10px] px-2 py-0.5 rounded-full border",
-                                statusColors[l.status] ||
+                                getStatusColorClasses(l.status) ||
                                   "bg-muted text-black border-transparent",
                               )}
                             >
-                              {l.status || "ALL"}
+                              {getStatusLabel(l.status) || "ALL"}
                             </span>
                           </div>
                           <div className="text-xs text-black mt-1 flex gap-2">
@@ -1531,6 +1728,116 @@ export default function LeadsPage() {
                 </div>
               )}
             </div>
+            {viewMode === "table" && (
+              <div className="ml-auto">{renderColumnConfigurator()}</div>
+            )}
+            <div
+              className={cn(
+                "flex items-center border-2 border-black",
+                viewMode !== "table" && "ml-auto",
+              )}
+            >
+              <button
+                onClick={() => setViewMode("table")}
+                title="Table view"
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black transition-colors",
+                  viewMode === "table"
+                    ? "bg-[#024BAB] text-white"
+                    : "bg-white text-black hover:bg-[#FFDE00]",
+                )}
+              >
+                <List className="w-3.5 h-3.5" /> Table
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode("kanban");
+                  setSelectedLeadId(null);
+                }}
+                title="Kanban view"
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors",
+                  viewMode === "kanban"
+                    ? "bg-[#024BAB] text-white"
+                    : "bg-white text-black hover:bg-[#FFDE00]",
+                )}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+              </button>
+            </div>
+
+            <Select
+              value={activeSavedViewId || "__none"}
+              onValueChange={(val) => {
+                if (val === "__none") return;
+                const view = savedViews.find((v) => v._id === val);
+                if (view) applySavedView(view);
+              }}
+            >
+              <SelectTrigger className="h-9 w-[170px] border-2 border-black bg-white text-xs font-black uppercase tracking-widest">
+                <Bookmark className="w-3.5 h-3.5 mr-1" />
+                <SelectValue placeholder="Saved Views" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none" disabled>
+                  {savedViews.length === 0 ? "No saved views" : "Saved Views"}
+                </SelectItem>
+                {savedViews.map((v) => (
+                  <SelectItem key={v._id} value={v._id}>
+                    <span className="flex items-center justify-between gap-2 w-full">
+                      <span>{v.name}</span>
+                      <Trash2
+                        className="w-3 h-3 text-red-600 hover:text-red-800 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleDeleteView(v._id);
+                        }}
+                      />
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Dialog open={saveViewDialogOpen} onOpenChange={setSaveViewDialogOpen}>
+              <DialogTrigger asChild>
+                <button
+                  className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
+                  title="Save current filters as a view"
+                >
+                  <BookmarkPlus className="w-3.5 h-3.5" /> Save View
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Save Current Filters as a View</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  <Label htmlFor="viewName">View Name</Label>
+                  <Input
+                    id="viewName"
+                    value={newViewName}
+                    onChange={(e) => setNewViewName(e.target.value)}
+                    placeholder="e.g. Hot leads this week"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveView();
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Saved views are shared with your whole team.
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={handleSaveView}
+                    disabled={savingView || !newViewName.trim()}
+                  >
+                    {savingView ? "Saving..." : "Save View"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {(startDate ||
               endDate ||
@@ -1552,6 +1859,7 @@ export default function LeadsPage() {
                   setBudgetMin("");
                   setBudgetMax("");
                   setFollowUpDateFilter(undefined);
+                  setActiveSavedViewId("");
                 }}
                 className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
               >
@@ -1561,7 +1869,7 @@ export default function LeadsPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex w-full lg:w-fit overflow-x-auto border-2 border-black">
+          <div className="flex w-full overflow-x-auto border-2 border-black">
             {Object.keys(categories).map((cat) => (
               <button
                 key={cat}
@@ -1592,43 +1900,6 @@ export default function LeadsPage() {
           </div>
 
           {}
-          {viewMode === "table" && (
-            <div className="ml-auto">{renderColumnConfigurator()}</div>
-          )}
-          <div
-            className={cn(
-              "flex items-center border-2 border-black",
-              viewMode !== "table" && "ml-auto",
-            )}
-          >
-            <button
-              onClick={() => setViewMode("table")}
-              title="Table view"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black transition-colors",
-                viewMode === "table"
-                  ? "bg-[#024BAB] text-white"
-                  : "bg-white text-black hover:bg-[#FFDE00]",
-              )}
-            >
-              <List className="w-3.5 h-3.5" /> Table
-            </button>
-            <button
-              onClick={() => {
-                setViewMode("kanban");
-                setSelectedLeadId(null);
-              }}
-              title="Kanban view"
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors",
-                viewMode === "kanban"
-                  ? "bg-[#024BAB] text-white"
-                  : "bg-white text-black hover:bg-[#FFDE00]",
-              )}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" /> Kanban
-            </button>
-          </div>
         </div>
 
         {}
@@ -1853,11 +2124,11 @@ export default function LeadsPage() {
                               <span
                                 className={cn(
                                   "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
-                                  statusColors[l.status] ||
+                                  getStatusColorClasses(l.status) ||
                                     "bg-gray-100 text-black border-transparent",
                                 )}
                               >
-                                {l.status || "—"}
+                                {getStatusLabel(l.status) || "—"}
                               </span>
                             </div>
                             {l.assignedTo?.name && (
@@ -1985,7 +2256,7 @@ export default function LeadsPage() {
                     )}
                     {isColVisible("formName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                        Lead Form Name
+                        Lead Form
                       </th>
                     )}
                     {isColVisible("budget") && (
@@ -1999,7 +2270,7 @@ export default function LeadsPage() {
                     {isColVisible("product") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          Interested Product
+                          Interested
                           {renderHeaderFilter(
                             "interestedProducts",
                             getUniqueValues("interestedProducts"),
@@ -2029,7 +2300,7 @@ export default function LeadsPage() {
                         Status
                         {renderHeaderFilter(
                           "status",
-                          Object.keys(statusColors),
+                          ALL_STATUSES,
                           statusFilters,
                           setStatusFilters,
                         )}
@@ -2341,11 +2612,11 @@ export default function LeadsPage() {
                                 <span
                                   className={cn(
                                     "text-xs font-medium px-2.5 py-1 rounded-full border text-nowrap",
-                                    statusColors[l.status] ||
+                                    getStatusColorClasses(l.status) ||
                                       "bg-muted text-black border-transparent",
                                   )}
                                 >
-                                  {l.status || "ALL"}
+                                  {getStatusLabel(l.status) || "ALL"}
                                 </span>
                                 {activeCategory === "Quotation" &&
                                   !l.status?.includes("QUOTATION") &&
@@ -2476,7 +2747,7 @@ export default function LeadsPage() {
               <span
                 className={cn(
                   "text-xs font-medium px-2.5 py-1 rounded-full border",
-                  statusColors[pendingStatus || "ALL"],
+                  getStatusColorClasses(pendingStatus || "ALL"),
                 )}
               >
                 {pendingStatus}
@@ -2527,7 +2798,7 @@ export default function LeadsPage() {
             {}
             <div className="space-y-2 pt-2 border-t border-border/50">
               <Label className="text-xs text-black uppercase tracking-wider">
-                Interested Products
+                Interesteds
               </Label>
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1 rounded-md border border-dashed border-border/50">
                 {allProducts.map((p) => (
@@ -2889,7 +3160,7 @@ export default function LeadsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-black">
-                    Interested Products
+                    Interesteds
                   </Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -3124,15 +3395,15 @@ export default function LeadsPage() {
       {/* Facebook Sync Modal */}
       {fbSyncModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-sm mx-4 p-6">
+          <div className="bg-white border-2 border-black w-full max-w-sm mx-4 p-6">
             <div className="flex items-center gap-3 border-b-2 border-black pb-3 mb-4">
               <img
-                src={fbLogo}
-                alt="Facebook"
+                src={metaLogo}
+                alt="Meta"
                 className="w-6 h-6 object-contain"
               />
               <h2 className="text-lg font-black uppercase tracking-widest">
-                Sync Facebook
+                Sync Meta
               </h2>
             </div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
@@ -3233,7 +3504,7 @@ export default function LeadsPage() {
                   handleFacebookSync(since, until);
                 }}
                 disabled={fbSyncing}
-                className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {fbSyncing ? "Syncing..." : "Sync Now"}
               </button>

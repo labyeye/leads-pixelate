@@ -1,6 +1,16 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
-import { Plus, Search, Pencil, Trash2, Loader2, Package } from "lucide-react";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Loader2,
+  Package,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { productsAPI } from "@/services/api";
 import { useNotify } from "@/components/ui/Notification";
@@ -146,34 +156,30 @@ export default function ProductsPage() {
       <div className="space-y-4">
         {}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            {
-              label: "Total Products",
-              value: products.length,
-              color: "bg-white",
-            },
-            { label: "Active", value: totalActive, color: "bg-green-50" },
-            { label: "Inactive", value: totalInactive, color: "bg-red-50" },
-          ].map(({ label, value, color }) => (
-            <div
-              key={label}
-              className={cn(
-                "border-2 border-black p-4 shadow-[3px_3px_0px_#000]",
-                color,
-              )}
-            >
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                {label}
-              </p>
-              <p className="text-3xl font-black text-black mt-1">{value}</p>
-            </div>
-          ))}
+          <KpiCard
+            title="Total Products"
+            value={loading ? "—" : products.length}
+            icon={Package}
+            bg="bg-[#024BAB]"
+          />
+          <KpiCard
+            title="Active"
+            value={loading ? "—" : totalActive}
+            icon={CheckCircle2}
+            bg="bg-[#00C48C]"
+          />
+          <KpiCard
+            title="Inactive"
+            value={loading ? "—" : totalInactive}
+            icon={XCircle}
+            bg="bg-[#EF4444]"
+          />
         </div>
 
         {}
         <div className="flex flex-wrap items-center gap-2">
           {}
-          <div className="flex items-center gap-2 border-2 border-black px-3 h-10 bg-white flex-1 min-w-[180px] max-w-xs shadow-[2px_2px_0px_#000]">
+          <div className="flex items-center gap-2 border-2 border-black px-3 h-10 bg-white flex-1 min-w-[180px] max-w-xs">
             <Search className="w-3.5 h-3.5 text-gray-500 shrink-0" />
             <input
               type="text"
@@ -188,7 +194,7 @@ export default function ProductsPage() {
           <select
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
-            className="h-10 border-2 border-black px-3 text-xs font-black uppercase tracking-widest bg-white outline-none shadow-[2px_2px_0px_#000] cursor-pointer"
+            className="h-10 border-2 border-black px-3 text-xs font-black uppercase tracking-widest bg-white outline-none cursor-pointer"
           >
             <option value="all">All Categories</option>
             {CATEGORIES.map((c) => (
@@ -201,7 +207,7 @@ export default function ProductsPage() {
           {can("Products", "create") && (
             <button
               onClick={openAdd}
-              className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black shadow-[3px_3px_0px_#000] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
+              className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
             >
               <Plus className="w-3.5 h-3.5" /> Add Product
             </button>
@@ -209,7 +215,7 @@ export default function ProductsPage() {
         </div>
 
         {}
-        <div className="border-2 border-black bg-white overflow-hidden shadow-[4px_4px_0px_#000]">
+        <div className="border-2 border-black bg-white overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -325,7 +331,7 @@ export default function ProductsPage() {
                           {can("Products", "update") && (
                             <button
                               onClick={() => openEdit(item)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                               <Pencil className="w-3 h-3" /> Edit
                             </button>
@@ -334,7 +340,7 @@ export default function ProductsPage() {
                             <button
                               onClick={() => handleDelete(item._id)}
                               disabled={deletingId === item._id}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
                             >
                               {deletingId === item._id ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -369,7 +375,7 @@ export default function ProductsPage() {
       {}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-md mx-4">
+          <div className="bg-white border-2 border-black w-full max-w-md mx-4">
             {}
             <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-[#024BAB]">
               <h2 className="text-sm font-black uppercase tracking-widest text-white">
@@ -395,7 +401,7 @@ export default function ProductsPage() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g. Offset Printing Machine"
                   required
-                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
+                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
                 />
               </div>
 
@@ -410,7 +416,7 @@ export default function ProductsPage() {
                     onChange={(e) =>
                       setForm({ ...form, category: e.target.value })
                     }
-                    className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white shadow-[2px_2px_0px_#000] cursor-pointer"
+                    className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white cursor-pointer"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -433,7 +439,7 @@ export default function ProductsPage() {
                     }
                     placeholder="0"
                     required
-                    className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
+                    className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
                   />
                 </div>
               </div>
@@ -453,7 +459,7 @@ export default function ProductsPage() {
                     setForm({ ...form, hsnCode: e.target.value })
                   }
                   placeholder="e.g. 998315"
-                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
+                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all"
                 />
               </div>
 
@@ -474,7 +480,7 @@ export default function ProductsPage() {
                           ? s === "Active"
                             ? "bg-green-500 text-white shadow-none translate-x-[2px] translate-y-[2px]"
                             : "bg-red-500 text-white shadow-none translate-x-[2px] translate-y-[2px]"
-                          : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
+                          : "bg-white text-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
                       )}
                     >
                       {s}
@@ -498,7 +504,7 @@ export default function ProductsPage() {
                   }
                   placeholder="Brief description of the product..."
                   rows={3}
-                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] shadow-[2px_2px_0px_#000] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all resize-none"
+                  className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none focus:border-[#024BAB] focus:shadow-none focus:translate-x-[2px] focus:translate-y-[2px] transition-all resize-none"
                 />
               </div>
 
@@ -507,14 +513,14 @@ export default function ProductsPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 py-2.5 text-xs font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-gray-100 shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                  className="flex-1 py-2.5 text-xs font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-gray-100 hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FA731C] text-white hover:bg-[#e8661a] shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-60"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FA731C] text-white hover:bg-[#e8661a] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-60"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {editId ? "Update" : "Add Product"}

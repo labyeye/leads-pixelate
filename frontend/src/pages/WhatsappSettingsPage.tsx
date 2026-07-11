@@ -1293,7 +1293,7 @@ function ConnectionTab({ toast }: { toast: any }) {
 
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const webhookUrl = `https://leads-backend.pixelatenest.com/api/whatsapp/webhook`;
+  const webhookUrl = `https://leads-pixelate-backend.vercel.app/api/whatsapp/webhook`;
 
   const fetchStatus = useCallback(async () => {
     setLoading(true);

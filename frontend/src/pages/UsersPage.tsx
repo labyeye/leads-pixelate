@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { roleLabels, UserRole } from "@/types/crm";
 import { cn } from "@/lib/utils";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
   Plus,
   Search,
@@ -9,6 +10,11 @@ import {
   Pencil,
   Trash2,
   Camera,
+  Shield,
+  ShieldCheck,
+  Briefcase,
+  Wrench,
+  Calculator,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -47,11 +53,11 @@ const ROLE_NB: Record<string, string> = {
 };
 
 const ROLE_COUNTS = [
-  "super_admin",
-  "admin",
-  "sales_executive",
-  "service_manager",
-  "accountant",
+  { role: "super_admin", icon: ShieldCheck, bg: "bg-[#024BAB]" },
+  { role: "admin", icon: Shield, bg: "bg-black text-white" },
+  { role: "sales_executive", icon: Briefcase, bg: "bg-[#FF751F]" },
+  { role: "service_manager", icon: Wrench, bg: "bg-[#A3E635]" },
+  { role: "accountant", icon: Calculator, bg: "bg-[#00C48C]" },
 ] as const;
 
 const NbInput = ({
@@ -492,21 +498,16 @@ export default function UsersPage() {
 
       {}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-        {ROLE_COUNTS.map((role) => {
+        {ROLE_COUNTS.map(({ role, icon, bg }) => {
           const count = users.filter((u) => u.role === role).length;
           return (
-            <div key={role} className="border-2 p-4 text-center">
-              <p className="text-3xl font-black text-black">
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-black/30" />
-                ) : (
-                  count
-                )}
-              </p>
-              <p className="text-[10px] font-black uppercase tracking-widest text-black/50 mt-1">
-                {roleLabels[role]}
-              </p>
-            </div>
+            <KpiCard
+              key={role}
+              title={roleLabels[role]}
+              value={loading ? "—" : count}
+              icon={icon}
+              bg={bg}
+            />
           );
         })}
       </div>

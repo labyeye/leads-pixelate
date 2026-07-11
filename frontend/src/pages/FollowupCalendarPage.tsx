@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { leadsAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { statusColors } from "@/components/leads/statusConstants";
+import { statusColors, getStatusColorClasses } from "@/components/leads/statusConstants";
 import { DateLeadModal } from "@/components/leads/DateLeadModal";
 
 // Parse a DB date string to a local-midnight Date to avoid UTC-offset day shifts
@@ -326,7 +326,7 @@ export default function FollowupCalendarPage() {
                               key={lead._id}
                               className={cn(
                                 "rounded px-1.5 py-1 text-[10px] font-bold truncate hover:opacity-90 shadow-sm",
-                                statusColors[lead.status] ||
+                                getStatusColorClasses(lead.status) ||
                                   "bg-gray-300 text-slate-900 font-semibold",
                               )}
                               onClick={(e) => {

@@ -4,13 +4,17 @@ import { useNavigate, Link } from "react-router-dom";
 import { AlertCircle, Zap, Eye, EyeOff } from "lucide-react";
 import logoimg from "@/assets/images/Logo.png";
 import indiamartLogo from "@/assets/images/logos/indiamart.png";
-import facebookLogo from "@/assets/images/logos/facebook.png";
+import facebookLogo from "@/assets/images/logos/meta.png";
 import tradeindiLogo from "@/assets/images/logos/tradeindia.webp";
+import justdialLogo from "@/assets/images/logos/justdial.webp";
+import googleAdsLogo from "@/assets/images/logos/google.webp";
 
 const PLATFORMS = [
   { label: "IndiaMART", logo: indiamartLogo },
-  { label: "Facebook Ads", logo: facebookLogo },
+  { label: "Meta Ads", logo: facebookLogo },
   { label: "TradeIndia", logo: tradeindiLogo },
+  { label: "JustDial", logo: justdialLogo },
+  { label: "Google Ads", logo: googleAdsLogo },
 ];
 
 export default function LoginPage() {
@@ -125,9 +129,17 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-black mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-bold text-black">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-bold text-[#024BAB] underline hover:text-[#FF3366] transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="flex items-center border-2 border-black">
                 <input
                   type={showPw ? "text" : "password"}

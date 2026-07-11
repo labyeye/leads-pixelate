@@ -22,13 +22,20 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
 import { GoogleAdsWizard } from "@/components/integrations/GoogleAdsWizard";
-import { facebookAPI, googleAdsAPI, indiamartAPI, usersAPI } from "@/services/api";
+import {
+  facebookAPI,
+  googleAdsAPI,
+  indiamartAPI,
+  tradeindiaSyncAPI,
+  justdialSyncAPI,
+  usersAPI,
+} from "@/services/api";
 import companylogo from "../assets/images/Logo.png";
 import indiamartLogo from "../assets/images/logos/indiamart.png";
 import facebookLogo from "../assets/images/logos/facebook.png";
 import tradeindiLogo from "../assets/images/logos/tradeindia.webp";
 import justdiallogo from "../assets/images/logos/justdial.webp";
-
+import googleAdsLogo from "../assets/images/logos/google.webp";
 type IntegrationId =
   | "indiamart"
   | "facebook"
@@ -443,6 +450,8 @@ const INTEGRATIONS: Integration[] = [
     color: "#4285F4",
     bgColor: "#EFF6FF",
     icon: "GA",
+        logo: googleAdsLogo,
+
     connected: false,
     docsUrl:
       "https://support.google.com/google-ads/answer/9358723",
@@ -479,9 +488,9 @@ const INTEGRATIONS: Integration[] = [
         ),
         instructions: [
           "Log in to your TradeIndia Seller account at tradeindia.com",
-          "Go to My Account → API Settings",
-          "Find your User ID and API Key on that page",
-          "Copy both values and paste them below",
+          "Click your profile icon → Inquiries → My Inquiry API",
+          "That page shows your User ID, Profile ID, API Key, and a ready-made API Link — copy all four",
+          "Paste them below exactly as shown; the API Link is account-specific and required",
         ],
         fields: [
           {
@@ -489,7 +498,14 @@ const INTEGRATIONS: Integration[] = [
             label: "TradeIndia User ID",
             type: "text",
             placeholder: "Your TradeIndia User ID",
-            help: "Found in TradeIndia Seller Panel → My Account → API Settings",
+            help: "Found on the My Inquiry API page",
+          },
+          {
+            key: "profile_id",
+            label: "TradeIndia Profile ID",
+            type: "text",
+            placeholder: "Your TradeIndia Profile ID",
+            help: "Found alongside your User ID on the My Inquiry API page",
           },
           {
             key: "api_key",
@@ -497,6 +513,13 @@ const INTEGRATIONS: Integration[] = [
             type: "password",
             placeholder: "Your TradeIndia API Key",
             help: "Found alongside your User ID in API Settings",
+          },
+          {
+            key: "api_link",
+            label: "TradeIndia API Link",
+            type: "text",
+            placeholder: "https://...",
+            help: "The full request URL shown on the My Inquiry API page — paste it exactly",
           },
         ],
         actionLabel: "Connect TradeIndia →",
@@ -511,14 +534,14 @@ const INTEGRATIONS: Integration[] = [
               TradeIndia connected!
             </p>
             <p className="text-xs text-muted-foreground text-center">
-              New enquiries will sync automatically
+              Run a sync from the Leads page to pull in enquiries
             </p>
           </div>
         ),
         instructions: [
-          "NestLeads will check for new TradeIndia enquiries automatically",
+          "Your details are saved — click \"Sync TradeIndia\" on the Leads page any time to pull in new enquiries",
           'Leads will be tagged with source "TradeIndia"',
-          "You can filter your Leads page by source to see TradeIndia leads",
+          "This first sync is the real test — if it fails, double-check the API Link and credentials from TradeIndia's My Inquiry API page",
         ],
         actionLabel: "Go to Leads →",
       },
@@ -561,20 +584,20 @@ const INTEGRATIONS: Integration[] = [
           </div>
         ),
         instructions: [
-          "Justdial provides API access on request — call their business support team",
-          "Once you receive your API key via email, paste it below",
-          "NestLeads will then auto-import all new Justdial enquiries",
+          "Justdial has no self-serve API — their business support team pushes leads to a webhook URL you give them",
+          "This step generates that URL. The API key field is optional, in case they ask you to set one for their own reference",
+          "The next step shows your webhook URL — hand it to Justdial support to activate",
         ],
         fields: [
           {
             key: "api_key",
-            label: "Justdial API Key",
+            label: "Justdial API Key (optional)",
             type: "password",
-            placeholder: "Paste your Justdial API key here",
-            help: "Received from Justdial Business Support team via email",
+            placeholder: "Leave blank unless Justdial support asked you to set one",
+            help: "Not required to generate your webhook URL",
           },
         ],
-        actionLabel: "Connect Justdial →",
+        actionLabel: "Generate Webhook URL →",
       },
       {
         title: "Justdial is connected!",
@@ -612,9 +635,32 @@ function IntegrationWizard({
   const [fields, setFields] = useState<Record<string, string>>({});
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
+  const [justdialWebhookUrl, setJustdialWebhookUrl] = useState<string | null>(null);
 
-  const current = integration.steps[step];
+  const baseStep = integration.steps[step];
   const isLast = step === integration.steps.length - 1;
+  // Justdial's final step has no fixed content to show — the webhook URL
+  // only exists once "Generate Webhook URL" has actually run, so swap in a
+  // dynamic version of the step instead of the static placeholder.
+  const current: WizardStep =
+    integration.id === "justdial" && isLast
+      ? {
+          ...baseStep,
+          instructions: [
+            "Copy the webhook URL below",
+            "Call Justdial business support and give it to them as your \"CRM API Integration\" delivery URL",
+            'Once they confirm it\'s active, new enquiries will appear here tagged source "Justdial" — usually within 1-2 business days',
+          ],
+          fields: [
+            {
+              key: "webhook_url",
+              label: "Your Justdial Webhook URL",
+              type: "readonly",
+              value: justdialWebhookUrl || "Generating…",
+            },
+          ],
+        }
+      : baseStep;
   const isFirst = step === 0;
   const totalSteps = integration.steps.length;
 
@@ -644,9 +690,28 @@ function IntegrationWizard({
             title: "Connected!",
             description: "IndiaMART is now syncing leads every 5 minutes.",
           });
+        } else if (integration.id === "tradeindia") {
+          await tradeindiaSyncAPI.connect(
+            fields.user_id,
+            fields.profile_id,
+            fields.api_key,
+            fields.api_link,
+          );
+          toast({
+            title: "Saved!",
+            description: "Run a sync from the Leads page to pull in your first leads.",
+          });
+        } else if (integration.id === "justdial") {
+          const res = await justdialSyncAPI.connect(fields.api_key);
+          setJustdialWebhookUrl(res.data.webhookUrl);
+          toast({
+            title: "Webhook URL generated",
+            description: "Copy it and send it to Justdial business support.",
+          });
         } else {
-          await new Promise((r) => setTimeout(r, 800));
-          toast({ title: "Saved!", description: "Connection verified." });
+          throw new Error(
+            "This integration isn't wired up yet — nothing was saved.",
+          );
         }
       } catch (err: any) {
         setSaving(false);

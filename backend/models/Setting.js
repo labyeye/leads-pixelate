@@ -94,6 +94,30 @@ const settingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
+
+    // Tenant-customized lead status labels/colors. Keyed by the fixed status
+    // value stored on Lead.status — see backend/utils/leadStatuses.js.
+    leadStatusLabels: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+
+    // Tenant-defined extra pipeline stages, slotted into one of the
+    // extendable categories (New Lead / Discussion / Quotation) — see
+    // backend/utils/leadStatuses.js for how these merge with the fixed set.
+    customLeadStatuses: {
+      type: [
+        {
+          value: { type: String, required: true },
+          category: { type: String, required: true },
+          label: { type: String, required: true },
+          colorKey: { type: String, default: "slate" },
+          order: { type: Number, default: 0 },
+          _id: false,
+        },
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,

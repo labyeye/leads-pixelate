@@ -98,29 +98,12 @@ const leadSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // No enum here — tenants can extend the pipeline with custom stages
+    // (backend/models/Setting.js customLeadStatuses), so the valid set is
+    // dynamic per tenant. Actual validation of allowed values/transitions
+    // happens in leadController via backend/utils/leadStatuses.js.
     status: {
       type: String,
-      enum: [
-        "PENDING CONTACT",
-        "1",
-        "2",
-        "3",
-        "COMPLETED",
-        "DISCUSSION",
-        "DISCUSSION 1",
-        "DISCUSSION 2",
-        "DISCUSSION 3",
-        "DISCUSSION COMPLETED",
-        "QUOTATION",
-        "QUOTATION 1",
-        "QUOTATION 2",
-        "QUOTATION 3",
-        "QUOTATION COMPLETED",
-        "VISIT SCHEDULED",
-        "VISITED",
-        "DROP",
-        "WON",
-      ],
       default: "PENDING CONTACT",
     },
     contactTag: {
@@ -164,6 +147,12 @@ const leadSchema = new mongoose.Schema(
     indiamartQueryTime: {
       type: Date,
     },
+    tradeindiaQueryId: {
+      type: String,
+    },
+    justdialLeadId: {
+      type: String,
+    },
     statusHistory: [
       {
         status: String,
@@ -190,6 +179,14 @@ leadSchema.index({ tenantId: 1, source: 1 });
 leadSchema.index({ tenantId: 1, assignedTo: 1 });
 leadSchema.index(
   { tenantId: 1, indiamartQueryId: 1 },
+  { sparse: true, unique: true },
+);
+leadSchema.index(
+  { tenantId: 1, tradeindiaQueryId: 1 },
+  { sparse: true, unique: true },
+);
+leadSchema.index(
+  { tenantId: 1, justdialLeadId: 1 },
   { sparse: true, unique: true },
 );
 leadSchema.index(

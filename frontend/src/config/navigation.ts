@@ -19,6 +19,7 @@ import {
   Package,
   Briefcase,
   KeyRound,
+  LifeBuoy,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 
@@ -184,6 +185,18 @@ const allGroups: NavGroup[] = [
         href: "/api-keys",
         icon: KeyRound,
         roles: ["super_admin", "admin"],
+      },
+      {
+        title: "Support",
+        href: "/support",
+        icon: LifeBuoy,
+        roles: [
+          "super_admin",
+          "admin",
+          "sales_executive",
+          "service_manager",
+          "accountant",
+        ],
       },
     ],
   },

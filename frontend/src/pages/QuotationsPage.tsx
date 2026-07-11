@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import React from "react";
 import { cn } from "@/lib/utils";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
   Plus,
   Search,
@@ -10,6 +11,10 @@ import {
   Pencil,
   Trash2,
   Eye,
+  FileText,
+  FileClock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { quotationsAPI, settingsAPI } from "@/services/api";
@@ -762,38 +767,42 @@ export default function QuotationsPage() {
 
       {}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        {[
-          {
-            label: "Total",
-            val: quotations.length,
-            bg: "bg-white text-primary",
-          },
-          {
-            label: "Draft",
-            val: quotations.filter((q) => q.status === "Draft").length,
-            bg: "bg-white text-secondary",
-          },
-          {
-            label: "Approved",
-            val: quotations.filter((q) => q.status === "Approved").length,
-            bg: "bg-white text-green-600",
-          },
-          {
-            label: "Rejected",
-            val: quotations.filter((q) => q.status === "Rejected").length,
-            bg: "bg-white text-red-600",
-          },
-        ].map(({ label, val, bg }) => (
-          <div
-            key={label}
-            className={cn("border-2 border-black p-3 text-center", bg)}
-          >
-            <p className="text-2xl font-black">{loading ? "—" : val}</p>
-            <p className="text-[10px] font-black uppercase tracking-widest mt-0.5 opacity-80">
-              {label}
-            </p>
-          </div>
-        ))}
+        <KpiCard
+          title="Total"
+          value={loading ? "—" : quotations.length}
+          icon={FileText}
+          bg="bg-[#024BAB]"
+        />
+        <KpiCard
+          title="Draft"
+          value={
+            loading
+              ? "—"
+              : quotations.filter((q) => q.status === "Draft").length
+          }
+          icon={FileClock}
+          bg="bg-[#FFDE00]"
+        />
+        <KpiCard
+          title="Approved"
+          value={
+            loading
+              ? "—"
+              : quotations.filter((q) => q.status === "Approved").length
+          }
+          icon={CheckCircle2}
+          bg="bg-[#00C48C]"
+        />
+        <KpiCard
+          title="Rejected"
+          value={
+            loading
+              ? "—"
+              : quotations.filter((q) => q.status === "Rejected").length
+          }
+          icon={XCircle}
+          bg="bg-[#EF4444]"
+        />
       </div>
 
       {}

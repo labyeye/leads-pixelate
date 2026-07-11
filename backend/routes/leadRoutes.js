@@ -7,6 +7,9 @@ const {
   importLeads,
   updateLead,
   deleteLead,
+  bulkAssignLeads,
+  bulkUpdateStatus,
+  bulkEmailLeads,
   addNote,
   convertToClient,
   connectIndiamart,
@@ -14,15 +17,28 @@ const {
   syncFromIndiamart,
   getIndiamartSyncStatus,
   indiamartWebhook,
+  connectTradeindia,
+  disconnectTradeindia,
+  syncFromTradeindia,
+  getTradeindiaSyncStatus,
+  connectJustdial,
+  disconnectJustdial,
+  getJustdialStatus,
+  justdialWebhook,
   getStatusHistoryReport,
   updateIndiamartSettings,
   getLeadColumnPreferences,
   updateLeadColumnPreferences,
+  getSavedViews,
+  createSavedView,
+  updateSavedView,
+  deleteSavedView,
 } = require("../controllers/leadController");
 const { protect, authorize } = require("../middleware/auth");
 const { checkPermission } = require("../middleware/checkPermission");
 
 router.post("/indiamart/webhook", indiamartWebhook);
+router.post("/justdial/webhook/:token", justdialWebhook);
 
 router.use(protect);
 router.get(
@@ -54,57 +70,62 @@ router.post(
 router.get(
   "/tradeindia/status",
   authorize("super_admin", "admin"),
-  (req, res) => {
-    res.json({
-      success: true,
-      data: {
-        configured: false,
-        message:
-          "TradeIndia integration not configured. Contact support to enable.",
-      },
-    });
-  },
+  getTradeindiaSyncStatus,
+);
+router.post(
+  "/tradeindia/connect",
+  authorize("super_admin", "admin"),
+  connectTradeindia,
+);
+router.post(
+  "/tradeindia/disconnect",
+  authorize("super_admin", "admin"),
+  disconnectTradeindia,
 );
 router.post(
   "/tradeindia/sync",
   authorize("super_admin", "admin"),
-  (req, res) => {
-    res.status(400).json({
-      success: false,
-      message:
-        "TradeIndia integration is not configured yet. Please contact support to set up the API key.",
-    });
-  },
+  syncFromTradeindia,
 );
 
 router.get(
   "/justdial/status",
   authorize("super_admin", "admin"),
-  (req, res) => {
-    res.json({
-      success: true,
-      data: {
-        configured: false,
-        message:
-          "Justdial integration not configured. Contact support to enable.",
-      },
-    });
-  },
+  getJustdialStatus,
 );
-router.post("/justdial/sync", authorize("super_admin", "admin"), (req, res) => {
-  res.status(400).json({
-    success: false,
-    message:
-      "Justdial integration is not configured yet. Please contact support to set up the API key.",
-  });
-});
+router.post(
+  "/justdial/connect",
+  authorize("super_admin", "admin"),
+  connectJustdial,
+);
+router.post(
+  "/justdial/disconnect",
+  authorize("super_admin", "admin"),
+  disconnectJustdial,
+);
 
 router.get("/reports/status-history", getStatusHistoryReport);
 router
   .route("/column-preferences")
   .get(getLeadColumnPreferences)
   .put(updateLeadColumnPreferences);
+router.route("/saved-views").get(getSavedViews).post(createSavedView);
+router
+  .route("/saved-views/:viewId")
+  .put(updateSavedView)
+  .delete(deleteSavedView);
 router.post("/import", checkPermission("Leads", "create"), importLeads);
+router.post(
+  "/bulk-assign",
+  checkPermission("Leads", "update"),
+  bulkAssignLeads,
+);
+router.post(
+  "/bulk-status",
+  checkPermission("Leads", "update"),
+  bulkUpdateStatus,
+);
+router.post("/bulk-email", checkPermission("Leads", "update"), bulkEmailLeads);
 router.route("/").get(getLeads).post(createLead);
 
 router

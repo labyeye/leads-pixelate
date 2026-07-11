@@ -13,6 +13,9 @@ import {
   CheckCircle,
   RefreshCw,
   Building2,
+  Target,
+  Users,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { billingAPI, settingsAPI, leadsAPI, usersAPI } from "@/services/api";
@@ -539,6 +542,8 @@ export default function BillingPage() {
                     leadsCount !== null && maxLeads < 999999
                       ? Math.min(100, Math.round((leadsCount / maxLeads) * 100))
                       : 0,
+                  icon: Target,
+                  bg: "bg-[#024BAB]",
                 },
                 {
                   label: "Team members",
@@ -551,6 +556,8 @@ export default function BillingPage() {
                           Math.round((membersCount / maxMembers) * 100),
                         )
                       : 0,
+                  icon: Users,
+                  bg: "bg-[#FB923C]",
                 },
                 {
                   label: "Days remaining",
@@ -560,18 +567,33 @@ export default function BillingPage() {
                     100,
                     Math.round((daysRemaining / totalPeriodDays) * 100),
                   ),
+                  icon: CalendarClock,
+                  bg: "bg-[#00C48C]",
                 },
               ].map((stat) => (
-                <div key={stat.label} className="nb-card p-4 bg-white">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                    {stat.label}
-                  </p>
-                  <p className="font-display font-bold text-2xl text-black mb-2">
-                    {stat.value}
-                    <span className="text-sm font-medium text-muted-foreground ml-1">
-                      / {stat.max}
-                    </span>
-                  </p>
+                <div
+                  key={stat.label}
+                  className="border-2 border-black p-4 flex flex-col gap-3 nb-card-hover bg-white"
+                >
+                  <div
+                    className={cn(
+                      "w-10 h-10 border-2 border-black flex items-center justify-center shrink-0",
+                      stat.bg,
+                    )}
+                  >
+                    <stat.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-display font-bold text-2xl text-black">
+                      {stat.value}
+                      <span className="text-sm font-medium text-muted-foreground ml-1">
+                        / {stat.max}
+                      </span>
+                    </p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+                      {stat.label}
+                    </p>
+                  </div>
                   <div className="h-2 bg-[#024BAB]/20 border border-black">
                     <div
                       className="h-full bg-[#024BAB] border-r border-black transition-all"

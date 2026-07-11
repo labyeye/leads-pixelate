@@ -29,7 +29,8 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   categoryOrder,
   getCategoryByStatus,
-  statusColors,
+  getStatusColor,
+  getStatusLabel,
   ALL_SOURCES,
   ALL_STATUSES,
 } from '../constants/statusConstants';
@@ -303,11 +304,7 @@ export default function LeadsListScreen({ navigation }: Props) {
   };
 
   const renderLeadCard = ({ item: l }: { item: any }) => {
-    const sc = statusColors[l.status] || {
-      bg: '#e2e8f0',
-      text: '#0f172a',
-      border: '#000',
-    };
+    const sc = getStatusColor(l.status);
     const tag = l.contactTag ? TAG_COLORS[l.contactTag] : null;
     return (
       <TouchableOpacity
@@ -415,7 +412,7 @@ export default function LeadsListScreen({ navigation }: Props) {
             ]}
           >
             <Text style={[styles.statusPillText, { color: sc.text }]}>
-              {l.status || 'PENDING CONTACT'}
+              {getStatusLabel(l.status) || 'PENDING CONTACT'}
             </Text>
           </View>
         </View>
@@ -868,7 +865,7 @@ export default function LeadsListScreen({ navigation }: Props) {
               <View style={styles.chipGrid}>
                 {ALL_STATUSES.map(s => {
                   const active = draftFilters.statuses.includes(s);
-                  const c = statusColors[s] || { bg: '#e2e8f0', text: '#000' };
+                  const c = getStatusColor(s);
                   return (
                     <TouchableOpacity
                       key={s}
@@ -887,7 +884,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                           active && { color: c.text },
                         ]}
                       >
-                        {s}
+                        {getStatusLabel(s)}
                       </Text>
                       {active && (
                         <Icon name="checkmark" size={10} color={c.text} />

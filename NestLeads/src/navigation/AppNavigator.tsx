@@ -24,6 +24,13 @@ import UsersScreen from '../screens/UsersScreen';
 import IntegrationsScreen from '../screens/IntegrationsScreen';
 import SocialPlannerScreen from '../screens/SocialPlannerScreen';
 import CreatePostScreen from '../screens/CreatePostScreen';
+import ServicesScreen from '../screens/ServicesScreen';
+import ApiKeysScreen from '../screens/ApiKeysScreen';
+import SupportScreen from '../screens/SupportScreen';
+import BillingScreen from '../screens/BillingScreen';
+import WhatsAppLogsScreen from '../screens/WhatsAppLogsScreen';
+import WhatsAppSetupScreen from '../screens/WhatsAppSetupScreen';
+import LeadStatusesScreen from '../screens/LeadStatusesScreen';
 
 export type LeadsStackParamList = {
   LeadsList: undefined;
@@ -55,6 +62,13 @@ export type MoreStackParamList = {
   Quotations: undefined;
   SocialPlanner: undefined;
   CreatePost: undefined;
+  Services: undefined;
+  ApiKeys: undefined;
+  Support: undefined;
+  Billing: undefined;
+  WhatsAppLogs: undefined;
+  WhatsAppSetup: undefined;
+  LeadStatuses: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -89,6 +103,13 @@ function MoreNavigator() {
       <MoreStack.Screen name="Quotations" component={QuotationsScreen} />
       <MoreStack.Screen name="SocialPlanner" component={SocialPlannerScreen} />
       <MoreStack.Screen name="CreatePost" component={CreatePostScreen} />
+      <MoreStack.Screen name="Services" component={ServicesScreen} />
+      <MoreStack.Screen name="ApiKeys" component={ApiKeysScreen} />
+      <MoreStack.Screen name="Support" component={SupportScreen} />
+      <MoreStack.Screen name="Billing" component={BillingScreen} />
+      <MoreStack.Screen name="WhatsAppLogs" component={WhatsAppLogsScreen} />
+      <MoreStack.Screen name="WhatsAppSetup" component={WhatsAppSetupScreen} />
+      <MoreStack.Screen name="LeadStatuses" component={LeadStatusesScreen} />
     </MoreStack.Navigator>
   );
 }

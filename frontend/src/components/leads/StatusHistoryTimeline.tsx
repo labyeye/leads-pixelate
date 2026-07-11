@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { statusColors } from "./statusConstants";
+import { statusColors, getStatusColorClasses, getStatusLabel } from "./statusConstants";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface StatusHistoryEntry {
@@ -89,17 +89,17 @@ export function StatusHistoryTimeline({
                       <span
                         className={cn(
                           "px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider shadow-sm",
-                          statusColors[entry.status] ||
+                          getStatusColorClasses(entry.status) ||
                             "bg-muted text-muted-foreground border-transparent",
                         )}
                       >
-                        {entry.status}
+                        {getStatusLabel(entry.status)}
                       </span>
                       {entry.contactTag && (
                         <span
                           className={cn(
                             "px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider shadow-sm",
-                            statusColors[entry.contactTag] ||
+                            getStatusColorClasses(entry.contactTag) ||
                               "bg-muted text-muted-foreground border-transparent",
                           )}
                         >
@@ -210,11 +210,11 @@ export function StatusHistoryTimeline({
                 <span
                   className={cn(
                     "px-2 py-1 rounded-full border text-[9px] font-bold",
-                    statusColors[stage] ||
+                    getStatusColorClasses(stage) ||
                       "bg-muted text-muted-foreground border-transparent",
                   )}
                 >
-                  {stage}
+                  {getStatusLabel(stage)}
                 </span>
                 {idx < stagePath.length - 1 && (
                   <span className="text-muted-foreground/40 font-bold">→</span>
