@@ -34,7 +34,7 @@ function setAuthCookies(res, { accessToken, refreshToken }) {
   res.cookie("csrf_token", csrfToken, {
     httpOnly: false,
     secure: isProd,
-    sameSite: "lax",
+    sameSite: isProd ? "none" : "lax",
     path: "/",
     maxAge: REFRESH_TOKEN_MAX_AGE,
   });
