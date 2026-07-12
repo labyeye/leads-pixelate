@@ -125,7 +125,14 @@ const authLimiter = rateLimit({
 
 app.use("/api/", generalLimiter);
 
-app.use(express.json({ limit: "5mb" }));
+// Facebook webhook needs the raw body for signature verification, so it must
+// bypass express.json() below, which would otherwise consume the stream first.
+app.use("/api/facebook/webhook", express.raw({ type: "*/*" }));
+
+app.use((req, res, next) => {
+  if (req.path === "/api/facebook/webhook") return next();
+  express.json({ limit: "5mb" })(req, res, next);
+});
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(cookieParser());
 app.use("/uploads", require("express").static(require("path").join(__dirname, "uploads")));
@@ -160,6 +167,7 @@ app.use("/api/public", require("./routes/publicRoutes"));
 app.use("/api/hrms", require("./routes/hrmsRoutes"));
 app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
+app.use("/internal", require("./routes/crmRoutes"));
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, status: "ok" });

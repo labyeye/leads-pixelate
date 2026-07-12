@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
+const Tenant = require("../models/Tenant");
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -36,6 +37,20 @@ const protect = asyncHandler(async (req, res, next) => {
   if (user.status === "inactive") {
     res.status(403);
     throw new Error("Account is deactivated. Contact your administrator.");
+  }
+
+  if (user.tenantId) {
+    const tenant = await Tenant.findById(user.tenantId).select("status planExpiresAt");
+    if (tenant) {
+      if (tenant.status !== "active") {
+        res.status(403);
+        throw new Error("Your subscription is not active. Contact your account manager.");
+      }
+      if (tenant.planExpiresAt && tenant.planExpiresAt < new Date()) {
+        res.status(403);
+        throw new Error("Your subscription has expired. Contact your account manager to renew.");
+      }
+    }
   }
 
   req.user = user;
