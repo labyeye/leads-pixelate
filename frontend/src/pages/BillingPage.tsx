@@ -456,6 +456,9 @@ export default function BillingPage() {
 
   const currentPlanId = subscription?.plan || tenant?.plan || "trial";
   const periodEnd = subscription?.currentPeriodEnd || tenant?.planExpiresAt;
+  const isActive =
+    subscription?.status === "active" || tenant?.status === "active";
+  const needsRenewal = currentPlanId !== "trial" && !isActive;
 
   const planLimits = plans?.[currentPlanId] || {};
   const maxLeads = planLimits?.limits?.leadsPerMonth ?? 100;
@@ -495,32 +498,49 @@ export default function BillingPage() {
                 <div>
                   <p className="font-display font-bold text-white text-lg">
                     {capitalise(currentPlanId)} Plan —{" "}
-                    {subscription?.status === "active" ||
-                    tenant?.status === "active"
+                    {isActive
                       ? "Active"
                       : capitalise(
                           subscription?.status || tenant?.status || "Trial",
                         )}
                   </p>
                   <p className="text-sm font-medium text-white/70">
-                    {periodEnd
-                      ? `Next billing: ${formatDate(periodEnd)} · ${plans?.[currentPlanId] ? formatAmount(billing === "yearly" ? plans[currentPlanId].priceYearly : plans[currentPlanId].priceMonthly) : "—"}`
-                      : "Free trial — upgrade to activate"}
+                    {needsRenewal
+                      ? "Your subscription has ended — renew to restore access"
+                      : periodEnd
+                        ? `Next billing: ${formatDate(periodEnd)} · ${plans?.[currentPlanId] ? formatAmount(billing === "yearly" ? plans[currentPlanId].priceYearly : plans[currentPlanId].priceMonthly) : "—"}`
+                        : "Free trial — upgrade to activate"}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={handleCancel}
-                  disabled={cancelling || currentPlanId === "trial"}
-                  className="nb-btn bg-white/20 text-white px-4 py-2 text-sm border-white/50 disabled:opacity-50"
-                >
-                  {cancelling ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Cancel Plan"
-                  )}
-                </button>
+                {needsRenewal ? (
+                  <button
+                    onClick={() => handleUpgrade(currentPlanId)}
+                    disabled={!!payingPlan}
+                    className="nb-btn bg-white text-[#024BAB] px-4 py-2 text-sm flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {payingPlan === currentPlanId ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4" /> Renew Plan
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleCancel}
+                    disabled={cancelling || currentPlanId === "trial"}
+                    className="nb-btn bg-white/20 text-white px-4 py-2 text-sm border-white/50 disabled:opacity-50"
+                  >
+                    {cancelling ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "Cancel Plan"
+                    )}
+                  </button>
+                )}
                 <button
                   onClick={loadAll}
                   className="nb-btn bg-white text-[#024BAB] px-4 py-2 text-sm"
@@ -643,7 +663,8 @@ export default function BillingPage() {
                 {planIds.map((planId) => {
                   const meta = PLAN_META[planId];
                   const apiPlan = plans?.[planId];
-                  const isCurrent = planId === currentPlanId;
+                  const isCurrent = planId === currentPlanId && isActive;
+                  const isRenewable = planId === currentPlanId && needsRenewal;
                   const isPaying = payingPlan === planId;
                   const isCustom = meta.custom;
                   const priceRaw = isCustom
@@ -664,7 +685,8 @@ export default function BillingPage() {
                       key={planId}
                       className={cn(
                         "nb-card p-4 flex flex-col relative",
-                        isCurrent && "border-[#024BAB] border-4",
+                        (isCurrent || isRenewable) &&
+                          "border-[#024BAB] border-4",
                       )}
                       style={
                         meta.popular
@@ -680,6 +702,11 @@ export default function BillingPage() {
                       {isCurrent && (
                         <div className="absolute -top-3 right-3 bg-[#00C48C] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" /> Active
+                        </div>
+                      )}
+                      {isRenewable && (
+                        <div className="absolute -top-3 right-3 bg-[#FF3366] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1">
+                          <RefreshCw className="w-3 h-3" /> Expired
                         </div>
                       )}
                       <div
@@ -742,7 +769,9 @@ export default function BillingPage() {
                             "nb-btn w-full py-2 text-xs flex items-center justify-center gap-1.5",
                             isCurrent
                               ? "bg-[#024BAB] text-white cursor-default"
-                              : "bg-black text-white disabled:opacity-60",
+                              : isRenewable
+                                ? "bg-[#FF3366] text-white disabled:opacity-60"
+                                : "bg-black text-white disabled:opacity-60",
                           )}
                         >
                           {isPaying ? (
@@ -752,6 +781,10 @@ export default function BillingPage() {
                             </>
                           ) : isCurrent ? (
                             "Current Plan"
+                          ) : isRenewable ? (
+                            <>
+                              Renew Now <RefreshCw className="w-3.5 h-3.5" />
+                            </>
                           ) : (
                             <>
                               Upgrade Now <ArrowRight className="w-3.5 h-3.5" />
