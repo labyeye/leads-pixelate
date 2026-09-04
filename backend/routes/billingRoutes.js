@@ -497,6 +497,11 @@ router.post(
         const { plan, billingCycle, amount } = subscription.pendingOrder;
         const amountPaise = Math.round(amount * 100);
 
+        const periodEnd =
+          billingCycle === "yearly"
+            ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
         const countResult = await Subscription.aggregate([
           { $unwind: { path: "$invoices", preserveNullAndEmptyArrays: false } },
           { $match: { "invoices.status": "paid" } },
@@ -512,10 +517,9 @@ router.post(
             billingCycle,
             status: "active",
             startDate: new Date(),
-            nextBillingDate:
-              billingCycle === "yearly"
-                ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            nextBillingDate: periodEnd,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: periodEnd,
             amount,
             paymentMethod: "razorpay",
             paymentDetails: {
@@ -541,7 +545,13 @@ router.post(
 
         const updatedTenant = await Tenant.findByIdAndUpdate(
           req.user.tenantId,
-          { plan, planStartDate: new Date() },
+          {
+            plan,
+            planStartDate: new Date(),
+            planExpiresAt: periodEnd,
+            status: "active",
+            limits: PLAN_LIMITS[plan],
+          },
           { new: true },
         );
 

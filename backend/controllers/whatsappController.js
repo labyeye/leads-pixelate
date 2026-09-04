@@ -128,6 +128,56 @@ async function sendWaMessage(
   return data;
 }
 
+// Best-effort WhatsApp text notification, e.g. when a quotation is marked "Sent".
+// `source` picks the sender: "platform" uses the shared Nest Leads number from
+// env, "tenant" (default) uses this tenant's own connected WhatsApp number.
+// Silently no-ops if the chosen sender isn't set up — this must never block
+// the caller's primary save.
+exports.sendTextNotification = async function sendTextNotification(
+  user,
+  rawPhone,
+  message,
+  source = "tenant",
+) {
+  try {
+    let phoneNumberId, accessToken;
+
+    if (source === "platform") {
+      accessToken = process.env.WHATSAPP_PLATFORM_ACCESS_TOKEN;
+      phoneNumberId = process.env.WHATSAPP_PLATFORM_PHONE_NUMBER_ID;
+      if (!accessToken || !phoneNumberId) return;
+    } else {
+      const wa = await getWaBase(user);
+      if (!wa) return;
+      phoneNumberId = resolvePhoneNumberId(wa, null);
+      if (!phoneNumberId) return;
+      accessToken = wa.accessToken;
+    }
+
+    const phone = formatPhone(rawPhone);
+    if (!phone) return;
+
+    const res = await fetch(`${WA_API}/${phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: phone,
+        type: "text",
+        text: { body: message },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok)
+      console.error("[WA Quotation Notify]", data?.error?.message || data);
+  } catch (err) {
+    console.error("[WA Quotation Notify]", err.message);
+  }
+};
+
 exports.setup = asyncHandler(async (req, res) => {
   const { accessToken, wabaId } = req.body;
   if (!accessToken) {

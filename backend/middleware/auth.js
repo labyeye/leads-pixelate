@@ -39,7 +39,8 @@ const protect = asyncHandler(async (req, res, next) => {
     throw new Error("Account is deactivated. Contact your administrator.");
   }
 
-  if (user.tenantId) {
+  const isBillingRoute = req.baseUrl === "/api/billing";
+  if (user.tenantId && !isBillingRoute) {
     const tenant = await Tenant.findById(user.tenantId).select("status planExpiresAt");
     if (tenant) {
       if (tenant.status !== "active") {

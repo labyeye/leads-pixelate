@@ -84,6 +84,15 @@ const settingSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    // Which WhatsApp sender to use for automatic notifications (e.g. quotation
+    // "Sent"): the shared Nest Leads platform number, or this tenant's own
+    // connected WhatsApp Business number.
+    quotationWhatsappSource: {
+      type: String,
+      enum: ["platform", "tenant"],
+      default: "tenant",
+    },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tenant",

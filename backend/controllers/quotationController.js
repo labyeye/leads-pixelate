@@ -1,6 +1,16 @@
 const asyncHandler = require("express-async-handler");
 const Quotation = require("../models/Quotation");
+const Setting = require("../models/Setting");
 const logActivity = require("../utils/activityLogger");
+const { sendTextNotification } = require("./whatsappController");
+
+async function notifyQuotationSent(user, quotation) {
+  if (!quotation.mobile) return;
+  const setting = await Setting.findOne({ tenantId: user.tenantId || null });
+  const source = setting?.quotationWhatsappSource || "tenant";
+  const message = `Hi ${quotation.clientName}, your quotation ${quotation.number} for "${quotation.projectTitle}" (₹${quotation.total.toLocaleString("en-IN")}) has been sent. Please check your email/download link for details. Thank you!`;
+  sendTextNotification(user, quotation.mobile, message, source);
+}
 
 const getQuotations = asyncHandler(async (req, res) => {
   const { status, search, page = 1, limit = 50 } = req.query;
@@ -76,6 +86,8 @@ const createQuotation = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
+  if (populated.status === "Sent") notifyQuotationSent(req.user, populated);
+
   res.status(201).json({
     success: true,
     data: populated,
@@ -95,10 +107,15 @@ const updateQuotation = asyncHandler(async (req, res) => {
     throw new Error("Cannot edit an approved or rejected quotation");
   }
 
+  const wasSent = quotation.status === "Sent";
+
   quotation = await Quotation.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
   }).populate("createdBy", "name email");
+
+  if (quotation.status === "Sent" && !wasSent)
+    notifyQuotationSent(req.user, quotation);
 
   logActivity({
     user: req.user,

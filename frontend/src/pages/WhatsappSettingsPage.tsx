@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { whatsappAPI } from "@/services/api";
+import { whatsappAPI, settingsAPI } from "@/services/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useToast } from "@/components/ui/use-toast";
@@ -1271,6 +1271,66 @@ function RepliesTab({ toast }: { toast: any }) {
   );
 }
 
+function NotificationSenderCard({ toast }: { toast: any }) {
+  const [source, setSource] = useState<"platform" | "tenant">("tenant");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await settingsAPI.get();
+        setSource(res.data?.quotationWhatsappSource || "tenant");
+      } catch {
+        toast({ title: "Failed to load notification settings", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [toast]);
+
+  const handleChange = async (value: "platform" | "tenant") => {
+    setSource(value);
+    setSaving(true);
+    try {
+      await settingsAPI.update({ quotationWhatsappSource: value });
+      toast({ title: "Notification sender updated" });
+    } catch (err: any) {
+      toast({
+        title: "Failed to save",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-muted/30 rounded-lg p-4 border border-border">
+      <h3 className="text-sm font-semibold mb-1">
+        Quotation Notification Sender
+      </h3>
+      <p className="text-xs text-muted-foreground mb-3">
+        Which WhatsApp number sends the "quotation sent" message to clients.
+      </p>
+      {loading ? (
+        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+      ) : (
+        <Select value={source} onValueChange={handleChange} disabled={saving}>
+          <SelectTrigger className="max-w-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tenant">Client's Own WhatsApp Connection</SelectItem>
+            <SelectItem value="platform">Nest Leads Number (Shared)</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+    </div>
+  );
+}
+
 function ConnectionTab({ toast }: { toast: any }) {
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -1428,6 +1488,8 @@ function ConnectionTab({ toast }: { toast: any }) {
           One access token, multiple phone numbers — each from the same WABA.
         </p>
       </div>
+
+      <NotificationSenderCard toast={toast} />
 
       {loading ? (
         <div className="flex justify-center py-8">
