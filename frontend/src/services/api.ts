@@ -91,6 +91,13 @@ async function request<T>(
       }
       window.location.href = "/login";
     }
+    if (
+      response.status === 403 &&
+      typeof data.message === "string" &&
+      data.message.toLowerCase().includes("subscription")
+    ) {
+      window.dispatchEvent(new Event("subscription-expired"));
+    }
     throw new ApiError(data.message || "Something went wrong", response.status);
   }
 

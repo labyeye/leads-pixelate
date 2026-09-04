@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
+import { SubscriptionExpiredModal } from "./SubscriptionExpiredModal";
 
 interface AppLayoutProps {
   title: string;
@@ -12,6 +13,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen flex w-full bg-background">
+      <SubscriptionExpiredModal />
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"

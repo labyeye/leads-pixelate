@@ -456,8 +456,10 @@ export default function BillingPage() {
 
   const currentPlanId = subscription?.plan || tenant?.plan || "trial";
   const periodEnd = subscription?.currentPeriodEnd || tenant?.planExpiresAt;
+  const isExpired = !!periodEnd && new Date(periodEnd).getTime() < Date.now();
   const isActive =
-    subscription?.status === "active" || tenant?.status === "active";
+    (subscription?.status === "active" || tenant?.status === "active") &&
+    !isExpired;
   const needsRenewal = currentPlanId !== "trial" && !isActive;
 
   const planLimits = plans?.[currentPlanId] || {};
