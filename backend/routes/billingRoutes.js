@@ -221,7 +221,7 @@ router.post(
 
     const orderId = `ORD_${req.user.tenantId}_${Date.now()}`;
     const backendUrl =
-      process.env.BACKEND_URL || `http://localhost:3500`;
+      process.env.BACKEND_URL || `https://leads-backend.pixelatenest.com`;
     const frontendUrl =
       process.env.CLIENT_URL || `https://leads.pixelatenest.com`;
 

@@ -112,7 +112,7 @@ const FIXED_FIELDS = [
 
 const BACKEND_URL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ||
-  "http://localhost:3500";
+  "https://leads-backend.pixelatenest.com";
 
 // ─── Snippet generator ───────────────────────────────────────────────────────
 
