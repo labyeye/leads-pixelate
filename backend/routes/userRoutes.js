@@ -7,6 +7,8 @@ const {
   updateUser,
   deleteUser,
   updateAutoAssign,
+  addUserDocument,
+  removeUserDocument,
 } = require("../controllers/userController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -27,5 +29,16 @@ router
   .get(authorize("super_admin", "admin"), getUser)
   .put(authorize("super_admin", "admin"), updateUser)
   .delete(authorize("super_admin"), deleteUser);
+
+router.post(
+  "/:id/documents",
+  authorize("super_admin", "admin"),
+  addUserDocument,
+);
+router.delete(
+  "/:id/documents/:docId",
+  authorize("super_admin", "admin"),
+  removeUserDocument,
+);
 
 module.exports = router;

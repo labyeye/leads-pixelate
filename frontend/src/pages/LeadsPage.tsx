@@ -49,6 +49,7 @@ import {
   tradeindiaSyncAPI,
   justdialSyncAPI,
   facebookAPI,
+  linkedinAdsAPI,
   usersAPI,
   productsAPI,
   authAPI,
@@ -87,8 +88,64 @@ import metaLogo from "@/assets/images/logos/meta.png";
 import imLogo from "@/assets/images/logos/indiamart.png";
 import tiLogo from "@/assets/images/logos/tradeindia.webp";
 import jdLogo from "@/assets/images/logos/justdial.webp";
+import linkedinLogo from "@/assets/images/logos/linkedin.webp";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import * as XLSX from "xlsx";
+import {
+  ExportFieldsDialog,
+  type ExportField,
+} from "@/components/export/ExportFieldsDialog";
+
+const LEAD_EXPORT_FIELDS: ExportField[] = [
+  { key: "name", label: "Name", get: (l) => l.name || "" },
+  { key: "company", label: "Company", get: (l) => l.company || "" },
+  { key: "phone", label: "Phone", get: (l) => l.phone || "" },
+  { key: "email", label: "Email", get: (l) => l.email || "" },
+  { key: "source", label: "Source", get: (l) => l.source || "" },
+  { key: "status", label: "Status", get: (l) => l.status || "" },
+  { key: "contactTag", label: "Tag", default: false, get: (l) => l.contactTag || "" },
+  {
+    key: "assignedTo",
+    label: "Assigned To",
+    get: (l) => l.assignedTo?.name || "Unassigned",
+  },
+  { key: "location", label: "Location", default: false, get: (l) => l.location || "" },
+  { key: "budget", label: "Budget", default: false, get: (l) => l.budget || "" },
+  {
+    key: "requirement",
+    label: "Requirement",
+    default: false,
+    get: (l) => l.requirement || "",
+  },
+  { key: "website", label: "Website", default: false, get: (l) => l.website || "" },
+  {
+    key: "interestedProducts",
+    label: "Interested Products",
+    default: false,
+    get: (l) => (l.interestedProducts || []).join(", "),
+  },
+  {
+    key: "followUpDate",
+    label: "Follow-up Date",
+    get: (l) =>
+      l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "",
+  },
+  {
+    key: "visitScheduledDate",
+    label: "Visit Scheduled",
+    default: false,
+    get: (l) =>
+      l.visitScheduledDate
+        ? new Date(l.visitScheduledDate).toLocaleDateString("en-IN")
+        : "",
+  },
+  {
+    key: "createdAt",
+    label: "Created At",
+    get: (l) => (l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : ""),
+  },
+  { key: "remarks", label: "Remarks", default: false, get: (l) => l.remarks || "" },
+];
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
@@ -112,12 +169,15 @@ export default function LeadsPage() {
   >("today");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importing, setImporting] = useState(false);
   const [fbSyncing, setFbSyncing] = useState(false);
   const [fbConnected, setFbConnected] = useState(false);
+  const [linkedinConnected, setLinkedinConnected] = useState(false);
+  const [linkedinSyncing, setLinkedinSyncing] = useState(false);
   const [fbSyncModalOpen, setFbSyncModalOpen] = useState(false);
   const [fbSyncDateOption, setFbSyncDateOption] = useState<
     "today" | "3days" | "7days" | "30days" | "custom"
@@ -241,7 +301,26 @@ export default function LeadsPage() {
         if (res.data.length > 0) setFbConnected(true);
       })
       .catch(() => {});
+    linkedinAdsAPI
+      .getConnectedAccounts()
+      .then((res) => {
+        if (res.data.length > 0) setLinkedinConnected(true);
+      })
+      .catch(() => {});
   }, []);
+
+  const handleLinkedinSync = async () => {
+    setLinkedinSyncing(true);
+    try {
+      const res = await linkedinAdsAPI.sync();
+      notify.success("LinkedIn Sync Complete", res.message);
+      fetchLeads();
+    } catch (error: any) {
+      notify.error("LinkedIn Sync Failed", error.message);
+    } finally {
+      setLinkedinSyncing(false);
+    }
+  };
   useEffect(() => {
     if (selectedLeadId) {
       setFullLead(null);
@@ -1524,6 +1603,14 @@ export default function LeadsPage() {
             )}
 
             <button
+              onClick={() => setShowExportDialog(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-blue-700 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Export
+            </button>
+
+            <button
               onClick={() => setImportModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-white text-emerald-700 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
             >
@@ -1625,6 +1712,25 @@ export default function LeadsPage() {
               )}
               {jdSyncing ? "Checking..." : "Justdial Status"}
             </button>
+
+            {} 
+              <button
+                onClick={handleLinkedinSync}
+                disabled={linkedinSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#0A66C2] font-black uppercase text-xs tracking-widest border-2 border-[#000000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
+              >
+                {linkedinSyncing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <img
+                    src={linkedinLogo}
+                    alt="LinkedIn"
+                    className="w-4 h-4 object-contain"
+                  />
+                )}
+                {linkedinSyncing ? "Syncing..." : "Sync LinkedIn"}
+              </button>
+            
           </div>
 
           {}
@@ -2185,6 +2291,7 @@ export default function LeadsPage() {
                               "Facebook",
                               "Instagram",
                               "Meta",
+                              "LinkedIn",
                               "Website",
                               "Manual",
                             ],
@@ -3104,6 +3211,7 @@ export default function LeadsPage() {
                         "Facebook",
                         "Instagram",
                         "Meta",
+                        "LinkedIn",
                         "Website",
                       ].map((s) => (
                         <SelectItem key={s} value={s}>
@@ -3587,6 +3695,15 @@ export default function LeadsPage() {
           </div>
         </div>
       )}
+
+      <ExportFieldsDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        title="Export Leads"
+        fields={LEAD_EXPORT_FIELDS}
+        data={filtered}
+        filenamePrefix="leads"
+      />
     </AppLayout>
   );
 }

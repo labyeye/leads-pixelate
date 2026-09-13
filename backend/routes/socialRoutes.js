@@ -17,12 +17,15 @@ const {
   facebookCallback,
   fetchFacebookPages,
   importFromIntegration,
+  getLinkedInAuthUrl,
+  linkedinCallback,
   getStats,
   getAnalytics,
 } = require("../controllers/socialController");
 const { protect, authorize } = require("../middleware/auth");
 
 router.get("/auth/facebook/callback", facebookCallback);
+router.get("/auth/linkedin/callback", linkedinCallback);
 
 router.use(protect);
 
@@ -55,5 +58,6 @@ router.delete(
 router.get("/auth/facebook", getFacebookAuthUrl);
 router.post("/auth/facebook/pages", fetchFacebookPages);
 router.post("/accounts/import-from-integration", importFromIntegration);
+router.get("/auth/linkedin", getLinkedInAuthUrl);
 
 module.exports = router;

@@ -14,14 +14,23 @@ import {
   Building2,
   FileText,
   Terminal,
-  Instagram,
   Megaphone,
   Package,
   Briefcase,
   KeyRound,
   LifeBuoy,
+  ShieldCheck,
+  LayoutGrid,
+  Layers,
+  ImageIcon,
+  BarChart3,
+  ClipboardList,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
+import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
+import { GoogleAdsIcon } from "@/components/icons/GoogleAdsIcon";
+import { MetaIcon } from "@/components/icons/MetaIcon";
+import { Facebook } from "lucide-react";
 
 export type NavIconComponent =
   LucideIcon | React.ComponentType<{ className?: string }>;
@@ -31,6 +40,7 @@ export interface NavItem {
   href: string;
   icon: NavIconComponent;
   roles: UserRole[];
+  children?: NavItem[];
 }
 
 export interface NavGroup {
@@ -126,19 +136,158 @@ const allGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Marketing",
+    label: "Social Media",
     items: [
       {
-        title: "Social Planner",
+        title: "Meta",
         href: "/social-planner",
-        icon: Instagram,
+        icon: MetaIcon,
         roles: ["super_admin", "admin", "sales_executive"],
       },
+    ],
+  },
+  {
+    label: "Campaigns",
+    items: [
       {
         title: "Campaigns",
         href: "/campaigns",
         icon: Megaphone,
         roles: ["super_admin", "admin", "sales_executive"],
+        children: [
+          {
+            title: "Facebook",
+            href: "/campaigns/facebook",
+            icon: Facebook,
+            roles: ["super_admin", "admin", "sales_executive"],
+            children: [
+              {
+                title: "Dashboard",
+                href: "/campaigns/facebook",
+                icon: LayoutGrid,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ad Campaigns",
+                href: "/campaigns/facebook/campaigns",
+                icon: Megaphone,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ad Sets",
+                href: "/campaigns/facebook/adsets",
+                icon: Layers,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ads",
+                href: "/campaigns/facebook/ads",
+                icon: ImageIcon,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Campaign Management",
+                href: "/campaigns/facebook/management",
+                icon: ClipboardList,
+                roles: ["super_admin", "admin"],
+              },
+            ],
+          },
+          {
+            title: "LinkedIn",
+            href: "/campaigns/linkedin",
+            icon: LinkedInIcon,
+            roles: ["super_admin", "admin", "sales_executive"],
+            children: [
+              {
+                title: "Dashboard",
+                href: "/campaigns/linkedin/dashboard",
+                icon: LayoutGrid,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ad Campaigns",
+                href: "/campaigns/linkedin/campaigns",
+                icon: Megaphone,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ad Sets",
+                href: "/campaigns/linkedin/adsets",
+                icon: Layers,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ads",
+                href: "/campaigns/linkedin/ads",
+                icon: ImageIcon,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Lead Sync Setup",
+                href: "/campaigns/linkedin",
+                icon: LinkedInIcon,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Campaign Management",
+                href: "/campaigns/linkedin/management",
+                icon: ClipboardList,
+                roles: ["super_admin", "admin"],
+              },
+            ],
+          },
+          {
+            title: "Google Ads",
+            href: "/campaigns/google",
+            icon: GoogleAdsIcon,
+            roles: ["super_admin", "admin", "sales_executive"],
+            children: [
+              {
+                title: "Dashboard",
+                href: "/campaigns/google/dashboard",
+                icon: LayoutGrid,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ad Campaigns",
+                href: "/campaigns/google/campaigns",
+                icon: Megaphone,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ad Groups",
+                href: "/campaigns/google/adgroups",
+                icon: Layers,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Ads",
+                href: "/campaigns/google/ads",
+                icon: ImageIcon,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+              {
+                title: "Lead Sync Setup",
+                href: "/campaigns/google",
+                icon: GoogleAdsIcon,
+                roles: ["super_admin", "admin", "sales_executive"],
+              },
+            ],
+          },
+          {
+            title: "Reports & Analytics",
+            href: "/campaigns/reports",
+            icon: BarChart3,
+            roles: ["super_admin", "admin"],
+          },
+          {
+            title: "Campaign Management",
+            href: "/campaigns/management",
+            icon: ClipboardList,
+            roles: ["super_admin", "admin"],
+          },
+        ],
       },
     ],
   },
@@ -185,6 +334,18 @@ const allGroups: NavGroup[] = [
         href: "/api-keys",
         icon: KeyRound,
         roles: ["super_admin", "admin"],
+      },
+      {
+        title: "Security",
+        href: "/account/security",
+        icon: ShieldCheck,
+        roles: [
+          "super_admin",
+          "admin",
+          "sales_executive",
+          "service_manager",
+          "accountant",
+        ],
       },
       {
         title: "Support",

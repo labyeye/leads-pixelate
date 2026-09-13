@@ -51,6 +51,69 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    designation: {
+      type: String,
+      trim: true,
+    },
+    dateOfJoining: {
+      type: Date,
+    },
+    dateOfBirth: {
+      type: Date,
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other", ""],
+      default: "",
+    },
+    employmentType: {
+      type: String,
+      enum: ["full_time", "part_time", "contract", "intern", ""],
+      default: "",
+    },
+    address: {
+      line1: { type: String, trim: true, default: "" },
+      city: { type: String, trim: true, default: "" },
+      state: { type: String, trim: true, default: "" },
+      pincode: { type: String, trim: true, default: "" },
+    },
+    emergencyContact: {
+      name: { type: String, trim: true, default: "" },
+      phone: { type: String, trim: true, default: "" },
+    },
+    panNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    // Payroll info — sensitive, hidden by default like the other secrets on
+    // this model; the user edit screen explicitly selects it back in.
+    bankDetails: {
+      accountName: { type: String, trim: true, default: "", select: false },
+      accountNumber: { type: String, trim: true, default: "", select: false },
+      ifsc: { type: String, trim: true, default: "", select: false },
+      bankName: { type: String, trim: true, default: "", select: false },
+    },
+    // HR/ID documents (resume, ID proof, offer letter, etc). Uploaded via
+    // the generic /api/upload endpoint, referenced here by URL.
+    documents: [
+      {
+        name: { type: String, trim: true },
+        type: {
+          type: String,
+          enum: [
+            "resume",
+            "id_proof",
+            "address_proof",
+            "offer_letter",
+            "other",
+          ],
+          default: "other",
+        },
+        url: { type: String },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
     status: {
       type: String,
       enum: ["active", "inactive"],
@@ -83,6 +146,34 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: {
       type: Date,
       select: false,
+    },
+    resetOtpHash: {
+      type: String,
+      select: false,
+    },
+    resetOtpExpires: {
+      type: Date,
+      select: false,
+    },
+    phoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    phoneOtpHash: {
+      type: String,
+      select: false,
+    },
+    phoneOtpExpires: {
+      type: Date,
+      select: false,
+    },
+    totpSecret: {
+      type: String,
+      select: false,
+    },
+    totpEnabled: {
+      type: Boolean,
+      default: false,
     },
     // Per-rep Gmail connection for in-CRM email (send + two-way sync via
     // polling). Tokens are select:false like the other secrets on this

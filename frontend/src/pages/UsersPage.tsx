@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { roleLabels, UserRole } from "@/types/crm";
 import { cn } from "@/lib/utils";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
   Plus,
   Search,
@@ -15,6 +16,9 @@ import {
   Briefcase,
   Wrench,
   Calculator,
+  FileText,
+  Upload,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,9 +42,82 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { usersAPI } from "@/services/api";
+import { usersAPI, uploadAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotify } from "@/components/ui/Notification";
+
+const DOCUMENT_TYPES: { value: string; label: string }[] = [
+  { value: "resume", label: "Resume" },
+  { value: "id_proof", label: "ID Proof" },
+  { value: "address_proof", label: "Address Proof" },
+  { value: "offer_letter", label: "Offer Letter" },
+  { value: "other", label: "Other" },
+];
+
+const EMPTY_FORM_DATA = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  role: "sales_executive" as UserRole,
+  phone: "",
+  department: "",
+  avatar: "",
+  designation: "",
+  dateOfJoining: "",
+  dateOfBirth: "",
+  gender: "",
+  employmentType: "",
+  addressLine1: "",
+  addressCity: "",
+  addressState: "",
+  addressPincode: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  panNumber: "",
+  bankAccountName: "",
+  bankAccountNumber: "",
+  bankIfsc: "",
+  bankName: "",
+};
+
+// The form keeps everything flat (simple inputs, simple state); the API
+// wants address/emergencyContact/bankDetails nested. Reshape at submit time.
+function buildUserPayload(formData: typeof EMPTY_FORM_DATA) {
+  const {
+    confirmPassword: _confirmPassword,
+    addressLine1,
+    addressCity,
+    addressState,
+    addressPincode,
+    emergencyContactName,
+    emergencyContactPhone,
+    bankAccountName,
+    bankAccountNumber,
+    bankIfsc,
+    bankName,
+    ...rest
+  } = formData;
+  return {
+    ...rest,
+    address: {
+      line1: addressLine1,
+      city: addressCity,
+      state: addressState,
+      pincode: addressPincode,
+    },
+    emergencyContact: {
+      name: emergencyContactName,
+      phone: emergencyContactPhone,
+    },
+    bankDetails: {
+      accountName: bankAccountName,
+      accountNumber: bankAccountNumber,
+      ifsc: bankIfsc,
+      bankName,
+    },
+  } as any;
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -100,16 +177,13 @@ export default function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "sales_executive" as UserRole,
-    phone: "",
-    department: "",
-    avatar: "",
-  });
+  const [modalTab, setModalTab] = useState<
+    "basic" | "employment" | "documents"
+  >("basic");
+  const [formData, setFormData] = useState(EMPTY_FORM_DATA);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [docUploading, setDocUploading] = useState(false);
+  const [docType, setDocType] = useState("resume");
 
   useEffect(() => {
     fetchUsers();
@@ -175,11 +249,12 @@ export default function UsersPage() {
         return;
       }
     }
-    if (formData.phone && !/^[6-9]\d{9}$/.test(formData.phone)) {
-      notify.error(
-        "Invalid Phone",
-        "Enter a valid 10-digit Indian mobile number.",
-      );
+    if (
+      formData.phone &&
+      !/^[6-9]\d{9}$/.test(formData.phone) &&
+      !(formData.phone.length >= 8 && formData.phone.length <= 15)
+    ) {
+      notify.error("Invalid Phone", "Enter a valid phone number.");
       return;
     }
     if (!formData.role) {
@@ -189,13 +264,12 @@ export default function UsersPage() {
 
     try {
       setSaving(true);
+      const payload = buildUserPayload(formData);
       let res;
       if (editingUserId) {
-        const { confirmPassword: _, ...payload } = formData as any;
         if (!payload.password) delete payload.password;
         res = await usersAPI.update(editingUserId, payload);
       } else {
-        const { confirmPassword: _, ...payload } = formData as any;
         res = await usersAPI.create(payload);
       }
       if (res.success) {
@@ -218,30 +292,53 @@ export default function UsersPage() {
   const resetForm = () => {
     setIsModalOpen(false);
     setEditingUserId(null);
-    setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      role: "sales_executive",
-      phone: "",
-      department: "",
-      avatar: "",
-    });
+    setModalTab("basic");
+    setFormData(EMPTY_FORM_DATA);
+    setDocuments([]);
   };
 
-  const handleEditClick = (user: any) => {
-    setFormData({
-      name: user.name || "",
-      email: user.email || "",
-      password: "",
-      role: user.role || "sales_executive",
-      phone: user.phone || "",
-      department: user.department || "",
-      avatar: user.avatar || "",
-    });
-    setEditingUserId(user._id || user.id);
+  const toDateInput = (v: string | null | undefined) =>
+    v ? new Date(v).toISOString().slice(0, 10) : "";
+
+  const handleEditClick = async (user: any) => {
+    const id = user._id || user.id;
+    setEditingUserId(id);
+    setModalTab("basic");
     setIsModalOpen(true);
+    // Row data from the list omits bankDetails (privacy) — fetch the full
+    // record so the edit form has everything.
+    try {
+      const res = await usersAPI.getById(id);
+      const full = res.data || user;
+      setFormData({
+        ...EMPTY_FORM_DATA,
+        name: full.name || "",
+        email: full.email || "",
+        role: full.role || "sales_executive",
+        phone: full.phone || "",
+        department: full.department || "",
+        avatar: full.avatar || "",
+        designation: full.designation || "",
+        dateOfJoining: toDateInput(full.dateOfJoining),
+        dateOfBirth: toDateInput(full.dateOfBirth),
+        gender: full.gender || "",
+        employmentType: full.employmentType || "",
+        addressLine1: full.address?.line1 || "",
+        addressCity: full.address?.city || "",
+        addressState: full.address?.state || "",
+        addressPincode: full.address?.pincode || "",
+        emergencyContactName: full.emergencyContact?.name || "",
+        emergencyContactPhone: full.emergencyContact?.phone || "",
+        panNumber: full.panNumber || "",
+        bankAccountName: full.bankDetails?.accountName || "",
+        bankAccountNumber: full.bankDetails?.accountNumber || "",
+        bankIfsc: full.bankDetails?.ifsc || "",
+        bankName: full.bankDetails?.bankName || "",
+      });
+      setDocuments(full.documents || []);
+    } catch (error: any) {
+      notify.error("Failed to load user", error.message);
+    }
   };
 
   const handleDeleteClick = async (id: string) => {
@@ -293,29 +390,53 @@ export default function UsersPage() {
             <button
               onClick={() => {
                 setEditingUserId(null);
-                setFormData({
-                  name: "",
-                  email: "",
-                  password: "",
-                  role: "sales_executive",
-                  phone: "",
-                  department: "",
-                  avatar: "",
-                });
+                setModalTab("basic");
+                setFormData(EMPTY_FORM_DATA);
+                setDocuments([]);
               }}
               className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Add User
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md border-2 border-black rounded-none p-0 gap-0">
+          <DialogContent className="sm:max-w-lg border-2 border-black rounded-none p-0 gap-0">
             <form onSubmit={handleSubmitUser}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4">
                 <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
                   {editingUserId ? "Edit User" : "Add New User"}
                 </DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 p-5 bg-white">
+
+              {}
+              <div className="flex border-b-2 border-black bg-white px-5">
+                {(
+                  [
+                    { id: "basic", label: "Basic" },
+                    { id: "employment", label: "Employment" },
+                    ...(editingUserId
+                      ? [{ id: "documents", label: "Documents" } as const]
+                      : []),
+                  ] as { id: typeof modalTab; label: string }[]
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setModalTab(t.id)}
+                    className={cn(
+                      "py-2.5 px-1 mr-5 text-xs font-black uppercase tracking-wider border-b-2 transition-colors",
+                      modalTab === t.id
+                        ? "border-[#FA731C] text-black"
+                        : "border-transparent text-muted-foreground hover:text-black",
+                    )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid gap-4 p-5 bg-white max-h-[60vh] overflow-y-auto">
+                {modalTab === "basic" && (
+                <>
                 <NbInput
                   label="Full Name"
                   id="name"
@@ -395,17 +516,11 @@ export default function UsersPage() {
                   </Select>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <NbInput
+                  <PhoneInput
                     label="Phone"
-                    id="phone"
                     value={formData.phone}
-                    onChange={(e: any) => {
-                      const v = e.target.value.replace(/\D/g, "").slice(0, 10);
-                      setFormData({ ...formData, phone: v });
-                    }}
+                    onChange={(v) => setFormData({ ...formData, phone: v })}
                     placeholder="10-digit mobile"
-                    maxLength={10}
-                    inputMode="numeric"
                   />
                   <NbInput
                     label="Department"
@@ -473,6 +588,364 @@ export default function UsersPage() {
                     )}
                   </div>
                 </div>
+                </>
+                )}
+
+                {modalTab === "employment" && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <NbInput
+                        label="Designation"
+                        id="designation"
+                        value={formData.designation}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            designation: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. Senior Sales Executive"
+                      />
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                          Employment Type
+                        </label>
+                        <Select
+                          value={formData.employmentType}
+                          onValueChange={(v) =>
+                            setFormData({ ...formData, employmentType: v })
+                          }
+                        >
+                          <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                            {[
+                              { value: "full_time", label: "Full-time" },
+                              { value: "part_time", label: "Part-time" },
+                              { value: "contract", label: "Contract" },
+                              { value: "intern", label: "Intern" },
+                            ].map((o) => (
+                              <SelectItem
+                                key={o.value}
+                                value={o.value}
+                                className="font-bold"
+                              >
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <NbInput
+                        label="Date of Joining"
+                        id="dateOfJoining"
+                        type="date"
+                        value={formData.dateOfJoining}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            dateOfJoining: e.target.value,
+                          })
+                        }
+                      />
+                      <NbInput
+                        label="Date of Birth"
+                        id="dateOfBirth"
+                        type="date"
+                        value={formData.dateOfBirth}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            dateOfBirth: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                        Gender
+                      </label>
+                      <Select
+                        value={formData.gender}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, gender: v })
+                        }
+                      >
+                        <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                          {["male", "female", "other"].map((g) => (
+                            <SelectItem key={g} value={g} className="font-bold capitalize">
+                              {g}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
+                      Address
+                    </p>
+                    <NbInput
+                      label="Address Line"
+                      id="addressLine1"
+                      value={formData.addressLine1}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          addressLine1: e.target.value,
+                        })
+                      }
+                      placeholder="House no, street, area"
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <NbInput
+                        label="City"
+                        id="addressCity"
+                        value={formData.addressCity}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            addressCity: e.target.value,
+                          })
+                        }
+                      />
+                      <NbInput
+                        label="State"
+                        id="addressState"
+                        value={formData.addressState}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            addressState: e.target.value,
+                          })
+                        }
+                      />
+                      <NbInput
+                        label="Pincode"
+                        id="addressPincode"
+                        value={formData.addressPincode}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            addressPincode: e.target.value.replace(/\D/g, "").slice(0, 6),
+                          })
+                        }
+                        inputMode="numeric"
+                        maxLength={6}
+                      />
+                    </div>
+
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
+                      Emergency Contact
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <NbInput
+                        label="Contact Name"
+                        id="emergencyContactName"
+                        value={formData.emergencyContactName}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            emergencyContactName: e.target.value,
+                          })
+                        }
+                      />
+                      <PhoneInput
+                        label="Contact Phone"
+                        value={formData.emergencyContactPhone}
+                        onChange={(v) =>
+                          setFormData({
+                            ...formData,
+                            emergencyContactPhone: v,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
+                      Identity &amp; Payroll
+                    </p>
+                    <NbInput
+                      label="PAN Number"
+                      id="panNumber"
+                      value={formData.panNumber}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          panNumber: e.target.value.toUpperCase(),
+                        })
+                      }
+                      placeholder="ABCDE1234F"
+                      maxLength={10}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <NbInput
+                        label="Bank Account Name"
+                        id="bankAccountName"
+                        value={formData.bankAccountName}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            bankAccountName: e.target.value,
+                          })
+                        }
+                      />
+                      <NbInput
+                        label="Bank Account Number"
+                        id="bankAccountNumber"
+                        value={formData.bankAccountNumber}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            bankAccountNumber: e.target.value.replace(/\D/g, ""),
+                          })
+                        }
+                        inputMode="numeric"
+                      />
+                      <NbInput
+                        label="IFSC Code"
+                        id="bankIfsc"
+                        value={formData.bankIfsc}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            bankIfsc: e.target.value.toUpperCase(),
+                          })
+                        }
+                        maxLength={11}
+                      />
+                      <NbInput
+                        label="Bank Name"
+                        id="bankName"
+                        value={formData.bankName}
+                        onChange={(e: any) =>
+                          setFormData({ ...formData, bankName: e.target.value })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {modalTab === "documents" && editingUserId && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Select value={docType} onValueChange={setDocType}>
+                        <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10 w-44">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                          {DOCUMENT_TYPES.map((d) => (
+                            <SelectItem
+                              key={d.value}
+                              value={d.value}
+                              className="font-bold"
+                            >
+                              {d.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-bold bg-white hover:bg-black hover:text-white transition-colors flex items-center gap-1.5">
+                        {docUploading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5" />
+                        )}
+                        Upload
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,image/*"
+                          className="hidden"
+                          disabled={docUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file || !editingUserId) return;
+                            if (file.size > 10 * 1024 * 1024) {
+                              notify.error(
+                                "File Too Large",
+                                "Max file size is 10MB.",
+                              );
+                              return;
+                            }
+                            setDocUploading(true);
+                            try {
+                              const uploaded = await uploadAPI.upload(file);
+                              const res = await usersAPI.addDocument(
+                                editingUserId,
+                                {
+                                  name: file.name,
+                                  type: docType,
+                                  url: uploaded.url,
+                                },
+                              );
+                              setDocuments(res.data || []);
+                              notify.success("Document uploaded");
+                            } catch (error: any) {
+                              notify.error("Upload Failed", error.message);
+                            } finally {
+                              setDocUploading(false);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    {documents.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No documents uploaded yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {documents.map((doc) => (
+                          <div
+                            key={doc._id}
+                            className="flex items-center gap-2 border-2 border-black p-2.5"
+                          >
+                            <FileText className="w-4 h-4 shrink-0 text-[#024BAB]" />
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 min-w-0 truncate text-xs font-bold underline"
+                            >
+                              {doc.name}
+                            </a>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase shrink-0">
+                              {DOCUMENT_TYPES.find((d) => d.value === doc.type)
+                                ?.label || doc.type}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!editingUserId) return;
+                                try {
+                                  const res = await usersAPI.removeDocument(
+                                    editingUserId,
+                                    doc._id,
+                                  );
+                                  setDocuments(res.data || []);
+                                } catch (error: any) {
+                                  notify.error("Delete Failed", error.message);
+                                }
+                              }}
+                              className="shrink-0 text-red-500 hover:text-red-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <DialogFooter className="border-t-2 border-black px-5 py-3 flex gap-2 bg-white">
                 <button

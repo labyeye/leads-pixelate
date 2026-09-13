@@ -114,6 +114,24 @@ const tenantSchema = new mongoose.Schema(
           },
         ],
       },
+      linkedinAds: {
+        enabled: { type: Boolean, default: false },
+        refreshToken: { type: String, default: "" },
+        oauthUserId: { type: String, default: "" },
+
+        accounts: [
+          {
+            adAccountId: { type: String, required: true },
+            adAccountName: { type: String, default: "" },
+            selectedFormIds: { type: [String], default: [] },
+
+            allowedStates: { type: [String], default: [] },
+            defaultAssigneeId: { type: String, default: "" },
+            webhookKey: { type: String, default: "" },
+            connectedAt: { type: Date, default: null },
+          },
+        ],
+      },
       justdial: {
         enabled: { type: Boolean, default: false },
         apiKey: { type: String, default: "" },

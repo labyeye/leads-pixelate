@@ -18,7 +18,7 @@ const socialPostSchema = new mongoose.Schema(
     },
     platforms: {
       type: [String],
-      enum: ["facebook", "instagram"],
+      enum: ["facebook", "instagram", "linkedin"],
       required: true,
     },
 
@@ -82,6 +82,7 @@ const socialPostSchema = new mongoose.Schema(
 
     facebookPostId: { type: String, default: "" },
     instagramPostId: { type: String, default: "" },
+    linkedinPostId: { type: String, default: "" },
     postedAt: { type: Date, default: null },
     failureReason: { type: String, default: "" },
 

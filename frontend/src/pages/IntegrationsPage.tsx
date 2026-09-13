@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   Check,
   AlertCircle,
@@ -28,6 +28,7 @@ import {
   indiamartAPI,
   tradeindiaSyncAPI,
   justdialSyncAPI,
+  linkedinAdsAPI,
   usersAPI,
 } from "@/services/api";
 import companylogo from "../assets/images/Logo.png";
@@ -36,12 +37,14 @@ import facebookLogo from "../assets/images/logos/facebook.png";
 import tradeindiLogo from "../assets/images/logos/tradeindia.webp";
 import justdiallogo from "../assets/images/logos/justdial.webp";
 import googleAdsLogo from "../assets/images/logos/google.webp";
+import linkedinLogo from "../assets/images/logos/linkedIn.webp";
 type IntegrationId =
   | "indiamart"
   | "facebook"
   | "googleAds"
   | "tradeindia"
-  | "justdial";
+  | "justdial"
+  | "linkedin";
 
 interface StepField {
   key: string;
@@ -548,6 +551,19 @@ const INTEGRATIONS: Integration[] = [
     ],
   },
   {
+    id: "linkedin",
+    name: "LinkedIn Lead Gen",
+    shortDesc: "Capture leads from LinkedIn Lead Gen Forms",
+    color: "#0A66C2",
+    bgColor: "#EFF6FF",
+    icon: "IN",
+    logo: linkedinLogo,
+    connected: false,
+    docsUrl:
+      "https://www.linkedin.com/help/lms/answer/a425696",
+    steps: [],
+  },
+  {
     id: "justdial",
     name: "Justdial",
     shortDesc: "Pull enquiries from Justdial business listings",
@@ -1006,6 +1022,7 @@ function IntegrationWizard({
 
 export default function IntegrationsPage() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [selected, setSelected] = useState<Integration | null>(null);
@@ -1055,6 +1072,15 @@ export default function IntegrationsPage() {
         if (res.data?.connected) {
           setConnectedIds((prev) => new Set([...prev, "indiamart"]));
           setImAssigneeIds(res.data?.assigneeIds || []);
+        }
+      })
+      .catch(() => {});
+
+    linkedinAdsAPI
+      .getConnectedAccounts()
+      .then((res) => {
+        if ((res.data || []).length > 0) {
+          setConnectedIds((prev) => new Set([...prev, "linkedin"]));
         }
       })
       .catch(() => {});
@@ -1139,6 +1165,8 @@ export default function IntegrationsPage() {
             : "login",
       );
       setShowGadsWizard(true);
+    } else if (integ.id === "linkedin") {
+      navigate("/campaigns/linkedin");
     } else {
       setSelected(integ);
     }
@@ -1210,7 +1238,7 @@ export default function IntegrationsPage() {
 
   return (
     <AppLayout title="Integrations">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w mx-auto space-y-6">
         <div className="border-2 bg-[#024BAB] p-4 sm:p-5 flex items-center gap-4">
           <img src={companylogo} alt="Logo" className="w-12 h-12" />
           <div>
@@ -1224,7 +1252,7 @@ export default function IntegrationsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {INTEGRATIONS.map((integ) => {
             const isConnected = connectedIds.has(integ.id);
             return (
@@ -1405,8 +1433,6 @@ export default function IntegrationsPage() {
               "Sulekha",
               "99acres",
               "MagicBricks",
-              "LinkedIn Lead Gen",
-              "Google Ads",
               "IndiaBizForSale",
             ].map((name) => (
               <div

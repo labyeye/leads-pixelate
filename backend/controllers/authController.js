@@ -13,6 +13,17 @@ const {
 const { setAuthCookies, clearAuthCookies } = require("../utils/authCookies");
 const logActivity = require("../utils/activityLogger");
 const { sendPasswordResetEmail } = require("../utils/emailService");
+const { sendWhatsAppOtp } = require("../utils/whatsappOtp");
+const { formatPhone } = require("./whatsappController");
+const totp = require("../utils/totp");
+
+function generateOtp() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashOtp(otp) {
+  return crypto.createHash("sha256").update(otp).digest("hex");
+}
 
 // Issues the web-app cookie session (access + refresh + csrf) alongside the
 // existing bearer token in the JSON body used by the mobile app.
@@ -249,7 +260,10 @@ const updateProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (name) user.name = name.trim();
-  if (phone !== undefined) user.phone = phone.trim();
+  if (phone !== undefined && phone.trim() !== user.phone) {
+    user.phone = phone.trim();
+    user.phoneVerified = false;
+  }
   if (department !== undefined) user.department = department.trim();
 
   const updated = await user.save();
@@ -424,9 +438,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     } catch (err) {
       // Don't leak email delivery failures to the caller — log and still
       // return the generic success response.
-      if (process.env.NODE_ENV === "development") {
-        console.error("[forgotPassword] email send failed", err.message);
-      }
+      console.error("[forgotPassword] email send failed:", err.message);
     }
 
     logActivity({
@@ -495,6 +507,223 @@ const resetPassword = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Password has been reset. Please log in." });
 });
 
+// Lets the "forgot password" screen know which reset methods this account
+// has actually set up, so it doesn't offer WhatsApp/authenticator options
+// that would just fail. Only usable signal here (no separate "account
+// doesn't exist" branch) — email is always offered either way.
+const forgotPasswordMethods = asyncHandler(async (req, res) => {
+  const { email } = req.query;
+
+  if (!email || !validator.isEmail(email)) {
+    res.status(400);
+    throw new Error("Please provide a valid email address");
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase().trim() });
+  const methods = ["email"];
+  if (user?.phoneVerified) methods.push("whatsapp");
+  if (user?.totpEnabled) methods.push("totp");
+
+  res.json({ success: true, data: { methods } });
+});
+
+const forgotPasswordWhatsapp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !validator.isEmail(email)) {
+    res.status(400);
+    throw new Error("Please provide a valid email address");
+  }
+
+  const user = await User.findOne({
+    email: email.toLowerCase().trim(),
+  }).select("+phone");
+
+  if (user?.phoneVerified && user.phone) {
+    const otp = generateOtp();
+    user.resetOtpHash = hashOtp(otp);
+    user.resetOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    try {
+      await sendWhatsAppOtp(formatPhone(user.phone), otp);
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[forgotPasswordWhatsapp] send failed", err.message);
+      }
+    }
+  }
+
+  res.json({
+    success: true,
+    message: "If that account has WhatsApp reset enabled, a code was sent.",
+  });
+});
+
+const resetPasswordWithOtp = asyncHandler(async (req, res) => {
+  const { email, otp, password } = req.body;
+
+  if (!email || !otp || !password || password.length < 8) {
+    res.status(400);
+    throw new Error("Email, code and an 8+ character password are required");
+  }
+
+  const user = await User.findOne({
+    email: email.toLowerCase().trim(),
+    resetOtpHash: hashOtp(otp),
+    resetOtpExpires: { $gt: new Date() },
+  }).select("+resetOtpHash +resetOtpExpires");
+
+  if (!user) {
+    res.status(400);
+    throw new Error("This code is invalid or has expired");
+  }
+
+  user.password = password;
+  user.resetOtpHash = undefined;
+  user.resetOtpExpires = undefined;
+  user.refreshTokenHash = undefined;
+  user.refreshTokenExpires = undefined;
+  await user.save();
+
+  clearAuthCookies(res);
+
+  logActivity({
+    user,
+    action: "PASSWORD_RESET",
+    module: "Auth",
+    description: `${user.name} reset their password via WhatsApp code`,
+    targetId: user._id,
+    ip: req.ip,
+  });
+
+  res.json({ success: true, message: "Password has been reset. Please log in." });
+});
+
+const resetPasswordWithTotp = asyncHandler(async (req, res) => {
+  const { email, token, password } = req.body;
+
+  if (!email || !token || !password || password.length < 8) {
+    res.status(400);
+    throw new Error(
+      "Email, authenticator code and an 8+ character password are required",
+    );
+  }
+
+  const user = await User.findOne({
+    email: email.toLowerCase().trim(),
+    totpEnabled: true,
+  }).select("+totpSecret");
+
+  if (!user || !totp.verifyToken(token, user.totpSecret)) {
+    res.status(400);
+    throw new Error("Invalid authenticator code");
+  }
+
+  user.password = password;
+  user.refreshTokenHash = undefined;
+  user.refreshTokenExpires = undefined;
+  await user.save();
+
+  clearAuthCookies(res);
+
+  logActivity({
+    user,
+    action: "PASSWORD_RESET",
+    module: "Auth",
+    description: `${user.name} reset their password via authenticator app`,
+    targetId: user._id,
+    ip: req.ip,
+  });
+
+  res.json({ success: true, message: "Password has been reset. Please log in." });
+});
+
+// --- Phone verification (required once before WhatsApp reset can be offered) ---
+
+const sendPhoneOtp = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("+phone");
+  if (!user.phone) {
+    res.status(400);
+    throw new Error("Add a phone number to your profile first");
+  }
+
+  const otp = generateOtp();
+  user.phoneOtpHash = hashOtp(otp);
+  user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+  await user.save({ validateBeforeSave: false });
+
+  await sendWhatsAppOtp(formatPhone(user.phone), otp);
+
+  res.json({ success: true, message: "Code sent via WhatsApp" });
+});
+
+const verifyPhoneOtp = asyncHandler(async (req, res) => {
+  const { otp } = req.body;
+  const user = await User.findOne({
+    _id: req.user._id,
+    phoneOtpHash: hashOtp(otp || ""),
+    phoneOtpExpires: { $gt: new Date() },
+  }).select("+phoneOtpHash +phoneOtpExpires");
+
+  if (!user) {
+    res.status(400);
+    throw new Error("This code is invalid or has expired");
+  }
+
+  user.phoneVerified = true;
+  user.phoneOtpHash = undefined;
+  user.phoneOtpExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+
+  res.json({ success: true, message: "Phone number verified" });
+});
+
+// --- TOTP (authenticator app) 2FA setup, used for both login 2FA and password reset ---
+
+const totpSetup = asyncHandler(async (req, res) => {
+  const secret = totp.generateSecret();
+  await User.findByIdAndUpdate(req.user._id, { totpSecret: secret });
+
+  const otpauthUrl = totp.buildOtpauthUrl(req.user.email, secret);
+  const qrCode = await totp.generateQrCodeDataUrl(otpauthUrl);
+
+  res.json({ success: true, data: { otpauthUrl, qrCode, secret } });
+});
+
+const totpVerifySetup = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  const user = await User.findById(req.user._id).select("+totpSecret");
+
+  const isValid = user.totpSecret && totp.verifyToken(token, user.totpSecret);
+  if (!isValid) {
+    console.error("[totpVerifySetup] rejected", {
+      receivedToken: token,
+      hasSecret: !!user.totpSecret,
+      secretPreview: user.totpSecret
+        ? user.totpSecret.slice(0, 4) + "…"
+        : null,
+      expectedNow: user.totpSecret ? totp.currentToken(user.totpSecret) : null,
+      serverTime: new Date().toISOString(),
+    });
+    res.status(400);
+    throw new Error("Invalid authenticator code");
+  }
+
+  user.totpEnabled = true;
+  await user.save({ validateBeforeSave: false });
+
+  res.json({ success: true, message: "Authenticator app enabled" });
+});
+
+const totpDisable = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(req.user._id, {
+    totpEnabled: false,
+    totpSecret: undefined,
+  });
+  res.json({ success: true, message: "Authenticator app disabled" });
+});
+
 module.exports = {
   register,
   login,
@@ -505,4 +734,13 @@ module.exports = {
   logout,
   forgotPassword,
   resetPassword,
+  forgotPasswordMethods,
+  forgotPasswordWhatsapp,
+  resetPasswordWithOtp,
+  resetPasswordWithTotp,
+  sendPhoneOtp,
+  verifyPhoneOtp,
+  totpSetup,
+  totpVerifySetup,
+  totpDisable,
 };

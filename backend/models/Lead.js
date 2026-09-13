@@ -24,6 +24,7 @@ const leadSchema = new mongoose.Schema(
         "Instagram",
         "Meta",
         "Google Ads",
+        "LinkedIn",
       ],
       required: [true, "Please specify the lead source"],
     },
@@ -49,6 +50,10 @@ const leadSchema = new mongoose.Schema(
     googleAdsCampaignName: { type: String, default: null },
     googleAdsFormId: { type: String, default: null },
     googleAdsCustomerId: { type: String, default: null },
+    linkedinLeadId: { type: String, default: null },
+    linkedinFormId: { type: String, default: null },
+    linkedinFormName: { type: String, default: null },
+    linkedinAdAccountId: { type: String, default: null },
     customFields: {
       type: Map,
       of: String,
@@ -195,6 +200,10 @@ leadSchema.index(
 );
 leadSchema.index(
   { tenantId: 1, googleAdsLeadId: 1 },
+  { sparse: true, unique: true },
+);
+leadSchema.index(
+  { tenantId: 1, linkedinLeadId: 1 },
   { sparse: true, unique: true },
 );
 

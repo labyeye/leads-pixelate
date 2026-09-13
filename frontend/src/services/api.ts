@@ -162,6 +162,57 @@ export const authAPI = {
         body: JSON.stringify({ password }),
       },
     ),
+
+  forgotPasswordMethods: (email: string) =>
+    request<{ success: boolean; data: { methods: string[] } }>(
+      `/auth/forgot-password/methods?email=${encodeURIComponent(email)}`,
+    ),
+
+  forgotPasswordWhatsapp: (email: string) =>
+    request<{ success: boolean; message: string }>(
+      "/auth/forgot-password/whatsapp",
+      { method: "POST", body: JSON.stringify({ email }) },
+    ),
+
+  resetPasswordWithOtp: (email: string, otp: string, password: string) =>
+    request<{ success: boolean; message: string }>(
+      "/auth/reset-password/otp/whatsapp",
+      { method: "POST", body: JSON.stringify({ email, otp, password }) },
+    ),
+
+  resetPasswordWithTotp: (email: string, token: string, password: string) =>
+    request<{ success: boolean; message: string }>(
+      "/auth/reset-password/otp/totp",
+      { method: "POST", body: JSON.stringify({ email, token, password }) },
+    ),
+
+  sendPhoneOtp: () =>
+    request<{ success: boolean; message: string }>("/auth/phone/send-otp", {
+      method: "POST",
+    }),
+
+  verifyPhoneOtp: (otp: string) =>
+    request<{ success: boolean; message: string }>(
+      "/auth/phone/verify-otp",
+      { method: "POST", body: JSON.stringify({ otp }) },
+    ),
+
+  totpSetup: () =>
+    request<{
+      success: boolean;
+      data: { otpauthUrl: string; qrCode: string; secret: string };
+    }>("/auth/2fa/totp/setup", { method: "POST" }),
+
+  totpVerifySetup: (token: string) =>
+    request<{ success: boolean; message: string }>("/auth/2fa/totp/verify", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  totpDisable: () =>
+    request<{ success: boolean; message: string }>("/auth/2fa/totp/disable", {
+      method: "POST",
+    }),
 };
 
 export const usersAPI = {
@@ -192,6 +243,40 @@ export const usersAPI = {
       method: "POST",
       body: JSON.stringify({ userIds }),
     }),
+  addDocument: (
+    userId: string,
+    doc: { name: string; type: string; url: string },
+  ) =>
+    request<{ success: boolean; data: any[] }>(`/users/${userId}/documents`, {
+      method: "POST",
+      body: JSON.stringify(doc),
+    }),
+  removeDocument: (userId: string, docId: string) =>
+    request<{ success: boolean; data: any[] }>(
+      `/users/${userId}/documents/${docId}`,
+      { method: "DELETE" },
+    ),
+};
+
+export const uploadAPI = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const csrf = getCsrfToken();
+    return fetch(`${API_BASE}/upload`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+      return data as { success: boolean; url: string };
+    });
+  },
 };
 
 export const leadsAPI = {
@@ -516,8 +601,18 @@ export const facebookAPI = {
       data: any[];
       adAccounts: any[];
     }>("/facebook/meta-campaigns"),
-  getMetaCampaignInsights: (id: string, datePreset?: string) => {
-    const query = datePreset ? `?datePreset=${datePreset}` : "";
+  getMetaCampaignInsights: (
+    id: string,
+    opts?: { datePreset?: string; since?: string; until?: string },
+  ) => {
+    const params = new URLSearchParams();
+    if (opts?.since && opts?.until) {
+      params.set("since", opts.since);
+      params.set("until", opts.until);
+    } else if (opts?.datePreset) {
+      params.set("datePreset", opts.datePreset);
+    }
+    const query = params.toString() ? `?${params.toString()}` : "";
     return request<{ success: boolean; data: any }>(
       `/facebook/meta-campaigns/${id}/insights${query}`,
     );
@@ -573,6 +668,83 @@ export const facebookAPI = {
     request<{ success: boolean; message: string }>(`/facebook/ads/${id}`, {
       method: "DELETE",
     }),
+  getAllAdSets: () =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      "/facebook/all-adsets",
+    ),
+  getAllAds: () =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      "/facebook/all-ads",
+    ),
+};
+
+export const campaignAssignmentAPI = {
+  getAll: (platform?: "facebook" | "linkedin") =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      `/campaign-assignments${platform ? `?platform=${platform}` : ""}`,
+    ),
+  upsert: (data: {
+    platform: "facebook" | "linkedin";
+    campaignId: string;
+    campaignName?: string;
+    adAccountId?: string;
+    assignedTo?: string | null;
+    notes?: string;
+  }) =>
+    request<{ success: boolean; data: any }>("/campaign-assignments", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean; message: string }>(
+      `/campaign-assignments/${id}`,
+      { method: "DELETE" },
+    ),
+};
+
+export const linkedinAdsAPI = {
+  getAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>(
+      "/linkedin-ads/auth-url",
+    ),
+  getAccounts: () =>
+    request<{ success: boolean; data: Array<{ id: string; name: string }> }>(
+      "/linkedin-ads/accounts",
+    ),
+  getForms: (adAccountId: string) =>
+    request<{ success: boolean; data: Array<{ id: string; name: string }> }>(
+      `/linkedin-ads/forms?adAccountId=${adAccountId}`,
+    ),
+  getCampaigns: (adAccountId: string) =>
+    request<{
+      success: boolean;
+      data: Array<{ id: string; name: string; status: string }>;
+    }>(`/linkedin-ads/campaigns?adAccountId=${adAccountId}`),
+  connectAccount: (data: {
+    adAccountId: string;
+    adAccountName?: string;
+    selectedFormIds?: string[];
+    allowedStates?: string[];
+    defaultAssigneeId?: string;
+  }) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/linkedin-ads/connect-account",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
+  getConnectedAccounts: () =>
+    request<{ success: boolean; data: any[]; hasToken: boolean }>(
+      "/linkedin-ads/connected-accounts",
+    ),
+  disconnect: (adAccountId?: string) =>
+    request<{ success: boolean; message: string }>("/linkedin-ads/disconnect", {
+      method: "POST",
+      body: JSON.stringify({ adAccountId }),
+    }),
+  sync: (adAccountId?: string, since?: string) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/linkedin-ads/sync",
+      { method: "POST", body: JSON.stringify({ adAccountId, since }) },
+    ),
 };
 
 export const googleAdsAPI = {
@@ -975,6 +1147,10 @@ export const socialAPI = {
   getFacebookAuthUrl: () =>
     request<{ success: boolean; data: { authUrl: string } }>(
       "/social/auth/facebook",
+    ),
+  getLinkedInAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>(
+      "/social/auth/linkedin",
     ),
   fetchFacebookPages: (userToken: string) =>
     request<{ success: boolean; data: any[] }>("/social/auth/facebook/pages", {

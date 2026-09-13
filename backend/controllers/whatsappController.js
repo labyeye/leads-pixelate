@@ -43,6 +43,7 @@ function formatPhone(raw) {
   if (digits.length === 10) return "91" + digits;
   return digits;
 }
+exports.formatPhone = formatPhone;
 
 function resolveVariable(fieldKey, customValue, lead) {
   const map = {

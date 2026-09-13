@@ -39,6 +39,7 @@ const SOURCE_COLORS: Record<string, string> = {
   Facebook: "#3B82F6",
   Instagram: "#C026D3",
   Meta: "#1D4ED8",
+  LinkedIn: "#0A66C2",
   TradeIndia: "#00C48C",
   Justdial: "#EF4444",
   Website: "#A855F7",

@@ -1,6 +1,13 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useToast } from "@/components/ui/use-toast";
-import { leadsAPI, reportsAPI, settingsAPI, usersAPI } from "@/services/api";
+import {
+  leadsAPI,
+  reportsAPI,
+  settingsAPI,
+  usersAPI,
+  clientsAPI,
+  quotationsAPI,
+} from "@/services/api";
 import { cn } from "@/lib/utils";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
@@ -17,6 +24,17 @@ import {
   Clock,
   Users,
   X,
+  LayoutGrid,
+  Flame,
+  CalendarClock,
+  MapPinned,
+  Tags,
+  CheckCircle2,
+  XCircle,
+  FileClock,
+  Building2,
+  Megaphone,
+  Facebook,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
@@ -28,6 +46,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ExportFieldsDialog,
+  type ExportField,
+} from "@/components/export/ExportFieldsDialog";
+import * as XLSX from "xlsx";
+import { downloadCSV } from "@/lib/csvExport";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const STATUSES = [
   "PENDING CONTACT",
@@ -90,8 +121,505 @@ function resolveCompany(lead: any): string {
   return lead.company && lead.company !== "N/A" ? lead.company : "—";
 }
 
+const LEAD_EXPORT_FIELDS: ExportField[] = [
+  { key: "name", label: "Name", get: (l) => l.name || "" },
+  { key: "company", label: "Company", get: (l) => resolveCompany(l) },
+  { key: "phone", label: "Phone", get: (l) => l.phone || "" },
+  { key: "email", label: "Email", get: (l) => l.email || "" },
+  { key: "source", label: "Source", get: (l) => l.source || "" },
+  { key: "status", label: "Status", get: (l) => l.status || "" },
+  {
+    key: "contactTag",
+    label: "Tag",
+    default: false,
+    get: (l) => l.contactTag || "",
+  },
+  {
+    key: "assignedTo",
+    label: "Assigned To",
+    get: (l) => l.assignedTo?.name || "Unassigned",
+  },
+  { key: "location", label: "Location", default: false, get: (l) => l.location || "" },
+  { key: "budget", label: "Budget", default: false, get: (l) => l.budget || "" },
+  {
+    key: "requirement",
+    label: "Requirement",
+    default: false,
+    get: (l) => l.requirement || "",
+  },
+  { key: "website", label: "Website", default: false, get: (l) => l.website || "" },
+  {
+    key: "followUpDate",
+    label: "Follow-up Date",
+    get: (l) =>
+      l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "",
+  },
+  {
+    key: "createdAt",
+    label: "Created At",
+    get: (l) =>
+      l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "",
+  },
+  {
+    key: "remarks",
+    label: "Remarks",
+    default: false,
+    get: (l) => l.remarks || "",
+  },
+];
+
+function computeTeamStats(teamLeads: any[]) {
+  const map: Record<
+    string,
+    {
+      name: string;
+      total: number;
+      won: number;
+      drop: number;
+      pending: number;
+      discussion: number;
+      quotation: number;
+      visited: number;
+    }
+  > = {};
+  for (const lead of teamLeads) {
+    const uid = lead.assignedTo?._id || "unassigned";
+    const uname = lead.assignedTo?.name || "Unassigned";
+    if (!map[uid])
+      map[uid] = {
+        name: uname,
+        total: 0,
+        won: 0,
+        drop: 0,
+        pending: 0,
+        discussion: 0,
+        quotation: 0,
+        visited: 0,
+      };
+    map[uid].total++;
+    const s = lead.status || "";
+    if (s === "WON") map[uid].won++;
+    else if (s === "DROP") map[uid].drop++;
+    else if (s === "PENDING CONTACT") map[uid].pending++;
+    else if (s.startsWith("DISCUSSION")) map[uid].discussion++;
+    else if (s.startsWith("QUOTATION")) map[uid].quotation++;
+    else if (s === "VISITED" || s === "VISIT SCHEDULED") map[uid].visited++;
+  }
+  return Object.values(map).sort((a, b) => b.total - a.total);
+}
+
+const dateStamp = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString("en-IN") : "");
+
+interface ReportTable {
+  headers: string[];
+  rows: (string | number)[][];
+}
+
+const LEADS_TABLE_HEADERS = [
+  "Name",
+  "Company",
+  "Phone",
+  "Email",
+  "Source",
+  "Status",
+  "Tag",
+  "Assigned To",
+  "Follow-up Date",
+  "Created At",
+];
+
+function buildLeadsTable(rows: any[]): ReportTable {
+  return {
+    headers: LEADS_TABLE_HEADERS,
+    rows: rows.map((l) => [
+      l.name || "",
+      resolveCompany(l),
+      l.phone || "",
+      l.email || "",
+      l.source || "",
+      l.status || "",
+      l.contactTag || "",
+      l.assignedTo?.name || "Unassigned",
+      fmtDate(l.followUpDate),
+      fmtDate(l.createdAt),
+    ]),
+  };
+}
+
+async function fetchAllLeads(extraParams: Record<string, string> = {}) {
+  const res = await leadsAPI.getAll({ limit: "99999", ...extraParams });
+  return res.data || [];
+}
+
+function quotationTotal(q: any): number {
+  const subtotal = (q.services || []).reduce(
+    (a: number, s: any) => a + Number(s.price) * Number(s.quantity),
+    0,
+  );
+  const discount = Number(q.discount) || 0;
+  return subtotal - discount + (subtotal - discount) * 0.18;
+}
+
+interface ReportDef {
+  id: string;
+  category: "Leads" | "Activity" | "Team" | "Clients" | "Quotations" | "Campaigns";
+  title: string;
+  description: string;
+  icon: any;
+  filenamePrefix: string;
+  fetch: () => Promise<ReportTable>;
+}
+
+const REPORT_CATALOG: ReportDef[] = [
+  {
+    id: "all-leads",
+    category: "Leads",
+    title: "All Leads Report",
+    description: "Full export of every lead in the pipeline with source, status, and assignment.",
+    icon: FileText,
+    filenamePrefix: "all-leads",
+    fetch: async () => buildLeadsTable(await fetchAllLeads()),
+  },
+  {
+    id: "won-leads",
+    category: "Leads",
+    title: "Won Leads Report",
+    description: "Leads that converted to clients.",
+    icon: CheckCircle2,
+    filenamePrefix: "won-leads",
+    fetch: async () => buildLeadsTable(await fetchAllLeads({ status: "WON" })),
+  },
+  {
+    id: "dropped-leads",
+    category: "Leads",
+    title: "Dropped Leads Report",
+    description: "Leads marked as dropped/lost, for loss analysis.",
+    icon: XCircle,
+    filenamePrefix: "dropped-leads",
+    fetch: async () => buildLeadsTable(await fetchAllLeads({ status: "DROP" })),
+  },
+  {
+    id: "pending-leads",
+    category: "Leads",
+    title: "Pending Contact Report",
+    description: "Fresh leads that haven't been contacted yet.",
+    icon: Clock,
+    filenamePrefix: "pending-contact",
+    fetch: async () => buildLeadsTable(await fetchAllLeads({ status: "PENDING CONTACT" })),
+  },
+  {
+    id: "leads-by-source",
+    category: "Leads",
+    title: "Leads by Source Report",
+    description: "All leads sorted by source (IndiaMART, Facebook, Website, etc).",
+    icon: MapPinned,
+    filenamePrefix: "leads-by-source",
+    fetch: async () =>
+      buildLeadsTable(
+        (await fetchAllLeads()).sort((a: any, b: any) =>
+          (a.source || "").localeCompare(b.source || ""),
+        ),
+      ),
+  },
+  {
+    id: "leads-by-tag",
+    category: "Leads",
+    title: "Hot / Warm / Cold Tag Report",
+    description: "Leads tagged by contact temperature.",
+    icon: Flame,
+    filenamePrefix: "leads-by-tag",
+    fetch: async () =>
+      buildLeadsTable((await fetchAllLeads()).filter((l: any) => l.contactTag)),
+  },
+  {
+    id: "followup-due",
+    category: "Leads",
+    title: "Follow-up Due Report",
+    description: "Open leads with a follow-up date on or before today.",
+    icon: CalendarClock,
+    filenamePrefix: "followup-due",
+    fetch: async () => {
+      const today = dateStamp();
+      const rows = (await fetchAllLeads()).filter(
+        (l: any) =>
+          l.followUpDate &&
+          new Date(l.followUpDate).toISOString().slice(0, 10) <= today &&
+          l.status !== "WON" &&
+          l.status !== "DROP",
+      );
+      return buildLeadsTable(rows);
+    },
+  },
+  {
+    id: "visit-scheduled",
+    category: "Leads",
+    title: "Visit Scheduled Report",
+    description: "Leads with a site/office visit scheduled.",
+    icon: Tags,
+    filenamePrefix: "visit-scheduled",
+    fetch: async () =>
+      buildLeadsTable(
+        (await fetchAllLeads()).filter(
+          (l: any) => l.status === "VISIT SCHEDULED" || l.visitScheduledDate,
+        ),
+      ),
+  },
+  {
+    id: "activity-month",
+    category: "Activity",
+    title: "Status Activity — This Month",
+    description: "Every status change made by the team in the current month.",
+    icon: Activity,
+    filenamePrefix: "status-activity-month",
+    fetch: async () => {
+      const res = await reportsAPI.getStatusHistory({ period: "month" });
+      const rows = res.data || [];
+      return {
+        headers: ["Lead Name", "Company", "Phone", "Changed To", "Changed By", "Assigned To", "Remarks", "Time"],
+        rows: rows.map((r: any) => [
+          r.leadName || "",
+          r.leadCompany || "",
+          r.leadPhone || "",
+          r.changedToStatus || "",
+          r.changedBy || "",
+          r.assignedTo || "",
+          r.remarks || "",
+          r.timestamp ? new Date(r.timestamp).toLocaleString("en-IN") : "",
+        ]),
+      };
+    },
+  },
+  {
+    id: "activity-year",
+    category: "Activity",
+    title: "Status Activity — This Year",
+    description: "Every status change made by the team so far this year.",
+    icon: Activity,
+    filenamePrefix: "status-activity-year",
+    fetch: async () => {
+      const res = await reportsAPI.getStatusHistory({ period: "year" });
+      const rows = res.data || [];
+      return {
+        headers: ["Lead Name", "Company", "Phone", "Changed To", "Changed By", "Assigned To", "Remarks", "Time"],
+        rows: rows.map((r: any) => [
+          r.leadName || "",
+          r.leadCompany || "",
+          r.leadPhone || "",
+          r.changedToStatus || "",
+          r.changedBy || "",
+          r.assignedTo || "",
+          r.remarks || "",
+          r.timestamp ? new Date(r.timestamp).toLocaleString("en-IN") : "",
+        ]),
+      };
+    },
+  },
+  {
+    id: "team-performance",
+    category: "Team",
+    title: "Team Performance Report",
+    description: "Leads handled, won/drop rate per team member this month.",
+    icon: Users,
+    filenamePrefix: "team-performance",
+    fetch: async () => {
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+      const endDate = now.toISOString().slice(0, 10);
+      const leads = await fetchAllLeads({ startDate, endDate });
+      const stats = computeTeamStats(leads);
+      return {
+        headers: ["Team Member", "Total", "Won", "Drop", "Pending", "Discussion", "Quotation", "Visit"],
+        rows: stats.map((m) => [
+          m.name,
+          m.total,
+          m.won,
+          m.drop,
+          m.pending,
+          m.discussion,
+          m.quotation,
+          m.visited,
+        ]),
+      };
+    },
+  },
+  {
+    id: "all-clients",
+    category: "Clients",
+    title: "All Clients Report",
+    description: "Full client list with contact and business details.",
+    icon: Building2,
+    filenamePrefix: "clients",
+    fetch: async () => {
+      const res = await clientsAPI.getAll();
+      const rows = res.data || [];
+      return {
+        headers: ["Name", "Company", "Email", "Phone", "Business Type", "Project Status", "Payment Status"],
+        rows: rows.map((c: any) => [
+          c.name || "",
+          c.company || "",
+          c.email || "",
+          c.phone || "",
+          c.businessType || "",
+          c.projectStatus || "",
+          c.paymentStatus || "",
+        ]),
+      };
+    },
+  },
+  {
+    id: "active-clients",
+    category: "Clients",
+    title: "Active Clients Report",
+    description: "Clients with an active project.",
+    icon: CheckCircle2,
+    filenamePrefix: "active-clients",
+    fetch: async () => {
+      const res = await clientsAPI.getAll();
+      const rows = (res.data || []).filter((c: any) => c.projectStatus === "Active");
+      return {
+        headers: ["Name", "Company", "Email", "Phone", "Payment Status"],
+        rows: rows.map((c: any) => [
+          c.name || "",
+          c.company || "",
+          c.email || "",
+          c.phone || "",
+          c.paymentStatus || "",
+        ]),
+      };
+    },
+  },
+  {
+    id: "payment-pending-clients",
+    category: "Clients",
+    title: "Payment Pending Report",
+    description: "Clients with payment status still pending.",
+    icon: FileClock,
+    filenamePrefix: "payment-pending",
+    fetch: async () => {
+      const res = await clientsAPI.getAll();
+      const rows = (res.data || []).filter((c: any) => c.paymentStatus === "Pending");
+      return {
+        headers: ["Name", "Company", "Email", "Phone"],
+        rows: rows.map((c: any) => [c.name || "", c.company || "", c.email || "", c.phone || ""]),
+      };
+    },
+  },
+  ...(["All", "Approved", "Draft", "Rejected"] as const).map((status) => ({
+    id: `quotations-${status.toLowerCase()}`,
+    category: "Quotations" as const,
+    title: status === "All" ? "All Quotations Report" : `${status} Quotations Report`,
+    description:
+      status === "All"
+        ? "Every quotation raised, with computed totals."
+        : `Quotations currently in ${status} status.`,
+    icon: status === "Approved" ? CheckCircle2 : status === "Rejected" ? XCircle : FileText,
+    filenamePrefix: `quotations-${status.toLowerCase()}`,
+    fetch: async () => {
+      const res = await quotationsAPI.getAll();
+      const rows = (res.data || []).filter((q: any) => status === "All" || q.status === status);
+      return {
+        headers: ["Number", "Client Name", "Company", "Project Title", "Status", "Total (incl. tax)", "Date"],
+        rows: rows.map((q: any) => [
+          q.number || "",
+          q.clientName || "",
+          q.companyName || "",
+          q.projectTitle || "",
+          q.status || "",
+          quotationTotal(q).toFixed(2),
+          fmtDate(q.date),
+        ]),
+      };
+    },
+  })),
+  ...(["Facebook", "Google Ads", "LinkedIn", "IndiaMART", "TradeIndia", "Justdial"] as const).map(
+    (source) => ({
+      id: `campaign-${source.toLowerCase().replace(/\s+/g, "-")}`,
+      category: "Campaigns" as const,
+      title: `${source} Leads Report`,
+      description: `All leads captured through ${source}.`,
+      icon: source === "Facebook" ? Facebook : Megaphone,
+      filenamePrefix: `${source.toLowerCase().replace(/\s+/g, "-")}-leads`,
+      fetch: async () => buildLeadsTable(await fetchAllLeads({ source })),
+    }),
+  ),
+];
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Leads: "bg-[#024BAB]",
+  Activity: "bg-purple-600",
+  Team: "bg-teal-600",
+  Clients: "bg-orange-500",
+  Quotations: "bg-pink-600",
+  Campaigns: "bg-indigo-600",
+};
+
 export default function ReportsPage() {
   const { toast } = useToast();
+
+  const [view, setView] = useState<"catalog" | "analytics">("catalog");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogCategory, setCatalogCategory] = useState<string>("All");
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [previewReport, setPreviewReport] = useState<ReportDef | null>(null);
+  const [previewTable, setPreviewTable] = useState<ReportTable | null>(null);
+
+  const handleGenerate = async (report: ReportDef) => {
+    setGeneratingId(report.id);
+    try {
+      const table = await report.fetch();
+      setPreviewReport(report);
+      setPreviewTable(table);
+    } catch (err: any) {
+      toast({
+        title: "Report generation failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewReport(null);
+    setPreviewTable(null);
+  };
+
+  const exportPreviewAsPDF = () => {
+    if (!previewReport || !previewTable) return;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFontSize(12);
+    doc.text(previewReport.title, 8, 10);
+    autoTable(doc, {
+      startY: 15,
+      head: [previewTable.headers],
+      body: previewTable.rows,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [2, 75, 171], textColor: 255, fontStyle: "bold" },
+      margin: { left: 5, right: 5 },
+    });
+    doc.save(`${previewReport.filenamePrefix}-${dateStamp()}.pdf`);
+  };
+
+  const exportPreviewAsCSV = () => {
+    if (!previewReport || !previewTable) return;
+    downloadCSV(
+      `${previewReport.filenamePrefix}-${dateStamp()}.csv`,
+      previewTable.headers,
+      previewTable.rows,
+    );
+  };
+
+  const exportPreviewAsExcel = () => {
+    if (!previewReport || !previewTable) return;
+    const ws = XLSX.utils.aoa_to_sheet([previewTable.headers, ...previewTable.rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+    XLSX.writeFile(wb, `${previewReport.filenamePrefix}-${dateStamp()}.xlsx`);
+  };
 
   const [activeTab, setActiveTab] = useState<Tab>("leads");
   const [leads, setLeads] = useState<any[]>([]);
@@ -100,6 +628,7 @@ export default function ReportsPage() {
   const [exporting, setExporting] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [activeDatePreset, setActiveDatePreset] = useState<string>("");
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -274,84 +803,7 @@ export default function ReportsPage() {
     }
   };
 
-  const teamStats = (() => {
-    const map: Record<
-      string,
-      {
-        name: string;
-        total: number;
-        won: number;
-        drop: number;
-        pending: number;
-        discussion: number;
-        quotation: number;
-        visited: number;
-      }
-    > = {};
-    for (const lead of teamLeads) {
-      const uid = lead.assignedTo?._id || "unassigned";
-      const uname = lead.assignedTo?.name || "Unassigned";
-      if (!map[uid])
-        map[uid] = {
-          name: uname,
-          total: 0,
-          won: 0,
-          drop: 0,
-          pending: 0,
-          discussion: 0,
-          quotation: 0,
-          visited: 0,
-        };
-      map[uid].total++;
-      const s = lead.status || "";
-      if (s === "WON") map[uid].won++;
-      else if (s === "DROP") map[uid].drop++;
-      else if (s === "PENDING CONTACT") map[uid].pending++;
-      else if (s.startsWith("DISCUSSION")) map[uid].discussion++;
-      else if (s.startsWith("QUOTATION")) map[uid].quotation++;
-      else if (s === "VISITED" || s === "VISIT SCHEDULED") map[uid].visited++;
-    }
-    return Object.values(map).sort((a, b) => b.total - a.total);
-  })();
-
-  const exportCSV = () => {
-    const headers = [
-      "Name",
-      "Company",
-      "Phone",
-      "Email",
-      "Source",
-      "Status",
-      "Assigned To",
-      "Location",
-      "Follow-up Date",
-      "Created At",
-    ];
-    const rows = leads.map((l) => [
-      l.name || "",
-      resolveCompany(l),
-      l.phone || "",
-      l.email || "",
-      l.source || "",
-      l.status || "",
-      l.assignedTo?.name || "Unassigned",
-      l.location || "",
-      l.followUpDate
-        ? new Date(l.followUpDate).toLocaleDateString("en-IN")
-        : "",
-      l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "",
-    ]);
-    const csv = [headers, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const teamStats = computeTeamStats(teamLeads);
 
   const exportActivityCSV = () => {
     const headers = [
@@ -541,9 +993,168 @@ export default function ReportsPage() {
     },
   ];
 
+  const catalogCategories = ["All", "Leads", "Activity", "Team", "Clients", "Quotations", "Campaigns"];
+  const categoryCounts = REPORT_CATALOG.reduce<Record<string, number>>((acc, r) => {
+    acc[r.category] = (acc[r.category] || 0) + 1;
+    return acc;
+  }, {});
+  const filteredCatalog = REPORT_CATALOG.filter((r) => {
+    const matchesCategory = catalogCategory === "All" || r.category === catalogCategory;
+    const q = catalogSearch.trim().toLowerCase();
+    const matchesSearch =
+      !q || r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q);
+    return matchesCategory && matchesSearch;
+  });
+  const groupedCatalog = catalogCategories
+    .filter((c) => c !== "All")
+    .map((cat) => ({ cat, reports: filteredCatalog.filter((r) => r.category === cat) }))
+    .filter((g) => g.reports.length > 0);
+
   return (
     <AppLayout title="Reports">
       <div className="space-y-5">
+        {}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="font-display font-black text-2xl text-black">Reports</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Generate, filter, and export CRM reports
+            </p>
+          </div>
+          <div className="flex border-2 border-black overflow-hidden">
+            <button
+              onClick={() => setView("catalog")}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors",
+                view === "catalog" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-50",
+              )}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> All Reports
+            </button>
+            <button
+              onClick={() => setView("analytics")}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest border-l-2 border-black transition-colors",
+                view === "analytics" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-50",
+              )}
+            >
+              <BarChart3 className="w-3.5 h-3.5" /> Analytics
+            </button>
+          </div>
+        </div>
+
+        {view === "catalog" && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 border-2 border-black px-3 py-2 bg-white flex-1 min-w-[220px]">
+                <Search className="w-4 h-4 text-black shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search reports..."
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  className="bg-transparent text-sm outline-none w-full text-black placeholder:text-black/40"
+                />
+              </div>
+              <div className="flex border-2 border-black overflow-hidden flex-wrap">
+                {catalogCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setCatalogCategory(cat)}
+                    className={cn(
+                      "px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
+                      catalogCategory === cat
+                        ? "bg-black text-white"
+                        : "bg-white text-black hover:bg-gray-50",
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {Object.entries(categoryCounts).map(([cat, count]) => (
+                <div
+                  key={cat}
+                  className="flex items-center gap-2 border-2 border-black px-3 py-1.5 bg-white text-xs font-bold"
+                >
+                  <span className={cn("w-2.5 h-2.5", CATEGORY_COLORS[cat])} />
+                  {cat.toUpperCase()} {count} report{count !== 1 ? "s" : ""}
+                </div>
+              ))}
+            </div>
+
+            {groupedCatalog.length === 0 ? (
+              <div className="border-2 border-black bg-white p-12 text-center text-sm font-bold text-muted-foreground">
+                No reports match your search.
+              </div>
+            ) : (
+              groupedCatalog.map(({ cat, reports }) => (
+                <div key={cat} className="space-y-3">
+                  <p className="text-xs font-black uppercase tracking-widest text-black flex items-center gap-2">
+                    <span className={cn("w-1.5 h-4", CATEGORY_COLORS[cat])} />
+                    {cat.toUpperCase()} ({reports.length})
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {reports.map((r) => {
+                      const Icon = r.icon;
+                      const isGenerating = generatingId === r.id;
+                      return (
+                        <div
+                          key={r.id}
+                          className="border-2 border-black bg-white p-4 flex flex-col gap-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "w-9 h-9 flex items-center justify-center text-white shrink-0",
+                                CATEGORY_COLORS[r.category],
+                              )}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span
+                              className={cn(
+                                "text-[10px] font-black uppercase tracking-widest px-2 py-1 text-white",
+                                CATEGORY_COLORS[r.category],
+                              )}
+                            >
+                              {r.category}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-black text-sm text-black">{r.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{r.description}</p>
+                          </div>
+                          <button
+                            onClick={() => handleGenerate(r)}
+                            disabled={isGenerating}
+                            className="w-full border-2 border-black py-2 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3.5 h-3.5" /> Generate
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {view === "analytics" && (
+        <>
         {}
         <div className="flex border-2 border-black overflow-hidden">
           {TABS.map((t) => (
@@ -820,7 +1431,7 @@ export default function ReportsPage() {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={exportCSV}
+                    onClick={() => setShowExportDialog(true)}
                     disabled={loading || leads.length === 0}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   >
@@ -1525,7 +2136,108 @@ export default function ReportsPage() {
             )}
           </>
         )}
+        </>
+        )}
       </div>
+
+      <ExportFieldsDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        title="Export Leads Report"
+        fields={LEAD_EXPORT_FIELDS}
+        data={leads}
+        filenamePrefix="leads-report"
+      />
+
+      <Dialog open={!!previewReport} onOpenChange={(open) => !open && closePreview()}>
+        <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{previewReport?.title}</DialogTitle>
+          </DialogHeader>
+
+          {previewTable && (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {previewTable.rows.length} row{previewTable.rows.length !== 1 ? "s" : ""}
+              </p>
+              <div className="flex-1 overflow-auto border-2 border-black">
+                <table className="w-full text-xs border-collapse">
+                  <thead className="sticky top-0">
+                    <tr className="bg-primary text-white">
+                      {previewTable.headers.map((h) => (
+                        <th
+                          key={h}
+                          className="text-left px-3 py-2 font-black uppercase tracking-wider whitespace-nowrap border-r border-white/10 last:border-r-0"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewTable.rows.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={previewTable.headers.length}
+                          className="text-center py-10 text-muted-foreground font-bold"
+                        >
+                          No data found for this report.
+                        </td>
+                      </tr>
+                    ) : (
+                      previewTable.rows.map((row, i) => (
+                        <tr
+                          key={i}
+                          className={cn(
+                            "border-b border-black/10",
+                            i % 2 === 0 ? "bg-white" : "bg-gray-50",
+                          )}
+                        >
+                          {row.map((cell, j) => (
+                            <td key={j} className="px-3 py-1.5 whitespace-nowrap">
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <button
+              onClick={closePreview}
+              className="px-4 py-2 text-sm font-bold border-2 border-black bg-white text-black"
+            >
+              Close
+            </button>
+            <button
+              onClick={exportPreviewAsCSV}
+              disabled={!previewTable || previewTable.rows.length === 0}
+              className="px-4 py-2 text-sm font-black border-2 border-black bg-blue-400 text-black flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" /> CSV
+            </button>
+            <button
+              onClick={exportPreviewAsExcel}
+              disabled={!previewTable || previewTable.rows.length === 0}
+              className="px-4 py-2 text-sm font-black border-2 border-black bg-green-500 text-black flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" /> Excel
+            </button>
+            <button
+              onClick={exportPreviewAsPDF}
+              disabled={!previewTable || previewTable.rows.length === 0}
+              className="px-4 py-2 text-sm font-black border-2 border-black bg-red-500 text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FileText className="w-4 h-4" /> PDF
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

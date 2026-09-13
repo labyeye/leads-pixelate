@@ -1353,7 +1353,7 @@ function ConnectionTab({ toast }: { toast: any }) {
 
   const [removingId, setRemovingId] = useState<string | null>(null);
 
-  const webhookUrl = `https://leads-backend.pixelatenest.com/api/whatsapp/webhook`;
+  const webhookUrl = `http://localhost:3500/api/whatsapp/webhook`;
 
   const fetchStatus = useCallback(async () => {
     setLoading(true);

@@ -10,7 +10,43 @@ import {
   Trash2,
   Building2,
   CheckCircle2,
+  Download,
 } from "lucide-react";
+import {
+  ExportFieldsDialog,
+  type ExportField,
+} from "@/components/export/ExportFieldsDialog";
+
+const CLIENT_EXPORT_FIELDS: ExportField[] = [
+  { key: "name", label: "Name", get: (c) => c.name || "" },
+  { key: "company", label: "Company", get: (c) => c.company || "" },
+  { key: "email", label: "Email", get: (c) => c.email || "" },
+  { key: "phone", label: "Phone", get: (c) => c.phone || "" },
+  { key: "address", label: "Address", default: false, get: (c) => c.address || "" },
+  {
+    key: "businessType",
+    label: "Business Type",
+    default: false,
+    get: (c) => c.businessType || "",
+  },
+  { key: "gst", label: "GST", default: false, get: (c) => c.gst || "" },
+  {
+    key: "services",
+    label: "Services",
+    default: false,
+    get: (c) => (Array.isArray(c.services) ? c.services.join(", ") : ""),
+  },
+  {
+    key: "projectStatus",
+    label: "Project Status",
+    get: (c) => c.projectStatus || "",
+  },
+  {
+    key: "paymentStatus",
+    label: "Payment Status",
+    get: (c) => c.paymentStatus || "",
+  },
+];
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,6 +154,7 @@ const NbSelect = ({ label, value, onChange, options }: any) => (
 export default function ClientsPage() {
   const { can } = usePermission();
   const [search, setSearch] = useState("");
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const notify = useNotify();
@@ -299,6 +336,14 @@ export default function ClientsPage() {
             className="bg-transparent text-sm outline-none w-full text-black placeholder:text-black/40 font-medium"
           />
         </div>
+
+        <button
+          onClick={() => setShowExportDialog(true)}
+          disabled={filtered.length === 0}
+          className="border-2 bg-white text-black px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Download className="w-4 h-4" /> Export
+        </button>
 
         <Dialog
           open={isModalOpen}
@@ -619,6 +664,15 @@ export default function ClientsPage() {
           </table>
         </div>
       </div>
+
+      <ExportFieldsDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        title="Export Clients"
+        fields={CLIENT_EXPORT_FIELDS}
+        data={filtered}
+        filenamePrefix="clients"
+      />
     </AppLayout>
   );
 }

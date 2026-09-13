@@ -15,7 +15,46 @@ import {
   FileClock,
   CheckCircle2,
   XCircle,
+  Download,
 } from "lucide-react";
+import {
+  ExportFieldsDialog,
+  type ExportField,
+} from "@/components/export/ExportFieldsDialog";
+
+function quotationTotal(q: any): number {
+  const subtotal = (q.services || []).reduce(
+    (a: number, s: any) => a + Number(s.price) * Number(s.quantity),
+    0,
+  );
+  const discount = Number(q.discount) || 0;
+  return subtotal - discount + (subtotal - discount) * 0.18;
+}
+
+const QUOTATION_EXPORT_FIELDS: ExportField[] = [
+  { key: "number", label: "Number", get: (q) => q.number || "" },
+  { key: "clientName", label: "Client Name", get: (q) => q.clientName || "" },
+  { key: "companyName", label: "Company", get: (q) => q.companyName || "" },
+  { key: "mobile", label: "Mobile", default: false, get: (q) => q.mobile || "" },
+  {
+    key: "projectTitle",
+    label: "Project Title",
+    get: (q) => q.projectTitle || "",
+  },
+  { key: "status", label: "Status", get: (q) => q.status || "" },
+  {
+    key: "total",
+    label: "Total (incl. tax)",
+    get: (q) => quotationTotal(q).toFixed(2),
+  },
+  {
+    key: "date",
+    label: "Date",
+    get: (q) => (q.date ? new Date(q.date).toLocaleDateString("en-IN") : ""),
+  },
+  { key: "gst", label: "GST", default: false, get: (q) => q.gst || "" },
+  { key: "address", label: "Address", default: false, get: (q) => q.address || "" },
+];
 import { useState, useEffect } from "react";
 import { quotationsAPI, settingsAPI } from "@/services/api";
 import { useNotify } from "@/components/ui/Notification";
@@ -114,6 +153,7 @@ const NbInput = ({
 export default function QuotationsPage() {
   const { can } = usePermission();
   const [search, setSearch] = useState("");
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [quotations, setQuotations] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -358,6 +398,14 @@ export default function QuotationsPage() {
             className="bg-transparent text-sm outline-none w-full text-black placeholder:text-black/40 font-medium"
           />
         </div>
+
+        <button
+          onClick={() => setShowExportDialog(true)}
+          disabled={filtered.length === 0}
+          className="border-2 bg-white text-black px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Download className="w-4 h-4" /> Export
+        </button>
 
         <Dialog
           open={isModalOpen}
@@ -984,6 +1032,15 @@ export default function QuotationsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ExportFieldsDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        title="Export Quotations"
+        fields={QUOTATION_EXPORT_FIELDS}
+        data={filtered}
+        filenamePrefix="quotations"
+      />
     </AppLayout>
   );
 }

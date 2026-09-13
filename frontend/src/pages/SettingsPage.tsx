@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { settingsAPI } from "@/services/api";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useToast } from "@/hooks/use-toast";
 import {
   Building2,
@@ -20,6 +21,8 @@ import {
   Layout,
   Tag,
   Lock,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -555,40 +558,64 @@ export default function SettingsPage() {
     value: string,
     patch: Partial<CustomLeadStatus>,
   ) => {
-    setSettings((prev: any) => ({
-      ...prev,
-      customLeadStatuses: (prev.customLeadStatuses || []).map(
-        (s: CustomLeadStatus) => (s.value === value ? { ...s, ...patch } : s),
-      ),
-    }));
+    setSettings((prev: any) => {
+      const next = (prev.customLeadStatuses || []).map((s: CustomLeadStatus) =>
+        s.value === value ? { ...s, ...patch } : s,
+      );
+      setCustomLeadStatuses(next);
+      return { ...prev, customLeadStatuses: next };
+    });
   };
 
   const removeCustomStatus = (value: string) => {
-    setSettings((prev: any) => ({
-      ...prev,
-      customLeadStatuses: (prev.customLeadStatuses || []).filter(
+    setSettings((prev: any) => {
+      const next = (prev.customLeadStatuses || []).filter(
         (s: CustomLeadStatus) => s.value !== value,
-      ),
-    }));
+      );
+      setCustomLeadStatuses(next);
+      return { ...prev, customLeadStatuses: next };
+    });
   };
 
   const addCustomStatus = (category: string) => {
     setSettings((prev: any) => {
       const existing: CustomLeadStatus[] = prev.customLeadStatuses || [];
       const tempValue = `NEW_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      return {
-        ...prev,
-        customLeadStatuses: [
-          ...existing,
-          {
-            value: tempValue,
-            category,
-            label: "New Stage",
-            colorKey: "slate",
-            order: existing.filter((s) => s.category === category).length,
-          },
-        ],
-      };
+      const next = [
+        ...existing,
+        {
+          value: tempValue,
+          category,
+          label: "New Stage",
+          colorKey: "slate",
+          order: existing.filter((s) => s.category === category).length,
+        },
+      ];
+      setCustomLeadStatuses(next);
+      return { ...prev, customLeadStatuses: next };
+    });
+  };
+
+  const moveCustomStatus = (value: string, direction: "up" | "down") => {
+    setSettings((prev: any) => {
+      const existing: CustomLeadStatus[] = prev.customLeadStatuses || [];
+      const item = existing.find((s) => s.value === value);
+      if (!item) return prev;
+      const siblings = existing
+        .filter((s) => s.category === item.category)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      const idx = siblings.findIndex((s) => s.value === value);
+      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= siblings.length) return prev;
+      const a = siblings[idx];
+      const b = siblings[swapIdx];
+      const next = existing.map((s) => {
+        if (s.value === a.value) return { ...s, order: b.order ?? 0 };
+        if (s.value === b.value) return { ...s, order: a.order ?? 0 };
+        return s;
+      });
+      setCustomLeadStatuses(next);
+      return { ...prev, customLeadStatuses: next };
     });
   };
 
@@ -654,12 +681,16 @@ export default function SettingsPage() {
       });
       return;
     }
-    if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+    if (
+      phone &&
+      !/^[6-9]\d{9}$/.test(phone) &&
+      !(phone.length >= 8 && phone.length <= 15)
+    ) {
       setActionModal({
         show: true,
         type: "error",
         title: "Invalid Phone",
-        message: "Enter a valid 10-digit Indian mobile number.",
+        message: "Enter a valid phone number.",
       });
       return;
     }
@@ -963,14 +994,13 @@ export default function SettingsPage() {
                     maxLength={2}
                     inputMode="numeric"
                   />
-                  <InputField
-                    onChange={handleChange}
+                  <PhoneInput
                     label="Phone Number"
-                    name="companyPhone"
                     value={settings?.companyPhone || ""}
+                    onChange={(v) =>
+                      setSettings((prev: any) => ({ ...prev, companyPhone: v }))
+                    }
                     readOnly={!isAdminOrAbove}
-                    maxLength={10}
-                    inputMode="numeric"
                   />
                   <InputField
                     onChange={handleChange}
@@ -1336,6 +1366,17 @@ export default function SettingsPage() {
                         const custom = (
                           settings?.customLeadStatuses || []
                         ).find((s: CustomLeadStatus) => s.value === status);
+                        const customSiblings = (
+                          settings?.customLeadStatuses || []
+                        )
+                          .filter((s: CustomLeadStatus) => s.category === cat)
+                          .sort(
+                            (a: CustomLeadStatus, b: CustomLeadStatus) =>
+                              (a.order || 0) - (b.order || 0),
+                          );
+                        const siblingIdx = customSiblings.findIndex(
+                          (s: CustomLeadStatus) => s.value === status,
+                        );
 
                         if (isCustom && custom) {
                           return (
@@ -1387,6 +1428,33 @@ export default function SettingsPage() {
                                     />
                                   );
                                 })}
+                              </div>
+                              <div className="flex items-center gap-0.5">
+                                <button
+                                  type="button"
+                                  title="Move up"
+                                  disabled={siblingIdx <= 0}
+                                  onClick={() =>
+                                    moveCustomStatus(status, "up")
+                                  }
+                                  className="p-1 border-2 border-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
+                                >
+                                  <ChevronUp className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Move down"
+                                  disabled={
+                                    siblingIdx === -1 ||
+                                    siblingIdx >= customSiblings.length - 1
+                                  }
+                                  onClick={() =>
+                                    moveCustomStatus(status, "down")
+                                  }
+                                  className="p-1 border-2 border-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
+                                >
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
                               </div>
                               <button
                                 type="button"

@@ -157,11 +157,16 @@ app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/billing", require("./routes/billingRoutes"));
 app.use("/api/facebook", require("./routes/facebookRoutes"));
 app.use("/api/google-ads", require("./routes/googleAdsRoutes"));
+app.use("/api/linkedin-ads", require("./routes/linkedinAdsRoutes"));
 app.use("/api/email", require("./routes/emailRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));
 app.use("/api/campaigns", require("./routes/campaignRoutes"));
+app.use(
+  "/api/campaign-assignments",
+  require("./routes/campaignAssignmentRoutes"),
+);
 app.use("/api/api-keys", require("./routes/apiKeyRoutes"));
 app.use("/api/public", require("./routes/publicRoutes"));
 app.use("/api/hrms", require("./routes/hrmsRoutes"));

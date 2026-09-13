@@ -1,8 +1,15 @@
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getNavGroupsForRole } from "@/config/navigation";
+import { getNavGroupsForRole, NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, LogOut, Zap, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  Zap,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import nestleadslogo from "@/assets/images/NestLeads_Logo_Name.png";
 import nestleadslogosmall from "../../../public/favicon.png";
@@ -12,14 +19,130 @@ interface AppSidebarProps {
   onClose: () => void;
 }
 
+function hasActiveDescendant(item: NavItem, pathname: string): boolean {
+  if (!item.children?.length) return false;
+  return item.children.some(
+    (c) => pathname === c.href || hasActiveDescendant(c, pathname),
+  );
+}
+
+// Recursive so a dropdown item (Campaigns > Facebook) can itself contain
+// another dropdown (Facebook > Dashboard/Ad Campaigns/Ad Sets/Ads).
+function NavNode({
+  item,
+  depth,
+  isWa,
+  collapsed,
+  openSet,
+  toggleOpen,
+  onClose,
+}: {
+  item: NavItem;
+  depth: number;
+  isWa: boolean;
+  collapsed: boolean;
+  openSet: Set<string>;
+  toggleOpen: (href: string) => void;
+  onClose: () => void;
+}) {
+  const location = useLocation();
+  const active = location.pathname === item.href;
+
+  if (item.children?.length) {
+    const childActive = hasActiveDescendant(item, location.pathname);
+    const expanded = openSet.has(item.href) || childActive;
+    return (
+      <div>
+        <button
+          type="button"
+          title={collapsed ? item.title : undefined}
+          onClick={() => toggleOpen(item.href)}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold transition-all duration-100 border-2",
+            childActive
+              ? "bg-[#024BAB]/10 border-black text-black"
+              : "border-transparent text-black hover:bg-[#024BAB]/10 hover:border-black",
+            collapsed && depth === 0 && "lg:justify-center lg:px-0",
+          )}
+        >
+          <item.icon className="w-[18px] h-[18px] shrink-0" />
+          <span className={cn("flex-1 text-left", collapsed && depth === 0 && "lg:hidden")}>
+            {item.title}
+          </span>
+          <ChevronDown
+            className={cn(
+              "w-3.5 h-3.5 shrink-0 transition-transform",
+              expanded && "rotate-180",
+              collapsed && depth === 0 && "lg:hidden",
+            )}
+          />
+        </button>
+        {expanded && !collapsed && (
+          <div className="ml-6 mt-0.5 space-y-0.5 border-l-2 border-black/10 pl-2">
+            {item.children.map((child) => (
+              <NavNode
+                key={child.href + child.title}
+                item={child}
+                depth={depth + 1}
+                isWa={isWa}
+                collapsed={collapsed}
+                openSet={openSet}
+                toggleOpen={toggleOpen}
+                onClose={onClose}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={item.href}
+      title={collapsed ? item.title : undefined}
+      onClick={onClose}
+      className={cn(
+        "flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold transition-all duration-100 border-2",
+        active && isWa
+          ? "bg-[#25D366] border-black text-white nb-shadow-sm"
+          : active
+            ? "bg-[#024BAB] border-black text-white nb-shadow-sm"
+            : isWa
+              ? "border-transparent text-black hover:bg-[#25D366]/10 hover:border-[#25D366]/60"
+              : "border-transparent text-black hover:bg-[#024BAB]/10 hover:border-black",
+        collapsed && depth === 0 && "lg:justify-center lg:px-0",
+      )}
+    >
+      <item.icon
+        className={cn(
+          "w-[18px] h-[18px] shrink-0",
+          isWa && !active && "text-[#25D366]",
+        )}
+      />
+      <span className={cn(collapsed && depth === 0 && "lg:hidden")}>
+        {item.title}
+      </span>
+    </Link>
+  );
+}
+
 export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   if (!user) return null;
 
   const groups = getNavGroupsForRole(user.role);
+
+  const toggleOpen = (href: string) => {
+    setOpenDropdowns((prev) => {
+      const next = new Set(prev);
+      next.has(href) ? next.delete(href) : next.add(href);
+      return next;
+    });
+  };
 
   return (
     <>
@@ -72,39 +195,18 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
                 </p>
               )}
               <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const active = location.pathname === item.href;
-                  const isWa = group.label === "WhatsApp";
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      title={collapsed ? item.title : undefined}
-                      onClick={onClose}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 text-sm font-semibold transition-all duration-100 border-2",
-                        active && isWa
-                          ? "bg-[#25D366] border-black text-white nb-shadow-sm"
-                          : active
-                            ? "bg-[#024BAB] border-black text-white nb-shadow-sm"
-                            : isWa
-                              ? "border-transparent text-black hover:bg-[#25D366]/10 hover:border-[#25D366]/60"
-                              : "border-transparent text-black hover:bg-[#024BAB]/10 hover:border-black",
-                        collapsed && "lg:justify-center lg:px-0",
-                      )}
-                    >
-                      <item.icon
-                        className={cn(
-                          "w-[18px] h-[18px] shrink-0",
-                          isWa && !active && "text-[#25D366]",
-                        )}
-                      />
-                      <span className={cn(collapsed && "lg:hidden")}>
-                        {item.title}
-                      </span>
-                    </Link>
-                  );
-                })}
+                {group.items.map((item) => (
+                  <NavNode
+                    key={item.href + item.title}
+                    item={item}
+                    depth={0}
+                    isWa={group.label === "WhatsApp"}
+                    collapsed={collapsed}
+                    openSet={openDropdowns}
+                    toggleOpen={toggleOpen}
+                    onClose={onClose}
+                  />
+                ))}
               </div>
             </div>
           ))}

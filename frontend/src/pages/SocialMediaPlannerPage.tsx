@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { socialAPI, usersAPI } from "@/services/api";
+import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -90,6 +91,7 @@ interface SocialPost {
   rejectionReason?: string;
   facebookPostId?: string;
   instagramPostId?: string;
+  linkedinPostId?: string;
   postedAt?: string;
   failureReason?: string;
   createdBy?: { name: string };
@@ -224,7 +226,7 @@ export default function SocialMediaPlannerPage() {
             <div>
               <h1 className="text-xl font-semibold">Social Media Planner</h1>
               <p className="text-xs text-muted-foreground">
-                Plan, approve & auto-post to Facebook and Instagram
+                Plan, approve & auto-post to Facebook, Instagram and LinkedIn
               </p>
             </div>
           </div>
@@ -1012,6 +1014,11 @@ function PostCard({
                   <Instagram className="w-3 h-3" /> Instagram
                 </span>
               )}
+              {post.platforms.includes("linkedin") && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-semibold">
+                  <LinkedInIcon className="w-3 h-3" /> LinkedIn
+                </span>
+              )}
             </div>
 
             {}
@@ -1072,6 +1079,9 @@ function PostCard({
                 )}
                 {post.instagramPostId && (
                   <span className="text-primary-900">IG ✓</span>
+                )}
+                {post.linkedinPostId && (
+                  <span className="text-sky-700">LI ✓</span>
                 )}
               </div>
             )}
@@ -1481,12 +1491,12 @@ function PostWizard({
                       <AlertCircle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
                       <p className="text-xs text-orange-700">
                         No connected accounts yet. Go to "Connected Accounts"
-                        and connect Facebook/Instagram first.
+                        and connect Facebook/Instagram/LinkedIn first.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {["facebook", "instagram"].map((platform) => {
+                      {["facebook", "instagram", "linkedin"].map((platform) => {
                         const list = accounts.filter(
                           (a) => a.platform === platform,
                         );
@@ -1496,7 +1506,9 @@ function PostWizard({
                             <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">
                               {platform === "facebook"
                                 ? "Facebook Pages"
-                                : "Instagram"}
+                                : platform === "linkedin"
+                                  ? "LinkedIn Pages"
+                                  : "Instagram"}
                             </p>
                             <div className="space-y-1.5">
                               {list.map((a) => (
@@ -1511,6 +1523,8 @@ function PostWizard({
                                 >
                                   {platform === "facebook" ? (
                                     <Facebook className="w-4 h-4 text-blue-600 shrink-0" />
+                                  ) : platform === "linkedin" ? (
+                                    <LinkedInIcon className="w-4 h-4 shrink-0" />
                                   ) : (
                                     <Instagram className="w-4 h-4 text-purple-600 shrink-0" />
                                   )}
@@ -1942,6 +1956,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [loading, setLoading] = useState(true);
   const [manualDialogOpen, setManualDialogOpen] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [liOauthLoading, setLiOauthLoading] = useState(false);
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -1983,6 +1998,21 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         variant: "destructive",
       });
       setOauthLoading(false);
+    }
+  };
+
+  const handleLinkedInConnect = async () => {
+    setLiOauthLoading(true);
+    try {
+      const res = await socialAPI.getLinkedInAuthUrl();
+      window.location.href = res.data.authUrl;
+    } catch (err: any) {
+      toast({
+        title: "Failed to get LinkedIn auth URL",
+        description: err.message,
+        variant: "destructive",
+      });
+      setLiOauthLoading(false);
     }
   };
 
@@ -2053,6 +2083,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
 
   const fbAccounts = accounts.filter((a) => a.platform === "facebook");
   const igAccounts = accounts.filter((a) => a.platform === "instagram");
+  const liAccounts = accounts.filter((a) => a.platform === "linkedin");
 
   return (
     <div className="p-6 max-w-2xl">
@@ -2060,7 +2091,8 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         <div>
           <h2 className="font-semibold text-base">Connected Accounts</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Connect your Facebook Pages and Instagram Business accounts
+            Connect your Facebook Pages, Instagram Business accounts, and
+            LinkedIn Company Pages
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchAccounts}>
@@ -2069,7 +2101,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
       </div>
 
       {}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {}
         <button
           onClick={handleImportFromIntegration}
@@ -2112,6 +2144,27 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               OAuth — connects all your Pages & Instagram accounts automatically
+            </p>
+          </div>
+        </button>
+
+        {}
+        <button
+          onClick={handleLinkedInConnect}
+          disabled={liOauthLoading}
+          className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-sky-200 hover:border-sky-400 hover:bg-sky-50/30 transition-all"
+        >
+          {liOauthLoading ? (
+            <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
+          ) : (
+            <LinkedInIcon className="w-8 h-8" />
+          )}
+          <div className="text-center">
+            <p className="text-sm font-semibold text-sky-700">
+              Connect via LinkedIn
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              OAuth — connects LinkedIn Company Pages you administer
             </p>
           </div>
         </button>
@@ -2190,6 +2243,12 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               Icon: Instagram,
               color: "text-primary-900 bg-purple-100",
             },
+            {
+              label: "LinkedIn Pages",
+              items: liAccounts,
+              Icon: LinkedInIcon,
+              color: "text-sky-700 bg-sky-100",
+            },
           ].map(({ label, items, Icon, color }) =>
             items.length === 0 ? null : (
               <div key={label}>
@@ -2257,7 +2316,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
             <div>
               <Label>Platform</Label>
               <div className="flex gap-2 mt-1">
-                {["facebook", "instagram"].map((p) => (
+                {["facebook", "instagram", "linkedin"].map((p) => (
                   <button
                     key={p}
                     onClick={() =>
@@ -2287,7 +2346,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               <Label>
                 {manualForm.platform === "facebook"
                   ? "Facebook Page ID"
-                  : "Instagram Business Account ID"}{" "}
+                  : manualForm.platform === "linkedin"
+                    ? "LinkedIn Organization ID"
+                    : "Instagram Business Account ID"}{" "}
                 <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -2424,6 +2485,10 @@ function PostDetailModal({
     ? `https://www.instagram.com/p/${post.instagramPostId}/`
     : null;
 
+  const liLink = post.linkedinPostId
+    ? `https://www.linkedin.com/feed/update/${encodeURIComponent(post.linkedinPostId)}`
+    : null;
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -2484,6 +2549,11 @@ function PostDetailModal({
             {post.platforms.includes("instagram") && (
               <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-semibold">
                 <Instagram className="w-3 h-3" /> Instagram
+              </span>
+            )}
+            {post.platforms.includes("linkedin") && (
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-semibold">
+                <LinkedInIcon className="w-3 h-3" /> LinkedIn
               </span>
             )}
             {post.postType && (
@@ -2607,6 +2677,18 @@ function PostDetailModal({
                     <ExternalLink className="w-3 h-3 ml-auto" />
                   </a>
                 )}
+                {liLink && (
+                  <a
+                    href={liLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-xs text-sky-700 bg-sky-50 border border-sky-200 px-3 py-2 rounded hover:bg-sky-100 transition-colors"
+                  >
+                    <LinkedInIcon className="w-3.5 h-3.5" />
+                    View on LinkedIn
+                    <ExternalLink className="w-3 h-3 ml-auto" />
+                  </a>
+                )}
                 <a
                   href="https://business.facebook.com/latest/insights/posts/"
                   target="_blank"
@@ -2622,7 +2704,9 @@ function PostDetailModal({
           )}
 
           {}
-          {(post.facebookPostId || post.instagramPostId) && (
+          {(post.facebookPostId ||
+            post.instagramPostId ||
+            post.linkedinPostId) && (
             <div className="space-y-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Post IDs
@@ -2661,6 +2745,26 @@ function PostDetailModal({
                     className="h-5 w-5 p-0"
                     onClick={() =>
                       navigator.clipboard.writeText(post.instagramPostId!)
+                    }
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+              {post.linkedinPostId && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground w-16">
+                    LinkedIn:
+                  </span>
+                  <code className="text-[10px] bg-muted px-2 py-0.5 rounded font-mono flex-1 truncate">
+                    {post.linkedinPostId}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 w-5 p-0"
+                    onClick={() =>
+                      navigator.clipboard.writeText(post.linkedinPostId!)
                     }
                   >
                     <Copy className="w-3 h-3" />
@@ -2792,6 +2896,8 @@ function AnalyticsTab() {
               <div key={platform} className="flex items-center gap-3">
                 {platform === "facebook" ? (
                   <Facebook className="w-4 h-4 text-blue-600 shrink-0" />
+                ) : platform === "linkedin" ? (
+                  <LinkedInIcon className="w-4 h-4 shrink-0" />
                 ) : (
                   <Instagram className="w-4 h-4 text-purple-600 shrink-0" />
                 )}
@@ -2802,7 +2908,7 @@ function AnalyticsTab() {
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${platform === "facebook" ? "bg-blue-500" : "bg-purple-500"}`}
+                      className={`h-full rounded-full ${platform === "facebook" ? "bg-blue-500" : platform === "linkedin" ? "bg-sky-500" : "bg-purple-500"}`}
                       style={{
                         width: `${Math.round((count / (Object.values(platforms).reduce((a, b) => a + b, 0) || 1)) * 100)}%`,
                       }}
@@ -2863,6 +2969,9 @@ function AnalyticsTab() {
               const igLink = post.instagramPostId
                 ? `https://www.instagram.com/p/${post.instagramPostId}/`
                 : null;
+              const liLink = post.linkedinPostId
+                ? `https://www.linkedin.com/feed/update/${encodeURIComponent(post.linkedinPostId)}`
+                : null;
 
               return (
                 <div
@@ -2915,6 +3024,17 @@ function AnalyticsTab() {
                         title="View on Instagram"
                       >
                         <Instagram className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {liLink && (
+                      <a
+                        href={liLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-7 w-7 flex items-center justify-center rounded border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors"
+                        title="View on LinkedIn"
+                      >
+                        <LinkedInIcon className="w-3.5 h-3.5" />
                       </a>
                     )}
                     <a

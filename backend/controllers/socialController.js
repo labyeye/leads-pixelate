@@ -14,6 +14,37 @@ function getSocialConfig() {
   };
 }
 
+// Reuses the same LinkedIn app (LINKEDIN_ADS_CLIENT_ID/SECRET) as the Ads
+// lead-sync integration — the app just needs the Community Management API
+// product (organization posting scopes) approved alongside the Ads product.
+function getLinkedInSocialConfig() {
+  return {
+    clientId: process.env.LINKEDIN_ADS_CLIENT_ID,
+    clientSecret: process.env.LINKEDIN_ADS_CLIENT_SECRET,
+    callbackUrl:
+      process.env.LINKEDIN_SOCIAL_OAUTH_CALLBACK_URL ||
+      "https://leads.pixelatenest.com/api/social/auth/linkedin/callback",
+    frontendUrl: process.env.CLIENT_URL || "http://localhost:3000",
+  };
+}
+
+const LINKEDIN_REST = "https://api.linkedin.com/rest";
+const LINKEDIN_API_VERSION = "202401";
+const LINKEDIN_SOCIAL_SCOPES = [
+  "w_organization_social",
+  "r_organization_social",
+  "rw_organization_admin",
+].join(" ");
+
+function linkedinHeaders(accessToken) {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "LinkedIn-Version": LINKEDIN_API_VERSION,
+    "X-Restli-Protocol-Version": "2.0.0",
+    "Content-Type": "application/json",
+  };
+}
+
 async function fbCall(path, accessToken, body) {
   const res = await fetch(`https://graph.facebook.com/v18.0/${path}`, {
     method: "POST",
@@ -148,12 +179,78 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
   return published.id || "";
 }
 
+async function uploadLinkedInImage(orgUrn, imageUrl, accessToken) {
+  const initRes = await fetch(`${LINKEDIN_REST}/images?action=initializeUpload`, {
+    method: "POST",
+    headers: linkedinHeaders(accessToken),
+    body: JSON.stringify({ initializeUploadRequest: { owner: orgUrn } }),
+  });
+  const initData = await initRes.json();
+  if (!initRes.ok) {
+    throw new Error(initData?.message || "LinkedIn image upload could not be initialized");
+  }
+
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error("Could not download image for LinkedIn upload");
+  const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+
+  const putRes = await fetch(initData.value.uploadUrl, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: imgBuffer,
+  });
+  if (!putRes.ok) throw new Error("LinkedIn image upload failed");
+
+  return initData.value.image; // urn:li:image:...
+}
+
+async function postToLinkedIn(orgId, accessToken, caption, post) {
+  if (post.postType === "carousel" || post.postType === "reel") {
+    throw new Error(
+      "LinkedIn video/carousel posts aren't supported yet — use an image or text-only post",
+    );
+  }
+
+  const orgUrn = `urn:li:organization:${orgId}`;
+  const imageUrl = post.imageUrl || post.mediaUrls?.[0];
+
+  const body = {
+    author: orgUrn,
+    commentary: caption,
+    visibility: "PUBLIC",
+    distribution: {
+      feedDistribution: "MAIN_FEED",
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
+    lifecycleState: "PUBLISHED",
+    isReshareDisabledByAuthor: false,
+  };
+
+  if (imageUrl) {
+    const imageUrn = await uploadLinkedInImage(orgUrn, imageUrl, accessToken);
+    body.content = { media: { id: imageUrn } };
+  }
+
+  const res = await fetch(`${LINKEDIN_REST}/posts`, {
+    method: "POST",
+    headers: linkedinHeaders(accessToken),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message || "LinkedIn post failed");
+  }
+  return res.headers.get("x-restli-id") || res.headers.get("x-linkedin-id") || "";
+}
+
 async function executePublish(post) {
   // Platforms that already succeeded on a previous attempt (e.g. retrying a
   // PARTIALLY_POSTED post) must not be posted to again.
   const alreadyPostedPlatforms = new Set();
   if (post.facebookPostId) alreadyPostedPlatforms.add("facebook");
   if (post.instagramPostId) alreadyPostedPlatforms.add("instagram");
+  if (post.linkedinPostId) alreadyPostedPlatforms.add("linkedin");
 
   post.status = "POSTING";
   await post.save();
@@ -186,20 +283,29 @@ async function executePublish(post) {
 
   for (const account of accounts) {
     try {
-      const postId =
-        account.platform === "facebook"
-          ? await postToFacebook(
-              account.accountId,
-              account.accessToken,
-              fullCaption,
-              post,
-            )
-          : await postToInstagram(
-              account.instagramBusinessAccountId || account.accountId,
-              account.accessToken,
-              fullCaption,
-              post,
-            );
+      let postId;
+      if (account.platform === "facebook") {
+        postId = await postToFacebook(
+          account.accountId,
+          account.accessToken,
+          fullCaption,
+          post,
+        );
+      } else if (account.platform === "instagram") {
+        postId = await postToInstagram(
+          account.instagramBusinessAccountId || account.accountId,
+          account.accessToken,
+          fullCaption,
+          post,
+        );
+      } else {
+        postId = await postToLinkedIn(
+          account.accountId,
+          account.accessToken,
+          fullCaption,
+          post,
+        );
+      }
       results.push({ accountId: account._id, platform: account.platform, postId });
     } catch (err) {
       errors.push(`${account.accountName}: ${err.message}`);
@@ -213,6 +319,10 @@ async function executePublish(post) {
   post.instagramPostId =
     results.find((r) => r.platform === "instagram")?.postId ||
     post.instagramPostId ||
+    "";
+  post.linkedinPostId =
+    results.find((r) => r.platform === "linkedin")?.postId ||
+    post.linkedinPostId ||
     "";
   const anySuccess = results.length > 0 || alreadyPostedPlatforms.size > 0;
   post.postedAt = anySuccess ? new Date() : null;
@@ -581,6 +691,127 @@ exports.disconnectAccount = asyncHandler(async (req, res) => {
 
   await account.deleteOne();
   res.json({ success: true, message: "Account disconnected" });
+});
+
+exports.getLinkedInAuthUrl = asyncHandler(async (req, res) => {
+  const config = getLinkedInSocialConfig();
+
+  if (!config.clientId) {
+    res.status(400);
+    throw new Error("LinkedIn app is not configured");
+  }
+
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: config.clientId,
+    redirect_uri: config.callbackUrl,
+    scope: LINKEDIN_SOCIAL_SCOPES,
+    state: req.user._id.toString(),
+  });
+
+  res.json({
+    success: true,
+    data: {
+      authUrl: `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`,
+    },
+  });
+});
+
+async function saveLinkedInOrgsAsSocialAccounts(accessToken, userId, tenantId) {
+  const aclRes = await fetch(
+    `${LINKEDIN_REST}/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED`,
+    { headers: linkedinHeaders(accessToken) },
+  );
+  const aclData = await aclRes.json();
+  if (!aclRes.ok) {
+    throw new Error(aclData?.message || "Failed to list LinkedIn organizations");
+  }
+
+  const orgUrns = (aclData.elements || []).map((e) => e.organization);
+  let savedCount = 0;
+
+  for (const orgUrn of orgUrns) {
+    const orgId = orgUrn.split(":").pop();
+    let name = `Organization ${orgId}`;
+    let picture = "";
+    try {
+      const orgRes = await fetch(
+        `${LINKEDIN_REST}/organizations/${orgId}?projection=(id,localizedName,logoV2(original~:playableStreams))`,
+        { headers: linkedinHeaders(accessToken) },
+      );
+      const orgData = await orgRes.json();
+      if (orgRes.ok) {
+        name = orgData.localizedName || name;
+        picture =
+          orgData.logoV2?.["original~"]?.elements?.[0]?.identifiers?.[0]
+            ?.identifier || "";
+      }
+    } catch (_) {}
+
+    await SocialAccount.findOneAndUpdate(
+      { platform: "linkedin", accountId: orgId, tenantId: tenantId || null },
+      {
+        accountName: name,
+        accessToken,
+        profilePicture: picture,
+        isActive: true,
+        connectedBy: userId,
+        tenantId: tenantId || null,
+      },
+      { upsert: true, new: true },
+    );
+    savedCount++;
+  }
+
+  return savedCount;
+}
+
+exports.linkedinCallback = asyncHandler(async (req, res) => {
+  const config = getLinkedInSocialConfig();
+  const { code, state: userId, error } = req.query;
+  const frontendUrl = `${config.frontendUrl}/social-planner`;
+
+  if (error) {
+    return res.redirect(
+      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(error)}`,
+    );
+  }
+
+  const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: config.callbackUrl,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+    }).toString(),
+  });
+  const tokenData = await tokenRes.json();
+
+  if (!tokenRes.ok || tokenData.error) {
+    return res.redirect(
+      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(
+        tokenData?.error_description || tokenData?.error || "Token exchange failed",
+      )}`,
+    );
+  }
+
+  const accessToken = tokenData.access_token;
+  const user = await require("../models/User").findById(userId).select("tenantId");
+  const tenantId = user?.tenantId || null;
+
+  let savedCount = 0;
+  try {
+    savedCount = await saveLinkedInOrgsAsSocialAccounts(accessToken, userId, tenantId);
+  } catch (err) {
+    return res.redirect(
+      `${frontendUrl}?tab=accounts&error=${encodeURIComponent(err.message)}`,
+    );
+  }
+
+  res.redirect(`${frontendUrl}?tab=accounts&connected=${savedCount}`);
 });
 
 exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {

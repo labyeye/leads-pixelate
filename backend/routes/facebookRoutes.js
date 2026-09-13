@@ -7,6 +7,7 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
+const CampaignAssignment = require("../models/CampaignAssignment");
 
 const FB_API = "https://graph.facebook.com/v20.0";
 const FB_SCOPES = [
@@ -31,6 +32,137 @@ async function fbGet(path, token, params = {}) {
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || "Facebook API error");
   return data;
+}
+
+// Ads Manager shows a node's full history, not just the first page — follow
+// `paging.next` so long-running ad accounts don't get truncated at whatever
+// the initial `limit` was. Capped so a single request can't run away.
+async function fbGetAll(path, token, params = {}, maxPages = 10) {
+  let all = [];
+  let data = await fbGet(path, token, params);
+  all = all.concat(data.data || []);
+  let next = data.paging?.next;
+  let pages = 1;
+  while (next && pages < maxPages) {
+    const res = await fetch(next);
+    data = await res.json();
+    if (data.error) throw new Error(data.error.message || "Facebook API error");
+    all = all.concat(data.data || []);
+    next = data.paging?.next;
+    pages++;
+  }
+  return all;
+}
+
+async function getFbUserToken(req) {
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  const tenant = await Tenant.findOne(query);
+  return tenant?.integrations?.facebook?.userAccessToken || null;
+}
+
+// Graph API "write" call — create/update via POST, delete via DELETE.
+// Object/array param values are JSON-encoded, matching what the Marketing
+// API expects for fields like `targeting` and `creative`.
+async function fbWrite(path, token, params = {}, method = "POST") {
+  const encoded = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null) continue;
+    encoded[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
+  }
+  const qs = new URLSearchParams({ access_token: token, ...encoded }).toString();
+  const res = await fetch(`${FB_API}${path}?${qs}`, { method });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || "Facebook API error");
+  return data;
+}
+
+// Admins manage every campaign; anyone else must have been assigned this
+// specific campaign by an admin (Task Management) to read/write it.
+async function assertCampaignAccess(req, campaignId) {
+  if (["admin", "super_admin"].includes(req.user.role)) return;
+  const filter = req.user.tenantId
+    ? { tenantId: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  const assignment = await CampaignAssignment.findOne({
+    ...filter,
+    platform: "facebook",
+    campaignId,
+    assignedTo: req.user._id,
+  });
+  if (!assignment) {
+    const err = new Error("You are not assigned to manage this campaign");
+    err.statusCode = 403;
+    throw err;
+  }
+}
+
+async function getAssignedCampaignIds(req) {
+  const filter = req.user.tenantId
+    ? { tenantId: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  const assignments = await CampaignAssignment.find({
+    ...filter,
+    platform: "facebook",
+    assignedTo: req.user._id,
+  }).select("campaignId");
+  return new Set(assignments.map((a) => a.campaignId));
+}
+
+const ALL_EFFECTIVE_STATUSES = JSON.stringify([
+  "ACTIVE",
+  "PAUSED",
+  "DELETED",
+  "PENDING_REVIEW",
+  "DISAPPROVED",
+  "PREAPPROVED",
+  "PENDING_BILLING_INFO",
+  "CAMPAIGN_PAUSED",
+  "ARCHIVED",
+  "ADSET_PAUSED",
+  "IN_PROCESS",
+  "WITH_ISSUES",
+]);
+
+const CAMPAIGN_FIELDS =
+  "id,name,status,effective_status,objective,daily_budget,lifetime_budget,budget_remaining,start_time,stop_time,created_time";
+const ADSET_FIELDS =
+  "id,name,status,effective_status,campaign_id,daily_budget,lifetime_budget,start_time,end_time,targeting,optimization_goal,billing_event,created_time";
+const AD_FIELDS =
+  "id,name,status,effective_status,adset_id,campaign_id,created_time,creative{title,body,image_url,call_to_action_type,object_story_spec}";
+
+function normalizeAd(a) {
+  return {
+    ...a,
+    creative: a.creative && {
+      title: a.creative.title,
+      body: a.creative.body,
+      image_url: a.creative.image_url,
+      call_to_action_type: a.creative.call_to_action_type,
+      link_url:
+        a.creative.object_story_spec?.link_data?.link ||
+        a.creative.object_story_spec?.video_data?.call_to_action?.value
+          ?.link ||
+        undefined,
+    },
+  };
+}
+
+// Fetches a node's children with the full-history status filter, falling
+// back to Graph API's own default filtering if that filter itself errors
+// (rather than silently returning nothing for that node).
+async function fbGetAllWithFallback(path, token, fields, label) {
+  try {
+    return await fbGetAll(path, token, {
+      fields,
+      effective_status: ALL_EFFECTIVE_STATUSES,
+      limit: "100",
+    });
+  } catch (err) {
+    console.error(`[${label}] status-filtered fetch failed:`, err.message);
+    return await fbGetAll(path, token, { fields, limit: "100" });
+  }
 }
 
 async function resolveAdPlatform(adId, token, cache) {
@@ -1059,29 +1191,258 @@ router.get(
 
     const allCampaigns = [];
     for (const account of adAccounts) {
+      let campaigns;
       try {
-        const cpData = await fbGet(`/${account.id}/campaigns`, userToken, {
-          fields:
-            "id,name,status,objective,daily_budget,lifetime_budget,budget_remaining,start_time,stop_time,created_time",
-          limit: "100",
+        campaigns = await fbGetAllWithFallback(
+          `/${account.id}/campaigns`,
+          userToken,
+          CAMPAIGN_FIELDS,
+          "meta-campaigns",
+        );
+      } catch (err) {
+        console.error(
+          `[meta-campaigns] fetch failed for ${account.id}:`,
+          err.message,
+        );
+        continue;
+      }
+      for (const c of campaigns) {
+        allCampaigns.push({
+          ...c,
+          adAccountId: account.id,
+          adAccountName: account.name,
+          currency: account.currency || "INR",
         });
-        for (const c of cpData.data || []) {
-          allCampaigns.push({
-            ...c,
-            adAccountId: account.id,
-            adAccountName: account.name,
-            currency: account.currency || "INR",
-          });
-        }
-      } catch {}
+      }
+    }
+
+    // Non-admins only ever see campaigns an admin has assigned to them —
+    // this is their whole "My Campaigns" view, not the full ad account.
+    let visibleCampaigns = allCampaigns;
+    if (!["admin", "super_admin"].includes(req.user.role)) {
+      const assignedIds = await getAssignedCampaignIds(req);
+      visibleCampaigns = allCampaigns.filter((c) => assignedIds.has(c.id));
     }
 
     res.json({
       success: true,
-      count: allCampaigns.length,
-      data: allCampaigns,
+      count: visibleCampaigns.length,
+      data: visibleCampaigns,
       adAccounts,
     });
+  }),
+);
+
+async function resolveCampaignIdForNode(id, token) {
+  try {
+    const data = await fbGet(`/${id}`, token, { fields: "campaign_id" });
+    return data.campaign_id || id;
+  } catch {
+    return id;
+  }
+}
+
+router.get(
+  "/meta-campaigns/:id/adsets",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+
+    try {
+      await assertCampaignAccess(req, req.params.id);
+      const adSets = await fbGetAllWithFallback(
+        `/${req.params.id}/adsets`,
+        userToken,
+        ADSET_FIELDS,
+        "meta-campaigns/adsets",
+      );
+      res.json({ success: true, count: adSets.length, data: adSets });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.get(
+  "/adsets/:id/ads",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+
+    try {
+      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      await assertCampaignAccess(req, campaignId);
+      const ads = await fbGetAllWithFallback(
+        `/${req.params.id}/ads`,
+        userToken,
+        AD_FIELDS,
+        "adsets/ads",
+      );
+      const normalized = ads.map(normalizeAd);
+      res.json({ success: true, count: normalized.length, data: normalized });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+// Flat cross-campaign views, matching Ads Manager's "Ad sets" / "Ads" tabs
+// (every ad set/ad across every campaign in one list, not drilled into one
+// campaign at a time).
+router.get(
+  "/all-adsets",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+
+    try {
+      const acData = await fbGet("/me/adaccounts", userToken, {
+        fields: "id,name",
+        limit: "20",
+      });
+      const adAccounts = acData.data || [];
+      const isAdmin = ["admin", "super_admin"].includes(req.user.role);
+      const assignedIds = isAdmin ? null : await getAssignedCampaignIds(req);
+
+      const allAdSets = [];
+      for (const account of adAccounts) {
+        let campaigns;
+        try {
+          campaigns = await fbGetAllWithFallback(
+            `/${account.id}/campaigns`,
+            userToken,
+            "id,name",
+            "all-adsets/campaigns",
+          );
+        } catch {
+          continue;
+        }
+        if (assignedIds) campaigns = campaigns.filter((c) => assignedIds.has(c.id));
+
+        const perCampaign = await Promise.all(
+          campaigns.map(async (c) => {
+            try {
+              const sets = await fbGetAllWithFallback(
+                `/${c.id}/adsets`,
+                userToken,
+                ADSET_FIELDS,
+                "all-adsets",
+              );
+              return sets.map((s) => ({
+                ...s,
+                campaignName: c.name,
+                adAccountName: account.name,
+              }));
+            } catch {
+              return [];
+            }
+          }),
+        );
+        perCampaign.forEach((sets) => allAdSets.push(...sets));
+      }
+
+      res.json({ success: true, count: allAdSets.length, data: allAdSets });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.get(
+  "/all-ads",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+
+    try {
+      const acData = await fbGet("/me/adaccounts", userToken, {
+        fields: "id,name",
+        limit: "20",
+      });
+      const adAccounts = acData.data || [];
+      const isAdmin = ["admin", "super_admin"].includes(req.user.role);
+      const assignedIds = isAdmin ? null : await getAssignedCampaignIds(req);
+
+      const allAds = [];
+      for (const account of adAccounts) {
+        let campaigns;
+        try {
+          campaigns = await fbGetAllWithFallback(
+            `/${account.id}/campaigns`,
+            userToken,
+            "id,name",
+            "all-ads/campaigns",
+          );
+        } catch {
+          continue;
+        }
+        if (assignedIds) campaigns = campaigns.filter((c) => assignedIds.has(c.id));
+
+        for (const c of campaigns) {
+          let adSets;
+          try {
+            adSets = await fbGetAllWithFallback(
+              `/${c.id}/adsets`,
+              userToken,
+              "id,name",
+              "all-ads/adsets",
+            );
+          } catch {
+            continue;
+          }
+
+          const perAdSet = await Promise.all(
+            adSets.map(async (s) => {
+              try {
+                const ads = await fbGetAllWithFallback(
+                  `/${s.id}/ads`,
+                  userToken,
+                  AD_FIELDS,
+                  "all-ads",
+                );
+                return ads.map((a) => ({
+                  ...normalizeAd(a),
+                  campaignName: c.name,
+                  adSetName: s.name,
+                  adAccountName: account.name,
+                }));
+              } catch {
+                return [];
+              }
+            }),
+          );
+          perAdSet.forEach((ads) => allAds.push(...ads));
+        }
+      }
+
+      res.json({ success: true, count: allAds.length, data: allAds });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
   }),
 );
 
@@ -1102,13 +1463,424 @@ router.get(
     }
 
     try {
-      const data = await fbGet(`/${req.params.id}/insights`, userToken, {
-        fields: "impressions,clicks,spend,reach,cpm,cpc,ctr,frequency",
-        date_preset: req.query.datePreset || "last_30d",
-      });
+      const { since, until, datePreset } = req.query;
+      const params = {
+        fields:
+          "impressions,clicks,spend,reach,cpm,cpc,ctr,frequency,actions",
+      };
+      if (since && until) {
+        params.time_range = JSON.stringify({ since, until });
+      } else {
+        params.date_preset = datePreset || "last_30d";
+      }
+      const data = await fbGet(`/${req.params.id}/insights`, userToken, params);
       res.json({ success: true, data: data.data?.[0] || null });
     } catch (err) {
       res.status(400).json({ success: false, message: err.message });
+    }
+  }),
+);
+
+// --- Write endpoints: let an admin-assigned employee actually run "their"
+// campaign end-to-end (status, budget, targeting, ad sets, ads) — not just
+// view it. Admins can do all of this on any campaign; everyone else only on
+// campaigns a CampaignAssignment ties to them (see assertCampaignAccess).
+
+router.post(
+  "/meta-campaigns",
+  protect,
+  asyncHandler(async (req, res) => {
+    if (!["admin", "super_admin"].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Only an admin can create a new campaign — ask them to create it and assign it to you.",
+      });
+    }
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    const {
+      adAccountId,
+      name,
+      objective,
+      status,
+      daily_budget,
+      lifetime_budget,
+      start_time,
+      stop_time,
+    } = req.body;
+    if (!adAccountId || !name || !objective) {
+      return res.status(400).json({
+        success: false,
+        message: "adAccountId, name and objective are required",
+      });
+    }
+    try {
+      const data = await fbWrite(`/${adAccountId}/campaigns`, userToken, {
+        name,
+        objective,
+        status: status || "PAUSED",
+        special_ad_categories: [],
+        daily_budget,
+        lifetime_budget,
+        start_time,
+        stop_time,
+      });
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.put(
+  "/meta-campaigns/:id",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    try {
+      await assertCampaignAccess(req, req.params.id);
+      const { name, status, daily_budget, lifetime_budget, start_time, stop_time } =
+        req.body;
+      const data = await fbWrite(`/${req.params.id}`, userToken, {
+        name,
+        status,
+        daily_budget,
+        lifetime_budget,
+        start_time,
+        stop_time,
+      });
+      res.json({ success: true, data });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.delete(
+  "/meta-campaigns/:id",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    try {
+      await assertCampaignAccess(req, req.params.id);
+      await fbWrite(`/${req.params.id}`, userToken, {}, "DELETE");
+      res.json({ success: true, message: "Campaign deleted" });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.post(
+  "/adsets",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    const {
+      campaign_id,
+      name,
+      daily_budget,
+      lifetime_budget,
+      start_time,
+      end_time,
+      targeting,
+      optimization_goal,
+      billing_event,
+      bid_amount,
+      status,
+    } = req.body;
+    if (!campaign_id || !name) {
+      return res
+        .status(400)
+        .json({ success: false, message: "campaign_id and name are required" });
+    }
+    try {
+      await assertCampaignAccess(req, campaign_id);
+      const campaign = await fbGet(`/${campaign_id}`, userToken, {
+        fields: "account_id",
+      });
+      if (!campaign.account_id) {
+        return res.status(400).json({
+          success: false,
+          message: "Could not resolve the ad account for this campaign",
+        });
+      }
+      const data = await fbWrite(`/act_${campaign.account_id}/adsets`, userToken, {
+        campaign_id,
+        name,
+        daily_budget,
+        lifetime_budget,
+        start_time,
+        end_time,
+        targeting: targeting || { geo_locations: { countries: ["IN"] } },
+        optimization_goal: optimization_goal || "LINK_CLICKS",
+        billing_event: billing_event || "IMPRESSIONS",
+        bid_amount,
+        status: status || "PAUSED",
+      });
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.put(
+  "/adsets/:id",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    try {
+      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      await assertCampaignAccess(req, campaignId);
+      const {
+        name,
+        status,
+        daily_budget,
+        lifetime_budget,
+        start_time,
+        end_time,
+        targeting,
+        optimization_goal,
+        billing_event,
+        bid_amount,
+      } = req.body;
+      const data = await fbWrite(`/${req.params.id}`, userToken, {
+        name,
+        status,
+        daily_budget,
+        lifetime_budget,
+        start_time,
+        end_time,
+        targeting,
+        optimization_goal,
+        billing_event,
+        bid_amount,
+      });
+      res.json({ success: true, data });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.delete(
+  "/adsets/:id",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    try {
+      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      await assertCampaignAccess(req, campaignId);
+      await fbWrite(`/${req.params.id}`, userToken, {}, "DELETE");
+      res.json({ success: true, message: "Ad set deleted" });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.post(
+  "/ads",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    const {
+      adset_id,
+      name,
+      status,
+      page_id,
+      title,
+      body,
+      link_url,
+      image_url,
+      call_to_action_type,
+    } = req.body;
+    if (!adset_id || !name) {
+      return res
+        .status(400)
+        .json({ success: false, message: "adset_id and name are required" });
+    }
+    try {
+      const campaignId = await resolveCampaignIdForNode(adset_id, userToken);
+      await assertCampaignAccess(req, campaignId);
+
+      const tenantQuery = req.user.tenantId
+        ? { _id: req.user.tenantId }
+        : { ownerUser: req.user._id };
+      const tenant = await Tenant.findOne(tenantQuery);
+      const pages = tenant?.integrations?.facebook?.pages || [];
+      const page = page_id ? pages.find((p) => p.pageId === page_id) : pages[0];
+      if (!page) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Connect a Facebook Page first (Integrations → Facebook) before creating an ad",
+        });
+      }
+
+      const adSet = await fbGet(`/${adset_id}`, userToken, {
+        fields: "account_id",
+      });
+      const accountId = `act_${adSet.account_id}`;
+
+      const creative = await fbWrite(`/${accountId}/adcreatives`, userToken, {
+        name: `${name} Creative`,
+        object_story_spec: {
+          page_id: page.pageId,
+          link_data: {
+            link: link_url || `https://www.facebook.com/${page.pageId}`,
+            message: body,
+            name: title,
+            picture: image_url,
+            call_to_action: call_to_action_type
+              ? { type: call_to_action_type, value: { link: link_url } }
+              : undefined,
+          },
+        },
+      });
+
+      const data = await fbWrite(`/${accountId}/ads`, userToken, {
+        name,
+        adset_id,
+        status: status || "PAUSED",
+        creative: { creative_id: creative.id },
+      });
+      res.status(201).json({ success: true, data });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.put(
+  "/ads/:id",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    try {
+      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      await assertCampaignAccess(req, campaignId);
+
+      const { name, status, page_id, title, body, link_url, image_url, call_to_action_type } =
+        req.body;
+      const updateParams = { name, status };
+
+      if (title || body || link_url || image_url || call_to_action_type) {
+        const ad = await fbGet(`/${req.params.id}`, userToken, {
+          fields: "account_id,adset_id",
+        });
+        const tenantQuery = req.user.tenantId
+          ? { _id: req.user.tenantId }
+          : { ownerUser: req.user._id };
+        const tenant = await Tenant.findOne(tenantQuery);
+        const pages = tenant?.integrations?.facebook?.pages || [];
+        const page = page_id ? pages.find((p) => p.pageId === page_id) : pages[0];
+        if (!page) {
+          return res.status(400).json({
+            success: false,
+            message: "Connect a Facebook Page first (Integrations → Facebook)",
+          });
+        }
+        const accountId = `act_${ad.account_id}`;
+        const creative = await fbWrite(`/${accountId}/adcreatives`, userToken, {
+          name: `${name || "Ad"} Creative`,
+          object_story_spec: {
+            page_id: page.pageId,
+            link_data: {
+              link: link_url || `https://www.facebook.com/${page.pageId}`,
+              message: body,
+              name: title,
+              picture: image_url,
+              call_to_action: call_to_action_type
+                ? { type: call_to_action_type, value: { link: link_url } }
+                : undefined,
+            },
+          },
+        });
+        updateParams.creative = { creative_id: creative.id };
+      }
+
+      const data = await fbWrite(`/${req.params.id}`, userToken, updateParams);
+      res.json({ success: true, data });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
+    }
+  }),
+);
+
+router.delete(
+  "/ads/:id",
+  protect,
+  asyncHandler(async (req, res) => {
+    const userToken = await getFbUserToken(req);
+    if (!userToken) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Facebook not connected" });
+    }
+    try {
+      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      await assertCampaignAccess(req, campaignId);
+      await fbWrite(`/${req.params.id}`, userToken, {}, "DELETE");
+      res.json({ success: true, message: "Ad deleted" });
+    } catch (err) {
+      res
+        .status(err.statusCode || 400)
+        .json({ success: false, message: err.message });
     }
   }),
 );

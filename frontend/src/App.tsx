@@ -28,7 +28,19 @@ import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
 import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
-import CampaignsPage from "./pages/CampaignsPage";
+import LinkedInCampaignsPage from "./pages/LinkedInCampaignsPage";
+import GoogleAdsCampaignsPage from "./pages/GoogleAdsCampaignsPage";
+import GoogleAdsPlaceholderPage from "./pages/GoogleAdsPlaceholderPage";
+import FacebookDashboardPage from "./pages/FacebookDashboardPage";
+import FacebookAdCampaignsPage from "./pages/FacebookAdCampaignsPage";
+import FacebookAdSetsPage from "./pages/FacebookAdSetsPage";
+import FacebookAdsPage from "./pages/FacebookAdsPage";
+import LinkedInAdsPlaceholderPage from "./pages/LinkedInAdsPlaceholderPage";
+import CampaignReportsPage from "./pages/CampaignReportsPage";
+import FacebookCampaignManagementPage from "./pages/FacebookCampaignManagementPage";
+import LinkedInCampaignManagementPage from "./pages/LinkedInCampaignManagementPage";
+import CampaignManagementOverviewPage from "./pages/CampaignManagementOverviewPage";
+import AccountSecurityPage from "./pages/AccountSecurityPage";
 import CampaignBuilderPage from "./pages/CampaignBuilderPage";
 import ApiKeysPage from "./pages/ApiKeysPage";
 import SupportPage from "./pages/SupportPage";
@@ -280,9 +292,157 @@ function AppRoutes() {
       />
       <Route
         path="/campaigns"
+        element={<Navigate to="/campaigns/facebook" replace />}
+      />
+      <Route
+        path="/account/security"
         element={
           <ProtectedRoute>
-            <CampaignsPage />
+            <AccountSecurityPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/facebook"
+        element={
+          <ProtectedRoute>
+            <FacebookDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/facebook/campaigns"
+        element={
+          <ProtectedRoute>
+            <FacebookAdCampaignsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/facebook/adsets"
+        element={
+          <ProtectedRoute>
+            <FacebookAdSetsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/facebook/ads"
+        element={
+          <ProtectedRoute>
+            <FacebookAdsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/facebook/management"
+        element={
+          <ProtectedRoute>
+            <FacebookCampaignManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/linkedin"
+        element={
+          <ProtectedRoute>
+            <LinkedInCampaignsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/linkedin/dashboard"
+        element={
+          <ProtectedRoute>
+            <LinkedInAdsPlaceholderPage title="Dashboard" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/linkedin/campaigns"
+        element={
+          <ProtectedRoute>
+            <LinkedInAdsPlaceholderPage title="Ad Campaigns" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/linkedin/adsets"
+        element={
+          <ProtectedRoute>
+            <LinkedInAdsPlaceholderPage title="Ad Sets" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/linkedin/ads"
+        element={
+          <ProtectedRoute>
+            <LinkedInAdsPlaceholderPage title="Ads" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/linkedin/management"
+        element={
+          <ProtectedRoute>
+            <LinkedInCampaignManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/google"
+        element={
+          <ProtectedRoute>
+            <GoogleAdsCampaignsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/google/dashboard"
+        element={
+          <ProtectedRoute>
+            <GoogleAdsPlaceholderPage title="Dashboard" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/google/campaigns"
+        element={
+          <ProtectedRoute>
+            <GoogleAdsPlaceholderPage title="Ad Campaigns" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/google/adgroups"
+        element={
+          <ProtectedRoute>
+            <GoogleAdsPlaceholderPage title="Ad Groups" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/google/ads"
+        element={
+          <ProtectedRoute>
+            <GoogleAdsPlaceholderPage title="Ads" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/reports"
+        element={
+          <ProtectedRoute>
+            <CampaignReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/campaigns/management"
+        element={
+          <ProtectedRoute>
+            <CampaignManagementOverviewPage />
           </ProtectedRoute>
         }
       />

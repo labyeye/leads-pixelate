@@ -28,7 +28,7 @@ const getUsers = asyncHandler(async (req, res) => {
 });
 
 const getUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).select("+bankDetails");
 
   if (!user) {
     res.status(404);
@@ -42,7 +42,24 @@ const getUser = asyncHandler(async (req, res) => {
 });
 
 const createUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role, phone, department, avatar } = req.body;
+  const {
+    name,
+    email,
+    password,
+    role,
+    phone,
+    department,
+    avatar,
+    designation,
+    dateOfJoining,
+    dateOfBirth,
+    gender,
+    employmentType,
+    address,
+    emergencyContact,
+    panNumber,
+    bankDetails,
+  } = req.body;
 
   const userExists = await User.findOne({ email });
   if (userExists) {
@@ -64,6 +81,15 @@ const createUser = asyncHandler(async (req, res) => {
     avatar: avatar || undefined,
     employeeId,
     tenantId: req.user.tenantId || null,
+    designation,
+    dateOfJoining: dateOfJoining || undefined,
+    dateOfBirth: dateOfBirth || undefined,
+    gender: gender || undefined,
+    employmentType: employmentType || undefined,
+    address,
+    emergencyContact,
+    panNumber,
+    bankDetails,
   });
 
   logActivity({
@@ -87,12 +113,20 @@ const createUser = asyncHandler(async (req, res) => {
       avatar: user.avatar,
       employeeId: user.employeeId,
       status: user.status,
+      designation: user.designation,
+      dateOfJoining: user.dateOfJoining,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      employmentType: user.employmentType,
+      address: user.address,
+      emergencyContact: user.emergencyContact,
+      panNumber: user.panNumber,
     },
   });
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findById(req.params.id).select("+bankDetails");
 
   if (!user) {
     res.status(404);
@@ -114,6 +148,15 @@ const updateUser = asyncHandler(async (req, res) => {
     status,
     receiveAutoAssignedLeads,
     avatar,
+    designation,
+    dateOfJoining,
+    dateOfBirth,
+    gender,
+    employmentType,
+    address,
+    emergencyContact,
+    panNumber,
+    bankDetails,
   } = req.body;
 
   if (name) user.name = name;
@@ -126,6 +169,15 @@ const updateUser = asyncHandler(async (req, res) => {
   if (receiveAutoAssignedLeads !== undefined)
     user.receiveAutoAssignedLeads = receiveAutoAssignedLeads;
   if (avatar !== undefined) user.avatar = avatar;
+  if (designation !== undefined) user.designation = designation;
+  if (dateOfJoining !== undefined) user.dateOfJoining = dateOfJoining || null;
+  if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth || null;
+  if (gender !== undefined) user.gender = gender;
+  if (employmentType !== undefined) user.employmentType = employmentType;
+  if (address !== undefined) user.address = address;
+  if (emergencyContact !== undefined) user.emergencyContact = emergencyContact;
+  if (panNumber !== undefined) user.panNumber = panNumber;
+  if (bankDetails !== undefined) user.bankDetails = bankDetails;
 
   const updated = await user.save();
 
@@ -179,6 +231,50 @@ const deleteUser = asyncHandler(async (req, res) => {
   });
 });
 
+const addUserDocument = asyncHandler(async (req, res) => {
+  const { name, type, url } = req.body;
+
+  if (!name || !url) {
+    res.status(400);
+    throw new Error("Document name and url are required");
+  }
+
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  user.documents.push({ name, type: type || "other", url });
+  await user.save();
+
+  logActivity({
+    user: req.user,
+    action: "UPDATE",
+    module: "User",
+    description: `Admin ${req.user.name} uploaded a document for ${user.name}`,
+    targetId: user._id,
+    ip: req.ip,
+  });
+
+  res.json({ success: true, data: user.documents });
+});
+
+const removeUserDocument = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  user.documents = user.documents.filter(
+    (d) => d._id.toString() !== req.params.docId,
+  );
+  await user.save();
+
+  res.json({ success: true, data: user.documents });
+});
+
 const updateAutoAssign = asyncHandler(async (req, res) => {
   const { userIds } = req.body;
 
@@ -211,4 +307,6 @@ module.exports = {
   updateUser,
   deleteUser,
   updateAutoAssign,
+  addUserDocument,
+  removeUserDocument,
 };
