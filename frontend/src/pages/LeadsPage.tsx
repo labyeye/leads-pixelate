@@ -88,7 +88,7 @@ import metaLogo from "@/assets/images/logos/meta.png";
 import imLogo from "@/assets/images/logos/indiamart.png";
 import tiLogo from "@/assets/images/logos/tradeindia.webp";
 import jdLogo from "@/assets/images/logos/justdial.webp";
-import linkedinLogo from "@/assets/images/logos/linkedin.webp";
+import linkedinLogo from "@/assets/images/logos/linkedIn.webp";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import * as XLSX from "xlsx";
 import {
