@@ -1031,6 +1031,30 @@ export default function IntegrationsPage() {
     "login" | "select_page" | "select_forms" | "done"
   >("login");
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
+  const [unlinkingLinkedin, setUnlinkingLinkedin] = useState(false);
+
+  const handleUnlinkLinkedin = async () => {
+    if (!confirm("Unlink LinkedIn? You'll need to sign in again to reconnect."))
+      return;
+    try {
+      setUnlinkingLinkedin(true);
+      await linkedinAdsAPI.disconnect();
+      setConnectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete("linkedin");
+        return next;
+      });
+      toast({ title: "LinkedIn unlinked" });
+    } catch (error: any) {
+      toast({
+        title: "Failed to unlink LinkedIn",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUnlinkingLinkedin(false);
+    }
+  };
   const [fbHasToken, setFbHasToken] = useState(false);
 
   const [showGadsWizard, setShowGadsWizard] = useState(false);
@@ -1354,6 +1378,16 @@ export default function IntegrationsPage() {
                     </>
                   )}
                 </button>
+
+                {integ.id === "linkedin" && isConnected && (
+                  <button
+                    onClick={handleUnlinkLinkedin}
+                    disabled={unlinkingLinkedin}
+                    className="w-full py-2 text-xs font-bold text-red-600 hover:underline disabled:opacity-60 mt-2"
+                  >
+                    {unlinkingLinkedin ? "Unlinking…" : "Unlink LinkedIn"}
+                  </button>
+                )}
 
                 {/* IndiaMART: Lead Assignment panel (shown only when connected) */}
                 {integ.id === "indiamart" && isConnected && (
