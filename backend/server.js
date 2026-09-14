@@ -10,6 +10,7 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const { errorHandler, notFound } = require("./middleware/errorHandler");
 const { verifyCsrf } = require("./middleware/csrf");
+const log = require("./utils/logger").scope("Server");
 
 dotenv.config();
 
@@ -51,9 +52,7 @@ connectDB().then(async () => {
         });
       }
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[IndiaMART Cron]", err.message);
-      }
+      log.error("IndiaMART cron failed", { message: err.message });
     }
   });
 
@@ -69,7 +68,7 @@ connectDB().then(async () => {
       try {
         await syncGmailForUser(user);
       } catch (err) {
-        console.error(`[Gmail Cron] Failed for user ${user._id}:`, err.message);
+        log.error("Gmail cron sync failed", { userId: user._id, message: err.message });
       }
     }
   });
@@ -147,6 +146,7 @@ if (process.env.NODE_ENV === "development") {
 
 app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
 app.use("/api/clients", require("./routes/clientRoutes"));
 app.use("/api/quotations", require("./routes/quotationRoutes"));

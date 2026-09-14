@@ -2,7 +2,7 @@ const LINKEDIN_API = "https://api.linkedin.com/rest";
 const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
 const LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
 // LinkedIn REST APIs are versioned by calendar month, not a fixed major version.
-const LINKEDIN_API_VERSION = "202401";
+const LINKEDIN_API_VERSION = "202507";
 
 const LINKEDIN_SCOPES = ["r_ads", "r_ads_leadgen_automation"].join(" ");
 

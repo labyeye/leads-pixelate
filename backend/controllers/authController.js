@@ -16,6 +16,7 @@ const { sendPasswordResetEmail } = require("../utils/emailService");
 const { sendWhatsAppOtp } = require("../utils/whatsappOtp");
 const { formatPhone } = require("./whatsappController");
 const totp = require("../utils/totp");
+const log = require("../utils/logger").scope("Auth");
 
 function generateOtp() {
   return String(crypto.randomInt(100000, 1000000));
@@ -393,9 +394,18 @@ const logout = asyncHandler(async (req, res) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      await User.findByIdAndUpdate(decoded.id, {
+      const user = await User.findByIdAndUpdate(decoded.id, {
         $unset: { refreshTokenHash: 1, refreshTokenExpires: 1 },
       });
+      if (user) {
+        logActivity({
+          user,
+          action: "LOGOUT",
+          module: "Auth",
+          description: `${user.name} logged out`,
+          ip: req.ip,
+        });
+      }
     } catch {
       // Token already invalid/expired — nothing to revoke.
     }
@@ -438,7 +448,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
     } catch (err) {
       // Don't leak email delivery failures to the caller — log and still
       // return the generic success response.
-      console.error("[forgotPassword] email send failed:", err.message);
+      log.error("Password reset email send failed", {
+        email: user.email,
+        message: err.message,
+      });
     }
 
     logActivity({
@@ -548,9 +561,7 @@ const forgotPasswordWhatsapp = asyncHandler(async (req, res) => {
     try {
       await sendWhatsAppOtp(formatPhone(user.phone), otp);
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("[forgotPasswordWhatsapp] send failed", err.message);
-      }
+      log.error("WhatsApp reset OTP send failed", { message: err.message });
     }
   }
 
@@ -697,15 +708,7 @@ const totpVerifySetup = asyncHandler(async (req, res) => {
 
   const isValid = user.totpSecret && totp.verifyToken(token, user.totpSecret);
   if (!isValid) {
-    console.error("[totpVerifySetup] rejected", {
-      receivedToken: token,
-      hasSecret: !!user.totpSecret,
-      secretPreview: user.totpSecret
-        ? user.totpSecret.slice(0, 4) + "…"
-        : null,
-      expectedNow: user.totpSecret ? totp.currentToken(user.totpSecret) : null,
-      serverTime: new Date().toISOString(),
-    });
+    log.warn("TOTP setup verification rejected", { userId: req.user._id });
     res.status(400);
     throw new Error("Invalid authenticator code");
   }

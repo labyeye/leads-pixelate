@@ -23,6 +23,7 @@ const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
 const { buildTransitionMaps } = require("../utils/leadStatuses");
 const { sendBulkLeadEmail } = require("../utils/emailService");
+const log = require("../utils/logger").scope("Leads");
 
 // Tenant custom pipeline stages (Setting.customLeadStatuses) extend the
 // fixed transition graph — fetch them per-request and splice them in via
@@ -794,8 +795,6 @@ const getIndiamartSyncStatus = asyncHandler(async (req, res) => {
 });
 
 const indiamartWebhook = asyncHandler(async (req, res) => {
-  console.log("🔔 [IndiaMART Webhook] Received Push notification:", req.body);
-
   let records = [];
   if (Array.isArray(req.body)) {
     records = req.body;
@@ -824,9 +823,7 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
   });
 
   if (!tenant) {
-    console.warn(
-      "[IndiaMART Webhook] No active IndiaMART tenant found, leads will be created without tenantId",
-    );
+    log.warn("No active IndiaMART tenant found — leads created without tenantId");
   }
 
   let createdCount = 0;
@@ -857,16 +854,14 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
         createdCount++;
       }
     } catch (err) {
-      console.error(
-        `[IndiaMART Webhook] Error processing lead QID ${qid}:`,
-        err.message,
-      );
+      log.error("Error processing IndiaMART webhook lead", { qid, message: err.message });
     }
   }
 
-  console.log(
-    `[IndiaMART Webhook] Processed ${records.length} records. Created ${createdCount} new leads.`,
-  );
+  log.info("IndiaMART webhook processed", {
+    recordCount: records.length,
+    created: createdCount,
+  });
   res.status(200).json({
     success: true,
     message: `Processed ${records.length} records, saved ${createdCount}`,
@@ -1079,7 +1074,6 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
 
 const justdialWebhook = asyncHandler(async (req, res) => {
   const { token } = req.params;
-  console.log("🔔 [Justdial Webhook] Received:", req.body);
 
   const tenant = await Tenant.findOne({
     "integrations.justdial.enabled": true,
@@ -1119,7 +1113,7 @@ const justdialWebhook = asyncHandler(async (req, res) => {
 
     res.status(200).json({ success: true, message: "Lead recorded" });
   } catch (err) {
-    console.error("[Justdial Webhook] Error:", err.message);
+    log.error("Justdial webhook processing failed", { message: err.message });
     res.status(200).json({ success: false, message: err.message });
   }
 });

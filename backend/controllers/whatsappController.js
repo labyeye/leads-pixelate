@@ -5,6 +5,7 @@ const WhatsappCampaign = require("../models/WhatsappCampaign");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const { encrypt, decrypt } = require("../utils/encryption");
+const log = require("../utils/logger").scope("WhatsApp");
 
 const WA_API = "https://graph.facebook.com/v20.0";
 
@@ -173,9 +174,9 @@ exports.sendTextNotification = async function sendTextNotification(
     });
     const data = await res.json();
     if (!res.ok)
-      console.error("[WA Quotation Notify]", data?.error?.message || data);
+      log.error("Quotation notify failed", { message: data?.error?.message || "unknown error" });
   } catch (err) {
-    console.error("[WA Quotation Notify]", err.message);
+    log.error("Quotation notify failed", { message: err.message });
   }
 };
 
@@ -618,7 +619,7 @@ exports.createCampaign = asyncHandler(async (req, res) => {
           ? "COMPLETED"
           : "PARTIAL";
     await campaign.save();
-  })().catch((err) => console.error("[WA Campaign]", err.message));
+  })().catch((err) => log.error("Campaign send failed", { campaignId: campaign._id, message: err.message }));
 });
 
 exports.sendMessage = asyncHandler(async (req, res) => {
@@ -788,7 +789,7 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
           }
           await campaign.save();
         } catch (err) {
-          console.error("[WA Webhook Status]", err.message);
+          log.error("Webhook status update failed", { message: err.message });
         }
       }
 
@@ -815,7 +816,7 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
           campaign.repliedCount = (campaign.repliedCount || 0) + 1;
           await campaign.save();
         } catch (err) {
-          console.error("[WA Webhook Reply]", err.message);
+          log.error("Webhook reply handling failed", { message: err.message });
         }
       }
     }

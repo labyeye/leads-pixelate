@@ -1,6 +1,22 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
+const Role = require("../models/Role");
 const logActivity = require("../utils/activityLogger");
+
+// Resolves a roleId (from the Team page's role dropdown) to its tier, scoped
+// to the caller's tenant. Role catalog never contains "super_admin", so this
+// can never be used to self-escalate.
+async function resolveRole(roleId, req, res) {
+  const filter = req.user.tenantId
+    ? { _id: roleId, tenantId: req.user.tenantId }
+    : { _id: roleId, tenantId: null };
+  const role = await Role.findOne(filter);
+  if (!role) {
+    res.status(400);
+    throw new Error("Role not found");
+  }
+  return role;
+}
 
 const getUsers = asyncHandler(async (req, res) => {
   const { status, role, search } = req.query;
@@ -18,7 +34,9 @@ const getUsers = asyncHandler(async (req, res) => {
     ];
   }
 
-  const users = await User.find(query).sort("-createdAt");
+  const users = await User.find(query)
+    .sort("-createdAt")
+    .populate("roleId", "name tier");
 
   res.json({
     success: true,
@@ -28,7 +46,9 @@ const getUsers = asyncHandler(async (req, res) => {
 });
 
 const getUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id).select("+bankDetails");
+  const user = await User.findById(req.params.id)
+    .select("+bankDetails")
+    .populate("roleId", "name tier");
 
   if (!user) {
     res.status(404);
@@ -47,6 +67,7 @@ const createUser = asyncHandler(async (req, res) => {
     email,
     password,
     role,
+    roleId,
     phone,
     department,
     avatar,
@@ -67,6 +88,19 @@ const createUser = asyncHandler(async (req, res) => {
     throw new Error("User with this email already exists");
   }
 
+  let resolvedRole = "sales_executive";
+  let resolvedRoleId = null;
+  if (roleId) {
+    const found = await resolveRole(roleId, req, res);
+    resolvedRole = found.tier;
+    resolvedRoleId = found._id;
+  } else if (role === "super_admin" && req.user.role !== "super_admin") {
+    res.status(403);
+    throw new Error("Only a super admin can create another super admin");
+  } else if (role) {
+    resolvedRole = role;
+  }
+
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const count = await User.countDocuments(tenantFilter);
   const employeeId = `EMP-${String(count + 1).padStart(3, "0")}`;
@@ -75,7 +109,8 @@ const createUser = asyncHandler(async (req, res) => {
     name,
     email,
     password,
-    role: role || "sales_executive",
+    role: resolvedRole,
+    roleId: resolvedRoleId,
     phone,
     department,
     avatar: avatar || undefined,
@@ -108,6 +143,7 @@ const createUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      roleId: user.roleId,
       phone: user.phone,
       department: user.department,
       avatar: user.avatar,
@@ -143,6 +179,7 @@ const updateUser = asyncHandler(async (req, res) => {
     email,
     password,
     role,
+    roleId,
     phone,
     department,
     status,
@@ -162,7 +199,14 @@ const updateUser = asyncHandler(async (req, res) => {
   if (name) user.name = name;
   if (email) user.email = email;
   if (password) user.password = password;
-  if (role && req.user.role === "super_admin") user.role = role;
+  if (roleId) {
+    const found = await resolveRole(roleId, req, res);
+    user.role = found.tier;
+    user.roleId = found._id;
+  } else if (role && req.user.role === "super_admin") {
+    user.role = role;
+    user.roleId = null;
+  }
   if (phone !== undefined) user.phone = phone;
   if (department !== undefined) user.department = department;
   if (status) user.status = status;
@@ -179,7 +223,8 @@ const updateUser = asyncHandler(async (req, res) => {
   if (panNumber !== undefined) user.panNumber = panNumber;
   if (bankDetails !== undefined) user.bankDetails = bankDetails;
 
-  const updated = await user.save();
+  let updated = await user.save();
+  updated = await updated.populate("roleId", "name tier");
 
   logActivity({
     user: req.user,

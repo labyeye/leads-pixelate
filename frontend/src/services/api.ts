@@ -258,6 +258,32 @@ export const usersAPI = {
     ),
 };
 
+export interface Role {
+  _id: string;
+  name: string;
+  tier: "admin" | "sales_executive" | "service_manager" | "accountant";
+  isDefault: boolean;
+  userCount: number;
+}
+
+export const rolesAPI = {
+  getAll: () => request<{ success: boolean; data: Role[] }>("/roles"),
+  create: (data: { name: string; tier: string }) =>
+    request<{ success: boolean; data: Role }>("/roles", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: { name?: string; tier?: string }) =>
+    request<{ success: boolean; data: Role }>(`/roles/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/roles/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 export const uploadAPI = {
   upload: (file: File) => {
     const formData = new FormData();

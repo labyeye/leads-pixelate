@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+const log = require("./logger").scope("Email Service");
 
 function createTransport() {
   return nodemailer.createTransport({
@@ -495,7 +496,7 @@ async function sendWelcomeEmail({
   invoiceNumber,
 }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("Email not configured — skipping welcome email.");
+    log.warn("Email not configured — skipping welcome email");
     return;
   }
 
@@ -584,7 +585,7 @@ function buildPasswordResetHtml({ userName, resetUrl }) {
 
 async function sendPasswordResetEmail({ to, userName, resetUrl }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("Email not configured — skipping password reset email.");
+    log.warn("Email not configured — skipping password reset email");
     return;
   }
 
@@ -600,7 +601,7 @@ async function sendPasswordResetEmail({ to, userName, resetUrl }) {
 
 async function sendBulkLeadEmail({ to, subject, message, fromName }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("Email not configured — skipping bulk lead email.");
+    log.warn("Email not configured — skipping bulk lead email");
     return { skipped: true };
   }
 

@@ -2,6 +2,7 @@ const https = require("https");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const { resolvePincode, isPincode } = require("../utils/pincode");
+const log = require("../utils/logger").scope("IndiaMART Sync");
 
 const INDIAMART_API_BASE =
   "https://mapi.indiamart.com/wservce/crm/crmListing/v2/";
@@ -442,11 +443,13 @@ async function runScheduledSync(tenantId, apiKey, assigneeIds = []) {
 
   lastSyncEndTime = now.toISOString();
 
-  console.log(
-    `[IndiaMART Sync] ${new Date().toISOString()} | Fetched: ${result.fetched} | Created: ${result.created} | Skipped: ${result.skipped}`,
-  );
+  log.info("Scheduled sync complete", {
+    fetched: result.fetched,
+    created: result.created,
+    skipped: result.skipped,
+  });
   if (result.errors.length) {
-    console.warn(`[IndiaMART Sync] Errors:`, result.errors);
+    log.warn("Sync completed with errors", { errorCount: result.errors.length });
   }
 
   return result;

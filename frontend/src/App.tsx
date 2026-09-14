@@ -9,6 +9,7 @@ import LeadsPage from "./pages/LeadsPage";
 import VisitCalendarPage from "./pages/VisitCalendarPage";
 import FollowupCalendarPage from "./pages/FollowupCalendarPage";
 import UsersPage from "./pages/UsersPage";
+import ActivityLogPage from "./pages/ActivityLogPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -191,6 +192,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <IntegrationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity-log"
+        element={
+          <ProtectedRoute>
+            <ActivityLogPage />
           </ProtectedRoute>
         }
       />

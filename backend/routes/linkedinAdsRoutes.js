@@ -8,6 +8,7 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const linkedinAds = require("../services/linkedinAdsService");
+const log = require("../utils/logger").scope("LinkedIn Ads");
 
 function getRedirectUri() {
   return (
@@ -51,6 +52,7 @@ router.get(
       `${req.user.tenantId || "global"}:${req.user._id}`,
     ).toString("base64");
     const authUrl = linkedinAds.buildAuthUrl(getRedirectUri(), state);
+    log.info("Auth URL requested", { userId: req.user._id });
     res.json({ success: true, data: { authUrl } });
   }),
 );
@@ -62,6 +64,7 @@ router.get(
     const frontendBase = process.env.CLIENT_URL || "http://localhost:5173";
 
     if (error || !code) {
+      log.warn("OAuth callback denied by user or LinkedIn", { error });
       return res.redirect(
         `${frontendBase}/campaigns/linkedin?lnkd_error=${encodeURIComponent(error || "access_denied")}`,
       );
@@ -73,6 +76,7 @@ router.get(
       [tenantId, userId] = decoded.split(":");
       if (!userId) throw new Error("Invalid state");
     } catch {
+      log.warn("OAuth callback received invalid state param");
       return res.redirect(
         `${frontendBase}/integrations?lnkd_error=invalid_state`,
       );
@@ -81,13 +85,15 @@ router.get(
     let tokens;
     try {
       tokens = await linkedinAds.exchangeCodeForTokens(code, getRedirectUri());
-    } catch {
+    } catch (err) {
+      log.error("Token exchange failed", { userId, message: err.message });
       return res.redirect(
         `${frontendBase}/campaigns/linkedin?lnkd_error=token_exchange_failed`,
       );
     }
 
     if (!tokens.refresh_token) {
+      log.warn("LinkedIn did not return a refresh token", { userId });
       return res.redirect(
         `${frontendBase}/campaigns/linkedin?lnkd_error=no_refresh_token`,
       );
@@ -103,6 +109,7 @@ router.get(
       "integrations.linkedinAds.oauthUserId": userId,
     });
 
+    log.info("Account connected", { userId, tenantId: tenantId || "global" });
     res.redirect(`${frontendBase}/campaigns/linkedin?lnkd_step=select_account`);
   }),
 );
@@ -245,6 +252,12 @@ router.post(
       });
     }
 
+    log.info("Ad account connected", {
+      tenantId: tenant._id,
+      adAccountId: accountEntry.adAccountId,
+      formCount: selectedFormIds.length,
+    });
+
     res.json({
       success: true,
       message: "LinkedIn Ads account connected successfully",
@@ -284,6 +297,7 @@ router.post(
         "integrations.linkedinAds.accounts": [],
       });
     }
+    log.info("Disconnected", { tenantId: query._id || query.ownerUser, adAccountId: adAccountId || "all" });
     res.json({ success: true, message: "LinkedIn Ads disconnected" });
   }),
 );
@@ -499,10 +513,10 @@ router.post(
         }
       } catch (err) {
         accountResult.error = err.message;
-        console.error(
-          `[LinkedIn Ads sync] Failed for account ${account.adAccountName}:`,
-          err.message,
-        );
+        log.error("Sync failed for account", {
+          adAccountName: account.adAccountName,
+          message: err.message,
+        });
       }
 
       accountResults.push(accountResult);
@@ -512,6 +526,13 @@ router.post(
     if (totalUpdated > 0) parts.push(`${totalUpdated} already in DB`);
     if (totalFiltered > 0)
       parts.push(`${totalFiltered} blocked by location filter`);
+
+    log.info("Sync complete", {
+      tenantId: tenant._id,
+      created: totalCreated,
+      updated: totalUpdated,
+      filtered: totalFiltered,
+    });
 
     res.json({
       success: true,
@@ -540,7 +561,10 @@ router.post(
       "integrations.linkedinAds.enabled": true,
     });
 
-    if (!tenant) return res.sendStatus(404);
+    if (!tenant) {
+      log.warn("Webhook hit with unknown key", { webhookKey });
+      return res.sendStatus(404);
+    }
     res.sendStatus(200);
 
     const account = tenant.integrations.linkedinAds.accounts.find(
@@ -553,8 +577,10 @@ router.post(
       account.selectedFormIds?.length &&
       formId &&
       !account.selectedFormIds.includes(String(formId))
-    )
+    ) {
+      log.info("Webhook lead skipped (form not selected)", { adAccountId: account.adAccountId, formId });
       return;
+    }
 
     const fMap = mapAnswerFields(body.formResponse?.answers);
 
@@ -562,10 +588,13 @@ router.post(
       ...(tenant._id ? { tenantId: tenant._id } : {}),
       role: { $in: ["admin", "super_admin"] },
     });
-    if (!adminUser) return;
+    if (!adminUser) {
+      log.warn("Webhook lead dropped, no admin user for tenant", { tenantId: tenant._id });
+      return;
+    }
 
     try {
-      await upsertLeadFromResponse({
+      const result = await upsertLeadFromResponse({
         fMap,
         tenant,
         account,
@@ -575,8 +604,16 @@ router.post(
         adminUser,
         assigneeCache: {},
       });
+      log.info("Webhook lead received", {
+        adAccountId: account.adAccountId,
+        formId,
+        result: result.created ? "created" : result.updated ? "updated" : "filtered",
+      });
     } catch (err) {
-      console.error("[LinkedIn Ads webhook] Failed to save lead:", err.message);
+      log.error("Failed to save webhook lead", {
+        adAccountId: account.adAccountId,
+        message: err.message,
+      });
     }
   }),
 );

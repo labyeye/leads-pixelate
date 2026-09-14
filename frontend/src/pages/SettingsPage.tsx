@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { settingsAPI } from "@/services/api";
+import { settingsAPI, rolesAPI, Role } from "@/services/api";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -11,6 +11,7 @@ import {
   Loader2,
   Save,
   Plus,
+  Pencil,
   Trash2,
   CheckCircle,
   AlertCircle,
@@ -435,8 +436,93 @@ export default function SettingsPage() {
     message: string;
   }>({ show: false, type: "success", title: "", message: "" });
 
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [roleForm, setRoleForm] = useState({ name: "", tier: "sales_executive" });
+  const [savingRole, setSavingRole] = useState(false);
+
+  const TIER_LABELS: Record<string, string> = {
+    admin: "Admin",
+    sales_executive: "Sales Executive",
+    service_manager: "Service Manager",
+    accountant: "Accountant",
+  };
+
+  const fetchRoles = async () => {
+    try {
+      setRolesLoading(true);
+      const res = await rolesAPI.getAll();
+      if (res.success) setRoles(res.data);
+    } catch (error: any) {
+      toast({
+        title: "Failed to load roles",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setRolesLoading(false);
+    }
+  };
+
+  const resetRoleForm = () => {
+    setEditingRoleId(null);
+    setRoleForm({ name: "", tier: "sales_executive" });
+  };
+
+  const handleEditRole = (role: Role) => {
+    setEditingRoleId(role._id);
+    setRoleForm({ name: role.name, tier: role.tier });
+  };
+
+  const handleSaveRole = async () => {
+    if (!roleForm.name.trim()) {
+      toast({ title: "Role name is required", variant: "destructive" });
+      return;
+    }
+    try {
+      setSavingRole(true);
+      const res = editingRoleId
+        ? await rolesAPI.update(editingRoleId, roleForm)
+        : await rolesAPI.create(roleForm);
+      if (res.success) {
+        toast({
+          title: editingRoleId ? "Role updated" : "Role created",
+        });
+        resetRoleForm();
+        fetchRoles();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Save failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
+  const handleDeleteRole = async (role: Role) => {
+    if (!confirm(`Delete the role "${role.name}"?`)) return;
+    try {
+      const res = await rolesAPI.delete(role._id);
+      if (res.success) {
+        toast({ title: "Role deleted" });
+        fetchRoles();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchSettings();
+    fetchRoles();
   }, []);
 
   const fetchSettings = async () => {
@@ -787,6 +873,12 @@ export default function SettingsPage() {
       id: "statuses",
       label: "Lead Statuses",
       icon: Tag,
+      adminOnly: true,
+    },
+    {
+      id: "roles",
+      label: "Roles",
+      icon: ShieldCheck,
       adminOnly: true,
     },
     {
@@ -1557,6 +1649,172 @@ export default function SettingsPage() {
             )}
 
             {}
+            {activeTab === "roles" && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 bg-[#024BAB] border-2 border-black flex items-center justify-center shrink-0 nb-shadow-sm">
+                    <ShieldCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-display font-bold text-black">
+                      Team Roles
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Create roles for how your company is structured — each
+                      one behaves like one of the base permission tiers.
+                      These show up when assigning a role on the Team page.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-2 border-black nb-shadow-sm bg-white">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-[#024BAB] text-white text-xs uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left border-r-2 border-black">
+                          Role Name
+                        </th>
+                        <th className="px-4 py-3 text-left border-r-2 border-black">
+                          Permission Tier
+                        </th>
+                        <th className="px-4 py-3 text-center border-r-2 border-black">
+                          Members
+                        </th>
+                        <th className="px-4 py-3 text-center w-28">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rolesLoading && (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="px-4 py-6 text-center text-sm text-muted-foreground"
+                          >
+                            <Loader2 className="w-4 h-4 inline animate-spin mr-2" />
+                            Loading roles…
+                          </td>
+                        </tr>
+                      )}
+                      {!rolesLoading &&
+                        roles.map((role, idx) => (
+                          <tr
+                            key={role._id}
+                            className={cn(
+                              "border-b-2 border-black last:border-b-0",
+                              idx % 2 === 0 ? "bg-white" : "bg-[#024BAB]/5",
+                            )}
+                          >
+                            <td className="px-4 py-3 text-sm font-bold text-black border-r-2 border-black">
+                              {role.name}
+                              {role.isDefault && (
+                                <span className="ml-2 text-[10px] font-bold uppercase text-muted-foreground">
+                                  Default
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-black border-r-2 border-black">
+                              {TIER_LABELS[role.tier] || role.tier}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-center text-black border-r-2 border-black">
+                              {role.userCount}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleEditRole(role)}
+                                  className="p-1.5 border-2 border-black bg-white hover:bg-[#024BAB]/10"
+                                  title="Edit role"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                {!role.isDefault && (
+                                  <button
+                                    onClick={() => handleDeleteRole(role)}
+                                    className="p-1.5 border-2 border-black bg-white hover:bg-red-50"
+                                    title="Delete role"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="border-2 border-black nb-shadow-sm bg-white p-4 space-y-3">
+                  <p className="font-display font-bold text-black text-sm">
+                    {editingRoleId ? "Edit Role" : "Create New Role"}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <div className="space-y-1 sm:col-span-1">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                        Role Name
+                      </label>
+                      <input
+                        value={roleForm.name}
+                        onChange={(e) =>
+                          setRoleForm({ ...roleForm, name: e.target.value })
+                        }
+                        placeholder="e.g. Marketing Lead"
+                        className="border-2 border-black w-full px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-1">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                        Behaves Like
+                      </label>
+                      <select
+                        value={roleForm.tier}
+                        onChange={(e) =>
+                          setRoleForm({ ...roleForm, tier: e.target.value })
+                        }
+                        disabled={
+                          !!editingRoleId &&
+                          roles.find((r) => r._id === editingRoleId)
+                            ?.isDefault
+                        }
+                        className="border-2 border-black w-full px-3 py-2 text-sm bg-white disabled:opacity-50"
+                      >
+                        {Object.entries(TIER_LABELS).map(([tier, label]) => (
+                          <option key={tier} value={tier}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-2 sm:col-span-1">
+                      <button
+                        onClick={handleSaveRole}
+                        disabled={savingRole}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-[#024BAB] text-white border-2 border-black px-3 py-2 text-sm font-bold nb-shadow-sm disabled:opacity-60"
+                      >
+                        {savingRole ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
+                        {editingRoleId ? "Save" : "Create"}
+                      </button>
+                      {editingRoleId && (
+                        <button
+                          onClick={resetRoleForm}
+                          className="border-2 border-black px-3 py-2 bg-white"
+                          title="Cancel"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === "permissions" && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-2">

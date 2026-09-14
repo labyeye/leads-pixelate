@@ -8,6 +8,7 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const googleAds = require("../services/googleAdsService");
+const log = require("../utils/logger").scope("Google Ads");
 
 function getRedirectUri() {
   return (
@@ -495,10 +496,7 @@ router.post(
         }
       } catch (err) {
         accountResult.error = err.message;
-        console.error(
-          `[Google Ads sync] Failed for account ${account.customerName}:`,
-          err.message,
-        );
+        log.error("Sync failed for account", { customerName: account.customerName, message: err.message });
       }
 
       accountResults.push(accountResult);
@@ -585,7 +583,7 @@ router.post(
         assigneeCache: {},
       });
     } catch (err) {
-      console.error("[Google Ads webhook] Failed to save lead:", err.message);
+      log.error("Webhook failed to save lead", { message: err.message });
     }
   }),
 );

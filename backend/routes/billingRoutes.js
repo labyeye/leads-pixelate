@@ -9,6 +9,7 @@ const Subscription = require("../models/Subscription");
 
 const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
 const { sendWelcomeEmail } = require("../utils/emailService");
+const log = require("../utils/logger").scope("Billing");
 
 function hdfcEncrypt(plainText, workingKey) {
   const keyBytes = crypto.createHash("md5").update(workingKey).digest();
@@ -365,7 +366,7 @@ router.post(
         { upsert: true, new: true },
       );
     } catch (err) {
-      console.error("HDFC response DB error:", err);
+      log.error("HDFC response DB update failed", { message: err.message });
       return res.redirect(
         `${frontendUrl}/billing?payment=failed&reason=db_error`,
       );
@@ -442,7 +443,7 @@ router.post(
     } catch (err) {
       const errMsg =
         err?.error?.description || err?.message || JSON.stringify(err);
-      console.error("Razorpay create-order error:", JSON.stringify(err));
+      log.error("Razorpay create-order failed", { message: errMsg });
       res.status(400).json({
         success: false,
         message: "Failed to create order",
@@ -564,7 +565,7 @@ router.post(
           amountRupees: amount,
           paymentId: razorpayPaymentId,
           invoiceNumber,
-        }).catch((err) => console.error("Welcome email failed:", err.message));
+        }).catch((err) => log.error("Welcome email failed", { message: err.message }));
 
         res.json({
           success: true,

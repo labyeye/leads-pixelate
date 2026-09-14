@@ -2,13 +2,15 @@ const express = require("express");
 const router = express.Router();
 const { protect, authorize } = require("../middleware/auth");
 const {
-  getActivityLogs,
-  getActivityStats,
-} = require("../controllers/activityController");
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+} = require("../controllers/roleController");
 
 router.use(protect, authorize("super_admin", "admin"));
 
-router.get("/", getActivityLogs);
-router.get("/stats", getActivityStats);
+router.route("/").get(getRoles).post(createRole);
+router.route("/:id").put(updateRole).delete(deleteRole);
 
 module.exports = router;

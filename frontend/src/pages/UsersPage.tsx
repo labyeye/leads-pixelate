@@ -42,7 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { usersAPI, uploadAPI } from "@/services/api";
+import { usersAPI, uploadAPI, rolesAPI, Role } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotify } from "@/components/ui/Notification";
 
@@ -60,6 +60,7 @@ const EMPTY_FORM_DATA = {
   password: "",
   confirmPassword: "",
   role: "sales_executive" as UserRole,
+  roleId: "" as string,
   phone: "",
   department: "",
   avatar: "",
@@ -86,6 +87,8 @@ const EMPTY_FORM_DATA = {
 function buildUserPayload(formData: typeof EMPTY_FORM_DATA) {
   const {
     confirmPassword: _confirmPassword,
+    role: _role,
+    roleId,
     addressLine1,
     addressCity,
     addressState,
@@ -100,6 +103,9 @@ function buildUserPayload(formData: typeof EMPTY_FORM_DATA) {
   } = formData;
   return {
     ...rest,
+    ...(roleId === "__super_admin__"
+      ? { role: "super_admin" }
+      : { roleId }),
     address: {
       line1: addressLine1,
       city: addressCity,
@@ -184,6 +190,14 @@ export default function UsersPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [docUploading, setDocUploading] = useState(false);
   const [docType, setDocType] = useState("resume");
+  const [roles, setRoles] = useState<Role[]>([]);
+
+  useEffect(() => {
+    rolesAPI
+      .getAll()
+      .then((res) => res.success && setRoles(res.data))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -257,7 +271,7 @@ export default function UsersPage() {
       notify.error("Invalid Phone", "Enter a valid phone number.");
       return;
     }
-    if (!formData.role) {
+    if (!formData.roleId) {
       notify.error("Role is required");
       return;
     }
@@ -315,6 +329,12 @@ export default function UsersPage() {
         name: full.name || "",
         email: full.email || "",
         role: full.role || "sales_executive",
+        roleId:
+          full.role === "super_admin"
+            ? "__super_admin__"
+            : full.roleId?._id ||
+              roles.find((r) => r.tier === full.role && r.isDefault)?._id ||
+              "",
         phone: full.phone || "",
         department: full.department || "",
         avatar: full.avatar || "",
@@ -498,20 +518,32 @@ export default function UsersPage() {
                     Role <span className="text-red-500">*</span>
                   </label>
                   <Select
-                    value={formData.role}
-                    onValueChange={(v: UserRole) =>
-                      setFormData({ ...formData, role: v })
+                    value={formData.roleId}
+                    onValueChange={(v: string) =>
+                      setFormData({ ...formData, roleId: v })
                     }
                   >
                     <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
-                      <SelectValue />
+                      <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
-                      {Object.entries(roleLabels).map(([key, label]) => (
-                        <SelectItem key={key} value={key} className="font-bold">
-                          {label}
+                      {roles.map((r) => (
+                        <SelectItem
+                          key={r._id}
+                          value={r._id}
+                          className="font-bold"
+                        >
+                          {r.name}
                         </SelectItem>
                       ))}
+                      {currentUser?.role === "super_admin" && (
+                        <SelectItem
+                          value="__super_admin__"
+                          className="font-bold"
+                        >
+                          Super Admin
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1092,7 +1124,9 @@ export default function UsersPage() {
                               "bg-white text-black border-black",
                           )}
                         >
-                          {roleLabels[user.role as UserRole] || user.role}
+                          {user.roleId?.name ||
+                            roleLabels[user.role as UserRole] ||
+                            user.role}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 hidden md:table-cell font-bold text-sm text-black">

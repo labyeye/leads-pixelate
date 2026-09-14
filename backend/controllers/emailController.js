@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Lead = require("../models/Lead");
 const Email = require("../models/Email");
 const gmail = require("../services/gmailService");
+const log = require("../utils/logger").scope("Gmail");
 
 function getRedirectUri() {
   return (
@@ -65,7 +66,7 @@ const gmailCallback = asyncHandler(async (req, res) => {
 
     res.redirect(`${frontendBase}/leads?gmail_connected=1`);
   } catch (err) {
-    console.error("[Gmail OAuth] callback failed:", err.message);
+    log.error("OAuth callback failed", { message: err.message });
     res.redirect(
       `${frontendBase}/leads?gmail_error=${encodeURIComponent(err.message)}`,
     );

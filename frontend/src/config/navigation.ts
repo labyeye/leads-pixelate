@@ -371,6 +371,12 @@ const allGroups: NavGroup[] = [
         roles: ["super_admin", "admin"],
       },
       {
+        title: "Activity Log",
+        href: "/activity-log",
+        icon: Terminal,
+        roles: ["super_admin", "admin"],
+      },
+      {
         title: "Settings",
         href: "/settings",
         icon: Settings,

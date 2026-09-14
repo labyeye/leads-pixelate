@@ -1,4 +1,5 @@
 const ActivityLog = require("../models/ActivityLog");
+const log = require("./logger").scope("Activity Log");
 
 function logActivity({ user, action, module, description, targetId, ip } = {}) {
   (async () => {
@@ -17,7 +18,7 @@ function logActivity({ user, action, module, description, targetId, ip } = {}) {
         timestamp: new Date(),
       });
     } catch (err) {
-      console.error("[ActivityLogger] Failed to write log:", err.message);
+      log.error("Failed to write activity log", { action, message: err.message });
     }
   })();
 }

@@ -36,6 +36,14 @@ const userSchema = new mongoose.Schema(
       ],
       default: "sales_executive",
     },
+    // The named, tenant-editable role this user was assigned (Team page
+    // dropdown). `role` above stays the source of truth for permission
+    // checks and is kept in sync with this role's tier.
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      default: null,
+    },
     phone: {
       type: String,
       trim: true,

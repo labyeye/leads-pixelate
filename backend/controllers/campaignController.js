@@ -5,6 +5,7 @@ const WhatsappTemplate = require("../models/WhatsappTemplate");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const { encrypt, decrypt } = require("../utils/encryption");
+const log = require("../utils/logger").scope("Campaigns");
 
 const WA_API = "https://graph.facebook.com/v20.0";
 
@@ -424,7 +425,9 @@ exports.launchCampaign = asyncHandler(async (req, res) => {
       campaign.status = "COMPLETED";
       campaign.completedAt = new Date();
       await campaign.save();
-    })().catch((err) => console.error("[Campaign Launch]", err.message));
+    })().catch((err) =>
+      log.error("Campaign launch failed", { campaignId: campaign._id, message: err.message }),
+    );
   } else {
     res.status(400);
     throw new Error(`Campaign type "${campaign.type}" is not yet supported`);

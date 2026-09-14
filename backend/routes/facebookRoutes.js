@@ -8,6 +8,7 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const CampaignAssignment = require("../models/CampaignAssignment");
+const log = require("../utils/logger").scope("Facebook Ads");
 
 const FB_API = "https://graph.facebook.com/v20.0";
 const FB_SCOPES = [
@@ -160,7 +161,7 @@ async function fbGetAllWithFallback(path, token, fields, label) {
       limit: "100",
     });
   } catch (err) {
-    console.error(`[${label}] status-filtered fetch failed:`, err.message);
+    log.error("Status-filtered fetch failed, falling back", { label, message: err.message });
     return await fbGetAll(path, token, { fields, limit: "100" });
   }
 }
@@ -694,10 +695,7 @@ router.post(
       } catch (err) {
         pageResult.error = `Could not fetch forms: ${err.message}`;
         pageResults.push(pageResult);
-        console.error(
-          `[FB sync] Failed to fetch forms for page ${page.pageName}:`,
-          err.message,
-        );
+        log.error("Failed to fetch forms for page", { pageName: page.pageName, message: err.message });
         continue;
       }
 
@@ -829,9 +827,6 @@ router.post(
               };
 
               const p = (lead.platform || "").toLowerCase();
-              console.log(
-                `[FB sync] lead=${lead.id} platform="${lead.platform}" ad_id="${lead.ad_id}"`,
-              );
               let resolvedSource = adMeta.source;
               let resolvedPlatforms = adMeta.platforms;
               if (p === "ig" || p === "instagram") {
@@ -874,9 +869,7 @@ router.post(
                   pageResult.created++;
                 } catch (createErr) {
                   if (createErr.code === 11000) {
-                    console.warn(
-                      `[FB sync] Duplicate lead detected for ${leadData.name} (${leadData.phone}) - skipping`,
-                    );
+                    log.warn("Duplicate lead skipped", { name: leadData.name, phone: leadData.phone });
                     totalUpdated++;
                     pageResult.updated++;
                   } else {
@@ -885,17 +878,11 @@ router.post(
                 }
               }
             } catch (err) {
-              console.error(
-                `[FB sync] Failed to save lead from form ${formId}:`,
-                err.message,
-              );
+              log.error("Failed to save lead from form", { formId, message: err.message });
             }
           }
         } catch (err) {
-          console.error(
-            `[FB sync] Failed to fetch leads for form ${formId} on page ${page.pageName}:`,
-            err.message,
-          );
+          log.error("Failed to fetch leads for form", { formId, pageName: page.pageName, message: err.message });
         }
       }
 
@@ -937,12 +924,6 @@ router.get("/webhook", (req, res) => {
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
   const stored = (process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || "").trim();
-
-  console.log("[webhook-raw-query]", JSON.stringify(req.query));
-  console.log(
-    "[webhook]",
-    JSON.stringify({ mode, token, stored, match: token === stored }),
-  );
 
   if (mode === "subscribe" && token === stored) {
     return res.status(200).send(challenge);
@@ -1200,10 +1181,7 @@ router.get(
           "meta-campaigns",
         );
       } catch (err) {
-        console.error(
-          `[meta-campaigns] fetch failed for ${account.id}:`,
-          err.message,
-        );
+        log.error("Meta campaigns fetch failed", { adAccountId: account.id, message: err.message });
         continue;
       }
       for (const c of campaigns) {

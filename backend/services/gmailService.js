@@ -1,4 +1,5 @@
 const MailComposer = require("nodemailer/lib/mail-composer");
+const log = require("../utils/logger").scope("Gmail Sync");
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -337,7 +338,7 @@ async function syncGmailForUser(user) {
       result.saved++;
     } catch (err) {
       if (err.code !== 11000) {
-        console.error(`[Gmail Sync] Failed on message ${messageId}:`, err.message);
+        log.error("Failed to sync message", { messageId, message: err.message });
       }
     }
   }

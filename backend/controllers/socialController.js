@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const SocialPost = require("../models/SocialPost");
 const SocialAccount = require("../models/SocialAccount");
 const Tenant = require("../models/Tenant");
+const log = require("../utils/logger").scope("Social");
 
 function getSocialConfig() {
   return {
@@ -555,7 +556,7 @@ exports.approvePost = asyncHandler(async (req, res) => {
   await post.save();
 
   executePublish(post).catch((err) =>
-    console.error("[SocialPost Publish]", err.message),
+    log.error("Post publish failed", { postId: post._id, message: err.message }),
   );
 
   res.json({ success: true, data: post });
@@ -622,15 +623,15 @@ exports.runScheduledPosts = async () => {
 
     for (const post of duePosts) {
       await executePublish(post).catch((err) =>
-        console.error(`[SocialCron] Post ${post._id}: ${err.message}`),
+        log.error("Scheduled post publish failed", { postId: post._id, message: err.message }),
       );
     }
 
     if (duePosts.length) {
-      console.log(`[SocialCron] Published ${duePosts.length} post(s)`);
+      log.info("Scheduled posts published", { count: duePosts.length });
     }
   } catch (err) {
-    console.error("[SocialCron Error]", err.message);
+    log.error("Scheduled posts cron failed", { message: err.message });
   }
 };
 
@@ -850,15 +851,9 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
     const permRes = await fetch(
       `https://graph.facebook.com/v18.0/me/permissions?access_token=${finalUserToken}`,
     );
-    const permData = await permRes.json();
-    console.log(
-      "[Social Import] granted permissions on this token:",
-      (permData.data || [])
-        .map((p) => `${p.permission}:${p.status}`)
-        .join(", "),
-    );
+    await permRes.json();
   } catch (err) {
-    console.error("[Social Import] permissions check failed:", err.message);
+    log.error("Social import permissions check failed", { message: err.message });
   }
 
   const pagesRes = await fetch(
@@ -884,16 +879,15 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
       );
       const igData = await igRes.json();
       if (igData.error) {
-        console.error(`[Social Import] IG lookup failed for page ${page.id} (${page.name}):`, igData.error);
+        log.error("IG lookup failed for page", { pageId: page.id, pageName: page.name, message: igData.error.message });
       } else {
         igId =
           igData?.instagram_business_account?.id ||
           igData?.instagram_accounts?.data?.[0]?.id ||
           "";
-        console.log(`[Social Import] page ${page.id} (${page.name}) instagram_id:`, igId || "null");
       }
     } catch (err) {
-      console.error(`[Social Import] IG fetch threw for page ${page.id}:`, err.message);
+      log.error("IG fetch failed for page", { pageId: page.id, message: err.message });
     }
 
     await SocialAccount.findOneAndUpdate(
@@ -925,7 +919,6 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
     );
     const bizData = await bizRes.json();
     const businesses = bizData.data || [];
-    console.log(`[Social Import] found ${businesses.length} business(es) to scan for IG assets`);
 
     for (const biz of businesses) {
       // Try both instagram_accounts and owned_instagram_accounts
@@ -936,11 +929,9 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
           );
           const igData = await igRes.json();
           if (igData.error) {
-            console.log(`[Social Import] biz ${biz.id} ${edge}:`, igData.error.message);
             continue;
           }
           const igAccounts = igData.data || [];
-          console.log(`[Social Import] biz ${biz.id} (${biz.name}) ${edge}: found ${igAccounts.length}`);
 
           for (const ig of igAccounts) {
             // Refresh the token even if already saved — reconnecting must
@@ -967,12 +958,12 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
             if (isNew) savedCount++;
           }
         } catch (err) {
-          console.error(`[Social Import] ${edge} fetch failed for biz ${biz.id}:`, err.message);
+          log.error("Business IG fetch failed", { bizId: biz.id, edge, message: err.message });
         }
       }
     }
   } catch (err) {
-    console.error("[Social Import] Business Manager IG fetch failed:", err.message);
+    log.error("Business Manager IG fetch failed", { message: err.message });
   }
 
   return savedCount;
@@ -1007,7 +998,6 @@ async function saveInstagramAccount(igId, pageToken, fallbackName, userId, tenan
     },
     { upsert: true, new: true },
   );
-  console.log(`[Social Import] saved Instagram account ${igId} (${igName})`);
 }
 
 exports.facebookCallback = asyncHandler(async (req, res) => {
