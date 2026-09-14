@@ -1,3 +1,5 @@
+const log = require("../utils/logger").scope("LinkedIn Ads");
+
 const LINKEDIN_API = "https://api.linkedin.com/rest";
 const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
 const LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
@@ -60,12 +62,23 @@ function authHeaders(accessToken) {
 }
 
 async function listAdAccounts(accessToken) {
+  const headers = authHeaders(accessToken);
+  log.info("Requesting ad accounts", {
+    versionHeaderSent: headers["LinkedIn-Version"],
+  });
   const res = await fetch(
     `${LINKEDIN_API}/adAccounts?q=search&search=(status:(values:List(ACTIVE)))`,
-    { headers: authHeaders(accessToken) },
+    { headers },
   );
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || "Failed to list LinkedIn ad accounts");
+  if (!res.ok) {
+    log.error("List ad accounts failed", {
+      status: res.status,
+      versionHeaderSent: headers["LinkedIn-Version"],
+      responseBody: data,
+    });
+    throw new Error(data?.message || "Failed to list LinkedIn ad accounts");
+  }
   return (data.elements || []).map((a) => ({
     id: String(a.id),
     name: a.name || `Account ${a.id}`,
