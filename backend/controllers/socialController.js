@@ -30,7 +30,9 @@ function getLinkedInSocialConfig() {
 }
 
 const LINKEDIN_REST = "https://api.linkedin.com/rest";
-const LINKEDIN_API_VERSION = "202401";
+// See LINKEDIN_API_VERSION comment in services/linkedinAdsService.js —
+// versions sunset after ~1 year, bump this periodically too.
+const LINKEDIN_API_VERSION = "202608";
 const LINKEDIN_SOCIAL_SCOPES = [
   "w_organization_social",
   "r_organization_social",

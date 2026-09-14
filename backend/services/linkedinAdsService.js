@@ -3,8 +3,10 @@ const log = require("../utils/logger").scope("LinkedIn Ads");
 const LINKEDIN_API = "https://api.linkedin.com/rest";
 const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
 const LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
-// LinkedIn REST APIs are versioned by calendar month, not a fixed major version.
-const LINKEDIN_API_VERSION = "202507";
+// LinkedIn REST APIs are versioned by calendar month and each version is
+// only supported for ~1 year before sunset — bump this periodically.
+// https://learn.microsoft.com/en-us/linkedin/marketing/versioning
+const LINKEDIN_API_VERSION = "202608";
 
 const LINKEDIN_SCOPES = ["r_ads", "r_ads_leadgen_automation"].join(" ");
 
