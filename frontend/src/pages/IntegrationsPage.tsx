@@ -1044,6 +1044,7 @@ export default function IntegrationsPage() {
         next.delete("linkedin");
         return next;
       });
+      setLinkedinHasToken(false);
       toast({ title: "LinkedIn unlinked" });
     } catch (error: any) {
       toast({
@@ -1062,6 +1063,7 @@ export default function IntegrationsPage() {
     "login" | "select_account" | "select_campaigns" | "done"
   >("login");
   const [gadsHasToken, setGadsHasToken] = useState(false);
+  const [linkedinHasToken, setLinkedinHasToken] = useState(false);
 
   // IndiaMART assignee state
   const [imUsers, setImUsers] = useState<{ _id: string; name: string }[]>([]);
@@ -1103,6 +1105,7 @@ export default function IntegrationsPage() {
     linkedinAdsAPI
       .getConnectedAccounts()
       .then((res) => {
+        if (res.hasToken) setLinkedinHasToken(true);
         if ((res.data || []).length > 0) {
           setConnectedIds((prev) => new Set([...prev, "linkedin"]));
         }
@@ -1379,15 +1382,16 @@ export default function IntegrationsPage() {
                   )}
                 </button>
 
-                {integ.id === "linkedin" && isConnected && (
-                  <button
-                    onClick={handleUnlinkLinkedin}
-                    disabled={unlinkingLinkedin}
-                    className="w-full py-2 text-xs font-bold text-red-600 hover:underline disabled:opacity-60 mt-2"
-                  >
-                    {unlinkingLinkedin ? "Unlinking…" : "Unlink LinkedIn"}
-                  </button>
-                )}
+                {integ.id === "linkedin" &&
+                  (isConnected || linkedinHasToken) && (
+                    <button
+                      onClick={handleUnlinkLinkedin}
+                      disabled={unlinkingLinkedin}
+                      className="w-full py-2 text-xs font-bold text-red-600 hover:underline disabled:opacity-60 mt-2"
+                    >
+                      {unlinkingLinkedin ? "Unlinking…" : "Unlink LinkedIn"}
+                    </button>
+                  )}
 
                 {/* IndiaMART: Lead Assignment panel (shown only when connected) */}
                 {integ.id === "indiamart" && isConnected && (
