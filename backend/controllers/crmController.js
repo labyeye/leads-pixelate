@@ -12,6 +12,56 @@ const checkApiKey = (req, res, next) => {
 
 const ALLOWED_TENANT_STATUS = ["active", "suspended", "cancelled"];
 const ALLOWED_SUBSCRIPTION_STATUS = ["active", "cancelled", "past_due", "trialing"];
+const ALLOWED_INVOICE_STATUS = ["paid", "unpaid", "overdue"];
+
+// GET /api/crm/invoices — flattened list of every subscription's embedded
+// invoices across all tenants, for the external CRM dashboard's invoice list.
+const getCrmInvoices = async (req, res) => {
+  try {
+    if (req.query.status && !ALLOWED_INVOICE_STATUS.includes(req.query.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Use ${ALLOWED_INVOICE_STATUS.join(", ")}.`,
+      });
+    }
+
+    const subs = await Subscription.find({ "invoices.0": { $exists: true } })
+      .populate({
+        path: "tenant",
+        select: "name ownerUser",
+        populate: { path: "ownerUser", select: "email phone" },
+      })
+      .lean();
+
+    let invoices = [];
+    for (const sub of subs) {
+      for (const inv of sub.invoices || []) {
+        const status = inv.status === "paid" ? "paid" : inv.status === "failed" ? "overdue" : "unpaid";
+        invoices.push({
+          invoiceNumber:
+            inv.razorpayOrderId || inv.hdfcOrderId || `NL-${String(inv._id).slice(-8).toUpperCase()}`,
+          clientName: sub.tenant?.name || "Unknown",
+          clientEmail: sub.tenant?.ownerUser?.email || "",
+          amount: Math.round((inv.amount || 0) / 100), // stored in paise
+          currency: inv.currency || "INR",
+          status,
+          issuedDate: inv.createdAt,
+          dueDate: inv.paidAt || inv.createdAt,
+          subscriptionPlan: inv.plan || sub.plan,
+        });
+      }
+    }
+
+    if (req.query.status) {
+      invoices = invoices.filter((i) => i.status === req.query.status);
+    }
+    invoices.sort((a, b) => new Date(b.issuedDate) - new Date(a.issuedDate));
+
+    res.json({ success: true, invoices });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 // PATCH /internal/tenants/:tenantId/subscription — activate/extend/deactivate a
 // tenant's subscription from the external CRM dashboard on payment/expiry events.
@@ -52,4 +102,4 @@ const updateTenantSubscription = async (req, res) => {
   }
 };
 
-module.exports = { checkApiKey, updateTenantSubscription };
+module.exports = { checkApiKey, updateTenantSubscription, getCrmInvoices };
