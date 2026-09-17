@@ -11,11 +11,11 @@ const Quotation = require("../models/Quotation");
 // Same guard pattern as the HRMS backend: static secret, no JWT.
 // Pass as ?key=<secret> or X-Stats-Key header.
 function statsGuard(req, res, next) {
-  const secret = process.env.CRM_API_SECRET;
+  const secret = process.env.NESTLEADS_SECRET;
   if (!secret) {
     return res.status(503).json({
       success: false,
-      message: "Stats endpoint not configured (CRM_API_SECRET missing)",
+      message: "Stats endpoint not configured (NESTLEADS_SECRET missing)",
     });
   }
   const provided = req.query.key || req.headers["x-stats-key"];

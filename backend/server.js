@@ -173,7 +173,7 @@ app.use("/api/hrms", require("./routes/hrmsRoutes"));
 app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/internal", require("./routes/crmRoutes"));
-app.use("/api/crm", require("./routes/crmInvoiceRoutes"));
+app.use("/api/crm", require("./routes/crmApiRoutes"));
 app.use("/internal/stats", require("./routes/statsRoutes"));
 
 app.get("/api/health", (req, res) => {
