@@ -172,9 +172,13 @@ app.use("/api/public", require("./routes/publicRoutes"));
 app.use("/api/hrms", require("./routes/hrmsRoutes"));
 app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
+// /internal/stats must be registered before the broader /internal mount below —
+// Express matches app.use() by path prefix, so /internal/stats would otherwise
+// be swallowed by the /internal router first and rejected by its x-api-key
+// guard (which checks a different header than the X-Stats-Key this route uses).
+app.use("/internal/stats", require("./routes/statsRoutes"));
 app.use("/internal", require("./routes/crmRoutes"));
 app.use("/api/crm", require("./routes/crmApiRoutes"));
-app.use("/internal/stats", require("./routes/statsRoutes"));
 
 app.get("/api/health", (req, res) => {
   res.json({ success: true, status: "ok" });
