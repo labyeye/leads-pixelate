@@ -136,7 +136,13 @@ app.use((req, res, next) => {
 });
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(cookieParser());
-app.use("/uploads", require("express").static(require("path").join(__dirname, "uploads")));
+// Public media the frontend (different origin) and Meta must load; helmet's default CORP is same-origin.
+app.use(
+  "/uploads",
+  require("express").static(require("path").join(__dirname, "uploads"), {
+    setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
+  }),
+);
 
 app.use(mongoSanitize({ allowDots: true }));
 app.use(hpp());
