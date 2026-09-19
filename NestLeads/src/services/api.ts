@@ -69,6 +69,54 @@ export const authAPI = {
       method: 'PUT',
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
+  sendPhoneOtp: () =>
+    request<{ success: boolean; message?: string }>('/auth/phone/send-otp', {
+      method: 'POST',
+    }),
+  verifyPhoneOtp: (otp: string) =>
+    request<{ success: boolean; message?: string }>('/auth/phone/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ otp }),
+    }),
+  totpSetup: () =>
+    request<{ success: boolean; data: { otpauthUrl: string; qrCode: string; secret: string } }>(
+      '/auth/2fa/totp/setup',
+      { method: 'POST' },
+    ),
+  totpVerifySetup: (token: string) =>
+    request<{ success: boolean; message?: string }>('/auth/2fa/totp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }),
+  totpDisable: () =>
+    request<{ success: boolean; message?: string }>('/auth/2fa/totp/disable', {
+      method: 'POST',
+    }),
+  forgotPassword: (email: string) =>
+    request<{ success: boolean; message?: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  loginSendOtp: (phone: string) =>
+    request<{ success: boolean; message?: string }>('/auth/login/otp/send', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
+  loginVerifyOtp: (phone: string, otp: string) =>
+    request<{ success: boolean; token?: string; data: any }>('/auth/login/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone, otp }),
+    }),
+  verify2FA: (userId: string, token: string) =>
+    request<{ success: boolean; token?: string; data: any }>('/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ userId, token }),
+    }),
+  biometricLogin: (payload: any) =>
+    request<{ success: boolean; token?: string; data: any }>('/auth/passkey/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const leadsAPI = {
@@ -184,6 +232,8 @@ export const usersAPI = {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<{ success: boolean; data: any[] }>(`/users${qs}`);
   },
+  getById: (id: string) =>
+    request<{ success: boolean; data: any }>(`/users/${id}`),
   create: (data: any) =>
     request<{ success: boolean; data: any }>('/users', {
       method: 'POST',
@@ -196,6 +246,76 @@ export const usersAPI = {
     }),
   delete: (id: string) =>
     request<{ success: boolean }>(`/users/${id}`, { method: 'DELETE' }),
+  updateAutoAssign: (userIds: string[]) =>
+    request<{ success: boolean }>('/users/auto-assign', {
+      method: 'POST',
+      body: JSON.stringify({ userIds }),
+    }),
+  addDocument: (userId: string, doc: { name: string; type: string; url: string }) =>
+    request<{ success: boolean; data: any }>(`/users/${userId}/documents`, {
+      method: 'POST',
+      body: JSON.stringify(doc),
+    }),
+  removeDocument: (userId: string, docId: string) =>
+    request<{ success: boolean; data: any }>(`/users/${userId}/documents/${docId}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const rolesAPI = {
+  getAll: () => request<{ success: boolean; data: any[] }>('/roles'),
+  create: (data: { name: string; tier: string }) =>
+    request<{ success: boolean; data: any }>('/roles', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: { name?: string; tier?: string }) =>
+    request<{ success: boolean; data: any }>(`/roles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean }>(`/roles/${id}`, { method: 'DELETE' }),
+};
+
+export const activityAPI = {
+  getLogs: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ success: boolean; count: number; total: number; page: number; pages: number; data: any[] }>(
+      `/activity${qs}`,
+    );
+  },
+  getStats: () => request<{ success: boolean; data: any }>('/activity/stats'),
+};
+
+export const campaignAssignmentAPI = {
+  getAll: (platform?: 'facebook' | 'linkedin') =>
+    request<{ success: boolean; count: number; data: any[] }>(
+      `/campaign-assignments${platform ? `?platform=${platform}` : ''}`,
+    ),
+  upsert: (data: {
+    platform: 'facebook' | 'linkedin';
+    campaignId: string;
+    campaignName?: string;
+    adAccountId?: string;
+    assignedTo?: string;
+    notes?: string;
+  }) =>
+    request<{ success: boolean; data: any }>('/campaign-assignments', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean; message: string }>(`/campaign-assignments/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+export const reportsAPI = {
+  getStatusHistory: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ success: boolean; data: any }>(`/leads/reports/status-history${qs}`);
+  },
 };
 
 export const campaignsAPI = {
@@ -247,6 +367,81 @@ export const facebookAPI = {
       method: 'POST',
       body: JSON.stringify({ pageId, since, until }),
     }),
+  getAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>('/facebook/auth-url'),
+  getPages: () => request<{ success: boolean; data: any[] }>('/facebook/pages'),
+  getForms: (pageId: string) =>
+    request<{ success: boolean; data: any[] }>(`/facebook/forms?pageId=${pageId}`),
+  connectPage: (
+    pageId: string,
+    selectedFormIds?: string[],
+    allowedStates?: string[],
+    defaultAssigneeId?: string,
+  ) =>
+    request<{ success: boolean; message: string; data: any }>('/facebook/connect-page', {
+      method: 'POST',
+      body: JSON.stringify({ pageId, selectedFormIds, allowedStates, defaultAssigneeId }),
+    }),
+  getConnectedPages: () =>
+    request<{ success: boolean; hasToken: boolean; data: any[] }>('/facebook/connected-pages'),
+  disconnect: (pageId?: string) =>
+    request<{ success: boolean; message: string }>('/facebook/disconnect', {
+      method: 'POST',
+      body: JSON.stringify({ pageId }),
+    }),
+  getMetaCampaigns: () =>
+    request<{ success: boolean; count: number; data: any[]; adAccounts: any[] }>(
+      '/facebook/meta-campaigns',
+    ),
+  getMetaCampaignInsights: (id: string, params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ success: boolean; data: any }>(`/facebook/meta-campaigns/${id}/insights${qs}`);
+  },
+  createCampaign: (data: any) =>
+    request<{ success: boolean; data: any }>('/facebook/meta-campaigns', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateCampaign: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/facebook/meta-campaigns/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteCampaign: (id: string) =>
+    request<{ success: boolean; message: string }>(`/facebook/meta-campaigns/${id}`, {
+      method: 'DELETE',
+    }),
+  getAllAdSets: () =>
+    request<{ success: boolean; count: number; data: any[] }>('/facebook/all-adsets'),
+  createAdSet: (data: any) =>
+    request<{ success: boolean; data: any }>('/facebook/adsets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateAdSet: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/facebook/adsets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteAdSet: (id: string) =>
+    request<{ success: boolean; message: string }>(`/facebook/adsets/${id}`, {
+      method: 'DELETE',
+    }),
+  getAllAds: () => request<{ success: boolean; count: number; data: any[] }>('/facebook/all-ads'),
+  createAd: (data: any) =>
+    request<{ success: boolean; data: any }>('/facebook/ads', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateAd: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/facebook/ads/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteAd: (id: string) =>
+    request<{ success: boolean; message: string }>(`/facebook/ads/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 export const googleAdsAPI = {
@@ -254,6 +449,80 @@ export const googleAdsAPI = {
     request<{ success: boolean; data: any; message: string }>('/google-ads/sync', {
       method: 'POST',
       body: JSON.stringify({ customerId, since }),
+    }),
+  getAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>('/google-ads/auth-url'),
+  getAccounts: () =>
+    request<{ success: boolean; data: { id: string; name: string; error?: string }[] }>(
+      '/google-ads/accounts',
+    ),
+  getCampaigns: (customerId: string) =>
+    request<{ success: boolean; data: { id: string; name: string; status: string }[] }>(
+      `/google-ads/campaigns?customerId=${customerId}`,
+    ),
+  connectAccount: (
+    customerId: string,
+    customerName?: string,
+    selectedCampaignIds: string[] = [],
+    allowedStates: string[] = [],
+    defaultAssigneeId: string = '',
+    loginCustomerId: string = '',
+  ) =>
+    request<{ success: boolean; message: string; data: any }>('/google-ads/connect-account', {
+      method: 'POST',
+      body: JSON.stringify({
+        customerId,
+        customerName,
+        selectedCampaignIds,
+        allowedStates,
+        defaultAssigneeId,
+        loginCustomerId,
+      }),
+    }),
+  getConnectedAccounts: () =>
+    request<{ success: boolean; hasToken: boolean; data: any[] }>('/google-ads/connected-accounts'),
+  disconnect: (customerId?: string) =>
+    request<{ success: boolean; message: string }>('/google-ads/disconnect', {
+      method: 'POST',
+      body: JSON.stringify({ customerId }),
+    }),
+};
+
+export const linkedinAdsAPI = {
+  getAuthUrl: () =>
+    request<{ success: boolean; data: { authUrl: string } }>('/linkedin-ads/auth-url'),
+  getAccounts: () =>
+    request<{ success: boolean; data: { id: string; name: string }[] }>('/linkedin-ads/accounts'),
+  getForms: (adAccountId: string) =>
+    request<{ success: boolean; data: { id: string; name: string }[] }>(
+      `/linkedin-ads/forms?adAccountId=${adAccountId}`,
+    ),
+  getCampaigns: (adAccountId: string) =>
+    request<{ success: boolean; data: { id: string; name: string; status: string }[] }>(
+      `/linkedin-ads/campaigns?adAccountId=${adAccountId}`,
+    ),
+  connectAccount: (data: {
+    adAccountId: string;
+    adAccountName?: string;
+    selectedFormIds?: string[];
+    allowedStates?: string[];
+    defaultAssigneeId?: string;
+  }) =>
+    request<{ success: boolean; message: string; data: any }>('/linkedin-ads/connect-account', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getConnectedAccounts: () =>
+    request<{ success: boolean; hasToken: boolean; data: any[] }>('/linkedin-ads/connected-accounts'),
+  disconnect: (adAccountId?: string) =>
+    request<{ success: boolean; message: string }>('/linkedin-ads/disconnect', {
+      method: 'POST',
+      body: JSON.stringify({ adAccountId }),
+    }),
+  sync: (adAccountId?: string, since?: string) =>
+    request<{ success: boolean; message: string; data: any }>('/linkedin-ads/sync', {
+      method: 'POST',
+      body: JSON.stringify({ adAccountId, since }),
     }),
 };
 

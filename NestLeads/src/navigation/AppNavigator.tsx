@@ -12,6 +12,8 @@ import AddLeadScreen from '../screens/AddLeadScreen';
 import FiltersScreen from '../screens/FiltersScreen';
 import ClientsScreen from '../screens/ClientsScreen';
 import QuotationsScreen from '../screens/QuotationsScreen';
+import QuotationFormScreen from '../screens/QuotationFormScreen';
+import RolesPermissionsScreen from '../screens/RolesPermissionsScreen';
 import MoreScreen from '../screens/MoreScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import FollowupCalendarScreen from '../screens/FollowupCalendarScreen';
@@ -31,6 +33,20 @@ import BillingScreen from '../screens/BillingScreen';
 import WhatsAppLogsScreen from '../screens/WhatsAppLogsScreen';
 import WhatsAppSetupScreen from '../screens/WhatsAppSetupScreen';
 import LeadStatusesScreen from '../screens/LeadStatusesScreen';
+import AdCampaignsHubScreen from '../screens/AdCampaignsHubScreen';
+import LinkedInSetupScreen from '../screens/LinkedInSetupScreen';
+import GoogleAdsSetupScreen from '../screens/GoogleAdsSetupScreen';
+import AdPlatformLockedScreen from '../screens/AdPlatformLockedScreen';
+import FacebookAdsDashboardScreen from '../screens/FacebookAdsDashboardScreen';
+import FacebookAdCampaignsScreen from '../screens/FacebookAdCampaignsScreen';
+import FacebookAdSetsScreen from '../screens/FacebookAdSetsScreen';
+import FacebookAdsListScreen from '../screens/FacebookAdsListScreen';
+import FacebookCampaignManagementScreen from '../screens/FacebookCampaignManagementScreen';
+import LinkedInCampaignManagementScreen from '../screens/LinkedInCampaignManagementScreen';
+import CampaignManagementOverviewScreen from '../screens/CampaignManagementOverviewScreen';
+import CampaignReportsScreen from '../screens/CampaignReportsScreen';
+import ActivityLogScreen from '../screens/ActivityLogScreen';
+import AccountSecurityScreen from '../screens/AccountSecurityScreen';
 
 export type LeadsStackParamList = {
   LeadsList: undefined;
@@ -60,6 +76,8 @@ export type MoreStackParamList = {
   Integrations: undefined;
   Clients: undefined;
   Quotations: undefined;
+  QuotationForm: {quotation?: any} | undefined;
+  RolesPermissions: undefined;
   SocialPlanner: undefined;
   CreatePost: undefined;
   Services: undefined;
@@ -69,6 +87,20 @@ export type MoreStackParamList = {
   WhatsAppLogs: undefined;
   WhatsAppSetup: undefined;
   LeadStatuses: undefined;
+  AdCampaignsHub: undefined;
+  LinkedInSetup: undefined;
+  GoogleAdsSetup: undefined;
+  AdPlatformLocked: {platform: 'linkedin' | 'google'; section: string};
+  FacebookAdsDashboard: undefined;
+  FacebookAdCampaigns: undefined;
+  FacebookAdSets: undefined;
+  FacebookAdsList: undefined;
+  FacebookCampaignManagement: undefined;
+  LinkedInCampaignManagement: undefined;
+  CampaignManagementOverview: undefined;
+  CampaignReports: undefined;
+  ActivityLog: undefined;
+  AccountSecurity: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -101,6 +133,8 @@ function MoreNavigator() {
       <MoreStack.Screen name="Integrations" component={IntegrationsScreen} />
       <MoreStack.Screen name="Clients" component={ClientsScreen} />
       <MoreStack.Screen name="Quotations" component={QuotationsScreen} />
+      <MoreStack.Screen name="QuotationForm" component={QuotationFormScreen} />
+      <MoreStack.Screen name="RolesPermissions" component={RolesPermissionsScreen} />
       <MoreStack.Screen name="SocialPlanner" component={SocialPlannerScreen} />
       <MoreStack.Screen name="CreatePost" component={CreatePostScreen} />
       <MoreStack.Screen name="Services" component={ServicesScreen} />
@@ -110,6 +144,20 @@ function MoreNavigator() {
       <MoreStack.Screen name="WhatsAppLogs" component={WhatsAppLogsScreen} />
       <MoreStack.Screen name="WhatsAppSetup" component={WhatsAppSetupScreen} />
       <MoreStack.Screen name="LeadStatuses" component={LeadStatusesScreen} />
+      <MoreStack.Screen name="AdCampaignsHub" component={AdCampaignsHubScreen} />
+      <MoreStack.Screen name="LinkedInSetup" component={LinkedInSetupScreen} />
+      <MoreStack.Screen name="GoogleAdsSetup" component={GoogleAdsSetupScreen} />
+      <MoreStack.Screen name="AdPlatformLocked" component={AdPlatformLockedScreen} />
+      <MoreStack.Screen name="FacebookAdsDashboard" component={FacebookAdsDashboardScreen} />
+      <MoreStack.Screen name="FacebookAdCampaigns" component={FacebookAdCampaignsScreen} />
+      <MoreStack.Screen name="FacebookAdSets" component={FacebookAdSetsScreen} />
+      <MoreStack.Screen name="FacebookAdsList" component={FacebookAdsListScreen} />
+      <MoreStack.Screen name="FacebookCampaignManagement" component={FacebookCampaignManagementScreen} />
+      <MoreStack.Screen name="LinkedInCampaignManagement" component={LinkedInCampaignManagementScreen} />
+      <MoreStack.Screen name="CampaignManagementOverview" component={CampaignManagementOverviewScreen} />
+      <MoreStack.Screen name="CampaignReports" component={CampaignReportsScreen} />
+      <MoreStack.Screen name="ActivityLog" component={ActivityLogScreen} />
+      <MoreStack.Screen name="AccountSecurity" component={AccountSecurityScreen} />
     </MoreStack.Navigator>
   );
 }

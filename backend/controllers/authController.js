@@ -650,6 +650,108 @@ const resetPasswordWithTotp = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Password has been reset. Please log in." });
 });
 
+// --- Passwordless login via WhatsApp OTP (phone must already be verified) ---
+
+function phoneVariants(raw) {
+  const normalised = String(raw || "").replace(/\D/g, "").slice(-10);
+  return [normalised, `+91${normalised}`, `91${normalised}`];
+}
+
+const loginRequestOtp = asyncHandler(async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) {
+    res.status(400);
+    throw new Error("Phone number is required");
+  }
+
+  const user = await User.findOne({
+    phone: { $in: phoneVariants(phone) },
+    phoneVerified: true,
+  }).select("+phone");
+
+  if (user && user.status !== "inactive") {
+    const otp = generateOtp();
+    user.loginOtpHash = hashOtp(otp);
+    user.loginOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save({ validateBeforeSave: false });
+
+    try {
+      await sendWhatsAppOtp(formatPhone(user.phone), otp);
+    } catch (err) {
+      log.error("Login OTP send failed", { message: err.message });
+    }
+  }
+
+  // Generic response regardless of match, to avoid phone-number enumeration.
+  res.json({
+    success: true,
+    message: "If that phone number is registered and verified, an OTP has been sent.",
+  });
+});
+
+const loginVerifyOtp = asyncHandler(async (req, res) => {
+  const { phone, otp } = req.body;
+  if (!phone || !otp) {
+    res.status(400);
+    throw new Error("Phone and OTP are required");
+  }
+
+  const user = await User.findOne({
+    phone: { $in: phoneVariants(phone) },
+    loginOtpHash: hashOtp(otp),
+    loginOtpExpires: { $gt: new Date() },
+  }).select("+loginOtpHash +loginOtpExpires");
+
+  if (!user) {
+    res.status(401);
+    throw new Error("Invalid or expired OTP");
+  }
+
+  if (user.status === "inactive") {
+    res.status(403);
+    throw new Error("Account is deactivated. Contact your administrator.");
+  }
+
+  user.loginOtpHash = undefined;
+  user.loginOtpExpires = undefined;
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
+
+  const tenant = user.tenantId
+    ? await Tenant.findById(user.tenantId).select("name plan status planExpiresAt")
+    : null;
+
+  logActivity({
+    user,
+    action: "LOGIN",
+    module: "Auth",
+    description: `${user.name} logged in via WhatsApp OTP`,
+    ip: req.ip,
+  });
+
+  await issueWebSession(res, user);
+
+  res.json({
+    success: true,
+    data: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      department: user.department,
+      avatar: user.avatar,
+      status: user.status,
+      tenantId: user.tenantId,
+      lastLogin: user.lastLogin,
+      token: generateToken(user._id),
+      tenant: tenant
+        ? { _id: tenant._id, name: tenant.name, plan: tenant.plan, status: tenant.status }
+        : null,
+    },
+  });
+});
+
 // --- Phone verification (required once before WhatsApp reset can be offered) ---
 
 const sendPhoneOtp = asyncHandler(async (req, res) => {
@@ -741,6 +843,8 @@ module.exports = {
   forgotPasswordWhatsapp,
   resetPasswordWithOtp,
   resetPasswordWithTotp,
+  loginRequestOtp,
+  loginVerifyOtp,
   sendPhoneOtp,
   verifyPhoneOtp,
   totpSetup,

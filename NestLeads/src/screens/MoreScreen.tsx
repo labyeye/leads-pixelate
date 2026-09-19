@@ -29,6 +29,7 @@ type MenuItem = {
   sub: string;
   screen: string;
   color: string;
+  adminOnly?: boolean;
 };
 
 const MENU_ITEMS: MenuItem[] = [
@@ -96,6 +97,13 @@ const MENU_ITEMS: MenuItem[] = [
     color: SECONDARY,
   },
   {
+    icon: 'stats-chart-outline',
+    label: 'Ad Campaigns',
+    sub: 'Facebook, LinkedIn & Google Ads',
+    screen: 'AdCampaignsHub',
+    color: '#0A66C2',
+  },
+  {
     icon: 'logo-instagram',
     label: 'Social Planner',
     sub: 'Schedule & approve social posts',
@@ -152,6 +160,21 @@ const MENU_ITEMS: MenuItem[] = [
     color: PRIMARY,
   },
   {
+    icon: 'shield-checkmark-outline',
+    label: 'Account Security',
+    sub: 'Password, WhatsApp & 2FA',
+    screen: 'AccountSecurity',
+    color: PRIMARY,
+  },
+  {
+    icon: 'terminal-outline',
+    label: 'Activity Log',
+    sub: 'Admin & team activity history',
+    screen: 'ActivityLog',
+    color: '#000',
+    adminOnly: true,
+  },
+  {
     icon: 'settings-outline',
     label: 'Settings',
     sub: 'Profile & app settings',
@@ -164,6 +187,8 @@ export default function MoreScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const initial = (user?.name || user?.email || 'U')[0].toUpperCase();
+  const isAdmin = ['admin', 'super_admin'].includes(user?.role);
+  const menuItems = MENU_ITEMS.filter(item => !item.adminOnly || isAdmin);
 
   const handleLogout = () => {
     const { Alert } = require('react-native');
@@ -229,7 +254,7 @@ export default function MoreScreen({ navigation }: any) {
 
         {/* Menu list card */}
         <View style={styles.menuCard}>
-          {MENU_ITEMS.map((item, idx) => (
+          {menuItems.map((item, idx) => (
             <View key={item.screen}>
               {idx > 0 && <View style={styles.menuDivider} />}
               <TouchableOpacity
@@ -296,7 +321,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileAvatarText: { fontSize: 22, fontWeight: '900', color: '#fff' },
-  profileInfo: { },
+  profileInfo: { flexShrink: 1 },
   profileName: {
     fontSize: 16,
     fontWeight: '900',
@@ -309,7 +334,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 2,
   },
-  profileActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  profileActions: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' },
   editBtn: {
     flex: 1,
     flexDirection: 'row',

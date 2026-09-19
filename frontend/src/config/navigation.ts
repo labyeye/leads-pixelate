@@ -25,6 +25,9 @@ import {
   ImageIcon,
   BarChart3,
   ClipboardList,
+  Sparkles,
+  Inbox,
+  Send,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
@@ -143,6 +146,12 @@ const allGroups: NavGroup[] = [
         href: "/social-planner",
         icon: MetaIcon,
         roles: ["super_admin", "admin", "sales_executive"],
+      },
+      {
+        title: "Autopilot",
+        href: "/social-autopilot",
+        icon: Sparkles,
+        roles: ["super_admin", "admin"],
       },
     ],
   },
@@ -292,25 +301,40 @@ const allGroups: NavGroup[] = [
     ],
   },
   {
-    label: "WhatsApp",
+    label: "Messaging",
     items: [
       {
-        title: "Inbox",
-        href: "/whatsapp/inbox",
+        title: "WhatsApp",
+        href: "/whatsapp",
         icon: WhatsAppNavIcon,
         roles: ["super_admin", "admin", "sales_executive"],
-      },
-      {
-        title: "Logs",
-        href: "/whatsapp/logs",
-        icon: WhatsAppNavIcon,
-        roles: ["super_admin", "admin", "sales_executive"],
-      },
-      {
-        title: "Setup",
-        href: "/whatsapp/setup",
-        icon: WhatsAppNavIcon,
-        roles: ["super_admin", "admin"],
+        children: [
+          {
+            title: "Inbox",
+            href: "/whatsapp/inbox",
+            icon: Inbox,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Campaigns",
+            href: "/whatsapp/campaigns",
+            icon: Send,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Logs",
+            href: "/whatsapp/logs",
+            icon: FileText,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            // Connection, Templates, Campaign Analytics and Replies tabs
+            title: "Setup",
+            href: "/whatsapp/setup",
+            icon: Settings,
+            roles: ["super_admin", "admin"],
+          },
+        ],
       },
     ],
   },
@@ -398,11 +422,21 @@ export function getNavForRole(role: UserRole) {
   return navItems.filter((item) => item.roles.includes(role));
 }
 
+// Children carry their own roles (e.g. WhatsApp > Setup is admin-only), so the
+// filter has to recurse; a dropdown left with no visible children disappears.
+function filterByRole(items: NavItem[], role: UserRole): NavItem[] {
+  return items
+    .filter((item) => item.roles.includes(role))
+    .map((item) =>
+      item.children
+        ? { ...item, children: filterByRole(item.children, role) }
+        : item,
+    )
+    .filter((item) => !item.children || item.children.length > 0);
+}
+
 export function getNavGroupsForRole(role: UserRole): NavGroup[] {
   return allGroups
-    .map((g) => ({
-      ...g,
-      items: g.items.filter((item) => item.roles.includes(role)),
-    }))
+    .map((g) => ({ ...g, items: filterByRole(g.items, role) }))
     .filter((g) => g.items.length > 0);
 }

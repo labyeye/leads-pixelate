@@ -3,7 +3,7 @@ import {View, StyleSheet, ActivityIndicator, Image, StatusBar, Linking} from 're
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import LoginScreen from './src/screens/LoginScreen';
+import AuthNavigator from './src/navigation/AuthNavigator';
 import {
   createNotificationChannels,
   requestNotificationPermission,
@@ -81,7 +81,7 @@ function RootNavigator() {
     );
   }
 
-  if (!user) return <LoginScreen />;
+  if (!user) return <AuthNavigator />;
   return <AppNavigator />;
 }
 

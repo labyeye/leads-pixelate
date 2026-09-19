@@ -110,7 +110,11 @@ const PLAN_PRICES_YEARLY = {
   pro: 1999900,
 };
 
+// Flat monthly add-ons billed on top of the plan (paise).
+const ADDON_PRICES = { autopilot: 149900 };
+
 module.exports = mongoose.model("Subscription", subscriptionSchema);
+module.exports.ADDON_PRICES = ADDON_PRICES;
 module.exports.PLAN_LIMITS = PLAN_LIMITS;
 module.exports.PLAN_PRICES_MONTHLY = PLAN_PRICES_MONTHLY;
 module.exports.PLAN_PRICES_YEARLY = PLAN_PRICES_YEARLY;

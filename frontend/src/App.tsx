@@ -27,8 +27,10 @@ import ConsolePage from "./pages/ConsolePage";
 import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
 import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
 import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
+import WhatsappMessagingPage from "./pages/WhatsappMessagingPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
+import SocialAutopilotPage from "./pages/SocialAutopilotPage";
 import LinkedInCampaignsPage from "./pages/LinkedInCampaignsPage";
 import GoogleAdsCampaignsPage from "./pages/GoogleAdsCampaignsPage";
 import GoogleAdsPlaceholderPage from "./pages/GoogleAdsPlaceholderPage";
@@ -292,10 +294,30 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/whatsapp/campaigns"
+        element={
+          <ProtectedRoute>
+            <WhatsappMessagingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/whatsapp"
+        element={<Navigate to="/whatsapp/inbox" replace />}
+      />
+      <Route
         path="/social-planner"
         element={
           <ProtectedRoute>
             <SocialMediaPlannerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/social-autopilot"
+        element={
+          <ProtectedRoute>
+            <SocialAutopilotPage />
           </ProtectedRoute>
         }
       />

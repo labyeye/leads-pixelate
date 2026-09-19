@@ -13,6 +13,7 @@ import {
   Modal,
   ScrollView,
   Image,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
@@ -40,6 +41,7 @@ import {
   Calendar,
   CalendarCheck,
   IdCard,
+  Mail,
   PhoneCall,
   UserIcon,
 } from 'lucide-react-native';
@@ -316,7 +318,6 @@ export default function LeadsListScreen({ navigation }: Props) {
       >
         <View style={styles.cardTop}>
           <View style={styles.cardTopLeft}>
-            {' '}
             <View style={styles.leadDetailRow}>
               <View
                 style={{
@@ -363,16 +364,6 @@ export default function LeadsListScreen({ navigation }: Props) {
               </View>
             ) : null}
           </View>
-          <View style={styles.cardTopRight}>
-            <SourceBadge source={l.source} size="md" />
-            {tag && (
-              <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
-                <Text style={[styles.tagPillText, { color: tag.text }]}>
-                  {l.contactTag}
-                </Text>
-              </View>
-            )}
-          </View>
         </View>
 
         {l.followUpDate ? (
@@ -405,6 +396,17 @@ export default function LeadsListScreen({ navigation }: Props) {
               </Text>
             ) : null}
           </View>
+        </View>
+
+        <View style={styles.sourceStatusRow}>
+          <SourceBadge source={l.source} size="md" />
+          {tag && (
+            <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
+              <Text style={[styles.tagPillText, { color: tag.text }]}>
+                {l.contactTag}
+              </Text>
+            </View>
+          )}
           <View
             style={[
               styles.statusPill,
@@ -415,6 +417,36 @@ export default function LeadsListScreen({ navigation }: Props) {
               {getStatusLabel(l.status) || 'PENDING CONTACT'}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.cardActionsRow}>
+          {l.phone ? (
+            <TouchableOpacity
+              style={styles.cardActionBtn}
+              onPress={() => Linking.openURL(`tel:${l.phone}`)}
+            >
+              <PhoneCall size={13} color={PRIMARY} />
+              <Text style={styles.cardActionText}>Call</Text>
+            </TouchableOpacity>
+          ) : null}
+          {l.email ? (
+            <TouchableOpacity
+              style={styles.cardActionBtn}
+              onPress={() => Linking.openURL(`mailto:${l.email}`)}
+            >
+              <Mail size={13} color={PRIMARY} />
+              <Text style={styles.cardActionText}>Email</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity
+            style={styles.cardActionBtn}
+            onPress={() =>
+              navigation.navigate('LeadDetail', { leadId: l._id || l.id })
+            }
+          >
+            <IdCard size={13} color={PRIMARY} />
+            <Text style={styles.cardActionText}>Details</Text>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -524,75 +556,7 @@ export default function LeadsListScreen({ navigation }: Props) {
       </View>
 
       {/* Sync row — equal width chips, no scroll */}
-      <View style={styles.syncRow}>
-        {(
-          [
-            {
-              key: 'indiamart',
-              label: 'IndiaMART',
-              logo: require('../assets/images/logos/indiamart.png'),
-              color: '#FF6B2B',
-            },
-            {
-              key: 'facebook',
-              label: 'Facebook',
-              logo: require('../assets/images/logos/facebook.png'),
-              color: '#1877F2',
-            },
-            {
-              key: 'googleAds',
-              label: 'Google Ads',
-              logo: null,
-              iconName: 'logo-google',
-              color: '#4285F4',
-            },
-            {
-              key: 'tradeindia',
-              label: 'TradeIndia',
-              logo: require('../assets/images/logos/tradeindia.webp'),
-              color: '#e11d48',
-            },
-            {
-              key: 'justdial',
-              label: 'JustDial',
-              logo: require('../assets/images/logos/justdial.webp'),
-              color: '#f59e0b',
-            },
-          ] as const
-        ).map(s => {
-          const isSyncing = syncingSource === s.key;
-          return (
-            <TouchableOpacity
-              key={s.key}
-              style={[
-                styles.syncChip,
-                { borderColor: s.color },
-                isSyncing && { opacity: 0.6 },
-              ]}
-              onPress={() => handleSyncPress(s.key)}
-              disabled={syncingSource !== null}
-            >
-              {isSyncing ? (
-                <ActivityIndicator size={14} color={s.color} />
-              ) : 'logo' in s && s.logo ? (
-                <Image
-                  source={s.logo}
-                  style={styles.syncLogo}
-                  resizeMode="contain"
-                />
-              ) : (
-                <Icon name={(s as any).iconName} size={14} color={s.color} />
-              )}
-              <Text
-                style={[styles.syncChipText, { color: s.color }]}
-                numberOfLines={1}
-              >
-                {s.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      
       <View style={styles.syncRowDivider} />
 
       {/* Category tabs */}
@@ -601,6 +565,7 @@ export default function LeadsListScreen({ navigation }: Props) {
         showsHorizontalScrollIndicator={false}
         data={categoryOrder}
         keyExtractor={i => i}
+        style={styles.tabsFlatList}
         contentContainerStyle={styles.tabsRow}
         renderItem={({ item: cat }) => {
           const active = cat === activeCategory;
@@ -636,6 +601,7 @@ export default function LeadsListScreen({ navigation }: Props) {
         </View>
       ) : (
         <FlatList
+          style={styles.leadsList}
           data={filtered}
           keyExtractor={i => i._id || i.id}
           renderItem={renderLeadCard}
@@ -1214,19 +1180,26 @@ const styles = StyleSheet.create({
   addBtnInlineText: { fontSize: 13, fontWeight: '900', color: '#fff' },
 
   // Tabs
+  // Fixed height so this row can never stretch to fill leftover vertical
+  // space (e.g. when the leads list below it is empty) — chip size must
+  // stay constant regardless of how much data is loaded.
+  tabsFlatList: { flexGrow: 0, flexShrink: 0, height: 54 },
   tabsRow: {
     paddingLeft: 12,
     paddingRight: 12,
     paddingVertical: 10,
     gap: 6,
+    alignItems: 'center',
     backgroundColor: '#fff',
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
+    flexGrow: 0,
+    flexShrink: 0,
     paddingHorizontal: 12,
-    marginBottom: 20,
-    minHeight: 36,
+    paddingVertical: 8,
     borderWidth: 2,
     backgroundColor: '#fff',
     gap: 5,
@@ -1254,6 +1227,7 @@ const styles = StyleSheet.create({
   divider: { height: 2, backgroundColor: '#000' },
 
   // Cards
+  leadsList: { flex: 1 },
   listContent: { padding: 12, gap: 10 },
   card: {
     backgroundColor: '#fff',
@@ -1270,7 +1244,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardTopLeft: { flex: 1, marginRight: 8 },
-  cardTopRight: { alignItems: 'flex-end', gap: 4 },
   inquiryDate: {
     fontSize: 13,
     color: '#059600',
@@ -1325,6 +1298,35 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 2,
   },
+  sourceStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  cardActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  cardActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    borderWidth: 1.5,
+    borderColor: PRIMARY,
+    backgroundColor: '#eff6ff',
+  },
+  cardActionText: { fontSize: 11, fontWeight: '800', color: PRIMARY },
   followUpRow: {
     flexDirection: 'row',
     alignItems: 'center',

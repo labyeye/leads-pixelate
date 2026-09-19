@@ -55,6 +55,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Zap,
+  Sparkles,
   BarChart3,
   ExternalLink,
   Copy,
@@ -71,7 +72,7 @@ import {
   isSameMonth,
   isToday,
 } from "date-fns";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 interface SocialPost {
   _id: string;
@@ -230,6 +231,14 @@ export default function SocialMediaPlannerPage() {
               </p>
             </div>
           </div>
+          {isAdmin && (
+            <Link to="/social-autopilot">
+              <Button variant="outline" size="sm">
+                <Sparkles className="w-4 h-4 mr-1" />
+                Autopilot
+              </Button>
+            </Link>
+          )}
         </div>
 
         {}

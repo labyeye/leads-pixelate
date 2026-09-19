@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { Check, CheckCheck, ClockPlus } from 'lucide-react-native';
+import { linkedinAdsAPI, googleAdsAPI } from '../services/api';
 
 // ─── Logo assets ─────────────────────────────────────────────────────────────
 const LOGOS: Record<string, any> = {
@@ -211,31 +212,16 @@ const INTEGRATIONS: Integration[] = [
     fallbackIcon: 'logo-google',
     color: '#4285F4',
     bgColor: '#fff',
-    steps: [
-      {
-        title: 'Connect your Google account',
-        subtitle: 'Step 1 of 2 — Use the NestLeads web dashboard',
-        instructions: [
-          'This connection uses Google sign-in, which needs to be done from the web dashboard',
-          'Open leads.pixelatenest.com on a computer or browser and log in',
-          'Go to Integrations → Google Ads Lead Forms → Connect with Google',
-          'Sign in with the Google account that manages your Ads account',
-        ],
-        actionLabel: "I'll connect from the web",
-      },
-      {
-        title: 'Select account & campaigns',
-        subtitle: 'Step 2 of 2 — Choose what to sync',
-        instructions: [
-          'On the web dashboard, pick your Google Ads account',
-          'Select the campaigns with Lead Form assets you want to sync',
-          'Optionally set allowed states to filter leads by location',
-          'Once connected, leads will appear here in the Leads tab automatically',
-          'Leads are tagged with source "Google Ads" so you can filter them',
-        ],
-        actionLabel: 'Done',
-      },
-    ],
+    steps: [], // handled by GoogleAdsSetupScreen (real OAuth), not the generic wizard
+  },
+  {
+    key: 'linkedin',
+    label: 'LinkedIn Lead Gen',
+    desc: 'Capture leads from LinkedIn Lead Gen Forms',
+    fallbackIcon: 'link-outline',
+    color: '#0A66C2',
+    bgColor: '#fff',
+    steps: [], // handled by LinkedInSetupScreen (real OAuth), not the generic wizard
   },
   {
     key: 'tradeindia',
@@ -811,6 +797,35 @@ export default function IntegrationsScreen({ navigation }: any) {
   );
   const [wizard, setWizard] = useState<Integration | null>(null);
 
+  // LinkedIn/Google Ads connect real backend state (unlike the other cards'
+  // local-only mock state) — refresh whenever the screen regains focus, e.g.
+  // after returning from LinkedInSetup/GoogleAdsSetup.
+  useEffect(() => {
+    const checkReal = async () => {
+      try {
+        const li = await linkedinAdsAPI.getConnectedAccounts();
+        setConnected(s => {
+          const n = new Set(s);
+          if (li.hasToken && li.data?.length) n.add('linkedin');
+          else n.delete('linkedin');
+          return n;
+        });
+      } catch {}
+      try {
+        const ga = await googleAdsAPI.getConnectedAccounts();
+        setConnected(s => {
+          const n = new Set(s);
+          if (ga.hasToken && ga.data?.length) n.add('googleAds');
+          else n.delete('googleAds');
+          return n;
+        });
+      } catch {}
+    };
+    checkReal();
+    const unsub = navigation.addListener?.('focus', checkReal);
+    return unsub;
+  }, [navigation]);
+
   const connectedCount = connected.size;
 
   return (
@@ -936,6 +951,14 @@ export default function IntegrationsScreen({ navigation }: any) {
                   { borderColor: isOn ? '#22c55e' : intg.color },
                 ]}
                 onPress={() => {
+                  if (intg.key === 'linkedin') {
+                    navigation.navigate('LinkedInSetup');
+                    return;
+                  }
+                  if (intg.key === 'googleAds') {
+                    navigation.navigate('GoogleAdsSetup');
+                    return;
+                  }
                   if (isOn) {
                     Alert.alert(
                       `Disconnect ${intg.label}`,
@@ -975,13 +998,7 @@ export default function IntegrationsScreen({ navigation }: any) {
         {/* Coming soon */}
         <Text style={[styles.sectionLabel, { marginTop: 8 }]}>COMING SOON</Text>
         <View style={styles.comingSoonRow}>
-          {[
-            'Sulekha',
-            '99acres',
-            'MagicBricks',
-            'LinkedIn Lead Gen',
-            'Google Ads',
-          ].map(name => (
+          {['Sulekha', '99acres', 'MagicBricks'].map(name => (
             <View key={name} style={styles.comingSoonTag}>
               <Text style={styles.comingSoonText}>{name}</Text>
             </View>

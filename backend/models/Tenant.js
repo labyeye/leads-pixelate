@@ -171,6 +171,28 @@ const tenantSchema = new mongoose.Schema(
       customerId: { type: String, default: null },
       subscriptionId: { type: String, default: null },
     },
+    // Social Autopilot add-on (services/autopilotService.js). Platform-owned
+    // AI keys; tenant gets a one-time trial, then pays a flat monthly add-on.
+    autopilot: {
+      enabled: { type: Boolean, default: false },
+      postsPerDay: { type: Number, default: 1, min: 1, max: 2 },
+      tone: { type: String, default: "", maxlength: 200 },
+      language: {
+        type: String,
+        enum: ["English", "Hindi", "Hinglish"],
+        default: "English",
+      },
+      notes: { type: String, default: "", maxlength: 500 },
+      reviewFirst: { type: Boolean, default: false },
+      accountIds: { type: [String], default: [] },
+      trialStartedAt: { type: Date, default: null },
+      trialEndsAt: { type: Date, default: null },
+      paidUntil: { type: Date, default: null },
+      pendingOrderIds: { type: [String], default: [] },
+      runningSince: { type: Date, default: null },
+      lastRunAt: { type: Date, default: null },
+      lastError: { type: String, default: "" },
+    },
     apiKeys: [
       {
         name: { type: String, required: true },

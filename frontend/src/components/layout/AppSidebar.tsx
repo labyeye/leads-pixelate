@@ -1,4 +1,4 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getNavGroupsForRole, NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
@@ -26,12 +26,15 @@ function hasActiveDescendant(item: NavItem, pathname: string): boolean {
   );
 }
 
+function firstLeaf(item: NavItem): string {
+  return item.children?.length ? firstLeaf(item.children[0]) : item.href;
+}
+
 // Recursive so a dropdown item (Campaigns > Facebook) can itself contain
 // another dropdown (Facebook > Dashboard/Ad Campaigns/Ad Sets/Ads).
 function NavNode({
   item,
   depth,
-  isWa,
   collapsed,
   openSet,
   toggleOpen,
@@ -39,13 +42,14 @@ function NavNode({
 }: {
   item: NavItem;
   depth: number;
-  isWa: boolean;
   collapsed: boolean;
   openSet: Set<string>;
   toggleOpen: (href: string) => void;
   onClose: () => void;
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const isWa = item.href.startsWith("/whatsapp");
   const active = location.pathname === item.href;
 
   if (item.children?.length) {
@@ -56,7 +60,12 @@ function NavNode({
         <button
           type="button"
           title={collapsed ? item.title : undefined}
-          onClick={() => toggleOpen(item.href)}
+          // A collapsed rail can't show the dropdown, so jump to its first page.
+          onClick={() =>
+            collapsed && depth === 0
+              ? navigate(firstLeaf(item))
+              : toggleOpen(item.href)
+          }
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold transition-all duration-100 border-2",
             childActive
@@ -65,7 +74,12 @@ function NavNode({
             collapsed && depth === 0 && "lg:justify-center lg:px-0",
           )}
         >
-          <item.icon className="w-[18px] h-[18px] shrink-0" />
+          <item.icon
+            className={cn(
+              "w-[18px] h-[18px] shrink-0",
+              isWa && "text-[#25D366]",
+            )}
+          />
           <span className={cn("flex-1 text-left", collapsed && depth === 0 && "lg:hidden")}>
             {item.title}
           </span>
@@ -84,7 +98,6 @@ function NavNode({
                 key={child.href + child.title}
                 item={child}
                 depth={depth + 1}
-                isWa={isWa}
                 collapsed={collapsed}
                 openSet={openSet}
                 toggleOpen={toggleOpen}
@@ -200,7 +213,6 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
                     key={item.href + item.title}
                     item={item}
                     depth={0}
-                    isWa={group.label === "WhatsApp"}
                     collapsed={collapsed}
                     openSet={openDropdowns}
                     toggleOpen={toggleOpen}

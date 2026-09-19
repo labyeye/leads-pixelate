@@ -1,20 +1,66 @@
 import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal,
   ActivityIndicator, StatusBar, RefreshControl, Alert, FlatList,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import UserAvatar from '../components/UserAvatar';
 import SourceBadge from '../components/SourceBadge';
-import {leadsAPI, usersAPI} from '../services/api';
+import {leadsAPI, usersAPI, clientsAPI, quotationsAPI, reportsAPI} from '../services/api';
 import {getStatusColor, getStatusLabel, sourceColors, getCategoryByStatus} from '../constants/statusConstants';
+import {shareCSV} from '../lib/csvExport';
 
 const PRIMARY   = '#024BAB';
 const SECONDARY = '#FF751F';
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
 type Tab = 'overview' | 'sources' | 'team' | 'trends' | 'followups';
+type ReportsView = 'catalog' | 'analytics';
+
+interface ReportTable {headers: string[]; rows: (string | number)[][]}
+interface ReportDef {
+  id: string; category: string; title: string; description: string; icon: string;
+  filenamePrefix: string; fetch: () => Promise<ReportTable>;
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  Leads: '#024BAB', Activity: '#7c3aed', Team: '#FF751F', Clients: '#22c55e', Quotations: '#0ea5e9', Campaigns: '#4f46e5',
+};
+
+function quotationTotalFor(q: any): number {
+  const subtotal = (q.services || []).reduce((a: number, s: any) => a + Number(s.price) * Number(s.quantity), 0);
+  const discount = Number(q.discount) || 0;
+  return subtotal - discount + (subtotal - discount) * 0.18;
+}
+
+function buildLeadsTable(list: any[]): ReportTable {
+  return {
+    headers: ['Name', 'Company', 'Phone', 'Email', 'Source', 'Status', 'Assigned To', 'Created'],
+    rows: list.map(l => [
+      l.name || '', l.company || '', l.phone || '', l.email || '', l.source || '',
+      getStatusLabel(l.status) || l.status || '', l.assignedTo?.name || '—',
+      l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '',
+    ]),
+  };
+}
+
+function buildClientsTable(list: any[]): ReportTable {
+  return {
+    headers: ['Name', 'Company', 'Phone', 'Email', 'Project Status', 'Payment Status'],
+    rows: list.map(c => [c.name || '', c.company || '', c.phone || '', c.email || '', c.projectStatus || '', c.paymentStatus || '']),
+  };
+}
+
+function buildQuotationsTable(list: any[]): ReportTable {
+  return {
+    headers: ['Number', 'Client', 'Project', 'Status', 'Total', 'Date'],
+    rows: list.map(q => [
+      q.number || '', q.clientName || '', q.projectTitle || '', q.status || '',
+      quotationTotalFor(q).toFixed(2), q.date ? new Date(q.date).toLocaleDateString('en-IN') : '',
+    ]),
+  };
+}
 
 const TABS: {key: Tab; label: string; icon: string}[] = [
   {key: 'overview',  label: 'Overview',   icon: 'grid-outline'},
@@ -65,6 +111,12 @@ export default function ReportsScreen({navigation}: any) {
   const [users, setUsers]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [view, setView] = useState<ReportsView>('catalog');
+  const [catSearch, setCatSearch] = useState('');
+  const [catFilter, setCatFilter] = useState('All');
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{title: string; table: ReportTable} | null>(null);
 
   const fetchAll = useCallback(async (isRefresh = false) => {
     try {
@@ -531,6 +583,134 @@ export default function ReportsScreen({navigation}: any) {
     }
   };
 
+  /* ─── Report Catalog (declarative, CSV export via native Share) ─── */
+  const REPORT_CATALOG: ReportDef[] = [
+    {id: 'leads-all', category: 'Leads', title: 'All Leads', description: 'Every lead in the system', icon: 'people-outline', filenamePrefix: 'leads-all', fetch: async () => buildLeadsTable(leads)},
+    {id: 'leads-won', category: 'Leads', title: 'Won Leads', description: 'Leads converted to clients', icon: 'checkmark-circle-outline', filenamePrefix: 'leads-won', fetch: async () => buildLeadsTable(leads.filter(l => getCategoryByStatus(l.status) === 'Client'))},
+    {id: 'leads-dropped', category: 'Leads', title: 'Dropped Leads', description: 'Leads marked as dropped/lost', icon: 'close-circle-outline', filenamePrefix: 'leads-dropped', fetch: async () => buildLeadsTable(leads.filter(l => getCategoryByStatus(l.status) === 'Dropped'))},
+    {id: 'leads-pending', category: 'Leads', title: 'Pending Contact', description: 'Leads not yet contacted', icon: 'time-outline', filenamePrefix: 'leads-pending', fetch: async () => buildLeadsTable(leads.filter(l => (l.status || '').toUpperCase() === 'PENDING CONTACT'))},
+    {id: 'leads-followup', category: 'Leads', title: 'Follow-up Due', description: 'Leads with a follow-up date set', icon: 'calendar-outline', filenamePrefix: 'leads-followup', fetch: async () => buildLeadsTable(leads.filter(l => !!l.followUpDate))},
+    {id: 'leads-visit', category: 'Leads', title: 'Visit Scheduled', description: 'Leads with a site visit scheduled', icon: 'business-outline', filenamePrefix: 'leads-visit', fetch: async () => buildLeadsTable(leads.filter(l => !!l.visitScheduledDate))},
+    {
+      id: 'activity-status', category: 'Activity', title: 'Status Activity', description: 'Lead status changes by month', icon: 'flash-outline', filenamePrefix: 'status-activity',
+      fetch: async () => {
+        const res = await reportsAPI.getStatusHistory({period: 'month'});
+        const rows = Object.entries(res.data || {}).map(([k, v]) => [k, String(v)]);
+        return {headers: ['Period', 'Count'], rows};
+      },
+    },
+    {
+      id: 'team-performance', category: 'Team', title: 'Team Performance', description: 'Leads handled & conversion by team member', icon: 'people-outline', filenamePrefix: 'team-performance',
+      fetch: async () => ({
+        headers: ['Name', 'Leads', 'Clients', 'Hot Leads', 'Conversion %'],
+        rows: stats.agentList.map((p: any) => [p.name, p.count, p.clients, p.hot, p.rate]),
+      }),
+    },
+    {id: 'clients-all', category: 'Clients', title: 'All Clients', description: 'Every converted client', icon: 'briefcase-outline', filenamePrefix: 'clients-all', fetch: async () => { const r = await clientsAPI.getAll(); return buildClientsTable(r.data || []); }},
+    {id: 'clients-active', category: 'Clients', title: 'Active Clients', description: 'Clients with active projects', icon: 'checkmark-circle-outline', filenamePrefix: 'clients-active', fetch: async () => { const r = await clientsAPI.getAll(); return buildClientsTable((r.data || []).filter((c: any) => c.projectStatus === 'Active')); }},
+    {id: 'clients-pending', category: 'Clients', title: 'Payment Pending', description: 'Clients with pending/overdue payments', icon: 'card-outline', filenamePrefix: 'clients-payment-pending', fetch: async () => { const r = await clientsAPI.getAll(); return buildClientsTable((r.data || []).filter((c: any) => c.paymentStatus !== 'Paid')); }},
+    {id: 'quotations-all', category: 'Quotations', title: 'All Quotations', description: 'Every quotation raised', icon: 'document-text-outline', filenamePrefix: 'quotations-all', fetch: async () => { const r = await quotationsAPI.getAll(); return buildQuotationsTable(r.data || []); }},
+    {id: 'quotations-approved', category: 'Quotations', title: 'Approved Quotations', description: 'Quotations approved by client', icon: 'checkmark-circle-outline', filenamePrefix: 'quotations-approved', fetch: async () => { const r = await quotationsAPI.getAll(); return buildQuotationsTable((r.data || []).filter((q: any) => q.status === 'Approved')); }},
+    {id: 'quotations-draft', category: 'Quotations', title: 'Draft Quotations', description: 'Quotations not yet sent', icon: 'create-outline', filenamePrefix: 'quotations-draft', fetch: async () => { const r = await quotationsAPI.getAll(); return buildQuotationsTable((r.data || []).filter((q: any) => q.status === 'Draft')); }},
+    {id: 'quotations-rejected', category: 'Quotations', title: 'Rejected Quotations', description: 'Quotations rejected by client', icon: 'close-circle-outline', filenamePrefix: 'quotations-rejected', fetch: async () => { const r = await quotationsAPI.getAll(); return buildQuotationsTable((r.data || []).filter((q: any) => q.status === 'Rejected')); }},
+    ...(['Facebook', 'Google Ads', 'LinkedIn', 'IndiaMART', 'TradeIndia', 'Justdial'].map(source => ({
+      id: `campaigns-${source.toLowerCase().replace(/\s/g, '-')}`, category: 'Campaigns', title: source, description: `Leads captured via ${source}`, icon: 'megaphone-outline',
+      filenamePrefix: `leads-${source.toLowerCase().replace(/\s/g, '-')}`,
+      fetch: async () => buildLeadsTable(leads.filter(l => l.source === source)),
+    }))),
+  ];
+
+  const catCounts = REPORT_CATALOG.reduce((acc: Record<string, number>, r) => {acc[r.category] = (acc[r.category] || 0) + 1; return acc;}, {});
+  const filteredCatalog = REPORT_CATALOG.filter(r =>
+    (catFilter === 'All' || r.category === catFilter) &&
+    (!catSearch || r.title.toLowerCase().includes(catSearch.toLowerCase())),
+  );
+
+  const handleGenerate = async (report: ReportDef) => {
+    setGeneratingId(report.id);
+    try {
+      const table = await report.fetch();
+      setPreview({title: report.title, table});
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to generate report');
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
+  const renderCatalog = () => (
+    <View style={{flex: 1}}>
+      <View style={styles.catFilters}>
+        <View style={styles.catSearchBox}>
+          <Icon name="search-outline" size={14} color="#94a3b8" />
+          <TextInput style={styles.catSearchInput} value={catSearch} onChangeText={setCatSearch} placeholder="Search reports…" placeholderTextColor="#94a3b8" />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap: 6}}>
+          {['All', 'Leads', 'Activity', 'Team', 'Clients', 'Quotations', 'Campaigns'].map(c => (
+            <TouchableOpacity key={c} style={[styles.catChip, catFilter === c && {backgroundColor: PRIMARY}]} onPress={() => setCatFilter(c)}>
+              <Text style={[styles.catChipText, catFilter === c && {color: '#fff'}]}>{c}{c !== 'All' ? ` (${catCounts[c] || 0})` : ''}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+      <FlatList
+        data={filteredCatalog}
+        keyExtractor={r => r.id}
+        numColumns={1}
+        contentContainerStyle={{padding: 12, gap: 10, paddingBottom: insets.bottom + 24}}
+        renderItem={({item: r}) => (
+          <View style={styles.reportCard}>
+            <View style={[styles.reportIconBox, {borderColor: CATEGORY_COLORS[r.category]}]}>
+              <Icon name={r.icon} size={18} color={CATEGORY_COLORS[r.category]} />
+            </View>
+            <View style={{flex: 1}}>
+              <View style={[styles.reportCatBadge, {backgroundColor: CATEGORY_COLORS[r.category]}]}>
+                <Text style={styles.reportCatBadgeText}>{r.category}</Text>
+              </View>
+              <Text style={styles.reportTitle}>{r.title}</Text>
+              <Text style={styles.reportDesc}>{r.description}</Text>
+            </View>
+            <TouchableOpacity style={styles.generateBtn} disabled={generatingId === r.id} onPress={() => handleGenerate(r)}>
+              {generatingId === r.id ? <ActivityIndicator size="small" color="#fff" /> : <Icon name="chevron-forward" size={16} color="#fff" />}
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+
+      <Modal visible={!!preview} transparent animationType="slide" onRequestClose={() => setPreview(null)}>
+        <View style={styles.previewOverlay}>
+          <View style={styles.previewSheet}>
+            <View style={styles.previewHeader}>
+              <Text style={styles.previewTitle}>{preview?.title}</Text>
+              <TouchableOpacity onPress={() => setPreview(null)}><Icon name="close" size={20} color="#000" /></TouchableOpacity>
+            </View>
+            <Text style={styles.previewSub}>{preview?.table.rows.length || 0} rows</Text>
+            <ScrollView horizontal style={{marginVertical: 10}}>
+              <View>
+                <View style={styles.previewRow}>
+                  {preview?.table.headers.map((h, i) => <Text key={i} style={styles.previewHeaderCell}>{h}</Text>)}
+                </View>
+                <ScrollView style={{maxHeight: 320}}>
+                  {preview?.table.rows.map((row, ri) => (
+                    <View key={ri} style={styles.previewRow}>
+                      {row.map((c, ci) => <Text key={ci} style={styles.previewCell}>{String(c)}</Text>)}
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.exportCsvBtn}
+              onPress={() => preview && shareCSV(`${preview.title}.csv`, preview.table.headers, preview.table.rows)}>
+              <Icon name="download-outline" size={15} color="#fff" />
+              <Text style={styles.exportCsvBtnText}>Export CSV</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+
   return (
     <View style={[styles.container, {paddingTop: insets.top}]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -540,29 +720,44 @@ export default function ReportsScreen({navigation}: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
-        <View>
+        <View style={{flex: 1}}>
           <Text style={styles.headerTitle}>Reports</Text>
           <Text style={styles.headerSub}>{leads.length} leads analysed</Text>
         </View>
       </View>
       <View style={styles.divider} />
 
-      {/* Tab bar */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={styles.tabBarContent}>
-        {TABS.map(t => {
-          const active = t.key === activeTab;
-          return (
-            <TouchableOpacity key={t.key} style={[styles.tab, active && styles.tabActive]} onPress={() => setActiveTab(t.key)}>
-              <Icon name={t.icon} size={14} color={active ? '#fff' : '#000'} />
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>{t.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {/* Catalog / Analytics toggle */}
+      <View style={styles.viewToggle}>
+        {(['catalog', 'analytics'] as ReportsView[]).map(v => (
+          <TouchableOpacity key={v} style={[styles.viewToggleBtn, view === v && styles.viewToggleBtnActive]} onPress={() => setView(v)}>
+            <Text style={[styles.viewToggleText, view === v && styles.viewToggleTextActive]}>{v === 'catalog' ? 'All Reports' : 'Analytics'}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <View style={styles.divider} />
+
+      {view === 'analytics' && (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar} contentContainerStyle={styles.tabBarContent}>
+            {TABS.map(t => {
+              const active = t.key === activeTab;
+              return (
+                <TouchableOpacity key={t.key} style={[styles.tab, active && styles.tabActive]} onPress={() => setActiveTab(t.key)}>
+                  <Icon name={t.icon} size={14} color={active ? '#fff' : '#000'} />
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{t.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.divider} />
+        </>
+      )}
 
       {loading ? (
         <View style={styles.centerBox}><ActivityIndicator size="large" color={PRIMARY} /></View>
+      ) : view === 'catalog' ? (
+        renderCatalog()
       ) : (
         renderTabContent()
       )}
@@ -706,4 +901,37 @@ const styles = StyleSheet.create({
   emptyBox: {alignItems: 'center', paddingTop: 60, gap: 10},
   emptyTitle: {fontSize: 16, fontWeight: '900', color: '#000'},
   emptySub: {fontSize: 13, color: '#64748b', textAlign: 'center', paddingHorizontal: 32},
+
+  // View toggle (Catalog / Analytics)
+  viewToggle: {flexDirection: 'row', backgroundColor: '#fff'},
+  viewToggleBtn: {flex: 1, alignItems: 'center', paddingVertical: 12},
+  viewToggleBtnActive: {borderBottomWidth: 3, borderBottomColor: PRIMARY, marginBottom: -2},
+  viewToggleText: {fontSize: 12, fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase'},
+  viewToggleTextActive: {color: PRIMARY},
+
+  // Report catalog
+  catFilters: {padding: 12, gap: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
+  catSearchBox: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 8},
+  catSearchInput: {flex: 1, fontSize: 12, color: '#000'},
+  catChip: {borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 7, backgroundColor: '#fff'},
+  catChipText: {fontSize: 11, fontWeight: '800', color: '#000'},
+  reportCard: {flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff', padding: 12, ...NB_SHADOW},
+  reportIconBox: {width: 40, height: 40, borderWidth: 2, alignItems: 'center', justifyContent: 'center'},
+  reportCatBadge: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, marginBottom: 3},
+  reportCatBadgeText: {fontSize: 8, fontWeight: '900', color: '#fff', textTransform: 'uppercase'},
+  reportTitle: {fontSize: 13, fontWeight: '900', color: '#000'},
+  reportDesc: {fontSize: 11, color: '#64748b', marginTop: 2},
+  generateBtn: {width: 34, height: 34, borderRadius: 17, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center'},
+
+  // Report preview modal
+  previewOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end'},
+  previewSheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, maxHeight: '85%'},
+  previewHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
+  previewTitle: {fontSize: 16, fontWeight: '900', color: '#000', flex: 1},
+  previewSub: {fontSize: 11, color: '#64748b', marginTop: 2},
+  previewRow: {flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
+  previewHeaderCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 10, fontWeight: '900', color: '#000', backgroundColor: '#f1f5f9', textTransform: 'uppercase'},
+  previewCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 11, color: '#000'},
+  exportCsvBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#000', paddingVertical: 12},
+  exportCsvBtnText: {fontSize: 13, fontWeight: '900', color: '#fff'},
 });

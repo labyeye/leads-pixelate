@@ -6,8 +6,28 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {quotationsAPI} from '../services/api';
+import ExportFieldsDialog, {type ExportField} from '../components/ExportFieldsDialog';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
+
+function quotationTotal(q: any): number {
+  const subtotal = (q.services || []).reduce((a: number, s: any) => a + Number(s.price) * Number(s.quantity), 0);
+  const discount = Number(q.discount) || 0;
+  return subtotal - discount + (subtotal - discount) * 0.18;
+}
+
+const QUOTATION_EXPORT_FIELDS: ExportField[] = [
+  {key: 'number', label: 'Number', get: (q: any) => q.number || ''},
+  {key: 'clientName', label: 'Client Name', get: (q: any) => q.clientName || ''},
+  {key: 'companyName', label: 'Company', get: (q: any) => q.companyName || ''},
+  {key: 'mobile', label: 'Mobile', default: false, get: (q: any) => q.mobile || ''},
+  {key: 'projectTitle', label: 'Project Title', get: (q: any) => q.projectTitle || ''},
+  {key: 'status', label: 'Status', get: (q: any) => q.status || ''},
+  {key: 'total', label: 'Total (incl. tax)', get: (q: any) => quotationTotal(q).toFixed(2)},
+  {key: 'date', label: 'Date', get: (q: any) => (q.date ? new Date(q.date).toLocaleDateString('en-IN') : '')},
+  {key: 'gst', label: 'GST', default: false, get: (q: any) => q.gst || ''},
+  {key: 'address', label: 'Address', default: false, get: (q: any) => q.address || ''},
+];
 
 const STATUS_COLORS: Record<string, {bg: string; text: string}> = {
   Draft:    {bg: '#fff',    text: '#000'},
@@ -16,12 +36,13 @@ const STATUS_COLORS: Record<string, {bg: string; text: string}> = {
   Rejected: {bg: '#000',    text: '#fff'},
 };
 
-export default function QuotationsScreen() {
+export default function QuotationsScreen({navigation}: any) {
   const insets = useSafeAreaInsets();
   const [quotations, setQuotations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [exportOpen, setExportOpen] = useState(false);
 
   const fetchQuotations = useCallback(async (isRefresh = false) => {
     try {
@@ -33,6 +54,9 @@ export default function QuotationsScreen() {
   }, []);
 
   useEffect(() => {fetchQuotations();}, [fetchQuotations]);
+
+  // Refresh after returning from the create/edit form.
+  useEffect(() => navigation.addListener('focus', () => fetchQuotations(true)), [navigation, fetchQuotations]);
 
   const filtered = quotations.filter(q => {
     if (!search) return true;
@@ -92,12 +116,16 @@ export default function QuotationsScreen() {
             </Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={() => handleDelete(q._id)}>
-          <Icon name="trash-outline" size={13} color="#EF4444" />
-          <Text style={styles.deleteBtnText}>Delete</Text>
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('QuotationForm', {quotation: q})}>
+            <Icon name="create-outline" size={13} color="#024BAB" />
+            <Text style={[styles.deleteBtnText, {color: '#024BAB'}]}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(q._id)}>
+            <Icon name="trash-outline" size={13} color="#EF4444" />
+            <Text style={styles.deleteBtnText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -106,8 +134,16 @@ export default function QuotationsScreen() {
     <View style={[styles.container, {paddingTop: insets.top}]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Quotations</Text>
-        <Text style={styles.headerSub}>{quotations.length} total</Text>
+        <View style={{flex: 1}}>
+          <Text style={styles.headerTitle}>Quotations</Text>
+          <Text style={styles.headerSub}>{quotations.length} total</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('QuotationForm')}>
+          <Icon name="add" size={16} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.exportBtn} onPress={() => setExportOpen(true)} disabled={filtered.length === 0}>
+          <Icon name="download-outline" size={15} color="#000" />
+        </TouchableOpacity>
       </View>
       <View style={styles.divider} />
 
@@ -157,11 +193,20 @@ export default function QuotationsScreen() {
             <View style={styles.emptyBox}>
               <Icon name="document-text-outline" size={40} color="#e2e8f0" />
               <Text style={styles.emptyText}>No quotations yet</Text>
-              <Text style={styles.emptySub}>Create quotations from the web app</Text>
+              <Text style={styles.emptySub}>Tap + to create your first quotation</Text>
             </View>
           }
         />
       )}
+
+      <ExportFieldsDialog
+        visible={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title="Export Quotations"
+        fields={QUOTATION_EXPORT_FIELDS}
+        data={filtered}
+        filenamePrefix="quotations"
+      />
     </View>
   );
 }
@@ -169,6 +214,10 @@ export default function QuotationsScreen() {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 8},
+  exportBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000'},
+  addBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000', backgroundColor: '#024BAB'},
+  actionRow: {flexDirection: 'row', gap: 18, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0'},
+  actionBtn: {flexDirection: 'row', alignItems: 'center', gap: 4},
   headerTitle: {fontSize: 20, fontWeight: '900', color: '#000'},
   headerSub: {fontSize: 11, color: '#64748b'},
   divider: {height: 2, backgroundColor: '#000'},

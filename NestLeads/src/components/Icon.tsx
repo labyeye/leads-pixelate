@@ -1,15 +1,16 @@
 import React from 'react';
 import {
   AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, ArrowLeftRight,
-  BarChart2, Bell, Box, Briefcase, Building2, Calendar,
-  Check, CheckCircle, ChevronLeft, ChevronRight,
-  Clock, DollarSign, Edit2, Eye, EyeOff,
-  FileText, Filter, Flame, GitBranch, Info, LayoutGrid,
-  LogIn, Lock, LogOut, Mail, Megaphone, MessageCircle, MessageSquare,
+  BarChart2, BarChart3, Bell, Box, Briefcase, Building2, Calendar,
+  Check, CheckCircle, ChevronDown, ChevronLeft, ChevronRight,
+  Clock, CreditCard, DollarSign, Download, Edit2, ExternalLink, Eye, EyeOff,
+  FileText, Filter, Flame, GitBranch, Image as ImageIcon, Info, Key,
+  Layers, LayoutGrid, Link2, ListChecks, Lock, LogIn, LogOut,
+  Mail, MapPin, Megaphone, MessageCircle, MessageSquare,
   Pause, PauseCircle, Pencil, Phone,
-  Play, PlayCircle, Plus, Search,
+  Play, PlayCircle, Plus, RefreshCw, Search,
   Server, Settings, ShieldCheck, Square, Star,
-  Trash2, User, Users, X, XCircle, Zap,
+  Terminal, TrendingUp, Trash2, User, UserCheck, Users, Wallet, X, XCircle, Zap,
   LucideIcon,
 } from 'lucide-react-native';
 
@@ -87,6 +88,24 @@ const MAP: Record<string, LucideIcon> = {
   'trash-outline':            Trash2,
   'warning':                  AlertTriangle,
   'warning-outline':          AlertTriangle,
+  'chevron-down':             ChevronDown,
+  'refresh':                  RefreshCw,
+  'refresh-outline':          RefreshCw,
+  'open-outline':             ExternalLink,
+  'link-outline':             Link2,
+  'layers-outline':           Layers,
+  'image-outline':            ImageIcon,
+  'location-outline':         MapPin,
+  'pin':                      MapPin,
+  'person-add-outline':       UserCheck,
+  'download-outline':         Download,
+  'list-outline':             ListChecks,
+  'wallet-outline':           Wallet,
+  'trending-up-outline':      TrendingUp,
+  'stats-chart-outline':      BarChart3,
+  'key-outline':              Key,
+  'card-outline':             CreditCard,
+  'terminal-outline':         Terminal,
 };
 
 interface Props {

@@ -175,6 +175,17 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    // Passwordless WhatsApp-OTP login — kept separate from phoneOtpHash
+    // (which proves phone ownership for the account-security flow) so the
+    // two unauthenticated/authenticated OTP purposes can't be crossed.
+    loginOtpHash: {
+      type: String,
+      select: false,
+    },
+    loginOtpExpires: {
+      type: Date,
+      select: false,
+    },
     totpSecret: {
       type: String,
       select: false,

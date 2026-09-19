@@ -1,13 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const Tenant = require("../models/Tenant");
 const Subscription = require("../models/Subscription");
 
-const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
+const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY, ADDON_PRICES } =
+  Subscription;
+const { PAID_DAYS } = require("../services/autopilotService");
 const { sendWelcomeEmail } = require("../utils/emailService");
 const log = require("../utils/logger").scope("Billing");
 
@@ -589,6 +591,128 @@ router.post(
         error: err.message,
       });
     }
+  }),
+);
+
+// Social Autopilot add-on: flat monthly, on top of the plan. Stored on
+// tenant.autopilot (not on the plan), so it never touches plan/limits.
+router.post(
+  "/autopilot/create-order",
+  protect,
+  authorize("super_admin", "admin"),
+  asyncHandler(async (req, res) => {
+    const razorpay = getRazorpayInstance();
+    const amount = ADDON_PRICES.autopilot;
+    const tenantId = req.user.tenantId.toString();
+
+    const order = await razorpay.orders.create({
+      amount,
+      currency: "INR",
+      receipt: `AP_${tenantId.slice(-10)}_${Date.now()}`,
+      notes: { addon: "autopilot", tenantId },
+    });
+    // Keep the last few: a tenant may open checkout twice and pay the first.
+    await Tenant.updateOne(
+      { _id: tenantId },
+      { $push: { "autopilot.pendingOrderIds": { $each: [order.id], $slice: -5 } } },
+    );
+
+    const tenant = await Tenant.findById(tenantId);
+    res.json({
+      success: true,
+      data: {
+        orderId: order.id,
+        amount,
+        currency: "INR",
+        customerEmail: tenant?.email || req.user.email || "",
+        customerPhone: tenant?.phone || "",
+        customerName: tenant?.name || req.user.name || "Customer",
+        key: process.env.RAZORPAY_KEY_ID,
+      },
+    });
+  }),
+);
+
+router.post(
+  "/autopilot/verify",
+  protect,
+  authorize("super_admin", "admin"),
+  asyncHandler(async (req, res) => {
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing payment details" });
+    }
+    if (
+      !verifyRazorpaySignature(
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid payment signature" });
+    }
+
+    const payment = await getRazorpayInstance().payments.fetch(razorpayPaymentId);
+    if (payment.status !== "captured") {
+      return res
+        .status(400)
+        .json({ success: false, message: `Payment ${payment.status}` });
+    }
+
+    const tenant = await Tenant.findById(req.user.tenantId);
+    const current = tenant?.autopilot?.paidUntil;
+    const base = current && current > new Date() ? current : new Date();
+    const paidUntil = new Date(base.getTime() + PAID_DAYS * 24 * 60 * 60 * 1000);
+
+    // Matching a pending order is the one-time claim: it is pulled in the same
+    // write, so a replayed signature can't extend the add-on twice.
+    const updated = await Tenant.findOneAndUpdate(
+      { _id: tenant._id, "autopilot.pendingOrderIds": razorpayOrderId },
+      {
+        $set: { "autopilot.paidUntil": paidUntil },
+        $pull: { "autopilot.pendingOrderIds": razorpayOrderId },
+      },
+      { new: true },
+    );
+    if (!updated) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Order not found or already used" });
+    }
+
+    // $setOnInsert keeps tenants that never had a Subscription doc from being
+    // flagged "trialing" (statsRoutes reads that) just because of this invoice.
+    await Subscription.findOneAndUpdate(
+      { tenant: tenant._id },
+      {
+        $setOnInsert: {
+          plan: tenant.plan,
+          status: tenant.plan === "trial" ? "trialing" : "active",
+        },
+        $push: {
+          invoices: {
+            razorpayPaymentId,
+            razorpayOrderId,
+            amount: ADDON_PRICES.autopilot,
+            plan: "autopilot",
+            billingCycle: "monthly",
+            status: "paid",
+            paidAt: new Date(),
+          },
+        },
+      },
+      { upsert: true },
+    );
+
+    res.json({
+      success: true,
+      message: "Autopilot activated",
+      data: { paidUntil },
+    });
   }),
 );
 

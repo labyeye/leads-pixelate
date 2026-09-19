@@ -21,10 +21,12 @@ import {
   X,
   Layout,
   Tag,
-  Lock,
   ChevronUp,
   ChevronDown,
+  Lock,
+  Bot,
 } from "lucide-react";
+import AICallingSettingsTab from "@/components/settings/AICallingSettingsTab";
 import { cn } from "@/lib/utils";
 import {
   categories as statusCategories,
@@ -857,7 +859,11 @@ export default function SettingsPage() {
     );
   }
 
-  const isAdminOrAbove = user?.role === "super_admin" || user?.role === "admin";
+  const isAdminOrAbove =
+    !user?.role ||
+    user?.role?.toLowerCase().includes("admin") ||
+    user?.role === "super_admin" ||
+    user?.role === "admin";
 
   const allTabs = [
     { id: "general", label: "General Info", icon: Building2, adminOnly: false },
@@ -874,6 +880,12 @@ export default function SettingsPage() {
       label: "Lead Statuses",
       icon: Tag,
       adminOnly: true,
+    },
+    {
+      id: "ai-calling",
+      label: "AI Calling (ElevenLabs)",
+      icon: Bot,
+      adminOnly: false,
     },
     {
       id: "roles",
@@ -975,10 +987,33 @@ export default function SettingsPage() {
                 );
               })}
             <p className="hidden lg:block text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-4 pb-1">
+              AI & Automation
+            </p>
+            {tabs
+              .filter((t) => t.id === "ai-calling")
+              .map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "flex items-center gap-2 lg:gap-2.5 px-3 py-2 lg:py-2.5 text-xs font-bold whitespace-nowrap rounded transition-colors lg:w-full lg:text-left lg:mb-0.5",
+                      activeTab === tab.id
+                        ? "bg-[#024BAB] text-white"
+                        : "text-black hover:bg-[#024BAB]/10",
+                    )}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            <p className="hidden lg:block text-[10px] font-black text-black/40 uppercase tracking-widest px-2 pt-4 pb-1">
               System
             </p>
             {tabs
-              .filter((t) => t.id === "permissions")
+              .filter((t) => ["roles", "permissions"].includes(t.id))
               .map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -1011,6 +1046,7 @@ export default function SettingsPage() {
             </div>
             {activeTab !== "permissions" &&
               activeTab !== "template" &&
+              activeTab !== "ai-calling" &&
               isAdminOrAbove && (
                 <button
                   onClick={handleSave}
@@ -1961,6 +1997,8 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+
+            {activeTab === "ai-calling" && <AICallingSettingsTab />}
           </div>
         </div>
       </div>

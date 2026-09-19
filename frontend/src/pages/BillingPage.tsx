@@ -16,6 +16,7 @@ import {
   Target,
   Users,
   CalendarClock,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { billingAPI, settingsAPI, leadsAPI, usersAPI } from "@/services/api";
@@ -40,6 +41,7 @@ const PLAN_META: Record<
     features: [
       "Up to 25 employees",
       "2,000 leads/month",
+      "50 ElevenLabs AI Voice Calls/mo",
       "IndiaMART integration",
       "Follow-up reminders",
       "Email support",
@@ -53,6 +55,7 @@ const PLAN_META: Record<
     features: [
       "Up to 50 employees",
       "10,000 leads/month",
+      "500 ElevenLabs AI Voice Calls/mo",
       "IndiaMART + Facebook Ads",
       "Advanced follow-up workflows",
       "Calendar & visit tracking",
@@ -67,6 +70,7 @@ const PLAN_META: Record<
     features: [
       "Up to 100 employees",
       "50,000 leads/month",
+      "2,500 ElevenLabs AI Voice Calls/mo",
       "All integrations",
       "Advanced analytics",
       "Custom workflows",
@@ -81,6 +85,7 @@ const PLAN_META: Record<
     features: [
       "Up to 250 employees",
       "2,00,000 leads/month",
+      "10,000 ElevenLabs AI Voice Calls/mo",
       "All integrations",
       "Custom workflows",
       "Dedicated account manager",
@@ -97,6 +102,7 @@ const PLAN_META: Record<
     features: [
       "250+ employees",
       "Unlimited leads",
+      "Unlimited ElevenLabs AI Voice Calls",
       "Unlimited team members",
       "Custom integrations",
       "Dedicated account manager",
@@ -113,6 +119,7 @@ const PLAN_META: Record<
     features: [
       "Up to 100 employees",
       "50,000 leads/month",
+      "2,500 ElevenLabs AI Voice Calls/mo",
       "All integrations",
       "Custom workflows",
     ],
@@ -552,8 +559,8 @@ export default function BillingPage() {
               </div>
             </div>
 
-            {}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Usage cards grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {
                   label: "Leads this month",
@@ -580,6 +587,23 @@ export default function BillingPage() {
                       : 0,
                   icon: Users,
                   bg: "bg-[#FB923C]",
+                },
+                {
+                  label: "AI Voice Calls",
+                  value: "Included",
+                  max:
+                    currentPlanId === "starter"
+                      ? "50/mo"
+                      : currentPlanId === "growth"
+                        ? "500/mo"
+                        : currentPlanId === "business"
+                          ? "10,000/mo"
+                          : currentPlanId === "enterprise"
+                            ? "∞"
+                            : "2,500/mo",
+                  pct: 100,
+                  icon: Bot,
+                  bg: "bg-purple-600 text-white",
                 },
                 {
                   label: "Days remaining",

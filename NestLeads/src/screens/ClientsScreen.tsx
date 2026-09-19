@@ -6,6 +6,20 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {clientsAPI} from '../services/api';
+import ExportFieldsDialog, {type ExportField} from '../components/ExportFieldsDialog';
+
+const CLIENT_EXPORT_FIELDS: ExportField[] = [
+  {key: 'name', label: 'Name', get: (c: any) => c.name || ''},
+  {key: 'company', label: 'Company', get: (c: any) => c.company || ''},
+  {key: 'email', label: 'Email', get: (c: any) => c.email || ''},
+  {key: 'phone', label: 'Phone', get: (c: any) => c.phone || ''},
+  {key: 'address', label: 'Address', default: false, get: (c: any) => c.address || ''},
+  {key: 'businessType', label: 'Business Type', default: false, get: (c: any) => c.businessType || ''},
+  {key: 'gst', label: 'GST', default: false, get: (c: any) => c.gst || ''},
+  {key: 'services', label: 'Services', default: false, get: (c: any) => (Array.isArray(c.services) ? c.services.join(', ') : '')},
+  {key: 'projectStatus', label: 'Project Status', get: (c: any) => c.projectStatus || ''},
+  {key: 'paymentStatus', label: 'Payment Status', get: (c: any) => c.paymentStatus || ''},
+];
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
@@ -29,6 +43,7 @@ export default function ClientsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editClient, setEditClient] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [form, setForm] = useState({
     name: '', company: '', email: '', phone: '',
     projectStatus: 'Active', paymentStatus: 'Pending', address: '',
@@ -148,6 +163,9 @@ export default function ClientsScreen() {
         <Text style={styles.headerTitle}>Clients</Text>
         <Text style={styles.headerSub}>{clients.length} total</Text>
         <View style={{flex: 1}} />
+        <TouchableOpacity style={styles.exportBtn} onPress={() => setExportOpen(true)} disabled={filtered.length === 0}>
+          <Icon name="download-outline" size={15} color="#000" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.addBtn} onPress={openAdd}>
           <Icon name="add" size={16} color="#fff" />
           <Text style={styles.addBtnText}>New</Text>
@@ -191,6 +209,15 @@ export default function ClientsScreen() {
           }
         />
       )}
+
+      <ExportFieldsDialog
+        visible={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title="Export Clients"
+        fields={CLIENT_EXPORT_FIELDS}
+        data={filtered}
+        filenamePrefix="clients"
+      />
 
       {/* Add/Edit Modal */}
       <Modal visible={modalOpen} transparent animationType="slide" onRequestClose={() => setModalOpen(false)}>
@@ -281,6 +308,7 @@ const styles = StyleSheet.create({
   headerTitle: {fontSize: 20, fontWeight: '900', color: '#000'},
   headerSub: {fontSize: 11, color: '#64748b'},
   addBtn: {flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF751F', borderWidth: 2, borderColor: '#000', paddingHorizontal: 12, paddingVertical: 8, gap: 4, ...NB_SHADOW},
+  exportBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000', marginRight: 8},
   addBtnText: {fontSize: 13, fontWeight: '900', color: '#fff'},
   divider: {height: 2, backgroundColor: '#000'},
   thinDivider: {height: 1, backgroundColor: '#e2e8f0'},

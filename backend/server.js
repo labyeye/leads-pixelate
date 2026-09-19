@@ -18,9 +18,11 @@ connectDB().then(async () => {
   const cron = require("node-cron");
   const { runScheduledSync } = require("./services/indiamartService");
   const { runScheduledPosts } = require("./controllers/socialController");
+  const { runAutopilotCron } = require("./services/autopilotService");
   const User = require("./models/User");
 
   cron.schedule("* * * * *", runScheduledPosts);
+  cron.schedule("0 * * * *", runAutopilotCron);
 
   cron.schedule("*/5 * * * *", async () => {
     try {
@@ -162,6 +164,7 @@ app.use("/api/email", require("./routes/emailRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));
+app.use("/api/autopilot", require("./routes/autopilotRoutes"));
 app.use("/api/campaigns", require("./routes/campaignRoutes"));
 app.use(
   "/api/campaign-assignments",
@@ -172,6 +175,8 @@ app.use("/api/public", require("./routes/publicRoutes"));
 app.use("/api/hrms", require("./routes/hrmsRoutes"));
 app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
+app.use("/api/ai-calling", require("./routes/aiCallingRoutes"));
+app.use("/api/webhooks", require("./routes/webhookRoutes"));
 // /internal/stats must be registered before the broader /internal mount below —
 // Express matches app.use() by path prefix, so /internal/stats would otherwise
 // be swallowed by the /internal router first and rejected by its x-api-key

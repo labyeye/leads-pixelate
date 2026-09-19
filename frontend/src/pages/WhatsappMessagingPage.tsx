@@ -155,6 +155,15 @@ export default function WhatsappMessagingPage() {
   const [sending, setSending] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [loadingLeads, setLoadingLeads] = useState(false);
+  const [senders, setSenders] = useState<
+    {
+      phoneNumberId: string;
+      label: string;
+      businessName: string;
+      phoneNumber: string;
+    }[]
+  >([]);
+  const [senderId, setSenderId] = useState("");
 
   const fetchCampaigns = useCallback(async () => {
     setLoadingCampaigns(true);
@@ -185,9 +194,10 @@ export default function WhatsappMessagingPage() {
     setLoadingTemplates(true);
     setLoadingLeads(true);
     try {
-      const [tRes, lRes] = await Promise.all([
+      const [tRes, lRes, sRes] = await Promise.all([
         whatsappAPI.getTemplates(),
         leadsAPI.getAll(),
+        whatsappAPI.getStatus(),
       ]);
       setTemplates(
         tRes.data.filter(
@@ -196,6 +206,9 @@ export default function WhatsappMessagingPage() {
       );
       setLeads(lRes.data);
       setFilteredLeads(lRes.data);
+      const numbers = sRes.data?.phoneNumbers || [];
+      setSenders(numbers);
+      setSenderId(numbers[0]?.phoneNumberId || "");
     } catch {
       toast({ title: "Failed to load data", variant: "destructive" });
     } finally {
@@ -259,6 +272,7 @@ export default function WhatsappMessagingPage() {
         templateId: selectedTemplate._id,
         leadIds: Array.from(selectedLeadIds),
         variableMapping,
+        phoneNumberId: senderId || undefined,
       });
       toast({
         title: "Campaign launched!",
@@ -735,6 +749,25 @@ export default function WhatsappMessagingPage() {
                     </span>
                   </div>
                 </div>
+
+                {senders.length > 1 && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Send from</p>
+                    <Select value={senderId} onValueChange={setSenderId}>
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue placeholder="Choose a number" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {senders.map((s) => (
+                          <SelectItem key={s.phoneNumberId} value={s.phoneNumberId}>
+                            {s.label || s.businessName || "WhatsApp number"}
+                            {s.phoneNumber ? ` · ${s.phoneNumber}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {selectedTemplate.status === "DRAFT" && (
                   <div className="flex items-start gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">

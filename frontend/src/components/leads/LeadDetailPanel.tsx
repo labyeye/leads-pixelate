@@ -27,6 +27,8 @@ import {
   Send,
   Mail,
   AlertCircle,
+  Bot,
+  Sparkles,
 } from "lucide-react";
 import {
   Dialog,
@@ -45,7 +47,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { whatsappAPI } from "@/services/api";
+import { whatsappAPI, aiCallingAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -131,6 +133,30 @@ export function LeadDetailPanel({
     } else {
       setPendingStatus(status);
       setIsStatusModalOpen(true);
+    }
+  };
+
+  const [callingAI, setCallingAI] = useState(false);
+
+  const handleTriggerAICall = async () => {
+    if (!lead || !lead._id) return;
+    try {
+      setCallingAI(true);
+      const res = await aiCallingAPI.callLead(lead._id);
+      if (res.success) {
+        toast({
+          title: "AI Outbound Call Triggered",
+          description: `ElevenLabs AI voice agent is dialing ${lead.name} (${lead.phone}).`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Failed to trigger AI Call",
+        description: err.message || "Ensure ElevenLabs API key and Agent ID are configured in Settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setCallingAI(false);
     }
   };
 
@@ -312,17 +338,32 @@ export function LeadDetailPanel({
         <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Actions
         </h4>
-
-        {}
+        {/* Actions buttons */}
         {lead.phone && (
-          <Button
-            variant="outline"
-            className="w-full border-2 justify-start gap-2 text-green-700 hover:text-green-800 hover:bg-green-50 border-black"
-            onClick={() => setWaDialogOpen(true)}
-          >
-            <WhatsAppIcon className="w-4 h-4" />
-            Send WhatsApp Message
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              className="w-full border-2 justify-center gap-1.5 text-green-700 hover:text-green-800 hover:bg-green-50 border-black font-bold text-xs"
+              onClick={() => setWaDialogOpen(true)}
+            >
+              <WhatsAppIcon className="w-4 h-4" />
+              WhatsApp
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full border-2 justify-center gap-1.5 text-blue-900 hover:text-blue-950 hover:bg-blue-50 border-black font-bold text-xs bg-gradient-to-r from-blue-50 to-indigo-50"
+              onClick={handleTriggerAICall}
+              disabled={callingAI}
+            >
+              {callingAI ? (
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              ) : (
+                <Bot className="w-4 h-4 text-blue-600" />
+              )}
+              AI Voice Call
+            </Button>
+          </div>
         )}
 
         {}

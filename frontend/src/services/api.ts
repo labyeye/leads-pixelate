@@ -213,6 +213,75 @@ export const authAPI = {
     request<{ success: boolean; message: string }>("/auth/2fa/totp/disable", {
       method: "POST",
     }),
+
+  // Login-time 2FA verification (called after email+password when requires2FA)
+  verify2FA: (userId: string, token: string) =>
+    request<{ success: boolean; data: any }>("/auth/2fa/verify", {
+      method: "POST",
+      body: JSON.stringify({ userId, token }),
+    }),
+
+  // WhatsApp phone OTP login (send + verify)
+  loginSendOtp: (phone: string) =>
+    request<{ success: boolean; message: string }>("/auth/login/otp/send", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    }),
+
+  loginVerifyOtp: (phone: string, otp: string) =>
+    request<{ success: boolean; data: any }>("/auth/login/otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ phone, otp }),
+    }),
+
+  // Passkey / WebAuthn login
+  passkeyLoginOptions: (email?: string) =>
+    request<{ success: boolean; data: any }>(
+      `/auth/passkey/login-options${email ? `?email=${encodeURIComponent(email)}` : ""}`,
+    ),
+
+  passkeyLogin: (assertion: object) =>
+    request<{ success: boolean; data: any }>("/auth/passkey/login", {
+      method: "POST",
+      body: JSON.stringify(assertion),
+    }),
+
+  // Passkey registration (for Settings / Account Security)
+  passkeyRegisterOptions: () =>
+    request<{ success: boolean; data: any }>("/auth/passkey/register-options", {
+      method: "POST",
+    }),
+
+  passkeyRegister: (credential: object) =>
+    request<{ success: boolean; message: string }>("/auth/passkey/register", {
+      method: "POST",
+      body: JSON.stringify(credential),
+    }),
+};
+
+export const aiCallingAPI = {
+  getSettings: () =>
+    request<{ success: boolean; data: any }>("/ai-calling/settings"),
+
+  updateSettings: (settingsData: object) =>
+    request<{ success: boolean; message: string; data: any }>("/ai-calling/settings", {
+      method: "PUT",
+      body: JSON.stringify(settingsData),
+    }),
+
+  testConnection: (apiKey?: string, agentId?: string) =>
+    request<{ success: boolean; message: string; agent?: any }>("/ai-calling/test-connection", {
+      method: "POST",
+      body: JSON.stringify({ apiKey, agentId }),
+    }),
+
+  callLead: (leadId: string) =>
+    request<{ success: boolean; message: string; data: any }>(`/ai-calling/call-lead/${leadId}`, {
+      method: "POST",
+    }),
+
+  getLeadCallLogs: (leadId: string) =>
+    request<{ success: boolean; data: any[] }>(`/ai-calling/logs/${leadId}`),
 };
 
 export const usersAPI = {
@@ -539,6 +608,49 @@ export const billingAPI = {
     request<{ success: boolean; message: string }>("/billing/cancel", {
       method: "POST",
     }),
+};
+
+// Social Autopilot add-on (backend: routes/autopilotRoutes.js + billingRoutes.js).
+export const autopilotAPI = {
+  get: () => request<{ success: boolean; data: any }>("/autopilot"),
+  update: (body: Record<string, unknown>) =>
+    request<{ success: boolean }>("/autopilot", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  run: () =>
+    request<{ success: boolean; message: string }>("/autopilot/run", {
+      method: "POST",
+    }),
+  createOrder: () =>
+    request<{
+      success: boolean;
+      data: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        customerEmail: string;
+        customerPhone: string;
+        customerName: string;
+        key: string;
+      };
+    }>("/billing/autopilot/create-order", { method: "POST" }),
+  verify: (payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) =>
+    request<{ success: boolean; message: string }>(
+      "/billing/autopilot/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          razorpayOrderId: payload.razorpay_order_id,
+          razorpayPaymentId: payload.razorpay_payment_id,
+          razorpaySignature: payload.razorpay_signature,
+        }),
+      },
+    ),
 };
 
 export const facebookAPI = {

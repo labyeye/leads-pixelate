@@ -35,7 +35,13 @@ interface AuthContextType {
   login: (
     email: string,
     password: string,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    requires2FA?: boolean;
+    userId?: string;
+  }>;
+  completeLogin: (userData: any, token: string) => void;
   register: (data: {
     companyName: string;
     name: string;
@@ -125,6 +131,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await authAPI.login(email, password);
+      // Backend may return requires2FA if TOTP is enabled
+      if ((response as any).data?.requires2FA) {
+        return {
+          success: false,
+          requires2FA: true,
+          userId: (response as any).data?.userId,
+        };
+      }
       const { tenant: tenantData, ...userData } = response.data;
       setUser(mapUser(userData));
       setTenant(mapTenant(tenantData));
@@ -135,6 +149,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: error.message || "Login failed. Please try again.",
       };
     }
+  }, []);
+
+  const completeLogin = useCallback((userData: any, token: string) => {
+    // For cookie-based auth the token is already set by the server;
+    // we just update local state from the returned user data.
+    const { tenant: tenantData, ...user } = userData;
+    setUser(mapUser(user));
+    setTenant(mapTenant(tenantData ?? null));
   }, []);
 
   const register = useCallback(
@@ -199,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        completeLogin,
         register,
         logout,
         updateUser,

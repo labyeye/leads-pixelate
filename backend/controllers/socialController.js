@@ -345,6 +345,7 @@ exports.getPosts = asyncHandler(async (req, res) => {
   if (req.user.tenantId) filter.tenantId = req.user.tenantId;
   if (req.query.status) filter.status = req.query.status;
   if (req.query.platform) filter.platforms = req.query.platform;
+  if (["manual", "autopilot"].includes(req.query.source)) filter.source = req.query.source;
 
   const posts = await SocialPost.find(filter)
     .sort({ scheduledAt: 1, createdAt: -1 })

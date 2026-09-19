@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center p-8">
+    <div className="min-h-screen bg-[#fffafa] flex items-center justify-center p-8">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img src={logoimg} alt="NestLeads" className="w-10 h-10" />

@@ -15,6 +15,8 @@ const {
   forgotPasswordWhatsapp,
   resetPasswordWithOtp,
   resetPasswordWithTotp,
+  loginRequestOtp,
+  loginVerifyOtp,
   sendPhoneOtp,
   verifyPhoneOtp,
   totpSetup,
@@ -58,6 +60,8 @@ router.post(
   forgotPasswordLimiter,
   resetPasswordWithTotp,
 );
+router.post("/login/otp/send", forgotPasswordLimiter, loginRequestOtp);
+router.post("/login/otp/verify", forgotPasswordLimiter, loginVerifyOtp);
 router.get("/me", protect, getMe);
 router.put("/me", protect, updateProfile);
 router.put("/change-password", protect, changePassword);

@@ -232,6 +232,13 @@ export default function SettingsScreen({navigation}: any) {
               <Text style={styles.leadStatusesBtnText}>Manage Lead Statuses</Text>
               <Icon name="chevron-forward" size={16} color="#94a3b8" />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.leadStatusesBtn, {marginTop: 10}]}
+              onPress={() => navigation.navigate('RolesPermissions')}>
+              <Icon name="shield-checkmark-outline" size={18} color="#024BAB" />
+              <Text style={styles.leadStatusesBtnText}>Roles & Permissions</Text>
+              <Icon name="chevron-forward" size={16} color="#94a3b8" />
+            </TouchableOpacity>
           </View>
         )}
 

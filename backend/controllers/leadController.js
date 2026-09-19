@@ -23,6 +23,7 @@ const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
 const { buildTransitionMaps } = require("../utils/leadStatuses");
 const { sendBulkLeadEmail } = require("../utils/emailService");
+const { autoCallNewLeadIfEnabled } = require("../services/elevenLabsService");
 const log = require("../utils/logger").scope("Leads");
 
 // Tenant custom pipeline stages (Setting.customLeadStatuses) extend the
@@ -226,6 +227,9 @@ const createLead = asyncHandler(async (req, res) => {
     targetId: lead._id,
     ip: req.ip,
   });
+
+  // Trigger automated AI outbound call via ElevenLabs if enabled
+  autoCallNewLeadIfEnabled(lead);
 
   res.status(201).json({
     success: true,
