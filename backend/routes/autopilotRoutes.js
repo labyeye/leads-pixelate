@@ -1,4 +1,9 @@
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 const express = require("express");
+const multer = require("multer");
+const sharp = require("sharp");
 const asyncHandler = require("express-async-handler");
 const { protect, authorize } = require("../middleware/auth");
 const Tenant = require("../models/Tenant");
@@ -6,6 +11,7 @@ const SocialPost = require("../models/SocialPost");
 const SocialAccount = require("../models/SocialAccount");
 const { ADDON_PRICES } = require("../models/Subscription");
 const svc = require("../services/autopilotService");
+const brand = require("../services/brandAnalysisService");
 const log = require("../utils/logger").scope("Autopilot");
 
 const router = express.Router();
@@ -54,6 +60,24 @@ router.get(
           accountIds: a.accountIds,
         },
         running: !!a.runningSince && Date.now() - a.runningSince < svc.LOCK_MS,
+        progress: a.progress?.stage ? { stage: a.progress.stage, at: a.progress.at } : null,
+        onboarded: !!(a.onboardedAt || a.enabled || a.firstApprovedAt),
+        firstApproved: !!a.firstApprovedAt,
+        analysis: {
+          status: a.analysis?.status || "idle",
+          stage: a.analysis?.stage || "",
+          error: a.analysis?.error || "",
+          note: a.analysis?.note || "",
+          at: a.analysis?.at || null,
+        },
+        brandProfile: a.brandProfile,
+        brandKit: {
+          logos: (a.brandKit?.logos || []).map((l) => ({ id: l.id, name: l.name, url: l.url })),
+          logoId: a.brandKit?.logoId || "",
+          logoEnabled: a.brandKit?.logoEnabled !== false,
+          logoPosition: a.brandKit?.logoPosition || "bottom-right",
+          colors: a.brandKit?.colors || [],
+        },
         lastRunAt: a.lastRunAt,
         lastError: a.lastError,
         monthCount,
@@ -85,7 +109,10 @@ router.put(
 
     const $set = Object.fromEntries(Object.entries(patch).map(([k, v]) => [`autopilot.${k}`, v]));
     const turningOn = patch.enabled === true && !tenant.autopilot.enabled;
-    if (patch.enabled) Object.assign($set, svc.trialPatch(tenant.autopilot));
+    if (patch.enabled) {
+      Object.assign($set, svc.trialPatch(tenant.autopilot));
+      if (!tenant.autopilot.onboardedAt) $set["autopilot.onboardedAt"] = new Date();
+    }
     if (Object.keys($set).length) await Tenant.updateOne({ _id: tenant._id }, { $set });
 
     // Pausing stops everything already queued, not just new generation.
@@ -129,6 +156,136 @@ router.post(
     svc
       .runForTenant(tenant._id, { manual: true })
       .catch((err) => log.error("Autopilot manual run failed", { message: err.message }));
+  }),
+);
+
+// ------------------------------------------------- onboarding: scan + brand kit
+
+const ANALYZE_COOLDOWN_MS = 60 * 1000;
+const HEX = /^#[0-9a-f]{6}$/i;
+const POSITIONS = ["bottom-right", "bottom-left", "top-right", "top-left"];
+const MAX_LOGOS = 5;
+
+const logoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) =>
+    /^image\/(png|jpe?g|webp)$/.test(file.mimetype) ? cb(null, true) : cb(new Error("Logo must be a PNG, JPG or WebP image")),
+});
+
+router.post(
+  "/analyze",
+  asyncHandler(async (req, res) => {
+    const tenant = await getTenant(req, res);
+    if (!svc.isConfigured()) {
+      res.status(503);
+      throw new Error("Autopilot is not configured on the server yet");
+    }
+    const at = tenant.autopilot.analysis?.at;
+    if (tenant.autopilot.analysis?.status !== "running" && at && Date.now() - at < ANALYZE_COOLDOWN_MS) {
+      res.status(429);
+      throw new Error("Scan just ran. Try again in a minute.");
+    }
+    const accountId = /^[0-9a-f]{24}$/i.test(req.body?.accountId || "") ? req.body.accountId : undefined;
+    const started = await brand.startAnalysis(tenant._id, accountId);
+    res.status(202).json({ success: true, started });
+  }),
+);
+
+router.put(
+  "/brand-profile",
+  asyncHandler(async (req, res) => {
+    const tenant = await getTenant(req, res);
+    await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.brandProfile": brand.sanitizeProfile(req.body) } });
+    res.json({ success: true });
+  }),
+);
+
+router.put(
+  "/brand",
+  asyncHandler(async (req, res) => {
+    const tenant = await getTenant(req, res);
+    const b = req.body || {};
+    const kit = tenant.autopilot.brandKit;
+    const $set = {};
+
+    if (Array.isArray(b.logos)) {
+      const names = new Map(b.logos.map((l) => [l?.id, svc.clean(l?.name, 60)]));
+      $set["autopilot.brandKit.logos"] = kit.logos.map((l) => ({
+        id: l.id,
+        file: l.file,
+        url: l.url,
+        name: names.get(l.id) || l.name,
+      }));
+    }
+    if (typeof b.logoId === "string" && kit.logos.some((l) => l.id === b.logoId)) {
+      $set["autopilot.brandKit.logoId"] = b.logoId;
+    }
+    if (typeof b.logoEnabled === "boolean") $set["autopilot.brandKit.logoEnabled"] = b.logoEnabled;
+    if (POSITIONS.includes(b.logoPosition)) $set["autopilot.brandKit.logoPosition"] = b.logoPosition;
+    if (Array.isArray(b.colors)) $set["autopilot.brandKit.colors"] = b.colors.filter((c) => HEX.test(c)).slice(0, 4);
+
+    if (Object.keys($set).length) await Tenant.updateOne({ _id: tenant._id }, { $set });
+    res.json({ success: true });
+  }),
+);
+
+router.post(
+  "/logos",
+  logoUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    const tenant = await getTenant(req, res);
+    if (!req.file) {
+      res.status(400);
+      throw new Error("No logo uploaded");
+    }
+    if (tenant.autopilot.brandKit.logos.length >= MAX_LOGOS) {
+      res.status(400);
+      throw new Error(`You can keep up to ${MAX_LOGOS} logos`);
+    }
+
+    // Re-encode: proves it is a real image and strips anything odd, whatever the extension said.
+    let png;
+    try {
+      png = await sharp(req.file.buffer).resize({ width: 1000, height: 1000, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+    } catch {
+      res.status(400);
+      throw new Error("That file isn't a valid image");
+    }
+
+    const id = crypto.randomBytes(8).toString("hex");
+    const dir = svc.brandDir(tenant._id);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, `${id}.png`), png);
+
+    const name = svc.clean(req.body?.name, 60) || svc.clean(path.parse(req.file.originalname).name, 60) || "Logo";
+    const logo = { id, name, file: `${id}.png`, url: `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${id}.png` };
+    const update = { $push: { "autopilot.brandKit.logos": logo } };
+    if (!tenant.autopilot.brandKit.logoId) update.$set = { "autopilot.brandKit.logoId": id };
+    await Tenant.updateOne({ _id: tenant._id }, update);
+    res.status(201).json({ success: true, data: { id, name, url: logo.url } });
+  }),
+);
+
+router.delete(
+  "/logos/:id",
+  asyncHandler(async (req, res) => {
+    const tenant = await getTenant(req, res);
+    const logo = tenant.autopilot.brandKit.logos.find((l) => l.id === req.params.id);
+    if (!logo) {
+      res.status(404);
+      throw new Error("Logo not found");
+    }
+    const rest = tenant.autopilot.brandKit.logos.filter((l) => l.id !== logo.id);
+    await Tenant.updateOne(
+      { _id: tenant._id },
+      {
+        $pull: { "autopilot.brandKit.logos": { id: logo.id } },
+        $set: { "autopilot.brandKit.logoId": tenant.autopilot.brandKit.logoId === logo.id ? rest[0]?.id || "" : tenant.autopilot.brandKit.logoId },
+      },
+    );
+    fs.rm(path.join(svc.brandDir(tenant._id), path.basename(logo.file)), { force: true }, () => {});
+    res.json({ success: true });
   }),
 );
 

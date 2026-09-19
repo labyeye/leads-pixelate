@@ -175,7 +175,7 @@ export default function PaymentSuccessPage() {
             fontSize: "clamp(28px, 5vw, 44px)",
             fontWeight: 800,
             background:
-              "linear-gradient(90deg, #fffafa 0%, #93c5fd 50%, #fffafa 100%)",
+              "linear-gradient(90deg, #ffffff 0%, #93c5fd 50%, #ffffff 100%)",
             backgroundSize: "200% auto",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",

@@ -70,6 +70,9 @@ interface Template {
   headerText?: string;
   headerMediaId?: string;
   headerMediaName?: string;
+  headerMediaHandle?: string;
+  exampleValues?: string[];
+  rejectedReason?: string;
   footerText?: string;
   category: string;
   language: string;
@@ -122,6 +125,8 @@ const EMPTY_TEMPLATE = {
   headerText: "",
   headerMediaId: "",
   headerMediaName: "",
+  headerMediaHandle: "",
+  exampleValues: [] as string[],
   bodyText: "",
   footerText: "",
   metaTemplateName: "",
@@ -209,6 +214,24 @@ function TemplatesTab({ toast }: { toast: any }) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+
+  const handleSubmitToMeta = async (t: Template) => {
+    setSubmittingId(t._id);
+    try {
+      const res = await whatsappAPI.submitTemplate(t._id);
+      toast({ title: "Submitted to Meta", description: res.message });
+      await fetchTemplates();
+    } catch (err: any) {
+      toast({
+        title: "Meta submission failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingId(null);
+    }
+  };
 
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
@@ -243,6 +266,8 @@ function TemplatesTab({ toast }: { toast: any }) {
       headerText: t.headerText || "",
       headerMediaId: t.headerMediaId || "",
       headerMediaName: t.headerMediaName || "",
+      headerMediaHandle: t.headerMediaHandle || "",
+      exampleValues: t.exampleValues || [],
       bodyText: t.bodyText,
       footerText: t.footerText || "",
       metaTemplateName: t.metaTemplateName || "",
@@ -318,6 +343,7 @@ function TemplatesTab({ toast }: { toast: any }) {
       setForm((f: any) => ({
         ...f,
         headerMediaId: res.data.mediaId,
+        headerMediaHandle: res.data.handle || "",
         headerMediaName: res.data.filename,
       }));
       toast({ title: "File uploaded", description: res.data.filename });
@@ -375,6 +401,8 @@ function TemplatesTab({ toast }: { toast: any }) {
               template={t}
               onEdit={() => openEdit(t)}
               onDelete={() => setDeleteId(t._id)}
+              onSubmit={() => handleSubmitToMeta(t)}
+              submitting={submittingId === t._id}
             />
           ))}
         </div>
@@ -559,6 +587,7 @@ function TemplatesTab({ toast }: { toast: any }) {
                           setForm((f: any) => ({
                             ...f,
                             headerMediaId: "",
+                            headerMediaHandle: "",
                             headerMediaName: "",
                           }))
                         }
@@ -629,6 +658,29 @@ function TemplatesTab({ toast }: { toast: any }) {
                 <code className="bg-muted px-1 rounded">{"{{2}}"}</code>, etc.
                 for dynamic variables (e.g. lead name, company).
               </p>
+              {[
+                ...new Set(
+                  (form.bodyText.match(/\{\{(\d+)\}\}/g) || []).map((m: string) =>
+                    parseInt(m.slice(2)),
+                  ),
+                ),
+              ]
+                .sort((a: any, b: any) => a - b)
+                .map((n: any) => (
+                  <Input
+                    key={n}
+                    placeholder={`Sample value for {{${n}}} (Meta needs this to review)`}
+                    value={form.exampleValues?.[n - 1] || ""}
+                    onChange={(e) =>
+                      setForm((f: any) => {
+                        const ev = [...(f.exampleValues || [])];
+                        ev[n - 1] = e.target.value;
+                        return { ...f, exampleValues: ev };
+                      })
+                    }
+                    className="mt-1.5 text-sm"
+                  />
+                ))}
             </div>
 
             <div>
@@ -762,10 +814,14 @@ function TemplateCard({
   template,
   onEdit,
   onDelete,
+  onSubmit,
+  submitting,
 }: {
   template: Template;
   onEdit: () => void;
   onDelete: () => void;
+  onSubmit: () => void;
+  submitting: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -796,8 +852,29 @@ function TemplateCard({
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
             {template.bodyText}
           </p>
+          {template.status === "REJECTED" && template.rejectedReason && (
+            <p className="text-[11px] text-red-600 mt-1">
+              Rejected: {template.rejectedReason}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {(template.status === "DRAFT" || template.status === "REJECTED") && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onSubmit}
+              disabled={submitting}
+              className="h-8 text-xs"
+            >
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+              ) : (
+                <Send className="w-3.5 h-3.5 mr-1" />
+              )}
+              Submit to Meta
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -1352,6 +1429,7 @@ function ConnectionTab({ toast }: { toast: any }) {
   });
 
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [fetchingNumbers, setFetchingNumbers] = useState(false);
 
   const webhookUrl = `https://leads-backend.pixelatenest.com/api/whatsapp/webhook`;
 
@@ -1375,17 +1453,30 @@ function ConnectionTab({ toast }: { toast: any }) {
   }, [fetchStatus]);
 
   const handleSetup = async () => {
-    if (!setupForm.accessToken.trim()) {
-      toast({ title: "Access Token is required", variant: "destructive" });
+    if (!setupForm.accessToken.trim() || !setupForm.wabaId.trim()) {
+      toast({
+        title: "Access Token and WABA ID are both required",
+        variant: "destructive",
+      });
       return;
     }
     setSetupSaving(true);
     try {
-      await whatsappAPI.setup({
+      const res = await whatsappAPI.setup({
         accessToken: setupForm.accessToken,
         wabaId: setupForm.wabaId,
       });
-      toast({ title: "Access token saved. Now add your phone number(s)." });
+      if (res.data?.warning) {
+        toast({ title: res.data.warning, variant: "destructive" });
+      } else {
+        // Numbers were imported by the server; pull templates too so the
+        // client can send a campaign right away.
+        const synced = await whatsappAPI.syncTemplates().catch(() => null);
+        toast({
+          title: "WhatsApp connected",
+          description: `${res.data?.added ?? 0} number(s) added${synced ? ", templates synced" : ""}.`,
+        });
+      }
       setSetupOpen(false);
       setSetupForm({ accessToken: "", wabaId: "" });
       await fetchStatus();
@@ -1425,6 +1516,27 @@ function ConnectionTab({ toast }: { toast: any }) {
       });
     } finally {
       setAddingSaving(false);
+    }
+  };
+
+  const handleFetchNumbers = async () => {
+    setFetchingNumbers(true);
+    try {
+      const res = await whatsappAPI.syncPhoneNumbers();
+      toast({
+        title: res.data.added
+          ? `${res.data.added} new number(s) added`
+          : "No new numbers found",
+      });
+      await fetchStatus();
+    } catch (err: any) {
+      toast({
+        title: "Could not fetch numbers",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingNumbers(false);
     }
   };
 
@@ -1549,7 +1661,7 @@ function ConnectionTab({ toast }: { toast: any }) {
                     className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
                     onClick={() => setSetupOpen(true)}
                   >
-                    Set Up Access Token
+                    Connect WhatsApp
                   </Button>
                 )}
               </div>
@@ -1588,14 +1700,30 @@ function ConnectionTab({ toast }: { toast: any }) {
                 </span>
               </div>
               {status?.isConnected && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs h-7 gap-1"
-                  onClick={() => setAddPhoneOpen(true)}
-                >
-                  <Plus className="w-3 h-3" /> Add Number
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs h-7 gap-1"
+                    onClick={handleFetchNumbers}
+                    disabled={fetchingNumbers}
+                  >
+                    {fetchingNumbers ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3" />
+                    )}
+                    Fetch Numbers
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs h-7 gap-1"
+                    onClick={() => setAddPhoneOpen(true)}
+                  >
+                    <Plus className="w-3 h-3" /> Add manually
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -1603,8 +1731,8 @@ function ConnectionTab({ toast }: { toast: any }) {
               <div className="ml-7 border border-dashed border-border rounded-lg p-4 text-center">
                 <p className="text-xs text-muted-foreground">
                   {status?.isConnected
-                    ? 'No phone numbers added yet. Click "Add Number" to add your first.'
-                    : "Set up access token first."}
+                    ? 'No numbers yet. Click "Fetch Numbers" to import them from Meta.'
+                    : "Connect your account first."}
                 </p>
               </div>
             ) : (
@@ -1723,9 +1851,9 @@ function ConnectionTab({ toast }: { toast: any }) {
           <div className="space-y-4 py-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-xs text-blue-700">
-                <strong>Step 1 of 2:</strong> Enter your Meta System User access
-                token. This is shared across all your phone numbers under the
-                same WABA.
+                Paste these 2 values from Meta and you're done. We'll
+                automatically add your WhatsApp numbers and import your
+                templates.
               </p>
             </div>
             <div>
@@ -1753,10 +1881,7 @@ function ConnectionTab({ toast }: { toast: any }) {
             </div>
             <div>
               <Label>
-                WABA ID{" "}
-                <span className="text-muted-foreground text-xs">
-                  (required for template sync)
-                </span>
+                WABA ID <span className="text-red-500">*</span>
               </Label>
               <Input
                 placeholder="WhatsApp Business Account ID"
@@ -1781,7 +1906,7 @@ function ConnectionTab({ toast }: { toast: any }) {
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {setupSaving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
-              Save & Continue
+              Connect WhatsApp
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1796,8 +1921,8 @@ function ConnectionTab({ toast }: { toast: any }) {
           <div className="space-y-4 py-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-xs text-blue-700">
-                <strong>Step 2:</strong> Add a phone number from your WABA. You
-                can add multiple numbers — same access token works for all.
+                Only needed if "Fetch Numbers" didn't find your number. The same
+                access token works for all numbers.
               </p>
             </div>
             <div>

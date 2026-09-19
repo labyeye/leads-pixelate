@@ -256,7 +256,7 @@ export function AutopilotPanel({ toast }: { toast: any }) {
             <p className="text-xs text-muted-foreground">
               {noAccounts
                 ? "Connect a Facebook, Instagram or LinkedIn account first (Connected Accounts tab)."
-                : "Keeps the next 3 days of posts scheduled, automatically."}
+                : "Creates and schedules each day's post automatically."}
             </p>
           </div>
           <Switch
@@ -352,9 +352,9 @@ export function AutopilotPanel({ toast }: { toast: any }) {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Review posts before they go live</p>
+              <p className="text-sm font-medium">Ask me before every post</p>
               <p className="text-xs text-muted-foreground">
-                Off = fully automatic. On = posts wait in the Posts tab for your approval.
+                Off = your first post needs approval, then Autopilot runs on its own. On = every post waits for your approval.
               </p>
             </div>
             <Switch checked={form.reviewFirst} onCheckedChange={(v) => setForm({ ...form, reviewFirst: v })} />

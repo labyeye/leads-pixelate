@@ -46,6 +46,13 @@ const whatsappTemplateSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // Meta resumable-upload handle: only needed to submit the template for review.
+    headerMediaHandle: {
+      type: String,
+      default: "",
+    },
+    // Sample values for {{1}}, {{2}}... Meta requires them on submission.
+    exampleValues: [String],
     bodyText: {
       type: String,
       required: [true, "Body text is required"],
@@ -84,6 +91,9 @@ const whatsappTemplateSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    metaTemplateId: { type: String, default: "" },
+    submittedAt: { type: Date, default: null },
+    rejectedReason: { type: String, default: "" },
     notes: {
       type: String,
       default: "",

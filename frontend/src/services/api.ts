@@ -622,6 +622,44 @@ export const autopilotAPI = {
     request<{ success: boolean; message: string }>("/autopilot/run", {
       method: "POST",
     }),
+  analyze: (accountId?: string) =>
+    request<{ success: boolean; started: boolean }>("/autopilot/analyze", {
+      method: "POST",
+      body: JSON.stringify({ accountId }),
+    }),
+  saveBrandProfile: (profile: Record<string, unknown>) =>
+    request<{ success: boolean }>("/autopilot/brand-profile", {
+      method: "PUT",
+      body: JSON.stringify(profile),
+    }),
+  saveBrand: (patch: Record<string, unknown>) =>
+    request<{ success: boolean }>("/autopilot/brand", {
+      method: "PUT",
+      body: JSON.stringify(patch),
+    }),
+  deleteLogo: (id: string) =>
+    request<{ success: boolean }>(`/autopilot/logos/${id}`, {
+      method: "DELETE",
+    }),
+  uploadLogo: (file: File, name?: string) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (name) formData.append("name", name);
+    const csrf = getCsrfToken();
+    return fetch(`${API_BASE}/autopilot/logos`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Logo upload failed");
+      return data as { success: boolean; data: { id: string; name: string; url: string } };
+    });
+  },
   createOrder: () =>
     request<{
       success: boolean;
@@ -1029,6 +1067,16 @@ export const clientsAPI = {
     request<{ success: boolean; message: string }>(`/clients/${id}`, {
       method: "DELETE",
     }),
+  importBulk: (clients: Record<string, string>[]) =>
+    request<{
+      success: boolean;
+      imported: number;
+      skipped: { row: number; name: string; reason: string }[];
+      message: string;
+    }>("/clients/import", {
+      method: "POST",
+      body: JSON.stringify({ clients }),
+    }),
 };
 
 export const servicesAPI = {
@@ -1154,6 +1202,11 @@ export const whatsappAPI = {
       { method: "POST" },
     ),
 
+  submitTemplate: (id: string) =>
+    request<{ success: boolean; message: string; data: any }>(
+      `/whatsapp/templates/${id}/submit`,
+      { method: "POST" },
+    ),
   getTemplates: () =>
     request<{ success: boolean; count: number; data: any[] }>(
       "/whatsapp/templates",
@@ -1185,6 +1238,16 @@ export const whatsappAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  resendCampaign: (id: string) =>
+    request<{ success: boolean; data: { resending: number } }>(
+      `/whatsapp/campaigns/${id}/resend`,
+      { method: "POST" },
+    ),
+  syncPhoneNumbers: () =>
+    request<{ success: boolean; data: { added: number } }>(
+      "/whatsapp/phone-numbers/sync",
+      { method: "POST" },
+    ),
 
   sendMessage: (data: {
     leadId: string;

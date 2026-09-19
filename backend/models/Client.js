@@ -60,6 +60,12 @@ const clientSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lead",
     },
+    // Who added this client. null for clients created before this was tracked.
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     tenantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Tenant",

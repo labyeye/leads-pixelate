@@ -5,9 +5,22 @@ import { autopilotAPI, socialAPI } from "@/services/api";
 import { AutopilotPanel } from "@/components/social/AutopilotPanel";
 import { AutopilotPosts } from "@/components/social/AutopilotPosts";
 import SocialAutopilotPage from "@/pages/SocialAutopilotPage";
+import { scanTarget, SCAN_STEPS } from "@/components/social/autopilot/ScanAnimation";
+import { genIndex } from "@/components/social/autopilot/GenerationProgress";
 
 vi.mock("@/services/api", () => ({
-  autopilotAPI: { get: vi.fn(), update: vi.fn(), run: vi.fn(), createOrder: vi.fn(), verify: vi.fn() },
+  autopilotAPI: {
+    get: vi.fn(),
+    update: vi.fn(),
+    run: vi.fn(),
+    createOrder: vi.fn(),
+    verify: vi.fn(),
+    analyze: vi.fn(),
+    saveBrandProfile: vi.fn(),
+    saveBrand: vi.fn(),
+    uploadLogo: vi.fn(),
+    deleteLogo: vi.fn(),
+  },
   socialAPI: { getPosts: vi.fn(), approvePost: vi.fn(), rejectPost: vi.fn(), deletePost: vi.fn() },
 }));
 
@@ -23,6 +36,24 @@ const status = (over: any = {}) => ({
   entitlement: { state: "trial", endsAt: inDays(2) },
   settings: { enabled: true, postsPerDay: 1, tone: "", language: "English", notes: "", reviewFirst: false, accountIds: [] },
   running: false,
+  progress: null,
+  onboarded: true,
+  firstApproved: true,
+  analysis: { status: "idle", stage: "", error: "", note: "", at: null },
+  brandProfile: {
+    summary: "",
+    industry: "",
+    audience: "",
+    tone: "",
+    visualStyle: "",
+    hashtagStyle: "",
+    contentPillars: [],
+    topPerformingThemes: [],
+    doList: [],
+    avoidList: [],
+    palette: [],
+  },
+  brandKit: { logos: [], logoId: "", logoEnabled: true, logoPosition: "bottom-right", colors: [] },
   lastRunAt: null,
   lastError: "",
   monthCount: 3,
@@ -128,10 +159,54 @@ describe("SocialAutopilotPage", () => {
     expect(await screen.findByText(/Nothing queued yet/)).toBeInTheDocument();
   });
 
+  it("shows the brand section on the dashboard once onboarded", async () => {
+    mockStatus();
+    vi.mocked(socialAPI.getPosts).mockResolvedValue({ success: true, count: 0, data: [] });
+    renderPage();
+    expect(await screen.findByText(/What Autopilot knows about your business/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Re-scan Instagram/ })).toBeInTheDocument();
+  });
+
+  it("walks a new tenant through the wizard instead of the settings form", async () => {
+    mockStatus({ onboarded: false, settings: { ...status().settings, enabled: false } });
+    vi.mocked(autopilotAPI.analyze).mockResolvedValue({ success: true, started: true });
+    renderPage();
+    expect(await screen.findByText(/Let's set up your Autopilot/)).toBeInTheDocument();
+    expect(screen.queryByText("Brand tone (optional)")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Scan my profile/ }));
+    await waitFor(() => expect(autopilotAPI.analyze).toHaveBeenCalledWith("a1"));
+    expect(await screen.findByText(/Scanning your profile/)).toBeInTheDocument();
+    expect(screen.getByText("Reading your profile")).toBeInTheDocument();
+  });
+
+  it("asks a tenant with no connected account to connect one first", async () => {
+    mockStatus({ onboarded: false, accounts: [], settings: { ...status().settings, enabled: false } });
+    renderPage();
+    expect(await screen.findByRole("link", { name: /Connect an account/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Scan my profile/ })).toBeDisabled();
+  });
+
   it("sends other roles back to the planner", async () => {
     role = "sales_executive";
     renderPage();
     expect(await screen.findByText("planner-page")).toBeInTheDocument();
     expect(autopilotAPI.get).not.toHaveBeenCalled();
+  });
+});
+
+describe("progress mapping", () => {
+  it("maps the server scan stage to a checklist position", () => {
+    expect(scanTarget("running", "profile")).toBe(0);
+    expect(scanTarget("running", "style")).toBe(2);
+    expect(scanTarget("running", "")).toBe(0);
+    expect(scanTarget("done", "profile_built")).toBe(SCAN_STEPS.length);
+  });
+
+  it("maps the generation stage to a pipeline position", () => {
+    expect(genIndex(undefined)).toBe(-1);
+    expect(genIndex("planning")).toBe(0);
+    expect(genIndex("review")).toBe(2);
+    expect(genIndex("done")).toBe(3);
   });
 });

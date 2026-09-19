@@ -304,6 +304,26 @@ export default function WhatsappMessagingPage() {
     }
   };
 
+  const resendCampaign = async (id: string, count: number) => {
+    if (
+      !window.confirm(
+        `Resend to ${count} people who did not receive it? Delivered/Read contacts will be skipped.`,
+      )
+    )
+      return;
+    try {
+      await whatsappAPI.resendCampaign(id);
+      toast({ title: "Resending...", description: `${count} messages queued` });
+      await Promise.all([fetchCampaigns(), viewCampaign(id)]);
+    } catch (err: any) {
+      toast({
+        title: "Resend failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <AppLayout title="WhatsApp Messaging">
       <div className="flex flex-col h-full">
@@ -440,7 +460,10 @@ export default function WhatsappMessagingPage() {
                 </p>
               </div>
             ) : (
-              <CampaignDetail campaign={selectedCampaign} />
+              <CampaignDetail
+                campaign={selectedCampaign}
+                onResend={resendCampaign}
+              />
             )}
           </div>
         </div>
@@ -834,10 +857,19 @@ export default function WhatsappMessagingPage() {
 }
 
 // ─── Campaign Detail Panel ─────────────────────────────────────────────────────
-function CampaignDetail({ campaign }: { campaign: any }) {
+function CampaignDetail({
+  campaign,
+  onResend,
+}: {
+  campaign: any;
+  onResend: (id: string, count: number) => void;
+}) {
   const [activeTab, setActiveTab] = useState<"messages" | "replies">(
     "messages",
   );
+  const undelivered = (campaign.messages || []).filter((m: any) =>
+    ["FAILED", "PENDING", "SENT"].includes(m.status),
+  ).length;
 
   const stats = [
     {
@@ -900,6 +932,18 @@ function CampaignDetail({ campaign }: { campaign: any }) {
             {campaign.status}
           </span>
         </div>
+
+        {undelivered > 0 && campaign.status !== "SENDING" && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-3 border-green-600 text-green-700 hover:bg-green-50"
+            onClick={() => onResend(campaign._id, undelivered)}
+          >
+            <RefreshCw className="w-4 h-4 mr-1" />
+            Resend to {undelivered} not delivered
+          </Button>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-6 gap-1 mt-4">

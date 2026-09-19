@@ -97,6 +97,25 @@ export default {
           from: { opacity: "0", transform: "translateX(-12px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        "scan-sweep": {
+          "0%": { transform: "translateY(-10%)", opacity: "0" },
+          "15%": { opacity: "1" },
+          "85%": { opacity: "1" },
+          "100%": { transform: "translateY(1000%)", opacity: "0" },
+        },
+        "ring-pulse": {
+          "0%": { transform: "scale(0.7)", opacity: "0.55" },
+          "100%": { transform: "scale(1.7)", opacity: "0" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+        "pop-in": {
+          "0%": { transform: "scale(0.6)", opacity: "0" },
+          "70%": { transform: "scale(1.12)", opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
         slideInRight: {
           from: { opacity: "0", transform: "translateX(110%)" },
           to: { opacity: "1", transform: "translateX(0)" },
@@ -110,6 +129,10 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "scan-sweep": "scan-sweep 2.4s ease-in-out infinite",
+        "ring-pulse": "ring-pulse 2.4s ease-out infinite",
+        shimmer: "shimmer 2.2s linear infinite",
+        "pop-in": "pop-in 0.35s ease-out both",
         "slide-in-left":
           "slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
       },

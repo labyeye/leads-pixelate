@@ -11,11 +11,13 @@ import {
   Building2,
   CheckCircle2,
   Download,
+  Upload,
 } from "lucide-react";
 import {
   ExportFieldsDialog,
   type ExportField,
 } from "@/components/export/ExportFieldsDialog";
+import { ImportClientsDialog } from "@/components/clients/ImportClientsDialog";
 
 const CLIENT_EXPORT_FIELDS: ExportField[] = [
   { key: "name", label: "Name", get: (c) => c.name || "" },
@@ -46,7 +48,24 @@ const CLIENT_EXPORT_FIELDS: ExportField[] = [
     label: "Payment Status",
     get: (c) => c.paymentStatus || "",
   },
+  { key: "addedBy", label: "Added By", get: (c) => c.createdBy?.name || "" },
+  {
+    key: "addedOn",
+    label: "Added On",
+    default: false,
+    get: (c) =>
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString("en-IN") : "",
+  },
 ];
+
+const fmtAdded = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,6 +174,7 @@ export default function ClientsPage() {
   const { can } = usePermission();
   const [search, setSearch] = useState("");
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const notify = useNotify();
@@ -344,6 +364,15 @@ export default function ClientsPage() {
         >
           <Download className="w-4 h-4" /> Export
         </button>
+
+        {can("Clients", "create") && (
+          <button
+            onClick={() => setShowImportDialog(true)}
+            className="border-2 bg-white text-black px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
+          >
+            <Upload className="w-4 h-4" /> Import Excel
+          </button>
+        )}
 
         <Dialog
           open={isModalOpen}
@@ -536,16 +565,18 @@ export default function ClientsPage() {
                   "Contact",
                   "Status",
                   "Address / Type",
+                  "Added By",
                   "Actions",
                 ].map((h, i) => (
                   <th
                     key={h}
                     className={cn(
                       "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest",
-                      i < 4 ? "text-left" : "text-right",
+                      i < 5 ? "text-left" : "text-right",
                       i === 1 ? "hidden md:table-cell" : "",
                       i === 2 ? "hidden lg:table-cell" : "",
                       i === 3 ? "hidden xl:table-cell" : "",
+                      i === 4 ? "hidden md:table-cell" : "",
                     )}
                   >
                     {h}
@@ -556,7 +587,7 @@ export default function ClientsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-14">
+                  <td colSpan={6} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                     <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
                       Loading...
@@ -566,7 +597,7 @@ export default function ClientsPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
                   >
                     No clients found.
@@ -625,6 +656,14 @@ export default function ClientsPage() {
                         {client.businessType}
                       </p>
                     </td>
+                    <td className="px-5 py-3.5 hidden md:table-cell">
+                      <p className="text-xs font-bold text-black">
+                        {client.createdBy?.name || "—"}
+                      </p>
+                      <p className="text-xs text-black/50">
+                        {fmtAdded(client.createdAt)}
+                      </p>
+                    </td>
                     <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -672,6 +711,14 @@ export default function ClientsPage() {
         fields={CLIENT_EXPORT_FIELDS}
         data={filtered}
         filenamePrefix="clients"
+        formats={["xlsx", "pdf", "csv"]}
+        documentTitle="Clients"
+      />
+
+      <ImportClientsDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImported={fetchClients}
       />
     </AppLayout>
   );

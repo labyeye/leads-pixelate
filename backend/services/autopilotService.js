@@ -34,6 +34,25 @@ const isConfigured = () =>
   !!(process.env.ANTHROPIC_API_KEY && process.env.GEMINI_API_KEY) &&
   process.env.AUTOPILOT_ENABLED !== "false";
 
+// Saved by the onboarding scan (brandAnalysisService) and editable by the owner.
+function brandProfileForPrompt(a) {
+  const p = a.brandProfile || {};
+  const list = (arr, n = 8) => (arr || []).slice(0, n).map((x) => clean(x, 80));
+  return {
+    summary: clean(p.summary, 600),
+    industry: clean(p.industry, 100),
+    tone: clean(p.tone, 200),
+    audience: clean(p.audience, 300),
+    visualStyle: clean(p.visualStyle, 300),
+    hashtagStyle: clean(p.hashtagStyle, 200),
+    contentPillars: list(p.contentPillars),
+    topPerformingThemes: list(p.topPerformingThemes),
+    doList: list(p.doList),
+    avoidList: list(p.avoidList),
+    palette: list([...(a.brandKit?.colors || []), ...(p.palette || [])], 6),
+  };
+}
+
 // Tenant/lead-supplied text ends up inside prompts: strip angle brackets so it
 // can't close our <business_data> delimiters, and cap the length.
 const clean = (s, n) => String(s ?? "").replace(/[<>]/g, "").trim().slice(0, n);
@@ -195,6 +214,8 @@ Rules:
 - Vary topics and angles; do not repeat or closely echo the recentPosts.
 - Base posts on the given products, services and lead trends. Never invent prices, discounts, certifications, clients or statistics.
 - Only use platforms from the connected platforms list.
+- brandProfile (when filled) describes the business's real Instagram presence: match its tone, content pillars and visual style, follow doList and avoidList, and lean on topPerformingThemes.
+- Put brandProfile.visualStyle and palette colours into every imagePrompt so the images look like the same brand.
 - imagePrompt: one clean photographic or illustrated scene for a 4:5 image. No text, letters, logos or watermarks in the image.`;
 
 const REVIEW_SYSTEM = `You are the final approval gate before AI-generated posts go live on a business's public social media pages. Each draft has a caption and an image. For every draft decide:
@@ -256,14 +277,14 @@ const geminiBlocks = (interaction) =>
   (interaction.steps || []).filter((s) => s.type === "model_output").flatMap((s) => s.content || []);
 
 async function captionWithGemini(item, ctx) {
-  const facts = JSON.stringify({ brand: ctx.brand, products: ctx.products });
+  const facts = JSON.stringify({ brand: ctx.brand, brandProfile: ctx.brandProfile, products: ctx.products });
   const data = await gemini({
     model: geminiTextModel(),
     input: `Write one ${ctx.brand.language} social media post for ${ctx.brand.name}.
 Topic: ${clean(item.topic, 200)}
 Angle: ${clean(item.angle, 200)}
 Brief: ${clean(item.captionBrief, 400)}
-Tone: ${ctx.brand.tone || "friendly and professional"}
+Tone: ${ctx.brand.tone || ctx.brandProfile?.tone || "friendly and professional"}
 Platforms: ${item.platforms.join(", ")} (LinkedIn: more professional; Instagram: more visual and casual)
 
 Rules: 2-5 short sentences and one clear call to action. No links. No prices, discounts or claims that are not in the facts. At most 2 emojis. 3-6 relevant hashtags.
@@ -303,14 +324,56 @@ const ai = { plan: planWithClaude, caption: captionWithGemini, image: imageWithG
 
 // -------------------------------------------------------------------- pipeline
 
+// Same public base URL the manual upload route hands out (Meta must fetch it).
+const publicBase = () =>
+  (process.env.API_BASE_URL || process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, "");
+
 function saveImage(tenantId, buf) {
   const dir = path.join(__dirname, "../uploads/autopilot", String(tenantId));
   fs.mkdirSync(dir, { recursive: true });
   const name = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}.jpg`;
   fs.writeFileSync(path.join(dir, name), buf);
-  // Same public base URL the manual upload route hands out (Meta must fetch it).
-  const base = process.env.API_BASE_URL || process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
-  return `${base.replace(/\/$/, "")}/uploads/autopilot/${tenantId}/${name}`;
+  return `${publicBase()}/uploads/autopilot/${tenantId}/${name}`;
+}
+
+const setProgress = (tenantId, stage) =>
+  Tenant.updateOne({ _id: tenantId }, { $set: { "autopilot.progress": { stage, at: new Date() } } }).catch(() => {});
+
+const brandDir = (tenantId) => path.join(__dirname, "../uploads/autopilot", String(tenantId), "brand");
+
+// Stamp the tenant's chosen logo onto the finished image. Done after the review gate
+// (which rejects images containing logos) and never fails the run: a bad logo file
+// just means the post goes out without it.
+async function applyLogo(buf, tenant) {
+  const kit = tenant.autopilot?.brandKit;
+  const logo = kit?.logoEnabled ? (kit.logos || []).find((l) => l.id === kit.logoId) || kit.logos?.[0] : null;
+  if (!logo) return buf;
+  try {
+    const sharp = require("sharp");
+    const base = sharp(buf);
+    const { width, height } = await base.metadata();
+    const size = Math.round(width * 0.16);
+    const mark = await sharp(path.join(brandDir(tenant._id), path.basename(logo.file)))
+      .resize({ width: size, height: size, fit: "inside" })
+      .png()
+      .toBuffer();
+    const m = await sharp(mark).metadata();
+    const pad = Math.round(width * 0.04);
+    const [v, h] = (kit.logoPosition || "bottom-right").split("-");
+    return await base
+      .composite([
+        {
+          input: mark,
+          left: h === "left" ? pad : width - m.width - pad,
+          top: v === "top" ? pad : height - m.height - pad,
+        },
+      ])
+      .jpeg({ quality: 90 })
+      .toBuffer();
+  } catch (err) {
+    log.warn("Logo overlay skipped", { tenantId: String(tenant._id), message: err.message });
+    return buf;
+  }
 }
 
 async function buildContext(tenant, accounts, now) {
@@ -347,6 +410,7 @@ async function buildContext(tenant, accounts, now) {
       language: a.language,
       notes: clean(a.notes, 500),
     },
+    brandProfile: brandProfileForPrompt(a),
     products: products.map((p) => ({
       name: clean(p.name, 80),
       category: p.category,
@@ -412,6 +476,7 @@ async function runForTenant(tenantId, { manual = false } = {}) {
   if (!claimed) return { skipped: "already running" };
 
   try {
+    await setProgress(tenant._id, "planning");
     const ctx = await buildContext(tenant, accounts, now);
     ctx.alreadyScheduled = filled.map((p) => p.scheduledAt.toISOString());
     const items = validatePlan(await ai.plan(ctx, { count, from: now, to: until }), {
@@ -422,6 +487,7 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     });
     if (!items.length) throw new Error("Claude's plan had no schedulable posts");
 
+    await setProgress(tenant._id, "creating");
     const drafts = [];
     let firstError;
     for (const item of items) {
@@ -436,8 +502,11 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     if (!drafts.length) throw firstError;
 
     // Fail closed: a draft with no matching "ok"/"fix" verdict is not posted.
+    await setProgress(tenant._id, "review");
     const reviews = (await ai.review(ctx, drafts)) || [];
-    const status = a.reviewFirst ? "PENDING_APPROVAL" : "SCHEDULED";
+    // The first Autopilot post always waits for the owner; approving it (socialController.approvePost)
+    // sets firstApprovedAt and later runs go out on their own unless reviewFirst is forced on.
+    const status = a.reviewFirst || !a.firstApprovedAt ? "PENDING_APPROVAL" : "SCHEDULED";
     let created = 0;
     for (const [i, d] of drafts.entries()) {
       const r = reviews.find((x) => x.index === i);
@@ -450,7 +519,7 @@ async function runForTenant(tenantId, { manual = false } = {}) {
       await SocialPost.create({
         caption,
         hashtags: d.hashtags,
-        imageUrl: saveImage(tenant._id, d.image),
+        imageUrl: saveImage(tenant._id, await applyLogo(d.image, tenant)),
         postType: "image",
         platforms: d.platforms,
         accountIds: accounts.filter((acc) => d.platforms.includes(acc.platform)).map((acc) => String(acc._id)),
@@ -467,11 +536,13 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     // the same rejected drafts again next hour.
     if (!created) throw new Error("Every draft was rejected in review");
     await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.lastError": "" } });
+    await setProgress(tenant._id, "done");
     log.info("Autopilot run done", { tenantId: String(tenant._id), planned: items.length, created });
     return { created, planned: items.length };
   } catch (err) {
     log.error("Autopilot run failed", { tenantId: String(tenant._id), message: err.message });
     await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.lastError": clean(err.message, 300) } });
+    await setProgress(tenant._id, "failed");
     return { error: err.message };
   } finally {
     await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.runningSince": null } });
@@ -499,6 +570,11 @@ async function runAutopilotCron() {
 
 module.exports = {
   ai,
+  claudeJson,
+  clean,
+  brandDir,
+  applyLogo,
+  publicBase,
   runAutopilotCron,
   runForTenant,
   revertScheduled,

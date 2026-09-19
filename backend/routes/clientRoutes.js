@@ -6,6 +6,7 @@ const {
   createClient,
   updateClient,
   deleteClient,
+  importClients,
 } = require("../controllers/clientController");
 const { protect } = require("../middleware/auth");
 const { checkPermission } = require("../middleware/checkPermission");
@@ -16,6 +17,8 @@ router
   .route("/")
   .get(checkPermission("Clients", "read"), getClients)
   .post(checkPermission("Clients", "create"), createClient);
+
+router.post("/import", checkPermission("Clients", "create"), importClients);
 
 router
   .route("/:id")

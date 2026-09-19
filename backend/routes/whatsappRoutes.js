@@ -13,9 +13,12 @@ const {
   updateTemplate,
   deleteTemplate,
   syncTemplates,
+  submitTemplate,
   getCampaigns,
   getCampaign,
   createCampaign,
+  resendCampaign,
+  syncPhoneNumbers,
   sendMessage,
   verifyWebhook,
   handleWebhook,
@@ -50,6 +53,11 @@ router.post(
   authorize("super_admin", "admin"),
   addPhoneNumber,
 );
+router.post(
+  "/phone-numbers/sync",
+  authorize("super_admin", "admin"),
+  syncPhoneNumbers,
+);
 router.delete(
   "/phone-numbers/:phoneNumberId",
   authorize("super_admin", "admin"),
@@ -80,8 +88,15 @@ router.post(
   syncTemplates,
 );
 
+router.post(
+  "/templates/:id/submit",
+  authorize("super_admin", "admin"),
+  submitTemplate,
+);
+
 router.route("/campaigns").get(getCampaigns).post(createCampaign);
 router.route("/campaigns/:id").get(getCampaign);
+router.post("/campaigns/:id/resend", resendCampaign);
 
 router.post("/send", sendMessage);
 

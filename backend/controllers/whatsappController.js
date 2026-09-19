@@ -180,6 +180,52 @@ exports.sendTextNotification = async function sendTextNotification(
   }
 };
 
+// Pulls every phone number under the WABA from Meta and adds the ones we don't
+// have yet, so clients never have to hunt for a Phone Number ID.
+async function importWabaNumbers(user, wabaId, accessToken) {
+  const r = await fetch(
+    `${WA_API}/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name&access_token=${accessToken}`,
+  );
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  const tenant = await Tenant.findOne(getTenantQuery(user));
+  const have = new Set(
+    (tenant?.integrations?.whatsapp?.phoneNumbers || []).map(
+      (p) => p.phoneNumberId,
+    ),
+  );
+  const fresh = (d.data || [])
+    .filter((p) => !have.has(p.id))
+    .map((p) => ({
+      phoneNumberId: p.id,
+      label: p.verified_name || "",
+      businessName: p.verified_name || "",
+      phoneNumber: p.display_phone_number || "",
+      addedAt: new Date(),
+    }));
+  if (fresh.length)
+    await Tenant.updateOne(getTenantQuery(user), {
+      $push: { "integrations.whatsapp.phoneNumbers": { $each: fresh } },
+    });
+  return fresh.length;
+}
+
+exports.syncPhoneNumbers = asyncHandler(async (req, res) => {
+  const wa = await getWaBase(req.user);
+  if (!wa?.wabaId) {
+    res.status(400);
+    throw new Error("Connect WhatsApp with your WABA ID first");
+  }
+  let added;
+  try {
+    added = await importWabaNumbers(req.user, wa.wabaId, wa.accessToken);
+  } catch (err) {
+    res.status(400);
+    throw new Error("Could not fetch numbers from Meta: " + err.message);
+  }
+  res.json({ success: true, data: { added } });
+});
+
 exports.setup = asyncHandler(async (req, res) => {
   const { accessToken, wabaId } = req.body;
   if (!accessToken) {
@@ -209,9 +255,20 @@ exports.setup = asyncHandler(async (req, res) => {
     { new: true },
   );
 
+  let added = 0;
+  let warning = "";
+  if (wabaId) {
+    try {
+      added = await importWabaNumbers(req.user, wabaId, accessToken);
+    } catch (err) {
+      warning = "Saved, but could not read numbers for this WABA ID: " + err.message;
+    }
+  }
+
   res.json({
     success: true,
-    message: "WhatsApp access token saved. Now add your phone numbers.",
+    message: "WhatsApp connected",
+    data: { added, warning },
   });
 });
 
@@ -347,6 +404,10 @@ exports.createTemplate = asyncHandler(async (req, res) => {
     footerText,
     buttons,
     metaTemplateName,
+    headerMediaId,
+    headerMediaName,
+    headerMediaHandle,
+    exampleValues,
     notes,
   } = req.body;
   const varMatches = (bodyText || "").match(/\{\{\d+\}\}/g) || [];
@@ -361,6 +422,10 @@ exports.createTemplate = asyncHandler(async (req, res) => {
     footerText,
     buttons,
     metaTemplateName: metaTemplateName || name,
+    headerMediaId,
+    headerMediaName,
+    headerMediaHandle,
+    exampleValues,
     notes,
     variableCount: new Set(varMatches).size,
     tenantId: req.user.tenantId || null,
@@ -416,7 +481,7 @@ exports.syncTemplates = asyncHandler(async (req, res) => {
   }
 
   const metaRes = await fetch(
-    `${WA_API}/${wa.wabaId}/message_templates?access_token=${wa.accessToken}&fields=name,category,language,status,components&limit=100`,
+    `${WA_API}/${wa.wabaId}/message_templates?access_token=${wa.accessToken}&fields=name,category,language,status,components,id,rejected_reason&limit=100`,
   );
   const metaData = await metaRes.json();
   if (metaData.error) throw new Error(metaData.error.message);
@@ -438,6 +503,11 @@ exports.syncTemplates = asyncHandler(async (req, res) => {
         name: t.name.replace(/[^a-z0-9_]/gi, "_").toLowerCase(),
         displayName: t.name,
         metaTemplateName: t.name,
+        metaTemplateId: t.id || "",
+        rejectedReason:
+          t.rejected_reason && t.rejected_reason !== "NONE"
+            ? t.rejected_reason
+            : "",
         category: t.category,
         language: t.language,
         status:
@@ -475,6 +545,159 @@ exports.syncTemplates = asyncHandler(async (req, res) => {
     data: { synced, approved: approvedCount },
   });
 });
+
+// Template -> Meta "components" payload (same shape final-pixelate submits).
+function buildMetaComponents(t) {
+  const components = [];
+
+  if (t.headerType === "TEXT" && t.headerText) {
+    components.push({ type: "HEADER", format: "TEXT", text: t.headerText });
+  } else if (["IMAGE", "DOCUMENT"].includes(t.headerType)) {
+    components.push({
+      type: "HEADER",
+      format: t.headerType,
+      example: { header_handle: [t.headerMediaHandle] },
+    });
+  }
+
+  const body = { type: "BODY", text: t.bodyText.trim() };
+  const nums = [
+    ...new Set(
+      (t.bodyText.match(/\{\{(\d+)\}\}/g) || []).map((m) => parseInt(m.slice(2))),
+    ),
+  ].sort((a, b) => a - b);
+  if (nums.length) {
+    body.example = {
+      body_text: [
+        nums.map((n) => (t.exampleValues?.[n - 1] || "").trim() || `sample_${n}`),
+      ],
+    };
+  }
+  components.push(body);
+
+  if (t.footerText) components.push({ type: "FOOTER", text: t.footerText });
+
+  if (t.buttons?.length) {
+    components.push({
+      type: "BUTTONS",
+      buttons: t.buttons.map((b) => {
+        if (b.type === "URL") return { type: "URL", text: b.text, url: b.url };
+        if (b.type === "PHONE_NUMBER")
+          return { type: "PHONE_NUMBER", text: b.text, phone_number: b.phoneNumber };
+        return { type: "QUICK_REPLY", text: b.text };
+      }),
+    });
+  }
+  return components;
+}
+
+exports.submitTemplate = asyncHandler(async (req, res) => {
+  const wa = await getWaBase(req.user);
+  if (!wa?.wabaId) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected (WABA ID missing)");
+  }
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const template = await WhatsappTemplate.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
+  if (!template) {
+    res.status(404);
+    throw new Error("Template not found");
+  }
+  if (
+    ["IMAGE", "DOCUMENT"].includes(template.headerType) &&
+    !template.headerMediaHandle
+  ) {
+    res.status(400);
+    throw new Error("Upload a sample header file before submitting to Meta");
+  }
+
+  const name = template.metaTemplateName || template.name;
+  const metaRes = await fetch(`${WA_API}/${wa.wabaId}/message_templates`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${wa.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      language: template.language || "en",
+      category: template.category,
+      components: buildMetaComponents(template),
+    }),
+  });
+  const data = await metaRes.json().catch(() => ({}));
+
+  // 2388023 = "already exists": treat as submitted; Sync Templates pulls the real status.
+  const alreadyExists = data?.error?.error_subcode === 2388023;
+  if (!metaRes.ok && !alreadyExists) {
+    const e = data?.error || {};
+    res.status(422);
+    throw new Error(
+      e.error_user_msg ||
+        e.error_data?.details ||
+        e.message ||
+        "Meta rejected the template",
+    );
+  }
+
+  template.status = "PENDING";
+  template.metaTemplateName = name;
+  template.metaTemplateId = data.id || template.metaTemplateId;
+  template.submittedAt = new Date();
+  template.rejectedReason = "";
+  await template.save();
+  res.json({
+    success: true,
+    message:
+      "Submitted to Meta. Review takes a few hours to 2 days, then press Sync.",
+    data: template,
+  });
+});
+
+// Meta resumable upload -> header_handle (needed only for template submission).
+async function uploadHeaderHandle(accessToken, { buffer, mimetype, originalname }) {
+  let appId = process.env.WHATSAPP_APP_ID;
+  if (!appId) {
+    const dbg = await (
+      await fetch(
+        `${WA_API}/debug_token?input_token=${accessToken}&access_token=${accessToken}`,
+      )
+    ).json();
+    appId = dbg?.data?.app_id;
+  }
+  if (!appId) throw new Error("Could not determine Meta App ID");
+
+  const q = new URLSearchParams({
+    file_name: originalname,
+    file_length: String(buffer.length),
+    file_type: mimetype,
+  });
+  const session = await (
+    await fetch(`${WA_API}/${appId}/uploads?${q}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).json();
+  if (!session.id)
+    throw new Error(session?.error?.message || "Upload session failed");
+
+  const up = await (
+    await fetch(`${WA_API}/${session.id}`, {
+      method: "POST",
+      headers: {
+        Authorization: `OAuth ${accessToken}`,
+        file_offset: "0",
+        "Content-Type": mimetype,
+      },
+      body: buffer,
+    })
+  ).json();
+  if (!up.h) throw new Error(up?.error?.message || "Header upload failed");
+  return up.h;
+}
 
 exports.getCampaigns = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
@@ -620,6 +843,124 @@ exports.createCampaign = asyncHandler(async (req, res) => {
           : "PARTIAL";
     await campaign.save();
   })().catch((err) => log.error("Campaign send failed", { campaignId: campaign._id, message: err.message }));
+});
+
+// Re-sends only to people who did NOT receive the message (failed / never sent /
+// sent but not delivered). DELIVERED and READ are never touched.
+const RESENDABLE = ["FAILED", "PENDING", "SENT"];
+
+exports.resendCampaign = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const campaign = await WhatsappCampaign.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
+  if (!campaign) {
+    res.status(404);
+    throw new Error("Campaign not found");
+  }
+  const targets = campaign.messages.filter((m) => RESENDABLE.includes(m.status));
+  if (!targets.length) {
+    res.status(400);
+    throw new Error("Everyone has already received this message");
+  }
+
+  const template = await WhatsappTemplate.findOne({
+    _id: campaign.template,
+    ...tenantFilter,
+  });
+  const wa = await getWaBase(req.user);
+  const phoneNumberId = wa && resolvePhoneNumberId(wa, campaign.fromPhoneNumberId);
+  if (!template || !phoneNumberId) {
+    res.status(400);
+    throw new Error(
+      !template
+        ? "The template of this campaign no longer exists"
+        : "The WhatsApp number this campaign was sent from is not connected",
+    );
+  }
+
+  const claimed = await WhatsappCampaign.findOneAndUpdate(
+    { _id: campaign._id, status: { $ne: "SENDING" } },
+    { status: "SENDING" },
+  );
+  if (!claimed) {
+    res.status(409);
+    throw new Error("This campaign is still sending, try again in a moment");
+  }
+
+  res.json({ success: true, data: { resending: targets.length } });
+
+  (async () => {
+    for (const m of targets) {
+      // A late delivery webhook may have landed since we started — never double-send.
+      const stillPending = await WhatsappCampaign.exists({
+        _id: campaign._id,
+        messages: { $elemMatch: { _id: m._id, status: { $in: RESENDABLE } } },
+      });
+      if (!stillPending) continue;
+
+      let set;
+      try {
+        const lead = await Lead.findOne({ _id: m.lead, ...tenantFilter });
+        if (!lead) throw new Error("Lead no longer exists");
+        const phone = formatPhone(lead.phone);
+        if (!phone) throw new Error("Invalid phone number");
+        const apiRes = await sendWaMessage(
+          phoneNumberId,
+          wa.accessToken,
+          phone,
+          template.metaTemplateName || template.name,
+          template.language,
+          buildTemplateComponents(template, campaign.variableMapping, lead),
+        );
+        set = {
+          status: "SENT",
+          phone,
+          waMessageId: apiRes?.messages?.[0]?.id || "",
+          sentAt: new Date(),
+          failedReason: "",
+        };
+      } catch (err) {
+        set = { status: "FAILED", failedReason: err.message };
+      }
+      // Per-message atomic update: safe against webhook saves on the same doc.
+      await WhatsappCampaign.updateOne(
+        { _id: campaign._id },
+        {
+          $set: Object.fromEntries(
+            Object.entries(set).map(([k, v]) => [`messages.$[m].${k}`, v]),
+          ),
+        },
+        { arrayFilters: [{ "m._id": m._id }] },
+      );
+    }
+  })()
+    .catch((err) =>
+      log.error("Campaign resend failed", { campaignId: campaign._id, message: err.message }),
+    )
+    .finally(async () => {
+      const fresh = await WhatsappCampaign.findById(campaign._id);
+      if (!fresh) return;
+      const n = (...s) => fresh.messages.filter((x) => s.includes(x.status)).length;
+      const sent = n("SENT", "DELIVERED", "READ");
+      const failed = n("FAILED");
+      await WhatsappCampaign.updateOne(
+        { _id: campaign._id },
+        {
+          status:
+            failed === fresh.messages.length
+              ? "FAILED"
+              : sent > 0
+                ? "COMPLETED"
+                : "PARTIAL",
+          sentCount: sent,
+          deliveredCount: n("DELIVERED", "READ"),
+          readCount: n("READ"),
+          failedCount: failed,
+        },
+      );
+    });
 });
 
 exports.sendMessage = asyncHandler(async (req, res) => {
@@ -870,8 +1211,15 @@ exports.uploadMedia = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error(data?.error?.message || "Media upload failed");
   }
+  // Best effort: the handle is only needed to submit a template to Meta.
+  let handle = "";
+  try {
+    handle = await uploadHeaderHandle(wa.accessToken, req.file);
+  } catch (err) {
+    log.warn("Header handle upload failed: " + err.message);
+  }
   res.json({
     success: true,
-    data: { mediaId: data.id, filename: originalname, mimetype },
+    data: { mediaId: data.id, handle, filename: originalname, mimetype },
   });
 });

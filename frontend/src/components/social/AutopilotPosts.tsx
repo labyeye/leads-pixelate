@@ -163,7 +163,7 @@ export function AutopilotPosts({ toast }: { toast: any }) {
           <ul className="space-y-2">{upcoming.map(row)}</ul>
         ) : (
           <p className="text-sm text-muted-foreground rounded-lg border border-dashed p-4">
-            Nothing queued yet. Turn Autopilot on and your next 3 days of posts will appear here.
+            Nothing queued yet. Turn Autopilot on and your next post will appear here.
           </p>
         )}
       </section>

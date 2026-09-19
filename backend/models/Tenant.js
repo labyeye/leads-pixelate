@@ -192,6 +192,48 @@ const tenantSchema = new mongoose.Schema(
       runningSince: { type: Date, default: null },
       lastRunAt: { type: Date, default: null },
       lastError: { type: String, default: "" },
+      onboardedAt: { type: Date, default: null },
+      // Set when the owner approves their first Autopilot post; from then on runs are hands-off.
+      firstApprovedAt: { type: Date, default: null },
+      progress: {
+        stage: { type: String, default: "" }, // planning | writing | image | review | done | failed
+        at: { type: Date, default: null },
+      },
+      analysis: {
+        status: { type: String, enum: ["idle", "running", "done", "failed"], default: "idle" },
+        stage: { type: String, default: "" }, // profile | posts | style | profile_built
+        error: { type: String, default: "" },
+        note: { type: String, default: "" },
+        at: { type: Date, default: null },
+        accountId: { type: String, default: "" },
+      },
+      brandProfile: {
+        summary: { type: String, default: "", maxlength: 600 },
+        industry: { type: String, default: "", maxlength: 100 },
+        audience: { type: String, default: "", maxlength: 300 },
+        tone: { type: String, default: "", maxlength: 200 },
+        visualStyle: { type: String, default: "", maxlength: 300 },
+        hashtagStyle: { type: String, default: "", maxlength: 200 },
+        contentPillars: { type: [String], default: [] },
+        topPerformingThemes: { type: [String], default: [] },
+        doList: { type: [String], default: [] },
+        avoidList: { type: [String], default: [] },
+        palette: { type: [String], default: [] },
+      },
+      brandKit: {
+        logos: {
+          type: [{ id: String, name: { type: String, maxlength: 60 }, file: String, url: String }],
+          default: [],
+        },
+        logoId: { type: String, default: "" },
+        logoEnabled: { type: Boolean, default: true },
+        logoPosition: {
+          type: String,
+          enum: ["bottom-right", "bottom-left", "top-right", "top-left"],
+          default: "bottom-right",
+        },
+        colors: { type: [String], default: [] },
+      },
     },
     apiKeys: [
       {
