@@ -77,7 +77,7 @@ async function startCall({ agentPhone, callLogId }) {
     StatusCallback: `${base}/api/webhooks/twilio/status/${callLogId}`,
     StatusCallbackMethod: "POST",
   });
-  for (const ev of ["initiated", "ringing", "answered", "completed"]) body.append("StatusCallbackEvent", ev);
+  // Trial accounts reject StatusCallbackEvent ("limited parameter access"); default = completed only.
 
   const auth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString("base64");
   const res = await fetch(`${API}/${process.env.TWILIO_ACCOUNT_SID}/Calls.json`, {

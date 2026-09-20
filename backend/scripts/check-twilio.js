@@ -136,7 +136,7 @@ async function main() {
     assert.strictEqual(req.body.get("From"), "+15005550006");
     assert.strictEqual(req.body.get("Url"), `https://hooks.example.com/api/webhooks/twilio/connect/${c._id}`);
     assert.strictEqual(req.body.get("StatusCallback"), `https://hooks.example.com/api/webhooks/twilio/status/${c._id}`);
-    assert.deepStrictEqual(req.body.getAll("StatusCallbackEvent"), ["initiated", "ringing", "answered", "completed"]);
+    assert.deepStrictEqual(req.body.getAll("StatusCallbackEvent"), []);
     assert.strictEqual(userUpdates.length, 0, "profile number unchanged unless asked");
 
     // typed number + remember
