@@ -113,6 +113,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
         $project: {
           name: 1,
           role: 1,
+          avatar: 1,
           leadsCount: { $size: "$myLeads" },
           conversions: {
             $size: {

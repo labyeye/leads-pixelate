@@ -25,6 +25,7 @@ import CampaignsScreen from '../screens/CampaignsScreen';
 import UsersScreen from '../screens/UsersScreen';
 import IntegrationsScreen from '../screens/IntegrationsScreen';
 import SocialPlannerScreen from '../screens/SocialPlannerScreen';
+import AutopilotScreen from '../screens/AutopilotScreen';
 import CreatePostScreen from '../screens/CreatePostScreen';
 import ServicesScreen from '../screens/ServicesScreen';
 import ApiKeysScreen from '../screens/ApiKeysScreen';
@@ -79,6 +80,7 @@ export type MoreStackParamList = {
   QuotationForm: {quotation?: any} | undefined;
   RolesPermissions: undefined;
   SocialPlanner: undefined;
+  Autopilot: undefined;
   CreatePost: undefined;
   Services: undefined;
   ApiKeys: undefined;
@@ -136,6 +138,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="QuotationForm" component={QuotationFormScreen} />
       <MoreStack.Screen name="RolesPermissions" component={RolesPermissionsScreen} />
       <MoreStack.Screen name="SocialPlanner" component={SocialPlannerScreen} />
+      <MoreStack.Screen name="Autopilot" component={AutopilotScreen} />
       <MoreStack.Screen name="CreatePost" component={CreatePostScreen} />
       <MoreStack.Screen name="Services" component={ServicesScreen} />
       <MoreStack.Screen name="ApiKeys" component={ApiKeysScreen} />

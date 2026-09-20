@@ -141,12 +141,25 @@ function Leaderboard({ performers }: { performers: any[] }) {
             <span className="text-base w-7 shrink-0">
               {medals[i] || `#${i + 1}`}
             </span>
+            <div className="w-9 h-9 border-2 rounded-full border-black shrink-0 overflow-hidden bg-[#044bab]">
+              {p.avatar ? (
+                <img
+                  src={p.avatar}
+                  alt={p.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs font-black text-white">
+                  {(p.name || "U")[0].toUpperCase()}
+                </div>
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-black truncate">{p.name}</p>
               <div className="flex items-center gap-2 mt-1">
-                <div className="flex-1 h-1.5 bg-[#024BAB]/30 border border-black overflow-hidden">
+                <div className="flex-1 h-1.5 bg-white border border-black overflow-hidden">
                   <div
-                    className="h-full bg-[#024BAB]"
+                    className="h-full bg-[#044bab]"
                     style={{ width: `${convRate}%` }}
                   />
                 </div>

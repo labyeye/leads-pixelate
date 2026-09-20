@@ -31,6 +31,9 @@ import WhatsappMessagingPage from "./pages/WhatsappMessagingPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
 import SocialAutopilotPage from "./pages/SocialAutopilotPage";
+import SocialAutopilotSetupPage from "./pages/SocialAutopilotSetupPage";
+import SocialAutopilotReportPage from "./pages/SocialAutopilotReportPage";
+import AIUsagePage from "./pages/AIUsagePage";
 import LinkedInCampaignsPage from "./pages/LinkedInCampaignsPage";
 import GoogleAdsCampaignsPage from "./pages/GoogleAdsCampaignsPage";
 import GoogleAdsPlaceholderPage from "./pages/GoogleAdsPlaceholderPage";
@@ -314,10 +317,34 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/ai-usage"
+        element={
+          <ProtectedRoute>
+            <AIUsagePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/social-autopilot"
         element={
           <ProtectedRoute>
             <SocialAutopilotPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/social-autopilot/setup"
+        element={
+          <ProtectedRoute>
+            <SocialAutopilotSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/social-autopilot/report"
+        element={
+          <ProtectedRoute>
+            <SocialAutopilotReportPage />
           </ProtectedRoute>
         }
       />

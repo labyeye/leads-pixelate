@@ -226,7 +226,8 @@ export default function UsersScreen({navigation}: any) {
           <View style={styles.cardInfo}>
             <Text style={styles.userName}>{u.name || 'Unnamed'}</Text>
             <Text style={styles.userEmail} numberOfLines={1}>{u.email}</Text>
-            {u.designation ? <Text style={styles.userPhone}>{u.designation}{u.department ? ` · ${u.department}` : ''}</Text> : (u.phone ? <Text style={styles.userPhone}>{u.phone}</Text> : null)}
+            {u.designation ? <Text style={styles.userPhone}>{u.designation}{u.department ? ` · ${u.department}` : ''}</Text> : null}
+            {u.phone || u.gender ? <Text style={styles.userPhone}>{[u.phone, u.gender && u.gender[0].toUpperCase() + u.gender.slice(1)].filter(Boolean).join(' · ')}</Text> : null}
           </View>
           <View style={styles.cardRight}>
             <View style={[styles.roleBadge, {backgroundColor: rc.bg, borderColor: '#000'}]}>

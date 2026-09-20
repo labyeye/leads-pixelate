@@ -389,6 +389,12 @@ const allGroups: NavGroup[] = [
     label: "System",
     items: [
       {
+        title: "AI Usage",
+        href: "/ai-usage",
+        icon: BarChart3,
+        roles: ["super_admin", "admin"],
+      },
+      {
         title: "Billing",
         href: "/billing",
         icon: CreditCard,

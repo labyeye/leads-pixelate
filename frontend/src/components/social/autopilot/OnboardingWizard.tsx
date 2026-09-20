@@ -1,24 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowLeft, ArrowRight, Check, Facebook, Instagram, Loader2, PartyPopper, Rocket, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Facebook,
+  FileText,
+  Instagram,
+  Loader2,
+  PartyPopper,
+  Rocket,
+  Sparkles,
+} from "lucide-react";
 import { autopilotAPI, socialAPI } from "@/services/api";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BrandKitEditor } from "./BrandKitEditor";
 import { BrandProfileEditor } from "./BrandProfileEditor";
 import { GenerationProgress } from "./GenerationProgress";
+import { IntroStep } from "./IntroStep";
+import { PostingPlan, type PlanPatch } from "./PostingPlan";
+import { ReviewActions } from "./ReviewActions";
 import { ScanAnimation } from "./ScanAnimation";
 import type { AutopilotStatus } from "./useAutopilot";
 
-const STEPS = ["Connect", "Scan", "Brand profile", "Logos & colours", "Preferences", "Launch"];
+const STEPS = ["Brand intro", "Accounts", "Scan", "Brand profile", "Logos", "Schedule", "Launch"];
 const GIVE_UP_MS = 3 * 60 * 1000;
-const rupees = (paise: number) => `₹${(paise / 100).toLocaleString("en-IN")}`;
 
 interface Post {
   _id: string;
@@ -29,6 +39,7 @@ interface Post {
   scheduledAt: string;
   status: string;
   createdAt?: string;
+  autopilotMeta?: { revising?: boolean; revisions?: number; revisionError?: string };
 }
 
 const PLATFORM_ICON: Record<string, JSX.Element> = {
@@ -46,17 +57,11 @@ interface Props {
 
 export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
   const scanState = status.analysis.status;
-  const [step, setStep] = useState(scanState === "running" || scanState === "done" ? 1 : 0);
+  const hasIntro = !!(status.intro?.text?.trim() || status.intro?.pdfName);
+  const [step, setStep] = useState(scanState === "running" || scanState === "done" ? 2 : 0);
   const [busy, setBusy] = useState(false);
   const [scanFinished, setScanFinished] = useState(false);
   const [selected, setSelected] = useState<string[]>(() => status.accounts.map((a) => a._id));
-  const [prefs, setPrefs] = useState({
-    language: status.settings.language,
-    postsPerDay: status.settings.postsPerDay,
-    tone: status.settings.tone || status.brandProfile?.tone || "",
-    notes: status.settings.notes,
-    reviewFirst: status.settings.reviewFirst,
-  });
 
   const fail = (err: any) => toast({ title: "Something went wrong", description: err.message, variant: "destructive" });
   const chosen = status.accounts.filter((a) => selected.includes(a._id));
@@ -73,7 +78,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
       }
       setScanFinished(false);
       await reload();
-      setStep(1);
+      setStep(2);
     } catch (err) {
       fail(err);
     } finally {
@@ -94,6 +99,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
     }
   };
 
+  const savePlan = (p: PlanPatch) => run(() => autopilotAPI.update({ ...p, accountIds: selected }), 6);
   const onScanComplete = useCallback(() => setScanFinished(true), []);
 
   return (
@@ -104,9 +110,20 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
         {step === 0 && (
           <>
             <Heading
-              icon={<Sparkles className="w-5 h-5 text-white" />}
+              icon={<FileText className="w-5 h-5 text-white" />}
               title="Let's set up your Autopilot"
-              text="Autopilot studies your Instagram or Facebook page, learns how your brand looks and sounds, then creates posts that fit. It takes about two minutes."
+              text="First, tell us about your brand in your own words, or import a document you already have. Autopilot reads it before looking at your social profiles."
+            />
+            <IntroStep status={status} toast={toast} reload={reload} onNext={() => setStep(1)} />
+          </>
+        )}
+
+        {step === 1 && (
+          <>
+            <Heading
+              icon={<Sparkles className="w-5 h-5 text-white" />}
+              title="Which accounts should we use?"
+              text="We scan your Instagram (or Facebook) to learn how your brand really looks and sounds, and post to everything you tick."
             />
             {noAccounts ? (
               <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 space-y-3">
@@ -118,9 +135,6 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
             ) : (
               <div className="space-y-2">
                 <Label>Accounts to use</Label>
-                <p className="text-xs text-muted-foreground">
-                  We scan your Instagram (or Facebook) to learn your style, and post to everything you tick.
-                </p>
                 <ul className="grid sm:grid-cols-2 gap-2">
                   {status.accounts.map((a) => (
                     <li key={a._id}>
@@ -145,10 +159,11 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                 Scan my profile
               </Button>
               {!noAccounts && (
-                <Button variant="ghost" disabled={busy} onClick={() => setStep(2)}>
+                <Button variant="ghost" disabled={busy} onClick={() => setStep(3)}>
                   Skip scan, I'll fill it in myself
                 </Button>
               )}
+              <BackButton onClick={() => setStep(0)} />
             </div>
             {!status.configured && (
               <p className="text-xs text-amber-700">Autopilot isn't switched on for this server yet. Contact support.</p>
@@ -156,15 +171,15 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           </>
         )}
 
-        {step === 1 && (
+        {step === 2 && (
           <>
             <Heading
               icon={<Sparkles className="w-5 h-5 text-white" />}
-              title={scanState === "failed" ? "The scan hit a problem" : scanFinished ? "Scan complete" : "Scanning your profile…"}
+              title={scanState === "failed" ? "The scan hit a problem" : scanFinished ? "Scan complete" : "Analysing your brand…"}
               text={
                 scanState === "failed"
                   ? "Nothing was changed. You can try again or continue and fill in your brand details yourself."
-                  : "We're reading your page the way a new social media manager would."
+                  : "We're reading your notes and your page the way a new social media manager would."
               }
             />
             {scanState === "failed" ? (
@@ -177,7 +192,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                   <Button onClick={startScan} disabled={busy}>
                     {busy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Try again
                   </Button>
-                  <Button variant="outline" onClick={() => setStep(2)}>
+                  <Button variant="outline" onClick={() => setStep(3)}>
                     Continue without it
                   </Button>
                 </div>
@@ -190,10 +205,11 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                   accountName={scanAccount?.accountName}
                   platform={scanAccount?.platform}
                   avatar={scanAccount?.profilePicture}
+                  hasIntro={hasIntro}
                   onComplete={onScanComplete}
                 />
                 {scanFinished && (
-                  <Button className="animate-fade-in" onClick={() => setStep(2)}>
+                  <Button className="animate-fade-in" onClick={() => setStep(3)}>
                     See what we found <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 )}
@@ -202,7 +218,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           </>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <>
             <Heading
               icon={<Check className="w-5 h-5 text-white" />}
@@ -220,26 +236,9 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
               profile={status.brandProfile}
               saving={busy}
               saveLabel="Looks right, continue"
-              onSave={(p) => run(() => autopilotAPI.saveBrandProfile(p as any), 3)}
+              onSave={(p) => run(() => autopilotAPI.saveBrandProfile(p as unknown as Record<string, unknown>), 4)}
             />
-            <BackButton onClick={() => setStep(0)} />
-          </>
-        )}
-
-        {step === 3 && (
-          <>
-            <Heading
-              icon={<Sparkles className="w-5 h-5 text-white" />}
-              title="Your logos and colours"
-              text="Upload your logos and name them. Autopilot stamps your logo on every image and uses your colours in the artwork."
-            />
-            <BrandKitEditor kit={status.brandKit} toast={toast} onChanged={reload} />
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={() => setStep(4)}>
-                {status.brandKit.logos.length ? "Continue" : "Skip for now"} <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-              <BackButton onClick={() => setStep(2)} />
-            </div>
+            <BackButton onClick={() => setStep(1)} />
           </>
         )}
 
@@ -247,77 +246,32 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           <>
             <Heading
               icon={<Sparkles className="w-5 h-5 text-white" />}
-              title="How should Autopilot post?"
-              text="You can change any of this later."
+              title="Add your logos"
+              text="Upload every logo you use, for example a dark and a light version, and give each a name. Autopilot puts your logo on every image."
             />
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Language</Label>
-                <Select value={prefs.language} onValueChange={(v) => setPrefs({ ...prefs, language: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Hindi">Hindi</SelectItem>
-                    <SelectItem value="Hinglish">Hinglish</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Posts per day</Label>
-                <Select value={String(prefs.postsPerDay)} onValueChange={(v) => setPrefs({ ...prefs, postsPerDay: Number(v) })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 per day</SelectItem>
-                    <SelectItem value="2">2 per day</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Brand tone (optional)</Label>
-              <Input
-                maxLength={200}
-                placeholder="e.g. friendly, professional, no slang"
-                value={prefs.tone}
-                onChange={(e) => setPrefs({ ...prefs, tone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Anything else Autopilot should know? (optional)</Label>
-              <Textarea
-                rows={3}
-                maxLength={500}
-                placeholder="What to focus on, what to avoid, your audience…"
-                value={prefs.notes}
-                onChange={(e) => setPrefs({ ...prefs, notes: e.target.value })}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border-2 border-black/20 p-3">
-              <div>
-                <p className="text-sm font-medium">Ask me before every post</p>
-                <p className="text-xs text-muted-foreground">
-                  Off (recommended): you approve the first post, then Autopilot runs on its own.
-                </p>
-              </div>
-              <Switch checked={prefs.reviewFirst} onCheckedChange={(v) => setPrefs({ ...prefs, reviewFirst: v })} />
-            </div>
+            <BrandKitEditor kit={status.brandKit} toast={toast} onChanged={reload} />
             <div className="flex flex-wrap gap-3">
-              <Button
-                disabled={busy}
-                onClick={() => run(() => autopilotAPI.update({ ...prefs, accountIds: selected }), 5)}
-              >
-                {busy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Continue <ArrowRight className="w-4 h-4 ml-1" />
+              <Button onClick={() => setStep(5)}>
+                {status.brandKit.logos.length ? "Continue" : "Skip for now"} <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
               <BackButton onClick={() => setStep(3)} />
             </div>
           </>
         )}
 
-        {step === 5 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(4)} />}
+        {step === 5 && (
+          <>
+            <Heading
+              icon={<Sparkles className="w-5 h-5 text-white" />}
+              title="When and what should we post?"
+              text="Pick the days and times, and the kinds of posts you want. You can change this any time."
+            />
+            <PostingPlan status={status} saving={busy} saveLabel="Continue" onSave={savePlan} />
+            <BackButton onClick={() => setStep(4)} />
+          </>
+        )}
+
+        {step === 6 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(5)} />}
       </div>
     </div>
   );
@@ -327,7 +281,11 @@ function Stepper({ step }: { step: number }) {
   return (
     <ol className="flex items-center gap-1 sm:gap-2" aria-label="Setup progress">
       {STEPS.map((label, i) => (
-        <li key={label} className="flex items-center gap-1 sm:gap-2 flex-1 last:flex-none" aria-current={i === step ? "step" : undefined}>
+        <li
+          key={label}
+          className="flex items-center gap-1 sm:gap-2 flex-1 last:flex-none"
+          aria-current={i === step ? "step" : undefined}
+        >
           <span
             className={`w-7 h-7 shrink-0 rounded-full border-2 border-black text-xs font-semibold flex items-center justify-center transition-colors ${
               i < step ? "bg-green-500 text-white" : i === step ? "bg-primary text-white nb-shadow-sm" : "bg-background"
@@ -335,7 +293,7 @@ function Stepper({ step }: { step: number }) {
           >
             {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
           </span>
-          <span className={`hidden md:inline text-xs whitespace-nowrap ${i === step ? "font-semibold" : "text-muted-foreground"}`}>
+          <span className={`hidden lg:inline text-xs whitespace-nowrap ${i === step ? "font-semibold" : "text-muted-foreground"}`}>
             {label}
           </span>
           {i < STEPS.length - 1 && <span className={`h-0.5 flex-1 min-w-2 ${i < step ? "bg-green-500" : "bg-black/15"}`} />}
@@ -375,6 +333,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
   const [busy, setBusy] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const launchedAt = useRef(0);
+  const postId = useRef<string | null>(null);
   const failed = status.progress?.stage === "failed" && !status.running;
 
   const fail = (err: any) => toast({ title: "Something went wrong", description: err.message, variant: "destructive" });
@@ -409,9 +368,10 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
     }
   };
 
-  // Wait for the first post to land, then show it for approval.
+  // Wait for the first post to land; keep refreshing it while the owner reviews (a change
+  // request rewrites it in the background).
   useEffect(() => {
-    if (phase !== "generating") return;
+    if (phase !== "generating" && phase !== "review") return;
     let cancelled = false;
     const tick = async () => {
       try {
@@ -419,14 +379,21 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
         const pending: Post[] = (res.data as Post[])
           .filter((p) => p.status === "PENDING_APPROVAL")
           .sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt));
+        if (cancelled) return;
+        if (postId.current) {
+          const same = pending.find((p) => p._id === postId.current);
+          if (same) setPost(same);
+          return;
+        }
         const fresh = pending.find((p) => !p.createdAt || +new Date(p.createdAt) >= launchedAt.current - 10_000);
         // Nothing new after the run ended (e.g. a draft was already waiting): show what is there.
         const settled = Date.now() - launchedAt.current > 15_000 && !status.running;
         const found = fresh || (settled ? pending[0] : undefined);
-        if (!cancelled && found) {
+        if (found) {
+          postId.current = found._id;
           setPost(found);
           setPhase("review");
-        } else if (!cancelled && Date.now() - launchedAt.current > GIVE_UP_MS) {
+        } else if (Date.now() - launchedAt.current > GIVE_UP_MS) {
           setTimedOut(true);
         }
       } catch {
@@ -441,44 +408,60 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
     };
   }, [phase, status.running]);
 
-  const decide = async (approve: boolean) => {
+  const approve = async () => {
     if (!post) return;
-    setBusy(true);
-    try {
-      if (approve) {
-        await socialAPI.approvePost(post._id);
-        await reload();
-        setPhase("live");
-      } else {
-        await socialAPI.rejectPost(post._id, "Rejected during Autopilot setup");
-        setPost(null);
-        launchedAt.current = Date.now();
-        setPhase("generating");
-        await autopilotAPI.run();
-        await reload();
-      }
-    } catch (err) {
-      fail(err);
-      if (!approve) setPhase("review");
-    } finally {
-      setBusy(false);
-    }
+    await socialAPI.approvePost(post._id);
+    await reload();
+    setPhase("live");
+  };
+
+  const rejectAndRetry = async () => {
+    if (!post) return;
+    await socialAPI.rejectPost(post._id, "Rejected during Autopilot setup");
+    postId.current = null;
+    setPost(null);
+    launchedAt.current = Date.now();
+    setPhase("generating");
+    await autopilotAPI.run();
+    await reload();
   };
 
   if (phase === "ready") {
-    const logo = status.brandKit.logos.find((l) => l.id === status.brandKit.logoId) || status.brandKit.logos[0];
+    const logos = status.brandKit.logos;
+    const s = status.settings;
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const when = s.schedule?.times?.length
+      ? `${!s.schedule.days.length || s.schedule.days.length === 7 ? "Every day" : [...s.schedule.days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => dayNames[d]).join(", ")} at ${s.schedule.times.join(" & ")}`
+      : `${s.postsPerDay} per day`;
     return (
       <>
-        <Heading icon={<Rocket className="w-5 h-5 text-white" />} title="Ready to launch" text="We'll create your first post now so you can see exactly what Autopilot makes." />
+        <Heading
+          icon={<Rocket className="w-5 h-5 text-white" />}
+          title="Ready to launch"
+          text={`We'll create your first post now so you can see exactly what Autopilot makes. During your ${status.trialDays}-day free trial you approve every post, and you can ask for changes.`}
+        />
         <ul className="grid sm:grid-cols-2 gap-2 text-sm">
-          <Fact label="Posting to" value={status.accounts.filter((a) => status.settings.accountIds.length === 0 || status.settings.accountIds.includes(a._id)).map((a) => a.accountName).join(", ") || "—"} />
-          <Fact label="Language" value={status.settings.language} />
-          <Fact label="Posts per day" value={String(status.settings.postsPerDay)} />
-          <Fact label="Logo" value={logo && status.brandKit.logoEnabled ? logo.name : "None"} />
+          <Fact
+            label="Posting to"
+            value={
+              status.accounts
+                .filter((a) => s.accountIds.length === 0 || s.accountIds.includes(a._id))
+                .map((a) => a.accountName)
+                .join(", ") || "—"
+            }
+          />
+          <Fact label="When" value={when} />
+          <Fact label="Language" value={s.language} />
+          <Fact
+            label="Logos"
+            value={!logos.length || !status.brandKit.logoEnabled ? "None" : `${logos.length} (${status.brandKit.logoMode === "auto" ? "picked automatically" : "fixed"})`}
+          />
         </ul>
         {status.entitlement.state === "none" && (
           <p className="text-xs rounded-lg border border-blue-200 bg-blue-50 text-blue-800 p-3">
-            Free for {status.trialDays} days, then {rupees(status.price)}/month. Your trial starts when you launch.
+            Free for {status.trialDays} days, then Autopilot is included in your NestLeads plan. Your trial starts when you
+            launch and includes up to {status.limits.daysPerWeek} posting days a week. After the trial, posts you have approved
+            before go out automatically.
           </p>
         )}
         <div className="flex flex-wrap gap-3">
@@ -517,30 +500,44 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
         <Heading
           icon={<Sparkles className="w-5 h-5 text-white" />}
           title="Your first post is ready"
-          text="Approve it and Autopilot takes over. From now on new posts are created and published automatically."
+          text="Something not right? Ask for a change and Autopilot fixes it and regenerates. Approve it when you're happy."
         />
         <div className="grid sm:grid-cols-[220px_minmax(0,1fr)] gap-5 items-start">
-          {post.imageUrl && <img src={post.imageUrl} alt="Generated post" className="w-full aspect-[4/5] object-cover rounded-lg border-2 border-black nb-shadow bg-muted" />}
+          {post.imageUrl && (
+            <img
+              src={post.imageUrl}
+              alt="Generated post"
+              className="w-full aspect-[4/5] object-cover rounded-lg border-2 border-black nb-shadow bg-muted"
+            />
+          )}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {post.platforms.map((p) => (
                 <span key={p}>{PLATFORM_ICON[p]}</span>
               ))}
               <span>
-                Scheduled {new Date(post.scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                Scheduled{" "}
+                {new Date(post.scheduledAt).toLocaleString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
             <p className="text-sm whitespace-pre-line">{post.caption}</p>
-            {!!post.hashtags?.length && <p className="text-sm text-primary">{post.hashtags.map((h) => `#${h}`).join(" ")}</p>}
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Button onClick={() => decide(true)} disabled={busy}>
-                {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
-                Approve &amp; go automatic
-              </Button>
-              <Button variant="outline" onClick={() => decide(false)} disabled={busy}>
-                Reject &amp; try another
-              </Button>
-            </div>
+            {!!post.hashtags?.length && (
+              <p className="text-sm text-primary">{post.hashtags.map((h) => `#${h}`).join(" ")}</p>
+            )}
+            <ReviewActions
+              post={post}
+              toast={toast}
+              onChanged={reload}
+              approveLabel="Approve"
+              rejectLabel="Reject & try another"
+              onApprove={approve}
+              onReject={rejectAndRetry}
+            />
           </div>
         </div>
       </div>
@@ -554,7 +551,8 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       </span>
       <h2 className="text-xl font-semibold">Autopilot is live</h2>
       <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        New posts will be created and published on their own. You won't be asked to approve them again, and you can pause any time.
+        New posts are prepared a day ahead at the times you chose. During your free trial you approve each one, and what you
+        approve or correct teaches Autopilot your style. You can pause any time.
       </p>
       <Button size="lg" onClick={onDone}>
         Go to my Autopilot <ArrowRight className="w-4 h-4 ml-1" />

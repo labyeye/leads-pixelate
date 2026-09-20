@@ -111,6 +111,14 @@ const MENU_ITEMS: MenuItem[] = [
     color: '#7c3aed',
   },
   {
+    icon: 'flash-outline',
+    label: 'Social Autopilot',
+    sub: 'AI posts: dashboard, setup & report',
+    screen: 'Autopilot',
+    color: '#0ea5e9',
+    adminOnly: true,
+  },
+  {
     icon: 'people-outline',
     label: 'Team',
     sub: 'Manage team members & roles',

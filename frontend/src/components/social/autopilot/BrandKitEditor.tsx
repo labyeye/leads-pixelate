@@ -145,7 +145,13 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
                   onBlur={() => rename(l.id)}
                   className="h-8"
                 />
-                <p className="text-[11px] text-muted-foreground">{active?.id === l.id ? "Used on posts" : "Click image to use"}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {kit.logoMode === "auto" && kit.logos.length > 1
+                    ? "Chosen automatically"
+                    : active?.id === l.id
+                      ? "Used on posts"
+                      : "Click image to use"}
+                </p>
               </div>
               <Button size="icon" variant="ghost" aria-label={`Delete ${l.name}`} onClick={() => remove(l.id)}>
                 <Trash2 className="w-4 h-4" />
@@ -183,6 +189,21 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
               onCheckedChange={(v) => save({ logoEnabled: v })}
             />
           </div>
+          {kit.logos.length > 1 && (
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">Pick the best logo for each image</p>
+                <p className="text-xs text-muted-foreground">
+                  Uses your dark logo on light images and your light logo on dark ones. Off = always the logo you selected.
+                </p>
+              </div>
+              <Switch
+                checked={kit.logoMode === "auto"}
+                disabled={!kit.logoEnabled}
+                onCheckedChange={(v) => save({ logoMode: v ? "auto" : "fixed" })}
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Position</Label>
             <div className="grid grid-cols-2 gap-2">

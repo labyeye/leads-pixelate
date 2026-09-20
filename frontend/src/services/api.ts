@@ -622,6 +622,8 @@ export const autopilotAPI = {
     request<{ success: boolean; message: string }>("/autopilot/run", {
       method: "POST",
     }),
+  stats: (days: 7 | 30 | 90) =>
+    request<{ success: boolean; data: AutopilotStats }>(`/autopilot/stats?days=${days}`),
   analyze: (accountId?: string) =>
     request<{ success: boolean; started: boolean }>("/autopilot/analyze", {
       method: "POST",
@@ -636,6 +638,32 @@ export const autopilotAPI = {
     request<{ success: boolean }>("/autopilot/brand", {
       method: "PUT",
       body: JSON.stringify(patch),
+    }),
+  saveIntro: (text: string, file?: File | null) => {
+    const formData = new FormData();
+    formData.append("text", text);
+    if (file) formData.append("file", file);
+    const csrf = getCsrfToken();
+    return fetch(`${API_BASE}/autopilot/intro`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Could not save your brand intro");
+      return data as { success: boolean };
+    });
+  },
+  deleteIntroPdf: () =>
+    request<{ success: boolean }>("/autopilot/intro/pdf", { method: "DELETE" }),
+  revisePost: (id: string, feedback: string) =>
+    request<{ success: boolean }>(`/autopilot/posts/${id}/revise`, {
+      method: "POST",
+      body: JSON.stringify({ feedback }),
     }),
   deleteLogo: (id: string) =>
     request<{ success: boolean }>(`/autopilot/logos/${id}`, {
@@ -660,35 +688,52 @@ export const autopilotAPI = {
       return data as { success: boolean; data: { id: string; name: string; url: string } };
     });
   },
-  createOrder: () =>
-    request<{
-      success: boolean;
-      data: {
-        orderId: string;
-        amount: number;
-        currency: string;
-        customerEmail: string;
-        customerPhone: string;
-        customerName: string;
-        key: string;
-      };
-    }>("/billing/autopilot/create-order", { method: "POST" }),
-  verify: (payload: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-  }) =>
-    request<{ success: boolean; message: string }>(
-      "/billing/autopilot/verify",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          razorpayOrderId: payload.razorpay_order_id,
-          razorpayPaymentId: payload.razorpay_payment_id,
-          razorpaySignature: payload.razorpay_signature,
-        }),
-      },
-    ),
+};
+
+// Numbers behind the Autopilot dashboard and report (backend: services/autopilotStatsService.js).
+export interface AutopilotStats {
+  range: { days: number; since: string };
+  totals: {
+    generated: number;
+    posted: number;
+    pending: number;
+    scheduled: number;
+    rejected: number;
+    failed: number;
+    other: number;
+  };
+  rates: {
+    approvalRate: number | null;
+    avgApprovalHours: number | null;
+    revisedPosts: number;
+    revisions: number;
+  };
+  series: { date: string; generated: number; posted: number; rejected: number }[];
+  platforms: { platform: string; count: number }[];
+  topics: { topic: string; count: number }[];
+  next: { scheduledAt: string; status: string; caption: string; platforms: string[] } | null;
+}
+
+// What the tenant used of the AI features in their plan this month (backend: routes/aiUsageRoutes.js).
+export interface UsageMeter {
+  used: number;
+  limit: number;
+}
+export interface AIUsage {
+  plan: { id: string; expiresAt: string | null };
+  month: { start: string; resetsAt: string };
+  autopilot: UsageMeter & {
+    daysPerWeek: number;
+    enabled: boolean;
+    state: "none" | "trial" | "paid" | "expired";
+    endsAt: string | null;
+  };
+  aiCalls: UsageMeter;
+  leads: UsageMeter;
+  team: UsageMeter;
+}
+export const aiUsageAPI = {
+  get: () => request<{ success: boolean; data: AIUsage }>("/ai-usage"),
 };
 
 export const facebookAPI = {

@@ -8,11 +8,16 @@ export const SCAN_STEPS = [
   { key: "profile_built", label: "Building your brand profile" },
 ] as const;
 
+const INTRO_STEP = { key: "intro", label: "Reading your brand notes" } as const;
+export const scanSteps = (hasIntro?: boolean) => (hasIntro ? [INTRO_STEP, ...SCAN_STEPS] : [...SCAN_STEPS]);
+
 const STEP_MS = 1300; // each step stays visible at least this long, even if the server is faster
 
 // Which step the server is on; a finished scan means every step is done.
-export const scanTarget = (status: string, stage: string) =>
-  status === "done" ? SCAN_STEPS.length : Math.max(0, SCAN_STEPS.findIndex((s) => s.key === stage));
+export const scanTarget = (status: string, stage: string, hasIntro?: boolean) => {
+  const steps = scanSteps(hasIntro);
+  return status === "done" ? steps.length : Math.max(0, steps.findIndex((s) => s.key === stage));
+};
 
 interface Props {
   status: "idle" | "running" | "done" | "failed";
@@ -20,11 +25,13 @@ interface Props {
   accountName?: string;
   platform?: string;
   avatar?: string;
+  hasIntro?: boolean;
   onComplete?: () => void;
 }
 
-export function ScanAnimation({ status, stage, accountName, platform, avatar, onComplete }: Props) {
-  const target = scanTarget(status, stage);
+export function ScanAnimation({ status, stage, accountName, platform, avatar, hasIntro, onComplete }: Props) {
+  const steps = scanSteps(hasIntro);
+  const target = scanTarget(status, stage, hasIntro);
   const [shown, setShown] = useState(0);
 
   useEffect(() => {
@@ -33,7 +40,7 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, on
     return () => clearTimeout(t);
   }, [shown, target]);
 
-  const finished = shown >= SCAN_STEPS.length;
+  const finished = shown >= steps.length;
   useEffect(() => {
     if (finished) onComplete?.();
   }, [finished, onComplete]);
@@ -99,7 +106,7 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, on
           </p>
         )}
         <ol className="space-y-2.5">
-          {SCAN_STEPS.map((s, i) => {
+          {steps.map((s, i) => {
             const done = shown > i;
             const active = shown === i && !finished && status !== "failed";
             return (

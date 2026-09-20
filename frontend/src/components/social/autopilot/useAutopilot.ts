@@ -21,13 +21,15 @@ export interface BrandKit {
   logos: { id: string; name: string; url: string }[];
   logoId: string;
   logoEnabled: boolean;
+  logoMode: "fixed" | "auto";
   logoPosition: LogoPosition;
   colors: string[];
 }
 
 export interface AutopilotStatus {
   configured: boolean;
-  price: number;
+  plan: string;
+  limits: { plan: string; daysPerWeek: number; monthlyPosts: number };
   trialDays: number;
   entitlement: { state: "none" | "trial" | "paid" | "expired"; endsAt: string | null };
   settings: {
@@ -38,7 +40,12 @@ export interface AutopilotStatus {
     notes: string;
     reviewFirst: boolean;
     accountIds: string[];
+    schedule: { days: number[]; times: string[] };
+    contentTypes: string[];
+    lessons: string[];
   };
+  contentTypes: string[];
+  intro: { text: string; pdfName: string };
   running: boolean;
   progress: { stage: string; at: string } | null;
   onboarded: boolean;

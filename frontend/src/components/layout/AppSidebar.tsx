@@ -91,21 +91,32 @@ function NavNode({
             )}
           />
         </button>
-        {expanded && !collapsed && (
-          <div className="ml-6 mt-0.5 space-y-0.5 border-l-2 border-black/10 pl-2">
-            {item.children.map((child) => (
-              <NavNode
-                key={child.href + child.title}
-                item={child}
-                depth={depth + 1}
-                collapsed={collapsed}
-                openSet={openSet}
-                toggleOpen={toggleOpen}
-                onClose={onClose}
-              />
-            ))}
+        {/* grid-rows 0fr -> 1fr animates height without measuring; invisible keeps closed links out of tab order */}
+        <div
+          aria-hidden={!(expanded && !collapsed)}
+          className={cn(
+            "grid transition-[grid-template-rows,visibility] duration-200 ease-out",
+            expanded && !collapsed
+              ? "grid-rows-[1fr]"
+              : "grid-rows-[0fr] invisible",
+          )}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="ml-6 mt-0.5 space-y-0.5 border-l-2 border-black/10 pl-2">
+              {item.children.map((child) => (
+                <NavNode
+                  key={child.href + child.title}
+                  item={child}
+                  depth={depth + 1}
+                  collapsed={collapsed}
+                  openSet={openSet}
+                  toggleOpen={toggleOpen}
+                  onClose={onClose}
+                />
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }

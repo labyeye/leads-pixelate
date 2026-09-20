@@ -544,16 +544,12 @@ exports.approvePost = asyncHandler(async (req, res) => {
     throw new Error("Only posts pending approval can be approved");
   }
 
-  // First approved Autopilot post = the owner trusts it: later runs go out without asking,
-  // and any other autopilot drafts already waiting are released too.
+  // Remember the owner has approved an Autopilot post: after the free trial, runs are then
+  // hands-off (services/autopilotService.js decides). Approved captions also become style examples.
   if (post.source === "autopilot" && post.tenantId) {
     await Tenant.updateOne(
       { _id: post.tenantId, "autopilot.firstApprovedAt": null },
       { $set: { "autopilot.firstApprovedAt": new Date() } },
-    );
-    await SocialPost.updateMany(
-      { tenantId: post.tenantId, source: "autopilot", status: "PENDING_APPROVAL", _id: { $ne: post._id }, scheduledAt: { $gt: new Date() } },
-      { status: "SCHEDULED", approvedBy: req.user._id, approvedAt: new Date() },
     );
   }
 

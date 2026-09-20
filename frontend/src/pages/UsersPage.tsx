@@ -1029,7 +1029,8 @@ export default function UsersPage() {
                   { h: "Role", cls: "" },
                   { h: "Department", cls: "hidden md:table-cell" },
                   { h: "Status", cls: "hidden lg:table-cell" },
-                  { h: "Last Login", cls: "hidden lg:table-cell" },
+                  { h: "Gender", cls: "hidden lg:table-cell" },
+                  { h: "Phone", cls: "hidden lg:table-cell" },
                   { h: "Actions", cls: "text-right" },
                 ].map(({ h, cls }) => (
                   <th
@@ -1048,7 +1049,7 @@ export default function UsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-14">
+                  <td colSpan={8} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                     <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
                       Loading...
@@ -1058,7 +1059,7 @@ export default function UsersPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
                   >
                     No users found.
@@ -1147,16 +1148,14 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-bold text-black/50">
-                        {user.lastLogin ? (
-                          new Date(user.lastLogin).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                        {user.gender ? (
+                          <span className="capitalize">{user.gender}</span>
                         ) : (
                           <span className="text-black/30">—</span>
                         )}
+                      </td>
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-bold text-black/50">
+                        {user.phone || <span className="text-black/30">—</span>}
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <DropdownMenu>

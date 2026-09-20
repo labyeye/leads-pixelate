@@ -82,39 +82,43 @@ const subscriptionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// One place for every plan limit. Social Autopilot is part of the plan, not an add-on:
+//   aiCalls                 AI voice calls a month
+//   autopilotDaysPerWeek    posting days a week
+//   autopilotMonthlyPosts   posts Autopilot may generate a month (plan's posts + one spare)
+// Only starter / growth / professional are sold; business, enterprise and pro stay so
+// tenants already on them keep working.
 const PLAN_LIMITS = {
-  trial: { leadsPerMonth: 100, teamMembers: 2 },
-  starter: { leadsPerMonth: 2000, teamMembers: 25 },
-  growth: { leadsPerMonth: 10000, teamMembers: 50 },
-  professional: { leadsPerMonth: 50000, teamMembers: 100 },
-  business: { leadsPerMonth: 200000, teamMembers: 250 },
-  enterprise: { leadsPerMonth: 999999, teamMembers: 999 },
-  pro: { leadsPerMonth: 50000, teamMembers: 100 },
+  trial: { leadsPerMonth: 100, teamMembers: 2, aiCalls: 10, autopilotDaysPerWeek: 3, autopilotMonthlyPosts: 14 },
+  starter: { leadsPerMonth: 2000, teamMembers: 25, aiCalls: 50, autopilotDaysPerWeek: 1, autopilotMonthlyPosts: 5 },
+  growth: { leadsPerMonth: 10000, teamMembers: 50, aiCalls: 500, autopilotDaysPerWeek: 3, autopilotMonthlyPosts: 14 },
+  professional: { leadsPerMonth: 50000, teamMembers: 100, aiCalls: 2500, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23 },
+  business: { leadsPerMonth: 200000, teamMembers: 250, aiCalls: 10000, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23 },
+  enterprise: { leadsPerMonth: 999999, teamMembers: 999, aiCalls: 999999, autopilotDaysPerWeek: 7, autopilotMonthlyPosts: 31 },
+  pro: { leadsPerMonth: 50000, teamMembers: 100, aiCalls: 2500, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23 },
 };
 
+// Prices include Social Autopilot (CRM + Autopilot).
 const PLAN_PRICES_MONTHLY = {
-  starter: 49900,
-  growth: 99900,
-  professional: 199900,
+  starter: 299900,
+  growth: 599900,
+  professional: 999900,
   business: 449900,
   enterprise: 0,
   pro: 199900,
 };
 
 const PLAN_PRICES_YEARLY = {
-  starter: 499900,
-  growth: 999900,
-  professional: 1999900,
+  starter: 2999000,
+  growth: 5999000,
+  professional: 9999000,
   business: 4499900,
   enterprise: 0,
   pro: 1999900,
 };
 
-// Flat monthly add-ons billed on top of the plan (paise).
-const ADDON_PRICES = { autopilot: 149900 };
 
 module.exports = mongoose.model("Subscription", subscriptionSchema);
-module.exports.ADDON_PRICES = ADDON_PRICES;
 module.exports.PLAN_LIMITS = PLAN_LIMITS;
 module.exports.PLAN_PRICES_MONTHLY = PLAN_PRICES_MONTHLY;
 module.exports.PLAN_PRICES_YEARLY = PLAN_PRICES_YEARLY;

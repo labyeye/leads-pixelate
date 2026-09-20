@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Check,
   CreditCard,
@@ -41,7 +41,8 @@ const PLAN_META: Record<
     features: [
       "Up to 25 employees",
       "2,000 leads/month",
-      "50 ElevenLabs AI Voice Calls/mo",
+      "50 AI voice calls/mo",
+      "Social Autopilot: 1 post/week (~4 posts/mo)",
       "IndiaMART integration",
       "Follow-up reminders",
       "Email support",
@@ -55,7 +56,8 @@ const PLAN_META: Record<
     features: [
       "Up to 50 employees",
       "10,000 leads/month",
-      "500 ElevenLabs AI Voice Calls/mo",
+      "500 AI voice calls/mo",
+      "Social Autopilot: 3 posts/week (~13 posts/mo)",
       "IndiaMART + Facebook Ads",
       "Advanced follow-up workflows",
       "Calendar & visit tracking",
@@ -70,7 +72,8 @@ const PLAN_META: Record<
     features: [
       "Up to 100 employees",
       "50,000 leads/month",
-      "2,500 ElevenLabs AI Voice Calls/mo",
+      "2,500 AI voice calls/mo",
+      "Social Autopilot: 5 posts/week (~22 posts/mo)",
       "All integrations",
       "Advanced analytics",
       "Custom workflows",
@@ -119,7 +122,8 @@ const PLAN_META: Record<
     features: [
       "Up to 100 employees",
       "50,000 leads/month",
-      "2,500 ElevenLabs AI Voice Calls/mo",
+      "2,500 AI voice calls/mo",
+      "Social Autopilot: 5 posts/week (~22 posts/mo)",
       "All integrations",
       "Custom workflows",
     ],
@@ -481,13 +485,8 @@ export default function BillingPage() {
   const billingCycle = subscription?.billingCycle || "monthly";
   const totalPeriodDays = billingCycle === "yearly" ? 365 : 31;
 
-  const planIds = [
-    "starter",
-    "growth",
-    "professional",
-    "business",
-    "enterprise",
-  ];
+  // Three plans on sale; business / enterprise stay only for tenants already on them.
+  const planIds = ["starter", "growth", "professional"];
 
   return (
     <AppLayout title="Billing">
@@ -656,6 +655,9 @@ export default function BillingPage() {
                 <h2 className="font-display font-bold text-2xl text-black">
                   {currentPlanId === "trial" ? "Choose a Plan" : "Change Plan"}
                 </h2>
+                <Link to="/ai-usage" className="text-xs font-bold text-[#024BAB] underline sm:order-none">
+                  See what your plan includes & your AI usage
+                </Link>
                 <div className="flex items-center border-2 border-black nb-shadow-sm overflow-hidden self-start">
                   <button
                     onClick={() => setBilling("monthly")}
@@ -685,7 +687,7 @@ export default function BillingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {planIds.map((planId) => {
                   const meta = PLAN_META[planId];
                   const apiPlan = plans?.[planId];

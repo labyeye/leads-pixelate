@@ -57,7 +57,8 @@ export default function BillingScreen({navigation}: any) {
   const maxMembers = planLimits?.limits?.teamMembers ?? 2;
   const status = subscription?.status || tenant?.status || 'trial';
 
-  const planIds = ['starter', 'growth', 'professional', 'business', 'enterprise'];
+  // Three plans on sale (Social Autopilot is included); business / enterprise only for tenants already on them.
+  const planIds = ['starter', 'growth', 'professional'];
 
   const openWebBilling = () => {
     Linking.openURL(WEB_BILLING_URL).catch(() =>

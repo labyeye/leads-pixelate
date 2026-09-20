@@ -7,9 +7,7 @@ const Razorpay = require("razorpay");
 const Tenant = require("../models/Tenant");
 const Subscription = require("../models/Subscription");
 
-const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY, ADDON_PRICES } =
-  Subscription;
-const { PAID_DAYS } = require("../services/autopilotService");
+const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
 const { sendWelcomeEmail } = require("../utils/emailService");
 const log = require("../utils/logger").scope("Billing");
 
@@ -63,97 +61,62 @@ function verifyRazorpaySignature(orderId, paymentId, signature) {
   return expectedSignature === signature;
 }
 
+// The three plans on sale. Business / enterprise / pro remain valid for tenants already on them.
+const SOLD_PLANS = ["starter", "growth", "professional"];
+
+const planCard = (id, name, employees, features, extra = {}) => ({
+  name,
+  priceMonthly: PLAN_PRICES_MONTHLY[id],
+  priceYearly: PLAN_PRICES_YEARLY[id],
+  currency: "INR",
+  limits: PLAN_LIMITS[id],
+  employees,
+  features,
+  ...extra,
+});
+
+// Every plan includes Social Autopilot; its posts/week and posts/month come from PLAN_LIMITS.
 router.get("/plans", (req, res) => {
   res.json({
     success: true,
     data: {
-      starter: {
-        name: "Starter",
-        priceMonthly: PLAN_PRICES_MONTHLY.starter,
-        priceYearly: PLAN_PRICES_YEARLY.starter,
-        currency: "INR",
-        limits: PLAN_LIMITS.starter,
-        employees: 25,
-        features: [
-          "Up to 25 employees",
-          "2,000 leads/month",
-          "IndiaMART integration",
-          "Follow-up reminders",
-          "Email support",
-        ],
-      },
-      growth: {
-        name: "Growth",
-        priceMonthly: PLAN_PRICES_MONTHLY.growth,
-        priceYearly: PLAN_PRICES_YEARLY.growth,
-        currency: "INR",
-        limits: PLAN_LIMITS.growth,
-        employees: 50,
-        features: [
+      starter: planCard("starter", "Starter", 25, [
+        "Up to 25 employees",
+        "2,000 leads/month",
+        "50 AI voice calls/month",
+        "Social Autopilot: 1 post/week",
+        "IndiaMART integration",
+        "Follow-up reminders",
+        "Email support",
+      ]),
+      growth: planCard(
+        "growth",
+        "Growth",
+        50,
+        [
           "Up to 50 employees",
           "10,000 leads/month",
+          "500 AI voice calls/month",
+          "Social Autopilot: 3 posts/week",
           "IndiaMART + Facebook Ads",
           "Advanced follow-up workflows",
           "Calendar & visit tracking",
           "Priority support",
           "CSV export",
         ],
-        popular: true,
-      },
-      professional: {
-        name: "Professional",
-        priceMonthly: PLAN_PRICES_MONTHLY.professional,
-        priceYearly: PLAN_PRICES_YEARLY.professional,
-        currency: "INR",
-        limits: PLAN_LIMITS.professional,
-        employees: 100,
-        features: [
-          "Up to 100 employees",
-          "50,000 leads/month",
-          "All integrations",
-          "Advanced analytics",
-          "Custom workflows",
-          "Dedicated support",
-          "API access",
-        ],
-      },
-      business: {
-        name: "Business",
-        priceMonthly: PLAN_PRICES_MONTHLY.business,
-        priceYearly: PLAN_PRICES_YEARLY.business,
-        currency: "INR",
-        limits: PLAN_LIMITS.business,
-        employees: 250,
-        features: [
-          "Up to 250 employees",
-          "2,00,000 leads/month",
-          "All integrations",
-          "Custom workflows",
-          "Dedicated account manager",
-          "SLA guarantee",
-          "Custom reporting",
-          "White-label options",
-        ],
-      },
-      enterprise: {
-        name: "Enterprise",
-        priceMonthly: null,
-        priceYearly: null,
-        currency: "INR",
-        limits: PLAN_LIMITS.enterprise,
-        employees: null,
-        custom: true,
-        features: [
-          "250+ employees",
-          "Unlimited leads",
-          "Unlimited team members",
-          "Custom integrations",
-          "Dedicated account manager",
-          "SLA guarantee",
-          "Custom reporting",
-          "On-premise option",
-        ],
-      },
+        { popular: true },
+      ),
+      professional: planCard("professional", "Professional", 100, [
+        "Up to 100 employees",
+        "50,000 leads/month",
+        "2,500 AI voice calls/month",
+        "Social Autopilot: 5 posts/week",
+        "All integrations",
+        "Advanced analytics",
+        "Custom workflows",
+        "Dedicated support",
+        "API access",
+      ]),
     },
   });
 });
@@ -209,9 +172,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (
-      !["starter", "growth", "professional", "business", "pro"].includes(plan)
-    ) {
+    if (!SOLD_PLANS.includes(plan)) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
@@ -386,9 +347,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { plan, billingCycle = "monthly" } = req.body;
 
-    if (
-      !["starter", "growth", "professional", "business", "pro"].includes(plan)
-    ) {
+    if (!SOLD_PLANS.includes(plan)) {
       return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
@@ -591,128 +550,6 @@ router.post(
         error: err.message,
       });
     }
-  }),
-);
-
-// Social Autopilot add-on: flat monthly, on top of the plan. Stored on
-// tenant.autopilot (not on the plan), so it never touches plan/limits.
-router.post(
-  "/autopilot/create-order",
-  protect,
-  authorize("super_admin", "admin"),
-  asyncHandler(async (req, res) => {
-    const razorpay = getRazorpayInstance();
-    const amount = ADDON_PRICES.autopilot;
-    const tenantId = req.user.tenantId.toString();
-
-    const order = await razorpay.orders.create({
-      amount,
-      currency: "INR",
-      receipt: `AP_${tenantId.slice(-10)}_${Date.now()}`,
-      notes: { addon: "autopilot", tenantId },
-    });
-    // Keep the last few: a tenant may open checkout twice and pay the first.
-    await Tenant.updateOne(
-      { _id: tenantId },
-      { $push: { "autopilot.pendingOrderIds": { $each: [order.id], $slice: -5 } } },
-    );
-
-    const tenant = await Tenant.findById(tenantId);
-    res.json({
-      success: true,
-      data: {
-        orderId: order.id,
-        amount,
-        currency: "INR",
-        customerEmail: tenant?.email || req.user.email || "",
-        customerPhone: tenant?.phone || "",
-        customerName: tenant?.name || req.user.name || "Customer",
-        key: process.env.RAZORPAY_KEY_ID,
-      },
-    });
-  }),
-);
-
-router.post(
-  "/autopilot/verify",
-  protect,
-  authorize("super_admin", "admin"),
-  asyncHandler(async (req, res) => {
-    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
-    if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing payment details" });
-    }
-    if (
-      !verifyRazorpaySignature(
-        razorpayOrderId,
-        razorpayPaymentId,
-        razorpaySignature,
-      )
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid payment signature" });
-    }
-
-    const payment = await getRazorpayInstance().payments.fetch(razorpayPaymentId);
-    if (payment.status !== "captured") {
-      return res
-        .status(400)
-        .json({ success: false, message: `Payment ${payment.status}` });
-    }
-
-    const tenant = await Tenant.findById(req.user.tenantId);
-    const current = tenant?.autopilot?.paidUntil;
-    const base = current && current > new Date() ? current : new Date();
-    const paidUntil = new Date(base.getTime() + PAID_DAYS * 24 * 60 * 60 * 1000);
-
-    // Matching a pending order is the one-time claim: it is pulled in the same
-    // write, so a replayed signature can't extend the add-on twice.
-    const updated = await Tenant.findOneAndUpdate(
-      { _id: tenant._id, "autopilot.pendingOrderIds": razorpayOrderId },
-      {
-        $set: { "autopilot.paidUntil": paidUntil },
-        $pull: { "autopilot.pendingOrderIds": razorpayOrderId },
-      },
-      { new: true },
-    );
-    if (!updated) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Order not found or already used" });
-    }
-
-    // $setOnInsert keeps tenants that never had a Subscription doc from being
-    // flagged "trialing" (statsRoutes reads that) just because of this invoice.
-    await Subscription.findOneAndUpdate(
-      { tenant: tenant._id },
-      {
-        $setOnInsert: {
-          plan: tenant.plan,
-          status: tenant.plan === "trial" ? "trialing" : "active",
-        },
-        $push: {
-          invoices: {
-            razorpayPaymentId,
-            razorpayOrderId,
-            amount: ADDON_PRICES.autopilot,
-            plan: "autopilot",
-            billingCycle: "monthly",
-            status: "paid",
-            paidAt: new Date(),
-          },
-        },
-      },
-      { upsert: true },
-    );
-
-    res.json({
-      success: true,
-      message: "Autopilot activated",
-      data: { paidUntil },
-    });
   }),
 );
 

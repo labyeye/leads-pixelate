@@ -171,6 +171,7 @@ app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));
 app.use("/api/autopilot", require("./routes/autopilotRoutes"));
+app.use("/api/ai-usage", require("./routes/aiUsageRoutes"));
 app.use("/api/campaigns", require("./routes/campaignRoutes"));
 app.use(
   "/api/campaign-assignments",

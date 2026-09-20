@@ -1,4 +1,11 @@
 import { AppLayout } from "@/components/layout/AppLayout";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Search,
@@ -12,6 +19,7 @@ import {
   Filter,
   Check,
   ChevronDown,
+  RefreshCw,
   X,
   ChevronUp,
   IndianRupee,
@@ -1517,9 +1525,9 @@ export default function LeadsPage() {
       {}
       <div className="flex flex-col gap-2 mb-4 animate-fade-in">
         {}
-        <div className="flex flex-col gap-2 w-full">
+        <div className="flex flex-wrap items-center gap-2 w-full">
           {}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="contents">
             {currentUser?.role !== "sales_executive" && (
               <Dialog
                 open={isAssignModalOpen}
@@ -1603,22 +1611,6 @@ export default function LeadsPage() {
             )}
 
             <button
-              onClick={() => setShowExportDialog(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-blue-700 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              Export
-            </button>
-
-            <button
-              onClick={() => setImportModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-emerald-700 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              Import Excel
-            </button>
-
-            <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
             >
@@ -1626,115 +1618,78 @@ export default function LeadsPage() {
               Add Lead
             </button>
 
-            {fbConnected && (
-              <button
-                onClick={() => setFbSyncModalOpen(true)}
-                disabled={fbSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#1877F2] font-black uppercase text-xs tracking-widest border-2 border-[#000000]  hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                {fbSyncing ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <img
-                    src={metaLogo}
-                    alt="Meta"
-                    className="w-4 h-4 object-contain"
-                  />
-                )}
-                {fbSyncing ? "Syncing..." : "Sync Meta"}
-              </button>
-            )}
-
-            {syncStatus !== null && (
-              <div className="flex items-center border-2 border-black">
-                <button
-                  id="indiamart-sync-btn"
-                  onClick={() => setSyncModalOpen(true)}
-                  disabled={syncing}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#E07B39] font-black uppercase text-xs tracking-widest border-r-2 border-[#E07B39] hover:bg-orange-50 transition-colors disabled:opacity-50 whitespace-nowrap"
-                >
-                  {syncing ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#E07B39]" />
-                  ) : (
-                    <img
-                      src={imLogo}
-                      alt="IndiaMART"
-                      className="w-4 h-4 object-contain"
-                    />
-                  )}
-                  {syncing ? "Syncing..." : "Sync IndiaMART"}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
+                  <FileText className="w-3.5 h-3.5" />
+                  Import / Export
+                  <ChevronDown className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  onClick={() => setSyncPanelOpen(!syncPanelOpen)}
-                  className="px-2 py-2 bg-white hover:bg-orange-50 text-[#E07B39] border-l border-[#E07B39]/30 transition-colors"
-                >
-                  {syncPanelOpen ? (
-                    <ChevronUp className="w-3.5 h-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="border-2 border-black">
+                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-emerald-700" onSelect={() => setImportModalOpen(true)}>
+                  <FileText className="w-3.5 h-3.5" /> Import Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-blue-700" onSelect={() => setShowExportDialog(true)}>
+                  <FileText className="w-3.5 h-3.5" /> Export
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#024BAB] font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
+                  {fbSyncing || syncing || tiSyncing || jdSyncing || linkedinSyncing ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <ChevronDown className="w-3.5 h-3.5" />
+                    <RefreshCw className="w-3.5 h-3.5" />
                   )}
+                  Sync Leads
+                  <ChevronDown className="w-3.5 h-3.5" />
                 </button>
-              </div>
-            )}
-
-            {}
-            <button
-              onClick={handleTradeindiaSyncAttempt}
-              disabled={tiSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#22C55E] font-black uppercase text-xs tracking-widest border-2 border-[#000000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
-            >
-              {tiSyncing ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <img
-                  src={tiLogo}
-                  alt="TradeIndia"
-                  className="w-4 h-4 object-contain"
-                />
-              )}
-              {tiSyncing ? "Syncing..." : "Sync TradeIndia"}
-            </button>
-
-            {}
-            <button
-              onClick={handleJustdialSyncAttempt}
-              disabled={jdSyncing}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#EF4444] font-black uppercase text-xs tracking-widest border-2 border-[#000000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
-            >
-              {jdSyncing ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <img
-                  src={jdLogo}
-                  alt="Justdial"
-                  className="w-4 h-4 object-contain"
-                />
-              )}
-              {jdSyncing ? "Checking..." : "Justdial Status"}
-            </button>
-
-            {} 
-              <button
-                onClick={handleLinkedinSync}
-                disabled={linkedinSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#0A66C2] font-black uppercase text-xs tracking-widest border-2 border-[#000000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                {linkedinSyncing ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <img
-                    src={linkedinLogo}
-                    alt="LinkedIn"
-                    className="w-4 h-4 object-contain"
-                  />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="border-2 border-black">
+                {fbConnected && (
+                  <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#1877F2]" disabled={fbSyncing} onSelect={() => setFbSyncModalOpen(true)}>
+                    <img src={metaLogo} alt="" className="w-4 h-4 object-contain" />
+                    {fbSyncing ? "Syncing Meta..." : "Sync Meta"}
+                  </DropdownMenuItem>
                 )}
-                {linkedinSyncing ? "Syncing..." : "Sync LinkedIn"}
-              </button>
-            
+                {syncStatus !== null && (
+                  <>
+                    <DropdownMenuItem
+                      id="indiamart-sync-btn"
+                      className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]"
+                      disabled={syncing}
+                      onSelect={() => setSyncModalOpen(true)}
+                    >
+                      <img src={imLogo} alt="" className="w-4 h-4 object-contain" />
+                      {syncing ? "Syncing IndiaMART..." : "Sync IndiaMART"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]/80 pl-8" onSelect={() => setSyncPanelOpen(!syncPanelOpen)}>
+                      {syncPanelOpen ? "Hide" : "Show"} IndiaMART sync details
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#22C55E]" disabled={tiSyncing} onSelect={() => handleTradeindiaSyncAttempt()}>
+                  <img src={tiLogo} alt="" className="w-4 h-4 object-contain" />
+                  {tiSyncing ? "Syncing TradeIndia..." : "Sync TradeIndia"}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#EF4444]" disabled={jdSyncing} onSelect={() => handleJustdialSyncAttempt()}>
+                  <img src={jdLogo} alt="" className="w-4 h-4 object-contain" />
+                  {jdSyncing ? "Checking Justdial..." : "Justdial Status"}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#0A66C2]" disabled={linkedinSyncing} onSelect={() => handleLinkedinSync()}>
+                  <img src={linkedinLogo} alt="" className="w-4 h-4 object-contain" />
+                  {linkedinSyncing ? "Syncing LinkedIn..." : "Sync LinkedIn"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="contents">
             <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white">
               <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
               <input
@@ -1853,7 +1808,7 @@ export default function LeadsPage() {
                     : "bg-white text-black hover:bg-[#FFDE00]",
                 )}
               >
-                <List className="w-3.5 h-3.5" /> Table
+                <List className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Table</span>
               </button>
               <button
                 onClick={() => {
@@ -1868,7 +1823,7 @@ export default function LeadsPage() {
                     : "bg-white text-black hover:bg-[#FFDE00]",
                 )}
               >
-                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+                <LayoutGrid className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Kanban</span>
               </button>
             </div>
 
@@ -1880,7 +1835,7 @@ export default function LeadsPage() {
                 if (view) applySavedView(view);
               }}
             >
-              <SelectTrigger className="h-9 w-[170px] border-2 border-black bg-white text-xs font-black uppercase tracking-widest">
+              <SelectTrigger className="h-9 w-[150px] border-2 border-black bg-white text-xs font-black uppercase tracking-widest">
                 <Bookmark className="w-3.5 h-3.5 mr-1" />
                 <SelectValue placeholder="Saved Views" />
               </SelectTrigger>
@@ -1912,7 +1867,7 @@ export default function LeadsPage() {
                   className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
                   title="Save current filters as a view"
                 >
-                  <BookmarkPlus className="w-3.5 h-3.5" /> Save View
+                  <BookmarkPlus className="w-3.5 h-3.5" /> <span className="hidden 2xl:inline">Save View</span>
                 </button>
               </DialogTrigger>
               <DialogContent>

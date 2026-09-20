@@ -1,12 +1,12 @@
 import { useToast } from "@/components/ui/use-toast";
 import { AutopilotShell } from "@/components/social/autopilot/AutopilotShell";
-import { AutopilotDashboard } from "@/components/social/autopilot/AutopilotDashboard";
+import { AutopilotSetup } from "@/components/social/autopilot/AutopilotSetup";
 
-export default function SocialAutopilotPage() {
+export default function SocialAutopilotSetupPage() {
   const { toast } = useToast();
   return (
     <AutopilotShell>
-      <AutopilotDashboard toast={toast} />
+      <AutopilotSetup toast={toast} />
     </AutopilotShell>
   );
 }

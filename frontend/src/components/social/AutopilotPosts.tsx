@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Facebook, Instagram, Loader2, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { Facebook, Instagram, Loader2, Trash2 } from "lucide-react";
 import { socialAPI } from "@/services/api";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ReviewActions } from "@/components/social/autopilot/ReviewActions";
 
 interface Post {
   _id: string;
@@ -13,6 +14,7 @@ interface Post {
   scheduledAt: string;
   status: string;
   failureReason?: string;
+  autopilotMeta?: { revising?: boolean; revisions?: number; revisionError?: string };
 }
 
 const UPCOMING = ["SCHEDULED", "APPROVED", "PENDING_APPROVAL", "POSTING"];
@@ -38,7 +40,7 @@ const PLATFORM_ICON: Record<string, JSX.Element> = {
 const when = (d: string) =>
   new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export function AutopilotPosts({ toast }: { toast: any }) {
+export function AutopilotPosts({ toast, onChange }: { toast: any; onChange?: () => void }) {
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -53,9 +55,14 @@ export function AutopilotPosts({ toast }: { toast: any }) {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 10_000); // new posts land while a run is generating
-    return () => clearInterval(t);
   }, [load]);
+
+  // New posts land while a run is generating; a post being fixed from feedback changes fast.
+  const revising = !!posts?.some((p) => p.autopilotMeta?.revising);
+  useEffect(() => {
+    const t = setInterval(load, revising ? 3000 : 10_000);
+    return () => clearInterval(t);
+  }, [load, revising]);
 
   const act = async (id: string, fn: () => Promise<unknown>, ok: string) => {
     setBusy(id);
@@ -63,6 +70,7 @@ export function AutopilotPosts({ toast }: { toast: any }) {
       await fn();
       toast({ title: ok });
       await load();
+      onChange?.();
     } catch (err: any) {
       toast({ title: "Failed", description: err.message, variant: "destructive" });
     } finally {
@@ -80,7 +88,12 @@ export function AutopilotPosts({ toast }: { toast: any }) {
 
   const upcoming = posts
     .filter((p) => UPCOMING.includes(p.status))
-    .sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt));
+    // Posts waiting for the owner first, then by publish time.
+    .sort(
+      (a, b) =>
+        Number(b.status === "PENDING_APPROVAL") - Number(a.status === "PENDING_APPROVAL") ||
+        +new Date(a.scheduledAt) - +new Date(b.scheduledAt),
+    );
   const history = posts
     .filter((p) => HISTORY.includes(p.status))
     .sort((a, b) => +new Date(b.scheduledAt) - +new Date(a.scheduledAt))
@@ -113,28 +126,17 @@ export function AutopilotPosts({ toast }: { toast: any }) {
               {p.failureReason}
             </p>
           )}
+          {p.status === "PENDING_APPROVAL" && <ReviewActions
+              post={p}
+              toast={toast}
+              onChanged={async () => {
+                await load();
+                onChange?.();
+              }}
+            />}
           {(p.status === "PENDING_APPROVAL" || REMOVABLE.includes(p.status)) && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {p.status === "PENDING_APPROVAL" && (
-                <>
-                  <Button
-                    size="sm"
-                    disabled={busy === p._id}
-                    onClick={() => act(p._id, () => socialAPI.approvePost(p._id), "Post approved")}
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5 mr-1" /> Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busy === p._id}
-                    onClick={() => act(p._id, () => socialAPI.rejectPost(p._id, "Rejected from Autopilot"), "Post rejected")}
-                  >
-                    <ThumbsDown className="w-3.5 h-3.5 mr-1" /> Reject
-                  </Button>
-                </>
-              )}
-              {REMOVABLE.includes(p.status) && (
+              {REMOVABLE.includes(p.status) && p.status !== "PENDING_APPROVAL" && (
                 <Button
                   size="sm"
                   variant="ghost"

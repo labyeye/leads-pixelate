@@ -193,6 +193,23 @@ const tenantSchema = new mongoose.Schema(
       lastRunAt: { type: Date, default: null },
       lastError: { type: String, default: "" },
       onboardedAt: { type: Date, default: null },
+      // Which Autopilot plan the current paidUntil period was bought on ("" = never paid).
+      plan: { type: String, enum: ["", "starter", "growth", "pro"], default: "" },
+      // Owner's own words about the brand (typed and/or a PDF kept outside the public uploads dir).
+      brandIntro: {
+        text: { type: String, default: "", maxlength: 4000 },
+        pdfName: { type: String, default: "", maxlength: 200 },
+        hasPdf: { type: Boolean, default: false },
+        updatedAt: { type: Date, default: null },
+      },
+      // When to post: weekdays (0 = Sunday) and HH:MM times, India time. Empty = Claude picks.
+      schedule: {
+        days: { type: [Number], default: [] },
+        times: { type: [String], default: [] },
+      },
+      contentTypes: { type: [String], default: [] },
+      // Reusable corrections the owner gave while reviewing posts.
+      lessons: { type: [String], default: [] },
       // Set when the owner approves their first Autopilot post; from then on runs are hands-off.
       firstApprovedAt: { type: Date, default: null },
       progress: {
@@ -227,6 +244,7 @@ const tenantSchema = new mongoose.Schema(
         },
         logoId: { type: String, default: "" },
         logoEnabled: { type: Boolean, default: true },
+        logoMode: { type: String, enum: ["fixed", "auto"], default: "fixed" },
         logoPosition: {
           type: String,
           enum: ["bottom-right", "bottom-left", "top-right", "top-left"],

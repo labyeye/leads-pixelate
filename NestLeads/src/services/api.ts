@@ -647,6 +647,67 @@ export const billingAPI = {
     request<{success: boolean; data: any[]}>('/billing/invoices'),
 };
 
+// Social Autopilot (backend: routes/autopilotRoutes.js). Same endpoints as the web app.
+export const autopilotAPI = {
+  get: () => request<{success: boolean; data: any}>('/autopilot'),
+  stats: (days: 7 | 30 | 90) =>
+    request<{success: boolean; data: any}>(`/autopilot/stats?days=${days}`),
+  update: (body: Record<string, unknown>) =>
+    request<{success: boolean}>('/autopilot', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  run: () => request<{success: boolean}>('/autopilot/run', {method: 'POST'}),
+  analyze: (accountId?: string) =>
+    request<{success: boolean; started: boolean}>('/autopilot/analyze', {
+      method: 'POST',
+      body: JSON.stringify({accountId}),
+    }),
+  saveBrand: (patch: Record<string, unknown>) =>
+    request<{success: boolean}>('/autopilot/brand', {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    }),
+  deleteLogo: (id: string) =>
+    request<{success: boolean}>(`/autopilot/logos/${id}`, {method: 'DELETE'}),
+  revisePost: (id: string, feedback: string) =>
+    request<{success: boolean}>(`/autopilot/posts/${id}/revise`, {
+      method: 'POST',
+      body: JSON.stringify({feedback}),
+    }),
+};
+
+// Multipart calls (logo image, brand intro text). fetch sets the multipart boundary itself.
+async function autopilotForm(path: string, form: FormData): Promise<any> {
+  const token = await getToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: {Authorization: `Bearer ${token}`},
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(data.message || 'Upload failed', res.status);
+  return data;
+}
+
+export function uploadAutopilotLogo(fileUri: string, fileName: string, mimeType: string) {
+  const form = new FormData();
+  form.append('file', {uri: fileUri, name: fileName, type: mimeType} as any);
+  return autopilotForm('/autopilot/logos', form);
+}
+
+// Text only: attaching a PDF needs a document picker, which the app does not ship (use the web app).
+export function saveAutopilotIntro(text: string) {
+  const form = new FormData();
+  form.append('text', text);
+  return autopilotForm('/autopilot/intro', form);
+}
+
+// What the tenant used of the AI features in their plan this month.
+export const aiUsageAPI = {
+  get: () => request<{success: boolean; data: any}>('/ai-usage'),
+};
+
 export const settingsAPI = {
   get: () => request<{success: boolean; data: any}>('/settings'),
   update: (data: any) =>
