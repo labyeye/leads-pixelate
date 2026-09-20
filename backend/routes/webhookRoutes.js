@@ -3,6 +3,7 @@ const router = express.Router();
 const CallLog = require("../models/CallLog");
 const Lead = require("../models/Lead");
 const twilio = require("../services/twilioService");
+const analysis = require("../services/callAnalysisService");
 const { handleElevenLabsWebhook } = require("../controllers/aiCallingController");
 
 // Public webhook route for ElevenLabs post-call analysis and transcripts
@@ -34,8 +35,21 @@ router.post("/twilio/connect/:id", fromTwilio, async (req, res) => {
       leadName: lead?.name,
       leadPhone: call.phoneNumber,
       dialActionUrl: `${twilio.webhookBase()}/api/webhooks/twilio/dial-done/${call._id}`,
+      recordingUrl: `${twilio.webhookBase()}/api/webhooks/twilio/recording/${call._id}`,
+      whisperUrl: `${twilio.webhookBase()}/api/webhooks/twilio/whisper`,
     }),
   );
+});
+
+// Played to the lead when they answer: "this call is recorded".
+router.post("/twilio/whisper", fromTwilio, (req, res) => twiml(res, twilio.whisperTwiml()));
+
+// The recording is ready. Answer Twilio at once, then transcribe + analyse in the background.
+router.post("/twilio/recording/:id", fromTwilio, async (req, res) => {
+  res.sendStatus(204);
+  const { RecordingStatus, RecordingUrl, RecordingDuration } = req.body;
+  if (!isId(req.params.id) || RecordingStatus !== "completed" || !RecordingUrl) return;
+  analysis.processRecording(req.params.id, RecordingUrl, Number(RecordingDuration) || 0).catch(() => {});
 });
 
 // The lead's leg ended: this is the real outcome and talk time.

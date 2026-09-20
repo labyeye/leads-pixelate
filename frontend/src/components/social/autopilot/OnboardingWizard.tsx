@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Facebook,
   FileText,
   Instagram,
@@ -20,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { BrandKitEditor } from "./BrandKitEditor";
 import { BrandProfileEditor } from "./BrandProfileEditor";
+import { ContentBrief, CTA_TYPES, type BriefPatch } from "./ContentBrief";
 import { useCampaignApi } from "./CampaignContext";
 import { GenerationProgress } from "./GenerationProgress";
 import { IntroStep } from "./IntroStep";
@@ -29,7 +32,7 @@ import { ReviewActions } from "./ReviewActions";
 import { ScanAnimation } from "./ScanAnimation";
 import type { AutopilotStatus } from "./useAutopilot";
 
-const STEPS = ["Brand intro", "Accounts", "References", "Scan", "Brand profile", "Logos", "Schedule", "Launch"];
+const STEPS = ["Brand intro", "Accounts", "References", "Scan", "Brand profile", "Logos", "Schedule", "Content", "Preview"];
 const GIVE_UP_MS = 3 * 60 * 1000;
 
 interface Post {
@@ -104,6 +107,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
   };
 
   const savePlan = (p: PlanPatch) => run(() => api.update({ ...p }), 7);
+  const saveBrief = (p: BriefPatch) => run(() => api.update({ ...p }), 8);
   const onScanComplete = useCallback(() => setScanFinished(true), []);
 
   return (
@@ -306,7 +310,19 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           </>
         )}
 
-        {step === 7 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(6)} />}
+        {step === 7 && (
+          <>
+            <Heading
+              icon={<Sparkles className="w-5 h-5 text-white" />}
+              title="What should each post be?"
+              text="Choose image or carousel, the goal, what to include, your call to action and any instructions. The more detail you give, the closer the posts get to what you want."
+            />
+            <ContentBrief status={status} saving={busy} saveLabel="Continue" onSave={saveBrief} />
+            <BackButton onClick={() => setStep(6)} />
+          </>
+        )}
+
+        {step === 8 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(7)} />}
       </div>
     </div>
   );
@@ -368,6 +384,8 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
   const [post, setPost] = useState<Post | null>(null);
   const [busy, setBusy] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const [sample, setSample] = useState<Awaited<ReturnType<typeof api.preview>>["data"] | null>(null);
+  const [sampling, setSampling] = useState(false);
   const launchedAt = useRef(0);
   const postId = useRef<string | null>(null);
   const failed = status.progress?.stage === "failed" && !status.running;
@@ -387,6 +405,17 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       fail(err);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const makeSample = async () => {
+    setSampling(true);
+    try {
+      setSample((await api.preview()).data);
+    } catch (err) {
+      fail(err);
+    } finally {
+      setSampling(false);
     }
   };
 
@@ -473,8 +502,12 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       <>
         <Heading
           icon={<Rocket className="w-5 h-5 text-white" />}
-          title="Ready to launch"
-          text={`We'll create your first post now so you can see exactly what Autopilot makes. During your ${status.trialDays}-day free trial you approve every post, and you can ask for changes.`}
+          title={sample ? "Here's a sample post" : "Ready to preview"}
+          text={
+            sample
+              ? "This is what Autopilot makes from your settings. Happy with it? Start the campaign. If not, go back and adjust the brief, or try another sample."
+              : `First we'll make one sample post from your settings so you can check it before anything starts. During your ${status.trialDays}-day free trial you approve every post, and you can ask for changes.`
+          }
         />
         <ul className="grid sm:grid-cols-2 gap-2 text-sm">
           <Fact
@@ -488,6 +521,9 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
           />
           <Fact label="When" value={when} />
           <Fact label="Language" value={s.language} />
+          <Fact label="Format" value={s.brief.format === "carousel" ? `Carousel, ${s.brief.slides} slides` : "Single image"} />
+          <Fact label="Call to action" value={s.brief.cta.type === "none" ? "None" : s.brief.cta.text || CTA_TYPES[s.brief.cta.type]} />
+          <Fact label="Runs for" value={s.timeline.days ? `${s.timeline.days} days` : "Until you pause it"} />
           <Fact
             label="Logos"
             value={!logos.length || !status.brandKit.logoEnabled ? "None" : `${logos.length} (${status.brandKit.logoMode === "auto" ? "picked automatically" : "fixed"})`}
@@ -500,13 +536,36 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
             before go out automatically.
           </p>
         )}
+        {sampling && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+            <Loader2 className="w-4 h-4 animate-spin" /> Making your sample{s.brief.format === "carousel" ? ` (${s.brief.slides} slides, this takes a minute)` : ""}…
+          </p>
+        )}
+        {sample && !sampling && <SamplePost sample={sample} />}
         <div className="flex flex-wrap gap-3">
-          <Button size="lg" onClick={launch} disabled={busy || !status.configured}>
-            {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-            Generate my first post
-          </Button>
+          {sample ? (
+            <>
+              <Button size="lg" onClick={launch} disabled={busy || sampling || !status.configured}>
+                {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
+                Looks good, start
+              </Button>
+              <Button size="lg" variant="outline" onClick={makeSample} disabled={busy || sampling}>
+                Try another sample
+              </Button>
+            </>
+          ) : (
+            <Button size="lg" onClick={makeSample} disabled={sampling || !status.configured}>
+              {sampling ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+              Preview a sample post
+            </Button>
+          )}
           <BackButton onClick={onBack} />
         </div>
+        {!sample && (
+          <button type="button" className="text-xs text-muted-foreground underline" onClick={launch} disabled={busy || !status.configured}>
+            Skip the preview and start now
+          </button>
+        )}
       </>
     );
   }
@@ -593,6 +652,58 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       <Button size="lg" onClick={onDone}>
         Go to my Autopilot <ArrowRight className="w-4 h-4 ml-1" />
       </Button>
+    </div>
+  );
+}
+
+// The sample post: the caption and the picture(s); a carousel scrolls sideways.
+function SamplePost({ sample }: { sample: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: string } }) {
+  const [i, setI] = useState(0);
+  const n = sample.images.length;
+  return (
+    <div className="grid sm:grid-cols-[220px_minmax(0,1fr)] gap-5 items-start animate-fade-in">
+      <div className="relative">
+        <img
+          src={sample.images[i]}
+          alt={n > 1 ? `Sample slide ${i + 1} of ${n}` : "Sample post"}
+          className="w-full aspect-[4/5] object-cover rounded-lg border-2 border-black nb-shadow bg-muted"
+        />
+        {n > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous slide"
+              disabled={i === 0}
+              onClick={() => setI(i - 1)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white p-1 disabled:opacity-30"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next slide"
+              disabled={i === n - 1}
+              onClick={() => setI(i + 1)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full border-2 border-black bg-white p-1 disabled:opacity-30"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <p className="absolute bottom-2 right-2 rounded-full bg-black/70 text-white text-[10px] px-2 py-0.5">
+              {i + 1} / {n}
+            </p>
+          </>
+        )}
+      </div>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {sample.platforms.map((p) => (
+            <span key={p}>{PLATFORM_ICON[p]}</span>
+          ))}
+          <span>{n > 1 ? "Carousel" : "Single image"}</span>
+        </div>
+        <p className="text-sm whitespace-pre-line">{sample.caption}</p>
+        {!!sample.hashtags.length && <p className="text-sm text-primary">{sample.hashtags.map((h) => `#${h}`).join(" ")}</p>}
+      </div>
     </div>
   );
 }

@@ -142,6 +142,24 @@ async function campaignStatus(tenant, campaign) {
       schedule: { days: a.schedule?.days || [], times: a.schedule?.times || [] },
       contentTypes: a.contentTypes || [],
       lessons: a.lessons || [],
+      brief: {
+        format: a.brief?.format || "image",
+        slides: a.brief?.slides || 5,
+        goal: a.brief?.goal || "",
+        cta: {
+          type: a.brief?.cta?.type || "none",
+          text: a.brief?.cta?.text || "",
+          link: a.brief?.cta?.link || "",
+          phone: a.brief?.cta?.phone || "",
+        },
+        include: a.brief?.include || [],
+        instructions: a.brief?.instructions || "",
+      },
+      timeline: {
+        days: a.timeline?.days || 0,
+        startsOn: a.timeline?.startsOn || null,
+        endsOn: a.timeline?.endsOn || null,
+      },
     },
     contentTypes: svc.CONTENT_TYPES,
     intro: { text: a.brandIntro?.text || "", pdfName: a.brandIntro?.hasPdf ? a.brandIntro.pdfName : "" },
@@ -233,6 +251,18 @@ one.put(
 
     const turningOn = patch.enabled === true && !campaign.enabled;
     const $set = { ...patch };
+    // Timeline: keep the start date, and (re)compute the end from it while the campaign is live.
+    delete $set.timeline;
+    const days = patch.timeline ? patch.timeline.days : campaign.timeline?.days || 0;
+    if (patch.timeline) $set["timeline.days"] = days;
+    if (turningOn || patch.timeline) {
+      const live = patch.enabled ?? campaign.enabled;
+      const start = turningOn ? new Date() : campaign.timeline?.startsOn || new Date();
+      if (live) {
+        $set["timeline.startsOn"] = start;
+        $set["timeline.endsOn"] = days ? new Date(start.getTime() + days * 24 * 60 * 60 * 1000) : null;
+      }
+    }
     if (patch.enabled && !campaign.onboardedAt) $set.onboardedAt = new Date();
     if (Object.keys($set).length) await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set });
     if (patch.enabled) {
@@ -251,6 +281,32 @@ one.put(
     }
 
     res.json({ success: true });
+  }),
+);
+
+// A sample post from the campaign's current settings (costs one plan + caption + the images).
+const previewTimes = new Map();
+one.post(
+  "/preview",
+  asyncHandler(async (req, res) => {
+    const { tenant, campaign } = req;
+    if (!svc.isConfigured()) {
+      res.status(503);
+      throw new Error("Autopilot is not configured on the server yet");
+    }
+    const key = String(campaign._id);
+    const recent = (previewTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    if (recent.length >= 5) {
+      res.status(429);
+      throw new Error("You've made a few previews already. Try again in a while.");
+    }
+    previewTimes.set(key, [...recent, Date.now()]);
+    try {
+      res.json({ success: true, data: await svc.previewForCampaign(tenant, campaign) });
+    } catch (err) {
+      res.status(502);
+      throw new Error(err.message);
+    }
   }),
 );
 

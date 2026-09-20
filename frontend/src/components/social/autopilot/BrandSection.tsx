@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandKitEditor } from "./BrandKitEditor";
 import { BrandProfileEditor } from "./BrandProfileEditor";
+import { ContentBrief, type BriefPatch } from "./ContentBrief";
 import { useCampaignApi } from "./CampaignContext";
 import { PostingPlan, type PlanPatch } from "./PostingPlan";
 import { ReferencesCompetitors } from "./ReferencesCompetitors";
@@ -88,6 +89,7 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
       <Tabs defaultValue="plan">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="plan">Posting plan</TabsTrigger>
+          <TabsTrigger value="brief">Content brief</TabsTrigger>
           <TabsTrigger value="profile">Brand profile</TabsTrigger>
           <TabsTrigger value="refs">References &amp; competitors</TabsTrigger>
           <TabsTrigger value="kit">Logos &amp; colours</TabsTrigger>
@@ -113,6 +115,13 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
               </ul>
             </div>
           )}
+        </TabsContent>
+        <TabsContent value="brief" className="pt-3">
+          <ContentBrief
+            status={status}
+            saving={saving}
+            onSave={(p: BriefPatch) => saveWith(() => api.update({ ...p }), "Content brief saved")}
+          />
         </TabsContent>
         <TabsContent value="profile" className="pt-3">
           <BrandProfileEditor

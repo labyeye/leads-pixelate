@@ -39,9 +39,11 @@ const sign = (url, params = {}) =>
   assert.ok(!twilio.validSignature("AAAA", url, params), "wrong length must not throw");
 }
 
-const t = twilio.connectTwiml({ leadName: "Ravi <b>&\"Sons\"", leadPhone: "+919876543210", dialActionUrl: "https://x/y?a=1&b=2" });
+const t = twilio.connectTwiml({ leadName: "Ravi <b>&\"Sons\"", leadPhone: "+919876543210", dialActionUrl: "https://x/y?a=1&b=2", recordingUrl: "https://x/rec", whisperUrl: "https://x/whisper" });
 assert.ok(t.includes("Ravi &lt;b&gt;&amp;&quot;Sons&quot;") && !t.includes("<b>"), "names are escaped in TwiML");
-assert.ok(t.includes("<Number>+919876543210</Number>") && t.includes('callerId="+15005550006"'));
+assert.ok(t.includes('>+919876543210</Number>') && t.includes('callerId="+15005550006"'));
+assert.ok(t.includes('record="record-from-answer-dual"') && t.includes('recordingStatusCallback="https://x/rec"') && t.includes('<Number url="https://x/whisper"'), "bridged call is recorded, lead hears the notice");
+assert.ok(/recorded/.test(twilio.whisperTwiml()));
 assert.ok(t.includes("a=1&amp;b=2"), "attribute URLs are escaped");
 assert.deepStrictEqual(
   ["queued", "ringing", "in-progress", "completed", "busy", "no-answer", "failed", "canceled", "weird"].map(twilio.mapStatus),
@@ -169,8 +171,9 @@ async function main() {
     let h = await hook(`/api/webhooks/twilio/connect/${id}`, { CallSid: "CAabc" });
     assert.strictEqual(h.status, 200);
     assert.ok(/xml/.test(h.type));
-    assert.ok(h.text.includes("Connecting you to Ravi") && h.text.includes("<Number>+919876543210</Number>"));
+    assert.ok(h.text.includes("Connecting you to Ravi") && h.text.includes(">+919876543210</Number>"));
     assert.ok(h.text.includes(`/api/webhooks/twilio/dial-done/${id}`));
+    assert.ok(h.text.includes(`/api/webhooks/twilio/recording/${id}`) && h.text.includes("/api/webhooks/twilio/whisper"));
     assert.strictEqual(c.status, "in_progress");
 
     await hook(`/api/webhooks/twilio/status/${id}`, { CallStatus: "initiated" }); // late, must not go backwards

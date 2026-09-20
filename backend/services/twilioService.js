@@ -39,13 +39,19 @@ function validSignature(signature, url, params = {}) {
 const xml = (s) =>
   String(s ?? "").replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]);
 
-// TwiML for the moment the agent answers: say who is being called, then dial the lead.
-function connectTwiml({ leadName, leadPhone, dialActionUrl }) {
+// Spoken to the lead the moment they pick up (the <Number url> below), before the two are bridged.
+const RECORDING_NOTICE = "This call is being recorded for quality and record keeping.";
+const whisperTwiml = () => `<?xml version="1.0" encoding="UTF-8"?><Response><Say>${RECORDING_NOTICE}</Say></Response>`;
+
+// TwiML for the moment the agent answers: say who is being called, then dial the lead. The bridged call is
+// recorded on two channels (agent = 1st, lead = 2nd) and Twilio reports the file to recordingUrl.
+function connectTwiml({ leadName, leadPhone, dialActionUrl, recordingUrl, whisperUrl }) {
   return (
     `<?xml version="1.0" encoding="UTF-8"?><Response>` +
-    `<Say>Connecting you to ${xml(leadName || "the lead")}.</Say>` +
-    `<Dial callerId="${xml(process.env.TWILIO_PHONE_NUMBER)}" timeout="30" action="${xml(dialActionUrl)}" method="POST">` +
-    `<Number>${xml(leadPhone)}</Number></Dial></Response>`
+    `<Say>Connecting you to ${xml(leadName || "the lead")}. This call is recorded.</Say>` +
+    `<Dial callerId="${xml(process.env.TWILIO_PHONE_NUMBER)}" timeout="30" action="${xml(dialActionUrl)}" method="POST"` +
+    ` record="record-from-answer-dual" recordingStatusCallback="${xml(recordingUrl)}" recordingStatusCallbackMethod="POST">` +
+    `<Number url="${xml(whisperUrl)}" method="POST">${xml(leadPhone)}</Number></Dial></Response>`
   );
 }
 const emptyTwiml = () => `<?xml version="1.0" encoding="UTF-8"?><Response/>`;
@@ -91,4 +97,12 @@ async function startCall({ agentPhone, callLogId }) {
   return { sid: data.sid };
 }
 
-module.exports = { isConfigured, webhookBase, e164, validSignature, connectTwiml, emptyTwiml, mapStatus, startCall, xml };
+// Download a finished recording (Twilio media needs the account credentials). Returns a Buffer.
+async function downloadRecording(recordingUrl) {
+  const auth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString("base64");
+  const res = await fetch(`${recordingUrl}.mp3`, { headers: { Authorization: `Basic ${auth}` }, signal: AbortSignal.timeout(60_000) });
+  if (!res.ok) throw new Error(`Twilio recording download failed (${res.status})`);
+  return Buffer.from(await res.arrayBuffer());
+}
+
+module.exports = { isConfigured, webhookBase, e164, validSignature, connectTwiml, whisperTwiml, emptyTwiml, mapStatus, startCall, downloadRecording, xml };

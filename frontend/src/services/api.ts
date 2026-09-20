@@ -653,6 +653,12 @@ function autopilotCampaignApi(id: string) {
     update: (body: Record<string, unknown>) => send("", "PUT", body),
     remove: () => send("", "DELETE"),
     run: () => send("/run", "POST"),
+    // One sample post from the current settings (nothing is scheduled).
+    preview: () =>
+      request<{
+        success: boolean;
+        data: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: "image" | "carousel"; topic: string };
+      }>(`${base}/preview`, { method: "POST" }),
     analyze: (accountId?: string) =>
       request<{ success: boolean; started: boolean }>(`${base}/analyze`, {
         method: "POST",

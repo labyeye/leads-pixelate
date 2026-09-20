@@ -36,6 +36,27 @@ const campaignSchema = new mongoose.Schema(
       times: { type: [String], default: [] },
     },
     contentTypes: { type: [String], default: [] },
+    // What each post should be: format, goal, what to include, the call to action and free-form
+    // instructions. Video is not generated yet, so only image / carousel are accepted.
+    brief: {
+      format: { type: String, enum: ["image", "carousel"], default: "image" },
+      slides: { type: Number, default: 5, min: 2, max: 8 },
+      goal: { type: String, default: "", maxlength: 200 },
+      cta: {
+        type: { type: String, default: "none" },
+        text: { type: String, default: "", maxlength: 80 },
+        link: { type: String, default: "", maxlength: 300 },
+        phone: { type: String, default: "", maxlength: 20 },
+      },
+      include: { type: [String], default: [] },
+      instructions: { type: String, default: "", maxlength: 1500 },
+    },
+    // How long the campaign runs. days 0 = until paused. startsOn / endsOn are set when it starts.
+    timeline: {
+      days: { type: Number, default: 0, min: 0, max: 90 },
+      startsOn: { type: Date, default: null },
+      endsOn: { type: Date, default: null },
+    },
     // Reusable corrections the owner gave while reviewing this campaign's posts.
     lessons: { type: [String], default: [] },
     progress: {

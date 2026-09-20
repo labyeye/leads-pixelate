@@ -62,6 +62,15 @@ export interface AutopilotStatus {
     schedule: { days: number[]; times: string[] };
     contentTypes: string[];
     lessons: string[];
+    brief: {
+      format: "image" | "carousel";
+      slides: number;
+      goal: string;
+      cta: { type: string; text: string; link: string; phone: string };
+      include: string[];
+      instructions: string;
+    };
+    timeline: { days: number; startsOn: string | null; endsOn: string | null };
   };
   contentTypes: string[];
   intro: { text: string; pdfName: string };

@@ -69,6 +69,16 @@ const CallLogSchema = new Schema(
       type: String,
       default: "",
     },
+    // Manual calls: recording -> transcript -> Gemini remarks (services/callAnalysisService.js).
+    // "processing" is the atomic claim that keeps a retried Twilio webhook from running it twice.
+    analysisState: {
+      type: String,
+      enum: ["", "processing", "done", "failed", "skipped"],
+      default: "",
+    },
+    analysisError: { type: String, default: "" },
+    suggestedStatus: { type: String, default: "" }, // Gemini's pick, whether or not it was applied
+    statusApplied: { type: Boolean, default: false },
   },
   {
     timestamps: true,

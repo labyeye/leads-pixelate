@@ -872,6 +872,31 @@ async function main() {
   assert.ok(rec.plannedCtx.slots.length === 2, "Claude is told the slots");
   cleanup(rec.tenantId);
 
+  // ---- brief: carousel = one image per slide, brief reaches the planner, timeline ends the campaign
+  ({ rec } = setup({ autopilot: { firstApprovedAt: now, brief: { format: "carousel", slides: 3, goal: "book demos", cta: { type: "book", text: "Book a demo", link: "https://x.io/demo", phone: "" }, include: ["free setup"], instructions: "warm tone" } } }));
+  svc.ai.plan = async (ctx, o) => Array.from({ length: o.count }, (_, i) => ({ scheduledAt: (ctx.slots ? ctx.slots[i] : new Date(o.from.getTime() + 3 * 3600000 + i * 3600000)).toString(), platforms: ctx.platforms, topic: "t", angle: "a", captionBrief: "b", imagePrompt: "scene", slidePrompts: ["s1", "s2", "s3"] }));
+  const slideCalls = [];
+  svc.ai.image = async (p) => (slideCalls.push(p), Buffer.from([0xff, 0xd8, 5]));
+  svc.ai.review = async (_c, ds) => ds.map((d, i) => ({ index: i, verdict: "ok", caption: "", reason: "", n: d.images.length }));
+  out = await svc.runForTenant(rec.tenantId);
+  assert.ok(out.created >= 1, JSON.stringify(out));
+  assert.ok(rec.created.every((p) => p.postType === "carousel" && p.mediaUrls.length === 3), "carousel post with 3 slides");
+  assert.deepStrictEqual(slideCalls.slice(0, 3), ["s1", "s2", "s3"], "one image per planned slide prompt");
+  cleanup(rec.tenantId);
+  const sane = svc.sanitizeSettings({ brief: { format: "video", slides: 99, cta: { type: "bogus", link: "javascript:x", phone: "+91 98<>76" }, include: ["a", "", "b"] }, timeline: { days: 500 } });
+  assert.strictEqual(sane.brief.format, "image", "video is not accepted yet");
+  assert.strictEqual(sane.brief.slides, 8);
+  assert.strictEqual(sane.brief.cta.type, "none");
+  assert.strictEqual(sane.brief.cta.link, "", "only http(s) links");
+  assert.strictEqual(sane.brief.cta.phone, "+91 9876");
+  assert.deepStrictEqual(sane.brief.include, ["a", "b"]);
+  assert.strictEqual(sane.timeline.days, 90);
+  ({ rec } = setup({ autopilot: { firstApprovedAt: now, timeline: { days: 1, endsOn: new Date(Date.now() - 1000) } } }));
+  out = await svc.runForTenant(rec.tenantId);
+  assert.strictEqual(out.skipped, "timeline ended");
+  assert.strictEqual(store[0].enabled, false, "campaign stops when its timeline is over");
+  cleanup(rec.tenantId);
+
   // ---- several campaigns: own accounts, own lock and progress, one shared monthly cap
   ({ rec } = setup({ autopilot: { firstApprovedAt: now }, extraCampaigns: 1 }));
   const [c1, c2] = store;

@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { aiUsageAPI, autopilotAPI, socialAPI } from "@/services/api";
 import { AutopilotPosts } from "@/components/social/AutopilotPosts";
 import { PostingPlan } from "@/components/social/autopilot/PostingPlan";
+import { ContentBrief } from "@/components/social/autopilot/ContentBrief";
 import AIUsagePage from "@/pages/AIUsagePage";
 import SocialAutopilotPage from "@/pages/SocialAutopilotPage";
 import SocialAutopilotSetupPage from "@/pages/SocialAutopilotSetupPage";
@@ -101,6 +102,8 @@ const status = (over: any = {}) => ({
     schedule: { days: [], times: [] },
     contentTypes: [],
     lessons: [],
+    brief: { format: "image", slides: 5, goal: "", cta: { type: "none", text: "", link: "", phone: "" }, include: [], instructions: "" },
+    timeline: { days: 0, startsOn: null, endsOn: null },
   },
   contentTypes: ["product", "tips"],
   intro: { text: "", pdfName: "" },
@@ -531,6 +534,29 @@ describe("PostingPlan", () => {
     expect(patch.schedule.times).toEqual(["09:30", "18:00"]);
     expect(patch.contentTypes).not.toContain("tips");
     expect(patch.contentTypes).toContain("product");
+  });
+
+  it("content brief: carousel, include list, CTA and duration are sent together", () => {
+    const onSave = vi.fn();
+    render(<ContentBrief status={status() as any} onSave={onSave} />);
+    expect(screen.getByText("Coming soon")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Carousel/ }));
+    fireEvent.change(screen.getByLabelText(/goal of these posts/), { target: { value: "Get demo bookings" } });
+    fireEvent.change(screen.getByLabelText(/should the posts include/), { target: { value: "free setup" } });
+    fireEvent.keyDown(screen.getByLabelText(/should the posts include/), { key: "Enter" });
+    fireEvent.change(screen.getByLabelText(/Instructions for the AI/), { target: { value: "warm tone" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    const patch = onSave.mock.calls[0][0];
+    expect(patch.brief).toMatchObject({ format: "carousel", slides: 5, goal: "Get demo bookings", include: ["free setup"], instructions: "warm tone" });
+    expect(patch.timeline).toEqual({ days: 0 });
+  });
+
+  it("content brief: a link without http(s) blocks saving", () => {
+    const s = status();
+    s.settings.brief.cta = { type: "book", text: "Book", link: "yoursite.com", phone: "" };
+    render(<ContentBrief status={s as any} onSave={vi.fn()} />);
+    expect(screen.getByText(/must start with http/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
   it("won't save without a day, time or kind of post", () => {
