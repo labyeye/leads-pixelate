@@ -6,6 +6,8 @@ const QuestionSchema = new Schema({
   questionText: { type: String, required: true },
   fieldKey: { type: String, default: "" }, // e.g. 'budget', 'interestedProducts', 'requirement'
   required: { type: Boolean, default: true },
+  // Answer choices the assistant offers ("Under 1 lakh", "1-5 lakh"...). Empty = open-ended answer.
+  options: { type: [String], default: [] },
 });
 
 const AICallSettingsSchema = new Schema(

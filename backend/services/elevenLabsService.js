@@ -13,7 +13,10 @@ function buildAgentPrompt(settings, lead, tenantName) {
     .replace(/{company_name}/g, tenantName || "our company");
 
   const questionsList = settings.questions
-    .map((q, idx) => `${idx + 1}. ${q.questionText}`)
+    .map((q, idx) => {
+      const opts = (q.options || []).filter(Boolean);
+      return `${idx + 1}. ${q.questionText}${opts.length ? ` (offer these choices: ${opts.join(" / ")}; if the client picks one, use it exactly, otherwise note their own words)` : ""}`;
+    })
     .join("\n");
 
   const systemPrompt = `

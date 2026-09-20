@@ -356,7 +356,7 @@ export function LeadDetailPanel({
               variant="outline"
               className="w-full border-2 justify-center gap-1.5 text-blue-900 hover:text-blue-950 hover:bg-blue-50 border-black font-bold text-xs bg-gradient-to-r from-blue-50 to-indigo-50"
               onClick={handleTriggerAICall}
-              disabled={callingAI}
+              disabled // ponytail: coming soon, needs an upgraded ElevenLabs plan; drop this and the badge to re-enable
             >
               {callingAI ? (
                 <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
@@ -364,6 +364,9 @@ export function LeadDetailPanel({
                 <Bot className="w-4 h-4 text-blue-600" />
               )}
               AI Voice Call
+              <span className="ml-1 rounded-full border border-black/30 bg-white px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-black/60">
+                Coming soon
+              </span>
             </Button>
 
             <Button

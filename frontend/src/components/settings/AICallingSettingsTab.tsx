@@ -22,6 +22,7 @@ interface Question {
   questionText: string;
   fieldKey: string;
   required: boolean;
+  options?: string[];
 }
 
 interface AICallSettings {
@@ -324,6 +325,41 @@ export default function AICallingSettingsTab() {
                       <option value="requirement">Requirement</option>
                     </select>
                   </label>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-gray-600">
+                    Answer options <span className="font-normal">(optional: the assistant offers these choices; leave empty for an open answer)</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(q.options || []).map((o, oi) => (
+                      <span key={oi} className="inline-flex items-center gap-1 border-2 border-black bg-white px-2 py-0.5 text-xs font-bold">
+                        {o}
+                        <button
+                          type="button"
+                          aria-label={`Remove option ${o}`}
+                          onClick={() => updateQuestion(idx, "options", (q.options || []).filter((_, k) => k !== oi))}
+                          className="text-red-600"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    aria-label={`Add answer option for question ${idx + 1}`}
+                    placeholder="Type an option and press Enter (e.g. Under 1 lakh)"
+                    className="w-full px-3 py-1.5 border-2 border-black bg-white text-xs font-bold focus:outline-none focus:border-blue-600"
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const v = e.currentTarget.value.trim();
+                      const cur = q.options || [];
+                      if (v && !cur.includes(v) && cur.length < 8) updateQuestion(idx, "options", [...cur, v]);
+                      e.currentTarget.value = "";
+                    }}
+                  />
                 </div>
               </div>
               <button
