@@ -10,7 +10,8 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, "Please add a category"],
-      enum: ["Machines", "Services", "Raw Materials", "Spare Parts"],
+      trim: true,
+      maxlength: [40, "Category is too long (max 40 characters)"],
     },
     price: {
       type: Number,

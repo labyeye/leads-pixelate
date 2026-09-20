@@ -31,6 +31,7 @@ import {
   Bookmark,
   BookmarkPlus,
   Trash2,
+  Users,
 } from "lucide-react";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
 import { cn } from "@/lib/utils";
@@ -1166,7 +1167,6 @@ export default function LeadsPage() {
 
   const STATIC_COLUMNS: { id: string; label: string; alwaysOn?: boolean }[] = [
     { id: "name", label: "Name", alwaysOn: true },
-    { id: "score", label: "Score" },
     { id: "source", label: "Source" },
     { id: "adPlatform", label: "Ad Platform (FB/IG)" },
     { id: "inquiryDate", label: "Inquiry Date" },
@@ -1666,9 +1666,9 @@ export default function LeadsPage() {
                       <img src={imLogo} alt="" className="w-4 h-4 object-contain" />
                       {syncing ? "Syncing IndiaMART..." : "Sync IndiaMART"}
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]/80 pl-8" onSelect={() => setSyncPanelOpen(!syncPanelOpen)}>
+                    {/* <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]/80 pl-8" onSelect={() => setSyncPanelOpen(!syncPanelOpen)}>
                       {syncPanelOpen ? "Hide" : "Show"} IndiaMART sync details
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                   </>
                 )}
                 <DropdownMenuSeparator />
@@ -2228,11 +2228,6 @@ export default function LeadsPage() {
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
                       Name
                     </th>
-                    {isColVisible("score") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                        Score
-                      </th>
-                    )}
                     {isColVisible("source") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest group">
                         <div className="flex items-center gap-1">
@@ -2467,43 +2462,16 @@ export default function LeadsPage() {
                             onClick={() => setSelectedLeadId(l._id || l.id)}
                           >
                             <td className="px-5 py-3.5">
-                              <p className="font-medium text-foreground">
-                                {l.name}
-                              </p>
-                              <p className="text-xs text-black">{l.company}</p>
+                              <div className="flex items-center gap-2.5">
+                                <Users className="w-4 h-4 shrink-0 text-black/60" />
+                                <div className="min-w-0">
+                                  <p className="font-medium text-foreground">
+                                    {l.name}
+                                  </p>
+                                  <p className="text-xs text-black">{l.company}</p>
+                                </div>
+                              </div>
                             </td>
-                            {isColVisible("score") && (
-                              <td className="px-5 py-3.5">
-                                {l.contactTag ? (
-                                  <span
-                                    className={cn(
-                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider whitespace-nowrap",
-                                      l.contactTag === "HOT" &&
-                                        "bg-red-500 text-white border-black",
-                                      l.contactTag === "WARM" &&
-                                        "bg-[#FFDE00] text-black border-black",
-                                      l.contactTag === "COLD" &&
-                                        "bg-[#024BAB] text-white border-black",
-                                    )}
-                                  >
-                                    {l.contactTag === "HOT" && (
-                                      <Flame className="w-3 h-3" />
-                                    )}
-                                    {l.contactTag === "WARM" && (
-                                      <Thermometer className="w-3 h-3" />
-                                    )}
-                                    {l.contactTag === "COLD" && (
-                                      <Snowflake className="w-3 h-3" />
-                                    )}
-                                    {l.contactTag}
-                                  </span>
-                                ) : (
-                                  <span className="text-black/20 text-xs">
-                                    —
-                                  </span>
-                                )}
-                              </td>
-                            )}
                             {isColVisible("source") && (
                               <td className="px-5 py-3.5">
                                 <SourceBadge source={l.source} />

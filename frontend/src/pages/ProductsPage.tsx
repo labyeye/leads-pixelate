@@ -16,12 +16,14 @@ import { productsAPI } from "@/services/api";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   "Machines",
   "Services",
   "Raw Materials",
   "Spare Parts",
-] as const;
+];
+
+const NEW_CATEGORY = "__new__";
 
 const CATEGORY_COLORS: Record<string, string> = {
   Machines: "bg-blue-100 text-blue-800 border-blue-300",
@@ -50,6 +52,7 @@ export default function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...initialForm });
+  const [customCat, setCustomCat] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -72,11 +75,13 @@ export default function ProductsPage() {
   const openAdd = () => {
     setEditId(null);
     setForm({ ...initialForm });
+    setCustomCat(false);
     setModalOpen(true);
   };
 
   const openEdit = (item: any) => {
     setEditId(item._id);
+    setCustomCat(false);
     setForm({
       name: item.name || "",
       category: item.category || "Machines",
@@ -92,6 +97,7 @@ export default function ProductsPage() {
     setModalOpen(false);
     setEditId(null);
     setForm({ ...initialForm });
+    setCustomCat(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,13 +106,17 @@ export default function ProductsPage() {
       notify.error("Product Name is required");
       return;
     }
+    if (!form.category.trim()) {
+      notify.error("Category is required", "Pick one or type a new category name.");
+      return;
+    }
     if (!form.price || Number(form.price) <= 0) {
       notify.error("Invalid Price", "Price must be greater than 0.");
       return;
     }
     try {
       setSaving(true);
-      const payload = { ...form, price: Number(form.price) };
+      const payload = { ...form, category: form.category.trim(), price: Number(form.price) };
       if (editId) {
         await productsAPI.update(editId, payload);
         notify.success("Product Updated", `"${form.name}" has been updated.`);
@@ -139,6 +149,14 @@ export default function ProductsPage() {
       setDeletingId(null);
     }
   };
+
+  // Built-in categories plus any custom one already used on a product.
+  const CATEGORIES = [
+    ...DEFAULT_CATEGORIES,
+    ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))).filter(
+      (c) => !DEFAULT_CATEGORIES.includes(c),
+    ),
+  ];
 
   const filtered = products.filter((p) => {
     const matchSearch =
@@ -412,10 +430,12 @@ export default function ProductsPage() {
                     Category <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={form.category}
-                    onChange={(e) =>
-                      setForm({ ...form, category: e.target.value })
-                    }
+                    value={customCat ? NEW_CATEGORY : form.category}
+                    onChange={(e) => {
+                      const isNew = e.target.value === NEW_CATEGORY;
+                      setCustomCat(isNew);
+                      setForm({ ...form, category: isNew ? "" : e.target.value });
+                    }}
                     className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white cursor-pointer"
                   >
                     {CATEGORIES.map((c) => (
@@ -423,7 +443,18 @@ export default function ProductsPage() {
                         {c}
                       </option>
                     ))}
+                    <option value={NEW_CATEGORY}>+ Add new category…</option>
                   </select>
+                  {customCat && (
+                    <input
+                      autoFocus
+                      maxLength={40}
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                      placeholder="New category name"
+                      className="w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white mt-2"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">

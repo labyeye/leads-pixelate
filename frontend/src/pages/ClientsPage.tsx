@@ -345,7 +345,7 @@ export default function ClientsPage() {
   return (
     <AppLayout title="Clients">
       {}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center  gap-3 mb-5">
         <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input
@@ -531,27 +531,6 @@ export default function ClientsPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <KpiCard
-          title="Total Clients"
-          value={loading ? "—" : clients.length}
-          icon={Building2}
-          bg="bg-[#024BAB]"
-        />
-        <KpiCard
-          title="Active"
-          value={
-            loading
-              ? "—"
-              : clients.filter((c) => c.projectStatus === "Active").length
-          }
-          sub="Ongoing projects"
-          icon={CheckCircle2}
-          bg="bg-[#00C48C]"
-        />
       </div>
 
       {}
