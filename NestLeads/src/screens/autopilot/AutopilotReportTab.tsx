@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {View, Text, ScrollView, RefreshControl, ActivityIndicator, Dimensions, StyleSheet} from 'react-native';
 import {LineChart, PieChart} from 'react-native-gifted-charts';
 import {autopilotAPI} from '../../services/api';
-import {COLORS, RANGES, RangeDays, chartMax, lineData, pctOf, pieData} from '../../lib/autopilot';
+import {COLORS, RANGES, RangeDays, Selection, chartMax, lineData, pctOf, pieData} from '../../lib/autopilot';
 import {Card, Chip, ProgressBar, SectionTitle} from '../../components/autopilot/ui';
 
 const CHART_WIDTH = Dimensions.get('window').width - 32 - 28 - 40;
@@ -19,7 +19,9 @@ function Tile({label, value, hint}: {label: string; value: string | number; hint
 }
 
 // How Autopilot performed over a period: output, outcomes, review loop, platforms and topics.
-export default function AutopilotReportTab() {
+export default function AutopilotReportTab({overview, selection}: {overview: any; selection: Selection}) {
+  const campaignId = selection && selection !== 'all' ? selection : undefined;
+  const scope = campaignId ? overview.campaigns.find((c: any) => c.id === campaignId)?.name : 'All campaigns';
   const [days, setDays] = useState<RangeDays>(30);
   const [stats, setStats] = useState<any>(null);
   const [error, setError] = useState('');
@@ -27,13 +29,13 @@ export default function AutopilotReportTab() {
 
   const load = useCallback(async () => {
     try {
-      const res = await autopilotAPI.stats(days);
+      const res = await autopilotAPI.stats(days, campaignId);
       setStats(res.data);
       setError('');
     } catch (e: any) {
       setError(e.message || 'Could not load the report');
     }
-  }, [days]);
+  }, [days, campaignId]);
 
   useEffect(() => {
     setStats(null);
@@ -59,6 +61,7 @@ export default function AutopilotReportTab() {
           tintColor="#024BAB"
         />
       }>
+      <Text style={s.scope}>{scope}</Text>
       <View style={s.chips}>
         {RANGES.map(d => (
           <Chip key={d} label={`${d} days`} active={days === d} onPress={() => setDays(d)} />
@@ -79,6 +82,20 @@ export default function AutopilotReportTab() {
             <Tile label="Rejected" value={t.rejected} hint={`${pctOf(t.rejected, t.generated)} of created`} />
             <Tile label="Failed to post" value={t.failed} hint={t.failed ? 'check Connected Accounts' : 'none'} />
           </View>
+
+          {!campaignId && stats.byCampaign?.length ? (
+            <Card style={{marginTop: 14}}>
+              <SectionTitle title="By campaign" />
+              {stats.byCampaign.map((c: any) => (
+                <View key={c.campaignId} style={s.cmpRow}>
+                  <Text style={[s.legendText, {flex: 1, fontWeight: '800', color: '#000'}]} numberOfLines={1}>{c.name}</Text>
+                  <Text style={s.cmpNum}>{c.generated} made</Text>
+                  <Text style={s.cmpNum}>{c.posted} posted</Text>
+                  <Text style={s.cmpNum}>{pctOf(c.posted, c.generated)}</Text>
+                </View>
+              ))}
+            </Card>
+          ) : null}
 
           <Card style={{marginTop: 14}}>
             <SectionTitle title="Activity" />
@@ -182,6 +199,9 @@ export default function AutopilotReportTab() {
 }
 
 const s = StyleSheet.create({
+  scope: {fontSize: 16, fontWeight: '900', color: '#000', marginBottom: 6},
+  cmpRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
+  cmpNum: {fontSize: 12, color: '#334155', marginLeft: 10, minWidth: 54, textAlign: 'right'},
   chips: {flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6},
   tiles: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
   tile: {flexBasis: '47%', flexGrow: 1, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12},

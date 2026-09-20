@@ -61,7 +61,8 @@ async function resolveAgentPhoneNumberId(apiKey, agentId) {
     );
   }
   const n = numbers.find((x) => x.assigned_agent?.agent_id === agentId) || numbers[0];
-  return { id: n.phone_number_id, sip: n.provider === "sip_trunk" };
+  // provider: "twilio" | "sip_trunk" | "exotel" -> matching outbound-call endpoint
+  return { id: n.phone_number_id, route: n.provider === "sip_trunk" ? "sip-trunk" : n.provider === "exotel" ? "exotel" : "twilio" };
 }
 
 /**
@@ -84,7 +85,7 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
   // Twilio needs E.164; leads store bare 10-digit Indian numbers
   const digits = String(lead.phone).replace(/\D/g, "");
   const toNumber = `+${digits.length === 10 ? `91${digits}` : digits}`;
-  const { id: agentPhoneNumberId, sip } = await resolveAgentPhoneNumberId(apiKey, agentId);
+  const { id: agentPhoneNumberId, route } = await resolveAgentPhoneNumberId(apiKey, agentId);
 
   // Get Tenant Name
   let tenantName = "NestLeads";
@@ -113,7 +114,7 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
 
   try {
     // Prompt/first_message overrides must be enabled in the agent's Security tab on ElevenLabs
-    const response = await fetch(`${ELEVENLABS_API}/${sip ? "sip-trunk" : "twilio"}/outbound-call`, {
+    const response = await fetch(`${ELEVENLABS_API}/${route}/outbound-call`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

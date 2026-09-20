@@ -6,8 +6,8 @@ import {
 import {LineChart} from 'react-native-gifted-charts';
 import {aiUsageAPI, autopilotAPI, socialAPI} from '../../services/api';
 import {
-  COLORS, RANGES, RangeDays, HISTORY, POST_STATUS, UPCOMING,
-  chartMax, lineData, sortQueue, statePill, usageColor, usagePct,
+  COLORS, RANGES, RangeDays, HISTORY, POST_STATUS, Selection, UPCOMING,
+  campaignPill, chartMax, lineData, sortQueue, usageColor, usagePct,
 } from '../../lib/autopilot';
 import {Card, Chip, Kpi, Pill, PrimaryButton, ProgressBar, SectionTitle} from '../../components/autopilot/ui';
 import ReviewModal from '../../components/autopilot/ReviewModal';
@@ -17,16 +17,30 @@ const CHART_WIDTH = Dimensions.get('window').width - 32 - 28 - 40;
 const when = (d: string) =>
   new Date(d).toLocaleString('en-IN', {weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit'});
 
-// Home of Autopilot: what it did, what needs the owner, plan usage and the queue.
+// Home of Autopilot: what it did, what needs the owner, plan usage and the queue, for one
+// campaign or all of them together.
 export default function AutopilotDashboardTab({
+  overview,
+  selection,
   status,
+  reloadOverview,
   reloadStatus,
   onGoSetup,
+  onSelect,
+  onNew,
 }: {
+  overview: any;
+  selection: Selection;
   status: any;
+  reloadOverview: () => Promise<any>;
   reloadStatus: () => Promise<any>;
   onGoSetup: () => void;
+  onSelect: (id: string) => void;
+  onNew: () => void;
 }) {
+  const all = selection === 'all';
+  const campaignId = selection && !all ? selection : undefined;
+  const campaigns: any[] = overview.campaigns;
   const [days, setDays] = useState<RangeDays>(30);
   const [stats, setStats] = useState<any>(null);
   const [usage, setUsage] = useState<any>(null);
@@ -34,16 +48,21 @@ export default function AutopilotDashboardTab({
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [changing, setChanging] = useState<any | null>(null);
-  const [toggling, setToggling] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
-    const [st, po] = await Promise.allSettled([autopilotAPI.stats(days), socialAPI.getPosts({source: 'autopilot'})]);
+    const [st, po] = await Promise.allSettled([
+      autopilotAPI.stats(days, campaignId),
+      socialAPI.getPosts({source: 'autopilot', ...(campaignId ? {campaignId} : {})}),
+    ]);
     if (st.status === 'fulfilled') setStats(st.value.data);
     if (po.status === 'fulfilled') setPosts(po.value.data);
-  }, [days]);
+  }, [days, campaignId]);
 
   useEffect(() => {
+    setStats(null);
+    setPosts(null);
     load();
     const t = setInterval(load, 15_000);
     return () => clearInterval(t);
@@ -55,28 +74,46 @@ export default function AutopilotDashboardTab({
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([load(), reloadStatus()]);
+    await Promise.all([load(), reloadOverview(), reloadStatus()]);
     setRefreshing(false);
   };
 
-  if (status.onboarded === false) {
+  if (!campaigns.length) {
     return (
       <View style={{padding: 16}}>
         <Card>
-          <SectionTitle title="Let's set up your Autopilot" sub="Tell us about your brand, scan your profile, add logos and pick when to post." />
+          <SectionTitle title="Create your first campaign" sub="A campaign is one brand or set of accounts, with its own setup." />
+          <PrimaryButton label="New campaign" onPress={onNew} />
+        </Card>
+      </View>
+    );
+  }
+  if (!all && !status) {
+    return (
+      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+        <ActivityIndicator size="large" color="#024BAB" />
+      </View>
+    );
+  }
+  if (status && status.onboarded === false && !all) {
+    return (
+      <View style={{padding: 16}}>
+        <Card>
+          <SectionTitle title="Let's set up this campaign" sub="Tell us about the brand, scan the profile, add logos and pick when to post." />
           <PrimaryButton label="Start setup" onPress={onGoSetup} />
         </Card>
       </View>
     );
   }
 
-  const ent = status.entitlement;
-  const enabled = status.settings.enabled;
+  const ent = status?.entitlement ?? overview.entitlement;
+  const enabled = !!status?.settings.enabled;
   const entitled = ent.state === 'trial' || ent.state === 'paid';
-  const pill = statePill(status);
+  const pill = campaignPill(enabled, ent);
   const t = stats?.totals;
   const meter = usage?.autopilot;
   const pct = meter ? usagePct(meter.used, meter.limit) : 0;
+  const canAdd = campaigns.length < overview.limits.campaigns;
 
   const act = async (id: string, fn: () => Promise<unknown>) => {
     setBusy(id);
@@ -90,22 +127,23 @@ export default function AutopilotDashboardTab({
     }
   };
 
-  const toggle = async (on: boolean) => {
-    setToggling(true);
+  const setEnabledFor = async (id: string, on: boolean) => {
+    setToggling(id);
     try {
-      await autopilotAPI.update({enabled: on});
-      await Promise.all([reloadStatus(), load()]);
+      await autopilotAPI.campaign(id).update({enabled: on});
+      await Promise.all([reloadOverview(), reloadStatus(), load()]);
     } catch (e: any) {
       Alert.alert('Failed', e.message);
     } finally {
-      setToggling(false);
+      setToggling(null);
     }
   };
 
   const runNow = async () => {
+    if (!campaignId) return;
     setStarting(true);
     try {
-      await autopilotAPI.run();
+      await autopilotAPI.campaign(campaignId).run();
       Alert.alert('Started', 'Autopilot is creating a post. It shows up in the queue in a minute or two.');
       await reloadStatus();
     } catch (e: any) {
@@ -120,6 +158,7 @@ export default function AutopilotDashboardTab({
     .filter(p => HISTORY.includes(p.status))
     .sort((a, b) => +new Date(b.scheduledAt) - +new Date(a.scheduledAt))
     .slice(0, 5);
+  const nameOf = (id?: string | null) => campaigns.find(c => c.id === id)?.name;
 
   const renderPost = (p: any) => {
     const st = POST_STATUS[p.status];
@@ -130,6 +169,7 @@ export default function AutopilotDashboardTab({
           {p.imageUrl ? <Image source={{uri: p.imageUrl}} style={s.thumb} /> : null}
           <View style={{flex: 1, marginLeft: p.imageUrl ? 10 : 0}}>
             <View style={s.postMeta}>
+              {all && nameOf(p.campaignId) ? <Text style={s.campaignName}>{nameOf(p.campaignId)}</Text> : null}
               <Text style={s.postWhen}>{when(p.scheduledAt)}</Text>
               {st ? <Pill text={st.label} bg={st.bg} fg={st.fg} /> : null}
             </View>
@@ -145,19 +185,13 @@ export default function AutopilotDashboardTab({
             </View>
           ) : (
             <View style={s.actions}>
-              <TouchableOpacity
-                style={[s.act, {backgroundColor: '#22c55e'}]}
-                disabled={busy === p._id}
-                onPress={() => act(p._id, () => socialAPI.approvePost(p._id))}>
+              <TouchableOpacity style={[s.act, {backgroundColor: '#22c55e'}]} disabled={busy === p._id} onPress={() => act(p._id, () => socialAPI.approvePost(p._id))}>
                 <Text style={s.actText}>Approve</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[s.act, {backgroundColor: '#fff'}]} disabled={busy === p._id} onPress={() => setChanging(p)}>
                 <Text style={[s.actText, {color: '#000'}]}>Request changes</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.act, {backgroundColor: '#fff'}]}
-                disabled={busy === p._id}
-                onPress={() => act(p._id, () => socialAPI.rejectPost(p._id, 'Rejected from Autopilot'))}>
+              <TouchableOpacity style={[s.act, {backgroundColor: '#fff'}]} disabled={busy === p._id} onPress={() => act(p._id, () => socialAPI.rejectPost(p._id, 'Rejected from Autopilot'))}>
                 <Text style={[s.actText, {color: '#b91c1c'}]}>Reject</Text>
               </TouchableOpacity>
             </View>
@@ -171,43 +205,78 @@ export default function AutopilotDashboardTab({
       <ScrollView
         contentContainerStyle={{padding: 16, paddingBottom: 40}}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor="#024BAB" />}>
-        {/* status strip */}
-        <Card>
-          <View style={s.strip}>
-            <Pill text={pill.text} bg={pill.bg} fg={pill.fg} />
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Text style={s.onOff}>{enabled ? 'On' : 'Off'}</Text>
-              <Switch
-                accessibilityLabel="Autopilot on or off"
-                value={enabled}
-                disabled={toggling || (ent.state === 'expired' && !enabled)}
-                onValueChange={toggle}
-              />
+        {all ? (
+          <>
+            <Card>
+              <Text style={s.stripText}>
+                {campaigns.length} campaigns · {campaigns.filter(c => c.enabled).length} running. The plan's monthly posts are shared by all of them.
+              </Text>
+              {canAdd ? (
+                <View style={{marginTop: 10}}>
+                  <PrimaryButton label="New campaign" outline onPress={onNew} />
+                </View>
+              ) : null}
+            </Card>
+            {campaigns.map(c => {
+              const cp = c.onboarded ? campaignPill(c.enabled, overview.entitlement) : {text: 'Setup needed', bg: '#ffedd5', fg: '#9a3412'};
+              return (
+                <Card key={c.id} style={{marginBottom: 10}}>
+                  <View style={s.strip}>
+                    <TouchableOpacity onPress={() => onSelect(c.id)} style={{flex: 1}}>
+                      <Text style={s.cardName}>{c.name}</Text>
+                    </TouchableOpacity>
+                    {c.onboarded ? (
+                      <Switch accessibilityLabel={`${c.name} on or off`} value={c.enabled} disabled={toggling === c.id} onValueChange={on => setEnabledFor(c.id, on)} />
+                    ) : null}
+                  </View>
+                  <View style={{flexDirection: 'row', marginTop: 6}}>
+                    <Pill text={cp.text} bg={cp.bg} fg={cp.fg} />
+                  </View>
+                  <Text style={s.muted}>
+                    {c.accountIds.length} account{c.accountIds.length === 1 ? '' : 's'} · {c.monthPosts} post{c.monthPosts === 1 ? '' : 's'} this month
+                    {c.running ? ' · creating a post…' : ''}
+                  </Text>
+                  {c.lastError && !c.running ? <Text style={s.fail}>Last run failed: {c.lastError}</Text> : null}
+                </Card>
+              );
+            })}
+          </>
+        ) : (
+          <Card>
+            <View style={s.strip}>
+              <Pill text={pill.text} bg={pill.bg} fg={pill.fg} />
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Text style={s.onOff}>{enabled ? 'On' : 'Off'}</Text>
+                <Switch
+                  accessibilityLabel="Autopilot on or off"
+                  value={enabled}
+                  disabled={toggling === campaignId || (ent.state === 'expired' && !enabled)}
+                  onValueChange={on => setEnabledFor(campaignId as string, on)}
+                />
+              </View>
             </View>
-          </View>
-          <Text style={s.stripText}>
-            {status.running
-              ? 'Creating your next post…'
-              : stats?.next
-                ? `Next: ${when(stats.next.scheduledAt)} · ${stats.next.status === 'PENDING_APPROVAL' ? 'needs your approval' : 'scheduled'}`
-                : enabled
-                  ? 'Nothing scheduled yet. New posts are prepared a day ahead.'
-                  : 'Turn Autopilot on to start creating posts.'}
-          </Text>
-          {enabled && entitled ? (
-            <View style={{marginTop: 10}}>
-              <PrimaryButton label={starting || status.running ? 'Working…' : 'Create a post now'} outline onPress={runNow} disabled={starting || status.running} />
-            </View>
-          ) : null}
-          {status.lastError && !status.running ? (
-            <Text style={s.fail}>Last run failed: {status.lastError}. It retries on its own.</Text>
-          ) : null}
-        </Card>
+            <Text style={s.stripText}>
+              {status.running
+                ? 'Creating your next post…'
+                : stats?.next
+                  ? `Next: ${when(stats.next.scheduledAt)} · ${stats.next.status === 'PENDING_APPROVAL' ? 'needs your approval' : 'scheduled'}`
+                  : enabled
+                    ? 'Nothing scheduled yet. New posts are prepared a day ahead.'
+                    : 'Turn this campaign on to start creating posts.'}
+            </Text>
+            {enabled && entitled ? (
+              <View style={{marginTop: 10}}>
+                <PrimaryButton label={starting || status.running ? 'Working…' : 'Create a post now'} outline onPress={runNow} disabled={starting || status.running} />
+              </View>
+            ) : null}
+            {status.lastError && !status.running ? (
+              <Text style={s.fail}>Last run failed: {status.lastError}. It retries on its own.</Text>
+            ) : null}
+          </Card>
+        )}
 
         {/* numbers */}
-        <View style={s.rowBetween}>
-          <Text style={s.h2}>Overview</Text>
-        </View>
+        <Text style={s.h2}>Overview</Text>
         <View style={s.chips}>
           {RANGES.map(r => (
             <Chip key={r} label={`${r} days`} active={days === r} onPress={() => setDays(r)} />
@@ -235,9 +304,6 @@ export default function AutopilotDashboardTab({
                 color3={COLORS.rejected}
                 thickness={2}
                 hideDataPoints={stats.series.length > 14}
-                dataPointsColor1={COLORS.generated}
-                dataPointsColor2={COLORS.posted}
-                dataPointsColor3={COLORS.rejected}
                 maxValue={chartMax(stats.series)}
                 noOfSections={3}
                 width={CHART_WIDTH}
@@ -271,7 +337,8 @@ export default function AutopilotDashboardTab({
               </Text>
               <ProgressBar pct={pct} color={usageColor(pct)} />
               <Text style={s.muted}>
-                Up to {meter.daysPerWeek} posting day{meter.daysPerWeek === 1 ? '' : 's'} a week on your plan.
+                Shared by all campaigns. Up to {meter.daysPerWeek} posting day{meter.daysPerWeek === 1 ? '' : 's'} a week per campaign
+                {meter.campaigns ? `, ${meter.campaigns.used} of ${meter.campaigns.limit} campaigns used` : ''}.
               </Text>
             </>
           ) : (
@@ -326,8 +393,8 @@ const s = StyleSheet.create({
   strip: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
   onOff: {fontSize: 13, fontWeight: '800', marginRight: 6, color: '#000'},
   stripText: {fontSize: 13, color: '#334155', marginTop: 8},
+  cardName: {fontSize: 16, fontWeight: '900', color: '#000'},
   h2: {fontSize: 18, fontWeight: '900', color: '#000', marginBottom: 8, marginTop: 4},
-  rowBetween: {flexDirection: 'row', justifyContent: 'space-between'},
   chips: {flexDirection: 'row', flexWrap: 'wrap'},
   kpis: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
   legend: {flexDirection: 'row', marginTop: 8},
@@ -338,6 +405,7 @@ const s = StyleSheet.create({
   thumb: {width: 64, height: 80, borderWidth: 1, borderColor: '#000', backgroundColor: '#e2e8f0'},
   postMeta: {flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 4},
   postWhen: {fontSize: 11, color: '#64748b', marginRight: 4},
+  campaignName: {fontSize: 11, fontWeight: '800', color: '#000'},
   caption: {fontSize: 13, color: '#000'},
   fail: {fontSize: 11, color: '#b91c1c', marginTop: 4},
   actions: {flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10},
