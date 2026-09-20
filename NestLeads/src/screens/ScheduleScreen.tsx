@@ -15,9 +15,16 @@ const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shado
 const DAYS   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-export default function FollowupCalendarScreen({navigation}: any) {
+type Mode = 'followup' | 'visit';
+const MODES: Record<Mode, {field: string; label: string; plural: string; icon: string; accent: string}> = {
+  followup: {field: 'followUpDate',       label: 'Follow-ups', plural: 'follow-ups', icon: 'calendar-outline', accent: PRIMARY},
+  visit:    {field: 'visitScheduledDate', label: 'Visits',     plural: 'visits',     icon: 'business-outline', accent: SECONDARY},
+};
+
+export default function ScheduleScreen({navigation}: any) {
   const insets = useSafeAreaInsets();
-  const [leads, setLeads]   = useState<any[]>([]);
+  const [allLeads, setAllLeads] = useState<any[]>([]);
+  const [mode, setMode]       = useState<Mode>('followup');
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -26,11 +33,14 @@ export default function FollowupCalendarScreen({navigation}: any) {
     (async () => {
       try {
         const res = await leadsAPI.getAll();
-        setLeads((res.data || []).filter((l: any) => !!l.followUpDate));
+        setAllLeads(res.data || []);
       } catch (e: any) { Alert.alert('Error', e.message); }
       finally { setLoading(false); }
     })();
   }, []);
+
+  const {field, plural, icon, accent} = MODES[mode];
+  const leads = useMemo(() => allLeads.filter(l => !!l[field]), [allLeads, field]);
 
   const year  = current.getFullYear();
   const month = current.getMonth();
@@ -43,18 +53,18 @@ export default function FollowupCalendarScreen({navigation}: any) {
   const dateKey = (d: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-  const followupMap = useMemo(() => {
+  const dayMap = useMemo(() => {
     const map: Record<string, any[]> = {};
     leads.forEach(l => {
-      const d = l.followUpDate?.slice(0, 10);
+      const d = l[field]?.slice(0, 10);
       if (d) { if (!map[d]) map[d] = []; map[d].push(l); }
     });
     return map;
   }, [leads]);
 
   const todayStr     = new Date().toISOString().slice(0, 10);
-  const selectedLeads = selectedDate ? (followupMap[selectedDate] || []) : [];
-  const totalThisMonth = Object.keys(followupMap).filter(d => d.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)).reduce((a, d) => a + followupMap[d].length, 0);
+  const selectedLeads = selectedDate ? (dayMap[selectedDate] || []) : [];
+  const totalThisMonth = Object.keys(dayMap).filter(d => d.startsWith(`${year}-${String(month+1).padStart(2,'0')}`)).reduce((a, d) => a + dayMap[d].length, 0);
 
   const goToLead = (leadId: string) =>
     navigation.navigate('LeadsStack', {screen: 'LeadDetail', params: {leadId}});
@@ -69,15 +79,27 @@ export default function FollowupCalendarScreen({navigation}: any) {
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
         <View style={{flex: 1}}>
-          <Text style={styles.headerTitle}>Follow-up Calendar</Text>
-          <Text style={styles.headerSub}>{leads.length} follow-ups total</Text>
+          <Text style={styles.headerTitle}>Schedule</Text>
+          <Text style={styles.headerSub}>{leads.length} {plural} total</Text>
         </View>
-        <View style={styles.headerBadge}>
-          <Icon name="calendar-outline" size={13} color="#fff" />
+        <View style={[styles.headerBadge, {backgroundColor: accent}]}>
+          <Icon name={icon} size={13} color="#fff" />
           <Text style={styles.headerBadgeText}>{totalThisMonth} this month</Text>
         </View>
       </View>
       <View style={styles.divider} />
+
+      <View style={styles.toggle}>
+        {(Object.keys(MODES) as Mode[]).map(m => (
+          <TouchableOpacity
+            key={m}
+            style={[styles.toggleBtn, mode === m && {backgroundColor: MODES[m].accent}]}
+            onPress={() => { setMode(m); setSelectedDate(null); }}>
+            <Icon name={MODES[m].icon} size={14} color={mode === m ? '#fff' : '#000'} />
+            <Text style={[styles.toggleText, mode === m && {color: '#fff'}]}>{MODES[m].label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {loading ? (
         <View style={styles.centerBox}><ActivityIndicator size="large" color={PRIMARY} /></View>
@@ -115,7 +137,7 @@ export default function FollowupCalendarScreen({navigation}: any) {
               {cells.map((day, i) => {
                 if (!day) return <View key={i} style={styles.dayCell} />;
                 const key      = dateKey(day);
-                const count    = followupMap[key]?.length || 0;
+                const count    = dayMap[key]?.length || 0;
                 const isToday  = key === todayStr;
                 const isSelected = key === selectedDate;
                 const isPast   = key < todayStr;
@@ -127,7 +149,7 @@ export default function FollowupCalendarScreen({navigation}: any) {
                       styles.dayCell,
                       isWeekend && !isSelected && styles.dayCellWeekend,
                       isToday && styles.dayCellToday,
-                      isSelected && styles.dayCellSelected,
+                      isSelected && [styles.dayCellSelected, {backgroundColor: accent}],
                       isPast && !isToday && !isSelected && styles.dayCellPast,
                     ]}
                     onPress={() => setSelectedDate(isSelected ? null : key)}>
@@ -159,7 +181,7 @@ export default function FollowupCalendarScreen({navigation}: any) {
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, {backgroundColor: SECONDARY}]} />
-              <Text style={styles.legendText}>Has follow-ups</Text>
+              <Text style={styles.legendText}>Has {plural}</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, {backgroundColor: '#94a3b8'}]} />
@@ -171,13 +193,13 @@ export default function FollowupCalendarScreen({navigation}: any) {
           {selectedDate && (
             <View style={styles.panel}>
               <View style={styles.panelHeader}>
-                <View style={[styles.panelIconBox, {backgroundColor: PRIMARY}]}>
-                  <Icon name="calendar-outline" size={14} color="#fff" />
+                <View style={[styles.panelIconBox, {backgroundColor: accent}]}>
+                  <Icon name={icon} size={14} color="#fff" />
                 </View>
                 <Text style={styles.panelTitle}>
                   {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {weekday: 'long', day: 'numeric', month: 'long'})}
                 </Text>
-                <View style={styles.panelBadge}>
+                <View style={[styles.panelBadge, {backgroundColor: accent}]}>
                   <Text style={styles.panelBadgeText}>{selectedLeads.length}</Text>
                 </View>
               </View>
@@ -185,19 +207,27 @@ export default function FollowupCalendarScreen({navigation}: any) {
               {selectedLeads.length === 0 ? (
                 <View style={styles.emptyPanel}>
                   <Icon name="checkmark-circle-outline" size={28} color="#22c55e" />
-                  <Text style={styles.emptyPanelText}>No follow-ups this day</Text>
+                  <Text style={styles.emptyPanelText}>No {plural} this day</Text>
                 </View>
               ) : (
                 selectedLeads.map((l: any, idx: number) => {
                   const sc = getStatusColor(l.status);
+                  const time = new Date(l[field]).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit'});
                   return (
                     <TouchableOpacity key={l._id} style={styles.leadCard} onPress={() => goToLead(l._id)} activeOpacity={0.75}>
-                      <UserAvatar
-                        name={l.assignedTo?.name || l.name}
-                        avatar={l.assignedTo?.avatar}
-                        size={38}
-                        index={idx}
-                      />
+                      {mode === 'visit' ? (
+                        <View style={[styles.timeBox, {backgroundColor: idx % 2 === 0 ? PRIMARY : SECONDARY}]}>
+                          <Icon name="time-outline" size={11} color="#fff" />
+                          <Text style={styles.timeText}>{time}</Text>
+                        </View>
+                      ) : (
+                        <UserAvatar
+                          name={l.assignedTo?.name || l.name}
+                          avatar={l.assignedTo?.avatar}
+                          size={38}
+                          index={idx}
+                        />
+                      )}
                       <View style={styles.leadInfo}>
                         <Text style={styles.leadName} numberOfLines={1}>{l.name}</Text>
                         <Text style={styles.leadSub} numberOfLines={1}>{l.company || l.phone || '—'}</Text>
@@ -241,6 +271,9 @@ const styles = StyleSheet.create({
   headerBadge: {flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: PRIMARY, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 2, borderColor: '#000'},
   headerBadgeText: {fontSize: 11, fontWeight: '700', color: '#fff'},
   divider: {height: 2, backgroundColor: '#000'},
+  toggle: {flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
+  toggleBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff'},
+  toggleText: {fontSize: 12, fontWeight: '900', color: '#000', textTransform: 'uppercase'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
   monthNav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
@@ -287,8 +320,8 @@ const styles = StyleSheet.create({
   emptyPanelText: {fontSize: 13, color: '#64748b', fontWeight: '600'},
 
   leadCard: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  leadAvatar: {width: 38, height: 38, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  leadAvatarText: {fontSize: 15, fontWeight: '900', color: '#fff'},
+  timeBox: {width: 44, height: 44, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 2},
+  timeText: {fontSize: 9, fontWeight: '900', color: '#fff'},
   leadInfo: {flex: 1},
   leadName: {fontSize: 13, fontWeight: '900', color: '#000'},
   leadSub: {fontSize: 11, color: '#64748b', marginTop: 1},

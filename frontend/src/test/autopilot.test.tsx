@@ -1,35 +1,51 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { aiUsageAPI, autopilotAPI, socialAPI } from "@/services/api";
-import { AutopilotPanel } from "@/components/social/AutopilotPanel";
 import { AutopilotPosts } from "@/components/social/AutopilotPosts";
 import { PostingPlan } from "@/components/social/autopilot/PostingPlan";
 import AIUsagePage from "@/pages/AIUsagePage";
 import SocialAutopilotPage from "@/pages/SocialAutopilotPage";
 import SocialAutopilotSetupPage from "@/pages/SocialAutopilotSetupPage";
 import SocialAutopilotReportPage from "@/pages/SocialAutopilotReportPage";
-import { scanTarget, SCAN_STEPS } from "@/components/social/autopilot/ScanAnimation";
+import { scanTarget, SCAN_STEPS, scanSteps } from "@/components/social/autopilot/ScanAnimation";
 import { genIndex } from "@/components/social/autopilot/GenerationProgress";
 
-vi.mock("@/services/api", () => ({
-  autopilotAPI: {
+// One campaign's API (autopilotAPI.campaign(id)) is a single set of mocks the tests can inspect.
+const { scoped } = vi.hoisted(() => ({
+  scoped: {
     get: vi.fn(),
     update: vi.fn(),
+    remove: vi.fn(),
     run: vi.fn(),
     analyze: vi.fn(),
     saveBrandProfile: vi.fn(),
     saveBrand: vi.fn(),
-    uploadLogo: vi.fn(),
-    deleteLogo: vi.fn(),
     saveIntro: vi.fn(),
     deleteIntroPdf: vi.fn(),
-    revisePost: vi.fn(),
+    uploadLogo: vi.fn(),
+    deleteLogo: vi.fn(),
+    addCompetitor: vi.fn(),
+    deleteCompetitor: vi.fn(),
+    uploadReference: vi.fn(),
+    deleteReference: vi.fn(),
+  },
+}));
+vi.mock("@/services/api", () => ({
+  autopilotAPI: {
+    overview: vi.fn(),
+    createCampaign: vi.fn(),
+    campaign: vi.fn(() => scoped),
     stats: vi.fn(),
+    revisePost: vi.fn(),
   },
   aiUsageAPI: { get: vi.fn() },
   socialAPI: { getPosts: vi.fn(), approvePost: vi.fn(), rejectPost: vi.fn(), deletePost: vi.fn() },
 }));
+
+let role = "admin";
+vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { role } }) }));
+vi.mock("@/components/layout/AppLayout", () => ({ AppLayout: ({ children }: any) => <div>{children}</div> }));
 
 // recharts measures its container with ResizeObserver, which jsdom does not have
 (globalThis as any).ResizeObserver ??= class {
@@ -38,15 +54,40 @@ vi.mock("@/services/api", () => ({
   disconnect() {}
 };
 
-let role = "admin";
-vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ user: { role } }) }));
-vi.mock("@/components/layout/AppLayout", () => ({ AppLayout: ({ children }: any) => <div>{children}</div> }));
-
 const inDays = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString();
+const accounts = [
+  { _id: "a1", platform: "instagram", accountName: "ig-account", campaign: null },
+  { _id: "a2", platform: "facebook", accountName: "fb-page", campaign: { id: "c2", name: "Cafe" } },
+];
+const summary = (id: string, name: string, over: any = {}) => ({
+  id,
+  name,
+  enabled: true,
+  accountIds: [],
+  onboarded: true,
+  running: false,
+  lastError: "",
+  monthPosts: 3,
+  ...over,
+});
+const overview = (over: any = {}) => ({
+  configured: true,
+  trialDays: 3,
+  entitlement: { state: "trial", endsAt: inDays(2) },
+  plan: "",
+  limits: { plan: "growth", daysPerWeek: 3, monthlyPosts: 14, campaigns: 3 },
+  monthCount: 3,
+  monthlyCap: 14,
+  campaigns: [summary("c1", "Bakery")],
+  accounts,
+  ...over,
+});
+// One campaign's full state, as GET /autopilot/campaigns/:id returns it.
 const status = (over: any = {}) => ({
+  campaign: { id: "c1", name: "Bakery" },
   configured: true,
   plan: "",
-  limits: { plan: "growth", daysPerWeek: 3, monthlyPosts: 14 },
+  limits: { plan: "growth", daysPerWeek: 3, monthlyPosts: 14, campaigns: 3 },
   trialDays: 3,
   entitlement: { state: "trial", endsAt: inDays(2) },
   settings: {
@@ -56,7 +97,7 @@ const status = (over: any = {}) => ({
     language: "English",
     notes: "",
     reviewFirst: false,
-    accountIds: [],
+    accountIds: ["a1"],
     schedule: { days: [], times: [] },
     contentTypes: [],
     lessons: [],
@@ -80,66 +121,85 @@ const status = (over: any = {}) => ({
     doList: [],
     avoidList: [],
     palette: [],
+    competitive: { positioning: "", whatTheyDoWell: [], gapsToExploit: [] },
   },
   brandKit: { logos: [], logoId: "", logoEnabled: true, logoMode: "fixed", logoPosition: "bottom-right", colors: [] },
+  competitors: [],
+  references: [],
   lastRunAt: null,
   lastError: "",
   monthCount: 3,
-  monthlyCap: 62,
-  accounts: [{ _id: "a1", platform: "instagram", accountName: "ig-account" }],
+  campaignMonthCount: 3,
+  monthlyCap: 14,
+  accounts,
+  ...over,
+});
+const statsData = (over: any = {}) => ({
+  range: { days: 30, since: inDays(-29) },
+  totals: { generated: 12, posted: 7, pending: 2, scheduled: 1, rejected: 1, failed: 1, other: 0 },
+  rates: { approvalRate: 88, avgApprovalHours: 3.5, revisedPosts: 2, revisions: 3 },
+  series: [
+    { date: "2026-09-19", generated: 1, posted: 1, rejected: 0 },
+    { date: "2026-09-20", generated: 2, posted: 0, rejected: 1 },
+  ],
+  platforms: [{ platform: "instagram", count: 9 }, { platform: "facebook", count: 3 }],
+  topics: [{ topic: "Sourdough basics", count: 3 }],
+  byCampaign: [],
+  next: { scheduledAt: inDays(1), status: "PENDING_APPROVAL", caption: "hi", platforms: ["instagram"] },
   ...over,
 });
 const toast = vi.fn();
-const mockStatus = (over?: any) => vi.mocked(autopilotAPI.get).mockResolvedValue({ success: true, data: status(over) });
+const mockOverview = (over?: any) => vi.mocked(autopilotAPI.overview).mockResolvedValue({ success: true, data: overview(over) } as any);
+const mockStatus = (over?: any) => scoped.get.mockResolvedValue({ success: true, data: status(over) });
+const mockStats = (over?: any) => vi.mocked(autopilotAPI.stats).mockResolvedValue({ success: true, data: statsData(over) } as any);
+const noPosts = () => vi.mocked(socialAPI.getPosts).mockResolvedValue({ success: true, count: 0, data: [] });
 
 beforeEach(() => {
   vi.clearAllMocks();
   role = "admin";
+  vi.mocked(autopilotAPI.campaign).mockReturnValue(scoped as any);
+  mockOverview();
+  mockStatus();
+  mockStats();
+  noPosts();
+  vi.mocked(aiUsageAPI.get).mockResolvedValue({
+    success: true,
+    data: {
+      plan: { id: "growth", expiresAt: inDays(20) },
+      month: { start: inDays(-10), resetsAt: inDays(20) },
+      autopilot: { used: 5, limit: 14, daysPerWeek: 3, campaigns: { used: 1, limit: 3 }, enabled: true, state: "paid", endsAt: inDays(20) },
+      aiCalls: { used: 0, limit: 500 },
+      leads: { used: 0, limit: 10000 },
+      team: { used: 1, limit: 50 },
+    },
+  } as any);
 });
 
-describe("AutopilotPanel", () => {
-  it("shows the trial countdown, price and month usage", async () => {
-    mockStatus();
-    render(<MemoryRouter><AutopilotPanel toast={toast} /></MemoryRouter>);
-    expect(await screen.findByText(/Free trial — 2 day\(s\) left/)).toBeInTheDocument();
-    expect(screen.getByText(/Autopilot is included in your NestLeads plan/)).toBeInTheDocument();
-    expect(screen.getByText(/3 \/ 62 posts generated this month/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Choose a plan/ })).toHaveAttribute("href", "/billing");
-  });
-
-  it("expired trial asks to subscribe and won't let a paused Autopilot be switched on", async () => {
-    mockStatus({ entitlement: { state: "expired", endsAt: null }, settings: { ...status().settings, enabled: false } });
-    render(<MemoryRouter><AutopilotPanel toast={toast} /></MemoryRouter>);
-    expect(await screen.findByText(/access has ended/)).toBeInTheDocument();
-    expect(screen.getByText(/Choose a NestLeads plan/)).toBeInTheDocument();
-    expect(screen.getAllByRole("switch")[0]).toBeDisabled();
-  });
-
-  it("warns when the server has no API keys and blocks enabling with no accounts", async () => {
-    mockStatus({ configured: false, accounts: [], settings: { ...status().settings, enabled: false } });
-    render(<MemoryRouter><AutopilotPanel toast={toast} /></MemoryRouter>);
-    expect(await screen.findByText(/isn't switched on for this server/)).toBeInTheDocument();
-    expect(screen.getAllByRole("switch")[0]).toBeDisabled();
-  });
-
-  it("pausing sends enabled:false", async () => {
-    mockStatus();
-    vi.mocked(autopilotAPI.update).mockResolvedValue({ success: true });
-    render(<MemoryRouter><AutopilotPanel toast={toast} /></MemoryRouter>);
-    await screen.findByText(/Free trial/);
-    fireEvent.click(screen.getAllByRole("switch")[0]);
-    await waitFor(() => expect(autopilotAPI.update).toHaveBeenCalledWith({ enabled: false }));
-  });
-});
+function Where() {
+  const l = useLocation();
+  return <div data-testid="where">{l.pathname + l.search}</div>;
+}
+const renderPage = (path = "/social-autopilot") =>
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <Where />
+      <Routes>
+        <Route path="/social-autopilot" element={<SocialAutopilotPage />} />
+        <Route path="/social-autopilot/setup" element={<SocialAutopilotSetupPage />} />
+        <Route path="/social-autopilot/report" element={<SocialAutopilotReportPage />} />
+        <Route path="/social-planner" element={<div>planner-page</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
 
 describe("AutopilotPosts", () => {
-  const post = (id: string, status: string, over: any = {}) => ({
+  const post = (id: string, st: string, over: any = {}) => ({
     _id: id,
     caption: `caption ${id}`,
     imageUrl: "",
     platforms: ["instagram"],
     scheduledAt: inDays(1),
-    status,
+    status: st,
     ...over,
   });
 
@@ -163,95 +223,115 @@ describe("AutopilotPosts", () => {
   });
 
   it("shows an empty state", async () => {
-    vi.mocked(socialAPI.getPosts).mockResolvedValue({ success: true, count: 0, data: [] });
     render(<AutopilotPosts toast={toast} />);
     expect(await screen.findByText(/Nothing queued yet/)).toBeInTheDocument();
   });
-});
 
-const statsData = (over: any = {}) => ({
-  range: { days: 30, since: inDays(-29) },
-  totals: { generated: 12, posted: 7, pending: 2, scheduled: 1, rejected: 1, failed: 1, other: 0 },
-  rates: { approvalRate: 88, avgApprovalHours: 3.5, revisedPosts: 2, revisions: 3 },
-  series: [
-    { date: "2026-09-19", generated: 1, posted: 1, rejected: 0 },
-    { date: "2026-09-20", generated: 2, posted: 0, rejected: 1 },
-  ],
-  platforms: [{ platform: "instagram", count: 9 }, { platform: "facebook", count: 3 }],
-  topics: [{ topic: "Sourdough basics", count: 3 }],
-  next: { scheduledAt: inDays(1), status: "PENDING_APPROVAL", caption: "hi", platforms: ["instagram"] },
-  ...over,
-});
-const mockStats = (over?: any) => vi.mocked(autopilotAPI.stats).mockResolvedValue({ success: true, data: statsData(over) } as any);
-
-describe("Autopilot pages (Dashboard, Setup, Report)", () => {
-  const renderPage = (path = "/social-autopilot") =>
-    render(
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/social-autopilot" element={<SocialAutopilotPage />} />
-          <Route path="/social-autopilot/setup" element={<SocialAutopilotSetupPage />} />
-          <Route path="/social-autopilot/report" element={<SocialAutopilotReportPage />} />
-          <Route path="/social-planner" element={<div>planner-page</div>} />
-        </Routes>
-      </MemoryRouter>,
-    );
-  const noPosts = () => vi.mocked(socialAPI.getPosts).mockResolvedValue({ success: true, count: 0, data: [] });
-
-  beforeEach(() => {
-    mockStats();
-    vi.mocked(aiUsageAPI.get).mockResolvedValue({
-      success: true,
-      data: {
-        plan: { id: "growth", expiresAt: inDays(20) },
-        month: { start: inDays(-10), resetsAt: inDays(20) },
-        autopilot: { used: 5, limit: 14, daysPerWeek: 3, enabled: true, state: "paid", endsAt: inDays(20) },
-        aiCalls: { used: 0, limit: 500 },
-        leads: { used: 0, limit: 10000 },
-        team: { used: 1, limit: 50 },
-      },
-    } as any);
+  it("asks only for one campaign's posts and labels posts with their campaign", async () => {
+    vi.mocked(socialAPI.getPosts).mockResolvedValue({ success: true, count: 1, data: [post("p1", "SCHEDULED", { campaignId: "c2" })] });
+    render(<AutopilotPosts toast={toast} campaignId="c2" campaigns={[{ id: "c1", name: "Bakery" }, { id: "c2", name: "Cafe" }]} />);
+    expect(await screen.findByText("Cafe")).toBeInTheDocument();
+    expect(socialAPI.getPosts).toHaveBeenCalledWith({ source: "autopilot", campaignId: "c2" });
   });
+});
 
-  it("dashboard: shows what was done, what needs approval, plan usage and the queue", async () => {
-    mockStatus();
-    noPosts();
+describe("Dashboard", () => {
+  it("one campaign: shows what was done, what needs approval, plan usage and the queue", async () => {
     renderPage();
     await waitFor(() => expect(screen.getByTestId("kpi-Created")).toHaveTextContent("12"));
     expect(screen.getByTestId("kpi-Posted")).toHaveTextContent("7");
     expect(screen.getByTestId("kpi-Needs approval")).toHaveTextContent("2");
     expect(screen.getByTestId("kpi-Scheduled")).toHaveTextContent("1");
     expect(screen.getByTestId("kpi-Rejected")).toHaveTextContent("1");
-    expect(autopilotAPI.stats).toHaveBeenCalledWith(30);
+    expect(autopilotAPI.stats).toHaveBeenCalledWith(30, "c1");
     expect(await screen.findByLabelText("Plan usage")).toHaveTextContent("5 / 14 posts this month");
+    expect(screen.getByLabelText("Plan usage")).toHaveTextContent("1 of 3 campaigns used");
     expect(screen.getByText(/You approve/)).toHaveTextContent("88%");
     expect(await screen.findByText(/Nothing queued yet/)).toBeInTheDocument();
+    expect(socialAPI.getPosts).toHaveBeenCalledWith({ source: "autopilot", campaignId: "c1" });
     expect(screen.getByRole("link", { name: "Report" })).toHaveAttribute("href", "/social-autopilot/report");
     expect(screen.getByRole("link", { name: "Setup" })).toHaveAttribute("href", "/social-autopilot/setup");
   });
 
-  it("dashboard: changing the range reloads the numbers, and pausing sends enabled:false", async () => {
-    mockStatus();
-    noPosts();
-    vi.mocked(autopilotAPI.update).mockResolvedValue({ success: true });
+  it("changing the range reloads the numbers, and pausing sends enabled:false to that campaign", async () => {
+    scoped.update.mockResolvedValue({ success: true });
     renderPage();
     await screen.findByTestId("kpi-Created");
     fireEvent.click(screen.getByRole("button", { name: "7 days" }));
-    await waitFor(() => expect(autopilotAPI.stats).toHaveBeenCalledWith(7));
+    await waitFor(() => expect(autopilotAPI.stats).toHaveBeenCalledWith(7, "c1"));
     fireEvent.click(screen.getByRole("switch", { name: /Autopilot on or off/ }));
-    await waitFor(() => expect(autopilotAPI.update).toHaveBeenCalledWith({ enabled: false }));
+    await waitFor(() => expect(scoped.update).toHaveBeenCalledWith({ enabled: false }));
+    expect(autopilotAPI.campaign).toHaveBeenCalledWith("c1");
   });
 
-  it("dashboard sends a brand-new tenant to Setup first", async () => {
-    mockStatus({ onboarded: false, settings: { ...status().settings, enabled: false } });
-    noPosts();
+  it("several campaigns: starts on 'All campaigns' with a card each and combined numbers", async () => {
+    mockOverview({ campaigns: [summary("c1", "Bakery", { monthPosts: 4 }), summary("c2", "Cafe", { enabled: false, monthPosts: 2 })] });
+    renderPage();
+    expect(await screen.findByTestId("campaign-Bakery")).toHaveTextContent("4 posts this month");
+    expect(screen.getByTestId("campaign-Cafe")).toHaveTextContent("Paused");
+    await waitFor(() => expect(autopilotAPI.stats).toHaveBeenCalledWith(30, undefined));
+    expect(document.body).toHaveTextContent(/2 campaigns · 1 running/);
+    expect(scoped.get).not.toHaveBeenCalled(); // no single campaign is loaded in the combined view
+    expect(socialAPI.getPosts).toHaveBeenCalledWith({ source: "autopilot" });
+
+    // a card switches to that campaign
+    fireEvent.click(within(screen.getByTestId("campaign-Cafe")).getByRole("button", { name: "Cafe" }));
+    await waitFor(() => expect(autopilotAPI.stats).toHaveBeenCalledWith(30, "c2"));
+    expect(screen.getByTestId("where")).toHaveTextContent("campaign=c2");
+  });
+
+  it("a card's switch turns just that campaign on or off", async () => {
+    mockOverview({ campaigns: [summary("c1", "Bakery"), summary("c2", "Cafe")] });
+    scoped.update.mockResolvedValue({ success: true });
+    renderPage();
+    fireEvent.click(await screen.findByRole("switch", { name: "Cafe on or off" }));
+    await waitFor(() => expect(autopilotAPI.campaign).toHaveBeenCalledWith("c2"));
+    await waitFor(() => expect(scoped.update).toHaveBeenCalledWith({ enabled: false }));
+  });
+
+  it("dashboard sends a campaign that is not set up yet to Setup", async () => {
+    mockOverview({ campaigns: [summary("c1", "Bakery", { onboarded: false, enabled: false })] });
+    mockStatus({ onboarded: false, settings: { ...status().settings, enabled: false, accountIds: [] } });
     renderPage();
     expect(await screen.findByText(/Let's set up your Autopilot/)).toBeInTheDocument();
-    expect(autopilotAPI.stats).not.toHaveBeenCalledWith(undefined);
+    expect(screen.getByTestId("where")).toHaveTextContent("/social-autopilot/setup?campaign=c1");
   });
 
-  it("report: shows totals, review-loop numbers, platforms and topics", async () => {
-    mockStatus();
+  it("no campaigns yet: offers to create the first one", async () => {
+    mockOverview({ campaigns: [] });
+    renderPage();
+    expect(await screen.findByText(/Create your first Autopilot campaign/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /New campaign/ }));
+    expect(await screen.findByLabelText("Campaign name")).toBeInTheDocument();
+  });
+
+  it("creating a campaign asks for a name, then starts its setup", async () => {
+    vi.mocked(autopilotAPI.createCampaign).mockResolvedValue({ success: true, data: { id: "c9", name: "Winter sale" } });
+    mockOverview({ campaigns: [summary("c1", "Bakery")] });
+    renderPage();
+    await screen.findByTestId("kpi-Created");
+    fireEvent.click(screen.getByRole("button", { name: "New campaign" }));
+    const input = await screen.findByLabelText("Campaign name");
+    expect(screen.getByRole("button", { name: /Create campaign/ })).toBeDisabled();
+    fireEvent.change(input, { target: { value: "Winter sale" } });
+    fireEvent.click(screen.getByRole("button", { name: /Create campaign/ }));
+    await waitFor(() => expect(autopilotAPI.createCampaign).toHaveBeenCalledWith("Winter sale"));
+    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/social-autopilot/setup?campaign=c9"));
+  });
+
+  it("the plan's campaign limit hides the add button and a refused create explains why", async () => {
+    mockOverview({
+      limits: { plan: "starter", daysPerWeek: 1, monthlyPosts: 5, campaigns: 1 },
+      campaigns: [summary("c1", "Bakery")],
+    });
+    renderPage();
+    await screen.findByTestId("kpi-Created");
+    expect(screen.queryByRole("button", { name: "New campaign" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Report", () => {
+  it("shows totals, review-loop numbers, platforms and topics", async () => {
     renderPage("/social-autopilot/report");
     expect(await screen.findByTestId("tile-Posts created")).toHaveTextContent("12");
     expect(screen.getByTestId("tile-Posted")).toHaveTextContent("7");
@@ -260,50 +340,137 @@ describe("Autopilot pages (Dashboard, Setup, Report)", () => {
     expect(screen.getByTestId("tile-Posts you changed")).toHaveTextContent("2");
     expect(screen.getByText("Instagram")).toBeInTheDocument();
     expect(screen.getByText(/Sourdough basics/)).toBeInTheDocument();
+    expect(autopilotAPI.stats).toHaveBeenCalledWith(30, "c1");
     fireEvent.click(screen.getByRole("button", { name: "90 days" }));
-    await waitFor(() => expect(autopilotAPI.stats).toHaveBeenCalledWith(90));
+    await waitFor(() => expect(autopilotAPI.stats).toHaveBeenCalledWith(90, "c1"));
   });
 
-  it("report: shows dashes until something was reviewed", async () => {
-    mockStatus();
+  it("all campaigns: compares them side by side", async () => {
+    mockOverview({ campaigns: [summary("c1", "Bakery"), summary("c2", "Cafe")] });
+    mockStats({ byCampaign: [{ campaignId: "c1", name: "Bakery", generated: 8, posted: 6, rejected: 1 }, { campaignId: "c2", name: "Cafe", generated: 4, posted: 1, rejected: 0 }] });
+    renderPage("/social-autopilot/report");
+    const row = await screen.findByTestId("row-Bakery");
+    expect(row).toHaveTextContent("8");
+    expect(row).toHaveTextContent("75%");
+    expect(screen.getByTestId("row-Cafe")).toHaveTextContent("25%");
+    expect(autopilotAPI.stats).toHaveBeenCalledWith(30, undefined);
+  });
+
+  it("shows dashes until something was reviewed", async () => {
     mockStats({ totals: { generated: 0, posted: 0, pending: 0, scheduled: 0, rejected: 0, failed: 0, other: 0 }, rates: { approvalRate: null, avgApprovalHours: null, revisedPosts: 0, revisions: 0 }, platforms: [], topics: [], series: [] });
     renderPage("/social-autopilot/report");
     expect(await screen.findByTestId("tile-Approval rate")).toHaveTextContent("—");
     expect(screen.getByText(/appear once posts have been reviewed/)).toBeInTheDocument();
   });
+});
 
-  it("setup: shows the settings and the brand section once onboarded", async () => {
-    mockStatus();
+describe("Setup", () => {
+  it("existing campaign: shows its settings, brand section and references tab", async () => {
     renderPage("/social-autopilot/setup");
-    expect(await screen.findByText(/What Autopilot knows about your business/)).toBeInTheDocument();
+    expect(await screen.findByText(/What Autopilot knows about “Bakery”/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Re-scan Instagram/ })).toBeInTheDocument();
-    expect(screen.getByText(/Ask me before every post/)).toBeInTheDocument();
+    expect(screen.getByText("Campaign settings")).toBeInTheDocument();
+    expect(screen.getByText(/Always ask me before posting/)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /References & competitors/ })).toBeInTheDocument();
   });
 
-  it("setup: walks a new tenant through the wizard", async () => {
-    mockStatus({ onboarded: false, settings: { ...status().settings, enabled: false } });
-    vi.mocked(autopilotAPI.analyze).mockResolvedValue({ success: true, started: true });
+  it("settings: accounts used by another campaign are locked, saving sends the chosen ones", async () => {
+    scoped.update.mockResolvedValue({ success: true });
+    mockStatus({ settings: { ...status().settings, accountIds: [] } });
     renderPage("/social-autopilot/setup");
-    expect(await screen.findByText(/Let's set up your Autopilot/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Tell us about your brand/)).toBeInTheDocument();
+    await screen.findByText("Campaign settings");
+    expect(screen.getByText(/used by Cafe/)).toBeInTheDocument();
+    const boxes = screen.getAllByRole("checkbox"); // the campaign's accounts come first
+    expect(boxes[1]).toBeDisabled(); // the Facebook page belongs to "Cafe"
+    fireEvent.click(boxes[0]);
+    fireEvent.click(screen.getByRole("button", { name: /Save accounts/ }));
+    await waitFor(() => expect(scoped.update).toHaveBeenCalledWith({ accountIds: ["a1"] }));
+  });
 
-    // typing an intro saves it before moving on, then the account step offers the scan
-    vi.mocked(autopilotAPI.saveIntro).mockResolvedValue({ success: true });
+  it("settings: renaming and deleting a campaign", async () => {
+    scoped.update.mockResolvedValue({ success: true });
+    scoped.remove.mockResolvedValue({ success: true });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderPage("/social-autopilot/setup");
+    const name = await screen.findByLabelText("Campaign name");
+    fireEvent.change(name, { target: { value: "Bakery UK" } });
+    fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+    await waitFor(() => expect(scoped.update).toHaveBeenCalledWith({ name: "Bakery UK" }));
+    fireEvent.click(screen.getByRole("button", { name: /Delete this campaign/ }));
+    await waitFor(() => expect(scoped.remove).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent(/^\/social-autopilot$/));
+  });
+
+  it("wizard: a new campaign goes intro -> accounts -> references and competitors -> scan", async () => {
+    mockOverview({ campaigns: [summary("c1", "Bakery", { onboarded: false, enabled: false })] });
+    mockStatus({ onboarded: false, settings: { ...status().settings, enabled: false, accountIds: [] } });
+    scoped.saveIntro.mockResolvedValue({ success: true });
+    scoped.update.mockResolvedValue({ success: true });
+    scoped.analyze.mockResolvedValue({ success: true, started: true });
+    scoped.addCompetitor.mockResolvedValue({ success: true, data: { id: "k1", username: "rival_one", notes: "cheaper" } });
+    renderPage("/social-autopilot/setup");
+
+    // 1. brand intro
+    expect(await screen.findByText(/Let's set up your Autopilot/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Tell us about your brand/), { target: { value: "We bake sourdough." } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await waitFor(() => expect(autopilotAPI.saveIntro).toHaveBeenCalledWith("We bake sourdough.", null));
-    fireEvent.click(await screen.findByRole("button", { name: /Scan my profile/ }));
-    await waitFor(() => expect(autopilotAPI.analyze).toHaveBeenCalledWith("a1"));
+    await waitFor(() => expect(scoped.saveIntro).toHaveBeenCalledWith("We bake sourdough.", null));
+
+    // 2. accounts: none picked yet, one is taken by another campaign
+    expect(await screen.findByText(/Which accounts does this campaign post to/)).toBeInTheDocument();
+    expect(screen.getByText(/used by Cafe/)).toBeInTheDocument();
+    const next = screen.getByRole("button", { name: /Continue/ });
+    expect(next).toBeDisabled();
+    fireEvent.click(screen.getAllByRole("checkbox")[0]);
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    await waitFor(() => expect(scoped.update).toHaveBeenCalledWith({ accountIds: ["a1"] }));
+
+    // 3. references and competitors, then scan
+    expect(await screen.findByText("References and competitors")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Competitor Instagram username"), { target: { value: "@rival_one" } });
+    fireEvent.change(screen.getByLabelText("Notes about the competitor"), { target: { value: "cheaper" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Add$/ }));
+    await waitFor(() => expect(scoped.addCompetitor).toHaveBeenCalledWith({ username: "@rival_one", notes: "cheaper" }));
+    fireEvent.click(screen.getByRole("button", { name: /Scan my profile/ }));
+    await waitFor(() => expect(scoped.analyze).toHaveBeenCalledWith("a1"));
     expect(await screen.findByText(/Analysing your brand/)).toBeInTheDocument();
     expect(screen.getByText("Reading your profile")).toBeInTheDocument();
   });
 
-  it("setup: asks a tenant with no connected account to connect one first", async () => {
-    mockStatus({ onboarded: false, accounts: [], settings: { ...status().settings, enabled: false } });
+  it("references & competitors: shows what the scan found, and lets you remove them", async () => {
+    scoped.deleteCompetitor.mockResolvedValue({ success: true });
+    scoped.deleteReference.mockResolvedValue({ success: true });
+    mockStatus({
+      competitors: [
+        { id: "k1", username: "rival_one", notes: "cheap deals", followers: 5000, summary: "Rival bakery", error: "", readAt: null },
+        { id: "k2", username: "private_shop", notes: "", followers: null, summary: "", error: "Not a business or creator account", readAt: null },
+      ],
+      references: [{ id: "r1", url: "http://x/r1.jpg", note: "" }],
+    });
     renderPage("/social-autopilot/setup");
-    fireEvent.click(await screen.findByRole("button", { name: "Skip for now" }));
-    expect(await screen.findByRole("link", { name: /Connect an account/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Scan my profile/ })).toBeDisabled();
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /References & competitors/ }));
+    expect(await screen.findByText("@rival_one")).toBeInTheDocument();
+    expect(screen.getByText(/5,000 followers/)).toBeInTheDocument();
+    expect(screen.getByText(/Not a business or creator account/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove private_shop" }));
+    await waitFor(() => expect(scoped.deleteCompetitor).toHaveBeenCalledWith("k2"));
+    fireEvent.click(screen.getByRole("button", { name: "Remove reference image" }));
+    await waitFor(() => expect(scoped.deleteReference).toHaveBeenCalledWith("r1"));
+  });
+
+  it("references: uploading an image sends it to the campaign", async () => {
+    scoped.uploadReference.mockResolvedValue({ success: true, data: { id: "r2", url: "u", note: "" } });
+    renderPage("/social-autopilot/setup");
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /References & competitors/ }));
+    const file = new File([new Uint8Array([1, 2, 3])], "moodboard.png", { type: "image/png" });
+    fireEvent.change(await screen.findByLabelText("Upload reference images"), { target: { files: [file] } });
+    await waitFor(() => expect(scoped.uploadReference).toHaveBeenCalledWith(file));
+  });
+
+  it("no campaign yet: Setup asks to create one", async () => {
+    mockOverview({ campaigns: [] });
+    renderPage("/social-autopilot/setup");
+    expect(await screen.findByText(/Create your first Autopilot campaign/)).toBeInTheDocument();
   });
 
   it("sends other roles back to the planner from every page", async () => {
@@ -313,7 +480,7 @@ describe("Autopilot pages (Dashboard, Setup, Report)", () => {
       expect(await screen.findByText("planner-page")).toBeInTheDocument();
       unmount();
     }
-    expect(autopilotAPI.get).not.toHaveBeenCalled();
+    expect(autopilotAPI.overview).not.toHaveBeenCalled();
     expect(autopilotAPI.stats).not.toHaveBeenCalled();
   });
 });
@@ -324,6 +491,21 @@ describe("progress mapping", () => {
     expect(scanTarget("running", "style")).toBe(2);
     expect(scanTarget("running", "")).toBe(0);
     expect(scanTarget("done", "profile_built")).toBe(SCAN_STEPS.length);
+  });
+
+  it("adds the steps the owner's input needs, in the server's order", () => {
+    expect(scanSteps({ intro: true, references: true, competitors: true }).map((s) => s.key)).toEqual([
+      "intro",
+      "profile",
+      "posts",
+      "references",
+      "competitors",
+      "style",
+      "profile_built",
+    ]);
+    expect(scanTarget("running", "competitors", { references: true, competitors: true })).toBe(3);
+    expect(scanTarget("running", "style", { references: true, competitors: true })).toBe(4);
+    expect(scanTarget("done", "profile_built", { intro: true })).toBe(5);
   });
 
   it("maps the generation stage to a pipeline position", () => {
@@ -356,6 +538,13 @@ describe("PostingPlan", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mon" }));
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
+
+  it("stops at the plan's posting days per week", () => {
+    render(<PostingPlan status={status({ limits: { plan: "starter", daysPerWeek: 1, monthlyPosts: 5, campaigns: 1 } }) as any} onSave={vi.fn()} />);
+    expect(screen.getByText(/allows up to 1 posting day a week/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mon" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Tue" })).toBeDisabled();
+  });
 });
 
 describe("post review", () => {
@@ -385,20 +574,11 @@ describe("post review", () => {
   });
 });
 
-describe("plan limits in the posting plan", () => {
-  it("stops at the plan's posting days per week", () => {
-    render(<PostingPlan status={status({ limits: { plan: "starter", daysPerWeek: 1, monthlyPosts: 5 } }) as any} onSave={vi.fn()} />);
-    expect(screen.getByText(/allows up to 1 posting day a week/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Mon" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Tue" })).toBeDisabled();
-  });
-});
-
 describe("AIUsagePage", () => {
   const usage = (over: any = {}) => ({
     plan: { id: "growth", expiresAt: inDays(20) },
     month: { start: inDays(-10), resetsAt: inDays(20) },
-    autopilot: { used: 5, limit: 14, daysPerWeek: 3, enabled: true, state: "paid", endsAt: inDays(20) },
+    autopilot: { used: 5, limit: 14, daysPerWeek: 3, campaigns: { used: 2, limit: 3 }, enabled: true, state: "paid", endsAt: inDays(20) },
     aiCalls: { used: 120, limit: 500 },
     leads: { used: 300, limit: 10000 },
     team: { used: 4, limit: 50 },
@@ -411,13 +591,14 @@ describe("AIUsagePage", () => {
       </MemoryRouter>,
     );
 
-  it("shows every meter with its plan limit", async () => {
+  it("shows every meter with its plan limit, and the campaigns used", async () => {
     vi.mocked(aiUsageAPI.get).mockResolvedValue({ success: true, data: usage() } as any);
     renderUsage();
     expect(await screen.findByText("Growth plan")).toBeInTheDocument();
     const autopilot = screen.getByTestId("meter-Social Autopilot posts");
     expect(autopilot).toHaveTextContent("5 / 14 posts");
-    expect(autopilot).toHaveTextContent("up to 3 a week");
+    expect(autopilot).toHaveTextContent("up to 3 a week per campaign");
+    expect(autopilot).toHaveTextContent("Campaigns: 2 / 3");
     expect(autopilot).toHaveTextContent("36% used");
     expect(screen.getByTestId("meter-AI voice calls")).toHaveTextContent("120 / 500 calls");
     expect(screen.getByTestId("meter-Leads this month")).toHaveTextContent("300 / 10,000 leads");
@@ -429,7 +610,7 @@ describe("AIUsagePage", () => {
     vi.mocked(aiUsageAPI.get).mockResolvedValue({
       success: true,
       data: usage({
-        autopilot: { used: 13, limit: 14, daysPerWeek: 3, enabled: true, state: "trial", endsAt: inDays(2) },
+        autopilot: { used: 13, limit: 14, daysPerWeek: 3, campaigns: { used: 1, limit: 3 }, enabled: true, state: "trial", endsAt: inDays(2) },
         aiCalls: { used: 1, limit: 999999 },
         team: { used: 3, limit: 999 },
       }),
@@ -444,7 +625,7 @@ describe("AIUsagePage", () => {
   it("offers to set Autopilot up when it is off", async () => {
     vi.mocked(aiUsageAPI.get).mockResolvedValue({
       success: true,
-      data: usage({ autopilot: { used: 0, limit: 14, daysPerWeek: 3, enabled: false, state: "none", endsAt: null } }),
+      data: usage({ autopilot: { used: 0, limit: 14, daysPerWeek: 3, campaigns: { used: 0, limit: 3 }, enabled: false, state: "none", endsAt: null } }),
     } as any);
     renderUsage();
     expect(await screen.findByRole("link", { name: "Set it up" })).toHaveAttribute("href", "/social-autopilot");

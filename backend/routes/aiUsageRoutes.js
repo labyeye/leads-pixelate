@@ -4,6 +4,7 @@ const express = require("express");
 const asyncHandler = require("express-async-handler");
 const { protect } = require("../middleware/auth");
 const Tenant = require("../models/Tenant");
+const AutopilotCampaign = require("../models/AutopilotCampaign");
 const SocialPost = require("../models/SocialPost");
 const CallLog = require("../models/CallLog");
 const Lead = require("../models/Lead");
@@ -32,11 +33,12 @@ router.get(
     const ap = svc.planLimits(a, now);
     const tenantId = tenant._id;
 
-    const [posts, aiCalls, leads, team] = await Promise.all([
+    const [posts, aiCalls, leads, team, campaignCount] = await Promise.all([
       SocialPost.countDocuments({ tenantId, source: "autopilot", createdAt: { $gte: start } }),
       CallLog.countDocuments({ tenantId, callType: "automated_ai", createdAt: { $gte: start } }),
       Lead.countDocuments({ tenantId, createdAt: { $gte: start } }),
       User.countDocuments({ tenantId, status: "active" }),
+      AutopilotCampaign.countDocuments({ tenantId }),
     ]);
 
     res.json({
@@ -48,6 +50,7 @@ router.get(
           used: posts,
           limit: ap.monthlyPosts,
           daysPerWeek: ap.daysPerWeek,
+          campaigns: { used: campaignCount, limit: ap.campaigns },
           enabled: !!a.enabled,
           state: ent.state, // none | trial | paid | expired
           endsAt: ent.endsAt,

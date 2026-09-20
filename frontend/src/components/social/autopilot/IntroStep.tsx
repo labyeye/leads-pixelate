@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { FileText, Loader2, Trash2, Upload } from "lucide-react";
-import { autopilotAPI } from "@/services/api";
+import { useCampaignApi } from "./CampaignContext";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,7 @@ export function IntroStep({
   reload: () => Promise<unknown>;
   onNext: () => void;
 }) {
+  const api = useCampaignApi();
   const [text, setText] = useState(status.intro?.text ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,7 +42,7 @@ export function IntroStep({
 
   const removeSaved = async () => {
     try {
-      await autopilotAPI.deleteIntroPdf();
+      await api.deleteIntroPdf();
       await reload();
     } catch (err: any) {
       toast({ title: "Failed", description: err.message, variant: "destructive" });
@@ -53,7 +54,7 @@ export function IntroStep({
     if (changed) {
       setBusy(true);
       try {
-        await autopilotAPI.saveIntro(text, file);
+        await api.saveIntro(text, file);
         await reload();
       } catch (err: any) {
         toast({ title: "Couldn't save", description: err.message, variant: "destructive" });

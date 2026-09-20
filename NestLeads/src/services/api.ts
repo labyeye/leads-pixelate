@@ -648,28 +648,48 @@ export const billingAPI = {
 };
 
 // Social Autopilot (backend: routes/autopilotRoutes.js). Same endpoints as the web app.
+// Everything a campaign owns lives under /autopilot/campaigns/:id.
+function autopilotCampaignApi(id: string) {
+  const base = `/autopilot/campaigns/${id}`;
+  const send = (path: string, method: string, body?: unknown) =>
+    request<{success: boolean}>(`${base}${path}`, {
+      method,
+      ...(body === undefined ? {} : {body: JSON.stringify(body)}),
+    });
+  return {
+    get: () => request<{success: boolean; data: any}>(base),
+    update: (body: Record<string, unknown>) => send('', 'PUT', body),
+    remove: () => send('', 'DELETE'),
+    run: () => send('/run', 'POST'),
+    analyze: (accountId?: string) =>
+      request<{success: boolean; started: boolean}>(`${base}/analyze`, {
+        method: 'POST',
+        body: JSON.stringify({accountId}),
+      }),
+    saveBrand: (patch: Record<string, unknown>) => send('/brand', 'PUT', patch),
+    deleteLogo: (logoId: string) => send(`/logos/${logoId}`, 'DELETE'),
+    addCompetitor: (c: {username?: string; notes?: string}) =>
+      request<{success: boolean; data: any}>(`${base}/competitors`, {
+        method: 'POST',
+        body: JSON.stringify(c),
+      }),
+    deleteCompetitor: (competitorId: string) => send(`/competitors/${competitorId}`, 'DELETE'),
+    deleteReference: (refId: string) => send(`/references/${refId}`, 'DELETE'),
+  };
+}
+
 export const autopilotAPI = {
-  get: () => request<{success: boolean; data: any}>('/autopilot'),
-  stats: (days: 7 | 30 | 90) =>
-    request<{success: boolean; data: any}>(`/autopilot/stats?days=${days}`),
-  update: (body: Record<string, unknown>) =>
-    request<{success: boolean}>('/autopilot', {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    }),
-  run: () => request<{success: boolean}>('/autopilot/run', {method: 'POST'}),
-  analyze: (accountId?: string) =>
-    request<{success: boolean; started: boolean}>('/autopilot/analyze', {
+  overview: () => request<{success: boolean; data: any}>('/autopilot'),
+  createCampaign: (name: string) =>
+    request<{success: boolean; data: {id: string; name: string}}>('/autopilot/campaigns', {
       method: 'POST',
-      body: JSON.stringify({accountId}),
+      body: JSON.stringify({name}),
     }),
-  saveBrand: (patch: Record<string, unknown>) =>
-    request<{success: boolean}>('/autopilot/brand', {
-      method: 'PUT',
-      body: JSON.stringify(patch),
-    }),
-  deleteLogo: (id: string) =>
-    request<{success: boolean}>(`/autopilot/logos/${id}`, {method: 'DELETE'}),
+  campaign: autopilotCampaignApi,
+  stats: (days: 7 | 30 | 90, campaignId?: string) =>
+    request<{success: boolean; data: any}>(
+      `/autopilot/stats?days=${days}${campaignId ? `&campaignId=${campaignId}` : ''}`,
+    ),
   revisePost: (id: string, feedback: string) =>
     request<{success: boolean}>(`/autopilot/posts/${id}/revise`, {
       method: 'POST',
@@ -677,7 +697,7 @@ export const autopilotAPI = {
     }),
 };
 
-// Multipart calls (logo image, brand intro text). fetch sets the multipart boundary itself.
+// Multipart calls (logo / reference image, brand intro text). fetch sets the multipart boundary itself.
 async function autopilotForm(path: string, form: FormData): Promise<any> {
   const token = await getToken();
   const res = await fetch(`${API_BASE}${path}`, {
@@ -690,17 +710,23 @@ async function autopilotForm(path: string, form: FormData): Promise<any> {
   return data;
 }
 
-export function uploadAutopilotLogo(fileUri: string, fileName: string, mimeType: string) {
+export function uploadAutopilotLogo(campaignId: string, fileUri: string, fileName: string, mimeType: string) {
   const form = new FormData();
   form.append('file', {uri: fileUri, name: fileName, type: mimeType} as any);
-  return autopilotForm('/autopilot/logos', form);
+  return autopilotForm(`/autopilot/campaigns/${campaignId}/logos`, form);
+}
+
+export function uploadAutopilotReference(campaignId: string, fileUri: string, fileName: string, mimeType: string) {
+  const form = new FormData();
+  form.append('file', {uri: fileUri, name: fileName, type: mimeType} as any);
+  return autopilotForm(`/autopilot/campaigns/${campaignId}/references`, form);
 }
 
 // Text only: attaching a PDF needs a document picker, which the app does not ship (use the web app).
-export function saveAutopilotIntro(text: string) {
+export function saveAutopilotIntro(campaignId: string, text: string) {
   const form = new FormData();
   form.append('text', text);
-  return autopilotForm('/autopilot/intro', form);
+  return autopilotForm(`/autopilot/campaigns/${campaignId}/intro`, form);
 }
 
 // What the tenant used of the AI features in their plan this month.

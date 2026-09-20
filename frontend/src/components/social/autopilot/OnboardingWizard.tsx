@@ -13,21 +13,23 @@ import {
   Rocket,
   Sparkles,
 } from "lucide-react";
-import { autopilotAPI, socialAPI } from "@/services/api";
+import { socialAPI } from "@/services/api";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { BrandKitEditor } from "./BrandKitEditor";
 import { BrandProfileEditor } from "./BrandProfileEditor";
+import { useCampaignApi } from "./CampaignContext";
 import { GenerationProgress } from "./GenerationProgress";
 import { IntroStep } from "./IntroStep";
 import { PostingPlan, type PlanPatch } from "./PostingPlan";
+import { ReferencesCompetitors } from "./ReferencesCompetitors";
 import { ReviewActions } from "./ReviewActions";
 import { ScanAnimation } from "./ScanAnimation";
 import type { AutopilotStatus } from "./useAutopilot";
 
-const STEPS = ["Brand intro", "Accounts", "Scan", "Brand profile", "Logos", "Schedule", "Launch"];
+const STEPS = ["Brand intro", "Accounts", "References", "Scan", "Brand profile", "Logos", "Schedule", "Launch"];
 const GIVE_UP_MS = 3 * 60 * 1000;
 
 interface Post {
@@ -56,29 +58,31 @@ interface Props {
 }
 
 export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
+  const api = useCampaignApi();
   const scanState = status.analysis.status;
   const hasIntro = !!(status.intro?.text?.trim() || status.intro?.pdfName);
-  const [step, setStep] = useState(scanState === "running" || scanState === "done" ? 2 : 0);
+  const [step, setStep] = useState(scanState === "running" || scanState === "done" ? 3 : 0);
   const [busy, setBusy] = useState(false);
   const [scanFinished, setScanFinished] = useState(false);
-  const [selected, setSelected] = useState<string[]>(() => status.accounts.map((a) => a._id));
+  // Accounts this campaign posts to (an account belongs to one campaign): none until the owner picks.
+  const [selected, setSelected] = useState<string[]>(status.settings.accountIds);
 
   const fail = (err: any) => toast({ title: "Something went wrong", description: err.message, variant: "destructive" });
   const chosen = status.accounts.filter((a) => selected.includes(a._id));
   const scanAccount = chosen.find((a) => a.platform === "instagram") || chosen.find((a) => a.platform === "facebook");
-  const noAccounts = status.accounts.length === 0;
+  const noAccounts = status.accounts.filter((a) => !a.campaign || a.campaign.id === status.campaign.id).length === 0;
 
   const startScan = async () => {
     setBusy(true);
     try {
       try {
-        await autopilotAPI.analyze(scanAccount?._id);
+        await api.analyze(scanAccount?._id);
       } catch (err: any) {
         if (err.status !== 429) throw err; // scanned a moment ago: just show that result
       }
       setScanFinished(false);
       await reload();
-      setStep(2);
+      setStep(3);
     } catch (err) {
       fail(err);
     } finally {
@@ -99,7 +103,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
     }
   };
 
-  const savePlan = (p: PlanPatch) => run(() => autopilotAPI.update({ ...p, accountIds: selected }), 6);
+  const savePlan = (p: PlanPatch) => run(() => api.update({ ...p }), 7);
   const onScanComplete = useCallback(() => setScanFinished(true), []);
 
   return (
@@ -122,10 +126,10 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           <>
             <Heading
               icon={<Sparkles className="w-5 h-5 text-white" />}
-              title="Which accounts should we use?"
-              text="We scan your Instagram (or Facebook) to learn how your brand really looks and sounds, and post to everything you tick."
+              title="Which accounts does this campaign post to?"
+              text="Pick the Instagram, Facebook or LinkedIn accounts for this campaign. We learn how your brand looks and sounds from your Instagram (or Facebook)."
             />
-            {noAccounts ? (
+            {status.accounts.length === 0 ? (
               <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 space-y-3">
                 <p>Connect a Facebook, Instagram or LinkedIn account first. Autopilot needs somewhere to post.</p>
                 <Button asChild size="sm">
@@ -134,36 +138,65 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>Accounts to use</Label>
+                <Label>Accounts for “{status.campaign.name}”</Label>
                 <ul className="grid sm:grid-cols-2 gap-2">
-                  {status.accounts.map((a) => (
-                    <li key={a._id}>
-                      <label className="flex items-center gap-3 rounded-lg border-2 border-black/20 has-[:checked]:border-black has-[:checked]:nb-shadow-sm p-3 cursor-pointer">
-                        <Checkbox
-                          checked={selected.includes(a._id)}
-                          onCheckedChange={(c) =>
-                            setSelected(c === true ? [...selected, a._id] : selected.filter((x) => x !== a._id))
-                          }
-                        />
-                        {PLATFORM_ICON[a.platform]}
-                        <span className="text-sm truncate">{a.accountName}</span>
-                      </label>
-                    </li>
-                  ))}
+                  {status.accounts.map((a) => {
+                    const elsewhere = a.campaign && a.campaign.id !== status.campaign.id ? a.campaign.name : null;
+                    return (
+                      <li key={a._id}>
+                        <label
+                          className={`flex items-center gap-3 rounded-lg border-2 p-3 ${
+                            elsewhere ? "border-black/10 opacity-60" : "border-black/20 has-[:checked]:border-black has-[:checked]:nb-shadow-sm cursor-pointer"
+                          }`}
+                        >
+                          <Checkbox
+                            disabled={!!elsewhere}
+                            checked={selected.includes(a._id)}
+                            onCheckedChange={(c) =>
+                              setSelected(c === true ? [...selected, a._id] : selected.filter((x) => x !== a._id))
+                            }
+                          />
+                          {PLATFORM_ICON[a.platform]}
+                          <span className="text-sm truncate">{a.accountName}</span>
+                          {elsewhere && <span className="ml-auto text-[11px] text-muted-foreground">used by {elsewhere}</span>}
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
+                {noAccounts && (
+                  <p className="text-xs text-amber-800">
+                    Every connected account already belongs to another campaign. Remove one there or connect another account.
+                  </p>
+                )}
               </div>
             )}
             <div className="flex flex-wrap gap-3">
-              <Button onClick={startScan} disabled={busy || noAccounts || !chosen.length || !status.configured}>
+              <Button disabled={busy || !chosen.length} onClick={() => run(() => api.update({ accountIds: selected }), 2)}>
+                {busy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Continue <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+              <BackButton onClick={() => setStep(0)} />
+            </div>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <Heading
+              icon={<Sparkles className="w-5 h-5 text-white" />}
+              title="References and competitors"
+              text="Show Autopilot the look you like and who you compete with. Both are optional, and both make the posts fit your brand better."
+            />
+            <ReferencesCompetitors status={status} toast={toast} onChanged={reload} />
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={startScan} disabled={busy || !status.configured}>
                 {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
                 Scan my profile
               </Button>
-              {!noAccounts && (
-                <Button variant="ghost" disabled={busy} onClick={() => setStep(3)}>
-                  Skip scan, I'll fill it in myself
-                </Button>
-              )}
-              <BackButton onClick={() => setStep(0)} />
+              <Button variant="ghost" disabled={busy} onClick={() => setStep(4)}>
+                Skip scan, I'll fill it in myself
+              </Button>
+              <BackButton onClick={() => setStep(1)} />
             </div>
             {!status.configured && (
               <p className="text-xs text-amber-700">Autopilot isn't switched on for this server yet. Contact support.</p>
@@ -171,7 +204,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           </>
         )}
 
-        {step === 2 && (
+        {step === 3 && (
           <>
             <Heading
               icon={<Sparkles className="w-5 h-5 text-white" />}
@@ -192,7 +225,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                   <Button onClick={startScan} disabled={busy}>
                     {busy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Try again
                   </Button>
-                  <Button variant="outline" onClick={() => setStep(3)}>
+                  <Button variant="outline" onClick={() => setStep(4)}>
                     Continue without it
                   </Button>
                 </div>
@@ -206,10 +239,12 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                   platform={scanAccount?.platform}
                   avatar={scanAccount?.profilePicture}
                   hasIntro={hasIntro}
+                  hasReferences={status.references.length > 0}
+                  hasCompetitors={status.competitors.length > 0}
                   onComplete={onScanComplete}
                 />
                 {scanFinished && (
-                  <Button className="animate-fade-in" onClick={() => setStep(3)}>
+                  <Button className="animate-fade-in" onClick={() => setStep(4)}>
                     See what we found <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 )}
@@ -218,7 +253,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
           </>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <>
             <Heading
               icon={<Check className="w-5 h-5 text-white" />}
@@ -236,13 +271,13 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
               profile={status.brandProfile}
               saving={busy}
               saveLabel="Looks right, continue"
-              onSave={(p) => run(() => autopilotAPI.saveBrandProfile(p as unknown as Record<string, unknown>), 4)}
+              onSave={(p) => run(() => api.saveBrandProfile(p as unknown as Record<string, unknown>), 5)}
             />
-            <BackButton onClick={() => setStep(1)} />
+            <BackButton onClick={() => setStep(2)} />
           </>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <>
             <Heading
               icon={<Sparkles className="w-5 h-5 text-white" />}
@@ -251,15 +286,15 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
             />
             <BrandKitEditor kit={status.brandKit} toast={toast} onChanged={reload} />
             <div className="flex flex-wrap gap-3">
-              <Button onClick={() => setStep(5)}>
+              <Button onClick={() => setStep(6)}>
                 {status.brandKit.logos.length ? "Continue" : "Skip for now"} <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
-              <BackButton onClick={() => setStep(3)} />
+              <BackButton onClick={() => setStep(4)} />
             </div>
           </>
         )}
 
-        {step === 5 && (
+        {step === 6 && (
           <>
             <Heading
               icon={<Sparkles className="w-5 h-5 text-white" />}
@@ -267,11 +302,11 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
               text="Pick the days and times, and the kinds of posts you want. You can change this any time."
             />
             <PostingPlan status={status} saving={busy} saveLabel="Continue" onSave={savePlan} />
-            <BackButton onClick={() => setStep(4)} />
+            <BackButton onClick={() => setStep(5)} />
           </>
         )}
 
-        {step === 6 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(5)} />}
+        {step === 7 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(6)} />}
       </div>
     </div>
   );
@@ -328,6 +363,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
 type Phase = "ready" | "generating" | "review" | "live";
 
 function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () => void }) {
+  const api = useCampaignApi();
   const [phase, setPhase] = useState<Phase>("ready");
   const [post, setPost] = useState<Post | null>(null);
   const [busy, setBusy] = useState(false);
@@ -344,7 +380,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       launchedAt.current = Date.now();
       setTimedOut(false);
       // Enabling starts the trial and kicks off the first run on the server.
-      await autopilotAPI.update({ enabled: true });
+      await api.update({ enabled: true });
       await reload();
       setPhase("generating");
     } catch (err) {
@@ -359,7 +395,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
     try {
       launchedAt.current = Date.now();
       setTimedOut(false);
-      await autopilotAPI.run();
+      await api.run();
       await reload();
     } catch (err) {
       fail(err);
@@ -375,7 +411,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
     let cancelled = false;
     const tick = async () => {
       try {
-        const res = await socialAPI.getPosts({ source: "autopilot" });
+        const res = await socialAPI.getPosts({ source: "autopilot", campaignId: status.campaign.id });
         const pending: Post[] = (res.data as Post[])
           .filter((p) => p.status === "PENDING_APPROVAL")
           .sort((a, b) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt));
@@ -406,7 +442,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       cancelled = true;
       clearInterval(t);
     };
-  }, [phase, status.running]);
+  }, [phase, status.running, status.campaign.id]);
 
   const approve = async () => {
     if (!post) return;
@@ -422,7 +458,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
     setPost(null);
     launchedAt.current = Date.now();
     setPhase("generating");
-    await autopilotAPI.run();
+    await api.run();
     await reload();
   };
 
@@ -445,7 +481,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
             label="Posting to"
             value={
               status.accounts
-                .filter((a) => s.accountIds.length === 0 || s.accountIds.includes(a._id))
+                .filter((a) => s.accountIds.includes(a._id))
                 .map((a) => a.accountName)
                 .join(", ") || "—"
             }

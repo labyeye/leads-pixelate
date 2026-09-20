@@ -85,17 +85,18 @@ const subscriptionSchema = new mongoose.Schema(
 // One place for every plan limit. Social Autopilot is part of the plan, not an add-on:
 //   aiCalls                 AI voice calls a month
 //   autopilotDaysPerWeek    posting days a week
-//   autopilotMonthlyPosts   posts Autopilot may generate a month (plan's posts + one spare)
+//   autopilotMonthlyPosts   posts Autopilot may generate a month, shared by all campaigns (plan's posts + one spare)
+//   autopilotCampaigns      how many Autopilot campaigns (each with its own accounts and brand)
 // Only starter / growth / professional are sold; business, enterprise and pro stay so
 // tenants already on them keep working.
 const PLAN_LIMITS = {
-  trial: { leadsPerMonth: 100, teamMembers: 2, aiCalls: 10, autopilotDaysPerWeek: 3, autopilotMonthlyPosts: 14 },
-  starter: { leadsPerMonth: 2000, teamMembers: 25, aiCalls: 50, autopilotDaysPerWeek: 1, autopilotMonthlyPosts: 5 },
-  growth: { leadsPerMonth: 10000, teamMembers: 50, aiCalls: 500, autopilotDaysPerWeek: 3, autopilotMonthlyPosts: 14 },
-  professional: { leadsPerMonth: 50000, teamMembers: 100, aiCalls: 2500, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23 },
-  business: { leadsPerMonth: 200000, teamMembers: 250, aiCalls: 10000, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23 },
-  enterprise: { leadsPerMonth: 999999, teamMembers: 999, aiCalls: 999999, autopilotDaysPerWeek: 7, autopilotMonthlyPosts: 31 },
-  pro: { leadsPerMonth: 50000, teamMembers: 100, aiCalls: 2500, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23 },
+  trial: { leadsPerMonth: 100, teamMembers: 2, aiCalls: 10, autopilotDaysPerWeek: 3, autopilotMonthlyPosts: 14, autopilotCampaigns: 3 },
+  starter: { leadsPerMonth: 2000, teamMembers: 25, aiCalls: 50, autopilotDaysPerWeek: 1, autopilotMonthlyPosts: 5, autopilotCampaigns: 1 },
+  growth: { leadsPerMonth: 10000, teamMembers: 50, aiCalls: 500, autopilotDaysPerWeek: 3, autopilotMonthlyPosts: 14, autopilotCampaigns: 3 },
+  professional: { leadsPerMonth: 50000, teamMembers: 100, aiCalls: 2500, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23, autopilotCampaigns: 5 },
+  business: { leadsPerMonth: 200000, teamMembers: 250, aiCalls: 10000, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23, autopilotCampaigns: 5 },
+  enterprise: { leadsPerMonth: 999999, teamMembers: 999, aiCalls: 999999, autopilotDaysPerWeek: 7, autopilotMonthlyPosts: 31, autopilotCampaigns: 10 },
+  pro: { leadsPerMonth: 50000, teamMembers: 100, aiCalls: 2500, autopilotDaysPerWeek: 5, autopilotMonthlyPosts: 23, autopilotCampaigns: 5 },
 };
 
 // Prices include Social Autopilot (CRM + Autopilot).

@@ -14,6 +14,7 @@ interface Post {
   scheduledAt: string;
   status: string;
   failureReason?: string;
+  campaignId?: string | null;
   autopilotMeta?: { revising?: boolean; revisions?: number; revisionError?: string };
 }
 
@@ -40,18 +41,29 @@ const PLATFORM_ICON: Record<string, JSX.Element> = {
 const when = (d: string) =>
   new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export function AutopilotPosts({ toast, onChange }: { toast: any; onChange?: () => void }) {
+// campaignId: only that campaign's posts. campaigns: when given, each post shows its campaign's name.
+export function AutopilotPosts({
+  toast,
+  onChange,
+  campaignId,
+  campaigns,
+}: {
+  toast: any;
+  onChange?: () => void;
+  campaignId?: string;
+  campaigns?: { id: string; name: string }[];
+}) {
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await socialAPI.getPosts({ source: "autopilot" });
+      const res = await socialAPI.getPosts({ source: "autopilot", ...(campaignId ? { campaignId } : {}) });
       setPosts(res.data);
     } catch (err: any) {
       toast({ title: "Failed to load posts", description: err.message, variant: "destructive" });
     }
-  }, [toast]);
+  }, [toast, campaignId]);
 
   useEffect(() => {
     load();
@@ -117,6 +129,9 @@ export function AutopilotPosts({ toast, onChange }: { toast: any; onChange?: () 
             {p.platforms.map((pl) => (
               <span key={pl}>{PLATFORM_ICON[pl]}</span>
             ))}
+            {campaigns && p.campaignId && (
+              <span className="font-semibold text-foreground">{campaigns.find((c) => c.id === p.campaignId)?.name}</span>
+            )}
             <span>{when(p.scheduledAt)}</span>
             {st && <Badge className={`${st.cls} hover:${st.cls} border-0`}>{st.label}</Badge>}
           </div>

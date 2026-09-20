@@ -55,20 +55,6 @@ const MENU_ITEMS: MenuItem[] = [
     color: PRIMARY,
   },
   {
-    icon: 'calendar-outline',
-    label: 'Follow-up Calendar',
-    sub: 'Scheduled follow-ups by date',
-    screen: 'FollowupCalendar',
-    color: SECONDARY,
-  },
-  {
-    icon: 'business-outline',
-    label: 'Visit Calendar',
-    sub: 'Site visits & appointments',
-    screen: 'VisitCalendar',
-    color: PRIMARY,
-  },
-  {
     icon: 'logo-whatsapp',
     label: 'WhatsApp Inbox',
     sub: 'Messages from leads',
@@ -102,13 +88,6 @@ const MENU_ITEMS: MenuItem[] = [
     sub: 'Facebook, LinkedIn & Google Ads',
     screen: 'AdCampaignsHub',
     color: '#0A66C2',
-  },
-  {
-    icon: 'logo-instagram',
-    label: 'Social Planner',
-    sub: 'Schedule & approve social posts',
-    screen: 'SocialPlanner',
-    color: '#7c3aed',
   },
   {
     icon: 'flash-outline',
@@ -220,7 +199,6 @@ export default function MoreScreen({ navigation }: any) {
           <Icon name="notifications-outline" size={22} color="#000" />
         </TouchableOpacity>
       </View>
-      <View style={styles.divider} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

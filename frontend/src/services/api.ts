@@ -611,84 +611,130 @@ export const billingAPI = {
 };
 
 // Social Autopilot add-on (backend: routes/autopilotRoutes.js + billingRoutes.js).
-export const autopilotAPI = {
-  get: () => request<{ success: boolean; data: any }>("/autopilot"),
-  update: (body: Record<string, unknown>) =>
-    request<{ success: boolean }>("/autopilot", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  run: () =>
-    request<{ success: boolean; message: string }>("/autopilot/run", {
-      method: "POST",
-    }),
-  stats: (days: 7 | 30 | 90) =>
-    request<{ success: boolean; data: AutopilotStats }>(`/autopilot/stats?days=${days}`),
-  analyze: (accountId?: string) =>
-    request<{ success: boolean; started: boolean }>("/autopilot/analyze", {
-      method: "POST",
-      body: JSON.stringify({ accountId }),
-    }),
-  saveBrandProfile: (profile: Record<string, unknown>) =>
-    request<{ success: boolean }>("/autopilot/brand-profile", {
-      method: "PUT",
-      body: JSON.stringify(profile),
-    }),
-  saveBrand: (patch: Record<string, unknown>) =>
-    request<{ success: boolean }>("/autopilot/brand", {
-      method: "PUT",
-      body: JSON.stringify(patch),
-    }),
-  saveIntro: (text: string, file?: File | null) => {
-    const formData = new FormData();
-    formData.append("text", text);
-    if (file) formData.append("file", file);
-    const csrf = getCsrfToken();
-    return fetch(`${API_BASE}/autopilot/intro`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
-      },
-      body: formData,
-    }).then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Could not save your brand intro");
-      return data as { success: boolean };
+// Multipart POST (logo / reference image, brand intro). fetch sets the multipart boundary itself.
+function postForm<T>(endpoint: string, formData: FormData, failMessage: string): Promise<T> {
+  const csrf = getCsrfToken();
+  return fetch(`${API_BASE}${endpoint}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+    },
+    body: formData,
+  }).then(async (res) => {
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || failMessage);
+    return data as T;
+  });
+}
+
+// Everything one Autopilot campaign owns: the same calls the wizard, setup and dashboard make.
+function autopilotCampaignApi(id: string) {
+  const base = `/autopilot/campaigns/${id}`;
+  const send = (path: string, method: string, body?: unknown) =>
+    request<{ success: boolean }>(`${base}${path}`, {
+      method,
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-  },
-  deleteIntroPdf: () =>
-    request<{ success: boolean }>("/autopilot/intro/pdf", { method: "DELETE" }),
+  return {
+    get: () => request<{ success: boolean; data: any }>(base),
+    update: (body: Record<string, unknown>) => send("", "PUT", body),
+    remove: () => send("", "DELETE"),
+    run: () => send("/run", "POST"),
+    analyze: (accountId?: string) =>
+      request<{ success: boolean; started: boolean }>(`${base}/analyze`, {
+        method: "POST",
+        body: JSON.stringify({ accountId }),
+      }),
+    saveBrandProfile: (profile: Record<string, unknown>) => send("/brand-profile", "PUT", profile),
+    saveBrand: (patch: Record<string, unknown>) => send("/brand", "PUT", patch),
+    saveIntro: (text: string, file?: File | null) => {
+      const formData = new FormData();
+      formData.append("text", text);
+      if (file) formData.append("file", file);
+      return postForm<{ success: boolean }>(`${base}/intro`, formData, "Could not save your brand intro");
+    },
+    deleteIntroPdf: () => send("/intro/pdf", "DELETE"),
+    uploadLogo: (file: File, name?: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (name) formData.append("name", name);
+      return postForm<{ success: boolean; data: { id: string; name: string; url: string } }>(
+        `${base}/logos`,
+        formData,
+        "Logo upload failed",
+      );
+    },
+    deleteLogo: (logoId: string) => send(`/logos/${logoId}`, "DELETE"),
+    addCompetitor: (c: { username?: string; notes?: string }) =>
+      request<{ success: boolean; data: { id: string; username: string; notes: string } }>(`${base}/competitors`, {
+        method: "POST",
+        body: JSON.stringify(c),
+      }),
+    deleteCompetitor: (competitorId: string) => send(`/competitors/${competitorId}`, "DELETE"),
+    uploadReference: (file: File, note?: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (note) formData.append("note", note);
+      return postForm<{ success: boolean; data: { id: string; url: string; note: string } }>(
+        `${base}/references`,
+        formData,
+        "Image upload failed",
+      );
+    },
+    deleteReference: (refId: string) => send(`/references/${refId}`, "DELETE"),
+  };
+}
+export type CampaignAPI = ReturnType<typeof autopilotCampaignApi>;
+
+export const autopilotAPI = {
+  overview: () => request<{ success: boolean; data: AutopilotOverview }>("/autopilot"),
+  createCampaign: (name: string) =>
+    request<{ success: boolean; data: { id: string; name: string } }>("/autopilot/campaigns", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+  campaign: autopilotCampaignApi,
+  stats: (days: 7 | 30 | 90, campaignId?: string) =>
+    request<{ success: boolean; data: AutopilotStats }>(
+      `/autopilot/stats?days=${days}${campaignId ? `&campaignId=${campaignId}` : ""}`,
+    ),
   revisePost: (id: string, feedback: string) =>
     request<{ success: boolean }>(`/autopilot/posts/${id}/revise`, {
       method: "POST",
       body: JSON.stringify({ feedback }),
     }),
-  deleteLogo: (id: string) =>
-    request<{ success: boolean }>(`/autopilot/logos/${id}`, {
-      method: "DELETE",
-    }),
-  uploadLogo: (file: File, name?: string) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    if (name) formData.append("name", name);
-    const csrf = getCsrfToken();
-    return fetch(`${API_BASE}/autopilot/logos`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
-      },
-      body: formData,
-    }).then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Logo upload failed");
-      return data as { success: boolean; data: { id: string; name: string; url: string } };
-    });
-  },
 };
+
+// Tenant-level Autopilot state: the plan, the campaigns and which account belongs to which campaign.
+export interface CampaignSummary {
+  id: string;
+  name: string;
+  enabled: boolean;
+  accountIds: string[];
+  onboarded: boolean;
+  running: boolean;
+  lastError: string;
+  monthPosts: number;
+}
+export interface AutopilotOverview {
+  configured: boolean;
+  trialDays: number;
+  entitlement: { state: "none" | "trial" | "paid" | "expired"; endsAt: string | null };
+  plan: string;
+  limits: { plan: string; daysPerWeek: number; monthlyPosts: number; campaigns: number };
+  monthCount: number;
+  monthlyCap: number;
+  campaigns: CampaignSummary[];
+  accounts: {
+    _id: string;
+    platform: string;
+    accountName: string;
+    profilePicture?: string;
+    campaign: { id: string; name: string } | null;
+  }[];
+}
 
 // Numbers behind the Autopilot dashboard and report (backend: services/autopilotStatsService.js).
 export interface AutopilotStats {
@@ -711,6 +757,7 @@ export interface AutopilotStats {
   series: { date: string; generated: number; posted: number; rejected: number }[];
   platforms: { platform: string; count: number }[];
   topics: { topic: string; count: number }[];
+  byCampaign: { campaignId: string; name: string; generated: number; posted: number; rejected: number }[];
   next: { scheduledAt: string; status: string; caption: string; platforms: string[] } | null;
 }
 
@@ -724,6 +771,7 @@ export interface AIUsage {
   month: { start: string; resetsAt: string };
   autopilot: UsageMeter & {
     daysPerWeek: number;
+    campaigns: { used: number; limit: number };
     enabled: boolean;
     state: "none" | "trial" | "paid" | "expired";
     endsAt: string | null;

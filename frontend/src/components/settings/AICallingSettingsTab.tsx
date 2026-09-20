@@ -252,6 +252,23 @@ export default function AICallingSettingsTab() {
         </button>
       </div>
 
+      {/* Voice agent (per client: male / female voice = different ElevenLabs agent) */}
+      <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_#000] space-y-2">
+        <label className="text-sm font-black text-black uppercase tracking-wide flex items-center gap-2">
+          <Key className="w-4 h-4 text-blue-600" /> ElevenLabs Agent ID
+        </label>
+        <input
+          type="text"
+          value={settings.agentId}
+          onChange={(e) => setSettings((prev) => ({ ...prev, agentId: e.target.value }))}
+          placeholder={settings.envAgentIdSet ? "Leave blank to use the default agent" : "agent_xxxxxxxxxxxxxxxx"}
+          className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-bold font-mono focus:outline-none focus:border-blue-600"
+        />
+        <p className="text-xs text-gray-500 font-medium">
+          Paste the agent ID of the male or female voice agent you want for this account, then Save. Use Test Voice Engine to verify it.
+        </p>
+      </div>
+
       {testResult && (
         <div className={`p-3 border-2 text-xs font-bold flex items-center gap-2 ${testResult.success ? "bg-emerald-50 border-emerald-500 text-emerald-800" : "bg-red-50 border-red-500 text-red-800"}`}>
           {testResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}

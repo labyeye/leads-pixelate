@@ -3,7 +3,7 @@ import { AutopilotReport } from "@/components/social/autopilot/AutopilotReport";
 
 export default function SocialAutopilotReportPage() {
   return (
-    <AutopilotShell>
+    <AutopilotShell allowAll>
       <AutopilotReport />
     </AutopilotShell>
   );

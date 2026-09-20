@@ -147,8 +147,26 @@ export const SCAN_STEPS = [
   {key: 'style', label: 'Learning your visual style'},
   {key: 'profile_built', label: 'Building your brand profile'},
 ];
-export function scanStepIndex(status: string, stage: string, hasIntro: boolean): number {
-  const steps = hasIntro ? [{key: 'intro', label: ''}, ...SCAN_STEPS] : SCAN_STEPS;
+export interface ScanOptions {
+  intro?: boolean;
+  references?: boolean;
+  competitors?: boolean;
+}
+export function scanSteps(o: ScanOptions | boolean = {}) {
+  const opt = typeof o === 'boolean' ? {intro: o} : o;
+  const [profile, posts, style, built] = SCAN_STEPS;
+  return [
+    ...(opt.intro ? [{key: 'intro', label: 'Reading your brand notes'}] : []),
+    profile,
+    posts,
+    ...(opt.references ? [{key: 'references', label: 'Studying your reference images'}] : []),
+    ...(opt.competitors ? [{key: 'competitors', label: 'Looking at your competitors'}] : []),
+    style,
+    built,
+  ];
+}
+export function scanStepIndex(status: string, stage: string, options: ScanOptions | boolean = {}): number {
+  const steps = scanSteps(options);
   if (status === 'done') return steps.length;
   return Math.max(0, steps.findIndex(s => s.key === stage));
 }
@@ -188,4 +206,57 @@ export function planPayload(
       accountIds: form.accountIds,
     },
   };
+}
+
+// ---------------------------------------------------------------- campaigns
+
+// A campaign id, every campaign together ('all'), or nothing selected (no campaigns yet).
+export type Selection = string | 'all' | null;
+
+// Which campaign a screen works on: the wanted one if it exists, else the only / first campaign
+// ("all" only where the screen can show every campaign and there is more than one).
+export function pickCampaign(campaigns: {id: string}[], wanted: Selection, allowAll: boolean): Selection {
+  if (!campaigns.length) return null;
+  if (wanted === 'all' && allowAll && campaigns.length > 1) return 'all';
+  if (wanted && campaigns.some(c => c.id === wanted)) return wanted;
+  if (campaigns.length === 1 || !allowAll) return campaigns[0].id;
+  return 'all';
+}
+
+// An account belongs to one campaign: the name of the other campaign that already uses it, or null.
+export function accountTakenBy(
+  account: {campaign?: {id: string; name: string} | null},
+  campaignId: string,
+): string | null {
+  return account.campaign && account.campaign.id !== campaignId ? account.campaign.name : null;
+}
+
+export const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
+export const MAX_COMPETITORS = 5;
+export const MAX_REFERENCES = 8;
+
+// Competitor form -> request body, or the message to show. A leading @ is dropped.
+export function competitorPayload(
+  username: string,
+  notes: string,
+  existing: {username: string}[] = [],
+): {error: string} | {body: {username: string; notes: string}} {
+  const handle = username.trim().replace(/^@+/, '');
+  if (!handle && !notes.trim()) return {error: 'Add an Instagram username or a note about the competitor.'};
+  if (handle && !HANDLE.test(handle)) {
+    return {error: 'That does not look like an Instagram username (letters, numbers, dots and underscores).'};
+  }
+  if (existing.length >= MAX_COMPETITORS) return {error: `You can add up to ${MAX_COMPETITORS} competitors.`};
+  if (handle && existing.some(c => c.username.toLowerCase() === handle.toLowerCase())) {
+    return {error: 'That competitor is already added.'};
+  }
+  return {body: {username: handle, notes: notes.trim()}};
+}
+
+// The pill on a campaign: paused, trial countdown, live, or needs a plan.
+export function campaignPill(
+  enabled: boolean,
+  ent: {state: string; endsAt: string | null},
+): {text: string; bg: string; fg: string} {
+  return statePill({settings: {enabled}, entitlement: ent});
 }

@@ -3,6 +3,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
 import {navigationRef} from './navigationRef';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 
 import DashboardScreen from '../screens/DashboardScreen';
@@ -16,8 +17,7 @@ import QuotationFormScreen from '../screens/QuotationFormScreen';
 import RolesPermissionsScreen from '../screens/RolesPermissionsScreen';
 import MoreScreen from '../screens/MoreScreen';
 import ReportsScreen from '../screens/ReportsScreen';
-import FollowupCalendarScreen from '../screens/FollowupCalendarScreen';
-import VisitCalendarScreen from '../screens/VisitCalendarScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
 import WhatsAppInboxScreen from '../screens/WhatsAppInboxScreen';
 import ProductsScreen from '../screens/ProductsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -59,16 +59,19 @@ export type LeadsStackParamList = {
 export type RootTabParamList = {
   Dashboard: undefined;
   LeadsStack: undefined;
-  FollowupCalendar: undefined;
-  VisitCalendar: undefined;
+  Schedule: undefined;
+  SocialStack: undefined;
   More: undefined;
+};
+
+export type SocialStackParamList = {
+  SocialPlanner: undefined;
+  CreatePost: undefined;
 };
 
 export type MoreStackParamList = {
   MoreHome: undefined;
   Reports: undefined;
-  FollowupCalendar: undefined;
-  VisitCalendar: undefined;
   WhatsAppInbox: undefined;
   Products: undefined;
   Settings: undefined;
@@ -79,9 +82,7 @@ export type MoreStackParamList = {
   Quotations: undefined;
   QuotationForm: {quotation?: any} | undefined;
   RolesPermissions: undefined;
-  SocialPlanner: undefined;
   Autopilot: undefined;
-  CreatePost: undefined;
   Services: undefined;
   ApiKeys: undefined;
   Support: undefined;
@@ -107,6 +108,7 @@ export type MoreStackParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const LeadsStack = createNativeStackNavigator<LeadsStackParamList>();
+const SocialStack = createNativeStackNavigator<SocialStackParamList>();
 const MoreStack = createNativeStackNavigator<MoreStackParamList>();
 
 function LeadsNavigator() {
@@ -120,13 +122,20 @@ function LeadsNavigator() {
   );
 }
 
+function SocialNavigator() {
+  return (
+    <SocialStack.Navigator screenOptions={{headerShown: false}}>
+      <SocialStack.Screen name="SocialPlanner" component={SocialPlannerScreen} />
+      <SocialStack.Screen name="CreatePost" component={CreatePostScreen} />
+    </SocialStack.Navigator>
+  );
+}
+
 function MoreNavigator() {
   return (
     <MoreStack.Navigator screenOptions={{headerShown: false}}>
       <MoreStack.Screen name="MoreHome" component={MoreScreen} />
       <MoreStack.Screen name="Reports" component={ReportsScreen} />
-      <MoreStack.Screen name="FollowupCalendar" component={FollowupCalendarScreen} />
-      <MoreStack.Screen name="VisitCalendar" component={VisitCalendarScreen} />
       <MoreStack.Screen name="WhatsAppInbox" component={WhatsAppInboxScreen} />
       <MoreStack.Screen name="Products" component={ProductsScreen} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} />
@@ -137,9 +146,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="Quotations" component={QuotationsScreen} />
       <MoreStack.Screen name="QuotationForm" component={QuotationFormScreen} />
       <MoreStack.Screen name="RolesPermissions" component={RolesPermissionsScreen} />
-      <MoreStack.Screen name="SocialPlanner" component={SocialPlannerScreen} />
       <MoreStack.Screen name="Autopilot" component={AutopilotScreen} />
-      <MoreStack.Screen name="CreatePost" component={CreatePostScreen} />
       <MoreStack.Screen name="Services" component={ServicesScreen} />
       <MoreStack.Screen name="ApiKeys" component={ApiKeysScreen} />
       <MoreStack.Screen name="Support" component={SupportScreen} />
@@ -166,17 +173,18 @@ function MoreNavigator() {
 }
 
 export default function AppNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
         screenOptions={({route}) => ({
           headerShown: false,
           tabBarStyle: {
-            height: 60,
+            height: 60 + insets.bottom,
             borderTopWidth: 2,
             borderTopColor: '#000',
             backgroundColor: '#fff',
-            paddingBottom: 6,
+            paddingBottom: 6 + insets.bottom,
             paddingTop: 6,
           },
           tabBarLabelStyle: {
@@ -191,8 +199,8 @@ export default function AppNavigator() {
             const icons: Record<string, string> = {
               Dashboard:        focused ? 'grid'             : 'grid-outline',
               LeadsStack:       focused ? 'people'           : 'people-outline',
-              FollowupCalendar: focused ? 'calendar'         : 'calendar-outline',
-              VisitCalendar:    focused ? 'business'         : 'business-outline',
+              Schedule:         focused ? 'calendar'         : 'calendar-outline',
+              SocialStack:      focused ? 'megaphone'        : 'megaphone-outline',
               More:             focused ? 'apps'             : 'apps-outline',
             };
             return <Icon name={icons[route.name] || 'ellipse-outline'} size={size} color={color} />;
@@ -205,14 +213,14 @@ export default function AppNavigator() {
           options={{tabBarLabel: 'Leads'}}
         />
         <Tab.Screen
-          name="FollowupCalendar"
-          component={FollowupCalendarScreen}
-          options={{tabBarLabel: 'Follow-up'}}
+          name="Schedule"
+          component={ScheduleScreen}
+          options={{tabBarLabel: 'Schedule'}}
         />
         <Tab.Screen
-          name="VisitCalendar"
-          component={VisitCalendarScreen}
-          options={{tabBarLabel: 'Visits'}}
+          name="SocialStack"
+          component={SocialNavigator}
+          options={{tabBarLabel: 'Social'}}
         />
         <Tab.Screen
           name="More"

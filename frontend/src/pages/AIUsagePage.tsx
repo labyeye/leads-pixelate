@@ -147,8 +147,17 @@ export default function AIUsagePage() {
               >
                 <ul className="text-xs text-black space-y-1 border-t-2 border-black/10 pt-2">
                   <li>
-                    Posting days: up to <b>{usage.autopilot.daysPerWeek}</b> a week
+                    Posting days: up to <b>{usage.autopilot.daysPerWeek}</b> a week per campaign
                   </li>
+                  {usage.autopilot.campaigns && (
+                    <li>
+                      Campaigns:{" "}
+                      <b>
+                        {usage.autopilot.campaigns.used} / {usage.autopilot.campaigns.limit}
+                      </b>{" "}
+                      (the posts above are shared by all campaigns)
+                    </li>
+                  )}
                   <li>
                     Status:{" "}
                     <b>

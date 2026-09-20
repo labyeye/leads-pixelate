@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const Tenant = require("../models/Tenant");
+const AutopilotCampaign = require("../models/AutopilotCampaign");
 const { PLAN_LIMITS } = require("../models/Subscription");
 const SocialPost = require("../models/SocialPost");
 const SocialAccount = require("../models/SocialAccount");
@@ -58,6 +59,11 @@ function brandProfileForPrompt(a) {
     doList: list(p.doList),
     avoidList: list(p.avoidList),
     palette: list([...(a.brandKit?.colors || []), ...(p.palette || [])], 6),
+    competitive: {
+      positioning: clean(p.competitive?.positioning, 400),
+      whatTheyDoWell: list(p.competitive?.whatTheyDoWell, 5),
+      gapsToExploit: list(p.competitive?.gapsToExploit, 5),
+    },
   };
 }
 
@@ -88,13 +94,31 @@ function effectiveAutopilot(tenant, now = new Date()) {
   return a;
 }
 
+// A campaign as the pipeline reads it: the campaign's own setup plus the tenant's entitlement
+// (trial / paid plan), so every "a.xxx" in this file keeps working per campaign.
+function campaignView(tenant, campaign, now = new Date()) {
+  const ent = effectiveAutopilot(tenant, now);
+  const c = campaign?.toObject ? campaign.toObject() : { ...(campaign || {}) };
+  return { ...c, trialStartedAt: ent.trialStartedAt, trialEndsAt: ent.trialEndsAt, paidUntil: ent.paidUntil, plan: ent.plan };
+}
+
+// The bits of a tenant the pipeline needs, with `autopilot` = the campaign view.
+const tenantShim = (tenant, a, campaignId) => ({
+  _id: tenant._id,
+  name: tenant.name,
+  status: tenant.status,
+  ownerUser: tenant.ownerUser,
+  campaignId,
+  autopilot: a,
+});
+
 // What the tenant may do right now: their paid plan's limits, or the trial's. Unknown or
 // missing plan on a payment counts as the smallest one.
 function planLimits(a, now = new Date()) {
   const paid = entitlement(a, now).state === "paid";
   const id = paid ? (PLAN_LIMITS[a?.plan] && a.plan !== "trial" ? a.plan : "starter") : TRIAL_PLAN;
   const l = PLAN_LIMITS[id];
-  return { plan: id, daysPerWeek: l.autopilotDaysPerWeek, monthlyPosts: l.autopilotMonthlyPosts };
+  return { plan: id, daysPerWeek: l.autopilotDaysPerWeek, monthlyPosts: l.autopilotMonthlyPosts, campaigns: l.autopilotCampaigns };
 }
 
 // Posting days the plan allows: an empty list means every day, then the first N (Monday first).
@@ -184,9 +208,10 @@ function monthStart(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-const revertScheduled = (tenantId) =>
+// campaignId omitted = every campaign of the tenant.
+const revertScheduled = (tenantId, campaignId) =>
   SocialPost.updateMany(
-    { tenantId, source: "autopilot", status: "SCHEDULED", scheduledAt: { $gt: new Date() } },
+    { tenantId, source: "autopilot", status: "SCHEDULED", scheduledAt: { $gt: new Date() }, ...(campaignId ? { campaignId } : {}) },
     { status: "DRAFT" },
   );
 
@@ -286,6 +311,7 @@ Rules:
 - Put brandProfile.visualStyle and palette colours into every imagePrompt so the images look like the same brand.
 - contentTypes (when given) are the kinds of post the owner wants; rotate through them and do not repeat the type of the most recent recentPosts. Types: product = showcase a product or service; behind_the_scenes; tips = useful advice for the audience; social_proof = real customer or team stories from the data only; occasion = a relevant festival or season; announcement = news from the data only.
 - ownerFeedbackRules are corrections the owner made to earlier posts: always obey them. approvedExamples are posts the owner approved: match their voice and quality, but never reuse their wording.
+- brandProfile.competitive and competitors describe rivals: use them to stand apart (exploit gapsToExploit, keep your own positioning). Never copy a competitor's wording, claim their facts or mention them by name in a post.
 - When slots is given, plan exactly one post per slot, in order, and set scheduledAt to that slot's exact ISO time. You may tailor the topic to the weekday and time of day.
 - imagePrompt: one clean photographic or illustrated scene for a 4:5 image. No text, letters, logos or watermarks in the image.`;
 
@@ -452,10 +478,12 @@ function saveImage(tenantId, buf) {
   return `${publicBase()}/uploads/autopilot/${tenantId}/${name}`;
 }
 
-const setProgress = (tenantId, stage) =>
-  Tenant.updateOne({ _id: tenantId }, { $set: { "autopilot.progress": { stage, at: new Date() } } }).catch(() => {});
+const setProgress = (campaignId, stage) =>
+  AutopilotCampaign.updateOne({ _id: campaignId }, { $set: { progress: { stage, at: new Date() } } }).catch(() => {});
 
-const brandDir = (tenantId) => path.join(__dirname, "../uploads/autopilot", String(tenantId), "brand");
+// Logos and references live per campaign. Without a campaign (legacy files) the tenant's brand dir.
+const brandDir = (tenantId, campaignId) =>
+  path.join(__dirname, "../uploads/autopilot", String(tenantId), "brand", ...(campaignId ? [String(campaignId)] : []));
 
 // Mean brightness (0-255) of an image, ignoring transparent pixels.
 async function meanLuma(sharp, input) {
@@ -486,7 +514,7 @@ async function applyLogo(buf, tenant) {
     const pad = Math.round(width * 0.04);
     const [v, h] = (kit.logoPosition || "bottom-right").split("-");
     const load = (l) =>
-      sharp(path.join(brandDir(tenant._id), path.basename(l.file)))
+      sharp(path.join(brandDir(tenant._id, tenant.campaignId), path.basename(l.file)))
         .resize({ width: size, height: size, fit: "inside" })
         .png()
         .toBuffer();
@@ -550,12 +578,12 @@ async function buildContext(tenant, accounts, now) {
       .lean(),
     Lead.aggregate(leadGroup("source")),
     Lead.aggregate(leadGroup("status")),
-    SocialPost.find({ tenantId, createdAt: { $gte: since(14) } })
+    SocialPost.find({ tenantId, ...(tenant.campaignId ? { campaignId: tenant.campaignId } : {}), createdAt: { $gte: since(14) } })
       .sort({ createdAt: -1 })
       .limit(30)
       .select("caption")
       .lean(),
-    SocialPost.find({ tenantId, source: "autopilot", approvedAt: { $ne: null } })
+    SocialPost.find({ tenantId, source: "autopilot", ...(tenant.campaignId ? { campaignId: tenant.campaignId } : {}), approvedAt: { $ne: null } })
       .sort({ approvedAt: -1 })
       .limit(3)
       .select("caption")
@@ -582,6 +610,8 @@ async function buildContext(tenant, accounts, now) {
       last30dByStatus: byStatus.map((x) => ({ status: clean(x._id, 40), leads: x.n })),
     },
     recentPosts: recent.map((p) => clean(p.caption, 120)),
+    // Notes the owner wrote about competitors (what they do, what to avoid). Never their wording.
+    competitors: (a.competitors || []).slice(0, 5).map((c) => ({ instagram: clean(c.username, 60), notes: clean(c.notes, 300), summary: clean(c.summary, 300) })),
     contentTypes: (a.contentTypes || []).filter((c) => CONTENT_TYPES.includes(c)),
     ownerFeedbackRules: (a.lessons || []).map((x) => clean(x, 200)),
     approvedExamples: approved.map((p) => clean(p.caption, 300)),
@@ -589,39 +619,53 @@ async function buildContext(tenant, accounts, now) {
   };
 }
 
-// ponytail: tenants and their items run sequentially — fine for tens of tenants;
-// add a small concurrency pool if the hourly run starts taking close to an hour.
-async function runForTenant(tenantId, { manual = false } = {}) {
+// Runs every enabled campaign of the tenant (or just campaignId), one after another. A single
+// campaign returns its own result; several return { results, created }.
+// ponytail: campaigns and tenants run sequentially — fine for tens of tenants; add a small
+// concurrency pool if the hourly run starts taking close to an hour.
+async function runForTenant(tenantId, { manual = false, campaignId } = {}) {
   const tenant = await Tenant.findById(tenantId);
-  const a = tenant ? effectiveAutopilot(tenant) : undefined;
-  if (!tenant || tenant.status !== "active" || !a?.enabled) return { skipped: "disabled" };
+  if (!tenant || tenant.status !== "active") return { skipped: "disabled" };
+  const campaigns = await AutopilotCampaign.find(campaignId ? { _id: campaignId, tenantId } : { tenantId, enabled: true });
+  if (!campaigns.length) return { skipped: "disabled" };
+  const results = [];
+  for (const c of campaigns) results.push(await runForCampaign(tenant, c, { manual }));
+  if (results.length === 1) return results[0];
+  return { results, created: results.reduce((n, r) => n + (r.created || 0), 0) };
+}
 
+async function runForCampaign(tenantDoc, campaignDoc, { manual = false } = {}) {
   const now = new Date();
+  const a = campaignView(tenantDoc, campaignDoc, now);
+  if (tenantDoc.status !== "active" || !a.enabled) return { skipped: "disabled" };
+  const tenant = tenantShim(tenantDoc, a, campaignDoc._id);
+
   if (!isEntitled(a, now)) {
-    await revertScheduled(tenant._id);
+    await revertScheduled(tenant._id, campaignDoc._id);
     return { skipped: "not entitled" };
   }
   if (!manual && a.lastError && a.lastRunAt && now - a.lastRunAt < BACKOFF_MS) {
     return { skipped: "backoff" };
   }
 
-  const accounts = await SocialAccount.find({
-    tenantId: tenant._id,
-    isActive: true,
-    ...(a.accountIds?.length ? { _id: { $in: a.accountIds } } : {}),
-  });
+  // A campaign posts only to the accounts chosen for it (an account belongs to one campaign).
+  const accounts = a.accountIds?.length
+    ? await SocialAccount.find({ tenantId: tenant._id, isActive: true, _id: { $in: a.accountIds } })
+    : [];
   if (!accounts.length) return { skipped: "no connected accounts" };
 
   const until = new Date(now.getTime() + HORIZON_DAYS * DAY_MS);
   const [filled, monthCount] = await Promise.all([
     SocialPost.find({
       tenantId: tenant._id,
+      campaignId: campaignDoc._id,
       source: "autopilot",
       status: { $in: FILLED },
       scheduledAt: { $gt: now, $lte: until },
     })
       .select("scheduledAt")
       .lean(),
+    // The monthly cap is shared by all of the tenant's campaigns.
     SocialPost.countDocuments({ tenantId: tenant._id, source: "autopilot", createdAt: { $gte: monthStart(now) } }),
   ]);
   // Owner-chosen times: one post per free slot. No schedule: legacy "postsPerDay, Claude picks times".
@@ -637,19 +681,19 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     : postsToCreate({ postsPerDay: a.postsPerDay, existing: filled.length, monthCount, cap: limits.monthlyPosts });
   if (count <= 0) return { skipped: "up to date" };
 
-  // Per-tenant lock: overlapping cron ticks, a manual "Run now" or a second
+  // Per-campaign lock: overlapping cron ticks, a manual "Run now" or a second
   // instance can't generate (and pay for) the same posts twice.
-  const claimed = await Tenant.findOneAndUpdate(
+  const claimed = await AutopilotCampaign.findOneAndUpdate(
     {
-      _id: tenant._id,
-      $or: [{ "autopilot.runningSince": null }, { "autopilot.runningSince": { $lt: new Date(now.getTime() - LOCK_MS) } }],
+      _id: campaignDoc._id,
+      $or: [{ runningSince: null }, { runningSince: { $lt: new Date(now.getTime() - LOCK_MS) } }],
     },
-    { $set: { "autopilot.runningSince": now, "autopilot.lastRunAt": now } },
+    { $set: { runningSince: now, lastRunAt: now } },
   );
   if (!claimed) return { skipped: "already running" };
 
   try {
-    await setProgress(tenant._id, "planning");
+    await setProgress(campaignDoc._id, "planning");
     const ctx = await buildContext(tenant, accounts, now);
     ctx.alreadyScheduled = filled.map((p) => p.scheduledAt.toISOString());
     if (freeSlots) ctx.slots = freeSlots.slice(0, count).map((d) => d.toISOString());
@@ -666,7 +710,7 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     });
     if (!items.length) throw new Error("Claude's plan had no schedulable posts");
 
-    await setProgress(tenant._id, "creating");
+    await setProgress(campaignDoc._id, "creating");
     const drafts = [];
     let firstError;
     for (const item of items) {
@@ -681,7 +725,7 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     if (!drafts.length) throw firstError;
 
     // Fail closed: a draft with no matching "ok"/"fix" verdict is not posted.
-    await setProgress(tenant._id, "review");
+    await setProgress(campaignDoc._id, "review");
     let reviews = (await ai.review(ctx, drafts)) || [];
 
     // A rejected draft is not thrown away: redo its caption and image with the reviewer's
@@ -734,6 +778,7 @@ async function runForTenant(tenantId, { manual = false } = {}) {
         scheduledBy: tenant.ownerUser,
         createdBy: tenant.ownerUser,
         tenantId: tenant._id,
+        campaignId: campaignDoc._id,
         status,
         source: "autopilot",
         autopilotMeta: {
@@ -748,17 +793,17 @@ async function runForTenant(tenantId, { manual = false } = {}) {
     // Zero posts is a failure too: it triggers the backoff instead of paying for
     // the same rejected drafts again next hour.
     if (!created) throw new Error("Every draft was rejected in review");
-    await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.lastError": "" } });
-    await setProgress(tenant._id, "done");
+    await AutopilotCampaign.updateOne({ _id: campaignDoc._id }, { $set: { lastError: "" } });
+    await setProgress(campaignDoc._id, "done");
     log.info("Autopilot run done", { tenantId: String(tenant._id), planned: items.length, created });
     return { created, planned: items.length };
   } catch (err) {
     log.error("Autopilot run failed", { tenantId: String(tenant._id), message: err.message });
-    await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.lastError": clean(err.message, 300) } });
-    await setProgress(tenant._id, "failed");
+    await AutopilotCampaign.updateOne({ _id: campaignDoc._id }, { $set: { lastError: clean(err.message, 300) } });
+    await setProgress(campaignDoc._id, "failed");
     return { error: err.message };
   } finally {
-    await Tenant.updateOne({ _id: tenant._id }, { $set: { "autopilot.runningSince": null } });
+    await AutopilotCampaign.updateOne({ _id: campaignDoc._id }, { $set: { runningSince: null } });
   }
 }
 
@@ -782,7 +827,10 @@ async function runRevision(post, feedback) {
   const tenantId = post.tenantId;
   const finish = (set) => SocialPost.updateOne({ _id: post._id }, { $set: { "autopilotMeta.revising": false, ...set } });
   try {
-    const tenant = await Tenant.findById(tenantId);
+    const tenantDoc = await Tenant.findById(tenantId);
+    const campaignDoc = post.campaignId ? await AutopilotCampaign.findById(post.campaignId) : null;
+    const a = campaignDoc ? campaignView(tenantDoc, campaignDoc) : effectiveAutopilot(tenantDoc);
+    const tenant = tenantShim(tenantDoc, a, campaignDoc?._id);
     const ctx = await buildContext(tenant, [], new Date());
     const meta = post.autopilotMeta || {};
     const out = await ai.revise(ctx, {
@@ -812,8 +860,8 @@ async function runRevision(post, feedback) {
     }
     // A reusable correction becomes a standing rule for every later post.
     const lesson = clean(out.lesson, 200);
-    if (lesson) {
-      await Tenant.updateOne({ _id: tenantId }, { $push: { "autopilot.lessons": { $each: [lesson], $slice: -10 } } });
+    if (lesson && campaignDoc) {
+      await AutopilotCampaign.updateOne({ _id: campaignDoc._id }, { $push: { lessons: { $each: [lesson], $slice: -10 } } });
     }
   } catch (err) {
     log.error("Post revision failed", { postId: String(post._id), message: err.message });
@@ -824,13 +872,11 @@ async function runRevision(post, feedback) {
 async function runAutopilotCron() {
   if (!isConfigured()) return;
   try {
-    // Entitlement (trial or paid plan) is checked inside runForTenant.
-    const tenants = await Tenant.find({ status: "active", "autopilot.enabled": true })
-      .select("_id")
-      .lean();
-    for (const t of tenants) {
-      await runForTenant(t._id).catch((err) =>
-        log.error("Autopilot tenant run crashed", { tenantId: String(t._id), message: err.message }),
+    // Tenant status and entitlement (trial or paid plan) are checked inside runForTenant.
+    const tenantIds = await AutopilotCampaign.distinct("tenantId", { enabled: true });
+    for (const id of tenantIds) {
+      await runForTenant(id).catch((err) =>
+        log.error("Autopilot tenant run crashed", { tenantId: String(id), message: err.message }),
       );
     }
   } catch (err) {
@@ -852,6 +898,9 @@ module.exports = {
   publicBase,
   runAutopilotCron,
   runForTenant,
+  runForCampaign,
+  campaignView,
+  tenantShim,
   revertScheduled,
   entitlement,
   isEntitled,

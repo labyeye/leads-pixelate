@@ -346,6 +346,7 @@ exports.getPosts = asyncHandler(async (req, res) => {
   if (req.query.status) filter.status = req.query.status;
   if (req.query.platform) filter.platforms = req.query.platform;
   if (["manual", "autopilot"].includes(req.query.source)) filter.source = req.query.source;
+  if (/^[0-9a-f]{24}$/i.test(req.query.campaignId || "")) filter.campaignId = req.query.campaignId; // one Autopilot campaign
 
   const posts = await SocialPost.find(filter)
     .sort({ scheduledAt: 1, createdAt: -1 })
@@ -544,12 +545,12 @@ exports.approvePost = asyncHandler(async (req, res) => {
     throw new Error("Only posts pending approval can be approved");
   }
 
-  // Remember the owner has approved an Autopilot post: after the free trial, runs are then
-  // hands-off (services/autopilotService.js decides). Approved captions also become style examples.
-  if (post.source === "autopilot" && post.tenantId) {
-    await Tenant.updateOne(
-      { _id: post.tenantId, "autopilot.firstApprovedAt": null },
-      { $set: { "autopilot.firstApprovedAt": new Date() } },
+  // Remember the owner has approved a post of this Autopilot campaign: after the free trial, its runs
+  // are then hands-off (services/autopilotService.js decides). Approved captions also become style examples.
+  if (post.source === "autopilot" && post.campaignId) {
+    await require("../models/AutopilotCampaign").updateOne(
+      { _id: post.campaignId, firstApprovedAt: null },
+      { $set: { firstApprovedAt: new Date() } },
     );
   }
 

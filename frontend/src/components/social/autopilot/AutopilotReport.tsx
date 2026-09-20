@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { ActivityChart, RangePicker, StatusDonut } from "./AutopilotCharts";
+import { useCampaigns } from "./CampaignContext";
 import { useAutopilotStats, type RangeDays } from "./useAutopilotStats";
 
 const platformLabel: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", linkedin: "LinkedIn" };
@@ -18,8 +19,11 @@ function Tile({ label, value, hint }: { label: string; value: string | number; h
 
 // How Autopilot performed over a period: output, outcomes, platforms, topics and the review loop.
 export function AutopilotReport() {
+  const { selection, overview } = useCampaigns();
   const [days, setDays] = useState<RangeDays>(30);
-  const { stats, error } = useAutopilotStats(days);
+  const campaignId = selection && selection !== "all" ? selection : undefined;
+  const { stats, error } = useAutopilotStats(days, campaignId);
+  const scope = campaignId ? overview?.campaigns.find((c) => c.id === campaignId)?.name : "All campaigns";
 
   if (!stats) {
     return error ? (
@@ -39,7 +43,7 @@ export function AutopilotReport() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display font-bold text-xl text-black">Report</h2>
+          <h2 className="font-display font-bold text-xl text-black">Report{scope ? ` · ${scope}` : ""}</h2>
           <p className="text-sm text-muted-foreground">
             {new Date(stats.range.since).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} to today
           </p>
@@ -53,6 +57,36 @@ export function AutopilotReport() {
         <Tile label="Rejected" value={t.rejected} hint={`${pct(t.rejected, t.generated)} of created`} />
         <Tile label="Failed to post" value={t.failed} hint={t.failed ? "check Connected Accounts" : "none"} />
       </div>
+
+      {!campaignId && stats.byCampaign.length > 0 && (
+        <section className="nb-card p-4 bg-white space-y-3" aria-label="Campaign comparison">
+          <h3 className="font-display font-bold text-base text-black">By campaign</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b-2 border-black">
+                  <th className="py-2 pr-4">Campaign</th>
+                  <th className="py-2 pr-4">Created</th>
+                  <th className="py-2 pr-4">Posted</th>
+                  <th className="py-2 pr-4">Rejected</th>
+                  <th className="py-2">Posted share</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.byCampaign.map((c) => (
+                  <tr key={c.campaignId} className="border-b border-black/10" data-testid={`row-${c.name}`}>
+                    <td className="py-2 pr-4 font-medium">{c.name}</td>
+                    <td className="py-2 pr-4">{c.generated}</td>
+                    <td className="py-2 pr-4">{c.posted}</td>
+                    <td className="py-2 pr-4">{c.rejected}</td>
+                    <td className="py-2">{pct(c.posted, c.generated)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="nb-card p-4 bg-white space-y-3">
         <h3 className="font-display font-bold text-base text-black">Activity</h3>

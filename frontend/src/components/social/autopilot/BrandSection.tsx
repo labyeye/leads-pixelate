@@ -1,30 +1,32 @@
 import { useState } from "react";
 import { Loader2, RefreshCw, X } from "lucide-react";
-import { autopilotAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandKitEditor } from "./BrandKitEditor";
 import { BrandProfileEditor } from "./BrandProfileEditor";
+import { useCampaignApi } from "./CampaignContext";
 import { PostingPlan, type PlanPatch } from "./PostingPlan";
+import { ReferencesCompetitors } from "./ReferencesCompetitors";
 import { ScanAnimation } from "./ScanAnimation";
 import type { AutopilotStatus } from "./useAutopilot";
 
-// Dashboard home for what the onboarding wizard collected: edit the brand profile,
-// logos and colours, the posting plan, or re-scan the profile after the brand changes.
+// Dashboard home for what the onboarding wizard collected: edit the posting plan, brand profile,
+// references and competitors, logos and colours, or re-scan after the brand changes.
 export function BrandSection({ status, reload, toast }: { status: AutopilotStatus; reload: () => Promise<unknown>; toast: any }) {
+  const api = useCampaignApi();
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const scanning = status.analysis.status === "running";
   const hasIntro = !!(status.intro?.text?.trim() || status.intro?.pdfName);
-  const account =
-    status.accounts.find((a) => a.platform === "instagram") || status.accounts.find((a) => a.platform === "facebook");
+  const chosen = status.accounts.filter((a) => status.settings.accountIds.includes(a._id));
+  const account = chosen.find((a) => a.platform === "instagram") || chosen.find((a) => a.platform === "facebook");
 
   const fail = (title: string, err: any) => toast({ title, description: err.message, variant: "destructive" });
 
   const rescan = async () => {
     setStarting(true);
     try {
-      await autopilotAPI.analyze(account?._id);
+      await api.analyze(account?._id);
       await reload();
     } catch (err) {
       fail("Couldn't start the scan", err);
@@ -47,17 +49,16 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
   };
 
   const forget = (i: number) =>
-    saveWith(
-      () => autopilotAPI.update({ lessons: status.settings.lessons.filter((_, j) => j !== i) }),
-      "Rule removed",
-    );
+    saveWith(() => api.update({ lessons: status.settings.lessons.filter((_, j) => j !== i) }), "Rule removed");
 
   return (
     <div className="rounded-lg border-2 border-black p-4 space-y-4 bg-background">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-semibold text-sm">Brand &amp; posting plan</h3>
-          <p className="text-xs text-muted-foreground">What Autopilot knows about your business. Changes apply to the next post.</p>
+          <p className="text-xs text-muted-foreground">
+            What Autopilot knows about “{status.campaign.name}”. Changes apply to the next post.
+          </p>
         </div>
         {account && (
           <Button variant="outline" size="sm" onClick={rescan} disabled={starting || scanning}>
@@ -75,6 +76,8 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
           platform={account?.platform}
           avatar={account?.profilePicture}
           hasIntro={hasIntro}
+          hasReferences={status.references.length > 0}
+          hasCompetitors={status.competitors.length > 0}
         />
       )}
       {status.analysis.status === "failed" && (
@@ -83,16 +86,17 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
       {status.analysis.note && !scanning && <p className="text-xs text-amber-700">{status.analysis.note}</p>}
 
       <Tabs defaultValue="plan">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="plan">Posting plan</TabsTrigger>
           <TabsTrigger value="profile">Brand profile</TabsTrigger>
+          <TabsTrigger value="refs">References &amp; competitors</TabsTrigger>
           <TabsTrigger value="kit">Logos &amp; colours</TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="pt-3 space-y-6">
           <PostingPlan
             status={status}
             saving={saving}
-            onSave={(p: PlanPatch) => saveWith(() => autopilotAPI.update({ ...p }), "Posting plan saved")}
+            onSave={(p: PlanPatch) => saveWith(() => api.update({ ...p }), "Posting plan saved")}
           />
           {status.settings.lessons.length > 0 && (
             <div className="space-y-2">
@@ -115,8 +119,14 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
             key={status.analysis.at ?? "manual"}
             profile={status.brandProfile}
             saving={saving}
-            onSave={(p) => saveWith(() => autopilotAPI.saveBrandProfile(p as unknown as Record<string, unknown>), "Brand profile saved")}
+            onSave={(p) => saveWith(() => api.saveBrandProfile(p as unknown as Record<string, unknown>), "Brand profile saved")}
           />
+        </TabsContent>
+        <TabsContent value="refs" className="pt-3 space-y-3">
+          <ReferencesCompetitors status={status} toast={toast} onChanged={reload} />
+          <p className="text-xs text-muted-foreground">
+            New references and competitors are used the next time you re-scan.
+          </p>
         </TabsContent>
         <TabsContent value="kit" className="pt-3">
           <BrandKitEditor kit={status.brandKit} toast={toast} onChanged={reload} />

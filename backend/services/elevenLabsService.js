@@ -57,10 +57,11 @@ async function resolveAgentPhoneNumberId(apiKey, agentId) {
   const numbers = Array.isArray(body) ? body : body.phone_numbers || [];
   if (!numbers.length) {
     throw new Error(
-      "No phone number found in ElevenLabs. Import a Twilio number in ElevenLabs -> Agents -> Phone Numbers first."
+      "No phone number found in ElevenLabs. Import a Twilio/SIP (Exotel) number in ElevenLabs -> Agents -> Phone Numbers first."
     );
   }
-  return (numbers.find((n) => n.assigned_agent?.agent_id === agentId) || numbers[0]).phone_number_id;
+  const n = numbers.find((x) => x.assigned_agent?.agent_id === agentId) || numbers[0];
+  return { id: n.phone_number_id, sip: n.provider === "sip_trunk" };
 }
 
 /**
@@ -83,7 +84,7 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
   // Twilio needs E.164; leads store bare 10-digit Indian numbers
   const digits = String(lead.phone).replace(/\D/g, "");
   const toNumber = `+${digits.length === 10 ? `91${digits}` : digits}`;
-  const agentPhoneNumberId = await resolveAgentPhoneNumberId(apiKey, agentId);
+  const { id: agentPhoneNumberId, sip } = await resolveAgentPhoneNumberId(apiKey, agentId);
 
   // Get Tenant Name
   let tenantName = "NestLeads";
@@ -112,7 +113,7 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
 
   try {
     // Prompt/first_message overrides must be enabled in the agent's Security tab on ElevenLabs
-    const response = await fetch(`${ELEVENLABS_API}/twilio/outbound-call`, {
+    const response = await fetch(`${ELEVENLABS_API}/${sip ? "sip-trunk" : "twilio"}/outbound-call`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

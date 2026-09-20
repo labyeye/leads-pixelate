@@ -5,19 +5,20 @@ export type RangeDays = 7 | 30 | 90;
 
 // Loads the Autopilot numbers for a range and refreshes them while the page is open
 // (posts get approved, published and rejected in the background).
-export function useAutopilotStats(days: RangeDays) {
+// campaignId omitted = all campaigns together.
+export function useAutopilotStats(days: RangeDays, campaignId?: string) {
   const [stats, setStats] = useState<AutopilotStats | null>(null);
   const [error, setError] = useState("");
 
   const reload = useCallback(async () => {
     try {
-      const res = await autopilotAPI.stats(days);
+      const res = await autopilotAPI.stats(days, campaignId);
       setStats(res.data);
       setError("");
     } catch (err: any) {
       setError(err.message || "Could not load numbers");
     }
-  }, [days]);
+  }, [days, campaignId]);
 
   useEffect(() => {
     setStats(null);

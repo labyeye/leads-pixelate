@@ -29,9 +29,7 @@ const getSettings = asyncHandler(async (req, res) => {
   if (!settingsObj.elevenLabsApiKey && process.env.ELEVENLABS_API_KEY) {
     settingsObj.elevenLabsApiKey = process.env.ELEVENLABS_API_KEY;
   }
-  if (!settingsObj.agentId && process.env.ELEVENLABS_AGENT_ID) {
-    settingsObj.agentId = process.env.ELEVENLABS_AGENT_ID;
-  }
+  // agentId stays per-tenant; envAgentIdSet tells the UI a default exists (service falls back to it)
 
   res.json({
     success: true,
@@ -47,6 +45,7 @@ const getSettings = asyncHandler(async (req, res) => {
 const updateSettings = asyncHandler(async (req, res) => {
   const tenantId = req.user.tenantId;
   const updates = req.body;
+  if (typeof updates.agentId === "string") updates.agentId = updates.agentId.trim();
 
   let settings = await AICallSettings.findOne({ tenantId });
 

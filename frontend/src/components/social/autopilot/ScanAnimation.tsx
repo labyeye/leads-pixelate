@@ -9,13 +9,34 @@ export const SCAN_STEPS = [
 ] as const;
 
 const INTRO_STEP = { key: "intro", label: "Reading your brand notes" } as const;
-export const scanSteps = (hasIntro?: boolean) => (hasIntro ? [INTRO_STEP, ...SCAN_STEPS] : [...SCAN_STEPS]);
+const REFERENCES_STEP = { key: "references", label: "Studying your reference images" } as const;
+const COMPETITORS_STEP = { key: "competitors", label: "Looking at your competitors" } as const;
+
+// What the scan does depends on what the owner added; the order matches the server's stages.
+export interface ScanOptions {
+  intro?: boolean;
+  references?: boolean;
+  competitors?: boolean;
+}
+export const scanSteps = (o: ScanOptions | boolean = {}) => {
+  const opt = typeof o === "boolean" ? { intro: o } : o;
+  const [profile, posts, style, built] = SCAN_STEPS;
+  return [
+    ...(opt.intro ? [INTRO_STEP] : []),
+    profile,
+    posts,
+    ...(opt.references ? [REFERENCES_STEP] : []),
+    ...(opt.competitors ? [COMPETITORS_STEP] : []),
+    style,
+    built,
+  ];
+};
 
 const STEP_MS = 1300; // each step stays visible at least this long, even if the server is faster
 
 // Which step the server is on; a finished scan means every step is done.
-export const scanTarget = (status: string, stage: string, hasIntro?: boolean) => {
-  const steps = scanSteps(hasIntro);
+export const scanTarget = (status: string, stage: string, options?: ScanOptions | boolean) => {
+  const steps = scanSteps(options);
   return status === "done" ? steps.length : Math.max(0, steps.findIndex((s) => s.key === stage));
 };
 
@@ -26,12 +47,15 @@ interface Props {
   platform?: string;
   avatar?: string;
   hasIntro?: boolean;
+  hasReferences?: boolean;
+  hasCompetitors?: boolean;
   onComplete?: () => void;
 }
 
-export function ScanAnimation({ status, stage, accountName, platform, avatar, hasIntro, onComplete }: Props) {
-  const steps = scanSteps(hasIntro);
-  const target = scanTarget(status, stage, hasIntro);
+export function ScanAnimation({ status, stage, accountName, platform, avatar, hasIntro, hasReferences, hasCompetitors, onComplete }: Props) {
+  const options = { intro: hasIntro, references: hasReferences, competitors: hasCompetitors };
+  const steps = scanSteps(options);
+  const target = scanTarget(status, stage, options);
   const [shown, setShown] = useState(0);
 
   useEffect(() => {

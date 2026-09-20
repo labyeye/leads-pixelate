@@ -66,6 +66,12 @@ function ChipList({
   );
 }
 
+const emptyCompetitive = (p: BrandProfile) => ({
+  positioning: p.competitive?.positioning ?? "",
+  whatTheyDoWell: p.competitive?.whatTheyDoWell ?? [],
+  gapsToExploit: p.competitive?.gapsToExploit ?? [],
+});
+
 export function BrandProfileEditor({
   profile,
   saving,
@@ -143,6 +149,37 @@ export function BrandProfileEditor({
           </div>
         </div>
       )}
+
+      <div className="space-y-4 rounded-lg border-2 border-black/20 p-3">
+        <div>
+          <p className="text-sm font-semibold">Against your competitors</p>
+          <p className="text-xs text-muted-foreground">
+            Filled in by the scan when you add competitors. Autopilot uses it to stand apart, never to copy them.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="bp-positioning">How you stand apart</Label>
+          <Textarea
+            id="bp-positioning"
+            rows={2}
+            maxLength={400}
+            value={p.competitive?.positioning ?? ""}
+            onChange={(e) => set("competitive", { ...emptyCompetitive(p), positioning: e.target.value })}
+          />
+        </div>
+        <ChipList
+          label="What they do well"
+          items={p.competitive?.whatTheyDoWell ?? []}
+          onChange={(v) => set("competitive", { ...emptyCompetitive(p), whatTheyDoWell: v })}
+          max={5}
+        />
+        <ChipList
+          label="Gaps you can use"
+          items={p.competitive?.gapsToExploit ?? []}
+          onChange={(v) => set("competitive", { ...emptyCompetitive(p), gapsToExploit: v })}
+          max={5}
+        />
+      </div>
 
       <ChipList label="Content pillars" hint="The themes your posts keep coming back to." items={p.contentPillars} onChange={(v) => set("contentPillars", v)} />
       <ChipList label="Do" items={p.doList} onChange={(v) => set("doList", v)} />

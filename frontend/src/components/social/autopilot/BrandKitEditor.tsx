@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
-import { autopilotAPI } from "@/services/api";
+import { useCampaignApi } from "./CampaignContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ interface Props {
 }
 
 export function BrandKitEditor({ kit, toast, onChanged }: Props) {
+  const api = useCampaignApi();
   const [uploading, setUploading] = useState(false);
   const [over, setOver] = useState(false);
   const [names, setNames] = useState<Record<string, string>>({});
@@ -33,7 +34,7 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
   const fail = (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" });
   const save = async (patch: Record<string, unknown>) => {
     try {
-      await autopilotAPI.saveBrand(patch);
+      await api.saveBrand(patch);
       await onChanged();
     } catch (err) {
       fail(err);
@@ -45,7 +46,7 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
     if (!list.length) return;
     setUploading(true);
     try {
-      for (const f of list) await autopilotAPI.uploadLogo(f);
+      for (const f of list) await api.uploadLogo(f);
       await onChanged();
     } catch (err) {
       fail(err);
@@ -56,7 +57,7 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
 
   const remove = async (id: string) => {
     try {
-      await autopilotAPI.deleteLogo(id);
+      await api.deleteLogo(id);
       await onChanged();
     } catch (err) {
       fail(err);

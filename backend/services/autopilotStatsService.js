@@ -42,7 +42,8 @@ function totalsFrom(statusRows) {
   };
 }
 
-async function getStats(tenantId, days = 30, now = new Date()) {
+// campaignId omitted = all of the tenant's campaigns.
+async function getStats(tenantId, days = 30, now = new Date(), campaignId) {
   const range = RANGES.includes(days) ? days : 30;
   // Whole India days, so "last 7 days" is exactly the 7 bars shown.
   const since = new Date(now.getTime() - (range - 1) * DAY_MS);
@@ -55,7 +56,13 @@ async function getStats(tenantId, days = 30, now = new Date()) {
   const revisions = { $ifNull: ["$autopilotMeta.revisions", 0] };
 
   const [f] = await SocialPost.aggregate([
-    { $match: { tenantId: new mongoose.Types.ObjectId(String(tenantId)), source: "autopilot" } },
+    {
+      $match: {
+        tenantId: new mongoose.Types.ObjectId(String(tenantId)),
+        source: "autopilot",
+        ...(campaignId ? { campaignId: new mongoose.Types.ObjectId(String(campaignId)) } : {}),
+      },
+    },
     {
       $facet: {
         status: [{ $match: created }, { $group: { _id: "$status", n: { $sum: 1 } } }],
@@ -76,6 +83,18 @@ async function getStats(tenantId, days = 30, now = new Date()) {
         revised: [
           { $match: created },
           { $group: { _id: null, total: { $sum: revisions }, posts: { $sum: { $cond: [{ $gt: [revisions, 0] }, 1, 0] } } } },
+        ],
+        byCampaign: [
+          { $match: created },
+          {
+            $group: {
+              _id: "$campaignId",
+              generated: { $sum: 1 },
+              posted: { $sum: { $cond: [{ $in: ["$status", ["POSTED", "PARTIALLY_POSTED"]] }, 1, 0] } },
+              rejected: { $sum: { $cond: [{ $eq: ["$status", "REJECTED"] }, 1, 0] } },
+            },
+          },
+          { $sort: { generated: -1 } },
         ],
         next: [
           { $match: { status: { $in: ["SCHEDULED", "APPROVED", "PENDING_APPROVAL"] }, scheduledAt: { $gt: now } } },
@@ -105,6 +124,8 @@ async function getStats(tenantId, days = 30, now = new Date()) {
     series: buildSeries(facet, range, now),
     platforms: (facet.platforms || []).map((r) => ({ platform: r._id, count: r.n })),
     topics: (facet.topics || []).map((r) => ({ topic: r._id, count: r.n })),
+    // Per-campaign numbers for the report's comparison table (routes add the names).
+    byCampaign: (facet.byCampaign || []).map((r) => ({ campaignId: String(r._id), generated: r.generated, posted: r.posted, rejected: r.rejected })),
     next: facet.next?.[0] || null,
   };
 }
