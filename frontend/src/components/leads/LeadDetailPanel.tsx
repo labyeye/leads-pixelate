@@ -56,6 +56,7 @@ import { statusColors, getCategoryByStatus, getStatusColorClasses, getStatusLabe
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
 import { WhatsAppIcon } from "../icons/WhatsAppIcon";
+import { ManualCallDialog } from "./ManualCallDialog";
 
 const VARIABLE_FIELDS = [
   { value: "name", label: "Contact Name" },
@@ -121,6 +122,7 @@ export function LeadDetailPanel({
     "HOT" | "WARM" | "COLD" | undefined
   >(undefined);
   const [waDialogOpen, setWaDialogOpen] = useState(false);
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
 
   if (!lead) return null;
 
@@ -363,8 +365,23 @@ export function LeadDetailPanel({
               )}
               AI Voice Call
             </Button>
+
+            <Button
+              variant="outline"
+              className="w-full sm:col-span-2 border-2 justify-center gap-1.5 text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 border-black font-bold text-xs"
+              onClick={() => setCallDialogOpen(true)}
+            >
+              <Phone className="w-4 h-4" />
+              Call {lead.name?.split(" ")[0] || "lead"}
+            </Button>
           </div>
         )}
+        <ManualCallDialog
+          open={callDialogOpen}
+          onClose={() => setCallDialogOpen(false)}
+          lead={{ _id: lead._id, name: lead.name, phone: lead.phone }}
+          toast={toast}
+        />
 
         {}
         <WhatsAppSendDialog

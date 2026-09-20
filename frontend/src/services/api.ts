@@ -284,6 +284,17 @@ export const aiCallingAPI = {
     request<{ success: boolean; data: any[] }>(`/ai-calling/logs/${leadId}`),
 };
 
+// Manual calls: Twilio rings the agent, then the lead (backend: routes/callRoutes.js).
+export const callsAPI = {
+  manual: (body: { leadId: string; agentPhone?: string; remember?: boolean }) =>
+    request<{ success: boolean; message: string; data: { callLogId: string; callSid: string } }>("/calls/manual", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  status: (id: string) =>
+    request<{ success: boolean; data: { status: string; durationSeconds: number; errorReason: string } }>(`/calls/${id}`),
+};
+
 export const usersAPI = {
   getAll: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";

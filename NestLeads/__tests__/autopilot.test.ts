@@ -1,6 +1,7 @@
 import {
-  COLORS, chartMax, daysLeft, lineData, pctOf, pieData, planPayload, scanStepIndex,
-  shortDate, sortQueue, statePill, usageColor, usagePct,
+  COLORS, accountTakenBy, campaignPill, chartMax, competitorPayload, daysLeft, lineData, pctOf,
+  pickCampaign, pieData, planPayload, scanStepIndex, scanSteps, shortDate, sortQueue, statePill,
+  usageColor, usagePct,
 } from '../src/lib/autopilot';
 
 const series = (n: number) =>
@@ -121,5 +122,53 @@ describe('posting plan form', () => {
   it('says "day" not "days" for a one-day plan', () => {
     const out = planPayload({...ok, days: [1, 2]}, 1);
     expect('error' in out && out.error).toMatch(/allows 1 posting day a week/);
+  });
+});
+
+describe('campaigns', () => {
+  const one = [{id: 'c1'}];
+  const two = [{id: 'c1'}, {id: 'c2'}];
+
+  it('picks the campaign a screen works on', () => {
+    expect(pickCampaign([], 'all', true)).toBeNull();
+    expect(pickCampaign(one, null, true)).toBe('c1');
+    expect(pickCampaign(one, 'all', true)).toBe('c1'); // "all" needs more than one campaign
+    expect(pickCampaign(two, 'all', true)).toBe('all');
+    expect(pickCampaign(two, null, true)).toBe('all');
+    expect(pickCampaign(two, 'c2', true)).toBe('c2');
+    expect(pickCampaign(two, 'gone', true)).toBe('all');
+    expect(pickCampaign(two, 'all', false)).toBe('c1'); // Setup works on one campaign
+  });
+
+  it('knows which accounts another campaign already uses', () => {
+    expect(accountTakenBy({campaign: null}, 'c1')).toBeNull();
+    expect(accountTakenBy({}, 'c1')).toBeNull();
+    expect(accountTakenBy({campaign: {id: 'c1', name: 'Bakery'}}, 'c1')).toBeNull();
+    expect(accountTakenBy({campaign: {id: 'c2', name: 'Cafe'}}, 'c1')).toBe('Cafe');
+  });
+
+  it('builds and validates a competitor', () => {
+    expect((competitorPayload('@Rival_One', ' cheap ') as any).body).toEqual({username: 'Rival_One', notes: 'cheap'});
+    expect((competitorPayload('', 'a local chain') as any).body).toEqual({username: '', notes: 'a local chain'});
+    expect((competitorPayload('', '  ') as any).error).toMatch(/username or a note/);
+    expect((competitorPayload('not a handle!', '') as any).error).toMatch(/Instagram username/);
+    expect((competitorPayload('rival_one', '', [{username: 'Rival_One'}]) as any).error).toMatch(/already added/);
+    const five = Array.from({length: 5}, (_, i) => ({username: 'a' + i}));
+    expect((competitorPayload('b', '', five) as any).error).toMatch(/up to 5/);
+  });
+
+  it('adds the scan steps for what the owner added, in the server order', () => {
+    expect(scanSteps({intro: true, references: true, competitors: true}).map(s => s.key)).toEqual([
+      'intro', 'profile', 'posts', 'references', 'competitors', 'style', 'profile_built',
+    ]);
+    expect(scanStepIndex('running', 'competitors', {references: true, competitors: true})).toBe(3);
+    expect(scanStepIndex('running', 'style', {competitors: true})).toBe(3);
+    expect(scanStepIndex('done', 'profile_built', {references: true})).toBe(5);
+  });
+
+  it('shows a campaign pill from its own switch and the shared plan state', () => {
+    expect(campaignPill(false, {state: 'paid', endsAt: null}).text).toBe('Paused');
+    expect(campaignPill(true, {state: 'paid', endsAt: null}).text).toBe('Live');
+    expect(campaignPill(true, {state: 'expired', endsAt: null}).text).toBe('Needs a plan');
   });
 });

@@ -46,6 +46,10 @@ const updateSettings = asyncHandler(async (req, res) => {
   const tenantId = req.user.tenantId;
   const updates = req.body;
   if (typeof updates.agentId === "string") updates.agentId = updates.agentId.trim();
+  if (updates.agentId && !updates.agentId.startsWith("agent_")) {
+    res.status(400);
+    throw new Error('Invalid Agent ID. It should look like "agent_xxxxxxxx" (copy it from the ElevenLabs agent page).');
+  }
 
   let settings = await AICallSettings.findOne({ tenantId });
 

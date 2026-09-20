@@ -26,7 +26,7 @@ const CallLogSchema = new Schema(
     },
     callType: {
       type: String,
-      enum: ["automated_ai", "manual_in_app"],
+      enum: ["automated_ai", "manual_in_app", "manual_call"], // manual_call = a person calling through Twilio click-to-call
       default: "automated_ai",
     },
     status: {

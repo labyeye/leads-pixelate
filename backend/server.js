@@ -184,6 +184,7 @@ app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/api/ai-calling", require("./routes/aiCallingRoutes"));
 app.use("/api/webhooks", require("./routes/webhookRoutes"));
+app.use("/api/calls", require("./routes/callRoutes"));
 // /internal/stats must be registered before the broader /internal mount below —
 // Express matches app.use() by path prefix, so /internal/stats would otherwise
 // be swallowed by the /internal router first and rejected by its x-api-key
