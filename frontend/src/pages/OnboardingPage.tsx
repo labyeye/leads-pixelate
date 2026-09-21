@@ -8,8 +8,6 @@ import {
   Zap,
   Crown,
   Rocket,
-  Building2,
-  Building,
   LogOut,
   RefreshCw,
 } from "lucide-react";
@@ -28,13 +26,15 @@ const PLANS = [
     icon: Zap,
     color: "#A3E635",
     employees: "Up to 25",
-    priceMonthly: 499,
-    priceYearly: 4999,
+    priceMonthly: 2999,
+    priceYearly: 29990,
     custom: false,
     description: "Perfect for small sales teams just getting started",
     features: [
       "2,000 leads per month",
       "25 team members",
+      "50 AI voice calls/mo",
+      "Social Autopilot: 1 post/week, 1 campaign",
       "IndiaMART integration",
       "Follow-up reminders",
       "Email support",
@@ -47,13 +47,15 @@ const PLANS = [
     icon: Rocket,
     color: "#024BAB",
     employees: "Up to 50",
-    priceMonthly: 999,
-    priceYearly: 9999,
+    priceMonthly: 5999,
+    priceYearly: 59990,
     custom: false,
     description: "For teams serious about scaling their sales pipeline",
     features: [
       "10,000 leads per month",
       "50 team members",
+      "500 AI voice calls/mo",
+      "Social Autopilot: 3 posts/week, 3 campaigns",
       "IndiaMART + Facebook Lead Ads",
       "Visit calendar & scheduling",
       "Advanced follow-up workflows",
@@ -68,57 +70,19 @@ const PLANS = [
     icon: Crown,
     color: "#FA731C",
     employees: "Up to 100",
-    priceMonthly: 1999,
-    priceYearly: 19999,
+    priceMonthly: 9999,
+    priceYearly: 99990,
     custom: false,
     description: "Advanced features for growing companies",
     features: [
       "50,000 leads per month",
       "100 team members",
+      "2,500 AI voice calls/mo",
+      "Social Autopilot: 5 posts/week, 5 campaigns",
       "All integrations",
       "Advanced analytics",
       "Custom workflows",
-      "Priority support",
-    ],
-    popular: false,
-  },
-  {
-    id: "business" as const,
-    name: "Business",
-    icon: Building2,
-    color: "#0EA5E9",
-    employees: "Up to 250",
-    priceMonthly: 4499,
-    priceYearly: 44999,
-    custom: false,
-    description: "Enterprise-grade features for large sales orgs",
-    features: [
-      "200,000 leads per month",
-      "250 team members",
-      "All integrations",
-      "Dedicated account manager",
-      "SLA guarantee",
-      "Custom reporting",
-    ],
-    popular: false,
-  },
-  {
-    id: "enterprise" as const,
-    name: "Enterprise",
-    icon: Building,
-    color: "#A855F7",
-    employees: "250+",
-    priceMonthly: null,
-    priceYearly: null,
-    custom: true,
-    description: "Custom pricing for large enterprises with unique needs",
-    features: [
-      "Unlimited leads",
-      "Unlimited team members",
-      "All integrations",
-      "Dedicated infrastructure",
-      "SLA guarantee",
-      "Custom onboarding",
+      "Dedicated support",
       "API access",
     ],
     popular: false,
@@ -142,9 +106,7 @@ export default function OnboardingPage() {
   const { toast } = useToast();
 
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
-  const [selectedPlan, setSelectedPlan] = useState<
-    "starter" | "growth" | "professional" | "business" | "enterprise"
-  >("growth");
+  const [selectedPlan, setSelectedPlan] = useState<"starter" | "growth" | "professional">("growth");
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
@@ -325,7 +287,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {PLANS.map((plan) => {
             const isSelected = selectedPlan === plan.id;
             const planPrice = plan.custom
