@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 const Tenant = require("../models/Tenant");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
+const { nextBatchAssignee } = require("../utils/leadAssignment");
 
 // Strict rate limit — 60 submissions per IP per 15 min
 const publicLimiter = rateLimit({
@@ -128,13 +129,25 @@ router.post(
     if (!leadData.company) leadData.company = "Not provided";
     if (!leadData.requirement) leadData.requirement = "Not provided";
 
-    // 7. Auto-assign to first available team member
-    const assignee = await User.findOne({
-      tenantId: tenant._id,
-      role: { $in: ["sales_executive", "admin", "super_admin"] },
-      status: "active",
-    });
-    leadData.assignedTo = assignee?._id || null;
+    // 7. Assign: block round robin across this key's chosen people, else the first available team member.
+    let assigneeId = null;
+    if (matchedKey?.assigneeIds?.length) {
+      assigneeId = await nextBatchAssignee({
+        tenantId: tenant._id,
+        key: `website:${matchedKey.keyHash}`,
+        assigneeIds: matchedKey.assigneeIds,
+        batchSize: matchedKey.assignBatchSize || 1,
+      });
+    }
+    if (!assigneeId) {
+      const assignee = await User.findOne({
+        tenantId: tenant._id,
+        role: { $in: ["sales_executive", "admin", "super_admin"] },
+        status: "active",
+      });
+      assigneeId = assignee?._id || null;
+    }
+    leadData.assignedTo = assigneeId;
 
     // 8. Create the lead
     const lead = await Lead.create({

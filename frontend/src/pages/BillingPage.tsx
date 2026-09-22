@@ -21,7 +21,10 @@ import {
 import { cn } from "@/lib/utils";
 import { billingAPI, settingsAPI, leadsAPI, usersAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import jsPDF from "jspdf";
+import { InvoiceCompany } from "@/components/pdf/InvoicePDFDocument";
+import { pngDataUrl, saveInvoicePDF } from "@/lib/invoicePdf";
+import pdfSign from "@/assets/images/sign.png";
+import pdfKalahanuLogo from "@/assets/images/Logo_Color_Name_Large.png";
 
 const PLAN_META: Record<
   string,
@@ -147,131 +150,62 @@ function capitalise(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
 
-function downloadInvoicePDF(invoice: any, settings: any) {
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const margin = 15;
-  let y = margin;
+// Pixelate Nest issues the subscription invoice, so it prints on the exact same tax-invoice
+// template as final-pixelate (issuer = Pixelate Nest; bill-to = the customer's own company).
+const PIXELATE_NEST: InvoiceCompany = {
+  name: "Kalahanu Tech Studios LLP",
+  addressLines: ["Kala Bhawan, Akharaghat Road, Muzaffarpur, Bihar – 842001"],
+  email: "support@pixelatenest.com",
+  phone: "+91 84069 12345",
+  website: "pixelatenest.com",
+  gst: "10ABFFK0650E1Z2",
+  pan: "ABFFK0650E",
+  state: "Bihar",
+  stateCode: "10",
+  bank: {
+    name: "HDFC Bank Pvt. Ltd.",
+    accountNo: "50200119083987",
+    accountName: "KALAHANU TECH STUDIOS LLP",
+    ifsc: "HDFC0000344",
+    branch: "Saraiyaganj, Muzaffarpur, Bihar",
+    type: "Current",
+  },
+  jurisdiction: "Muzaffarpur",
+  signatoryTitle: "Labh Chandra Bothra, Co-Founder",
+};
 
-  doc.setFillColor(2, 75, 171);
-  doc.rect(0, 0, pageW, 18, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
-  const companyName = settings?.companyName || "Agency Flow CRM";
-  doc.text(companyName, margin, 12);
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text("TAX INVOICE", pageW - margin, 12, { align: "right" });
-
-  y = 28;
-
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  const lines: string[] = [];
-  if (settings?.companyAddress) lines.push(settings.companyAddress);
-  if (settings?.companyPhone) lines.push(`Tel: ${settings.companyPhone}`);
-  if (settings?.companyEmail) lines.push(`Email: ${settings.companyEmail}`);
-  if (settings?.companyGST) lines.push(`GSTIN: ${settings.companyGST}`);
-  if (settings?.companyWebsite) lines.push(settings.companyWebsite);
-  lines.forEach((line) => {
-    doc.text(line, margin, y);
-    y += 5;
+async function downloadInvoicePDF(invoice: any, settings: any) {
+  const paid = (invoice.amount || 0) / 100; // paise, GST included
+  const gstPct = 18;
+  await saveInvoicePDF(invoice.invoiceNumber, {
+    invoice: {
+      invoiceNo: invoice.invoiceNumber,
+      createdAt: invoice.paidAt,
+      dueDate: invoice.paidAt,
+      taxPercent: gstPct,
+      paidAmount: paid,
+      interState: true, // Pixelate Nest is billed from Bihar to customers anywhere; charge IGST
+      items: [
+        {
+          description: `${capitalise(invoice.plan || "")} Plan Subscription (${capitalise(invoice.billingCycle || "monthly")})`,
+          hsn: "998314",
+          quantity: 1,
+          price: paid / (1 + gstPct / 100), // the amount paid already includes GST
+        },
+      ],
+      notes: invoice.hdfcTrackingId ? `Paid in full. Payment reference: ${invoice.hdfcTrackingId}.` : "Paid in full. Thank you for choosing Pixelate Nest.",
+    },
+    client: {
+      name: settings?.companyName || "Customer",
+      address: settings?.companyAddress,
+      phone: settings?.companyPhone,
+      email: settings?.companyEmail,
+      gst: settings?.companyGST,
+    },
+    company: PIXELATE_NEST,
+    logo: await pngDataUrl(pdfKalahanuLogo),
+    sign: pdfSign,
   });
-
-  const rightX = pageW - margin;
-  let ry = 28;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text(`Invoice No: ${invoice.invoiceNumber}`, rightX, ry, {
-    align: "right",
-  });
-  ry += 6;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.text(`Date: ${formatDate(invoice.paidAt)}`, rightX, ry, {
-    align: "right",
-  });
-  ry += 5;
-  if (invoice.hdfcTrackingId) {
-    doc.text(`Payment Ref: ${invoice.hdfcTrackingId}`, rightX, ry, {
-      align: "right",
-    });
-    ry += 5;
-  }
-
-  y = Math.max(y, ry) + 8;
-
-  doc.setDrawColor(2, 75, 171);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
-
-  doc.setFillColor(2, 75, 171);
-  doc.rect(margin, y, pageW - margin * 2, 8, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("Description", margin + 3, y + 5.5);
-  doc.text("Billing Cycle", pageW / 2 - 10, y + 5.5, { align: "center" });
-  doc.text("Amount", pageW - margin - 3, y + 5.5, { align: "right" });
-  y += 8;
-
-  doc.setFillColor(245, 247, 255);
-  doc.rect(margin, y, pageW - margin * 2, 10, "F");
-  doc.setDrawColor(200, 200, 200);
-  doc.rect(margin, y, pageW - margin * 2, 10);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  const planLabel = `${capitalise(invoice.plan || "—")} Plan Subscription`;
-  doc.text(planLabel, margin + 3, y + 6.5);
-  doc.text(
-    capitalise(invoice.billingCycle || "monthly"),
-    pageW / 2 - 10,
-    y + 6.5,
-    { align: "center" },
-  );
-  doc.setFont("helvetica", "bold");
-  doc.text(formatAmount(invoice.amount), pageW - margin - 3, y + 6.5, {
-    align: "right",
-  });
-  y += 16;
-
-  doc.setFillColor(2, 75, 171);
-  doc.rect(pageW - margin - 55, y, 55, 10, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("Total:", pageW - margin - 35, y + 7);
-  doc.text(formatAmount(invoice.amount), pageW - margin - 3, y + 7, {
-    align: "right",
-  });
-  y += 18;
-
-  doc.setTextColor(0, 196, 140);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("✓ PAID", margin, y);
-  y += 10;
-
-  const footerY = doc.internal.pageSize.getHeight() - 18;
-  doc.setDrawColor(2, 75, 171);
-  doc.setLineWidth(0.3);
-  doc.line(margin, footerY, pageW - margin, footerY);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  const footerText =
-    settings?.quotationFooter ||
-    "This is a computer generated invoice. No signature required.";
-  doc.text(footerText, pageW / 2, footerY + 5, { align: "center" });
-  doc.text(companyName, pageW / 2, footerY + 10, { align: "center" });
-
-  doc.save(`${invoice.invoiceNumber}.pdf`);
 }
 
 export default function BillingPage() {
@@ -901,7 +835,7 @@ export default function BillingPage() {
                           {capitalise(inv.status)}
                         </span>
                         <button
-                          onClick={() => downloadInvoicePDF(inv, settings)}
+                          onClick={() => downloadInvoicePDF(inv, settings).catch(() => {})}
                           className="text-xs font-bold text-black underline hover:text-[#FF3366] transition-colors flex items-center gap-1"
                         >
                           <Download className="w-3 h-3" /> Download

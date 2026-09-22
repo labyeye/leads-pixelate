@@ -22,6 +22,8 @@ import ReportsPage from "./pages/ReportsPage";
 import ClientsPage from "./pages/ClientsPage";
 import QuotationsPage from "./pages/QuotationsPage";
 import ProductsPage from "./pages/ProductsPage";
+import PriceBooksPage from "./pages/PriceBooksPage";
+import TradeDocumentsPage from "./pages/TradeDocumentsPage";
 import ServicesPage from "./pages/ServicesPage";
 import ConsolePage from "./pages/ConsolePage";
 import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
@@ -253,6 +255,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProductsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/price-books"
+        element={
+          <ProtectedRoute>
+            <PriceBooksPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sales-orders"
+        element={
+          <ProtectedRoute>
+            <TradeDocumentsPage kind="sales_order" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/purchase-orders"
+        element={
+          <ProtectedRoute>
+            <TradeDocumentsPage kind="purchase_order" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/invoices"
+        element={
+          <ProtectedRoute>
+            <TradeDocumentsPage kind="invoice" />
           </ProtectedRoute>
         }
       />

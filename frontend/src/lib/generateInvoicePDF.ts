@@ -105,6 +105,8 @@ export async function generateInvoicePDF(q: any, settings: any): Promise<void> {
   doc.save(`${q.number || "quotation"}.pdf`);
 }
 
+// q may also carry (all optional): docTitle, numberLabel, dateLabel, dueLabel, dueDate, partyLabel,
+// terms (string[]), taxPercent, amountPaid. Used for sales orders, purchase orders and invoices.
 export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
 
@@ -126,7 +128,9 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   const bankAccountType = settings?.bankAccountType || "Current";
 
   const termLines: string[] =
-    settings?.quotationTerms?.length > 0
+    q.terms?.length > 0
+      ? q.terms
+      : settings?.quotationTerms?.length > 0
       ? settings.quotationTerms
       : [
           "Payment is due within 30 days of invoice date.",
@@ -135,7 +139,7 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
           "Interest @ 18% p.a. charged on overdue amounts.",
         ];
 
-  const invoiceTitle = settings?.quotationTitle || "TAX INVOICE";
+  const invoiceTitle = q.docTitle || settings?.quotationTitle || "TAX INVOICE";
   const footerText =
     settings?.quotationFooter ||
     "This is a computer-generated invoice and does not require a physical signature.";
@@ -179,7 +183,9 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   );
   const discount = Number(q.discount || 0);
   const taxableAmount = subtotal - discount;
-  const TAX_RATE = 0.18;
+  const TAX_RATE = (q.taxPercent ?? 18) / 100;
+  const taxPct = Number((TAX_RATE * 100).toFixed(2));
+  const halfPct = Number((taxPct / 2).toFixed(2));
   const igstAmt = isInterState ? taxableAmount * TAX_RATE : 0;
   const cgstAmt = !isInterState ? taxableAmount * (TAX_RATE / 2) : 0;
   const sgstAmt = !isInterState ? taxableAmount * (TAX_RATE / 2) : 0;
@@ -288,9 +294,9 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   });
 
   const metaRows: [string, string][] = [
-    ["Invoice No.", q.number || "—"],
+    [q.numberLabel || "Invoice No.", q.number || "—"],
     [
-      "Invoice Date",
+      q.dateLabel || "Invoice Date",
       new Date(q.date || Date.now()).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
@@ -298,8 +304,8 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       }),
     ],
     [
-      "Due Date",
-      new Date(q.date || Date.now()).toLocaleDateString("en-IN", {
+      q.dueLabel || "Due Date",
+      new Date(q.dueDate || q.date || Date.now()).toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -351,7 +357,7 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   doc.rect(ML, billY, halfCW, billBoxH, "S");
   setB(7);
   setTextClr(doc, PRIMARY);
-  doc.text("BILL TO", ML + 5, billY + 10);
+  doc.text(q.partyLabel || "BILL TO", ML + 5, billY + 10);
   hline(doc, ML + 5, billY + 13, halfCW - 10, LINE);
 
   let bly = billY + 22;
@@ -371,7 +377,6 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
   doc.rect(shipX, billY, halfCW, billBoxH, "S");
   setB(7);
   setTextClr(doc, PRIMARY);
-  doc.text("SHIP TO / DELIVER TO", shipX + 5, billY + 10);
   hline(doc, shipX + 5, billY + 13, halfCW - 10, LINE);
 
   let sly = billY + 22;
@@ -561,10 +566,10 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     ["Taxable Amount", rupee(taxableAmount), false],
   ];
   if (isInterState) {
-    totRows.push([`IGST (18%)`, rupee(igstAmt), false]);
+    totRows.push([`IGST (${taxPct}%)`, rupee(igstAmt), false]);
   } else {
-    totRows.push([`CGST (9%)`, rupee(cgstAmt), false]);
-    totRows.push([`SGST (9%)`, rupee(sgstAmt), false]);
+    totRows.push([`CGST (${halfPct}%)`, rupee(cgstAmt), false]);
+    totRows.push([`SGST (${halfPct}%)`, rupee(sgstAmt), false]);
   }
   totRows.push(["Grand Total", rupee(grandTotal), true]);
   totRows.push(["(-) Amount Paid", rupee(Number(q.amountPaid || 0)), false]);
@@ -678,7 +683,7 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
       align: "right",
     });
     doc.text(
-      isInterState ? "18%" : "9%",
+      isInterState ? `${taxPct}%` : `${halfPct}%`,
       hsnXs.rate + hsnCols.rate / 2,
       hsnRowY + 10,
       { align: "center" },

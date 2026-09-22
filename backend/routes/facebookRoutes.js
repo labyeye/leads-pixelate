@@ -8,6 +8,7 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const CampaignAssignment = require("../models/CampaignAssignment");
+const { nextBatchAssignee } = require("../utils/leadAssignment");
 const log = require("../utils/logger").scope("Facebook Ads");
 
 const FB_API = "https://graph.facebook.com/v20.0";
@@ -651,7 +652,18 @@ router.post(
     }
 
     const assigneeCache = {};
-    const resolveAssignee = async (defaultAssigneeId) => {
+    // assigneeIds (block round robin) wins over the single defaultAssigneeId when set.
+    const resolveAssignee = async (page) => {
+      if (page.assigneeIds?.length) {
+        const id = await nextBatchAssignee({
+          tenantId: tenant._id,
+          key: `facebook:${page.pageId}`,
+          assigneeIds: page.assigneeIds,
+          batchSize: page.assignBatchSize || 1,
+        });
+        if (id) return id;
+      }
+      const defaultAssigneeId = page.defaultAssigneeId;
       if (!defaultAssigneeId) return adminUser._id;
       if (assigneeCache[defaultAssigneeId])
         return assigneeCache[defaultAssigneeId];
@@ -852,9 +864,7 @@ router.post(
                 pageResult.updated++;
               } else {
                 try {
-                  const assigneeId = await resolveAssignee(
-                    page.defaultAssigneeId,
-                  );
+                  const assigneeId = await resolveAssignee(page);
                   await Lead.create({
                     ...leadData,
                     source: resolvedSource,
@@ -1102,7 +1112,15 @@ router.post(
           }
 
           let assigneeId = null;
-          if (pageConfig.defaultAssigneeId) {
+          if (pageConfig.assigneeIds?.length) {
+            assigneeId = await nextBatchAssignee({
+              tenantId: tenant._id,
+              key: `facebook:${pageConfig.pageId}`,
+              assigneeIds: pageConfig.assigneeIds,
+              batchSize: pageConfig.assignBatchSize || 1,
+            });
+          }
+          if (!assigneeId && pageConfig.defaultAssigneeId) {
             const u = await User.findById(pageConfig.defaultAssigneeId).catch(
               () => null,
             );

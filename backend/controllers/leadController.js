@@ -21,6 +21,7 @@ const {
 const User = require("../models/User");
 const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
+const { nextBatchAssignee } = require("../utils/leadAssignment");
 const { buildTransitionMaps } = require("../utils/leadStatuses");
 const { sendBulkLeadEmail } = require("../utils/emailService");
 const { autoCallNewLeadIfEnabled } = require("../services/elevenLabsService");
@@ -734,6 +735,7 @@ const syncFromIndiamart = asyncHandler(async (req, res) => {
     endTime,
     updateExisting: false,
     assigneeIds: tenant?.integrations?.indiamart?.assigneeIds || [],
+    batchSize: tenant?.integrations?.indiamart?.assignBatchSize || 1,
   });
 
   await Tenant.findOneAndUpdate(query, {
@@ -794,6 +796,7 @@ const getIndiamartSyncStatus = asyncHandler(async (req, res) => {
       last7DaysLeads: recentCount,
       recentSyncs: syncLogs.slice(0, 10),
       assigneeIds: integration.assigneeIds || [],
+      assignBatchSize: integration.assignBatchSize || 1,
     },
   });
 });
@@ -848,7 +851,12 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
         const savedIds = tenant?.integrations?.indiamart?.assigneeIds || [];
         const assignToId =
           savedIds.length > 0
-            ? await getRoundRobinFromIds(savedIds)
+            ? await nextBatchAssignee({
+                tenantId: tenant?._id,
+                key: "indiamart",
+                assigneeIds: savedIds,
+                batchSize: tenant?.integrations?.indiamart?.assignBatchSize || 1,
+              })
             : await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
         if (tenant) {
@@ -950,6 +958,7 @@ const syncFromTradeindia = asyncHandler(async (req, res) => {
     startDate: req.body.start_date,
     endDate: req.body.end_date,
     assigneeIds: ti.assigneeIds || [],
+    batchSize: ti.assignBatchSize || 1,
     getRoundRobinFromIds,
     getRoundRobinAssigneeId,
   });
@@ -994,6 +1003,7 @@ const getTradeindiaSyncStatus = asyncHandler(async (req, res) => {
       totalTradeindiaLeads: total,
       last7DaysLeads: recentCount,
       assigneeIds: integration.assigneeIds || [],
+      assignBatchSize: integration.assignBatchSize || 1,
     },
   });
 });
@@ -1072,6 +1082,7 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
       totalJustdialLeads: total,
       last7DaysLeads: recentCount,
       assigneeIds: integration.assigneeIds || [],
+      assignBatchSize: integration.assignBatchSize || 1,
     },
   });
 });
@@ -1104,7 +1115,12 @@ const justdialWebhook = asyncHandler(async (req, res) => {
     const savedIds = tenant.integrations?.justdial?.assigneeIds || [];
     const assignToId =
       savedIds.length > 0
-        ? await getRoundRobinFromIds(savedIds)
+        ? await nextBatchAssignee({
+            tenantId: tenant._id,
+            key: "justdial",
+            assigneeIds: savedIds,
+            batchSize: tenant.integrations?.justdial?.assignBatchSize || 1,
+          })
         : await getRoundRobinAssigneeId(tenant._id);
 
     const leadData = mapJDLeadToModel(req.body, assignToId);
@@ -1205,17 +1221,42 @@ const getStatusHistoryReport = asyncHandler(async (req, res) => {
   res.json({ success: true, count: results.length, data: results });
 });
 
+const clampBatchSize = (v) => Math.max(1, Math.min(1000, Math.round(Number(v)) || 1));
+
 const updateIndiamartSettings = asyncHandler(async (req, res) => {
-  const { assigneeIds } = req.body;
+  const { assigneeIds, batchSize } = req.body;
   const query = req.user.tenantId
     ? { _id: req.user.tenantId }
     : { ownerUser: req.user._id };
   await Tenant.findOneAndUpdate(query, {
-    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds)
-      ? assigneeIds
-      : [],
+    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
+    ...(batchSize !== undefined ? { "integrations.indiamart.assignBatchSize": clampBatchSize(batchSize) } : {}),
   });
   res.json({ success: true, message: "IndiaMART settings updated" });
+});
+
+const updateTradeindiaSettings = asyncHandler(async (req, res) => {
+  const { assigneeIds, batchSize } = req.body;
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.tradeindia.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
+    ...(batchSize !== undefined ? { "integrations.tradeindia.assignBatchSize": clampBatchSize(batchSize) } : {}),
+  });
+  res.json({ success: true, message: "TradeIndia settings updated" });
+});
+
+const updateJustdialSettings = asyncHandler(async (req, res) => {
+  const { assigneeIds, batchSize } = req.body;
+  const query = req.user.tenantId
+    ? { _id: req.user.tenantId }
+    : { ownerUser: req.user._id };
+  await Tenant.findOneAndUpdate(query, {
+    "integrations.justdial.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
+    ...(batchSize !== undefined ? { "integrations.justdial.assignBatchSize": clampBatchSize(batchSize) } : {}),
+  });
+  res.json({ success: true, message: "Justdial settings updated" });
 });
 
 const importLeads = asyncHandler(async (req, res) => {
@@ -1412,6 +1453,8 @@ module.exports = {
   justdialWebhook,
   getStatusHistoryReport,
   updateIndiamartSettings,
+  updateTradeindiaSettings,
+  updateJustdialSettings,
   getLeadColumnPreferences,
   updateLeadColumnPreferences,
   getSavedViews,

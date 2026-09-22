@@ -20,6 +20,8 @@ import ReportsScreen from '../screens/ReportsScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import WhatsAppInboxScreen from '../screens/WhatsAppInboxScreen';
 import ProductsScreen from '../screens/ProductsScreen';
+import PriceBooksScreen from '../screens/PriceBooksScreen';
+import TradeDocumentsScreen from '../screens/TradeDocumentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import CampaignsScreen from '../screens/CampaignsScreen';
 import UsersScreen from '../screens/UsersScreen';
@@ -74,6 +76,10 @@ export type MoreStackParamList = {
   Reports: undefined;
   WhatsAppInbox: undefined;
   Products: undefined;
+  PriceBooks: undefined;
+  SalesOrders: {kind: "sales_order"} | undefined;
+  PurchaseOrders: {kind: "purchase_order"} | undefined;
+  Invoices: {kind: "invoice"} | undefined;
   Settings: undefined;
   Campaigns: undefined;
   Users: undefined;
@@ -138,6 +144,10 @@ function MoreNavigator() {
       <MoreStack.Screen name="Reports" component={ReportsScreen} />
       <MoreStack.Screen name="WhatsAppInbox" component={WhatsAppInboxScreen} />
       <MoreStack.Screen name="Products" component={ProductsScreen} />
+      <MoreStack.Screen name="PriceBooks" component={PriceBooksScreen} />
+      <MoreStack.Screen name="SalesOrders" component={TradeDocumentsScreen} initialParams={{kind: "sales_order"}} />
+      <MoreStack.Screen name="PurchaseOrders" component={TradeDocumentsScreen} initialParams={{kind: "purchase_order"}} />
+      <MoreStack.Screen name="Invoices" component={TradeDocumentsScreen} initialParams={{kind: "invoice"}} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} />
       <MoreStack.Screen name="Campaigns" component={CampaignsScreen} />
       <MoreStack.Screen name="Users" component={UsersScreen} />

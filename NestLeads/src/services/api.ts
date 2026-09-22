@@ -227,6 +227,21 @@ export const productsAPI = {
     request<{ success: boolean }>(`/products/${id}`, { method: 'DELETE' }),
 };
 
+// Inventory: price books, sales orders, purchase orders, invoices (same list/create/update/remove
+// shape as the backend's inventoryRoutes.js).
+const inventoryResource = (path: string) => ({
+  getAll: () => request<{ success: boolean; count: number; data: any[] }>(path),
+  create: (data: any) =>
+    request<{ success: boolean; data: any }>(path, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`${path}/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => request<{ success: boolean }>(`${path}/${id}`, { method: 'DELETE' }),
+});
+export const priceBooksAPI = inventoryResource('/price-books');
+export const salesOrdersAPI = inventoryResource('/sales-orders');
+export const purchaseOrdersAPI = inventoryResource('/purchase-orders');
+export const invoicesAPI = inventoryResource('/invoices');
+
 export const usersAPI = {
   getAll: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';

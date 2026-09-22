@@ -27,6 +27,8 @@ const {
   justdialWebhook,
   getStatusHistoryReport,
   updateIndiamartSettings,
+  updateTradeindiaSettings,
+  updateJustdialSettings,
   getLeadColumnPreferences,
   updateLeadColumnPreferences,
   getSavedViews,
@@ -87,6 +89,11 @@ router.post(
   authorize("super_admin", "admin"),
   syncFromTradeindia,
 );
+router.post(
+  "/tradeindia/settings",
+  authorize("super_admin", "admin"),
+  updateTradeindiaSettings,
+);
 
 router.get(
   "/justdial/status",
@@ -102,6 +109,11 @@ router.post(
   "/justdial/disconnect",
   authorize("super_admin", "admin"),
   disconnectJustdial,
+);
+router.post(
+  "/justdial/settings",
+  authorize("super_admin", "admin"),
+  updateJustdialSettings,
 );
 
 router.get("/reports/status-history", getStatusHistoryReport);

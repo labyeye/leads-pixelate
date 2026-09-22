@@ -522,6 +522,11 @@ export const tradeindiaSyncAPI = {
       "/leads/tradeindia/disconnect",
       { method: "POST" },
     ),
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>(
+      "/leads/tradeindia/settings",
+      { method: "POST", body: JSON.stringify({ assigneeIds, batchSize }) },
+    ),
 };
 
 export const justdialSyncAPI = {
@@ -536,6 +541,11 @@ export const justdialSyncAPI = {
     request<{ success: boolean; message: string }>(
       "/leads/justdial/disconnect",
       { method: "POST" },
+    ),
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>(
+      "/leads/justdial/settings",
+      { method: "POST", body: JSON.stringify({ assigneeIds, batchSize }) },
     ),
 };
 
@@ -563,6 +573,19 @@ export const productsAPI = {
   delete: (id: string) =>
     request<{ success: boolean }>(`/products/${id}`, { method: "DELETE" }),
 };
+
+// Inventory section: price books, sales orders, purchase orders, invoices (same list/create/update/remove shape).
+const inventoryResource = (path: string) => ({
+  getAll: () => request<{ success: boolean; count: number; data: any[] }>(path),
+  create: (body: unknown) => request<{ success: boolean; data: any }>(path, { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: unknown) =>
+    request<{ success: boolean; data: any }>(`${path}/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  remove: (id: string) => request<{ success: boolean }>(`${path}/${id}`, { method: "DELETE" }),
+});
+export const priceBooksAPI = inventoryResource("/price-books");
+export const salesOrdersAPI = inventoryResource("/sales-orders");
+export const purchaseOrdersAPI = inventoryResource("/purchase-orders");
+export const invoicesAPI = inventoryResource("/invoices");
 
 export const billingAPI = {
   getPlans: () => request<{ success: boolean; data: any }>("/billing/plans"),
@@ -1267,10 +1290,10 @@ export const indiamartAPI = {
       "/leads/indiamart/sync",
       { method: "POST", body: JSON.stringify(body || {}) },
     ),
-  updateSettings: (assigneeIds: string[]) =>
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
     request<{ success: boolean; message: string }>(
       "/leads/indiamart/settings",
-      { method: "POST", body: JSON.stringify({ assigneeIds }) },
+      { method: "POST", body: JSON.stringify({ assigneeIds, batchSize }) },
     ),
 };
 

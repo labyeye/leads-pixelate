@@ -2,6 +2,7 @@ const https = require("https");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const { resolvePincode, isPincode } = require("../utils/pincode");
+const { nextBatchAssignee } = require("../utils/leadAssignment");
 const log = require("../utils/logger").scope("IndiaMART Sync");
 
 const INDIAMART_API_BASE =
@@ -273,6 +274,7 @@ async function syncIndiamartLeads({
   endTime,
   updateExisting = true,
   assigneeIds = [],
+  batchSize = 1,
 }) {
   const result = {
     fetched: 0,
@@ -406,7 +408,7 @@ async function syncIndiamartLeads({
 
       const assignedToId =
         assigneeIds.length > 0
-          ? await getRoundRobinFromIds(assigneeIds)
+          ? await nextBatchAssignee({ tenantId, key: "indiamart", assigneeIds, batchSize })
           : await getRoundRobinAssigneeId(tenantId);
       const leadData = mapIMLeadToModel(record, assignedToId);
       if (tenantId) leadData.tenantId = tenantId;
@@ -422,7 +424,7 @@ async function syncIndiamartLeads({
 
 let lastSyncEndTime = null;
 
-async function runScheduledSync(tenantId, apiKey, assigneeIds = []) {
+async function runScheduledSync(tenantId, apiKey, assigneeIds = [], batchSize = 1) {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -439,6 +441,7 @@ async function runScheduledSync(tenantId, apiKey, assigneeIds = []) {
     startTime,
     endTime,
     assigneeIds,
+    batchSize,
   });
 
   lastSyncEndTime = now.toISOString();
@@ -459,6 +462,7 @@ module.exports = {
   syncIndiamartLeads,
   runScheduledSync,
   formatIMDate,
+  parseIMDate,
   fetchFromIndiaMART,
   mapIMLeadToModel,
   getRoundRobinAssigneeId,

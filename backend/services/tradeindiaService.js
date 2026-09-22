@@ -137,9 +137,11 @@ async function syncTradeIndiaLeads({
   startDate,
   endDate,
   assigneeIds = [],
+  batchSize = 1,
   getRoundRobinFromIds,
   getRoundRobinAssigneeId,
 }) {
+  const { nextBatchAssignee } = require("../utils/leadAssignment");
   const result = { fetched: 0, created: 0, skipped: 0, errors: [] };
 
   const payload = await fetchFromTradeIndia(apiUrl, {
@@ -187,7 +189,7 @@ async function syncTradeIndiaLeads({
 
       const assignedToId =
         assigneeIds.length > 0
-          ? await getRoundRobinFromIds(assigneeIds)
+          ? await nextBatchAssignee({ tenantId, key: "tradeindia", assigneeIds, batchSize })
           : await getRoundRobinAssigneeId(tenantId);
 
       const leadData = mapTILeadToModel(record, assignedToId);

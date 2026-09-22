@@ -63,6 +63,8 @@ const tenantSchema = new mongoose.Schema(
         apiKey: { type: String, default: "" },
         lastSync: { type: Date, default: null },
         assigneeIds: { type: [String], default: [] },
+        // Block round robin: N leads to the first person in assigneeIds, then N to the next...
+        assignBatchSize: { type: Number, default: 1 },
       },
       facebook: {
         enabled: { type: Boolean, default: false },
@@ -78,6 +80,9 @@ const tenantSchema = new mongoose.Schema(
 
             allowedStates: { type: [String], default: [] },
             defaultAssigneeId: { type: String, default: "" },
+            // When set, overrides defaultAssigneeId with a block round robin across these people.
+            assigneeIds: { type: [String], default: [] },
+            assignBatchSize: { type: Number, default: 1 },
             webhookVerified: { type: Boolean, default: false },
             connectedAt: { type: Date, default: null },
           },
@@ -94,6 +99,7 @@ const tenantSchema = new mongoose.Schema(
         apiUrl: { type: String, default: "" },
         lastSync: { type: Date, default: null },
         assigneeIds: { type: [String], default: [] },
+        assignBatchSize: { type: Number, default: 1 },
       },
       googleAds: {
         enabled: { type: Boolean, default: false },
@@ -109,6 +115,8 @@ const tenantSchema = new mongoose.Schema(
 
             allowedStates: { type: [String], default: [] },
             defaultAssigneeId: { type: String, default: "" },
+            assigneeIds: { type: [String], default: [] },
+            assignBatchSize: { type: Number, default: 1 },
             webhookKey: { type: String, default: "" },
             connectedAt: { type: Date, default: null },
           },
@@ -127,6 +135,8 @@ const tenantSchema = new mongoose.Schema(
 
             allowedStates: { type: [String], default: [] },
             defaultAssigneeId: { type: String, default: "" },
+            assigneeIds: { type: [String], default: [] },
+            assignBatchSize: { type: Number, default: 1 },
             webhookKey: { type: String, default: "" },
             connectedAt: { type: Date, default: null },
           },
@@ -141,6 +151,7 @@ const tenantSchema = new mongoose.Schema(
         webhookToken: { type: String, default: "" },
         lastLeadAt: { type: Date, default: null },
         assigneeIds: { type: [String], default: [] },
+        assignBatchSize: { type: Number, default: 1 },
       },
       whatsapp: {
         enabled: { type: Boolean, default: false },
@@ -270,6 +281,9 @@ const tenantSchema = new mongoose.Schema(
             required: { type: Boolean, default: false },
           },
         ],
+        // Block round robin: N leads through this key to the first person, then N to the next...
+        assigneeIds: { type: [String], default: [] },
+        assignBatchSize: { type: Number, default: 1 },
       },
     ],
   },

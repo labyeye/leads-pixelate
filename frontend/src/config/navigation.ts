@@ -28,6 +28,9 @@ import {
   Sparkles,
   Inbox,
   Send,
+  Tag,
+  ShoppingCart,
+  Receipt,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
@@ -107,12 +110,11 @@ const allGroups: NavGroup[] = [
           "accountant",
         ],
       },
-      {
-        title: "Quotations",
-        href: "/quotations",
-        icon: FileText,
-        roles: ["super_admin", "admin", "sales_executive", "accountant"],
-      },
+    ],
+  },
+  {
+    label: "Inventory",
+    items: [
       {
         title: "Products",
         href: "/products",
@@ -124,6 +126,36 @@ const allGroups: NavGroup[] = [
         href: "/services",
         icon: Briefcase,
         roles: ["super_admin", "admin", "service_manager"],
+      },
+      {
+        title: "Price Books",
+        href: "/price-books",
+        icon: Tag,
+        roles: ["super_admin", "admin", "sales_executive", "service_manager"],
+      },
+      {
+        title: "Quotations",
+        href: "/quotations",
+        icon: FileText,
+        roles: ["super_admin", "admin", "sales_executive", "accountant"],
+      },
+      {
+        title: "Sales Orders",
+        href: "/sales-orders",
+        icon: ClipboardList,
+        roles: ["super_admin", "admin", "sales_executive", "accountant"],
+      },
+      {
+        title: "Purchase Orders",
+        href: "/purchase-orders",
+        icon: ShoppingCart,
+        roles: ["super_admin", "admin", "sales_executive", "service_manager"],
+      },
+      {
+        title: "Invoices",
+        href: "/invoices",
+        icon: Receipt,
+        roles: ["super_admin", "admin", "sales_executive", "accountant"],
       },
     ],
   },

@@ -7,6 +7,7 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
+const { nextBatchAssignee } = require("../utils/leadAssignment");
 const googleAds = require("../services/googleAdsService");
 const log = require("../utils/logger").scope("Google Ads");
 
@@ -300,7 +301,18 @@ router.get(
   }),
 );
 
-async function resolveAssignee(defaultAssigneeId, adminUser, cache) {
+// assigneeIds (block round robin) wins over the single defaultAssigneeId when set.
+async function resolveAssignee(account, tenantId, adminUser, cache) {
+  if (account.assigneeIds?.length) {
+    const id = await nextBatchAssignee({
+      tenantId,
+      key: `googleAds:${account.customerId}`,
+      assigneeIds: account.assigneeIds,
+      batchSize: account.assignBatchSize || 1,
+    });
+    if (id) return id;
+  }
+  const defaultAssigneeId = account.defaultAssigneeId;
   if (!defaultAssigneeId) return adminUser._id;
   if (cache[defaultAssigneeId]) return cache[defaultAssigneeId];
   const u = await User.findById(defaultAssigneeId).catch(() => null);
@@ -377,7 +389,8 @@ async function upsertLeadFromSubmission({
   }
 
   const assigneeId = await resolveAssignee(
-    account.defaultAssigneeId,
+    account,
+    tenant?._id,
     adminUser,
     assigneeCache,
   );

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
 import { GoogleAdsWizard } from "@/components/integrations/GoogleAdsWizard";
+import { LeadAssignmentPanel } from "@/components/integrations/LeadAssignmentPanel";
 import {
   facebookAPI,
   googleAdsAPI,
@@ -1065,10 +1066,17 @@ export default function IntegrationsPage() {
   const [gadsHasToken, setGadsHasToken] = useState(false);
   const [linkedinHasToken, setLinkedinHasToken] = useState(false);
 
-  // IndiaMART assignee state
+  // Lead assignment state, shared by the IndiaMART/TradeIndia/Justdial cards.
   const [imUsers, setImUsers] = useState<{ _id: string; name: string }[]>([]);
   const [imAssigneeIds, setImAssigneeIds] = useState<string[]>([]);
+  const [imBatchSize, setImBatchSize] = useState(1);
   const [imSavingAssignees, setImSavingAssignees] = useState(false);
+  const [tiAssigneeIds, setTiAssigneeIds] = useState<string[]>([]);
+  const [tiBatchSize, setTiBatchSize] = useState(1);
+  const [tiSavingAssignees, setTiSavingAssignees] = useState(false);
+  const [jdAssigneeIds, setJdAssigneeIds] = useState<string[]>([]);
+  const [jdBatchSize, setJdBatchSize] = useState(1);
+  const [jdSavingAssignees, setJdSavingAssignees] = useState(false);
 
   // Check DB on mount for existing connections
   useEffect(() => {
@@ -1098,6 +1106,29 @@ export default function IntegrationsPage() {
         if (res.data?.connected) {
           setConnectedIds((prev) => new Set([...prev, "indiamart"]));
           setImAssigneeIds(res.data?.assigneeIds || []);
+          setImBatchSize(res.data?.assignBatchSize || 1);
+        }
+      })
+      .catch(() => {});
+
+    tradeindiaSyncAPI
+      .getStatus()
+      .then((res) => {
+        if (res.data?.connected) {
+          setConnectedIds((prev) => new Set([...prev, "tradeindia"]));
+          setTiAssigneeIds(res.data?.assigneeIds || []);
+          setTiBatchSize(res.data?.assignBatchSize || 1);
+        }
+      })
+      .catch(() => {});
+
+    justdialSyncAPI
+      .getStatus()
+      .then((res) => {
+        if (res.data?.connected) {
+          setConnectedIds((prev) => new Set([...prev, "justdial"]));
+          setJdAssigneeIds(res.data?.assigneeIds || []);
+          setJdBatchSize(res.data?.assignBatchSize || 1);
         }
       })
       .catch(() => {});
@@ -1393,69 +1424,66 @@ export default function IntegrationsPage() {
                     </button>
                   )}
 
-                {/* IndiaMART: Lead Assignment panel (shown only when connected) */}
+                {/* Lead Assignment panel: which of the team these leads go to, batch round-robin size */}
                 {integ.id === "indiamart" && isConnected && (
-                  <div className="mt-4 pt-4 border-t-2 border-black">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                      Lead Assignment
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mb-3">
-                      Select who receives IndiaMART leads. One person = all
-                      leads go there. Multiple = round-robin. None = auto
-                      round-robin among all sales team.
-                    </p>
-                    <div className="flex flex-col gap-1 mb-3 max-h-40 overflow-y-auto border-2 border-black p-2 bg-[#F9FAFB]">
-                      {imUsers.map((u) => {
-                        const checked = imAssigneeIds.includes(u._id);
-                        return (
-                          <label
-                            key={u._id}
-                            className="flex items-center gap-2 cursor-pointer text-sm font-medium text-black hover:bg-[#024BAB]/10 px-2 py-1"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => {
-                                setImAssigneeIds((prev) =>
-                                  checked
-                                    ? prev.filter((id) => id !== u._id)
-                                    : [...prev, u._id],
-                                );
-                              }}
-                              className="accent-[#024BAB] w-4 h-4"
-                            />
-                            {u.name}
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <button
-                      disabled={imSavingAssignees}
-                      onClick={async () => {
-                        setImSavingAssignees(true);
-                        try {
-                          await indiamartAPI.updateSettings(imAssigneeIds);
-                          toast({
-                            title: "Saved!",
-                            description:
-                              imAssigneeIds.length === 0
-                                ? "Using auto round-robin for all sales team."
-                                : `Leads will be assigned to ${imAssigneeIds.length} selected user(s).`,
-                          });
-                        } catch {
-                          toast({
-                            title: "Error",
-                            description: "Could not save assignment settings.",
-                            variant: "destructive",
-                          });
-                        }
-                        setImSavingAssignees(false);
-                      }}
-                      className="nb-btn w-full py-2 text-sm font-bold bg-[#024BAB] text-white"
-                    >
-                      {imSavingAssignees ? "Saving…" : "Save Assignment"}
-                    </button>
-                  </div>
+                  <LeadAssignmentPanel
+                    users={imUsers}
+                    assigneeIds={imAssigneeIds}
+                    onAssigneeIdsChange={setImAssigneeIds}
+                    batchSize={imBatchSize}
+                    onBatchSizeChange={setImBatchSize}
+                    saving={imSavingAssignees}
+                    onSave={async () => {
+                      setImSavingAssignees(true);
+                      try {
+                        await indiamartAPI.updateSettings(imAssigneeIds, imBatchSize);
+                        toast({ title: "Saved!", description: "IndiaMART lead assignment updated." });
+                      } catch {
+                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      }
+                      setImSavingAssignees(false);
+                    }}
+                  />
+                )}
+                {integ.id === "tradeindia" && isConnected && (
+                  <LeadAssignmentPanel
+                    users={imUsers}
+                    assigneeIds={tiAssigneeIds}
+                    onAssigneeIdsChange={setTiAssigneeIds}
+                    batchSize={tiBatchSize}
+                    onBatchSizeChange={setTiBatchSize}
+                    saving={tiSavingAssignees}
+                    onSave={async () => {
+                      setTiSavingAssignees(true);
+                      try {
+                        await tradeindiaSyncAPI.updateSettings(tiAssigneeIds, tiBatchSize);
+                        toast({ title: "Saved!", description: "TradeIndia lead assignment updated." });
+                      } catch {
+                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      }
+                      setTiSavingAssignees(false);
+                    }}
+                  />
+                )}
+                {integ.id === "justdial" && isConnected && (
+                  <LeadAssignmentPanel
+                    users={imUsers}
+                    assigneeIds={jdAssigneeIds}
+                    onAssigneeIdsChange={setJdAssigneeIds}
+                    batchSize={jdBatchSize}
+                    onBatchSizeChange={setJdBatchSize}
+                    saving={jdSavingAssignees}
+                    onSave={async () => {
+                      setJdSavingAssignees(true);
+                      try {
+                        await justdialSyncAPI.updateSettings(jdAssigneeIds, jdBatchSize);
+                        toast({ title: "Saved!", description: "Justdial lead assignment updated." });
+                      } catch {
+                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      }
+                      setJdSavingAssignees(false);
+                    }}
+                  />
                 )}
               </div>
             );
