@@ -22,6 +22,16 @@ const User = require("../models/User");
 const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
 const { nextBatchAssignee } = require("../utils/leadAssignment");
+
+// Shows the last 4 characters only, so "Manage Connection" can confirm a key is saved without
+// exposing it. `strip` optionally drops a query string first (a TradeIndia API Link can carry the
+// key as a query param).
+const maskSecret = (v, { strip } = {}) => {
+  let s = String(v || "");
+  if (strip) s = s.split("?")[0];
+  if (!s) return "";
+  return s.length <= 4 ? "••••" : `••••${s.slice(-4)}`;
+};
 const { buildTransitionMaps } = require("../utils/leadStatuses");
 const { sendBulkLeadEmail } = require("../utils/emailService");
 const { autoCallNewLeadIfEnabled } = require("../services/elevenLabsService");
@@ -791,6 +801,7 @@ const getIndiamartSyncStatus = asyncHandler(async (req, res) => {
     data: {
       connected,
       apiKeyConfigured: connected,
+      apiKeyMasked: maskSecret(integration.apiKey),
       lastSync: integration.lastSync || null,
       totalIndiamartLeads: total,
       last7DaysLeads: recentCount,
@@ -999,6 +1010,10 @@ const getTradeindiaSyncStatus = asyncHandler(async (req, res) => {
     data: {
       connected,
       configured: connected,
+      userId: integration.userId || "",
+      profileId: integration.profileId || "",
+      apiKeyMasked: maskSecret(integration.apiKey),
+      apiUrlMasked: maskSecret(integration.apiUrl, { strip: true }),
       lastSync: integration.lastSync || null,
       totalTradeindiaLeads: total,
       last7DaysLeads: recentCount,
@@ -1078,6 +1093,7 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
       webhookUrl: connected
         ? `${backendUrl}/api/leads/justdial/webhook/${integration.webhookToken}`
         : null,
+      apiKeyMasked: maskSecret(integration.apiKey),
       lastLeadAt: integration.lastLeadAt || null,
       totalJustdialLeads: total,
       last7DaysLeads: recentCount,

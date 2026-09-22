@@ -23,6 +23,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { FacebookWizard } from "@/components/integrations/FacebookWizard";
 import { GoogleAdsWizard } from "@/components/integrations/GoogleAdsWizard";
 import { LeadAssignmentPanel } from "@/components/integrations/LeadAssignmentPanel";
+import { ManageKeyIntegrationPanel } from "@/components/integrations/ManageKeyIntegrationPanel";
 import {
   facebookAPI,
   googleAdsAPI,
@@ -1027,6 +1028,7 @@ export default function IntegrationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [selected, setSelected] = useState<Integration | null>(null);
+  const [managing, setManaging] = useState<Integration | null>(null);
   const [showFbWizard, setShowFbWizard] = useState(false);
   const [fbStartStep, setFbStartStep] = useState<
     "login" | "select_page" | "select_forms" | "done"
@@ -1225,6 +1227,11 @@ export default function IntegrationsPage() {
       setShowGadsWizard(true);
     } else if (integ.id === "linkedin") {
       navigate("/campaigns/linkedin");
+    } else if (
+      connectedIds.has(integ.id) &&
+      (integ.id === "indiamart" || integ.id === "tradeindia" || integ.id === "justdial")
+    ) {
+      setManaging(integ);
     } else {
       setSelected(integ);
     }
@@ -1277,6 +1284,31 @@ export default function IntegrationsPage() {
             onClose={handleGadsClose}
             onConnected={handleGadsConnected}
             startAtStep={gadsStartStep}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Manage an already-connected key-based integration: saved (masked) key, renew, disconnect
+  if (managing) {
+    return (
+      <AppLayout title="Integrations">
+        <div className="max-w-5xl mx-auto border-2 bg-white min-h-[calc(100vh-120px)] flex flex-col overflow-hidden">
+          <ManageKeyIntegrationPanel
+            kind={managing.id as "indiamart" | "tradeindia" | "justdial"}
+            name={managing.name}
+            color={managing.color}
+            logo={managing.logo}
+            onClose={() => setManaging(null)}
+            onDisconnected={() => {
+              setConnectedIds((prev) => {
+                const next = new Set(prev);
+                next.delete(managing.id);
+                return next;
+              });
+              setManaging(null);
+            }}
           />
         </div>
       </AppLayout>
