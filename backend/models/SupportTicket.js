@@ -3,7 +3,8 @@ const mongoose = require("mongoose");
 const replySchema = new mongoose.Schema(
   {
     message: { type: String, required: true },
-    from: { type: String, enum: ["hrms", "crm"], required: true },
+    // "platform" = the Pixelate Nest support team, replying from final-pixelate's shared inbox.
+    from: { type: String, enum: ["hrms", "crm", "platform"], required: true },
     senderName: { type: String, default: "" },
   },
   { timestamps: true }

@@ -1,4 +1,5 @@
 const SupportTicket = require("../models/SupportTicket");
+const { pushTicket } = require("../utils/finalPixelatePush");
 
 // GET /api/support
 // Logged-in CRM users see tickets raised from within the CRM (raisedBy: "crm"),
@@ -65,9 +66,45 @@ const createTicket = async (req, res) => {
     });
 
     res.status(201).json({ success: true, data: ticket });
+    pushTicket(ticket); // fire-and-forget: shows up in final-pixelate's shared support inbox
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-module.exports = { getTickets, getTicket, createTicket };
+// POST /api/support/webhook/:id — called by final-pixelate when its support team replies to, or
+// changes the status of, a ticket pushed from here. No JWT: guarded by a shared secret instead.
+const NL_STATUS = { new: "open", in_progress: "in_progress", resolved: "resolved", closed: "closed" };
+const webhookUpdate = async (req, res) => {
+  try {
+    const apiKey = req.headers["x-api-key"];
+    if (!apiKey || apiKey !== process.env.FINAL_PIXELATE_SECRET) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const ticket = await SupportTicket.findById(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: "Ticket not found" });
+    }
+
+    const { status, message, senderName } = req.body;
+    if (status && NL_STATUS[status]) {
+      ticket.status = NL_STATUS[status];
+      if (ticket.status === "resolved" && !ticket.resolvedAt) ticket.resolvedAt = new Date();
+    }
+    if (message && String(message).trim()) {
+      ticket.replies.push({
+        message: String(message).trim(),
+        from: "platform",
+        senderName: senderName || "Pixelate Nest Support",
+      });
+    }
+    await ticket.save();
+
+    res.json({ success: true, data: ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { getTickets, getTicket, createTicket, webhookUpdate };

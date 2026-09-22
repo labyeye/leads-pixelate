@@ -17,7 +17,7 @@ import { LifeBuoy, Plus, Clock, MessageSquare } from "lucide-react";
 
 interface Reply {
   message: string;
-  from: "hrms" | "crm";
+  from: "hrms" | "crm" | "platform"; // "platform" = the Pixelate Nest support team
   senderName: string;
   createdAt: string;
 }
