@@ -72,6 +72,70 @@ const createTicket = async (req, res) => {
   }
 };
 
+// PUT /api/support/:id — owner can edit while the ticket is still untouched by support (open,
+// no replies). Once support has picked it up, editing would yank context out from under them.
+const updateTicket = async (req, res) => {
+  try {
+    const filter = { raisedBy: "crm" };
+    if (req.user.tenantId) filter.tenantId = req.user.tenantId;
+    if (req.params.id.match(/^[a-f\d]{24}$/i)) {
+      filter._id = req.params.id;
+    } else {
+      filter.ticketId = req.params.id;
+    }
+
+    const ticket = await SupportTicket.findOne(filter);
+    if (!ticket)
+      return res.status(404).json({ success: false, message: "Ticket not found" });
+
+    if (ticket.status !== "open" || ticket.replies.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Ticket can no longer be edited — support has already started working on it",
+      });
+    }
+
+    const { subject, description, priority } = req.body;
+    if (subject !== undefined) ticket.subject = subject;
+    if (description !== undefined) ticket.description = description;
+    if (priority !== undefined) ticket.priority = priority;
+    await ticket.save();
+
+    res.json({ success: true, data: ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// DELETE /api/support/:id — same "not yet picked up" guard as updateTicket.
+const deleteTicket = async (req, res) => {
+  try {
+    const filter = { raisedBy: "crm" };
+    if (req.user.tenantId) filter.tenantId = req.user.tenantId;
+    if (req.params.id.match(/^[a-f\d]{24}$/i)) {
+      filter._id = req.params.id;
+    } else {
+      filter.ticketId = req.params.id;
+    }
+
+    const ticket = await SupportTicket.findOne(filter);
+    if (!ticket)
+      return res.status(404).json({ success: false, message: "Ticket not found" });
+
+    if (ticket.status !== "open" || ticket.replies.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Ticket can no longer be deleted — support has already started working on it",
+      });
+    }
+
+    await ticket.deleteOne();
+    res.json({ success: true, data: {} });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 // POST /api/support/webhook/:id — called by final-pixelate when its support team replies to, or
 // changes the status of, a ticket pushed from here. No JWT: guarded by a shared secret instead.
 const NL_STATUS = { new: "open", in_progress: "in_progress", resolved: "resolved", closed: "closed" };
@@ -107,4 +171,4 @@ const webhookUpdate = async (req, res) => {
   }
 };
 
-module.exports = { getTickets, getTicket, createTicket, webhookUpdate };
+module.exports = { getTickets, getTicket, createTicket, updateTicket, deleteTicket, webhookUpdate };

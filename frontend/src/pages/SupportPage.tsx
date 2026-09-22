@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supportAPI } from "@/services/api";
-import { LifeBuoy, Plus, Clock, MessageSquare } from "lucide-react";
+import { LifeBuoy, Plus, Clock, MessageSquare, Pencil, Trash2 } from "lucide-react";
 
 interface Reply {
   message: string;
@@ -54,6 +54,10 @@ export default function SupportPage() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<SupportTicket["priority"]>("medium");
   const [selected, setSelected] = useState<SupportTicket | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSubject, setEditSubject] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPriority, setEditPriority] = useState<SupportTicket["priority"]>("medium");
 
   const { data, isLoading } = useQuery({
     queryKey: ["support-tickets"],
@@ -74,7 +78,34 @@ export default function SupportPage() {
     onError: (err: any) => toast.error(err.message || "Failed to raise ticket"),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      supportAPI.update(selected!._id, {
+        subject: editSubject.trim(),
+        description: editDescription.trim(),
+        priority: editPriority,
+      }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["support-tickets"] });
+      toast.success("Ticket updated");
+      setSelected(res.data);
+      setIsEditing(false);
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to update ticket"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => supportAPI.remove(selected!._id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["support-tickets"] });
+      toast.success("Ticket deleted");
+      setSelected(null);
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to delete ticket"),
+  });
+
   const tickets: SupportTicket[] = data?.data || [];
+  const isEditable = (t: SupportTicket) => t.status === "open" && (t.replies?.length || 0) === 0;
 
   return (
     <AppLayout title="Support">
@@ -221,12 +252,71 @@ export default function SupportPage() {
       </Dialog>
 
       {/* Ticket Detail Dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelected(null);
+            setIsEditing(false);
+          }
+        }}
+      >
         <DialogContent className="border-2 border-black max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selected?.subject}</DialogTitle>
+            <DialogTitle>{isEditing ? "Edit Ticket" : selected?.subject}</DialogTitle>
           </DialogHeader>
-          {selected && (
+          {selected && isEditing && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-black">Subject</label>
+                <Input
+                  value={editSubject}
+                  onChange={(e) => setEditSubject(e.target.value)}
+                  className="border-2 border-black"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-black">Description</label>
+                <Textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="border-2 border-black min-h-[120px]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-black">Priority</label>
+                <div className="flex gap-2">
+                  {(["low", "medium", "high", "critical"] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setEditPriority(p)}
+                      className={`flex-1 text-xs px-2 py-1.5 border-2 font-semibold capitalize transition-colors ${
+                        editPriority === p
+                          ? "bg-[#024BAB] border-black text-white"
+                          : "bg-white border-black text-black hover:bg-[#024BAB]/10"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="border-2 border-black">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => updateMutation.mutate()}
+                  disabled={!editSubject.trim() || !editDescription.trim() || updateMutation.isPending}
+                  className="bg-[#024BAB] text-white border-2 border-black hover:bg-[#013a87]"
+                >
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          )}
+          {selected && !isEditing && (
             <div className="space-y-4 py-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-mono text-muted-foreground">
@@ -246,6 +336,37 @@ export default function SupportPage() {
               <p className="text-sm text-black whitespace-pre-wrap border-2 border-black p-3 bg-zinc-50">
                 {selected.description}
               </p>
+
+              {isEditable(selected) && (
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditSubject(selected.subject);
+                      setEditDescription(selected.description);
+                      setEditPriority(selected.priority);
+                      setIsEditing(true);
+                    }}
+                    className="border-2 border-black gap-1.5"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (confirm("Delete this ticket? This can't be undone.")) {
+                        deleteMutation.mutate();
+                      }
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="border-2 border-black text-red-600 hover:bg-red-50 gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              )}
 
               {selected.replies?.length > 0 && (
                 <div className="space-y-2">

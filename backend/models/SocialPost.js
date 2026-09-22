@@ -95,6 +95,16 @@ const socialPostSchema = new mongoose.Schema(
     // What an autopilot post was made from, so it can be revised on the owner's feedback.
     autopilotMeta: {
       imagePrompt: { type: String, default: "" },
+      // The poster's own plan, kept for transparency — what Claude decided to show and why,
+      // before it was turned into imagePrompt. See autopilotService.js buildImagePrompt().
+      posterPlan: {
+        subject: { type: String, default: "" },
+        setting: { type: String, default: "" },
+        composition: { type: String, default: "" },
+        keyElements: { type: [String], default: [] },
+        colorMood: { type: String, default: "" },
+        differentiation: { type: String, default: "" },
+      },
       topic: { type: String, default: "" },
       angle: { type: String, default: "" },
       captionBrief: { type: String, default: "" },

@@ -95,10 +95,18 @@ assert.strictEqual(svc.postsToCreate({ postsPerDay: 1, existing: 1, monthCount: 
 assert.strictEqual(svc.postsToCreate({ postsPerDay: 2, existing: 0, monthCount: svc.MONTHLY_CAP - 1 }), 1);
 assert.strictEqual(svc.postsToCreate({ postsPerDay: 2, existing: 0, monthCount: svc.MONTHLY_CAP }), 0);
 
+const posterPlan = () => ({
+  subject: "the product",
+  setting: "a clean studio",
+  composition: "close-up, centred",
+  keyElements: ["the product"],
+  colorMood: "bright and warm",
+  differentiation: "no clutter, unlike competitors' busy shots",
+});
 const good = (mins) => ({
   scheduledAt: new Date(now.getTime() + mins * 60 * 1000).toISOString(),
   platforms: ["instagram", "tiktok"],
-  imagePrompt: "p",
+  posterPlan: posterPlan(),
   captionBrief: "b",
 });
 const plan = svc.validatePlan(
@@ -107,7 +115,7 @@ const plan = svc.validatePlan(
     good(5), // too soon to review
     good(60 * 24 * 5), // beyond horizon
     { ...good(90), platforms: ["tiktok"] }, // no connected platform
-    { ...good(90), imagePrompt: "" },
+    { ...good(90), posterPlan: { ...posterPlan(), subject: "" } }, // incomplete plan
     { ...good(90), scheduledAt: "garbage" },
     good(120),
   ],
@@ -872,9 +880,34 @@ async function main() {
   assert.ok(rec.plannedCtx.slots.length === 2, "Claude is told the slots");
   cleanup(rec.tenantId);
 
+  // ---- posterPlan: Claude's content plan drives the image prompt (brand style, palette, differentiation)
+  {
+    const brand = { visualStyle: "warm and minimal", palette: ["#111", "#EEE"] };
+    const built = svc.buildImagePrompt(
+      { subject: "a cup of filter coffee", setting: "a wooden table by a window", composition: "close-up, shallow depth of field", keyElements: ["steam", "a saucer"], colorMood: "soft morning light", differentiation: "no busy props, unlike competitors' cluttered shots" },
+      brand,
+    );
+    assert.ok(built.includes("filter coffee") && built.includes("wooden table"), "poster content is in the prompt");
+    assert.ok(built.includes("steam") && built.includes("saucer"), "key elements are in the prompt");
+    assert.ok(built.includes("warm and minimal"), "brand visual style is in the prompt");
+    assert.ok(built.includes("#111") && built.includes("#EEE"), "brand palette is in the prompt");
+    assert.ok(built.includes("competitors"), "differentiation from competitors is in the prompt");
+  }
+
+  // ---- the built prompt (not raw posterPlan) is what actually reaches the image model, and the
+  // plan itself is kept on the post for transparency
+  ({ rec } = setup({ autopilot: { firstApprovedAt: now, brandProfile: { visualStyle: "bold colours", palette: ["#F00"] } } }));
+  const seenPrompts = [];
+  svc.ai.image = async (p) => (seenPrompts.push(p), Buffer.from([0xff, 0xd8, 3]));
+  out = await svc.runForTenant(rec.tenantId);
+  assert.ok(out.created >= 1, JSON.stringify(out));
+  assert.ok(seenPrompts.every((p) => p.includes("bold colours") && p.includes("#F00")), "brand style reached Gemini");
+  assert.ok(rec.created.every((p) => p.autopilotMeta.posterPlan?.subject), "posterPlan is kept on the post");
+  cleanup(rec.tenantId);
+
   // ---- brief: carousel = one image per slide, brief reaches the planner, timeline ends the campaign
   ({ rec } = setup({ autopilot: { firstApprovedAt: now, brief: { format: "carousel", slides: 3, goal: "book demos", cta: { type: "book", text: "Book a demo", link: "https://x.io/demo", phone: "" }, include: ["free setup"], instructions: "warm tone" } } }));
-  svc.ai.plan = async (ctx, o) => Array.from({ length: o.count }, (_, i) => ({ scheduledAt: (ctx.slots ? ctx.slots[i] : new Date(o.from.getTime() + 3 * 3600000 + i * 3600000)).toString(), platforms: ctx.platforms, topic: "t", angle: "a", captionBrief: "b", imagePrompt: "scene", slidePrompts: ["s1", "s2", "s3"] }));
+  svc.ai.plan = async (ctx, o) => Array.from({ length: o.count }, (_, i) => ({ scheduledAt: (ctx.slots ? ctx.slots[i] : new Date(o.from.getTime() + 3 * 3600000 + i * 3600000)).toString(), platforms: ctx.platforms, topic: "t", angle: "a", captionBrief: "b", posterPlan: posterPlan(), slidePrompts: ["s1", "s2", "s3"] }));
   const slideCalls = [];
   svc.ai.image = async (p) => (slideCalls.push(p), Buffer.from([0xff, 0xd8, 5]));
   svc.ai.review = async (_c, ds) => ds.map((d, i) => ({ index: i, verdict: "ok", caption: "", reason: "", n: d.images.length }));

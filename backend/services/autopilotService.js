@@ -212,14 +212,18 @@ function scheduleSlots(schedule, from, to) {
   return out.sort((x, y) => x - y);
 }
 
+const POSTER_PLAN_FIELDS = ["subject", "setting", "composition", "colorMood"];
+
 // Claude's plan is untrusted output: keep only items we can actually schedule.
 function validatePlan(items, { now, until, platforms, count }) {
   const out = [];
   for (const it of Array.isArray(items) ? items : []) {
     const at = new Date(it?.scheduledAt);
     const plats = (it?.platforms || []).filter((p) => platforms.has(p));
+    const plan = it?.posterPlan;
     if (!(at.getTime() >= now.getTime() + MIN_LEAD_MS && at <= until)) continue;
-    if (!plats.length || !it.imagePrompt || !it.captionBrief) continue;
+    if (!plats.length || !it.captionBrief || !plan) continue;
+    if (POSTER_PLAN_FIELDS.some((f) => !String(plan[f] || "").trim())) continue;
     out.push({ ...it, platforms: plats, scheduledAt: at });
     if (out.length === count) break;
   }
@@ -288,10 +292,25 @@ const PLAN_SCHEMA = {
           topic: { type: "string" },
           angle: { type: "string" },
           captionBrief: { type: "string" },
-          imagePrompt: { type: "string" },
+          // The poster's own plan, thought through before any prompt is written: what it shows,
+          // how it's framed, and — informed by the brand's own look and its competitors' — why it
+          // looks like this brand and not like anyone else's feed. See buildImagePrompt().
+          posterPlan: {
+            type: "object",
+            properties: {
+              subject: { type: "string" },
+              setting: { type: "string" },
+              composition: { type: "string" },
+              keyElements: { type: "array", items: { type: "string" } },
+              colorMood: { type: "string" },
+              differentiation: { type: "string" },
+            },
+            required: ["subject", "setting", "composition", "keyElements", "colorMood", "differentiation"],
+            additionalProperties: false,
+          },
           slidePrompts: { type: "array", items: { type: "string" } },
         },
-        required: ["scheduledAt", "platforms", "topic", "angle", "captionBrief", "imagePrompt", "slidePrompts"],
+        required: ["scheduledAt", "platforms", "topic", "angle", "captionBrief", "posterPlan", "slidePrompts"],
         additionalProperties: false,
       },
     },
@@ -299,6 +318,23 @@ const PLAN_SCHEMA = {
   required: ["items"],
   additionalProperties: false,
 };
+
+// Turns a planned poster into the actual image prompt: the plan's own content plus the brand's
+// visual identity (so every post looks like the same brand) and, when there is one, a line on how
+// it differs from the competitors — never just "no text", the whole point of the plan.
+function buildImagePrompt(plan, brandProfile) {
+  const palette = [...(brandProfile?.palette || [])].slice(0, 6).join(", ");
+  const parts = [
+    `${clean(plan.subject, 200)}, ${clean(plan.setting, 200)}.`,
+    clean(plan.composition, 200),
+    plan.keyElements?.length ? `Include: ${plan.keyElements.map((x) => clean(x, 80)).join(", ")}.` : "",
+    clean(plan.colorMood, 150),
+    brandProfile?.visualStyle ? `Overall visual style: ${clean(brandProfile.visualStyle, 300)}.` : "",
+    palette ? `Brand colours: ${palette}.` : "",
+    plan.differentiation ? `Stand apart from competitors: ${clean(plan.differentiation, 250)}.` : "",
+  ].filter(Boolean);
+  return parts.join(" ");
+}
 
 const REVIEW_SCHEMA = {
   type: "object",
@@ -338,7 +374,14 @@ Rules:
 - When slots is given, plan exactly one post per slot, in order, and set scheduledAt to that slot's exact ISO time. You may tailor the topic to the weekday and time of day.
 - brief (when given) is the owner's own direction for every post: follow brief.goal and brief.instructions, work everything in brief.include into the posts where it fits, and end the captionBrief with the brief.cta (use its exact text, link or phone; never invent a different offer).
 - brief.format "carousel": set slidePrompts to exactly brief.slides prompts, one per slide, telling one connected story (slide 1 a hook, the last slide the call to action). Every slide is a 4:5 image in the same visual style; no text in them. For "image", slidePrompts is an empty array.
-- imagePrompt: one clean photographic or illustrated scene for a 4:5 image. No text, letters, logos or watermarks in the image.`;
+- posterPlan: before writing any prompt, decide what the poster actually shows and why, as its own plan (not prose for the caption):
+  - subject: the main thing in frame (a specific product/person/scene from the business's own data, not a generic stock idea).
+  - setting: where it is / the background.
+  - composition: framing, angle and layout (e.g. close-up product shot on the left with negative space right, or a wide lifestyle scene) — a photographic/illustration composition only, never a text layout.
+  - keyElements: the concrete props or details that must appear, drawn from brief.include, the product/service and topic — specific, not vague ("a fresh dosa on a banana leaf with steam", not "food").
+  - colorMood: lighting and mood beyond the brand's palette (e.g. warm morning light, high-contrast studio).
+  - differentiation: one line on how this looks different from what competitors post (from brandProfile.competitive.whatTheyDoWell / gapsToExploit and competitors.summary/notes) — empty string only when there is no competitor data at all.
+  Every field in posterPlan is required and must be concrete enough that two different plans never read the same. The final image prompt is built from this plan plus the brand's own visualStyle and palette — never invent a look that contradicts them, and never mention a competitor by name in it. No text, letters, logos or watermarks in the image.`;
 
 const REVIEW_SYSTEM = `You are the final approval gate before AI-generated posts go live on a business's public social media pages. Each draft has a caption and an image. For every draft decide:
 - ok: publish as is.
@@ -779,7 +822,7 @@ async function runForCampaign(tenantDoc, campaignDoc, { manual = false } = {}) {
       until,
       platforms: new Set(ctx.platforms),
       count,
-    });
+    }).map((it) => ({ ...it, imagePrompt: buildImagePrompt(it.posterPlan, ctx.brandProfile) }));
     if (!items.length) throw new Error("Claude's plan had no schedulable posts");
 
     await setProgress(campaignDoc._id, "creating");
@@ -855,6 +898,16 @@ async function runForCampaign(tenantDoc, campaignDoc, { manual = false } = {}) {
         source: "autopilot",
         autopilotMeta: {
           imagePrompt: clean(d.imagePrompt, 800),
+          posterPlan: d.posterPlan
+            ? {
+                subject: clean(d.posterPlan.subject, 200),
+                setting: clean(d.posterPlan.setting, 200),
+                composition: clean(d.posterPlan.composition, 200),
+                keyElements: (d.posterPlan.keyElements || []).map((x) => clean(x, 80)).slice(0, 10),
+                colorMood: clean(d.posterPlan.colorMood, 150),
+                differentiation: clean(d.posterPlan.differentiation, 250),
+              }
+            : undefined,
           topic: clean(d.topic, 200),
           angle: clean(d.angle, 200),
           captionBrief: clean(d.captionBrief, 400),
@@ -958,9 +1011,10 @@ async function previewForCampaign(tenantDoc, campaignDoc) {
   const ctx = await buildContext(tenant, accounts, now);
   const plan = await ai.plan(ctx, { count: 1, from: new Date(now.getTime() + MIN_LEAD_MS), to: new Date(now.getTime() + DAY_MS) });
   const item = Array.isArray(plan) ? plan[0] : null;
-  if (!item?.imagePrompt || !item?.captionBrief) throw new Error("Couldn't plan a sample post. Try again.");
+  if (!item?.posterPlan || !item?.captionBrief) throw new Error("Couldn't plan a sample post. Try again.");
   const platforms = (item.platforms || []).filter((p) => ctx.platforms.includes(p));
   item.platforms = platforms.length ? platforms : ctx.platforms;
+  item.imagePrompt = buildImagePrompt(item.posterPlan, ctx.brandProfile);
   const [text, images] = await Promise.all([ai.caption(item, ctx), makeImages(item, ctx)]);
   const urls = [];
   for (const img of images) urls.push(saveImage(tenant._id, await applyLogo(img, tenant)));
@@ -1005,6 +1059,7 @@ module.exports = {
   runForTenant,
   runForCampaign,
   previewForCampaign,
+  buildImagePrompt,
   campaignView,
   tenantShim,
   revertScheduled,
