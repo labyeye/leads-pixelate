@@ -62,6 +62,7 @@ function mapUser(data: any): User {
     name: data.name,
     email: data.email,
     role: data.role,
+    roleId: data.roleId || null,
     avatar: data.avatar,
     phone: data.phone,
     department: data.department,

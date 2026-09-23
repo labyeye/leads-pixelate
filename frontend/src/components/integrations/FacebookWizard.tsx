@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { facebookAPI, usersAPI } from "@/services/api";
+import { AssigneePicker, describeAssignment } from "./AssigneePicker";
 import { useToast } from "@/components/ui/use-toast";
 
 interface FbPage {
@@ -85,7 +86,8 @@ export function FacebookWizard({
   const [users, setUsers] = useState<
     Array<{ _id: string; name: string; role: string }>
   >([]);
-  const [defaultAssigneeId, setDefaultAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assignBatchSize, setAssignBatchSize] = useState(1);
 
   const [connectedPages, setConnectedPages] = useState<
     Array<{
@@ -95,6 +97,8 @@ export function FacebookWizard({
       allowedStates: string[];
       selectedFormIds: string[];
       defaultAssigneeId: string;
+      assigneeIds?: string[];
+      assignBatchSize?: number;
     }>
   >([]);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
@@ -104,7 +108,8 @@ export function FacebookWizard({
   );
   const [editFilterInput, setEditFilterInput] = useState("");
   const [editFilterValues, setEditFilterValues] = useState<string[]>([]);
-  const [editAssigneeId, setEditAssigneeId] = useState("");
+  const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
+  const [editBatchSize, setEditBatchSize] = useState(1);
   const [savingFilter, setSavingFilter] = useState(false);
 
   useEffect(() => {
@@ -155,7 +160,8 @@ export function FacebookWizard({
         cp.pageId,
         cp.selectedFormIds,
         editFilterValues,
-        editAssigneeId,
+        "",
+        { assigneeIds: editAssigneeIds, assignBatchSize: editBatchSize },
       );
       setConnectedPages((prev) =>
         prev.map((p) =>
@@ -163,7 +169,9 @@ export function FacebookWizard({
             ? {
                 ...p,
                 allowedStates: editFilterValues,
-                defaultAssigneeId: editAssigneeId,
+                defaultAssigneeId: "",
+                assigneeIds: editAssigneeIds,
+                assignBatchSize: editBatchSize,
               }
             : p,
         ),
@@ -254,7 +262,8 @@ export function FacebookWizard({
         selectedPage.id,
         formIds,
         allowedStates,
-        defaultAssigneeId,
+        "",
+        { assigneeIds, assignBatchSize },
       );
       setStep("done");
       onConnected();
@@ -804,22 +813,17 @@ export function FacebookWizard({
                   <UserCheck className="w-3.5 h-3.5" /> Default Assignee
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Leads from this page will always be assigned to this person.
-                  Leave empty to assign to the admin.
+                  Pick one person, or several to rotate leads between them
+                  (e.g. 2 to A, then 2 to B). Leave empty to assign to the admin.
                 </p>
               </div>
-              <select
-                value={defaultAssigneeId}
-                onChange={(e) => setDefaultAssigneeId(e.target.value)}
-                className="w-full border-2 border-black px-3 py-2 text-sm font-medium bg-white focus:outline-none focus:border-[#1877F2]"
-              >
-                <option value="">— Auto-assign to admin —</option>
-                {users.map((u) => (
-                  <option key={u._id} value={u._id}>
-                    {u.name} ({u.role.replace("_", " ")})
-                  </option>
-                ))}
-              </select>
+              <AssigneePicker
+                users={users}
+                assigneeIds={assigneeIds}
+                onAssigneeIdsChange={setAssigneeIds}
+                batchSize={assignBatchSize}
+                onBatchSizeChange={setAssignBatchSize}
+              />
             </div>
           </div>
         )}
@@ -879,10 +883,7 @@ export function FacebookWizard({
                       {editingFilterPageId !== cp.pageId && (
                         <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <UserCheck className="w-3 h-3" />
-                          {cp.defaultAssigneeId
-                            ? users.find((u) => u._id === cp.defaultAssigneeId)
-                                ?.name || "Assigned user"
-                            : "Auto-assign to admin"}
+                          {describeAssignment(cp, users, "Auto-assign to admin")}
                         </p>
                       )}
                     </div>
@@ -895,7 +896,14 @@ export function FacebookWizard({
                           setEditingFilterPageId(cp.pageId);
                           setEditFilterValues(cp.allowedStates || []);
                           setEditFilterInput("");
-                          setEditAssigneeId(cp.defaultAssigneeId || "");
+                          setEditAssigneeIds(
+                            cp.assigneeIds?.length
+                              ? cp.assigneeIds
+                              : cp.defaultAssigneeId
+                                ? [cp.defaultAssigneeId]
+                                : [],
+                          );
+                          setEditBatchSize(cp.assignBatchSize || 1);
                         }
                       }}
                       className="border-2 border-black p-1.5 hover:bg-yellow-50 transition-colors mr-1"
@@ -969,18 +977,13 @@ export function FacebookWizard({
                         <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
                           <UserCheck className="w-3 h-3" /> Default Assignee
                         </p>
-                        <select
-                          value={editAssigneeId}
-                          onChange={(e) => setEditAssigneeId(e.target.value)}
-                          className="w-full border-2 border-black px-3 py-1.5 text-sm font-medium bg-white focus:outline-none focus:border-[#1877F2]"
-                        >
-                          <option value="">— Auto-assign to admin —</option>
-                          {users.map((u) => (
-                            <option key={u._id} value={u._id}>
-                              {u.name} ({u.role.replace("_", " ")})
-                            </option>
-                          ))}
-                        </select>
+                        <AssigneePicker
+                users={users}
+                assigneeIds={editAssigneeIds}
+                onAssigneeIdsChange={setEditAssigneeIds}
+                batchSize={editBatchSize}
+                onBatchSizeChange={setEditBatchSize}
+              />
                       </div>
 
                       <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">

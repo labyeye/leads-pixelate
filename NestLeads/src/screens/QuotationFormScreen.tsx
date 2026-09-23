@@ -1,11 +1,11 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, StatusBar, Alert, ActivityIndicator, KeyboardAvoidingView, Platform,
+  StyleSheet, StatusBar, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, FlatList,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import {quotationsAPI} from '../services/api';
+import {quotationsAPI, clientsAPI, productsAPI} from '../services/api';
 
 // Create / edit a quotation. Field set, validation and the total calculation
 // (18% tax on the discounted subtotal) mirror the web QuotationsPage.
@@ -22,6 +22,10 @@ type Item = {name: string; hsnCode: string; price: string; quantity: string};
 const EMPTY_ITEM: Item = {name: '', hsnCode: '', price: '', quantity: '1'};
 const today = () => new Date().toISOString().split('T')[0];
 
+// Single-line form stored in `address` (PDFs and older screens still read it); same as web joinAddress.
+const joinAddress = (a: {addressLine: string; city: string; state: string; zip: string; country: string}) =>
+  [a.addressLine, a.city, [a.state, a.zip].filter(Boolean).join(' '), a.country].map(x => x.trim()).filter(Boolean).join(', ');
+
 const inr = (n: number) => `₹${n.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
 
 export default function QuotationFormScreen({navigation, route}: any) {
@@ -33,6 +37,11 @@ export default function QuotationFormScreen({navigation, route}: any) {
     clientName: q?.clientName || '',
     companyName: q?.companyName || '',
     address: q?.address || '',
+    addressLine: q?.addressLine ?? (q?.city || q?.state || q?.zip ? '' : q?.address || ''),
+    city: q?.city || '',
+    state: q?.state || '',
+    zip: q?.zip || '',
+    country: q?.country || 'India',
     gst: q?.gst || '',
     aadhar: q?.aadhar || '',
     pan: q?.pan || '',
@@ -54,6 +63,53 @@ export default function QuotationFormScreen({navigation, route}: any) {
       : [{...EMPTY_ITEM}],
   );
   const [saving, setSaving] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  // null = closed, 'client' = picking a saved client, number = picking a catalogue product for that item
+  const [picker, setPicker] = useState<null | 'client' | number>(null);
+  const [pinNote, setPinNote] = useState('');
+
+  useEffect(() => {
+    clientsAPI.getAll().then((r: any) => setClients(r.data || [])).catch(() => {});
+    productsAPI.getAll().then(r => setProducts(r.data || [])).catch(() => {});
+  }, []);
+
+  // Picking a saved client fills the buyer fields (still editable).
+  const pickClient = (c: any) => {
+    setF(p => ({
+      ...p,
+      clientName: c.name || '',
+      companyName: c.company || '',
+      address: c.address || '',
+      addressLine: c.address || '',
+      city: '', state: '', zip: '', country: 'India',
+      gst: c.gst || '',
+      mobile: (c.phone || '').replace(/\D/g, '').slice(-10),
+      aadhar: '', pan: '',
+    }));
+    setPicker(null);
+  };
+
+  // Picking a catalogue product fills the item's name, price and HSN.
+  const pickProduct = (i: number, p: any) => {
+    setItems(prev => prev.map((it, idx) => (idx === i ? {...it, name: p.name, price: String(p.price ?? ''), hsnCode: p.hsnCode || ''} : it)));
+    setPicker(null);
+  };
+
+  // A 6-digit Indian PIN fills city and state (suggestion only; fields stay editable).
+  const onZip = async (raw: string) => {
+    const india = f.country.trim().toLowerCase() === 'india';
+    const zip = india ? raw.replace(/\D/g, '').slice(0, 6) : raw.slice(0, 12);
+    set('zip', zip);
+    setPinNote('');
+    if (!india || zip.length !== 6) return;
+    try {
+      const data = (await (await fetch(`https://api.postalpincode.in/pincode/${zip}`)).json())[0];
+      const o = data?.Status === 'Success' ? data.PostOffice?.[0] : null;
+      if (!o) return setPinNote('PIN code not found - fill city and state manually.');
+      setF(p => (p.zip === zip ? {...p, city: o.District || p.city, state: o.State || p.state} : p));
+    } catch {}
+  };
 
   const set = (k: keyof typeof f, v: string) => setF(p => ({...p, [k]: v}));
   const setItem = (i: number, k: keyof Item, v: string) =>
@@ -90,6 +146,7 @@ export default function QuotationFormScreen({navigation, route}: any) {
     try {
       const payload = {
         ...f,
+        address: joinAddress(f),
         discount,
         services: items.map(s => ({
           name: s.name.trim(),
@@ -137,9 +194,20 @@ export default function QuotationFormScreen({navigation, route}: any) {
 
       <ScrollView contentContainerStyle={{padding: 14, paddingBottom: insets.bottom + 40}} keyboardShouldPersistTaps="handled">
         <Text style={s.section}>Buyer</Text>
+        {!editing && (
+          <TouchableOpacity style={s.addItem} onPress={() => setPicker('client')}>
+            <Icon name="people-outline" size={14} color="#024BAB" />
+            <Text style={s.addItemText}>Select saved client</Text>
+          </TouchableOpacity>
+        )}
         {field('clientName', 'Name *', {placeholder: 'e.g. Raj Kumar'})}
         {field('companyName', 'Company', {placeholder: 'e.g. Raj Enterprises'})}
-        {field('address', 'Address', {multiline: true, style: [s.input, {height: 70, textAlignVertical: 'top'}]})}
+        {field('addressLine', 'Address', {multiline: true, maxLength: 300, style: [s.input, {height: 70, textAlignVertical: 'top'}]})}
+        {field('zip', 'PIN / ZIP', {keyboardType: 'number-pad', maxLength: 12, onChangeText: onZip})}
+        {!!pinNote && <Text style={{fontSize: 11, color: '#64748b', marginBottom: 8}}>{pinNote}</Text>}
+        {field('city', 'City')}
+        {field('state', 'State')}
+        {field('country', 'Country')}
         {field('gst', 'GST No', {autoCapitalize: 'characters', maxLength: 15, placeholder: '09AAGCB9274N1ZW'})}
         {field('mobile', 'Mobile', {keyboardType: 'phone-pad', maxLength: 10, placeholder: '9999999999'})}
         {field('aadhar', 'Aadhar', {keyboardType: 'number-pad', maxLength: 12})}
@@ -162,6 +230,11 @@ export default function QuotationFormScreen({navigation, route}: any) {
               )}
             </View>
             <TextInput style={s.input} value={it.name} onChangeText={v => setItem(i, 'name', v)} placeholder="Item description *" placeholderTextColor="#94a3b8" />
+            {products.length > 0 && (
+              <TouchableOpacity onPress={() => setPicker(i)} hitSlop={6}>
+                <Text style={s.addItemText}>Pick from products</Text>
+              </TouchableOpacity>
+            )}
             <View style={s.row3}>
               <TextInput style={[s.input, {flex: 1.2}]} value={it.hsnCode} onChangeText={v => setItem(i, 'hsnCode', v)} placeholder="HSN" placeholderTextColor="#94a3b8" />
               <TextInput style={[s.input, {flex: 1}]} value={it.price} onChangeText={v => setItem(i, 'price', v)} placeholder="Price *" keyboardType="numeric" placeholderTextColor="#94a3b8" />
@@ -200,11 +273,37 @@ export default function QuotationFormScreen({navigation, route}: any) {
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveText}>{editing ? 'Save Changes' : 'Create Quotation'}</Text>}
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal visible={picker !== null} transparent animationType="fade" onRequestClose={() => setPicker(null)}>
+        <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={() => setPicker(null)}>
+          <View style={s.sheet}>
+            <FlatList
+              data={picker === 'client' ? clients : products}
+              keyExtractor={(x: any) => x._id}
+              ListEmptyComponent={<Text style={s.sheetEmpty}>Nothing to pick yet</Text>}
+              renderItem={({item}: any) => (
+                <TouchableOpacity
+                  style={s.sheetRow}
+                  onPress={() => (picker === 'client' ? pickClient(item) : pickProduct(picker as number, item))}>
+                  <Text style={s.sheetText}>{item.name}{picker === 'client' && item.company ? ` - ${item.company}` : ''}</Text>
+                  {picker !== 'client' && <Text style={s.sheetSub}>{inr(item.price || 0)}</Text>}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
+  overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end'},
+  sheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', maxHeight: '60%'},
+  sheetRow: {paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
+  sheetText: {fontSize: 13, color: '#000', fontWeight: '700'},
+  sheetSub: {fontSize: 11, color: '#64748b', marginTop: 2},
+  sheetEmpty: {padding: 20, textAlign: 'center', color: '#94a3b8'},
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 60, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 10},
   backBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000'},

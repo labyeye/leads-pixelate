@@ -6,7 +6,7 @@ import {
   Target,
   Settings,
   LucideIcon,
-  MapPin,
+  CalendarCheck,
   Clock,
   CreditCard,
   Plug,
@@ -14,6 +14,7 @@ import {
   Building2,
   FileText,
   Terminal,
+  Trash2,
   Megaphone,
   Package,
   Briefcase,
@@ -84,7 +85,7 @@ const allGroups: NavGroup[] = [
       {
         title: "Visit Calendar",
         href: "/visit-calendar",
-        icon: MapPin,
+        icon: CalendarCheck,
         roles: ["super_admin", "admin", "sales_executive"],
       },
       {
@@ -430,6 +431,12 @@ const allGroups: NavGroup[] = [
         title: "Billing",
         href: "/billing",
         icon: CreditCard,
+        roles: ["super_admin", "admin"],
+      },
+      {
+        title: "Trash",
+        href: "/trash",
+        icon: Trash2,
         roles: ["super_admin", "admin"],
       },
       {

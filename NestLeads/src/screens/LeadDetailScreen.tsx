@@ -11,10 +11,13 @@ import {
   TextInput,
   Modal,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import {leadsAPI} from '../services/api';
+import {leadsAPI, settingsAPI} from '../services/api';
+import {useAuth} from '../contexts/AuthContext';
 import {
   getStatusColor,
   getStatusLabel,
@@ -37,6 +40,18 @@ const NB_SHADOW = {
   elevation: 4,
 };
 
+const EDIT_FIELDS = [
+  ['name', 'Name'], ['company', 'Company'], ['phone', 'Phone'], ['email', 'Email'],
+  ['website', 'Website'], ['location', 'Location / Pincode'], ['budget', 'Budget'],
+  ['requirement', 'Requirement'], ['remarks', 'Remarks'],
+] as const;
+
+// Same defaults as the backend's checkPermission.js for Leads (tenant overrides come from settings).
+const LEAD_DEFAULTS: Record<string, {update: boolean; delete: boolean}> = {
+  super_admin: {update: true, delete: true},
+  admin: {update: true, delete: true},
+};
+
 export default function LeadDetailScreen({navigation, route}: any) {
   const leadId = route?.params?.leadId;
   const insets = useSafeAreaInsets();
@@ -49,6 +64,51 @@ export default function LeadDetailScreen({navigation, route}: any) {
   const [pendingStatus, setPendingStatus] = useState('');
   const [remarksInput, setRemarksInput] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const {user} = useAuth();
+  const [perm, setPerm] = useState<{update?: boolean; delete?: boolean}>(LEAD_DEFAULTS[user?.role] || {});
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    settingsAPI.get().then((s: any) => {
+      const l = s?.data?.permissions?.Leads;
+      const p = (user?.roleId && l?.[user.roleId]) || l?.[user?.role];
+      if (p) setPerm(prev => ({...prev, ...p}));
+    }).catch(() => {});
+  }, [user?.role, user?.roleId]);
+
+  const openEdit = () => {
+    setEditForm(Object.fromEntries(EDIT_FIELDS.map(([k]) => [k, lead?.[k] ? String(lead[k]) : ''])));
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editForm.name?.trim()) { Alert.alert('Name is required'); return; }
+    try {
+      setSavingEdit(true);
+      await leadsAPI.update(leadId, editForm);
+      setEditOpen(false);
+      await fetchLead();
+    } catch (err: any) {
+      Alert.alert('Update failed', err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDelete = () =>
+    Alert.alert('Move to trash', `Move "${lead.name}" to trash?`, [
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'Move', style: 'destructive', onPress: async () => {
+        try {
+          await leadsAPI.delete(leadId);
+          navigation.goBack();
+        } catch (err: any) {
+          Alert.alert('Delete failed', err.message);
+        }
+      }},
+    ]);
 
   useEffect(() => {
     fetchLead();
@@ -170,6 +230,16 @@ export default function LeadDetailScreen({navigation, route}: any) {
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{lead.name}</Text>
+        {perm.update && (
+          <TouchableOpacity onPress={openEdit} hitSlop={8}>
+            <Icon name="pencil-outline" size={18} color="#000" />
+          </TouchableOpacity>
+        )}
+        {perm.delete && (
+          <TouchableOpacity onPress={handleDelete} hitSlop={8}>
+            <Icon name="trash-outline" size={18} color="#EF4444" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
@@ -301,7 +371,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
         {/* Interested Products */}
         {lead.interestedProducts?.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>INTERESTED PRODUCTS</Text>
+            <Text style={styles.sectionLabel}>INTERESTED IN</Text>
             <View style={styles.chipsWrap}>
               {lead.interestedProducts.map((p: string, i: number) => (
                 <View key={i} style={styles.productChip}>
@@ -423,6 +493,38 @@ export default function LeadDetailScreen({navigation, route}: any) {
         )}
       </ScrollView>
 
+      {/* Edit Lead Modal */}
+      <Modal visible={editOpen} transparent animationType="slide" onRequestClose={() => setEditOpen(false)}>
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={[styles.modalSheet, {maxHeight: '90%'}]}>
+            <Text style={styles.modalTitle}>Edit Lead</Text>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {EDIT_FIELDS.map(([k, label]) => (
+                <View key={k}>
+                  <Text style={styles.modalLabel}>{label.toUpperCase()}</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    value={editForm[k] || ''}
+                    onChangeText={v => setEditForm(f => ({...f, [k]: v}))}
+                    multiline={k === 'requirement' || k === 'remarks'}
+                    maxLength={k === 'name' ? 100 : k === 'company' ? 120 : k === 'budget' ? 15 : k === 'requirement' ? 1000 : k === 'remarks' ? 500 : undefined}
+                    placeholderTextColor="#94a3b8"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            <View style={styles.modalBtns}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setEditOpen(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirmBtn} onPress={saveEdit} disabled={savingEdit}>
+                {savingEdit ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.modalConfirmText}>Save</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* Status Update Modal */}
       <Modal
         visible={statusModalOpen}
@@ -443,7 +545,9 @@ export default function LeadDetailScreen({navigation, route}: any) {
               value={remarksInput}
               onChangeText={setRemarksInput}
               multiline
+              maxLength={500}
             />
+            <Text style={{fontSize: 10, color: '#64748b', textAlign: 'right'}}>{remarksInput.length}/500</Text>
             <View style={styles.modalBtns}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}

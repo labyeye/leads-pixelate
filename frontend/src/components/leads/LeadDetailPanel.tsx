@@ -29,6 +29,8 @@ import {
   AlertCircle,
   Bot,
   Sparkles,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   Dialog,
@@ -47,7 +49,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { whatsappAPI, aiCallingAPI } from "@/services/api";
+import { whatsappAPI, aiCallingAPI, leadsAPI } from "@/services/api";
+import { usePermission } from "@/hooks/usePermission";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -123,8 +126,22 @@ export function LeadDetailPanel({
   >(undefined);
   const [waDialogOpen, setWaDialogOpen] = useState(false);
   const [callDialogOpen, setCallDialogOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const { can } = usePermission();
 
   if (!lead) return null;
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Move "${lead.name}" to trash?`)) return;
+    try {
+      await leadsAPI.delete(lead._id);
+      toast({ title: "Lead moved to trash", description: lead.name });
+      onClose();
+      onRefresh();
+    } catch (err: any) {
+      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+    }
+  };
 
   const activeCategory = getCategoryByStatus(lead.status || "PENDING CONTACT");
 
@@ -177,12 +194,24 @@ export function LeadDetailPanel({
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-foreground">Lead Details</h3>
-        <button
-          onClick={onClose}
-          className="text-red-500 hover:text-red-700 text-sm"
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-3">
+          {can("Leads", "update") && (
+            <button onClick={() => setEditOpen(true)} title="Edit lead">
+              <Pencil className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          )}
+          {can("Leads", "delete") && (
+            <button onClick={handleDelete} title="Move to trash">
+              <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="text-red-500 hover:text-red-700 text-sm"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4 mb-6">
@@ -379,6 +408,14 @@ export function LeadDetailPanel({
             </Button>
           </div>
         )}
+      {editOpen && (
+        <EditLeadDialog
+          lead={lead}
+          onClose={() => setEditOpen(false)}
+          onSaved={onRefresh}
+          toast={toast}
+        />
+      )}
         <ManualCallDialog
           open={callDialogOpen}
           onClose={() => setCallDialogOpen(false)}
@@ -1071,6 +1108,90 @@ function WhatsAppSendDialog({
               <Send className="w-3.5 h-3.5" />
             )}
             Send
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+const EDIT_FIELDS = [
+  ["name", "Name"],
+  ["company", "Company"],
+  ["phone", "Phone"],
+  ["email", "Email"],
+  ["website", "Website"],
+  ["location", "Location / Pincode"],
+  ["budget", "Budget"],
+  ["requirement", "Requirement"],
+  ["remarks", "Remarks"],
+] as const;
+
+function EditLeadDialog({
+  lead,
+  onClose,
+  onSaved,
+  toast,
+}: {
+  lead: any;
+  onClose: () => void;
+  onSaved: () => void;
+  toast: any;
+}) {
+  const [form, setForm] = useState<Record<string, string>>(
+    Object.fromEntries(EDIT_FIELDS.map(([k]) => [k, lead[k] || ""])),
+  );
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!form.name.trim()) {
+      toast({ title: "Name is required", variant: "destructive" });
+      return;
+    }
+    try {
+      setSaving(true);
+      await leadsAPI.update(lead._id, form);
+      toast({ title: "Lead updated", description: form.name });
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Lead</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          {EDIT_FIELDS.map(([k, label]) => (
+            <div key={k} className="space-y-1">
+              <Label>{label}</Label>
+              {k === "requirement" || k === "remarks" ? (
+                <Textarea
+                  value={form[k]}
+                  onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                />
+              ) : (
+                <Input
+                  value={form[k]}
+                  onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

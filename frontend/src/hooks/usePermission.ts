@@ -9,7 +9,7 @@ const DEFAULT_PERMISSIONS: Record<
   Leads: {
     super_admin: { create: true, read: true, update: true, delete: true },
     admin: { create: true, read: true, update: true, delete: true },
-    sales_executive: { create: true, read: true, update: true, delete: false },
+    sales_executive: { create: true, read: true, update: false, delete: false },
     service_manager: {
       create: false,
       read: true,
@@ -201,7 +201,8 @@ export function usePermission() {
     if (!resourcePerms) {
       return op === "read" || user.role === "admin";
     }
-    return resourcePerms[user.role]?.[op] ?? false;
+    const perms = (user.roleId && resourcePerms[user.roleId]) || resourcePerms[user.role];
+    return perms?.[op] ?? false;
   }
 
   return { can };

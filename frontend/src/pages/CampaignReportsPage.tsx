@@ -1,4 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { facebookAPI, leadsAPI, whatsappAPI, campaignAPI } from "@/services/api";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -189,7 +190,7 @@ export default function CampaignReportsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="border-2 bg-white p-5">
           <h3 className="font-display font-bold text-base text-black mb-3 flex items-center gap-2">
-            <Send className="w-4 h-4 text-green-600" /> WhatsApp
+            <WhatsAppIcon className="w-4 h-4 text-[#25D366]" /> WhatsApp
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <KpiCard title="Sent" value={waSent} sub="All campaigns" icon={Send} bg="bg-green-600" />

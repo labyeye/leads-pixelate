@@ -47,6 +47,12 @@ const FOLLOW_UP_STATUSES = [
   "QUOTATION",
 ];
 
+const STATUS_LABELS: Record<string, string> = {
+  "1": "1st Follow-up",
+  "2": "2nd Follow-up",
+  "3": "3rd Follow-up",
+};
+
 export default function FollowupCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [leads, setLeads] = useState<any[]>([]);
@@ -204,7 +210,7 @@ export default function FollowupCalendarPage() {
                   onClick={() => setStatusFilter(status as StatusFilter)}
                   className="text-xs whitespace-nowrap flex-shrink-0"
                 >
-                  {status}
+                  {STATUS_LABELS[status] || status}
                   {status !== "ALL" && (
                     <span className="ml-1 text-[10px]">({count})</span>
                   )}

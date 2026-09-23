@@ -190,6 +190,14 @@ const MENU_ITEMS: MenuItem[] = [
     adminOnly: true,
   },
   {
+    icon: 'trash-outline',
+    label: 'Trash',
+    sub: 'Restore deleted leads, clients & more',
+    screen: 'Trash',
+    color: '#000',
+    adminOnly: true,
+  },
+  {
     icon: 'settings-outline',
     label: 'Settings',
     sub: 'Profile & app settings',

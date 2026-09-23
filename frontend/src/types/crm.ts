@@ -10,6 +10,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  roleId?: string | null; // custom role, if any; its own permission column is keyed by this id
   avatar?: string;
   phone?: string;
   department?: string;

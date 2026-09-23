@@ -28,7 +28,7 @@ const OPS = [
 
 // Web defaults ("crud" letters allowed, "-" denied), used until something is saved.
 const DEFAULTS: Record<string, Record<string, string>> = {
-  'Leads': {super_admin: 'crud', admin: 'crud', sales_executive: 'cru-', service_manager: '-r--', accountant: '-r--'},
+  'Leads': {super_admin: 'crud', admin: 'crud', sales_executive: 'cr--', service_manager: '-r--', accountant: '-r--'},
   'Products': {super_admin: 'crud', admin: 'crud', sales_executive: 'cru-', service_manager: '-r--', accountant: '-r--'},
   'Clients': {super_admin: 'crud', admin: 'crud', sales_executive: 'cru-', service_manager: '-ru-', accountant: '-r--'},
   'Quotations': {super_admin: 'crud', admin: 'crud', sales_executive: 'cru-', service_manager: '-r--', accountant: 'cru-'},
@@ -140,14 +140,17 @@ export default function RolesPermissionsScreen({navigation}: any) {
     ]);
 
   const toggle = (res: string, op: string) => {
-    setMatrix(m => ({...m, [res]: {...m[res], [tier]: {...m[res][tier], [op]: !m[res][tier][op]}}}));
+    const cur = cell(res);
+    setMatrix(m => ({...m, [res]: {...m[res], [col.id]: {...cur, [op]: !cur[op]}}}));
     setDirty(true);
   };
 
   const savePerms = async () => {
     setSavingPerms(true);
     try {
-      await settingsAPI.update({permissions: matrix});
+      const live = new Set(columns.map(c => c.id)); // drops columns of deleted roles
+      const pruned = Object.fromEntries(Object.entries(matrix).map(([res, byRole]) => [res, Object.fromEntries(Object.entries(byRole).filter(([k]) => live.has(k)))]));
+      await settingsAPI.update({permissions: pruned});
       setDirty(false);
       Alert.alert('Saved', 'Role permissions updated.');
     } catch (e: any) {
@@ -156,6 +159,15 @@ export default function RolesPermissionsScreen({navigation}: any) {
       setSavingPerms(false);
     }
   };
+
+  // One pill per default tier plus one per custom role (keyed by its _id). A custom role with no
+  // saved column yet shows, and starts from, its tier's values.
+  const columns = [
+    ...MATRIX_TIERS.map(t => ({id: t.id as string, label: t.label as string, base: t.id as string})),
+    ...roles.filter(r => !r.isDefault).map(r => ({id: r._id as string, label: r.name as string, base: r.tier as string})),
+  ];
+  const col = columns.find(c => c.id === tier) || columns[0];
+  const cell = (res: string) => matrix[res][col.id] ?? matrix[res][col.base] ?? {};
 
   const tierLabel = (id: string) => MATRIX_TIERS.find(t => t.id === id)?.label || id;
 
@@ -187,7 +199,7 @@ export default function RolesPermissionsScreen({navigation}: any) {
         <View style={s.center}><ActivityIndicator size="large" color="#024BAB" /></View>
       ) : tab === 'roles' ? (
         <ScrollView contentContainerStyle={{padding: 12, gap: 10, paddingBottom: insets.bottom + 24}}>
-          <Text style={s.hint}>A role is a name you can assign to team members. Each role maps to one permission tier.</Text>
+          <Text style={s.hint}>A role is a name you can assign to team members. Each role starts with its permission tier's access; customise a custom role on the Permissions tab.</Text>
           {roles.length === 0 && <Text style={s.empty}>No roles yet</Text>}
           {roles.map(r => (
             <View key={r._id} style={s.card}>
@@ -212,9 +224,9 @@ export default function RolesPermissionsScreen({navigation}: any) {
       ) : (
         <ScrollView contentContainerStyle={{padding: 12, paddingBottom: insets.bottom + 90}}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap: 8, marginBottom: 12}}>
-            {MATRIX_TIERS.map(t => (
-              <TouchableOpacity key={t.id} style={[s.pill, tier === t.id && s.pillOn]} onPress={() => setTier(t.id)}>
-                <Text style={[s.pillText, tier === t.id && {color: '#fff'}]}>{t.label}</Text>
+            {columns.map(t => (
+              <TouchableOpacity key={t.id} style={[s.pill, col.id === t.id && s.pillOn]} onPress={() => setTier(t.id)}>
+                <Text style={[s.pillText, col.id === t.id && {color: '#fff'}]}>{t.label}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -226,7 +238,7 @@ export default function RolesPermissionsScreen({navigation}: any) {
             <View key={res} style={s.matrixRow}>
               <Text style={s.resName}>{res}</Text>
               {OPS.map(o => {
-                const on = !!matrix[res][tier]?.[o.key];
+                const on = !!cell(res)[o.key];
                 return (
                   <TouchableOpacity key={o.key} style={[s.check, on && s.checkOn]} onPress={() => toggle(res, o.key)}>
                     {on && <Icon name="checkmark" size={14} color="#fff" />}

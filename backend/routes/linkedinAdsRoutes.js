@@ -7,7 +7,7 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
-const { nextBatchAssignee } = require("../utils/leadAssignment");
+const { nextBatchAssignee, assignmentFields } = require("../utils/leadAssignment");
 const linkedinAds = require("../services/linkedinAdsService");
 const log = require("../utils/logger").scope("LinkedIn Ads");
 
@@ -204,6 +204,7 @@ router.post(
       allowedStates = [],
       defaultAssigneeId = "",
     } = req.body;
+    const assign = assignmentFields(req.body);
 
     if (!adAccountId) {
       return res
@@ -226,6 +227,7 @@ router.post(
       selectedFormIds,
       allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
       defaultAssigneeId,
+      ...assign,
       webhookKey,
       connectedAt: new Date(),
     };
@@ -315,6 +317,8 @@ router.get(
         selectedFormIds: a.selectedFormIds || [],
         allowedStates: a.allowedStates || [],
         defaultAssigneeId: a.defaultAssigneeId || "",
+        assigneeIds: a.assigneeIds || [],
+        assignBatchSize: a.assignBatchSize || 1,
         connectedAt: a.connectedAt,
         webhookUrl: `${process.env.VITE_API_URL || "https://leads.pixelatenest.com"}/api/linkedin-ads/webhook/${a.webhookKey}`,
       }),

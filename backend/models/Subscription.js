@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const invoiceSchema = new mongoose.Schema(
   {
+    invoiceNumber: { type: String },
     hdfcPaymentId: { type: String },
     hdfcOrderId: { type: String },
     hdfcTrackingId: { type: String },

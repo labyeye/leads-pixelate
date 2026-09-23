@@ -15,12 +15,9 @@ import {
   Save,
 } from "lucide-react";
 
-type SecurityTab = "password" | "whatsapp" | "totp";
-
 export default function AccountSecurityPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [tab, setTab] = useState<SecurityTab>("password");
 
   // Phone verification
   const [phone, setPhone] = useState("");
@@ -211,20 +208,9 @@ export default function AccountSecurityPage() {
     }
   };
 
-  const TABS: {
-    id: SecurityTab;
-    label: string;
-    icon: React.ElementType;
-    badge?: boolean;
-  }[] = [
-    { id: "password", label: "Password", icon: Lock },
-    { id: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon, badge: phoneVerified },
-    { id: "totp", label: "Authenticator App", icon: KeyRound, badge: totpEnabled },
-  ];
-
   return (
     <AppLayout title="Security">
-      <div className="max-w-2xl">
+      <div>
         <div className="mb-5">
           <h2 className="font-display font-bold text-2xl text-black">
             Account Security
@@ -235,35 +221,15 @@ export default function AccountSecurityPage() {
           </p>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
         {}
-        <div className="flex border-b-2 border-black mb-5">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`py-3 px-1 mr-6 text-sm font-bold border-b-2 transition-colors flex items-center gap-1.5 ${
-                tab === t.id
-                  ? "border-[#FA731C] text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <t.icon className="w-4 h-4" />
-              {t.label}
-              {t.badge && (
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#00C48C]" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {}
-        {tab === "password" && (
-          <div className="border-2 bg-white p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 border-2 border-black bg-[#FA731C]/10 flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-[#FA731C]" />
+        {(
+          <div className="border-2 bg-white p-5 flex flex-col">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 border-2 border-black bg-[#FA731C]/10 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-[#FA731C]" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-display font-bold text-base text-black">
                   Reset Password
                 </h3>
@@ -314,13 +280,13 @@ export default function AccountSecurityPage() {
         )}
 
         {}
-        {tab === "whatsapp" && (
-          <div className="border-2 bg-white p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 border-2 border-black bg-[#25D366]/10 flex items-center justify-center shrink-0">
-                <WhatsAppIcon className="w-4 h-4 text-[#25D366]" />
+        {(
+          <div className="border-2 bg-white p-5 flex flex-col">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 border-2 border-black bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-display font-bold text-base text-black">
                   WhatsApp Verification
                 </h3>
@@ -329,8 +295,8 @@ export default function AccountSecurityPage() {
                 </p>
               </div>
               {phoneVerified && (
-                <span className="flex items-center gap-1 text-xs font-bold text-[#00C48C]">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Verified
+                <span className="nb-badge nb-tag-lime flex items-center gap-0.5 text-[10px] shrink-0">
+                  <CheckCircle2 className="w-2.5 h-2.5" /> Verified
                 </span>
               )}
             </div>
@@ -403,13 +369,13 @@ export default function AccountSecurityPage() {
         )}
 
         {}
-        {tab === "totp" && (
-          <div className="border-2 bg-white p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 border-2 border-black bg-[#024BAB]/10 flex items-center justify-center shrink-0">
-                <KeyRound className="w-4 h-4 text-[#024BAB]" />
+        {(
+          <div className="border-2 bg-white p-5 flex flex-col">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 border-2 border-black bg-[#024BAB]/10 flex items-center justify-center shrink-0">
+                <KeyRound className="w-5 h-5 text-[#024BAB]" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="font-display font-bold text-base text-black">
                   Authenticator App
                 </h3>
@@ -418,8 +384,8 @@ export default function AccountSecurityPage() {
                 </p>
               </div>
               {totpEnabled && (
-                <span className="flex items-center gap-1 text-xs font-bold text-[#00C48C]">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Enabled
+                <span className="nb-badge nb-tag-lime flex items-center gap-0.5 text-[10px] shrink-0">
+                  <ShieldCheck className="w-2.5 h-2.5" /> Enabled
                 </span>
               )}
             </div>
@@ -487,6 +453,7 @@ export default function AccountSecurityPage() {
             )}
           </div>
         )}
+        </div>
       </div>
     </AppLayout>
   );

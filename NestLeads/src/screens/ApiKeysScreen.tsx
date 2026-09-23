@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import {apiKeysAPI} from '../services/api';
+import {apiKeysAPI, usersAPI} from '../services/api';
+import AssigneePicker from '../components/AssigneePicker';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
@@ -17,6 +18,9 @@ export default function ApiKeysScreen({navigation}: any) {
   const [createVisible, setCreateVisible] = useState(false);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assignBatchSize, setAssignBatchSize] = useState(1);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [revealedName, setRevealedName] = useState('');
 
@@ -30,14 +34,17 @@ export default function ApiKeysScreen({navigation}: any) {
   }, []);
 
   useEffect(() => {fetchKeys();}, [fetchKeys]);
+  useEffect(() => {usersAPI.getAll().then((r: any) => setUsers(r.data || [])).catch(() => {});}, []);
 
   const handleGenerate = async () => {
     if (!name.trim()) {Alert.alert('Error', 'Key name is required'); return;}
     setSaving(true);
     try {
-      const res = await apiKeysAPI.generate(name.trim());
+      const res = await apiKeysAPI.generate(name.trim(), [], {assigneeIds, assignBatchSize});
       setCreateVisible(false);
       setName('');
+      setAssigneeIds([]);
+      setAssignBatchSize(1);
       setRevealedKey(res.data.key);
       setRevealedName(res.data.name);
       fetchKeys();
@@ -145,6 +152,8 @@ export default function ApiKeysScreen({navigation}: any) {
                 value={name}
                 onChangeText={setName}
               />
+              <Text style={styles.fieldLabel}>ASSIGN LEADS TO</Text>
+              <AssigneePicker users={users} assigneeIds={assigneeIds} onAssigneeIdsChange={setAssigneeIds} batchSize={assignBatchSize} onBatchSizeChange={setAssignBatchSize} />
               <Text style={styles.hintText}>A label to remember where this key is used. Full field configuration is available on the web dashboard.</Text>
             </View>
             <View style={styles.modalFooter}>

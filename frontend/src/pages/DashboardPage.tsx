@@ -125,7 +125,7 @@ function Leaderboard({ performers }: { performers: any[] }) {
       </div>
     );
   }
-  const medals = ["🥇", "🥈", "🥉"];
+  const medalColors = ["bg-[#FFD700]", "bg-[#C0C0C0]", "bg-[#CD7F32]"];
   return (
     <div className="space-y-2">
       {performers.map((p, i) => {
@@ -138,8 +138,13 @@ function Leaderboard({ performers }: { performers: any[] }) {
             key={p._id}
             className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black transition-all"
           >
-            <span className="text-base w-7 shrink-0">
-              {medals[i] || `#${i + 1}`}
+            <span
+              className={cn(
+                "w-7 h-7 shrink-0 rounded-full border-2 border-black flex items-center justify-center text-xs font-black text-black",
+                medalColors[i] || "bg-white",
+              )}
+            >
+              {i + 1}
             </span>
             <div className="w-9 h-9 border-2 rounded-full border-black shrink-0 overflow-hidden bg-[#044bab]">
               {p.avatar ? (
@@ -260,7 +265,7 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h2 className="font-display font-bold text-2xl text-black">
-            {greeting}, {user?.name?.split(" ")[0]} 👋
+            {greeting}, {user?.name?.split(" ")[0]}
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
             Here's what's happening with your leads right now
@@ -364,7 +369,7 @@ export default function DashboardPage() {
           sub={`${stats.totalLeads > 0 ? Math.round(((stats.convertedClients ?? 0) / stats.totalLeads) * 100) : 0}% conversion rate`}
           icon={TrendingUp}
           bg="bg-[#00C48C]"
-          trend="up"
+          trend={stats.convertedClients ? "up" : undefined}
           trendLabel={`${stats.totalLeads > 0 ? Math.round(((stats.convertedClients ?? 0) / stats.totalLeads) * 100) : 0}%`}
           to="/leads"
         />

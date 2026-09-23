@@ -25,6 +25,8 @@ const ACTION_COLOR: Record<string, string> = {
   UPDATE: "text-amber-600",
   STATUS_UPDATED: "text-amber-600",
   DELETE: "text-red-600",
+  RESTORE: "text-emerald-600",
+  PERMANENT_DELETE: "text-red-700",
   PASSWORD_CHANGED: "text-blue-600",
   PASSWORD_RESET: "text-blue-600",
   PASSWORD_RESET_REQUESTED: "text-blue-600",

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const softDelete = require("./plugins/softDelete");
 
 const serviceSchema = new mongoose.Schema(
   {
@@ -42,4 +43,5 @@ const serviceSchema = new mongoose.Schema(
 serviceSchema.index({ status: 1 });
 serviceSchema.index({ allocatedClient: 1 });
 
+serviceSchema.plugin(softDelete);
 module.exports = mongoose.model("Service", serviceSchema);

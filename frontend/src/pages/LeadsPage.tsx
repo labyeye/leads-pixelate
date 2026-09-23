@@ -11,7 +11,6 @@ import {
   Search,
   Plus,
   Calendar as CalendarIcon,
-  DollarSign,
   FileText,
   UserCheck,
   Zap,
@@ -551,6 +550,10 @@ export default function LeadsPage() {
   ];
 
   const handleExcelFile = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      notify.error("File Too Large", "Max file size is 5MB.");
+      return;
+    }
     setImportFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -2800,6 +2803,7 @@ export default function LeadsPage() {
                   id="budget"
                   type="number"
                   min="0"
+                  max="999999999"
                   placeholder="0"
                   className="w-full rounded-lg border border-border bg-background pl-10 p-4 text-base focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                   value={budgetInput}
@@ -2820,15 +2824,19 @@ export default function LeadsPage() {
                 id="remarks"
                 placeholder="Add a remark for this status change..."
                 className="w-full min-h-[120px] rounded-lg border border-border bg-background p-4 text-base focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                maxLength={500}
                 value={remarksInput}
                 onChange={(e) => setRemarksInput(e.target.value)}
               />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {remarksInput.length}/500
+              </p>
             </div>
 
             {}
             <div className="space-y-2 pt-2 border-t border-border/50">
               <Label className="text-xs text-black uppercase tracking-wider">
-                Interesteds
+                Interested In
               </Label>
               <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1 rounded-md border border-dashed border-border/50">
                 {allProducts.map((p) => (
@@ -2984,6 +2992,7 @@ export default function LeadsPage() {
                   <Input
                     id="name"
                     placeholder="Enter full name"
+                    maxLength={100}
                     value={newLead.name}
                     onChange={(e) =>
                       setNewLead({ ...newLead, name: e.target.value })
@@ -3001,6 +3010,7 @@ export default function LeadsPage() {
                   <Input
                     id="company"
                     placeholder="Enter company name"
+                    maxLength={120}
                     value={newLead.company}
                     onChange={(e) =>
                       setNewLead({ ...newLead, company: e.target.value })
@@ -3152,11 +3162,14 @@ export default function LeadsPage() {
                     Budget
                   </Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-black">
+                      ₹
+                    </span>
                     <Input
                       id="budget"
-                      className="pl-9"
+                      className="pl-8"
                       placeholder="e.g. 50,000"
+                      maxLength={15}
                       value={newLead.budget}
                       onChange={(e) =>
                         setNewLead({ ...newLead, budget: e.target.value })
@@ -3191,7 +3204,7 @@ export default function LeadsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold uppercase text-black">
-                    Interesteds
+                    Interested In
                   </Label>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -3262,6 +3275,7 @@ export default function LeadsPage() {
               <Textarea
                 id="requirement"
                 placeholder="Describe what the customer looking for..."
+                maxLength={1000}
                 className="min-h-[100px] resize-none"
                 value={newLead.requirement}
                 onChange={(e) =>
@@ -3369,6 +3383,9 @@ export default function LeadsPage() {
                     {importFile
                       ? importFile.name
                       : "Click to select Excel file"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground mt-0.5">
+                    .xlsx or .xls · max 5MB
                   </span>
                   <input
                     type="file"

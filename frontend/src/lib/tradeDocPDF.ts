@@ -49,5 +49,6 @@ export async function downloadTradeDocPDF(kind: TradeKind, d: any, settings: any
     logo: await resolveLogo(settings?.logoUrl),
     title: cfg.title,
     labels: cfg.labels,
+    template: settings?.invoiceTemplate, // the tenant's Settings > Invoice Designer layout
   });
 }

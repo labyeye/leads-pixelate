@@ -137,7 +137,7 @@ const ROLE_NB: Record<string, string> = {
 
 const ROLE_COUNTS = [
   { role: "super_admin", icon: ShieldCheck, bg: "bg-[#024BAB]" },
-  { role: "admin", icon: Shield, bg: "bg-black text-white" },
+  { role: "admin", icon: Shield, bg: "bg-[#5B8DEF] text-white" },
   { role: "sales_executive", icon: Briefcase, bg: "bg-[#FF751F]" },
   { role: "service_manager", icon: Wrench, bg: "bg-[#A3E635]" },
   { role: "accountant", icon: Calculator, bg: "bg-[#00C48C]" },
@@ -607,6 +607,9 @@ export default function UsersPage() {
                         }}
                       />
                     </label>
+                    <span className="text-[10px] text-muted-foreground">
+                      Image · max 2MB
+                    </span>
                     {formData.avatar && (
                       <button
                         type="button"
@@ -929,6 +932,9 @@ export default function UsersPage() {
                         />
                       </label>
                     </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      PDF, Word or image · max 10MB per file
+                    </p>
 
                     {documents.length === 0 ? (
                       <p className="text-xs text-muted-foreground">

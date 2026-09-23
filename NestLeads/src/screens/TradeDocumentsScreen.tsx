@@ -36,7 +36,7 @@ const STATUS_COLOR: Record<string, string> = {
   Overdue: '#EF4444', Cancelled: '#EF4444',
 };
 
-const blankItem = () => ({name: '', hsnCode: '', quantity: '1', rate: ''});
+const blankItem = () => ({productId: '', name: '', hsnCode: '', quantity: '1', rate: ''});
 const today = () => new Date().toISOString().slice(0, 10);
 const blank = () => ({
   partyName: '', reference: '', date: today(), dueDate: '', status: 'Draft',
@@ -86,7 +86,7 @@ export default function TradeDocumentsScreen({navigation, route}: any) {
       date: (d.date || today()).slice(0, 10), dueDate: d.dueDate ? d.dueDate.slice(0, 10) : '',
       status: d.status, discount: String(d.discount ?? 0), taxPercent: String(d.taxPercent ?? 18),
       notes: d.notes || '',
-      items: d.items.map((i: any) => ({name: i.name, hsnCode: i.hsnCode || '', quantity: String(i.quantity), rate: String(i.rate)})),
+      items: d.items.map((i: any) => ({productId: i.productId || '', name: i.name, hsnCode: i.hsnCode || '', quantity: String(i.quantity), rate: String(i.rate)})),
     });
     setModalVisible(true);
   };
@@ -95,7 +95,7 @@ export default function TradeDocumentsScreen({navigation, route}: any) {
     setForm(f => ({...f, items: f.items.map((it, k) => (k === i ? {...it, ...patch} : it))}));
   const pickProduct = (i: number, name: string) => {
     const p = products.find(x => x.name === name);
-    setItem(i, p ? {name, rate: String(p.price), hsnCode: p.hsnCode || ''} : {name});
+    setItem(i, p ? {productId: p._id, name, rate: String(p.price), hsnCode: p.hsnCode || ''} : {productId: '', name});
   };
 
   const totals = useMemo(() => {
@@ -119,7 +119,7 @@ export default function TradeDocumentsScreen({navigation, route}: any) {
         date: form.date, dueDate: form.dueDate || null, status: form.status,
         discount: parseFloat(form.discount) || 0, taxPercent: parseFloat(form.taxPercent) || 0,
         notes: form.notes,
-        items: items.map(i => ({name: i.name.trim(), hsnCode: i.hsnCode, quantity: parseFloat(i.quantity), rate: parseFloat(i.rate)})),
+        items: items.map(i => ({productId: i.productId || null, name: i.name.trim(), hsnCode: i.hsnCode, quantity: parseFloat(i.quantity), rate: parseFloat(i.rate)})),
       };
       if (editing) await cfg.api.update(editing._id, payload); else await cfg.api.create(payload);
       setModalVisible(false);
@@ -258,11 +258,16 @@ export default function TradeDocumentsScreen({navigation, route}: any) {
               />
 
               <Text style={styles.fieldLabel}>ITEMS</Text>
-              {form.items.map((it, i) => (
-                <View key={i} style={styles.itemRow}>
+              {form.items.map((it, i) => {
+                const stock = products.find(p => p._id === it.productId);
+                const short = kind === 'sales_order' && stock && Number(it.quantity) > (stock.stockQuantity ?? 0);
+                return (
+                <View key={i}>
+                <View style={styles.itemRow}>
                   <TextInput
                     style={[styles.input, styles.itemName]}
                     placeholder="Item or service"
+                    maxLength={160}
                     placeholderTextColor="#94a3b8"
                     value={it.name}
                     onChangeText={v => pickProduct(i, v)}
@@ -291,7 +296,14 @@ export default function TradeDocumentsScreen({navigation, route}: any) {
                     <Icon name="trash-outline" size={16} color={form.items.length === 1 ? '#cbd5e1' : '#EF4444'} />
                   </TouchableOpacity>
                 </View>
-              ))}
+                {stock && kind !== 'invoice' && (
+                  <Text style={{fontSize: 11, marginBottom: 6, color: short ? '#dc2626' : '#64748b', fontWeight: short ? '800' : '400'}}>
+                    {short ? 'Only ' : 'In stock: '}{stock.stockQuantity ?? 0} {stock.unit || 'pcs'}{short ? ' available - order exceeds stock' : ''}
+                  </Text>
+                )}
+                </View>
+                );
+              })}
               <TouchableOpacity style={styles.addItemBtn} onPress={() => setForm(f => ({...f, items: [...f.items, blankItem()]}))}>
                 <Icon name="add" size={14} color={PRIMARY} />
                 <Text style={styles.addItemBtnText}>Add item</Text>

@@ -149,7 +149,7 @@ router
 router.post("/:id/notes", addNote);
 router.post(
   "/:id/convert",
-  checkPermission("Leads", "update"),
+  checkPermission("Clients", "create"),
   convertToClient,
 );
 

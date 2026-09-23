@@ -3,11 +3,14 @@ import { cn } from "@/lib/utils";
 import {
   Plus,
   Search,
-  MoreHorizontal,
   Loader2,
   Pencil,
   Trash2,
+  Briefcase,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { servicesAPI, clientsAPI, productsAPI } from "@/services/api";
@@ -31,19 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const statusColors: Record<string, string> = {
-  Pending: "bg-muted text-muted-foreground",
-  "In Progress": "bg-primary/10 text-primary",
-  Completed: "bg-success/10 text-success",
-  "On Hold": "bg-warning/10 text-warning",
-  Cancelled: "bg-destructive/10 text-destructive",
+  Pending: "bg-gray-100 text-gray-700 border-gray-400",
+  "In Progress": "bg-blue-100 text-blue-800 border-blue-400",
+  Completed: "bg-green-100 text-green-800 border-green-400",
+  "On Hold": "bg-yellow-100 text-yellow-800 border-yellow-400",
+  Cancelled: "bg-red-100 text-red-800 border-red-400",
 };
 
 export default function ServicesPage() {
@@ -198,17 +195,41 @@ export default function ServicesPage() {
       (s.product?.name || "").toLowerCase().includes(search.toLowerCase()),
   );
 
+  const countBy = (st: string) => services.filter((x) => x.status === st).length;
+
   return (
     <AppLayout title="Service Allocations">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 animate-fade-in">
-        <div className="flex items-center gap-2 bg-card rounded-lg border border-border px-3 py-2 w-full sm:w-72">
-          <Search className="w-4 h-4 text-muted-foreground" />
+      <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <KpiCard
+          title="Total Allocations"
+          value={loading ? "—" : services.length}
+          icon={Briefcase}
+          bg="bg-[#024BAB]"
+        />
+        <KpiCard
+          title="In Progress"
+          value={loading ? "—" : countBy("In Progress")}
+          icon={Clock}
+          bg="bg-[#FFB800]"
+        />
+        <KpiCard
+          title="Completed"
+          value={loading ? "—" : countBy("Completed")}
+          icon={CheckCircle2}
+          bg="bg-[#00C48C]"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 border-2 border-black px-3 h-10 bg-white flex-1 min-w-[180px] max-w-xs">
+          <Search className="w-3.5 h-3.5 text-gray-500 shrink-0" />
           <input
             type="text"
             placeholder="Search allocations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-muted-foreground"
+            className="bg-transparent text-sm outline-none w-full font-medium placeholder:text-gray-400"
           />
         </div>
 
@@ -221,13 +242,12 @@ export default function ServicesPage() {
         >
           <DialogTrigger asChild>
             {can("Services", "create") && (
-              <Button
-                size="sm"
-                className="gap-1.5"
+              <button
                 onClick={() => resetFormAndCloseModal()}
+                className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
               >
                 <Plus className="w-3.5 h-3.5" /> Allocate Service
-              </Button>
+              </button>
             )}
           </DialogTrigger>
           <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto">
@@ -370,46 +390,37 @@ export default function ServicesPage() {
         </Dialog>
       </div>
 
-      <div
-        className="bg-card rounded-xl border border-border card-shadow overflow-hidden animate-fade-in"
-        style={{ animationDelay: "100ms" }}
-      >
+      <div className="border-2 border-black bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Client Focus
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                  Product Type & Price
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Progress
-                </th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                  Status
-                </th>
-                <th className="text-right px-5 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Actions
-                </th>
+              <tr className="bg-[#024BAB] text-white">
+                {["#", "Client", "Company", "Product / Service", "Price", "Timeline", "Progress", "Status", "Actions"].map((h) => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Loading allocations...
+                  <td colSpan={9} className="text-center py-16">
+                    <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
+                    <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
+                      Loading...
                     </p>
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10">
-                    <p className="text-sm text-muted-foreground">
-                      No service allocations found.
+                  <td colSpan={9} className="text-center py-16">
+                    <Briefcase className="w-10 h-10 mx-auto text-gray-200 mb-2" />
+                    <p className="text-sm font-black uppercase tracking-widest text-gray-400">
+                      {search ? "No allocations match your search" : "No service allocations yet"}
                     </p>
                   </td>
                 </tr>
@@ -417,85 +428,64 @@ export default function ServicesPage() {
                 filtered.map((item, i) => (
                   <tr
                     key={item._id || item.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors animate-fade-in"
-                    style={{ animationDelay: `${i * 50}ms` }}
+                    className={cn(
+                      "border-b-2 border-black last:border-b-0 transition-colors",
+                      i % 2 === 0 ? "bg-white" : "bg-gray-50/60",
+                    )}
                   >
-                    <td className="px-5 py-3.5">
-                      <p className="font-semibold text-foreground">
-                        {item.allocatedClient?.name || "Unknown"}
-                      </p>
-                      {item.allocatedClient?.company && (
-                        <span className="text-xs text-muted-foreground">
-                          {item.allocatedClient.company}
-                        </span>
-                      )}
+                    <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">{i + 1}</td>
+                    <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                      {item.allocatedClient?.name || "Unknown"}
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <p className="font-semibold text-foreground max-w-[200px] truncate">
-                        {item.product?.name || "Unknown Product"}
-                      </p>
-                      {item.product?.price && (
-                        <span className="text-[10px] text-muted-foreground border px-1.5 py-0.5 mt-1 inline-block rounded-md">
-                          ₹{item.product.price.toLocaleString()}
-                        </span>
-                      )}
+                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                      {item.allocatedClient?.company || <span className="text-gray-300 italic">—</span>}
                     </td>
-                    <td className="px-5 py-3.5">
-                      {item.timeline && (
-                        <p className="text-xs text-muted-foreground mb-1">
-                          TL: {item.timeline}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden min-w-[60px] max-w-[100px]">
-                          <div
-                            className="h-full bg-primary"
-                            style={{ width: `${item.progress || 0}%` }}
-                          ></div>
+                    <td className="px-4 py-3 font-black text-black whitespace-nowrap max-w-[220px] truncate">
+                      {item.product?.name || "Unknown Product"}
+                    </td>
+                    <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                      {item.product?.price ? `₹${item.product.price.toLocaleString("en-IN")}` : <span className="text-gray-300 italic">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                      {item.timeline || <span className="text-gray-300 italic">—</span>}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-2 border border-black bg-white overflow-hidden">
+                          <div className="h-full bg-[#024BAB]" style={{ width: `${item.progress || 0}%` }} />
                         </div>
-                        <span className="text-[10px] whitespace-nowrap text-muted-foreground">
-                          {item.progress || 0}%
-                        </span>
+                        <span className="text-[10px] font-black text-black">{item.progress || 0}%</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span
                         className={cn(
-                          "text-xs font-medium px-2 py-1 rounded-md",
-                          statusColors[item.status] ||
-                            "bg-muted text-muted-foreground",
+                          "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",
+                          statusColors[item.status] || statusColors.Pending,
                         )}
                       >
                         {item.status || "Pending"}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="p-1 rounded hover:bg-muted transition-colors">
-                            <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {can("Services", "update") && (
+                          <button
+                            onClick={() => handleEditClick(item)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                          >
+                            <Pencil className="w-3 h-3" /> Edit
                           </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {can("Services", "update") && (
-                            <DropdownMenuItem
-                              onClick={() => handleEditClick(item)}
-                            >
-                              <Pencil className="w-4 h-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                          )}
-                          {can("Services", "delete") && (
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                              onClick={() =>
-                                handleDeleteClick(item._id || item.id)
-                              }
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" /> Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        )}
+                        {can("Services", "delete") && (
+                          <button
+                            onClick={() => handleDeleteClick(item._id || item.id)}
+                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                          >
+                            <Trash2 className="w-3 h-3" /> Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -503,6 +493,18 @@ export default function ServicesPage() {
             </tbody>
           </table>
         </div>
+
+        {filtered.length > 0 && (
+          <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+            <span>
+              {filtered.length} allocation{filtered.length !== 1 ? "s" : ""}
+            </span>
+            <span>
+              {countBy("In Progress")} in progress · {countBy("Completed")} completed
+            </span>
+          </div>
+        )}
+      </div>
       </div>
     </AppLayout>
   );

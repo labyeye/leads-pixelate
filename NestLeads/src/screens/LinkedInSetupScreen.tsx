@@ -6,6 +6,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {linkedinAdsAPI, leadsAPI, usersAPI} from '../services/api';
+import AssigneePicker, {describeAssignment} from '../components/AssigneePicker';
 
 const LI_COLOR = '#0A66C2';
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
@@ -16,6 +17,8 @@ interface ConnectedAccount {
   selectedFormIds: string[];
   allowedStates: string[];
   defaultAssigneeId: string;
+  assigneeIds?: string[];
+  assignBatchSize?: number;
   connectedAt: string;
 }
 
@@ -40,10 +43,10 @@ export default function LinkedInSetupScreen({navigation}: any) {
   const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(new Set());
   const [allowedStates, setAllowedStates] = useState<string[]>([]);
   const [stateInput, setStateInput] = useState('');
-  const [defaultAssigneeId, setDefaultAssigneeId] = useState('');
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assignBatchSize, setAssignBatchSize] = useState(1);
   const [connecting, setConnecting] = useState(false);
   const [accountPickerOpen, setAccountPickerOpen] = useState(false);
-  const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
 
   const load = useCallback(async (isRefresh = false) => {
     try {
@@ -136,7 +139,8 @@ export default function LinkedInSetupScreen({navigation}: any) {
     setSelectedFormIds(new Set());
     setAllowedStates([]);
     setStateInput('');
-    setDefaultAssigneeId('');
+    setAssigneeIds([]);
+    setAssignBatchSize(1);
   };
 
   const handleConnect = async () => {
@@ -148,7 +152,8 @@ export default function LinkedInSetupScreen({navigation}: any) {
         adAccountName: selectedAdAccount.name,
         selectedFormIds: allForms ? [] : Array.from(selectedFormIds),
         allowedStates,
-        defaultAssigneeId,
+        assigneeIds,
+        assignBatchSize,
       });
       resetAddForm();
       load(true);
@@ -193,7 +198,6 @@ export default function LinkedInSetupScreen({navigation}: any) {
     ]);
   };
 
-  const assigneeName = (id: string) => users.find(u => u._id === id)?.name || 'Auto-assign';
 
   return (
     <View style={[styles.container, {paddingTop: insets.top}]}>
@@ -266,7 +270,7 @@ export default function LinkedInSetupScreen({navigation}: any) {
                       ) : null}
                       <View style={styles.metaRow}>
                         <Icon name="person-add-outline" size={11} color="#94a3b8" />
-                        <Text style={styles.accountMetaSmall}>{assigneeName(acc.defaultAssigneeId)}</Text>
+                        <Text style={styles.accountMetaSmall}>{describeAssignment(acc, users)}</Text>
                       </View>
                     </View>
                     <View style={{gap: 6}}>
@@ -367,11 +371,8 @@ export default function LinkedInSetupScreen({navigation}: any) {
                         </View>
                       )}
 
-                      <Text style={styles.formLabel}>Default Assignee (optional)</Text>
-                      <TouchableOpacity style={styles.pickerBtn} onPress={() => setAssigneePickerOpen(true)}>
-                        <Text style={styles.pickerBtnText}>{assigneeName(defaultAssigneeId)}</Text>
-                        <Icon name="chevron-down" size={14} color="#000" />
-                      </TouchableOpacity>
+                      <Text style={styles.formLabel}>Assign Leads To</Text>
+                      <AssigneePicker users={users} assigneeIds={assigneeIds} onAssigneeIdsChange={setAssigneeIds} batchSize={assignBatchSize} onBatchSizeChange={setAssignBatchSize} />
                     </>
                   )}
 
@@ -415,26 +416,6 @@ export default function LinkedInSetupScreen({navigation}: any) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Assignee picker */}
-      <Modal visible={assigneePickerOpen} transparent animationType="slide" onRequestClose={() => setAssigneePickerOpen(false)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setAssigneePickerOpen(false)}>
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Default Assignee</Text>
-            <FlatList
-              data={[{_id: '', name: 'Auto-assign'}, ...users]}
-              keyExtractor={u => u._id || 'auto'}
-              style={{maxHeight: 360}}
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  style={styles.sheetRow}
-                  onPress={() => { setDefaultAssigneeId(item._id); setAssigneePickerOpen(false); }}>
-                  <Text style={styles.sheetRowText}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 }

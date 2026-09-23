@@ -129,10 +129,10 @@ const updateClient = asyncHandler(async (req, res) => {
 });
 
 const deleteClient = asyncHandler(async (req, res) => {
-  const client = await Client.findOneAndDelete({
-    _id: req.params.id,
-    ...tenantScope(req),
-  });
+  const client = await Client.findOneAndUpdate(
+    { _id: req.params.id, ...tenantScope(req) },
+    { $set: { deletedAt: new Date(), deletedBy: req.user._id } },
+  );
 
   if (!client) {
     res.status(404);
@@ -143,14 +143,14 @@ const deleteClient = asyncHandler(async (req, res) => {
     user: req.user,
     action: "DELETE",
     module: "Client",
-    description: `Deleted client: ${client.name}`,
+    description: `Moved client to trash: ${client.name}`,
     targetId: client._id,
     ip: req.ip,
   });
 
   res.json({
     success: true,
-    message: "Client deleted successfully",
+    message: "Client moved to trash",
   });
 });
 

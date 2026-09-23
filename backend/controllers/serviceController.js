@@ -103,7 +103,7 @@ const deleteService = asyncHandler(async (req, res) => {
     throw new Error("Service allocation not found");
   }
 
-  await Service.findByIdAndDelete(req.params.id);
+  await Service.updateOne({ _id: service._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
 
   logActivity({
     user: req.user,

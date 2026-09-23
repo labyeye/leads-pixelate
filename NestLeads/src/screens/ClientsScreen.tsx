@@ -231,11 +231,11 @@ export default function ClientsScreen() {
             </View>
             <View style={styles.modalDivider} />
             <View style={{gap: 12}}>
-              <MField label="NAME *" value={form.name} onChange={v => set('name', v)} placeholder="John Doe" />
-              <MField label="COMPANY" value={form.company} onChange={v => set('company', v)} placeholder="Acme Corp" />
+              <MField label="NAME *" value={form.name} onChange={v => set('name', v)} placeholder="John Doe" max={100} />
+              <MField label="COMPANY" value={form.company} onChange={v => set('company', v)} placeholder="Acme Corp" max={120} />
               <MField label="PHONE" value={form.phone} onChange={v => set('phone', v)} placeholder="+91 9876543210" kb="phone-pad" />
-              <MField label="EMAIL" value={form.email} onChange={v => set('email', v)} placeholder="john@company.com" kb="email-address" cap="none" />
-              <MField label="ADDRESS" value={form.address} onChange={v => set('address', v)} placeholder="City, State" multiline />
+              <MField label="EMAIL" value={form.email} onChange={v => set('email', v)} placeholder="john@company.com" kb="email-address" cap="none" max={100} />
+              <MField label="ADDRESS" value={form.address} onChange={v => set('address', v)} placeholder="City, State" multiline max={300} />
               <StatusPicker
                 label="PROJECT STATUS"
                 value={form.projectStatus}
@@ -264,7 +264,7 @@ export default function ClientsScreen() {
   );
 }
 
-function MField({label, value, onChange, placeholder, kb, cap, multiline}: any) {
+function MField({label, value, onChange, placeholder, kb, cap, multiline, max}: any) {
   return (
     <View>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -278,6 +278,7 @@ function MField({label, value, onChange, placeholder, kb, cap, multiline}: any) 
           keyboardType={kb}
           autoCapitalize={cap || 'sentences'}
           multiline={multiline}
+          maxLength={max}
         />
       </View>
     </View>

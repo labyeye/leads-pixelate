@@ -1,6 +1,6 @@
 ﻿import React, {useState, useEffect, useCallback} from 'react';
 import {
-  View, Text, FlatList, TextInput, TouchableOpacity, Modal,
+  View, Text, Image, FlatList, TextInput, TouchableOpacity, Modal,
   StyleSheet, ActivityIndicator, StatusBar, RefreshControl, Alert, ScrollView,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -9,7 +9,8 @@ import {productsAPI} from '../services/api';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
-const BLANK = {name: '', description: '', price: '', unit: '', category: ''};
+const UNITS = ['pcs', 'kg', 'box', 'meter', 'liter', 'set', 'hour'];
+const BLANK = {name: '', description: '', price: '', unit: 'pcs', category: '', sku: '', stockQuantity: '', taxRate: '18', hsnCode: ''};
 
 export default function ProductsScreen({navigation}: any) {
   const insets = useSafeAreaInsets();
@@ -37,7 +38,8 @@ export default function ProductsScreen({navigation}: any) {
     if (!search) return true;
     const s = search.toLowerCase();
     return (p.name || '').toLowerCase().includes(s) ||
-           (p.category || '').toLowerCase().includes(s);
+           (p.category || '').toLowerCase().includes(s) ||
+           (p.sku || '').toLowerCase().includes(s);
   });
 
   const openAdd = () => {setEditing(null); setForm(BLANK); setModalVisible(true);};
@@ -47,8 +49,12 @@ export default function ProductsScreen({navigation}: any) {
       name: p.name || '',
       description: p.description || '',
       price: String(p.price || ''),
-      unit: p.unit || '',
+      unit: p.unit || 'pcs',
       category: p.category || '',
+      sku: p.sku || '',
+      stockQuantity: p.stockQuantity ? String(p.stockQuantity) : '',
+      taxRate: p.taxRate != null ? String(p.taxRate) : '18',
+      hsnCode: p.hsnCode || '',
     });
     setModalVisible(true);
   };
@@ -60,6 +66,8 @@ export default function ProductsScreen({navigation}: any) {
       const payload = {
         ...form,
         price: parseFloat(form.price) || 0,
+        stockQuantity: parseFloat(form.stockQuantity) || 0,
+        taxRate: form.taxRate === '' ? 0 : parseFloat(form.taxRate) || 0,
       };
       if (editing) {
         await productsAPI.update(editing._id, payload);
@@ -73,7 +81,7 @@ export default function ProductsScreen({navigation}: any) {
   };
 
   const handleDelete = (id: string, name: string) => {
-    Alert.alert('Delete Product', `Delete "${name}"?`, [
+    Alert.alert('Delete Product', `Move "${name}" to trash?`, [
       {text: 'Cancel', style: 'cancel'},
       {text: 'Delete', style: 'destructive', onPress: async () => {
         try {await productsAPI.delete(id); fetchProducts();}
@@ -86,11 +94,18 @@ export default function ProductsScreen({navigation}: any) {
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.productIcon}>
-          <Icon name="cube-outline" size={18} color="#024BAB" />
+          {p.photoUrl ? (
+            <Image source={{uri: p.photoUrl}} style={{width: 32, height: 32}} />
+          ) : (
+            <Icon name="cube-outline" size={18} color="#024BAB" />
+          )}
         </View>
         <View style={styles.cardInfo}>
           <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
           {p.category ? <Text style={styles.productCat} numberOfLines={1}>{p.category}</Text> : null}
+          <Text style={styles.productCat} numberOfLines={1}>
+            {p.sku ? `SKU ${p.sku} · ` : ''}Stock {p.stockQuantity ?? 0} {p.unit || 'pcs'}
+          </Text>
         </View>
         <View style={styles.priceBox}>
           <Text style={styles.priceText}>â‚¹{(p.price || 0).toLocaleString('en-IN')}</Text>
@@ -188,8 +203,18 @@ export default function ProductsScreen({navigation}: any) {
                 style={styles.input}
                 placeholder="Enter product name"
                 placeholderTextColor="#94a3b8"
+                maxLength={120}
                 value={form.name}
                 onChangeText={v => setForm(f => ({...f, name: v}))}
+              />
+              <Text style={styles.fieldLabel}>SKU / PRODUCT CODE</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. OPM-2024-01"
+                placeholderTextColor="#94a3b8"
+                value={form.sku}
+                maxLength={40}
+                onChangeText={v => setForm(f => ({...f, sku: v}))}
               />
               <Text style={styles.fieldLabel}>CATEGORY</Text>
               <TextInput
@@ -209,16 +234,55 @@ export default function ProductsScreen({navigation}: any) {
                     value={form.price}
                     onChangeText={v => setForm(f => ({...f, price: v}))}
                     keyboardType="numeric"
+                    maxLength={8}
                   />
                 </View>
                 <View style={{flex: 1}}>
-                  <Text style={styles.fieldLabel}>UNIT</Text>
+                  <Text style={styles.fieldLabel}>STOCK QTY</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="e.g. month, piece"
+                    placeholder="0"
                     placeholderTextColor="#94a3b8"
-                    value={form.unit}
-                    onChangeText={v => setForm(f => ({...f, unit: v}))}
+                    value={form.stockQuantity}
+                    onChangeText={v => setForm(f => ({...f, stockQuantity: v}))}
+                    keyboardType="numeric"
+                    maxLength={7}
+                  />
+                </View>
+              </View>
+              <Text style={styles.fieldLabel}>UNIT</Text>
+              <View style={styles.unitRow}>
+                {UNITS.map(u => (
+                  <TouchableOpacity
+                    key={u}
+                    style={[styles.unitChip, form.unit === u && styles.unitChipOn]}
+                    onPress={() => setForm(f => ({...f, unit: u}))}>
+                    <Text style={[styles.unitChipText, form.unit === u && {color: '#fff'}]}>{u}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.rowInputs}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.fieldLabel}>TAX RATE (%)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="18"
+                    placeholderTextColor="#94a3b8"
+                    value={form.taxRate}
+                    onChangeText={v => setForm(f => ({...f, taxRate: v}))}
+                    keyboardType="numeric"
+                    maxLength={5}
+                  />
+                </View>
+                <View style={{flex: 1}}>
+                  <Text style={styles.fieldLabel}>HSN / SAC (FOR GST)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. 998315"
+                    placeholderTextColor="#94a3b8"
+                    value={form.hsnCode}
+                    onChangeText={v => setForm(f => ({...f, hsnCode: v}))}
+                    maxLength={10}
                   />
                 </View>
               </View>
@@ -230,6 +294,7 @@ export default function ProductsScreen({navigation}: any) {
                 value={form.description}
                 onChangeText={v => setForm(f => ({...f, description: v}))}
                 multiline
+                maxLength={500}
                 numberOfLines={3}
                 textAlignVertical="top"
               />
@@ -305,6 +370,10 @@ const styles = StyleSheet.create({
   input: {borderWidth: 2, borderColor: '#000', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#000'},
   textArea: {minHeight: 80},
   rowInputs: {flexDirection: 'row', gap: 12},
+  unitRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  unitChip: {borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6},
+  unitChipOn: {backgroundColor: '#024BAB'},
+  unitChipText: {fontSize: 12, fontWeight: '800', color: '#000'},
   modalFooter: {flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 2, borderTopColor: '#000'},
   cancelBtn: {flex: 1, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', paddingVertical: 12},
   cancelBtnText: {fontSize: 13, fontWeight: '900', color: '#000'},

@@ -261,8 +261,8 @@ exports.deleteCampaign = asyncHandler(async (req, res) => {
     throw new Error("Cannot delete a running campaign");
   }
 
-  await campaign.deleteOne();
-  res.json({ success: true, message: "Campaign deleted" });
+  await Campaign.updateOne({ _id: campaign._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
+  res.json({ success: true, message: "Campaign moved to trash" });
 });
 
 exports.launchCampaign = asyncHandler(async (req, res) => {

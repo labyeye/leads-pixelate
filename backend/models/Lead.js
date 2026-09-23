@@ -158,6 +158,8 @@ const leadSchema = new mongoose.Schema(
     justdialLeadId: {
       type: String,
     },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     statusHistory: [
       {
         status: String,
@@ -206,5 +208,16 @@ leadSchema.index(
   { tenantId: 1, linkedinLeadId: 1 },
   { sparse: true, unique: true },
 );
+
+// Trashed leads are hidden from find/count/aggregate reads (lists, dashboards, reports). findOne /
+// findById are left alone on purpose so integration dedupe still sees trashed leads and doesn't
+// re-import them. Trash endpoints opt out with .setOptions({ withDeleted: true }).
+leadSchema.pre(["find", "countDocuments"], function () {
+  if (!this.getOptions().withDeleted) this.where({ deletedAt: null });
+});
+leadSchema.pre("aggregate", function () {
+  if (!this.options.withDeleted)
+    this.pipeline().unshift({ $match: { deletedAt: null } });
+});
 
 module.exports = mongoose.model("Lead", leadSchema);

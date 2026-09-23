@@ -131,7 +131,7 @@ export function DataTable({
         </table>
       </div>
       {footer && (
-        <div className="border-t-2 border-black px-4 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest">
+        <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest">
           {footer}
         </div>
       )}

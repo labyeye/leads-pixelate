@@ -11,6 +11,16 @@ const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
 const { sendWelcomeEmail } = require("../utils/emailService");
 const log = require("../utils/logger").scope("Billing");
 
+// INV-LEADS-0001, 0002, ... one above the paid invoices issued so far, across all tenants.
+async function nextInvoiceNumber() {
+  const [r] = await Subscription.aggregate([
+    { $unwind: "$invoices" },
+    { $match: { "invoices.status": "paid" } },
+    { $count: "total" },
+  ]);
+  return `INV-LEADS-${String((r?.total || 0) + 1).padStart(4, "0")}`;
+}
+
 function hdfcEncrypt(plainText, workingKey) {
   const keyBytes = crypto.createHash("md5").update(workingKey).digest();
   const iv = Buffer.alloc(16, 0);
@@ -151,7 +161,7 @@ router.get(
       .slice(0, 24)
       .map((inv, i, arr) => ({
         _id: inv._id,
-        invoiceNumber: `INV-${String(arr.length - i).padStart(4, "0")}`,
+        invoiceNumber: inv.invoiceNumber || `INV-LEADS-${String(arr.length - i).padStart(4, "0")}`,
         plan: inv.plan,
         billingCycle: inv.billingCycle,
         amount: inv.amount,
@@ -306,6 +316,7 @@ router.post(
         { new: true },
       );
 
+      const invoiceNumber = await nextInvoiceNumber();
       await Subscription.findOneAndUpdate(
         { tenant: tenant._id },
         {
@@ -316,6 +327,7 @@ router.post(
           currentPeriodEnd: periodEnd,
           $push: {
             invoices: {
+              invoiceNumber,
               hdfcPaymentId: orderId,
               hdfcTrackingId: trackingId,
               amount: Math.round(amount),
@@ -464,13 +476,7 @@ router.post(
             ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
             : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-        const countResult = await Subscription.aggregate([
-          { $unwind: { path: "$invoices", preserveNullAndEmptyArrays: false } },
-          { $match: { "invoices.status": "paid" } },
-          { $count: "total" },
-        ]);
-        const invoiceSeq = (countResult[0]?.total || 0) + 1;
-        const invoiceNumber = `KHT/${String(invoiceSeq).padStart(4, "0")}`;
+        const invoiceNumber = await nextInvoiceNumber();
 
         const updatedSubscription = await Subscription.findOneAndUpdate(
           { tenant: req.user.tenantId },
@@ -492,6 +498,7 @@ router.post(
             $unset: { pendingOrder: 1 },
             $push: {
               invoices: {
+                invoiceNumber,
                 razorpayPaymentId,
                 razorpayOrderId,
                 amount: amountPaise,

@@ -10,6 +10,7 @@ import VisitCalendarPage from "./pages/VisitCalendarPage";
 import FollowupCalendarPage from "./pages/FollowupCalendarPage";
 import UsersPage from "./pages/UsersPage";
 import ActivityLogPage from "./pages/ActivityLogPage";
+import TrashPage from "./pages/TrashPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -199,6 +200,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <IntegrationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/trash"
+        element={
+          <ProtectedRoute>
+            <TrashPage />
           </ProtectedRoute>
         }
       />

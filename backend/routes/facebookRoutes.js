@@ -8,7 +8,7 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const CampaignAssignment = require("../models/CampaignAssignment");
-const { nextBatchAssignee } = require("../utils/leadAssignment");
+const { nextBatchAssignee, assignmentFields } = require("../utils/leadAssignment");
 const log = require("../utils/logger").scope("Facebook Ads");
 
 const FB_API = "https://graph.facebook.com/v20.0";
@@ -482,6 +482,7 @@ router.post(
       allowedStates = [],
       defaultAssigneeId = "",
     } = req.body;
+    const assign = assignmentFields(req.body);
 
     if (!pageId || typeof pageId !== "string" || !/^\d+$/.test(pageId)) {
       return res
@@ -520,6 +521,7 @@ router.post(
       selectedFormIds,
       allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
       defaultAssigneeId,
+      ...assign,
       webhookVerified: subscribed,
       connectedAt: new Date(),
     };
@@ -607,6 +609,8 @@ router.get(
       selectedFormIds: p.selectedFormIds || [],
       allowedStates: p.allowedStates || [],
       defaultAssigneeId: p.defaultAssigneeId || "",
+      assigneeIds: p.assigneeIds || [],
+      assignBatchSize: p.assignBatchSize || 1,
       webhookVerified: p.webhookVerified,
       connectedAt: p.connectedAt,
     }));

@@ -4,6 +4,7 @@ const asyncHandler = require("express-async-handler");
 const TradeDoc = require("../models/TradeDoc");
 const { TYPES } = TradeDoc;
 const logActivity = require("../utils/activityLogger");
+const { syncStock } = require("../utils/stock");
 
 const isId = (v) => /^[0-9a-f]{24}$/i.test(String(v || ""));
 const scope = (req, extra = {}) => ({ ...extra, ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}) });
@@ -16,7 +17,7 @@ const body = (req) => {
 };
 
 // fixed = filter that always applies (e.g. { type: "invoice" }); label = module name for the log.
-function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate }) {
+function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, onChange }) {
   const find = (req, id) => Model.findOne(scope(req, { ...fixed, _id: id }));
   const notFound = (res) => {
     res.status(404);
@@ -49,14 +50,17 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate }) 
       const data = { ...body(req), ...fixed, tenantId: req.user.tenantId || null, createdBy: req.user._id };
       if (beforeCreate) await beforeCreate(data, req);
       const doc = await Model.create(data);
+      if (onChange) await onChange(req, null, doc);
       log(req, "CREATE", doc);
       res.status(201).json({ success: true, data: doc });
     }),
     update: asyncHandler(async (req, res) => {
       const doc = isId(req.params.id) ? await find(req, req.params.id) : null;
       if (!doc) notFound(res);
+      const before = onChange ? { status: doc.status, items: doc.items.map((i) => i.toObject()) } : null;
       doc.set(body(req));
       await doc.save(); // save (not findOneAndUpdate) so validation and the totals run
+      if (onChange) await onChange(req, before, doc);
       log(req, "UPDATE", doc);
       res.json({ success: true, data: doc });
     }),
@@ -64,6 +68,7 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate }) 
       const doc = isId(req.params.id) ? await find(req, req.params.id) : null;
       if (!doc) notFound(res);
       await doc.deleteOne();
+      if (onChange) await onChange(req, { status: doc.status, items: doc.items }, null);
       log(req, "DELETE", doc);
       res.json({ success: true });
     }),
@@ -87,6 +92,7 @@ const tradeDocs = (type, label) =>
     beforeCreate: async (data, req) => {
       data.number = await nextNumber(type, req.user.tenantId);
     },
+    onChange: (req, before, after) => syncStock(type, req.user.tenantId, before, after),
   });
 
 module.exports = { crud, tradeDocs };

@@ -855,6 +855,7 @@ export const facebookAPI = {
     selectedFormIds: string[],
     allowedStates: string[] = [],
     defaultAssigneeId: string = "",
+    assign: { assigneeIds: string[]; assignBatchSize: number } = { assigneeIds: [], assignBatchSize: 1 },
   ) =>
     request<{ success: boolean; message: string; data: any }>(
       "/facebook/connect-page",
@@ -865,6 +866,7 @@ export const facebookAPI = {
           selectedFormIds,
           allowedStates,
           defaultAssigneeId,
+          ...assign,
         }),
       },
     ),
@@ -1035,6 +1037,8 @@ export const linkedinAdsAPI = {
     selectedFormIds?: string[];
     allowedStates?: string[];
     defaultAssigneeId?: string;
+    assigneeIds?: string[];
+    assignBatchSize?: number;
   }) =>
     request<{ success: boolean; message: string; data: any }>(
       "/linkedin-ads/connect-account",
@@ -1078,6 +1082,7 @@ export const googleAdsAPI = {
     allowedStates: string[] = [],
     defaultAssigneeId: string = "",
     loginCustomerId: string = "",
+    assign: { assigneeIds: string[]; assignBatchSize: number } = { assigneeIds: [], assignBatchSize: 1 },
   ) =>
     request<{ success: boolean; message: string; data: any }>(
       "/google-ads/connect-account",
@@ -1090,6 +1095,7 @@ export const googleAdsAPI = {
           allowedStates,
           defaultAssigneeId,
           loginCustomerId,
+          ...assign,
         }),
       },
     ),
@@ -1559,10 +1565,14 @@ export const activityAPI = {
 
 export const apiKeysAPI = {
   list: () => request<{ success: boolean; data: any[] }>("/api-keys"),
-  generate: (name: string, fields?: any[]) =>
+  generate: (
+    name: string,
+    fields?: any[],
+    assign: { assigneeIds: string[]; assignBatchSize: number } = { assigneeIds: [], assignBatchSize: 1 },
+  ) =>
     request<{ success: boolean; data: any }>("/api-keys", {
       method: "POST",
-      body: JSON.stringify({ name, fields: fields || [] }),
+      body: JSON.stringify({ name, fields: fields || [], ...assign }),
     }),
   revoke: (id: string) =>
     request<{ success: boolean; message: string }>(`/api-keys/${id}`, {
@@ -1596,3 +1606,17 @@ export const supportAPI = {
 };
 
 export { hasSession, getCsrfToken, ApiError };
+
+export const trashAPI = {
+  list: () =>
+    request<{ success: boolean; count: number; data: any[] }>("/trash"),
+  restore: (type: string, id: string) =>
+    request<{ success: boolean; message: string }>(
+      `/trash/${type}/${id}/restore`,
+      { method: "POST" },
+    ),
+  purge: (type: string, id: string) =>
+    request<{ success: boolean; message: string }>(`/trash/${type}/${id}`, {
+      method: "DELETE",
+    }),
+};

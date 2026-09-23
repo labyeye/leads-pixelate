@@ -1608,7 +1608,7 @@ export default function ReportsPage() {
               </div>
 
               {leads.length > 0 && (
-                <div className="border-t-2 border-black px-4 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest flex justify-between">
+                <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
                   <span>Total: {leads.length} leads</span>
                   <span>
                     Won: {counts.won} · Drop: {counts.drop} · Pending:{" "}
@@ -2028,7 +2028,7 @@ export default function ReportsPage() {
               </div>
 
               {teamStats.length > 0 && (
-                <div className="border-t-2 border-black px-4 py-2 bg-black text-white text-[10px] font-black uppercase tracking-widest flex justify-between">
+                <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
                   <span>Team: {teamStats.length} members</span>
                   <span>
                     Total: {teamLeads.length} · Won:{" "}

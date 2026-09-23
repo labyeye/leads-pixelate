@@ -49,6 +49,7 @@ import LinkedInCampaignManagementScreen from '../screens/LinkedInCampaignManagem
 import CampaignManagementOverviewScreen from '../screens/CampaignManagementOverviewScreen';
 import CampaignReportsScreen from '../screens/CampaignReportsScreen';
 import ActivityLogScreen from '../screens/ActivityLogScreen';
+import TrashScreen from '../screens/TrashScreen';
 import AccountSecurityScreen from '../screens/AccountSecurityScreen';
 
 export type LeadsStackParamList = {
@@ -109,6 +110,7 @@ export type MoreStackParamList = {
   CampaignManagementOverview: undefined;
   CampaignReports: undefined;
   ActivityLog: undefined;
+  Trash: undefined;
   AccountSecurity: undefined;
 };
 
@@ -177,6 +179,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="CampaignManagementOverview" component={CampaignManagementOverviewScreen} />
       <MoreStack.Screen name="CampaignReports" component={CampaignReportsScreen} />
       <MoreStack.Screen name="ActivityLog" component={ActivityLogScreen} />
+      <MoreStack.Screen name="Trash" component={TrashScreen} />
       <MoreStack.Screen name="AccountSecurity" component={AccountSecurityScreen} />
     </MoreStack.Navigator>
   );

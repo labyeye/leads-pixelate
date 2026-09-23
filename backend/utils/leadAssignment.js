@@ -36,4 +36,12 @@ async function nextBatchAssignee({ tenantId, key, assigneeIds, batchSize = 1 }) 
   return winner;
 }
 
-module.exports = { nextBatchAssignee };
+const clampBatchSize = (v) => Math.max(1, Math.min(1000, Math.round(Number(v)) || 1));
+
+// Normalises the assignee list + batch size a connect endpoint receives into the stored shape.
+const assignmentFields = ({ assigneeIds, assignBatchSize }) => ({
+  assigneeIds: Array.isArray(assigneeIds) ? assigneeIds.filter(Boolean).map(String) : [],
+  assignBatchSize: clampBatchSize(assignBatchSize),
+});
+
+module.exports = { nextBatchAssignee, clampBatchSize, assignmentFields };

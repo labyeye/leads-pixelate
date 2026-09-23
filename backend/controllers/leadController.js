@@ -22,6 +22,20 @@ const User = require("../models/User");
 const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
 const { nextBatchAssignee } = require("../utils/leadAssignment");
+const { hasPermission } = require("../middleware/checkPermission");
+
+// Fields a user without Leads "update" permission may still change: the status workflow.
+// Everything else (name, phone, assignee, ...) is a lead edit and needs the permission.
+const WORKFLOW_FIELDS = [
+  "status",
+  "remarks",
+  "budget",
+  "interestedProducts",
+  "contactTag",
+  "followUpDate",
+  "visitScheduledDate",
+  "visitActualDate",
+];
 
 // Shows the last 4 characters only, so "Manage Connection" can confirm a key is saved without
 // exposing it. `strip` optionally drops a query string first (a TradeIndia API Link can carry the
@@ -162,7 +176,7 @@ const getLead = asyncHandler(async (req, res) => {
     .populate("notes.addedBy", "name")
     .populate("statusHistory.changedBy", "name");
 
-  if (!lead) {
+  if (!lead || lead.deletedAt) {
     res.status(404);
     throw new Error("Lead not found");
   }
@@ -251,9 +265,19 @@ const createLead = asyncHandler(async (req, res) => {
 const updateLead = asyncHandler(async (req, res) => {
   let lead = await Lead.findById(req.params.id);
 
-  if (!lead) {
+  if (!lead || lead.deletedAt) {
     res.status(404);
     throw new Error("Lead not found");
+  }
+
+  if (!(await hasPermission(req.user, "Leads", "update"))) {
+    if (req.body.status === undefined) {
+      res.status(403);
+      throw new Error("You do not have permission to edit leads");
+    }
+    req.body = Object.fromEntries(
+      WORKFLOW_FIELDS.filter((k) => k in req.body).map((k) => [k, req.body[k]]),
+    );
   }
 
   const statusChanged = req.body.status !== undefined;
@@ -535,30 +559,35 @@ const bulkEmailLeads = asyncHandler(async (req, res) => {
   });
 });
 
+// Soft delete: the lead goes to Trash; only an owner/admin can purge it from there.
 const deleteLead = asyncHandler(async (req, res) => {
-  const lead = await Lead.findById(req.params.id);
+  const lead = await Lead.findOneAndUpdate(
+    { _id: req.params.id, deletedAt: null, ...tenantScope(req) },
+    { $set: { deletedAt: new Date(), deletedBy: req.user._id } },
+  );
 
   if (!lead) {
     res.status(404);
     throw new Error("Lead not found");
   }
 
-  await Lead.findByIdAndDelete(req.params.id);
-
   logActivity({
     user: req.user,
     action: "DELETE",
     module: "Lead",
-    description: `Deleted lead: ${lead.name} (${lead.company || ""})`,
+    description: `Moved lead to trash: ${lead.name} (${lead.company || ""})`,
     targetId: lead._id,
     ip: req.ip,
   });
 
   res.json({
     success: true,
-    message: "Lead deleted successfully",
+    message: "Lead moved to trash",
   });
 });
+
+const tenantScope = (req) =>
+  req.user.tenantId ? { tenantId: req.user.tenantId } : {};
 
 const addNote = asyncHandler(async (req, res) => {
   const lead = await Lead.findById(req.params.id);

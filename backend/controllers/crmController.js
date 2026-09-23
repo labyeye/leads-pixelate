@@ -40,7 +40,7 @@ const getCrmInvoices = async (req, res) => {
         const status = inv.status === "paid" ? "paid" : inv.status === "failed" ? "overdue" : "unpaid";
         invoices.push({
           invoiceNumber:
-            inv.razorpayOrderId || inv.hdfcOrderId || `NL-${String(inv._id).slice(-8).toUpperCase()}`,
+            inv.invoiceNumber || inv.razorpayOrderId || inv.hdfcOrderId || `NL-${String(inv._id).slice(-8).toUpperCase()}`,
           clientName: sub.tenant?.name || "Unknown",
           clientEmail: sub.tenant?.ownerUser?.email || "",
           amount: Math.round((inv.amount || 0) / 100), // stored in paise

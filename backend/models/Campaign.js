@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const softDelete = require("./plugins/softDelete");
 
 const contactSchema = new mongoose.Schema(
   {
@@ -124,4 +125,5 @@ campaignSchema.index({ status: 1 });
 campaignSchema.index({ createdAt: -1 });
 campaignSchema.index({ tenantId: 1 });
 
+campaignSchema.plugin(softDelete);
 module.exports = mongoose.model("Campaign", campaignSchema);

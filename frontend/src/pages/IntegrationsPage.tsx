@@ -1002,7 +1002,7 @@ function IntegrationWizard({
           disabled={saving}
           className="nb-btn px-6 py-2.5 text-sm flex items-center gap-2 font-bold"
           style={{
-            backgroundColor: integration.color,
+            backgroundColor: "#024BAB",
             color: "#fff",
             borderColor: "#0A0A0A",
           }}
@@ -1431,7 +1431,7 @@ export default function IntegrationsPage() {
                   style={
                     isConnected
                       ? { backgroundColor: "#fff", color: "#0A0A0A" }
-                      : { backgroundColor: integ.color, color: "#fff" }
+                      : { backgroundColor: "#024BAB", color: "#fff" }
                   }
                 >
                   {isConnected ? (

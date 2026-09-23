@@ -95,7 +95,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
     throw new Error("Product not found");
   }
 
-  await Product.findByIdAndDelete(req.params.id);
+  await Product.updateOne({ _id: product._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
 
   logActivity({
     user: req.user,

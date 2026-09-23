@@ -10,9 +10,12 @@ import {
   Zap,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import nestleadslogo from "@/assets/images/NestLeads_Logo_Name.png";
 import nestleadslogosmall from "../../../public/favicon.png";
+
+// Every page mounts its own AppLayout, so the sidebar remounts on navigation; keep scroll here.
+let navScrollTop = 0;
 
 interface AppSidebarProps {
   mobileOpen: boolean;
@@ -154,6 +157,11 @@ function NavNode({
 export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    if (navRef.current) navRef.current.scrollTop = navScrollTop;
+  }, [user]);
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   if (!user) return null;
@@ -210,7 +218,10 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
           </button>
         </div>
 
-        <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <nav
+          ref={navRef}
+          onScroll={(e) => (navScrollTop = e.currentTarget.scrollTop)}
+          className="flex-1 py-3 px-2 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {groups.map((group) => (
             <div key={group.label}>
               {!collapsed && (

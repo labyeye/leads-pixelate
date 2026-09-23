@@ -119,7 +119,7 @@ export default function AIUsagePage() {
                   Usage resets on {fmtDate(usage.month.resetsAt)}.
                 </p>
               </div>
-              <Link to="/billing" className="nb-btn bg-black text-white px-4 py-2 text-sm flex items-center gap-1.5 self-start sm:self-auto">
+              <Link to="/billing" className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5 self-start sm:self-auto">
                 Change plan <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

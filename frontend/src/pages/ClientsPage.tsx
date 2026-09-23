@@ -133,6 +133,7 @@ const NbInput = ({
         onChange={onChange}
         placeholder={placeholder}
         rows={rows || 2}
+        {...rest}
         className="border-2 w-full px-3 py-2 text-sm resize-none"
       />
     ) : (
@@ -408,6 +409,7 @@ export default function ClientsPage() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="Full name"
+                    maxLength={100}
                     required
                   />
                   <NbInput
@@ -418,6 +420,7 @@ export default function ClientsPage() {
                       setFormData({ ...formData, company: e.target.value })
                     }
                     placeholder="Company Ltd."
+                    maxLength={120}
                     required
                   />
                 </div>
@@ -431,6 +434,7 @@ export default function ClientsPage() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     placeholder="email@co.com"
+                    maxLength={100}
                     required
                   />
                   <NbInput
@@ -455,6 +459,7 @@ export default function ClientsPage() {
                     setFormData({ ...formData, address: e.target.value })
                   }
                   placeholder="Full address"
+                  maxLength={300}
                   required
                   as="textarea"
                 />
@@ -467,6 +472,7 @@ export default function ClientsPage() {
                       setFormData({ ...formData, businessType: e.target.value })
                     }
                     placeholder="e.g. Manufacturing"
+                    maxLength={60}
                     required
                   />
                   <NbInput
@@ -491,6 +497,7 @@ export default function ClientsPage() {
                     setFormData({ ...formData, services: e.target.value })
                   }
                   placeholder="SEO, Web Design, Hosting"
+                  maxLength={200}
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <NbSelect
@@ -575,11 +582,28 @@ export default function ClientsPage() {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
-                  >
-                    No clients found.
+                  <td colSpan={6} className="text-center py-14">
+                    <p className="text-sm font-black uppercase tracking-widest text-black/30">
+                      {search ? "No clients match your search." : "No clients yet"}
+                    </p>
+                    {!search && (
+                      <>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                          When a lead is won, they'll appear here. You can also add a client manually.
+                        </p>
+                        {can("Clients", "create") && (
+                          <button
+                            onClick={() => {
+                              resetForm();
+                              setIsModalOpen(true);
+                            }}
+                            className="mt-4 border-2 bg-[#024BAB] text-white px-4 py-2 text-sm inline-flex items-center gap-1.5"
+                          >
+                            <Plus className="w-4 h-4" /> Add Your First Client
+                          </button>
+                        )}
+                      </>
+                    )}
                   </td>
                 </tr>
               ) : (

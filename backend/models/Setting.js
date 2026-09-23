@@ -85,6 +85,18 @@ const settingSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Invoice Designer layout (theme + blocks + placed images) used by the PDFs of invoices, sales
+    // orders and purchase orders. Validated by utils/invoiceTemplate.js; null = the classic layout.
+    invoiceTemplate: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+    // Same, for quotation PDFs (Settings > Quotation Designer).
+    quotationTemplate: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+
     // Which WhatsApp sender to use for automatic notifications (e.g. quotation
     // "Sent"): the shared Nest Leads platform number, or this tenant's own
     // connected WhatsApp Business number.

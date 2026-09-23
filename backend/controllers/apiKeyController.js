@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { assignmentFields } = require("../utils/leadAssignment");
 const asyncHandler = require("express-async-handler");
 const Tenant = require("../models/Tenant");
 
@@ -67,6 +68,7 @@ const generateApiKey = asyncHandler(async (req, res) => {
     keyHash,
     keyPrefix,
     fields: sanitizedFields,
+    ...assignmentFields(req.body),
   });
   await tenant.save();
 

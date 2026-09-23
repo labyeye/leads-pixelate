@@ -17,16 +17,16 @@ import {
   AlertCircle,
   ShieldCheck,
   ImageIcon,
-  Upload,
   X,
-  Layout,
   Tag,
   ChevronUp,
   ChevronDown,
   Lock,
   Bot,
+  Palette,
 } from "lucide-react";
 import AICallingSettingsTab from "@/components/settings/AICallingSettingsTab";
+import InvoiceDesigner from "@/components/settings/invoice-designer/InvoiceDesigner";
 import { cn } from "@/lib/utils";
 import {
   categories as statusCategories,
@@ -54,8 +54,11 @@ type CrmRole =
 
 interface ResourcePermissions {
   resource: string;
-  permissions: Record<CrmRole, Record<CrudOp, boolean>>;
+  // keyed by tier (default roles) or by role _id (custom roles)
+  permissions: Record<string, Record<CrudOp, boolean>>;
 }
+
+const NO_ACCESS: Record<CrudOp, boolean> = { create: false, read: false, update: false, delete: false };
 
 const CRM_ROLES: { id: CrmRole; label: string }[] = [
   { id: "super_admin", label: "Super Admin" },
@@ -82,7 +85,7 @@ const INITIAL_PERMISSIONS: ResourcePermissions[] = [
       sales_executive: {
         create: true,
         read: true,
-        update: true,
+        update: false,
         delete: false,
       },
       service_manager: {
@@ -335,6 +338,52 @@ const INITIAL_PERMISSIONS: ResourcePermissions[] = [
   },
 ];
 
+const INDIA_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
+  "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim",
+  "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
+  "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir",
+  "Ladakh", "Lakshadweep", "Puducherry",
+];
+
+function StateField({
+  value,
+  readOnly,
+  onChange,
+}: {
+  value: string;
+  readOnly: boolean;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-xs font-bold text-black uppercase tracking-wider">
+        State
+      </label>
+      <select
+        name="companyState"
+        value={value}
+        onChange={onChange}
+        disabled={readOnly}
+        className={cn(
+          "w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0",
+          readOnly ? "bg-gray-50 cursor-default text-muted-foreground" : "bg-white",
+        )}
+      >
+        <option value="">Select state</option>
+        {INDIA_STATES.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function InputField({
   label,
   name,
@@ -429,6 +478,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savingPerms, setSavingPerms] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
+  const [designersOpened, setDesignersOpened] = useState<string[]>([]); // each stays mounted after its first visit so edits survive tab switches
+  useEffect(() => {
+    if (activeTab.endsWith("-design")) setDesignersOpened((d) => (d.includes(activeTab) ? d : [...d, activeTab]));
+  }, [activeTab]);
   const [permissions, setPermissions] =
     useState<ResourcePermissions[]>(INITIAL_PERMISSIONS);
   const [actionModal, setActionModal] = useState<{
@@ -584,8 +637,9 @@ export default function SettingsPage() {
         string,
         Record<string, Record<string, boolean>>
       > = {};
+      const live = new Set(permColumns.map((c) => c.id)); // drops columns of deleted roles
       permissions.forEach((r) => {
-        permissionsMap[r.resource] = r.permissions;
+        permissionsMap[r.resource] = Object.fromEntries(Object.entries(r.permissions).filter(([k]) => live.has(k)));
       });
       await settingsAPI.update({ permissions: permissionsMap });
       await refreshPermissions();
@@ -605,7 +659,7 @@ export default function SettingsPage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name } = e.target;
     let value = e.target.value;
@@ -727,20 +781,23 @@ export default function SettingsPage() {
     setSettings((prev: any) => ({ ...prev, quotationTerms: newTerms }));
   };
 
-  const togglePermission = (resourceIdx: number, role: CrmRole, op: CrudOp) => {
-    setPermissions((prev) => {
-      const next = prev.map((r, i) => {
+  // One column per default tier plus one per custom role. A custom role with no saved column
+  // yet shows (and starts from) its tier's values.
+  const permColumns: { id: string; label: string; tier: string; custom: boolean }[] = [
+    ...CRM_ROLES.map((r) => ({ ...r, tier: r.id as string, custom: false })),
+    ...roles.filter((r) => !r.isDefault).map((r) => ({ id: r._id, label: r.name, tier: r.tier as string, custom: true })),
+  ];
+  const cellPerms = (res: ResourcePermissions, col: { id: string; tier: string }) =>
+    res.permissions[col.id] ?? res.permissions[col.tier] ?? NO_ACCESS;
+
+  const togglePermission = (resourceIdx: number, col: { id: string; tier: string }, op: CrudOp) => {
+    setPermissions((prev) =>
+      prev.map((r, i) => {
         if (i !== resourceIdx) return r;
-        return {
-          ...r,
-          permissions: {
-            ...r.permissions,
-            [role]: { ...r.permissions[role], [op]: !r.permissions[role][op] },
-          },
-        };
-      });
-      return next;
-    });
+        const cur = cellPerms(r, col);
+        return { ...r, permissions: { ...r.permissions, [col.id]: { ...cur, [op]: !cur[op] } } };
+      }),
+    );
   };
 
   const handleSave = async () => {
@@ -812,7 +869,8 @@ export default function SettingsPage() {
     }
     try {
       setSaving(true);
-      const res = await settingsAPI.update(settings);
+      const { invoiceTemplate: _i, quotationTemplate: _q, ...generalSettings } = settings; // the designers save their own
+      const res = await settingsAPI.update(generalSettings);
       setStatusOverrides(res.data?.leadStatusLabels);
       setCustomLeadStatuses(res.data?.customLeadStatuses);
       setSettings((prev: any) => ({
@@ -870,10 +928,16 @@ export default function SettingsPage() {
     { id: "bank", label: "Bank Details", icon: Landmark, adminOnly: true },
     { id: "terms", label: "Terms & Footer", icon: FileCheck, adminOnly: true },
     {
-      id: "template",
-      label: "Quotation Template",
-      icon: Layout,
-      adminOnly: false,
+      id: "invoice-design",
+      label: "Invoice Designer",
+      icon: Palette,
+      adminOnly: true,
+    },
+    {
+      id: "quotation-design",
+      label: "Quotation Designer",
+      icon: Palette,
+      adminOnly: true,
     },
     {
       id: "statuses",
@@ -905,10 +969,10 @@ export default function SettingsPage() {
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Logo must be under 10 MB.",
+        description: "Logo must be under 2 MB.",
         variant: "destructive",
       });
       return;
@@ -964,7 +1028,7 @@ export default function SettingsPage() {
             </p>
             {tabs
               .filter((t) =>
-                ["general", "bank", "terms", "template", "statuses"].includes(
+                ["general", "bank", "terms", "invoice-design", "quotation-design", "statuses"].includes(
                   t.id,
                 ),
               )
@@ -1045,7 +1109,8 @@ export default function SettingsPage() {
               </h2>
             </div>
             {activeTab !== "permissions" &&
-              activeTab !== "template" &&
+              activeTab !== "invoice-design" &&
+              activeTab !== "quotation-design" &&
               activeTab !== "ai-calling" &&
               isAdminOrAbove && (
                 <button
@@ -1068,7 +1133,21 @@ export default function SettingsPage() {
               )}
           </div>
 
-          <div className="p-4 sm:p-6 max-w-3xl">
+          {isAdminOrAbove &&
+            (["invoice", "quotation"] as const).map((kind) =>
+              designersOpened.includes(`${kind}-design`) ? (
+                <div key={kind} className={activeTab === `${kind}-design` ? "" : "hidden"}>
+                  <InvoiceDesigner
+                    kind={kind}
+                    settings={settings}
+                    active={activeTab === `${kind}-design`}
+                    onSaved={(t) => setSettings((prev: any) => ({ ...prev, [`${kind}Template`]: t }))}
+                  />
+                </div>
+              ) : null,
+            )}
+
+          <div className={cn("p-4 sm:p-6 max-w-3xl", activeTab.endsWith("-design") && "hidden")}>
             {}
             {activeTab === "general" && (
               <div className="space-y-4">
@@ -1104,13 +1183,10 @@ export default function SettingsPage() {
                     readOnly={!isAdminOrAbove}
                     maxLength={10}
                   />
-                  <InputField
-                    onChange={handleChange}
-                    label="State"
-                    name="companyState"
+                  <StateField
                     value={settings?.companyState || ""}
-                    placeholder="e.g. Bihar"
                     readOnly={!isAdminOrAbove}
+                    onChange={handleChange}
                   />
                   <InputField
                     onChange={handleChange}
@@ -1146,14 +1222,47 @@ export default function SettingsPage() {
                     placeholder="https://example.com"
                     readOnly={!isAdminOrAbove}
                   />
-                  <InputField
-                    onChange={handleChange}
-                    label="Logo URL"
-                    name="logoUrl"
-                    value={settings?.logoUrl || ""}
-                    placeholder="https://yourdomain.com/logo.png"
-                    readOnly={!isAdminOrAbove}
-                  />
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                      Company Logo
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 border-2 border-black bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+                        {settings?.logoUrl ? (
+                          <img
+                            src={settings.logoUrl}
+                            alt="Company logo"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <ImageIcon className="w-5 h-5 text-black/20" />
+                        )}
+                      </div>
+                      {isAdminOrAbove && (
+                        <label className="nb-btn cursor-pointer px-3 py-2 bg-white border-2 border-black text-xs font-black uppercase tracking-widest">
+                          Upload
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                            className="sr-only"
+                            onChange={handleLogoFileChange}
+                          />
+                        </label>
+                      )}
+                      {isAdminOrAbove && settings?.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          className="text-[10px] font-bold underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                      <span className="text-[10px] text-black/50">
+                        PNG, JPG, SVG or WebP · max 2 MB
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <TextAreaField
                   onChange={handleChange}
@@ -1278,188 +1387,6 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {}
-            {activeTab === "template" && (
-              <div className="space-y-6">
-                {}
-                <div>
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
-                    <div className="w-1 h-5 bg-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
-                      Company Logo
-                    </p>
-                    <p className="text-xs text-black/50 ml-1">
-                      — appears on all quotation PDFs
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    {}
-                    <div className="space-y-3">
-                      <label
-                        htmlFor="logo-upload"
-                        className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-black h-40 bg-white cursor-pointer hover:bg-[#FFDE00]/10 transition-colors group"
-                      >
-                        <div className="w-12 h-12 border-2 border-black bg-[#024BAB] flex items-center justify-center group-hover:bg-[#FFDE00] transition-colors">
-                          <Upload className="w-5 h-5 text-white group-hover:text-black" />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs font-black uppercase tracking-widest text-black">
-                            Click to upload logo
-                          </p>
-                          <p className="text-[10px] text-black/40 mt-1">
-                            PNG, JPG, SVG — max 2 MB
-                          </p>
-                        </div>
-                        <input
-                          id="logo-upload"
-                          type="file"
-                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                          className="sr-only"
-                          onChange={handleLogoFileChange}
-                        />
-                      </label>
-
-                      {settings?.logoUrl && (
-                        <button
-                          onClick={handleRemoveLogo}
-                          className="nb-btn w-full flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-xs font-black uppercase tracking-widest"
-                        >
-                          <X className="w-3.5 h-3.5" /> Remove Logo
-                        </button>
-                      )}
-                    </div>
-
-                    {}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-black">
-                        Preview — PDF Header
-                      </p>
-                      <div className="border-2 border-black bg-white p-4 nb-shadow-sm">
-                        {}
-                        <div className="flex items-start gap-4 pb-3 border-b border-gray-200">
-                          <div className="w-14 h-14 border-2 border-black bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
-                            {settings?.logoUrl ? (
-                              <img
-                                src={settings.logoUrl}
-                                alt="Company logo"
-                                className="w-full h-full object-contain"
-                              />
-                            ) : (
-                              <ImageIcon className="w-6 h-6 text-black/20" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-black text-[#1e3a8a] uppercase truncate">
-                              {settings?.companyName || "YOUR COMPANY NAME"}
-                            </p>
-                            <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                              {settings?.companyAddress || "Company Address"}
-                            </p>
-                            <p className="text-[10px] text-gray-500 truncate">
-                              {settings?.companyPhone &&
-                                `M: ${settings.companyPhone}`}
-                            </p>
-                            <p className="text-[10px] text-gray-500 truncate">
-                              {settings?.companyEmail &&
-                                `EMAIL: ${settings.companyEmail}`}
-                            </p>
-                            {settings?.companyGST && (
-                              <p className="text-[10px] font-bold text-gray-700 mt-0.5">
-                                GST NO: {settings.companyGST}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-xs font-black text-[#1e3a8a] uppercase">
-                              {settings?.quotationTitle || "PROFORMA INVOICE"}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-1">
-                              DATE: {new Date().toLocaleDateString("en-GB")}
-                            </p>
-                            <p className="text-[10px] text-gray-400">
-                              REF. NO.: SKF-0001
-                            </p>
-                          </div>
-                        </div>
-                        <p className="text-[9px] text-gray-300 mt-2 text-center uppercase tracking-widest">
-                          — Quotation body continues below —
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-black/40">
-                        This is how the header will look on every quotation PDF
-                        you generate.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {}
-                <div>
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-black">
-                    <div className="w-1 h-5 bg-[#FFDE00]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
-                      Document Settings
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputField
-                      onChange={handleChange}
-                      label="Quotation / Invoice Title"
-                      name="quotationTitle"
-                      value={settings?.quotationTitle || ""}
-                      placeholder="e.g. PROFORMA INVOICE"
-                    />
-                    <TextAreaField
-                      onChange={handleChange}
-                      label="Footer Message"
-                      name="quotationFooter"
-                      value={settings?.quotationFooter || ""}
-                      placeholder="e.g. Thank you for your business!"
-                      rows={2}
-                    />
-                  </div>
-                </div>
-
-                {}
-                {isAdminOrAbove && (
-                  <div className="flex justify-end pt-2 border-t-2 border-black">
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="nb-btn px-6 py-2.5 text-sm font-black text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      Save Template Settings
-                    </button>
-                  </div>
-                )}
-
-                {}
-                <div className="flex items-start gap-3 p-4 border-2 border-black bg-[#024BAB]/5">
-                  <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center shrink-0">
-                    <Layout className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-black uppercase tracking-wider">
-                      How it works
-                    </p>
-                    <p className="text-xs text-black/70 mt-1">
-                      Upload your company logo here. It will automatically
-                      appear at the top-left of every quotation PDF you generate
-                      from the Quotations page. Supported formats: PNG, JPG,
-                      SVG. Recommended size: 200×200 px or wider rectangular
-                      logos.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -1877,7 +1804,7 @@ export default function SettingsPage() {
                         <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider border-r-2 border-black w-36">
                           Resource
                         </th>
-                        {CRM_ROLES.map((role) => (
+                        {permColumns.map((role) => (
                           <th
                             key={role.id}
                             className="px-2 py-3 text-center text-xs font-bold text-white uppercase tracking-wider border-r-2 border-black last:border-r-0"
@@ -1889,7 +1816,7 @@ export default function SettingsPage() {
                       </tr>
                       <tr className="bg-[#024BAB]/10 border-b-2 border-black">
                         <th className="px-4 py-2 text-left text-[10px] font-bold text-black uppercase tracking-wider border-r-2 border-black" />
-                        {CRM_ROLES.map((role) =>
+                        {permColumns.map((role) =>
                           ["C", "R", "U", "D"].map((op) => (
                             <th
                               key={`${role.id}-${op}`}
@@ -1913,11 +1840,11 @@ export default function SettingsPage() {
                           <td className="px-4 py-3 text-xs font-bold text-black border-r-2 border-black whitespace-nowrap">
                             {res.resource}
                           </td>
-                          {CRM_ROLES.map((role) =>
+                          {permColumns.map((role) =>
                             (
                               ["create", "read", "update", "delete"] as CrudOp[]
                             ).map((op) => {
-                              const checked = res.permissions[role.id][op];
+                              const checked = cellPerms(res, role)[op];
                               const isSuperAdmin = role.id === "super_admin";
                               return (
                                 <td
@@ -1927,7 +1854,7 @@ export default function SettingsPage() {
                                   <button
                                     onClick={() =>
                                       !isSuperAdmin &&
-                                      togglePermission(resIdx, role.id, op)
+                                      togglePermission(resIdx, role, op)
                                     }
                                     disabled={isSuperAdmin}
                                     className={cn(
@@ -1976,8 +1903,9 @@ export default function SettingsPage() {
                   </span>
                   <p className="text-xs text-black">
                     C = Create, R = Read, U = Update, D = Delete. Super Admin
-                    always has full access to all resources. Changes here
-                    configure the role model for your team.
+                    always has full access to all resources. Roles you create on
+                    the Roles tab get their own column here; until you change it,
+                    a custom role has the same access as its permission tier.
                   </p>
                 </div>
 

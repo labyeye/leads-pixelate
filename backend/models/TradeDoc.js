@@ -20,6 +20,7 @@ const tradeDocSchema = new mongoose.Schema(
     items: {
       type: [
         {
+          productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", default: null }, // set when picked from the catalog; drives stock
           name: { type: String, required: true, trim: true, maxlength: 160 },
           hsnCode: { type: String, default: "" },
           quantity: { type: Number, required: true, min: 0.01 },

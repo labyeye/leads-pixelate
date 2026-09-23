@@ -150,8 +150,8 @@ export default function AddLeadScreen({navigation}: any) {
         {/* Basic Info */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>BASIC INFORMATION</Text>
-          <Field label="Full Name *" value={form.name} onChangeText={v => set('name', v)} placeholder="John Doe" />
-          <Field label="Company" value={form.company} onChangeText={v => set('company', v)} placeholder="Acme Corp" />
+          <Field label="Full Name *" value={form.name} onChangeText={v => set('name', v)} placeholder="John Doe" maxLength={100} />
+          <Field label="Company" value={form.company} onChangeText={v => set('company', v)} placeholder="Acme Corp" maxLength={120} />
           <Field label="Phone *" value={form.phone} onChangeText={v => set('phone', v)} placeholder="+91 9876543210" keyboardType="phone-pad" />
           <Field label="Email" value={form.email} onChangeText={v => set('email', v)} placeholder="john@company.com" keyboardType="email-address" autoCapitalize="none" />
         </View>
@@ -168,8 +168,8 @@ export default function AddLeadScreen({navigation}: any) {
             </TouchableOpacity>
           </View>
 
-          <Field label="Requirement" value={form.requirement} onChangeText={v => set('requirement', v)} placeholder="What does the client need?" multiline />
-          <Field label="Budget" value={form.budget} onChangeText={v => set('budget', v)} placeholder="e.g. 50000" keyboardType="numeric" />
+          <Field label="Requirement" value={form.requirement} onChangeText={v => set('requirement', v)} placeholder="What does the client need?" multiline maxLength={1000} />
+          <Field label="Budget" value={form.budget} onChangeText={v => set('budget', v)} placeholder="e.g. 50000" keyboardType="numeric" maxLength={15} />
         </View>
 
         {/* Location */}
@@ -213,7 +213,7 @@ export default function AddLeadScreen({navigation}: any) {
         {/* Products */}
         {products.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>INTERESTED PRODUCTS</Text>
+            <Text style={styles.sectionLabel}>INTERESTED IN</Text>
             <TouchableOpacity style={styles.selectRow} onPress={() => setProductModalOpen(true)}>
               <Text style={styles.selectText} numberOfLines={1}>
                 {form.interestedProducts.length
@@ -277,7 +277,7 @@ export default function AddLeadScreen({navigation}: any) {
   );
 }
 
-function Field({label, value, onChangeText, placeholder, keyboardType, autoCapitalize, multiline}: any) {
+function Field({label, value, onChangeText, placeholder, keyboardType, autoCapitalize, multiline, maxLength}: any) {
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.label}>{label}</Text>
@@ -291,6 +291,7 @@ function Field({label, value, onChangeText, placeholder, keyboardType, autoCapit
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize || 'sentences'}
           multiline={multiline}
+          maxLength={maxLength}
         />
       </View>
     </View>

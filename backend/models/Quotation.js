@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const softDelete = require("./plugins/softDelete");
 
 const quotationServiceSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -21,6 +22,11 @@ const quotationSchema = new mongoose.Schema(
     clientName: { type: String, required: [true, "Please add the buyer name"] },
     companyName: { type: String, default: "" },
     address: { type: String, default: "" },
+    addressLine: { type: String, default: "" },
+    city: { type: String, default: "" },
+    state: { type: String, default: "" },
+    zip: { type: String, default: "" },
+    country: { type: String, default: "India" },
     gst: { type: String, default: "" },
     aadhar: { type: String, default: "" },
     pan: { type: String, default: "" },
@@ -65,7 +71,10 @@ const quotationSchema = new mongoose.Schema(
 quotationSchema.pre("validate", async function (next) {
   if (!this.number) {
     const year = new Date().getFullYear();
-    const count = await mongoose.model("Quotation").countDocuments();
+    const count = await mongoose
+      .model("Quotation")
+      .countDocuments()
+      .setOptions({ withDeleted: true });
     this.number = `SKF-${String(count + 1).padStart(4, "0")}`;
   }
   next();
@@ -86,4 +95,5 @@ quotationSchema.pre("validate", function (next) {
 quotationSchema.index({ status: 1 });
 quotationSchema.index({ createdAt: -1 });
 
+quotationSchema.plugin(softDelete);
 module.exports = mongoose.model("Quotation", quotationSchema);

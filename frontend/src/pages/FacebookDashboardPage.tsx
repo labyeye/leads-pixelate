@@ -1,4 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Link } from "react-router-dom";
 import { facebookAPI } from "@/services/api";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -14,7 +15,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { RefreshCw, DollarSign, BarChart3, TrendingUp, MousePointerClick, Info } from "lucide-react";
+import { RefreshCw, DollarSign, Target, Eye, MousePointerClick, Info } from "lucide-react";
 import {
   MetaCampaign,
   Insight,
@@ -181,7 +182,7 @@ export default function FacebookDashboardPage() {
               title="Results"
               value={totals.results.toLocaleString()}
               sub="Leads / conversions"
-              icon={TrendingUp}
+              icon={Target}
               bg="bg-[#00C48C]"
             />
             <KpiCard
@@ -195,7 +196,7 @@ export default function FacebookDashboardPage() {
               title="Impressions"
               value={totals.impressions.toLocaleString()}
               sub={periodLabel}
-              icon={BarChart3}
+              icon={Eye}
               bg="bg-[#A3E635]"
             />
           </div>
@@ -251,8 +252,15 @@ export default function FacebookDashboardPage() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-bold">
-                  No data yet
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-bold text-center gap-1 px-4">
+                  <span>No campaign data yet</span>
+                  <span className="text-xs font-normal">
+                    Connect your Facebook Ad Account in{" "}
+                    <Link to="/integrations" className="text-[#024BAB] underline">
+                      Integrations
+                    </Link>{" "}
+                    or try a different date range.
+                  </span>
                 </div>
               )}
             </div>
@@ -300,8 +308,15 @@ export default function FacebookDashboardPage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-bold">
-                  No data yet
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-bold text-center gap-1 px-4">
+                  <span>No campaign data yet</span>
+                  <span className="text-xs font-normal">
+                    Connect your Facebook Ad Account in{" "}
+                    <Link to="/integrations" className="text-[#024BAB] underline">
+                      Integrations
+                    </Link>{" "}
+                    or try a different date range.
+                  </span>
                 </div>
               )}
             </div>

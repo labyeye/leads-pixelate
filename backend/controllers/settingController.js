@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const Setting = require("../models/Setting");
 const { invalidatePermissionsCache } = require("../middleware/checkPermission");
+const { sanitizeInvoiceTemplate } = require("../utils/invoiceTemplate");
 const {
   sanitizeLeadStatusLabels,
   sanitizeCustomLeadStatuses,
@@ -25,6 +26,16 @@ const updateSettings = asyncHandler(async (req, res) => {
   const body = { ...req.body };
   if ("leadStatusLabels" in body) {
     body.leadStatusLabels = sanitizeLeadStatusLabels(body.leadStatusLabels);
+  }
+
+  for (const field of ["invoiceTemplate", "quotationTemplate"]) {
+    if (body[field] == null) continue;
+    try {
+      body[field] = sanitizeInvoiceTemplate(body[field]);
+    } catch (err) {
+      res.status(err.statusCode || 400);
+      throw err;
+    }
   }
 
   let setting = await Setting.findOne(tenantFilter);

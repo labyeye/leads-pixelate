@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, Download, IndianRupee, Loader2, Package, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import { ImportPurchaseOrdersDialog, exportPurchaseOrders } from "@/components/inventory/ImportPurchaseOrdersDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DataTable, Modal, SaveBar, StatusPill, Toolbar, fmtDate, inputCls, labelCls, money } from "@/components/inventory/parts";
 import { clientsAPI, invoicesAPI, productsAPI, purchaseOrdersAPI, salesOrdersAPI, settingsAPI } from "@/services/api";
@@ -40,7 +42,7 @@ const KINDS = {
 
 export type TradeKind = keyof typeof KINDS;
 
-const blankItem = { name: "", hsnCode: "", quantity: "1", rate: "" };
+const blankItem = { productId: "", name: "", hsnCode: "", quantity: "1", rate: "" };
 const today = () => new Date().toISOString().slice(0, 10);
 const blank = () => ({
   partyName: "",
@@ -70,6 +72,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
   const [settings, setSettings] = useState<any>(null);
   const [pdfId, setPdfId] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = async () => {
     try {
@@ -117,7 +120,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
             discount: String(d.discount ?? 0),
             taxPercent: String(d.taxPercent ?? 18),
             notes: d.notes || "",
-            items: d.items.map((i: any) => ({ name: i.name, hsnCode: i.hsnCode || "", quantity: String(i.quantity), rate: String(i.rate) })),
+            items: d.items.map((i: any) => ({ productId: i.productId || "", name: i.name, hsnCode: i.hsnCode || "", quantity: String(i.quantity), rate: String(i.rate) })),
           }
         : blank(),
     );
@@ -130,7 +133,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
   // Picking a product name from the list fills its price and HSN.
   const pickProduct = (i: number, name: string) => {
     const p = products.find((x) => x.name === name);
-    setItem(i, p ? { name, rate: String(p.price), hsnCode: p.hsnCode || "" } : { name });
+    setItem(i, p ? { productId: p._id, name, rate: String(p.price), hsnCode: p.hsnCode || "" } : { productId: "", name });
   };
 
   const totals = useMemo(() => {
@@ -159,12 +162,13 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
         discount: Number(form.discount) || 0,
         taxPercent: Number(form.taxPercent) || 0,
         notes: form.notes,
-        items: items.map((i) => ({ name: i.name.trim(), hsnCode: i.hsnCode, quantity: Number(i.quantity), rate: Number(i.rate) })),
+        items: items.map((i) => ({ productId: i.productId || null, name: i.name.trim(), hsnCode: i.hsnCode, quantity: Number(i.quantity), rate: Number(i.rate) })),
       };
       editId ? await cfg.api.update(editId, payload) : await cfg.api.create(payload);
       notify.success(`${cfg.one} ${editId ? "updated" : "created"}`);
       setOpen(false);
       load();
+      productsAPI.getAll().then((r) => setProducts(r.data || [])).catch(() => {});
     } catch (err: any) {
       notify.error("Error", err.message);
     } finally {
@@ -205,9 +209,23 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
   const field = (k: "partyName" | "reference" | "date" | "dueDate" | "notes" | "discount" | "taxPercent" | "status") =>
     (e: React.ChangeEvent<any>) => setForm({ ...form, [k]: e.target.value });
 
+  const isPO = kind === "purchase_order";
+  const count = (st: string) => rows.filter((d) => d.status === st).length;
+  const totalValue = rows.reduce((t, d) => t + (d.status === "Cancelled" ? 0 : d.total), 0);
+  const cardBtn = "flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40";
+
   return (
     <AppLayout title={cfg.title}>
       <div className="space-y-4">
+        {isPO && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <KpiCard title="Total Orders" value={loading ? "—" : rows.length} icon={Package} bg="bg-[#024BAB]" />
+            <KpiCard title="Issued" value={loading ? "—" : count("Issued")} icon={Archive} bg="bg-[#FFDE00]" />
+            <KpiCard title="Received" value={loading ? "—" : count("Received")} icon={CheckCircle2} bg="bg-[#00C48C]" />
+            <KpiCard title="Total Value" value={loading ? "—" : money(totalValue)} icon={IndianRupee} bg="bg-gray-300" />
+          </div>
+        )}
+
         <Toolbar
           search={search}
           onSearch={setSearch}
@@ -215,6 +233,18 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
           addLabel={`New ${cfg.one}`}
           onAdd={can(cfg.perm, "create") ? () => openForm() : undefined}
         >
+          {isPO && (
+            <>
+              <button onClick={() => exportPurchaseOrders(shown)} disabled={!shown.length} className={cardBtn}>
+                <Download className="w-3.5 h-3.5" /> Export
+              </button>
+              {can(cfg.perm, "create") && (
+                <button onClick={() => setImportOpen(true)} className={cardBtn}>
+                  <Upload className="w-3.5 h-3.5" /> Import
+                </button>
+              )}
+            </>
+          )}
           <select
             aria-label="Filter by status"
             value={statusFilter}
@@ -305,13 +335,18 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
             <div>
               <p className={labelCls}>Items</p>
               <div className="space-y-2">
-                {form.items.map((it, i) => (
-                  <div key={i} className="grid grid-cols-[minmax(0,1fr)_70px_90px_auto] sm:grid-cols-[minmax(0,1fr)_100px_70px_100px_auto] gap-2 items-center">
+                {form.items.map((it, i) => {
+                  const stock = products.find((p) => p._id === it.productId);
+                  const short = kind === "sales_order" && stock && Number(it.quantity) > (stock.stockQuantity ?? 0);
+                  return (
+                  <div key={i}>
+                  <div className="grid grid-cols-[minmax(0,1fr)_70px_90px_auto] sm:grid-cols-[minmax(0,1fr)_100px_70px_100px_auto] gap-2 items-center">
                     <input
                       aria-label={`Item ${i + 1} name`}
                       list="td-products"
                       className={inputCls}
                       placeholder="Item or service"
+                      maxLength={160}
                       value={it.name}
                       onChange={(e) => pickProduct(i, e.target.value)}
                     />
@@ -319,6 +354,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                       aria-label={`Item ${i + 1} HSN`}
                       className={`${inputCls} hidden sm:block`}
                       placeholder="HSN/SAC"
+                      maxLength={10}
                       value={it.hsnCode}
                       onChange={(e) => setItem(i, { hsnCode: e.target.value })}
                     />
@@ -326,6 +362,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                       aria-label={`Item ${i + 1} quantity`}
                       type="number"
                       min="0"
+                      max="9999999"
                       step="any"
                       className={inputCls}
                       value={it.quantity}
@@ -338,6 +375,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                       step="any"
                       className={inputCls}
                       placeholder="Rate ₹"
+                      max="99999999"
                       value={it.rate}
                       onChange={(e) => setItem(i, { rate: e.target.value })}
                     />
@@ -351,7 +389,14 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                ))}
+                  {stock && kind !== "invoice" && (
+                    <p className={`text-[11px] mt-0.5 ${short ? "text-red-600 font-bold" : "text-gray-500"}`}>
+                      {short ? "Only " : "In stock: "}{stock.stockQuantity ?? 0} {stock.unit || "pcs"}{short ? " available — order exceeds stock" : ""}
+                    </p>
+                  )}
+                  </div>
+                  );
+                })}
               </div>
               <button
                 type="button"
@@ -395,6 +440,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
           </form>
         </Modal>
       )}
+      {isPO && <ImportPurchaseOrdersDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} products={products} />}
     </AppLayout>
   );
 }

@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
+import { AssigneePicker, describeAssignment } from "@/components/integrations/AssigneePicker";
 import {
   RefreshCw,
   Check,
@@ -25,6 +26,8 @@ interface ConnectedAccount {
   selectedFormIds: string[];
   allowedStates: string[];
   defaultAssigneeId: string;
+  assigneeIds?: string[];
+  assignBatchSize?: number;
   connectedAt: string;
 }
 
@@ -55,7 +58,8 @@ export default function LinkedInCampaignsPage() {
   const [users, setUsers] = useState<{ _id: string; name: string; role: string }[]>(
     [],
   );
-  const [defaultAssigneeId, setDefaultAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assignBatchSize, setAssignBatchSize] = useState(1);
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
@@ -173,7 +177,8 @@ export default function LinkedInCampaignsPage() {
     setSelectedFormIds(new Set());
     setAllowedStates([]);
     setStateInput("");
-    setDefaultAssigneeId("");
+    setAssigneeIds([]);
+    setAssignBatchSize(1);
   };
 
   const handleConnectAccount = async () => {
@@ -186,7 +191,8 @@ export default function LinkedInCampaignsPage() {
         adAccountName: account.name,
         selectedFormIds: allForms ? [] : [...selectedFormIds],
         allowedStates,
-        defaultAssigneeId,
+        assigneeIds,
+        assignBatchSize,
       });
       toast({
         title: "LinkedIn account connected!",
@@ -389,10 +395,7 @@ export default function LinkedInCampaignsPage() {
                       )}
                       <span className="flex items-center gap-1">
                         <UserCheck className="w-3 h-3" />
-                        {a.defaultAssigneeId
-                          ? users.find((u) => u._id === a.defaultAssigneeId)
-                              ?.name || "Assigned"
-                          : "Auto-assign"}
+                        {describeAssignment(a, users, "Auto-assign")}
                       </span>
                     </p>
                   </div>
@@ -567,20 +570,15 @@ export default function LinkedInCampaignsPage() {
 
                     <div>
                       <p className="text-xs font-bold uppercase tracking-wide mb-1.5">
-                        Default Assignee
+                        Assign Leads To
                       </p>
-                      <select
-                        value={defaultAssigneeId}
-                        onChange={(e) => setDefaultAssigneeId(e.target.value)}
-                        className="w-full border-2 border-black px-3 py-2 text-sm font-medium bg-white"
-                      >
-                        <option value="">— Auto-assign to admin —</option>
-                        {users.map((u) => (
-                          <option key={u._id} value={u._id}>
-                            {u.name} ({u.role.replace("_", " ")})
-                          </option>
-                        ))}
-                      </select>
+                      <AssigneePicker
+                        users={users}
+                        assigneeIds={assigneeIds}
+                        onAssigneeIdsChange={setAssigneeIds}
+                        batchSize={assignBatchSize}
+                        onBatchSizeChange={setAssignBatchSize}
+                      />
                     </div>
                   </>
                 )}

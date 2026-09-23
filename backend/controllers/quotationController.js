@@ -145,7 +145,7 @@ const deleteQuotation = asyncHandler(async (req, res) => {
     throw new Error("Cannot delete an approved quotation");
   }
 
-  await Quotation.findByIdAndDelete(req.params.id);
+  await Quotation.updateOne({ _id: quotation._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
 
   logActivity({
     user: req.user,

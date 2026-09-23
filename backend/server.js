@@ -156,6 +156,7 @@ app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
+app.use("/api/trash", require("./routes/trashRoutes"));
 app.use("/api/clients", require("./routes/clientRoutes"));
 app.use("/api/quotations", require("./routes/quotationRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));

@@ -21,7 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { apiKeysAPI } from "@/services/api";
+import { apiKeysAPI, usersAPI } from "@/services/api";
+import { AssigneePicker } from "@/components/integrations/AssigneePicker";
 import {
   Copy,
   Plus,
@@ -315,6 +316,8 @@ export default function ApiKeysPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [newKeyFields, setNewKeyFields] = useState<FieldConfig[]>([]);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assignBatchSize, setAssignBatchSize] = useState(1);
 
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [revealedKeyData, setRevealedKeyData] = useState<ApiKey | null>(null);
@@ -324,18 +327,25 @@ export default function ApiKeysPage() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"keys" | "docs">("keys");
 
+  const { data: usersRes } = useQuery({
+    queryKey: ["users-for-assignment"],
+    queryFn: () => usersAPI.getAll(),
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ["api-keys"],
     queryFn: () => apiKeysAPI.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: () => apiKeysAPI.generate(newKeyName.trim(), newKeyFields),
+    mutationFn: () => apiKeysAPI.generate(newKeyName.trim(), newKeyFields, { assigneeIds, assignBatchSize }),
     onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ["api-keys"] });
       setShowCreate(false);
       setNewKeyName("");
       setNewKeyFields([]);
+      setAssigneeIds([]);
+      setAssignBatchSize(1);
       // Build a partial ApiKey object to show the snippet immediately
       const created: ApiKey = {
         id: res.data.id,
@@ -777,6 +787,18 @@ export default function ApiKeysPage() {
               <FieldBuilder
                 selected={newKeyFields}
                 onChange={setNewKeyFields}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-black">
+                Assign Leads To
+              </label>
+              <AssigneePicker
+                users={usersRes?.data || []}
+                assigneeIds={assigneeIds}
+                onAssigneeIdsChange={setAssigneeIds}
+                batchSize={assignBatchSize}
+                onBatchSizeChange={setAssignBatchSize}
               />
             </div>
           </div>

@@ -22,6 +22,8 @@ const activityLogSchema = new mongoose.Schema(
         "UPDATE",
         "STATUS_UPDATED",
         "DELETE",
+        "RESTORE",
+        "PERMANENT_DELETE",
         "NOTE_ADDED",
         "LEAD_CONVERTED",
         "PASSWORD_CHANGED",

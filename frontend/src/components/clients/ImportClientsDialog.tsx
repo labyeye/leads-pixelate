@@ -130,6 +130,10 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
     reset();
     if (!file) return;
     setFileName(file.name);
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File is too large. Max file size is 5MB.");
+      return;
+    }
     try {
       const parsed = await readRows(file);
       if (parsed.length === 0) {
@@ -220,6 +224,7 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
               <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
                 <Upload className="w-4 h-4 mr-1" /> Choose file
               </Button>
+              <span className="text-xs text-muted-foreground self-center">.xlsx, .xls or .csv · max 5MB</span>
               <input
                 ref={fileRef}
                 type="file"

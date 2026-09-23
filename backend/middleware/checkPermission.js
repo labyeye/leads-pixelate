@@ -5,7 +5,7 @@ const DEFAULT_PERMISSIONS = {
   Leads: {
     super_admin: { create: true, read: true, update: true, delete: true },
     admin: { create: true, read: true, update: true, delete: true },
-    sales_executive: { create: true, read: true, update: true, delete: false },
+    sales_executive: { create: true, read: true, update: false, delete: false },
     service_manager: {
       create: false,
       read: true,
@@ -204,39 +204,36 @@ function invalidatePermissionsCache(tenantId) {
   permissionsCache.delete(key);
 }
 
+async function hasPermission(user, resource, op) {
+  const role = user?.role;
+  if (!role) return false;
+  if (role === "super_admin") return true;
+
+  const matrix = (await getTenantPermissions(user.tenantId)) || DEFAULT_PERMISSIONS;
+  const resourcePerms = matrix[resource];
+  if (!resourcePerms) return op === "read" || role === "admin";
+  // A custom role's own column (keyed by roleId) wins; otherwise it inherits its tier's column.
+  const perms = (user.roleId && resourcePerms[String(user.roleId)]) || resourcePerms[role];
+  return !!perms?.[op];
+}
+
 function checkPermission(resource, op) {
   return asyncHandler(async (req, res, next) => {
-    const role = req.user?.role;
-    if (!role) {
+    if (!req.user?.role) {
       res.status(401);
       throw new Error("Not authorized");
     }
-
-    if (role === "super_admin") return next();
-
-    const tenantPerms = await getTenantPermissions(req.user.tenantId);
-    const matrix = tenantPerms || DEFAULT_PERMISSIONS;
-
-    const resourcePerms = matrix[resource];
-    if (!resourcePerms) {
-      if (op === "read") return next();
-      if (role === "admin") return next();
+    if (!(await hasPermission(req.user, resource, op))) {
       res.status(403);
       throw new Error("You do not have permission to perform this action");
     }
-
-    const rolePerms = resourcePerms[role];
-    if (!rolePerms || !rolePerms[op]) {
-      res.status(403);
-      throw new Error("You do not have permission to perform this action");
-    }
-
     next();
   });
 }
 
 module.exports = {
   checkPermission,
+  hasPermission,
   invalidatePermissionsCache,
   DEFAULT_PERMISSIONS,
 };

@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   Download,
+  Upload,
 } from "lucide-react";
 import {
   ExportFieldsDialog,
@@ -56,7 +57,9 @@ const QUOTATION_EXPORT_FIELDS: ExportField[] = [
   { key: "address", label: "Address", default: false, get: (q) => q.address || "" },
 ];
 import { useState, useEffect } from "react";
-import { quotationsAPI, settingsAPI } from "@/services/api";
+import { quotationsAPI, settingsAPI, clientsAPI, productsAPI } from "@/services/api";
+import { AddressFields, blankAddress, joinAddress } from "@/components/quotations/AddressFields";
+import { ImportQuotationsDialog } from "@/components/quotations/ImportQuotationsDialog";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
 import {
@@ -80,7 +83,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { generateInvoicePDF, getInvoicePDF } from "@/lib/generateInvoicePDF";
+import { downloadQuotationPDF, quotationPdfBlob } from "@/lib/quotationPdf";
 
 const STATUS_NB: Record<string, string> = {
   Draft: "bg-white text-black border-black",
@@ -93,6 +96,7 @@ const initialFormState = {
   clientName: "",
   companyName: "",
   address: "",
+  ...blankAddress,
   gst: "",
   aadhar: "",
   pan: "",
@@ -154,6 +158,7 @@ export default function QuotationsPage() {
   const { can } = usePermission();
   const [search, setSearch] = useState("");
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [quotations, setQuotations] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -167,11 +172,37 @@ export default function QuotationsPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
 
   useEffect(() => {
     fetchQuotations();
     fetchSettings();
+    clientsAPI
+      .getAll()
+      .then((res) => setClients(res.data || []))
+      .catch(() => {});
+    productsAPI.getAll().then((r) => setProducts(r.data || [])).catch(() => {});
   }, []);
+
+  // Picking a saved client fills the buyer fields (still editable); "new" clears them.
+  const handleClientSelect = (id: string) => {
+    setSelectedClientId(id);
+    const c = clients.find((x) => x._id === id);
+    setFormData((prev) => ({
+      ...prev,
+      clientName: c?.name || "",
+      companyName: c?.company || "",
+      address: c?.address || "",
+      ...blankAddress,
+      addressLine: c?.address || "",
+      gst: c?.gst || "",
+      mobile: (c?.phone || "").replace(/\D/g, "").slice(-10),
+      aadhar: "",
+      pan: "",
+    }));
+  };
 
   const fetchSettings = async () => {
     try {
@@ -197,6 +228,11 @@ export default function QuotationsPage() {
       clientName: q.clientName || "",
       companyName: q.companyName || "",
       address: q.address || "",
+      addressLine: q.addressLine ?? (q.city || q.state || q.zip ? "" : q.address || ""),
+      city: q.city || "",
+      state: q.state || "",
+      zip: q.zip || "",
+      country: q.country || "India",
       gst: q.gst || "",
       aadhar: q.aadhar || "",
       pan: q.pan || "",
@@ -232,10 +268,19 @@ export default function QuotationsPage() {
   const resetForm = () => {
     setIsModalOpen(false);
     setEditingQId(null);
+    setSelectedClientId("");
     setFormData(initialFormState);
   };
   const setField = (key: string, value: any) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
+
+  // Typing/picking a catalogue product name fills its price and HSN. Quotations never touch stock; only a confirmed sales order does.
+  const handleNameChange = (index: number, name: string) => {
+    const p = products.find((x) => x.name === name);
+    const s = [...formData.services];
+    s[index] = { ...s[index], name, ...(p ? { price: p.price, hsnCode: p.hsnCode || "" } : {}) };
+    setField("services", s);
+  };
 
   const handleServiceChange = (index: number, field: string, value: any) => {
     const s = [...formData.services];
@@ -314,7 +359,7 @@ export default function QuotationsPage() {
       );
       const tax = (subtotal - Number(formData.discount)) * 0.18;
       const total = subtotal - Number(formData.discount) + tax;
-      const payload = { ...formData, subtotal, tax, total };
+      const payload = { ...formData, address: joinAddress(formData), subtotal, tax, total };
       const res = editingQId
         ? await quotationsAPI.update(editingQId, payload)
         : await quotationsAPI.create(payload);
@@ -338,7 +383,7 @@ export default function QuotationsPage() {
   const handleDownloadPDF = async (q: any) => {
     try {
       setPrintingId(q._id || q.id);
-      await generateInvoicePDF(q, settings);
+      await downloadQuotationPDF(q, settings);
       notify.success("PDF Downloaded");
     } catch {
       notify.error("PDF Error", "Could not generate PDF.");
@@ -350,8 +395,7 @@ export default function QuotationsPage() {
   const handlePreviewPDF = async (q: any) => {
     try {
       setPreviewingId(q._id || q.id || "new");
-      const doc = await getInvoicePDF(q, settings || {});
-      const blob = doc.output("blob");
+      const blob = await quotationPdfBlob(q, settings || {});
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
       setIsPreviewOpen(true);
@@ -387,7 +431,7 @@ export default function QuotationsPage() {
   return (
     <AppLayout title="Quotations">
       {}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
         <div className="flex items-center gap-2 border-2 px-3 py-2 w-full sm:w-72">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input
@@ -398,6 +442,15 @@ export default function QuotationsPage() {
             className="bg-transparent text-sm outline-none w-full text-black placeholder:text-black/40 font-medium"
           />
         </div>
+
+        {can("Quotations", "create") && (
+          <button
+            onClick={() => setShowImportDialog(true)}
+            className="border-2 bg-white text-black px-4 py-2 text-sm flex items-center justify-center gap-1.5 w-full sm:w-auto"
+          >
+            <Upload className="w-4 h-4" /> Import
+          </button>
+        )}
 
         <button
           onClick={() => setShowExportDialog(true)}
@@ -428,7 +481,7 @@ export default function QuotationsPage() {
           <DialogContent className="sm:max-w-[700px] border-2 border-black rounded-none shadow-[6px_6px_0px_#000] p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4 sticky top-0 z-10">
-                <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
+                <DialogTitle className="text-white uppercase tracking-wider text-base">
                   {editingQId ? "Edit Quotation" : "Create New Quotation"}
                 </DialogTitle>
               </DialogHeader>
@@ -442,7 +495,33 @@ export default function QuotationsPage() {
                       Buyer Details
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    {!editingQId && (
+                      <div className="col-span-1 sm:col-span-4 space-y-1">
+                        <label
+                          htmlFor="existingClient"
+                          className="block text-[10px] font-black uppercase tracking-widest text-black"
+                        >
+                          Select Client
+                        </label>
+                        <select
+                          id="existingClient"
+                          value={selectedClientId}
+                          onChange={(e) => handleClientSelect(e.target.value)}
+                          className="w-full border-2 border-black px-3 py-2 text-sm font-medium bg-white outline-none"
+                        >
+                          <option value="">
+                            — New client (enter details below) —
+                          </option>
+                          {clients.map((c) => (
+                            <option key={c._id} value={c._id}>
+                              {c.name}
+                              {c.company ? ` — ${c.company}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <NbInput
                       label="Name"
                       id="clientName"
@@ -462,18 +541,12 @@ export default function QuotationsPage() {
                       }
                       placeholder="e.g. Raj Enterprises"
                     />
-                    <div className="col-span-1 sm:col-span-2">
-                      <NbInput
-                        label="Address (optional)"
-                        id="address"
-                        value={formData.address}
-                        onChange={(e: any) =>
-                          setField("address", e.target.value)
-                        }
-                        placeholder="Full address..."
-                        as="textarea"
-                      />
-                    </div>
+                    <AddressFields
+                      value={formData}
+                      onChange={(patch) =>
+                        setFormData((prev) => ({ ...prev, ...patch }))
+                      }
+                    />
                     <NbInput
                       label="GST No (optional)"
                       id="gst"
@@ -607,6 +680,11 @@ export default function QuotationsPage() {
                       </div>
                       <div className="col-span-1" />
                     </div>
+                    <datalist id="q-products">
+                      {products.map((p) => (
+                        <option key={p._id} value={p.name} />
+                      ))}
+                    </datalist>
                     {formData.services.map((item, idx) => (
                       <div
                         key={idx}
@@ -619,8 +697,9 @@ export default function QuotationsPage() {
                         <div className="col-span-4 border-r-2 border-black">
                           <input
                             value={item.name}
+                            list="q-products"
                             onChange={(e) =>
-                              handleServiceChange(idx, "name", e.target.value)
+                              handleNameChange(idx, e.target.value)
                             }
                             placeholder="Item description"
                             required
@@ -861,7 +940,14 @@ export default function QuotationsPage() {
               <tr className="border-2 border-black bg-[#024BAB]">
                 {[
                   "Number & Date",
-                  "Buyer / Project",
+                  "Client",
+                  "Contact",
+                  "GST",
+                  "Project",
+                  "Items",
+                  "Subtotal",
+                  "Discount",
+                  "Tax (18%)",
                   "Total (incl. Tax)",
                   "Status",
                   "",
@@ -869,8 +955,8 @@ export default function QuotationsPage() {
                   <th
                     key={i}
                     className={cn(
-                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest",
-                      i >= 2 ? "text-right" : "text-left",
+                      "px-4 py-3 text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap",
+                      i >= 6 ? "text-right" : "text-left",
                     )}
                   >
                     {h}
@@ -881,7 +967,7 @@ export default function QuotationsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-14">
+                  <td colSpan={12} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                     <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
                       Loading...
@@ -891,7 +977,7 @@ export default function QuotationsPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={12}
                     className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
                   >
                     No quotations found.
@@ -914,21 +1000,67 @@ export default function QuotationsPage() {
                         {new Date(q.date).toLocaleDateString("en-IN")}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3.5">
                       <p className="font-black text-black text-sm">
-                        {q.companyName || q.clientName}
+                        {q.clientName}
                       </p>
-                      <p className="text-xs text-black/50">
-                        {q.companyName ? `${q.clientName} · ` : ""}
-                        {q.projectTitle}
+                      <p className="text-xs text-black/50">{q.companyName}</p>
+                      <p className="text-xs text-black/50 max-w-[200px] truncate">
+                        {q.address}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5 text-right font-black text-black text-sm">
-                      ₹
-                      {Number(q.total || 0).toLocaleString("en-IN", {
-                        maximumFractionDigits: 0,
-                      })}
+                    <td className="px-4 py-3.5 text-xs font-medium whitespace-nowrap">
+                      {q.mobile || <span className="text-black/30">—</span>}
                     </td>
+                    <td className="px-4 py-3.5 text-xs font-mono whitespace-nowrap">
+                      {q.gst || <span className="text-black/30">—</span>}
+                    </td>
+                    <td className="px-4 py-3.5 text-xs font-bold max-w-[180px]">
+                      <p className="truncate">{q.projectTitle}</p>
+                      {q.leadTag && (
+                        <p className="text-black/50 font-medium">{q.leadTag}</p>
+                      )}
+                    </td>
+                    <td
+                      className="px-4 py-3.5 text-xs max-w-[200px]"
+                      title={(q.services || [])
+                        .map((s: any) => `${s.name} x${s.quantity}`)
+                        .join("\n")}
+                    >
+                      <p className="font-black">
+                        {(q.services || []).length} item
+                        {(q.services || []).length === 1 ? "" : "s"}
+                      </p>
+                      <p className="text-black/50 truncate">
+                        {(q.services || []).map((s: any) => s.name).join(", ")}
+                      </p>
+                    </td>
+                    {(() => {
+                      const sub = (q.services || []).reduce(
+                        (a: number, s: any) =>
+                          a + Number(s.price) * Number(s.quantity),
+                        0,
+                      );
+                      const disc = Number(q.discount) || 0;
+                      const money = (n: number) =>
+                        `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+                      return (
+                        <>
+                          <td className="px-4 py-3.5 text-right text-xs font-bold whitespace-nowrap">
+                            {money(sub)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right text-xs font-bold whitespace-nowrap">
+                            {money(disc)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right text-xs font-bold whitespace-nowrap">
+                            {money((sub - disc) * 0.18)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-black text-black text-sm whitespace-nowrap">
+                            {money(quotationTotal(q))}
+                          </td>
+                        </>
+                      );
+                    })()}
                     <td className="px-5 py-3.5 text-right">
                       <span
                         className={cn(
@@ -1033,6 +1165,11 @@ export default function QuotationsPage() {
         </DialogContent>
       </Dialog>
 
+      <ImportQuotationsDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImported={fetchQuotations}
+      />
       <ExportFieldsDialog
         open={showExportDialog}
         onOpenChange={setShowExportDialog}

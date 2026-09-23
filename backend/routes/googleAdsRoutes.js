@@ -7,7 +7,7 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
-const { nextBatchAssignee } = require("../utils/leadAssignment");
+const { nextBatchAssignee, assignmentFields } = require("../utils/leadAssignment");
 const googleAds = require("../services/googleAdsService");
 const log = require("../utils/logger").scope("Google Ads");
 
@@ -184,6 +184,7 @@ router.post(
       defaultAssigneeId = "",
       loginCustomerId = "",
     } = req.body;
+    const assign = assignmentFields(req.body);
 
     if (!customerId) {
       return res
@@ -206,6 +207,7 @@ router.post(
       selectedCampaignIds,
       allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
       defaultAssigneeId,
+      ...assign,
       webhookKey,
       connectedAt: new Date(),
     };
@@ -292,6 +294,8 @@ router.get(
         selectedCampaignIds: a.selectedCampaignIds || [],
         allowedStates: a.allowedStates || [],
         defaultAssigneeId: a.defaultAssigneeId || "",
+        assigneeIds: a.assigneeIds || [],
+        assignBatchSize: a.assignBatchSize || 1,
         connectedAt: a.connectedAt,
         webhookUrl: `${process.env.VITE_API_URL || "https://leads.pixelatenest.com"}/api/google-ads/webhook`,
       }),
