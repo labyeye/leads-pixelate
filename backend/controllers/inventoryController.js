@@ -5,6 +5,8 @@ const TradeDoc = require("../models/TradeDoc");
 const { TYPES } = TradeDoc;
 const logActivity = require("../utils/activityLogger");
 const { syncStock } = require("../utils/stock");
+const { notify } = require("./whatsappController");
+const { nextDocNumber } = require("../utils/docNumber");
 
 const isId = (v) => /^[0-9a-f]{24}$/i.test(String(v || ""));
 const scope = (req, extra = {}) => ({ ...extra, ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}) });
@@ -79,6 +81,8 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, on
 // ponytail: two creates in the same instant can pick the same number; the unique index makes the
 // second fail with a clear error instead of duplicating. Add a counter document if that ever bites.
 async function nextNumber(type, tenantId) {
+  const custom = await nextDocNumber(tenantId, type);
+  if (custom) return custom;
   const last = await TradeDoc.findOne({ type, tenantId: tenantId || null }).sort({ createdAt: -1 }).select("number").lean();
   const n = last ? parseInt(String(last.number).split("-").pop(), 10) || 0 : 0;
   return `${TYPES[type].prefix}-${String(n + 1).padStart(4, "0")}`;
@@ -92,7 +96,10 @@ const tradeDocs = (type, label) =>
     beforeCreate: async (data, req) => {
       data.number = await nextNumber(type, req.user.tenantId);
     },
-    onChange: (req, before, after) => syncStock(type, req.user.tenantId, before, after),
+    onChange: async (req, before, after) => {
+      await syncStock(type, req.user.tenantId, before, after);
+      if (!before && after) notify(req.user.tenantId, type, after.partyPhone, [after.partyName, after.number, after.total.toLocaleString("en-IN")]);
+    },
   });
 
 module.exports = { crud, tradeDocs };

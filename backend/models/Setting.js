@@ -97,6 +97,10 @@ const settingSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Owner-set document number formats: { invoice: { format: "INV-{seq:4}", next: 12 }, ... }.
+    // Written only by PUT /api/settings/numbering (utils/docNumber.js), never by the generic update.
+    numbering: { type: mongoose.Schema.Types.Mixed, default: {} },
+
     // Which WhatsApp sender to use for automatic notifications (e.g. quotation
     // "Sent"): the shared Nest Leads platform number, or this tenant's own
     // connected WhatsApp Business number.

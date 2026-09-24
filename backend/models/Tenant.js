@@ -161,6 +161,8 @@ const tenantSchema = new mongoose.Schema(
         accessToken: { type: String, default: "" },
         webhookVerifyToken: { type: String, default: "" },
         lastSyncAt: { type: Date, default: null },
+        // Per-event switches for automatic messages: { quotation_sent: { enabled, templateId }, ... }
+        automations: { type: mongoose.Schema.Types.Mixed, default: {} },
 
         phoneNumbers: [
           {

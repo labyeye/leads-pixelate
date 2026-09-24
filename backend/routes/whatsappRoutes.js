@@ -24,8 +24,10 @@ const {
   handleWebhook,
   getReplies,
   uploadMedia,
+  getAutomations,
+  saveAutomations,
 } = require("../controllers/whatsappController");
-const { protect, authorize } = require("../middleware/auth");
+const { protect, ownerOnly } = require("../middleware/auth");
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -47,29 +49,30 @@ router.post("/webhook", handleWebhook);
 
 router.use(protect);
 
-router.post("/setup", authorize("super_admin", "admin"), setup);
+router.post("/setup", ownerOnly, setup);
 router.post(
   "/phone-numbers",
-  authorize("super_admin", "admin"),
+  ownerOnly,
   addPhoneNumber,
 );
 router.post(
   "/phone-numbers/sync",
-  authorize("super_admin", "admin"),
+  ownerOnly,
   syncPhoneNumbers,
 );
 router.delete(
   "/phone-numbers/:phoneNumberId",
-  authorize("super_admin", "admin"),
+  ownerOnly,
   removePhoneNumber,
 );
-router.post("/disconnect", authorize("super_admin", "admin"), disconnect);
+router.post("/disconnect", ownerOnly, disconnect);
 router.get("/status", getStatus);
 router.get("/config", getConfig);
+router.route("/automations").get(getAutomations).put(ownerOnly, saveAutomations);
 
 router.post(
   "/upload-media",
-  authorize("super_admin", "admin"),
+  ownerOnly,
   upload.single("file"),
   uploadMedia,
 );
@@ -77,20 +80,20 @@ router.post(
 router
   .route("/templates")
   .get(getTemplates)
-  .post(authorize("super_admin", "admin"), createTemplate);
+  .post(ownerOnly, createTemplate);
 router
   .route("/templates/:id")
-  .put(authorize("super_admin", "admin"), updateTemplate)
-  .delete(authorize("super_admin", "admin"), deleteTemplate);
+  .put(ownerOnly, updateTemplate)
+  .delete(ownerOnly, deleteTemplate);
 router.post(
   "/templates/sync",
-  authorize("super_admin", "admin"),
+  ownerOnly,
   syncTemplates,
 );
 
 router.post(
   "/templates/:id/submit",
-  authorize("super_admin", "admin"),
+  ownerOnly,
   submitTemplate,
 );
 

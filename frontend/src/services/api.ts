@@ -1268,11 +1268,16 @@ export const quotationsAPI = {
 };
 
 export const settingsAPI = {
-  get: () => request<{ success: boolean; data: any }>("/settings"),
+  get: () => request<{ success: boolean; data: any; isOwner?: boolean }>("/settings"),
   update: (settings: any) =>
     request<{ success: boolean; data: any }>("/settings", {
       method: "PUT",
       body: JSON.stringify(settings),
+    }),
+  saveNumbering: (body: Record<string, { format: string; next?: number }>) =>
+    request<{ success: boolean; data: any }>("/settings/numbering", {
+      method: "PUT",
+      body: JSON.stringify(body),
     }),
 };
 
@@ -1306,6 +1311,13 @@ export const indiamartAPI = {
 export const whatsappAPI = {
   getStatus: () => request<{ success: boolean; data: any }>("/whatsapp/status"),
   getConfig: () => request<{ success: boolean; data: any }>("/whatsapp/config"),
+  getAutomations: () =>
+    request<{ success: boolean; data: any[] }>("/whatsapp/automations"),
+  saveAutomations: (body: Record<string, { enabled: boolean; templateId: string }>) =>
+    request<{ success: boolean }>("/whatsapp/automations", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
   setup: (data: { accessToken: string; wabaId?: string }) =>
     request<{ success: boolean; message: string }>("/whatsapp/setup", {
       method: "POST",

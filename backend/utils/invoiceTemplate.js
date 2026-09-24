@@ -27,6 +27,13 @@ const BLOCKS = {
   divider: { thickness: [0.5, 8], color: "c" },
 };
 
+// Width (% of the row) and minimum height (pt) for every block; the items table and tax summary
+// keep the full width, so only their height is allowed.
+for (const [type, spec] of Object.entries(BLOCKS)) {
+  if (type !== "items" && type !== "taxSummary") spec.w = [10, 100];
+  spec.h = [0, 800];
+}
+
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const IMG = /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/;
 

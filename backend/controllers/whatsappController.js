@@ -130,55 +130,112 @@ async function sendWaMessage(
   return data;
 }
 
-// Best-effort WhatsApp text notification, e.g. when a quotation is marked "Sent".
-// `source` picks the sender: "platform" uses the shared Nest Leads number from
-// env, "tenant" (default) uses this tenant's own connected WhatsApp number.
-// Silently no-ops if the chosen sender isn't set up — this must never block
-// the caller's primary save.
-exports.sendTextNotification = async function sendTextNotification(
-  user,
-  rawPhone,
-  message,
-  source = "tenant",
-) {
+// One WhatsApp connection per tenant, set up by the owner, sends everything the
+// tenant automates. The shared Nest Leads number is never used for tenant messages.
+// vars are positional: they fill the chosen template's {{1}}, {{2}}... in order.
+const AUTOMATIONS = {
+  quotation_sent: {
+    label: "Quotation sent",
+    vars: ["Client name", "Quotation no.", "Project", "Total"],
+    text: ([name, no, project, total]) =>
+      `Hi ${name}, your quotation ${no} for "${project}" (₹${total}) has been sent. Please check your email/download link for details. Thank you!`,
+    defaultEnabled: true, // was always on before this became configurable
+  },
+  sales_order: {
+    label: "Sales order created",
+    vars: ["Client name", "Order no.", "Total"],
+    text: ([name, no, total]) => `Hi ${name}, your order ${no} of ₹${total} has been confirmed. Thank you!`,
+  },
+  purchase_order: {
+    label: "Purchase order issued",
+    vars: ["Vendor name", "PO no.", "Total"],
+    text: ([name, no, total]) => `Hi ${name}, we have issued purchase order ${no} of ₹${total}. Please confirm receipt.`,
+  },
+  invoice: {
+    label: "Invoice created",
+    vars: ["Client name", "Invoice no.", "Total"],
+    text: ([name, no, total]) => `Hi ${name}, your invoice ${no} of ₹${total} is ready. Thank you for your business!`,
+  },
+  lead_welcome: {
+    label: "New lead welcome",
+    vars: ["Lead name"],
+    text: ([name]) => `Hi ${name}, thanks for getting in touch! We have received your enquiry and will contact you shortly.`,
+  },
+};
+exports.AUTOMATIONS = AUTOMATIONS;
+
+// Best-effort: never throws, never blocks the caller's primary save. Sends only if the
+// tenant's own WhatsApp is connected and this automation is on. With a template chosen it
+// sends that (works for any contact); without one it sends plain text, which WhatsApp
+// only delivers inside the contact's 24-hour window.
+exports.notify = async function notify(tenantId, event, rawPhone, vars = []) {
   try {
-    let phoneNumberId, accessToken;
-
-    if (source === "platform") {
-      accessToken = process.env.WHATSAPP_PLATFORM_ACCESS_TOKEN;
-      phoneNumberId = process.env.WHATSAPP_PLATFORM_PHONE_NUMBER_ID;
-      if (!accessToken || !phoneNumberId) return;
-    } else {
-      const wa = await getWaBase(user);
-      if (!wa) return;
-      phoneNumberId = resolvePhoneNumberId(wa, null);
-      if (!phoneNumberId) return;
-      accessToken = wa.accessToken;
-    }
-
+    const def = AUTOMATIONS[event];
     const phone = formatPhone(rawPhone);
-    if (!phone) return;
+    if (!def || !phone || !tenantId) return;
+
+    const tenant = await Tenant.findById(tenantId);
+    const wa = tenant?.integrations?.whatsapp;
+    if (!wa?.isConnected || !wa.accessToken) return;
+    const cfg = wa.automations?.[event] || {};
+    if (!(cfg.enabled ?? def.defaultEnabled ?? false)) return;
+
+    const phoneNumberId =
+      wa.phoneNumbers?.length === 1
+        ? wa.phoneNumbers[0].phoneNumberId
+        : cfg.phoneNumberId ||
+          wa.phoneNumbers?.[0]?.phoneNumberId;
+    if (!phoneNumberId) return;
+    const accessToken = decrypt(wa.accessToken);
+
+    if (cfg.templateId) {
+      const t = await WhatsappTemplate.findOne({ _id: cfg.templateId, tenantId, status: "APPROVED" });
+      if (!t) return log.error("Automation template missing or not approved", { event });
+      const params = vars.slice(0, t.variableCount || 0).map((v) => ({ type: "text", text: String(v ?? "-") }));
+      await sendWaMessage(phoneNumberId, accessToken, phone, t.metaTemplateName || t.name, t.language,
+        params.length ? [{ type: "body", parameters: params }] : []);
+      return;
+    }
 
     const res = await fetch(`${WA_API}/${phoneNumberId}/messages`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: phone,
-        type: "text",
-        text: { body: message },
-      }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({ messaging_product: "whatsapp", to: phone, type: "text", text: { body: def.text(vars) } }),
     });
     const data = await res.json();
-    if (!res.ok)
-      log.error("Quotation notify failed", { message: data?.error?.message || "unknown error" });
+    if (!res.ok) log.error("Automation send failed", { event, message: data?.error?.message || "unknown error" });
   } catch (err) {
-    log.error("Quotation notify failed", { message: err.message });
+    log.error("Automation send failed", { event, message: err.message });
   }
 };
+
+exports.getAutomations = asyncHandler(async (req, res) => {
+  const tenant = await Tenant.findOne(getTenantQuery(req.user));
+  const saved = tenant?.integrations?.whatsapp?.automations || {};
+  res.json({
+    success: true,
+    data: Object.entries(AUTOMATIONS).map(([id, d]) => ({
+      id,
+      label: d.label,
+      vars: d.vars,
+      enabled: saved[id]?.enabled ?? d.defaultEnabled ?? false,
+      templateId: saved[id]?.templateId || "",
+    })),
+  });
+});
+
+exports.saveAutomations = asyncHandler(async (req, res) => {
+  const set = {};
+  for (const [id, cfg] of Object.entries(req.body || {})) {
+    if (!AUTOMATIONS[id]) continue;
+    set[`integrations.whatsapp.automations.${id}`] = {
+      enabled: !!cfg.enabled,
+      templateId: /^[0-9a-f]{24}$/i.test(cfg.templateId || "") ? cfg.templateId : "",
+    };
+  }
+  await Tenant.findOneAndUpdate(getTenantQuery(req.user), { $set: set });
+  res.json({ success: true });
+});
 
 // Pulls every phone number under the WABA from Meta and adds the ones we don't
 // have yet, so clients never have to hunt for a Phone Number ID.

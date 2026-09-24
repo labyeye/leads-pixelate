@@ -1,7 +1,7 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image } from "@react-pdf/renderer";
 import { computeInvoice, fmt, numToWords, type InvoiceCalc } from "@/lib/invoiceCalc";
-import { fillVars, normalizeTemplate, PAGE_H, PAGE_W, type Block, type Float, type Theme, type VarCtx } from "@/lib/invoiceTemplate";
+import { blockH, blockW, fillVars, groupRows, isPlainRow, normalizeTemplate, PAGE_H, PAGE_W, type Block, type Float, type Theme, type VarCtx } from "@/lib/invoiceTemplate";
 
 // The issuing company. Sales orders / purchase orders / invoices use the tenant's own details and
 // logo; the Pixelate Nest subscription invoice uses Pixelate Nest's.
@@ -477,7 +477,24 @@ export function InvoicePDFDocument({
     <Document>
       <Page size="A4" style={S.page}>
         {floats.filter((f) => f.back).map(renderFloat)}
-        <View style={S.outer}>{tpl.blocks.filter((b) => b.visible).map(renderBlock)}</View>
+        <View style={S.outer}>
+          {groupRows(tpl.blocks.filter((b) => b.visible)).map((row) =>
+            isPlainRow(row) ? (
+              renderBlock(row[0])
+            ) : (
+              <View key={row[0].id} style={{ flexDirection: "row", borderBottom: T.borders === "none" ? undefined : `1pt solid ${T.border}` }}>
+                {row.map((b, i) => {
+                  const node = renderBlock(b);
+                  return (
+                    <View key={b.id} style={{ width: `${blockW(b)}%`, minHeight: blockH(b) || undefined, borderRight: i < row.length - 1 && T.borders === "full" ? `1pt solid ${T.border}` : undefined }}>
+                      {React.isValidElement<{ style?: any }>(node) ? React.cloneElement(node, { style: [node.props.style, { borderBottomWidth: 0, flexGrow: 1 }] }) : node}
+                    </View>
+                  );
+                })}
+              </View>
+            ),
+          )}
+        </View>
         {floats.filter((f) => !f.back).map(renderFloat)}
       </Page>
     </Document>

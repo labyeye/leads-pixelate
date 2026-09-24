@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import React from "react";
 import { pdf } from "@react-pdf/renderer";
 import { InvoicePDFDocument } from "@/components/pdf/InvoicePDFDocument";
-import { defaultTemplate, fillVars, newBlock, newFloat, normalizeTemplate, PRESETS } from "@/lib/invoiceTemplate";
+import { defaultTemplate, fillVars, groupRows, newBlock, newFloat, normalizeTemplate, PRESETS } from "@/lib/invoiceTemplate";
 import { tradeDocToInvoice } from "@/lib/tradeDocPDF";
 
 describe("template helpers", () => {
@@ -72,5 +72,21 @@ describe("quotation", () => {
     const saved = defaultTemplate();
     saved.theme.primary = "#ff0000";
     expect(templateFor("quotation", saved).theme.primary).toBe("#ff0000");
+  });
+});
+
+describe("free block sizing", () => {
+  it("packs blocks into rows by width, and never narrows the items table", async () => {
+    const t = (w: number) => newBlock("note", { w });
+    const [a, b, c, d] = [t(30), t(70), t(50), t(50)];
+    expect(groupRows([a, b, c, d]).map((r) => r.length)).toEqual([2, 2]);
+    expect(groupRows([t(60), t(60), t(30)]).map((r) => r.length)).toEqual([1, 2]);
+    expect(groupRows([newBlock("items", { w: 30 }), t(50)]).map((r) => r.length)).toEqual([1, 1]);
+
+    const tpl = defaultTemplate();
+    tpl.blocks = [newBlock("note", { w: 40, h: 60 }), newBlock("note", { w: 60 })];
+    const invoice = tradeDocToInvoice("invoice", { number: "INV-0001", partyName: "A", date: "2026-01-01", items: [{ name: "x", quantity: 1, rate: 10 }], total: 10, taxPercent: 0 }, { name: "Co" } as any);
+    const blob = await pdf(<InvoicePDFDocument invoice={invoice} company={{ name: "Co", addressLines: [] } as any} template={tpl} />).toBlob();
+    expect(blob.size).toBeGreaterThan(500);
   });
 });

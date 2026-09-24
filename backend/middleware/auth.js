@@ -68,4 +68,16 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+// Account-level settings (e.g. connecting the company's WhatsApp) belong to whoever
+// registered the tenant, not to every admin.
+const ownerOnly = asyncHandler(async (req, res, next) => {
+  const tenant = req.user.tenantId ? await Tenant.findById(req.user.tenantId).select("ownerUser") : null;
+  const isOwner = tenant ? String(tenant.ownerUser) === String(req.user._id) : req.user.role === "super_admin";
+  if (!isOwner) {
+    res.status(403);
+    throw new Error("Only the account owner can do this");
+  }
+  next();
+});
+
+module.exports = { protect, authorize, ownerOnly };

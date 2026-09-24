@@ -263,7 +263,7 @@ export default function InvoiceDesigner({ kind = "invoice", settings, active, on
                   className={rowCls(sel?.kind === "block" && sel.id === b.id, dragOver === i && dragFrom !== null && dragFrom !== i)}
                 >
                   <GripVertical className="w-3.5 h-3.5 text-black/40 shrink-0 cursor-grab" />
-                  <span className={cn("flex-1 truncate", !b.visible && "opacity-40 line-through")}>{BLOCK_LABELS[b.type]}{blockHint(b) ? <span className="font-normal text-black/40"> · {blockHint(b)}</span> : null}</span>
+                  <span className={cn("flex-1 truncate", !b.visible && "opacity-40 line-through")}>{BLOCK_LABELS[b.type]}{Number(b.props.w) > 0 && Number(b.props.w) < 100 ? <span className="font-black text-[#024BAB]"> {Math.round(Number(b.props.w))}%</span> : null}{blockHint(b) ? <span className="font-normal text-black/40"> · {blockHint(b)}</span> : null}</span>
                   <button aria-label="Move up" onClick={(e) => { e.stopPropagation(); moveBlock(i, i - 1); }} disabled={i === 0} className="p-0.5 disabled:opacity-20"><ChevronUp className="w-3.5 h-3.5" /></button>
                   <button aria-label="Move down" onClick={(e) => { e.stopPropagation(); moveBlock(i, i + 1); }} disabled={i === tpl.blocks.length - 1} className="p-0.5 disabled:opacity-20"><ChevronDown className="w-3.5 h-3.5" /></button>
                   <button aria-label={b.visible ? "Hide" : "Show"} onClick={(e) => { e.stopPropagation(); toggleBlock(b.id); }} className="p-0.5">{b.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}</button>

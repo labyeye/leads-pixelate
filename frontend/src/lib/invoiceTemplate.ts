@@ -150,6 +150,27 @@ export function newBlock(type: BlockType, props: Record<string, any> = {}): Bloc
   return { id: uid(), type, visible: true, props: { ...BLOCK_DEFAULTS[type], ...props } };
 }
 
+// Free sizing: every block has a width (props.w, % of the row, default 100) and an optional
+// minimum height (props.h in pt, 0 = fit the content). Consecutive blocks whose widths add up to
+// 100 or less share one row; the next block that doesn't fit starts a new row. The items table and
+// tax summary need the full width, so only their height can change.
+export const CAN_WIDTH = (t: BlockType) => t !== "items" && t !== "taxSummary";
+export const blockW = (b: Block) => (CAN_WIDTH(b.type) ? Math.min(100, Math.max(10, Number(b.props.w) || 100)) : 100);
+export const blockH = (b: Block) => Math.min(800, Math.max(0, Number(b.props.h) || 0));
+export const isPlainRow = (row: Block[]) => row.length === 1 && blockW(row[0]) === 100 && !blockH(row[0]);
+
+export function groupRows(blocks: Block[]): Block[][] {
+  const rows: Block[][] = [];
+  let sum = 0;
+  for (const b of blocks) {
+    const w = blockW(b);
+    if (rows.length && sum + w <= 100.01) rows[rows.length - 1].push(b);
+    else rows.push([b]), (sum = 0);
+    sum += w;
+  }
+  return rows;
+}
+
 export function newFloat(kind: Float["kind"], patch: Partial<Float> = {}): Float {
   return {
     id: uid(),

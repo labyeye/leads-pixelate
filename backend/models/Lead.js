@@ -220,4 +220,14 @@ leadSchema.pre("aggregate", function () {
     this.pipeline().unshift({ $match: { deletedAt: null } });
 });
 
+// Every creation path (manual, imports, Facebook, IndiaMART, web form...) goes through save,
+// so the welcome message lives here once instead of in each of them.
+leadSchema.pre("save", function () {
+  this.$locals.wasNew = this.isNew;
+});
+leadSchema.post("save", function (lead) {
+  if (!lead.$locals.wasNew || !lead.tenantId) return;
+  require("../controllers/whatsappController").notify(lead.tenantId, "lead_welcome", lead.phone, [lead.name]);
+});
+
 module.exports = mongoose.model("Lead", leadSchema);

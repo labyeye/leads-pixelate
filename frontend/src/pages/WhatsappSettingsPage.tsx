@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { whatsappAPI, settingsAPI } from "@/services/api";
+import { whatsappAPI } from "@/services/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useToast } from "@/components/ui/use-toast";
@@ -1348,36 +1348,42 @@ function RepliesTab({ toast }: { toast: any }) {
   );
 }
 
-function NotificationSenderCard({ toast }: { toast: any }) {
-  const [source, setSource] = useState<"platform" | "tenant">("tenant");
+// One connection (the company's own WhatsApp, set up by the owner) sends everything below.
+function AutomationsCard({ toast }: { toast: any }) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await settingsAPI.get();
-        setSource(res.data?.quotationWhatsappSource || "tenant");
+        const [a, t] = await Promise.all([
+          whatsappAPI.getAutomations(),
+          whatsappAPI.getTemplates(),
+        ]);
+        setRows(a.data);
+        setTemplates(t.data.filter((x: any) => x.status === "APPROVED"));
       } catch {
-        toast({ title: "Failed to load notification settings", variant: "destructive" });
+        toast({ title: "Failed to load automatic messages", variant: "destructive" });
       } finally {
         setLoading(false);
       }
     })();
   }, [toast]);
 
-  const handleChange = async (value: "platform" | "tenant") => {
-    setSource(value);
+  const patch = (id: string, p: object) =>
+    setRows((r) => r.map((x) => (x.id === id ? { ...x, ...p } : x)));
+
+  const save = async () => {
     setSaving(true);
     try {
-      await settingsAPI.update({ quotationWhatsappSource: value });
-      toast({ title: "Notification sender updated" });
+      await whatsappAPI.saveAutomations(
+        Object.fromEntries(rows.map((r) => [r.id, { enabled: r.enabled, templateId: r.templateId }])),
+      );
+      toast({ title: "Automatic messages saved" });
     } catch (err: any) {
-      toast({
-        title: "Failed to save",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -1385,24 +1391,52 @@ function NotificationSenderCard({ toast }: { toast: any }) {
 
   return (
     <div className="bg-muted/30 rounded-lg p-4 border border-border">
-      <h3 className="text-sm font-semibold mb-1">
-        Quotation Notification Sender
-      </h3>
+      <h3 className="text-sm font-semibold mb-1">Automatic messages</h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Which WhatsApp number sends the "quotation sent" message to clients.
+        Sent from your own WhatsApp number above (Nest Leads never sends for you). Campaigns use the same
+        number. Pick an approved template so the message reaches anyone; without one, plain text is
+        delivered only to people who messaged you in the last 24 hours. Template variables fill in order,
+        as listed next to each message.
       </p>
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       ) : (
-        <Select value={source} onValueChange={handleChange} disabled={saving}>
-          <SelectTrigger className="max-w-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tenant">Client's Own WhatsApp Connection</SelectItem>
-            <SelectItem value="platform">Nest Leads Number (Shared)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="space-y-3">
+          {rows.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-3 border-b border-border pb-3 last:border-0">
+              <label className="flex items-center gap-2 min-w-[190px] text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={r.enabled}
+                  onChange={(e) => patch(r.id, { enabled: e.target.checked })}
+                />
+                {r.label}
+              </label>
+              <Select
+                value={r.templateId || "text"}
+                onValueChange={(v) => patch(r.id, { templateId: v === "text" ? "" : v })}
+              >
+                <SelectTrigger className="max-w-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Plain text (24-hour window only)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t._id} value={t._id}>
+                      {t.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-muted-foreground">
+                {r.vars.map((v: string, i: number) => `{{${i + 1}}} ${v}`).join(" · ")}
+              </span>
+            </div>
+          ))}
+          <Button size="sm" onClick={save} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}Save
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -1601,7 +1635,7 @@ function ConnectionTab({ toast }: { toast: any }) {
         </p>
       </div>
 
-      <NotificationSenderCard toast={toast} />
+      <AutomationsCard toast={toast} />
 
       {loading ? (
         <div className="flex justify-center py-8">

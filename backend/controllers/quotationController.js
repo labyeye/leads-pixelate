@@ -2,14 +2,15 @@ const asyncHandler = require("express-async-handler");
 const Quotation = require("../models/Quotation");
 const Setting = require("../models/Setting");
 const logActivity = require("../utils/activityLogger");
-const { sendTextNotification } = require("./whatsappController");
+const { notify } = require("./whatsappController");
 
-async function notifyQuotationSent(user, quotation) {
-  if (!quotation.mobile) return;
-  const setting = await Setting.findOne({ tenantId: user.tenantId || null });
-  const source = setting?.quotationWhatsappSource || "tenant";
-  const message = `Hi ${quotation.clientName}, your quotation ${quotation.number} for "${quotation.projectTitle}" (₹${quotation.total.toLocaleString("en-IN")}) has been sent. Please check your email/download link for details. Thank you!`;
-  sendTextNotification(user, quotation.mobile, message, source);
+function notifyQuotationSent(user, quotation) {
+  notify(user.tenantId, "quotation_sent", quotation.mobile, [
+    quotation.clientName,
+    quotation.number,
+    quotation.projectTitle,
+    quotation.total.toLocaleString("en-IN"),
+  ]);
 }
 
 const getQuotations = asyncHandler(async (req, res) => {

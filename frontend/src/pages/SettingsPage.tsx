@@ -24,8 +24,10 @@ import {
   Lock,
   Bot,
   Palette,
+  Hash,
 } from "lucide-react";
 import AICallingSettingsTab from "@/components/settings/AICallingSettingsTab";
+import NumberingTab from "@/components/settings/NumberingTab";
 import InvoiceDesigner from "@/components/settings/invoice-designer/InvoiceDesigner";
 import { cn } from "@/lib/utils";
 import {
@@ -478,6 +480,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savingPerms, setSavingPerms] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
+  const [isOwner, setIsOwner] = useState(false);
   const [designersOpened, setDesignersOpened] = useState<string[]>([]); // each stays mounted after its first visit so edits survive tab switches
   useEffect(() => {
     if (activeTab.endsWith("-design")) setDesignersOpened((d) => (d.includes(activeTab) ? d : [...d, activeTab]));
@@ -584,6 +587,7 @@ export default function SettingsPage() {
     try {
       setLoading(true);
       const res = await settingsAPI.get();
+      setIsOwner(!!res.isOwner);
       setSettings({
         ...res.data,
         companyName: res.data?.companyName || tenant?.name || "",
@@ -939,6 +943,7 @@ export default function SettingsPage() {
       icon: Palette,
       adminOnly: true,
     },
+    { id: "numbering", label: "Numbering", icon: Hash, adminOnly: true, ownerOnly: true },
     {
       id: "statuses",
       label: "Lead Statuses",
@@ -964,7 +969,7 @@ export default function SettingsPage() {
       adminOnly: true,
     },
   ];
-  const tabs = allTabs.filter((t) => !t.adminOnly || isAdminOrAbove);
+  const tabs = allTabs.filter((t: any) => (!t.adminOnly || isAdminOrAbove) && (!t.ownerOnly || isOwner));
 
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1112,6 +1117,7 @@ export default function SettingsPage() {
               activeTab !== "invoice-design" &&
               activeTab !== "quotation-design" &&
               activeTab !== "ai-calling" &&
+              activeTab !== "numbering" &&
               isAdminOrAbove && (
                 <button
                   onClick={handleSave}
@@ -1393,6 +1399,9 @@ export default function SettingsPage() {
             )}
 
             {}
+            {activeTab === "numbering" && isOwner && (
+              <NumberingTab saved={settings?.numbering} onSaved={(n) => setSettings((p: any) => ({ ...p, numbering: n }))} />
+            )}
             {activeTab === "statuses" && (
               <div className="space-y-6">
                 <div className="flex items-start gap-3 p-3 border-2 border-[#024BAB] bg-[#024BAB]/5">

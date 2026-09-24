@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import type { InvoiceCompany } from "@/components/pdf/InvoicePDFDocument";
 import { computeInvoice, fmt, numToWords } from "@/lib/invoiceCalc";
-import { fillVars, PAGE_H, PAGE_W, type Block, type Float, type InvoiceTemplate, type VarCtx } from "@/lib/invoiceTemplate";
+import { blockH, blockW, CAN_WIDTH, fillVars, groupRows, isPlainRow, PAGE_H, PAGE_W, type Block, type Float, type InvoiceTemplate, type VarCtx } from "@/lib/invoiceTemplate";
 
 export type Selection = { kind: "block" | "float"; id: string } | null;
 
@@ -398,6 +398,51 @@ export function DesignerCanvas({
     );
   };
 
+  // Drag the blue corner of the selected block: sideways = width (% of the row), down/up = height.
+  const sizeDrag = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  // Clickable wrapper around one block. Inside a shared row the block fills the row's height and
+  // drops its own bottom line (the row draws one), so blocks of different heights still line up.
+  const wrapBlock = (b: Block, inRow = false) => {
+    const sel = selection?.kind === "block" && selection.id === b.id;
+    let node = renderBlock(b);
+    if (inRow && React.isValidElement<{ style?: React.CSSProperties }>(node)) node = React.cloneElement(node, { style: { ...node.props.style, flexGrow: 1, borderBottom: "none" } });
+    const alone = !inRow && isPlainRow([b]);
+    return (
+      <div
+        key={b.id}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          onSelect({ kind: "block", id: b.id });
+        }}
+        style={{ pointerEvents: "auto", cursor: "pointer", outline: sel ? "2px solid #2563eb" : undefined, outlineOffset: -2, position: "relative", ...(inRow ? { flex: 1, display: "flex", flexDirection: "column" } : {}) }}
+        className={sel ? "" : "hover:outline hover:outline-1 hover:outline-dashed hover:outline-blue-400 hover:-outline-offset-1"}
+      >
+        {node}
+        {sel && (
+          <div
+            title="Drag to resize"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              e.currentTarget.setPointerCapture(e.pointerId);
+              sizeDrag.current = { x: e.clientX, y: e.clientY, w: blockW(b), h: (e.currentTarget.parentElement?.offsetHeight ?? 0) / k };
+            }}
+            onPointerMove={(e) => {
+              const d = sizeDrag.current;
+              const inner = contentRef.current?.clientWidth;
+              if (!d || !inner) return;
+              const patch: Record<string, number> = { h: Math.round(Math.min(800, Math.max(0, d.h + (e.clientY - d.y) / k))) };
+              if (CAN_WIDTH(b.type)) patch.w = Math.round(Math.min(100, Math.max(10, d.w + ((e.clientX - d.x) / inner) * 100)));
+              onBlockProps(b.id, patch, `size-${b.id}`);
+            }}
+            onPointerUp={() => (sizeDrag.current = null)}
+            style={{ position: "absolute", right: -6, bottom: -6, width: 12, height: 12, background: "#2563eb", border: "2px solid #fff", cursor: alone && !CAN_WIDTH(b.type) ? "ns-resize" : "nwse-resize", borderRadius: 2, touchAction: "none", zIndex: 40 }}
+          />
+        )}
+      </div>
+    );
+  };
+
   const floats = template.floats.filter((f) => f.visible);
   return (
     <div ref={wrapRef} className="w-full flex flex-col items-center">
@@ -409,24 +454,19 @@ export function DesignerCanvas({
         {floats.filter((f) => f.back).map(renderFloat)}
         <div style={{ position: "absolute", inset: 0, padding: `${px(T.margin * 0.8)}px ${px(T.margin)}px`, zIndex: 10, pointerEvents: "none" }}>
           <div ref={contentRef} style={{ border: full ? `${px(1.5)}px solid ${T.border}` : "none" }}>
-            {template.blocks
-              .filter((b) => b.visible)
-              .map((b) => {
-                const sel = selection?.kind === "block" && selection.id === b.id;
-                return (
-                  <div
-                    key={b.id}
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                      onSelect({ kind: "block", id: b.id });
-                    }}
-                    style={{ pointerEvents: "auto", cursor: "pointer", outline: sel ? "2px solid #2563eb" : undefined, outlineOffset: -2, position: "relative" }}
-                    className={sel ? "" : "hover:outline hover:outline-1 hover:outline-dashed hover:outline-blue-400 hover:-outline-offset-1"}
-                  >
-                    {renderBlock(b)}
-                  </div>
-                );
-              })}
+            {groupRows(template.blocks.filter((b) => b.visible)).map((row) =>
+              isPlainRow(row) ? (
+                wrapBlock(row[0])
+              ) : (
+                <div key={row[0].id} style={{ display: "flex", alignItems: "stretch", borderBottom: H(1) }}>
+                  {row.map((b, i) => (
+                    <div key={b.id} style={{ width: `${blockW(b)}%`, flex: "none", minWidth: 0, display: "flex", flexDirection: "column", borderRight: i < row.length - 1 ? V(1) : undefined, minHeight: px(blockH(b)) || undefined }}>
+                      {wrapBlock(b, true)}
+                    </div>
+                  ))}
+                </div>
+              ),
+            )}
           </div>
         </div>
         {floats.filter((f) => !f.back).map(renderFloat)}

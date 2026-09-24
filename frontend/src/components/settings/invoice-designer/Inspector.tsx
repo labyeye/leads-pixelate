@@ -1,6 +1,6 @@
 import React from "react";
 import { ImageIcon, Trash2 } from "lucide-react";
-import { BLOCK_LABELS, TEMPLATE_VARS, type Block, type BlockType, type Float, type InvoiceTemplate, type Theme } from "@/lib/invoiceTemplate";
+import { BLOCK_LABELS, CAN_WIDTH, TEMPLATE_VARS, type Block, type BlockType, type Float, type InvoiceTemplate, type Theme } from "@/lib/invoiceTemplate";
 import type { Selection } from "./DesignerCanvas";
 import { fileToDataUrl } from "./imageUtil";
 
@@ -206,6 +206,11 @@ export function Inspector({
       <div className="space-y-3">
         <Heading>{BLOCK_LABELS[block.type]}</Heading>
         {block.type === "header" && <p className="text-[10px] text-black/50">Logo defaults to the company logo in Settings &gt; General Info; upload another here to override. Company details come from General Info and Bank Details.</p>}
+        <div className="border-2 border-dashed border-black/30 p-2 space-y-2">
+          {CAN_WIDTH(block.type) && <Num text="Width % (under 100 sits beside the next block)" value={Number(block.props.w) || 100} min={10} max={100} step={5} onChange={(v) => onBlockProps(block.id, { w: v }, g("w"))} />}
+          <Num text="Minimum height (0 = fit content)" value={Number(block.props.h) || 0} min={0} max={800} step={5} onChange={(v) => onBlockProps(block.id, { h: v }, g("h"))} />
+          <p className="text-[10px] text-black/50">Or drag the blue corner of the selected block on the page. Blocks in a row share the 100%: 50 + 50, or 30 + 70, or 3 x 33.</p>
+        </div>
         {FIELDS[block.type].length === 0 && <p className="text-xs text-black/50">Nothing to set here. It appears when the invoice has tax.</p>}
         {FIELDS[block.type].map((f) => {
           const v = block.props[f.key];

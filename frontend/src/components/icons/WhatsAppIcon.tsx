@@ -1,24 +1,19 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { cn } from "@/lib/utils";
+import whatsappLogo from "@/assets/images/logos/whatsapp.png";
 
 interface WhatsAppIconProps {
   className?: string;
   colored?: boolean;
 }
 
-export function WhatsAppIcon({
-  className,
-  colored = false,
-}: WhatsAppIconProps) {
+export function WhatsAppIcon({ className }: WhatsAppIconProps) {
   return (
-    <FontAwesomeIcon
-      icon={faWhatsapp}
-      className={cn(colored && "text-[#25D366]", className)}
+    <img
+      src={whatsappLogo}
+      alt="WhatsApp"
+      className={cn("object-contain", className)}
     />
   );
 }
 
-export function WhatsAppNavIcon({ className }: { className?: string }) {
-  return <FontAwesomeIcon icon={faWhatsapp} className={className} />;
-}
+export const WhatsAppNavIcon = WhatsAppIcon;

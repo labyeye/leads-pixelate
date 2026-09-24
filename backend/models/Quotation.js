@@ -13,7 +13,6 @@ const quotationSchema = new mongoose.Schema(
     number: {
       type: String,
       required: true,
-      unique: true,
     },
     date: {
       type: Date,
@@ -70,7 +69,11 @@ const quotationSchema = new mongoose.Schema(
 
 quotationSchema.pre("validate", async function (next) {
   if (!this.number) {
-    const year = new Date().getFullYear();
+    const custom = await require("../utils/docNumber").nextDocNumber(this.tenantId, "quotation");
+    if (custom) {
+      this.number = custom;
+      return next();
+    }
     const count = await mongoose
       .model("Quotation")
       .countDocuments()
@@ -93,6 +96,9 @@ quotationSchema.pre("validate", function (next) {
 });
 
 quotationSchema.index({ status: 1 });
+// Numbers are per tenant now (each owner picks their own format), so uniqueness is per tenant.
+quotationSchema.index({ tenantId: 1, number: 1 }, { unique: true });
+mongoose.connection.once("open", () => mongoose.model("Quotation").collection.dropIndex("number_1").catch(() => {})); // the old global unique index
 quotationSchema.index({ createdAt: -1 });
 
 quotationSchema.plugin(softDelete);

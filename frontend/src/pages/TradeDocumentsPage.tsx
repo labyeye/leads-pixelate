@@ -46,6 +46,7 @@ const blankItem = { productId: "", name: "", hsnCode: "", quantity: "1", rate: "
 const today = () => new Date().toISOString().slice(0, 10);
 const blank = () => ({
   partyName: "",
+  partyPhone: "",
   reference: "",
   date: today(),
   dueDate: "",
@@ -113,6 +114,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
       d
         ? {
             partyName: d.partyName,
+            partyPhone: d.partyPhone || "",
             reference: d.reference || "",
             date: (d.date || today()).slice(0, 10),
             dueDate: d.dueDate ? d.dueDate.slice(0, 10) : "",
@@ -155,6 +157,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
     try {
       const payload = {
         partyName: form.partyName.trim(),
+        partyPhone: form.partyPhone.trim(),
         reference: form.reference.trim(),
         date: form.date,
         dueDate: form.dueDate || null,
@@ -206,7 +209,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
       [d.number, d.partyName, d.reference].some((x) => (x || "").toLowerCase().includes(q)),
   );
   const shownTotal = shown.reduce((s, d) => s + (d.status === "Cancelled" ? 0 : d.total), 0);
-  const field = (k: "partyName" | "reference" | "date" | "dueDate" | "notes" | "discount" | "taxPercent" | "status") =>
+  const field = (k: "partyName" | "partyPhone" | "reference" | "date" | "dueDate" | "notes" | "discount" | "taxPercent" | "status") =>
     (e: React.ChangeEvent<any>) => setForm({ ...form, [k]: e.target.value });
 
   const isPO = kind === "purchase_order";
@@ -317,6 +320,10 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                   Client <span className="text-red-500">*</span>
                 </label>
                 <input id="td-party" list="td-clients" className={inputCls} value={form.partyName} onChange={field("partyName")} maxLength={120} />
+              </div>
+              <div>
+                <label htmlFor="td-phone" className={labelCls}>WhatsApp number (optional)</label>
+                <input id="td-phone" className={inputCls} value={form.partyPhone} onChange={field("partyPhone")} maxLength={20} placeholder="For automatic WhatsApp messages" />
               </div>
               <div>
                 <label htmlFor="td-ref" className={labelCls}>Reference (optional)</label>

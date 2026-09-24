@@ -15,6 +15,7 @@ const tradeDocSchema = new mongoose.Schema(
     dueDate: { type: Date, default: null }, // due date, or expected delivery
     // Who it is with: a client (sales order, invoice, purchase order).
     partyName: { type: String, required: [true, "Please add who this is for"], trim: true, maxlength: 120 },
+    partyPhone: { type: String, default: "", trim: true, maxlength: 20 }, // WhatsApp automations message this number
     partyId: { type: mongoose.Schema.Types.ObjectId, default: null },
     reference: { type: String, default: "", maxlength: 60 }, // e.g. a quotation number or the customer's PO number
     items: {
