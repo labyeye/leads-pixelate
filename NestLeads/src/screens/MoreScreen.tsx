@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import WhatsAppLogo from '../components/WhatsAppLogo';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
 
@@ -261,18 +262,15 @@ export default function MoreScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Settings')}
             >
               <Icon name="person-outline" size={14} color={PRIMARY} />
-              <Text style={styles.editBtnText}>EDIT</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.logoutBtnSmall}
               onPress={handleLogout}
             >
               <Icon name="log-out-outline" size={14} color="#EF4444" />
-              <Text style={styles.logoutBtnSmallText}>LOGOUT</Text>
             </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.divider} />
 
         {/* Menu list card */}
         <View style={styles.menuCard}>
@@ -284,7 +282,11 @@ export default function MoreScreen({ navigation }: any) {
                 onPress={() => navigation.navigate(item.screen)}
               >
                 <View style={[styles.menuIconBox, { borderColor: item.color }]}>
-                  <Icon name={item.icon} size={22} color={item.color} />
+                  {item.icon === 'logo-whatsapp' ? (
+                    <WhatsAppLogo size={22} />
+                  ) : (
+                    <Icon name={item.icon} size={22} color={item.color} />
+                  )}
                 </View>
                 <View style={styles.menuText}>
                   <Text style={styles.menuLabel}>{item.label}</Text>
@@ -313,15 +315,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
   bellBtn: {
     width: 42,
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  divider: { height: 2, backgroundColor: '#000' },
-
   scroll: { padding: 16, gap: 16 },
 
   // Profile
@@ -342,13 +342,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  profileAvatarText: { fontSize: 22, fontWeight: '900', color: '#fff' },
-  profileInfo: { flexShrink: 1 },
+  profileAvatarText: { fontSize: 22, fontWeight: '600', color: '#fff' },
+  profileInfo: { flex: 1 },
   profileName: {
     fontSize: 16,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#000',
     letterSpacing: 0.3,
+    maxWidth: 200, 
   },
   profileRole: {
     fontSize: 11,
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  editBtnText: { fontSize: 11, fontWeight: '900', color: PRIMARY },
+  editBtnText: { fontSize: 11, fontWeight: '600', color: PRIMARY },
   logoutBtnSmall: {
     flex: 1,
     flexDirection: 'row',
@@ -380,14 +381,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  logoutBtnSmallText: { fontSize: 11, fontWeight: '900', color: '#EF4444' },
+  logoutBtnSmallText: { fontSize: 11, fontWeight: '600', color: '#EF4444' },
 
   // Menu list
   menuCard: {
     borderWidth: 2,
     borderColor: '#000',
     backgroundColor: '#fff',
-    ...NB_SHADOW,
   },
   menuDivider: { height: 1, backgroundColor: '#e2e8f0' },
   menuRow: {

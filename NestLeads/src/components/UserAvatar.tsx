@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   initialsText: {
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#fff',
   },
 });

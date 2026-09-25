@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 20, fontWeight: '900', color: '#000'},
+  headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
   saveBtn: {
     backgroundColor: '#FF751F',
     paddingHorizontal: 14,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     gap: 6,
     ...NB_SHADOW,
   },
-  saveBtnText: {color: '#fff', fontWeight: '900', fontSize: 13},
+  saveBtnText: {color: '#fff', fontWeight: '600', fontSize: 13},
   divider: {height: 2, backgroundColor: '#000'},
   scroll: {padding: 16, gap: 12},
 
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 14,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 16,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   pickerRowActive: {backgroundColor: '#eff6ff'},
   pickerText: {fontSize: 15, color: '#000', fontWeight: '500'},
   pickerTextActive: {color: '#024BAB', fontWeight: '700'},
-  pickerCheck: {color: '#024BAB', fontSize: 16, fontWeight: '900'},
+  pickerCheck: {color: '#024BAB', fontSize: 16, fontWeight: '600'},
   modalCancelBtn: {
     marginTop: 16,
     paddingVertical: 13,
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   checkboxChecked: {backgroundColor: '#024BAB'},
-  checkMark: {color: '#fff', fontSize: 13, fontWeight: '900'},
+  checkMark: {color: '#fff', fontSize: 13, fontWeight: '600'},
   checkLabel: {fontSize: 14, color: '#000', flex: 1, fontWeight: '500'},
   modalDoneBtn: {
     marginTop: 16,
@@ -479,6 +479,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...NB_SHADOW,
   },
-  modalDoneText: {color: '#fff', fontWeight: '900', fontSize: 15},
+  modalDoneText: {color: '#fff', fontWeight: '600', fontSize: 15},
 });
 

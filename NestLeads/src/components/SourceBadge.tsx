@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   md:  {paddingHorizontal: 7, paddingVertical: 3},
   logoSm: {width: 10, height: 10},
   logoMd: {width: 13, height: 13},
-  text: {color: '#fff', fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.3},
+  text: {color: '#fff', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3},
   textSm: {fontSize: 8},
   textMd: {fontSize: 9},
 });

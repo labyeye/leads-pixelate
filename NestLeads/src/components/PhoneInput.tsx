@@ -122,7 +122,7 @@ export default function PhoneInput({
 }
 
 const styles = StyleSheet.create({
-  label: {fontSize: 11, fontWeight: '900', color: '#000', textTransform: 'uppercase', letterSpacing: 0.5},
+  label: {fontSize: 11, fontWeight: '600', color: '#000', textTransform: 'uppercase', letterSpacing: 0.5},
   row: {flexDirection: 'row', borderWidth: 2, borderColor: '#000'},
   countryBtn: {
     flexDirection: 'row',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   input: {flex: 1, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13, color: '#000'},
   overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end'},
   sheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', maxHeight: '60%', padding: 16},
-  sheetTitle: {fontSize: 14, fontWeight: '900', marginBottom: 10, color: '#000'},
+  sheetTitle: {fontSize: 14, fontWeight: '600', marginBottom: 10, color: '#000'},
   countryRow: {paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   countryRowText: {fontSize: 14, color: '#000', fontWeight: '600'},
 });

@@ -28,9 +28,16 @@ const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
 
 const PIE_COLORS = [
-  '#024BAB', '#FF751F', '#22c55e', '#f59e0b',
-  '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444',
-  '#10b981', '#6366f1',
+  '#024BAB',
+  '#FF751F',
+  '#22c55e',
+  '#f59e0b',
+  '#8b5cf6',
+  '#ec4899',
+  '#06b6d4',
+  '#ef4444',
+  '#10b981',
+  '#6366f1',
 ];
 
 const FUNNEL_ICONS: Record<string, string> = {
@@ -414,69 +421,107 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
 
           {/* Source Breakdown — Pie Chart */}
-          {data?.sourceData?.length > 0 && (() => {
-            const total = data.sourceData.reduce((a: number, s: any) => a + (s.value || 0), 0) || 1;
-            const pieData = data.sourceData.map((s: any, idx: number) => ({
-              value: s.value || 0,
-              color: PIE_COLORS[idx % PIE_COLORS.length],
-              label: s.name,
-            }));
-            const safeIdx = Math.min(sourceFocusedIdx, pieData.length - 1);
-            const focused = pieData[safeIdx];
-            const focusedPct = Math.round((focused.value / total) * 100);
-            return (
-              <View style={[styles.section, { marginTop: 12 }]}>
-                <Text style={styles.sectionLabel}>LEADS BY SOURCE</Text>
-                <View style={styles.pieWrapper}>
-                  <View style={styles.pieChartBox}>
-                    <PieChart
-                      data={pieData}
-                      donut
-                      radius={90}
-                      innerRadius={58}
-                      innerCircleColor={'#fff'}
-                      innerCircleBorderWidth={2}
-                      innerCircleBorderColor={'#000'}
-                      strokeWidth={2}
-                      strokeColor={'#000'}
-                      focusOnPress
-                      onPress={(_item: any, idx: number) => setSourceFocusedIdx(idx)}
-                      centerLabelComponent={() => (
-                        <View style={styles.pieCenterLabel}>
-                          <Text style={[styles.pieCenterValue, { color: focused.color }]}>
-                            {focused.value}
-                          </Text>
-                          <Text style={styles.pieCenterPct}>{focusedPct}%</Text>
-                          <Text style={styles.pieCenterName} numberOfLines={2}>
-                            {focused.label}
-                          </Text>
-                        </View>
-                      )}
-                    />
-                  </View>
+          {data?.sourceData?.length > 0 &&
+            (() => {
+              const total =
+                data.sourceData.reduce(
+                  (a: number, s: any) => a + (s.value || 0),
+                  0,
+                ) || 1;
+              const pieData = data.sourceData.map((s: any, idx: number) => ({
+                value: s.value || 0,
+                color: PIE_COLORS[idx % PIE_COLORS.length],
+                label: s.name,
+              }));
+              const safeIdx = Math.min(sourceFocusedIdx, pieData.length - 1);
+              const focused = pieData[safeIdx];
+              const focusedPct = Math.round((focused.value / total) * 100);
+              return (
+                <View style={[styles.section, { marginTop: 12 }]}>
+                  <Text style={styles.sectionLabel}>LEADS BY SOURCE</Text>
+                  <View style={styles.pieWrapper}>
+                    <View style={styles.pieChartBox}>
+                      <PieChart
+                        data={pieData}
+                        donut
+                        radius={90}
+                        innerRadius={58}
+                        innerCircleColor={'#fff'}
+                        innerCircleBorderWidth={2}
+                        innerCircleBorderColor={'#000'}
+                        strokeWidth={2}
+                        strokeColor={'#000'}
+                        focusOnPress
+                        onPress={(_item: any, idx: number) =>
+                          setSourceFocusedIdx(idx)
+                        }
+                        centerLabelComponent={() => (
+                          <View style={styles.pieCenterLabel}>
+                            <Text
+                              style={[
+                                styles.pieCenterValue,
+                                { color: focused.color },
+                              ]}
+                            >
+                              {focused.value}
+                            </Text>
+                            <Text style={styles.pieCenterPct}>
+                              {focusedPct}%
+                            </Text>
+                            <Text
+                              style={styles.pieCenterName}
+                              numberOfLines={2}
+                            >
+                              {focused.label}
+                            </Text>
+                          </View>
+                        )}
+                      />
+                    </View>
 
-                  <View style={styles.pieLegend}>
-                    {pieData.map((item: any, idx: number) => {
-                      const pct = Math.round((item.value / total) * 100);
-                      const isActive = idx === safeIdx;
-                      return (
-                        <TouchableOpacity
-                          key={item.label}
-                          style={[styles.pieLegendRow, isActive && styles.pieLegendRowActive]}
-                          onPress={() => setSourceFocusedIdx(idx)}
-                          activeOpacity={0.7}>
-                          <View style={[styles.pieLegendDot, { backgroundColor: item.color }]} />
-                          <Text style={styles.pieLegendLabel} numberOfLines={1}>{item.label}</Text>
-                          <Text style={[styles.pieLegendVal, { color: item.color }]}>{item.value}</Text>
-                          <Text style={styles.pieLegendPct}>{pct}%</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
+                    <View style={styles.pieLegend}>
+                      {pieData.map((item: any, idx: number) => {
+                        const pct = Math.round((item.value / total) * 100);
+                        const isActive = idx === safeIdx;
+                        return (
+                          <TouchableOpacity
+                            key={item.label}
+                            style={[
+                              styles.pieLegendRow,
+                              isActive && styles.pieLegendRowActive,
+                            ]}
+                            onPress={() => setSourceFocusedIdx(idx)}
+                            activeOpacity={0.7}
+                          >
+                            <View
+                              style={[
+                                styles.pieLegendDot,
+                                { backgroundColor: item.color },
+                              ]}
+                            />
+                            <Text
+                              style={styles.pieLegendLabel}
+                              numberOfLines={1}
+                            >
+                              {item.label}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.pieLegendVal,
+                                { color: item.color },
+                              ]}
+                            >
+                              {item.value}
+                            </Text>
+                            <Text style={styles.pieLegendPct}>{pct}%</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
                   </View>
                 </View>
-              </View>
-            );
-          })()}
+              );
+            })()}
 
           {/* Leaderboard */}
           {data?.userPerformance?.length > 0 && (
@@ -731,12 +776,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 50,
   },
-  headerAvatarText: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  headerAvatarText: { fontSize: 18, fontWeight: '600', color: '#fff' },
   headerInfo: { flex: 1 },
   headerGreeting: { fontSize: 12, color: '#64748b', fontWeight: '600' },
   headerName: {
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#000',
     letterSpacing: 0.3,
   },
@@ -761,7 +806,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     borderRadius: 10,
   },
-  bellBadgeText: { fontSize: 12, fontWeight: '900', color: '#fff' },
+  bellBadgeText: { fontSize: 12, fontWeight: '600', color: '#fff' },
 
   // Notification modal
   notifOverlay: {
@@ -792,7 +837,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifHeaderTitle: { fontSize: 18, fontWeight: '900', color: '#000' },
+  notifHeaderTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
   notifCloseBtn: {
     width: 32,
     height: 32,
@@ -811,7 +856,7 @@ const styles = StyleSheet.create({
   },
   notifSectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -824,7 +869,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#000',
   },
-  notifCountText: { fontSize: 10, fontWeight: '900', color: '#fff' },
+  notifCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   notifItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -841,7 +886,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifItemInitial: { fontSize: 15, fontWeight: '900', color: '#fff' },
+  notifItemInitial: { fontSize: 15, fontWeight: '600', color: '#fff' },
   notifItemInfo: { flex: 1 },
   notifItemTitle: { fontSize: 13, fontWeight: '700', color: '#000' },
   notifItemSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
@@ -857,7 +902,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  notifItemBadgeText: { fontSize: 10, fontWeight: '900', color: '#fff' },
+  notifItemBadgeText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   notifLeadStatus: {
     paddingHorizontal: 6,
     paddingVertical: 3,
@@ -867,7 +912,7 @@ const styles = StyleSheet.create({
   },
   notifLeadStatusText: {
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#000',
     textTransform: 'uppercase',
   },
@@ -907,7 +952,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tabCountActive: { backgroundColor: '#fff' },
-  tabCountText: { fontSize: 10, fontWeight: '900', color: '#fff' },
+  tabCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   tabCountTextActive: { color: PRIMARY },
   tabDivider: { height: 2, backgroundColor: '#000' },
 
@@ -953,12 +998,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-  alertPillText: { fontSize: 10, fontWeight: '900', color: '#fff' },
+  alertPillText: { fontSize: 10, fontWeight: '600', color: '#fff' },
 
   // Section label
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -977,7 +1022,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-  sectionCountText: { fontSize: 11, fontWeight: '900', color: '#fff' },
+  sectionCountText: { fontSize: 11, fontWeight: '600', color: '#fff' },
 
   // KPI cards — 2 per row
   kpiRow: { flexDirection: 'row', gap: 10 },
@@ -987,7 +1032,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
     padding: 14,
-    ...NB_SHADOW,
   },
   kpiCardUrgent: { backgroundColor: '#fff7ed' },
   kpiIcon: {
@@ -999,10 +1043,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 10,
   },
-  kpiValue: { fontSize: 32, fontWeight: '900', color: '#000', lineHeight: 36 },
+  kpiValue: { fontSize: 32, fontWeight: '600', color: '#000', lineHeight: 36 },
   kpiTitle: {
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -1015,7 +1059,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
     padding: 14,
-    ...NB_SHADOW,
   },
 
   // This Month rows
@@ -1036,7 +1079,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   monthRowLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: '#000' },
-  monthRowValue: { fontSize: 16, fontWeight: '900', color: '#000' },
+  monthRowValue: { fontSize: 16, fontWeight: '600', color: '#000' },
 
   // Funnel
   funnelRow: {
@@ -1067,7 +1110,7 @@ const styles = StyleSheet.create({
   funnelCount: {
     paddingLeft: 8,
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#000',
   },
 
@@ -1088,14 +1131,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leadAvatarText: { fontSize: 13, fontWeight: '900', color: '#fff' },
+  leadAvatarText: { fontSize: 13, fontWeight: '600', color: '#fff' },
   leadInfo: { flex: 1 },
   leadName: { fontSize: 13, fontWeight: '700', color: '#000' },
   leadSub: { fontSize: 11, color: '#64748b' },
   leadRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   leadStatus: {
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     maxWidth: 80,
@@ -1135,7 +1178,7 @@ const styles = StyleSheet.create({
   },
   pieCenterValue: {
     fontSize: 22,
-    fontWeight: '900',
+    fontWeight: '600',
     lineHeight: 26,
   },
   pieCenterPct: {
@@ -1186,7 +1229,7 @@ const styles = StyleSheet.create({
   },
   pieLegendVal: {
     fontSize: 13,
-    fontWeight: '900',
+    fontWeight: '600',
   },
   pieLegendPct: {
     fontSize: 10,
@@ -1213,7 +1256,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sourceLabel: { fontSize: 12, fontWeight: '700', color: '#000' },
-  sourceCount: { fontSize: 12, fontWeight: '900', color: '#000' },
+  sourceCount: { fontSize: 12, fontWeight: '600', color: '#000' },
   sourcePct: { fontSize: 10, fontWeight: '500', color: '#64748b' },
   sourceBarBg: {
     height: 6,
@@ -1241,7 +1284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lbRankText: { fontSize: 11, fontWeight: '900' },
+  lbRankText: { fontSize: 11, fontWeight: '600' },
   lbInfo: { flex: 1 },
   lbName: { fontSize: 13, fontWeight: '700', color: '#000' },
   lbBar: {
@@ -1254,6 +1297,6 @@ const styles = StyleSheet.create({
   },
   lbFill: { height: '100%' },
   lbRight: { alignItems: 'flex-end' },
-  lbConv: { fontSize: 14, fontWeight: '900', color: '#000' },
+  lbConv: { fontSize: 14, fontWeight: '600', color: '#000' },
   lbLeads: { fontSize: 10, color: '#64748b' },
 });

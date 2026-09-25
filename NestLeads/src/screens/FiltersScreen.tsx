@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 20, fontWeight: '900', color: '#000'},
+  headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
   resetText: {fontSize: 13, fontWeight: '700', color: '#EF4444'},
   divider: {height: 2, backgroundColor: '#000'},
   scroll: {padding: 16, gap: 12},
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 12,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveViewBtnText: {fontSize: 12, fontWeight: '900', color: '#000'},
+  saveViewBtnText: {fontSize: 12, fontWeight: '600', color: '#000'},
   noViewsText: {fontSize: 12, color: '#64748b', fontWeight: '500'},
   viewChip: {
     flexDirection: 'row',
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   chipText: {fontSize: 11, fontWeight: '700', textTransform: 'uppercase'},
-  chipCheck: {fontSize: 10, fontWeight: '900'},
+  chipCheck: {fontSize: 10, fontWeight: '600'},
   sourceChip: {flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:6,paddingVertical:5,borderWidth:2,borderColor:'#e2e8f0',backgroundColor:'#f8fafc'},
   sourceChipActive: {borderColor:'#000',backgroundColor:'#FFDE00'},
 
@@ -387,6 +387,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...NB_SHADOW,
   },
-  applyBtnText: {color: '#fff', fontSize: 15, fontWeight: '900'},
+  applyBtnText: {color: '#fff', fontSize: 15, fontWeight: '600'},
 });
 

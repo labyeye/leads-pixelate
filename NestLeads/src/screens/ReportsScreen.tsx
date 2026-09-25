@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f8fafc'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: '#fff'},
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 20, fontWeight: '900', color: '#000'},
+  headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
   headerSub: {fontSize: 11, color: '#64748b', fontWeight: '500'},
   divider: {height: 2, backgroundColor: '#000'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
   tabBarContent: {paddingHorizontal: 12, paddingVertical: 8, gap: 6},
   tab: {flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff'},
   tabActive: {backgroundColor: PRIMARY},
-  tabText: {fontSize: 11, fontWeight: '900', color: '#000', textTransform: 'uppercase'},
+  tabText: {fontSize: 11, fontWeight: '600', color: '#000', textTransform: 'uppercase'},
   tabTextActive: {color: '#fff'},
 
   tabContent: {padding: 14, gap: 12, paddingBottom: 40},
@@ -786,33 +786,33 @@ const styles = StyleSheet.create({
   // Section
   section: {backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 14, ...NB_SHADOW},
   sectionHeaderRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14},
-  sectionLabel: {fontSize: 10, fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: 1},
+  sectionLabel: {fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 1},
   sectionBadge: {backgroundColor: SECONDARY, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1.5, borderColor: '#000'},
-  sectionBadgeText: {fontSize: 9, fontWeight: '900', color: '#fff'},
+  sectionBadgeText: {fontSize: 9, fontWeight: '600', color: '#fff'},
 
   // KPI grid
   kpiGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
   kpiCard: {width: '47%', backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12, ...NB_SHADOW},
   kpiIcon: {width: 38, height: 38, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginBottom: 8},
-  kpiValue: {fontSize: 28, fontWeight: '900', color: '#000'},
-  kpiTitle: {fontSize: 9, fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.7, marginTop: 2},
+  kpiValue: {fontSize: 28, fontWeight: '600', color: '#000'},
+  kpiTitle: {fontSize: 9, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.7, marginTop: 2},
   kpiSub: {fontSize: 10, color: '#94a3b8', marginTop: 2},
 
   // Acquisition
   acqRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10},
   acqIcon: {width: 28, height: 28, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
   acqLabel: {width: 72, fontSize: 11, fontWeight: '700', color: '#000'},
-  acqValue: {width: 60, fontSize: 11, fontWeight: '900', color: '#000'},
+  acqValue: {width: 60, fontSize: 11, fontWeight: '600', color: '#000'},
   acqBar: {height: 16, borderWidth: 2, borderColor: '#000', overflow: 'hidden', justifyContent: 'center', backgroundColor: '#f8fafc'},
   acqBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0},
 
   // Temperature
   tempRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8},
   tempPill: {width: 48, paddingVertical: 4, alignItems: 'center', borderWidth: 2, borderColor: '#000'},
-  tempPillText: {fontSize: 9, fontWeight: '900'},
+  tempPillText: {fontSize: 9, fontWeight: '600'},
   tempBarWrap: {flex: 1, height: 20, borderWidth: 2, borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc'},
   tempBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0, opacity: 0.7},
-  tempCount: {fontSize: 13, fontWeight: '900', color: '#000', width: 28, textAlign: 'right'},
+  tempCount: {fontSize: 13, fontWeight: '600', color: '#000', width: 28, textAlign: 'right'},
   tempPct: {fontSize: 10, color: '#64748b', width: 36},
 
   // Funnel
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
   funnelLabel: {width: 80, fontSize: 10, fontWeight: '700', color: '#000'},
   funnelBarWrap: {flex: 1, height: 24, borderWidth: 2, borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc', justifyContent: 'center'},
   funnelBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0},
-  funnelCount: {paddingLeft: 8, fontSize: 11, fontWeight: '900', color: '#000'},
+  funnelCount: {paddingLeft: 8, fontSize: 11, fontWeight: '600', color: '#000'},
 
   // Bar
   barTrack: {flex: 1, borderWidth: 1, borderColor: '#000', backgroundColor: '#f8fafc', overflow: 'hidden'},
@@ -833,40 +833,40 @@ const styles = StyleSheet.create({
   sourceDetailInfo: {flex: 1, gap: 4},
   sourceDetailName: {fontSize: 12, fontWeight: '700', color: '#000'},
   sourceDetailRight: {alignItems: 'flex-end'},
-  sourceDetailCount: {fontSize: 16, fontWeight: '900', color: '#000'},
+  sourceDetailCount: {fontSize: 16, fontWeight: '600', color: '#000'},
   sourceDetailPct: {fontSize: 10, color: '#64748b', fontWeight: '600'},
 
   statusDetailRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8},
   statusBadge: {width: 88, paddingHorizontal: 5, paddingVertical: 4, borderWidth: 1, borderColor: '#000'},
-  statusBadgeText: {fontSize: 8, fontWeight: '900', textTransform: 'uppercase'},
-  statusCount: {fontSize: 12, fontWeight: '900', color: '#000', width: 24, textAlign: 'right'},
+  statusBadgeText: {fontSize: 8, fontWeight: '600', textTransform: 'uppercase'},
+  statusCount: {fontSize: 12, fontWeight: '600', color: '#000', width: 24, textAlign: 'right'},
 
   // Team
   topPerformerRow: {flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10},
-  topPerformerName: {fontSize: 16, fontWeight: '900', color: '#fff'},
+  topPerformerName: {fontSize: 16, fontWeight: '600', color: '#fff'},
   topPerformerStat: {fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2},
   trophyBox: {width: 44, height: 44, borderWidth: 2, borderColor: SECONDARY, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)'},
 
   agentRow: {flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   agentRank: {width: 24, height: 24, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  agentRankText: {fontSize: 10, fontWeight: '900'},
+  agentRankText: {fontSize: 10, fontWeight: '600'},
   agentInfo: {flex: 1, gap: 4},
   agentName: {fontSize: 13, fontWeight: '700', color: '#000'},
   agentStats: {alignItems: 'flex-end'},
-  agentLeadsCount: {fontSize: 15, fontWeight: '900', color: '#000'},
+  agentLeadsCount: {fontSize: 15, fontWeight: '600', color: '#000'},
   agentClientsCount: {fontSize: 10, color: '#64748b', fontWeight: '600'},
   agentRatePill: {paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderColor: '#000'},
-  agentRateText: {fontSize: 11, fontWeight: '900'},
+  agentRateText: {fontSize: 11, fontWeight: '600'},
 
   hotRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   hotAgentName: {flex: 1, fontSize: 13, fontWeight: '700', color: '#000'},
   hotPill: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderColor: '#000'},
-  hotPillText: {fontSize: 11, fontWeight: '900', color: '#fff'},
+  hotPillText: {fontSize: 11, fontWeight: '600', color: '#fff'},
   noDataText: {fontSize: 13, color: '#94a3b8', fontWeight: '600', textAlign: 'center', paddingVertical: 16},
 
   // Trends
   trendRow: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12},
-  trendMonth: {width: 42, fontSize: 10, fontWeight: '900', color: '#000'},
+  trendMonth: {width: 42, fontSize: 10, fontWeight: '600', color: '#000'},
   trendBarWrap: {height: 20, borderWidth: 1, borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc', flexDirection: 'row', alignItems: 'center'},
   trendBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0},
   trendBarLabel: {paddingLeft: 6, fontSize: 10, fontWeight: '700', color: '#000'},
@@ -878,28 +878,28 @@ const styles = StyleSheet.create({
   distLabel: {width: 82, fontSize: 9, fontWeight: '700', color: '#000', textTransform: 'uppercase'},
   distBarWrap: {flex: 1, height: 18, borderWidth: 1, borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc'},
   distBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0},
-  distCount: {width: 24, fontSize: 11, fontWeight: '900', color: '#000', textAlign: 'right'},
+  distCount: {width: 24, fontSize: 11, fontWeight: '600', color: '#000', textAlign: 'right'},
   distPct: {width: 30, fontSize: 10, color: '#64748b', textAlign: 'right'},
 
   // Follow-ups
   fuKpiRow: {flexDirection: 'row', gap: 10},
   fuKpi: {flex: 1, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12, alignItems: 'center', gap: 4, ...NB_SHADOW},
-  fuKpiValue: {fontSize: 26, fontWeight: '900'},
-  fuKpiLabel: {fontSize: 8, fontWeight: '900', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center'},
+  fuKpiValue: {fontSize: 26, fontWeight: '600'},
+  fuKpiLabel: {fontSize: 8, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center'},
   fuRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   fuInfo: {flex: 1},
   fuName: {fontSize: 13, fontWeight: '700', color: '#000'},
   fuSub: {fontSize: 11, color: '#64748b', marginTop: 1},
   fuOverduePill: {backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderColor: '#000'},
-  fuOverdueText: {fontSize: 10, fontWeight: '900', color: '#fff'},
+  fuOverdueText: {fontSize: 10, fontWeight: '600', color: '#fff'},
   fuStatusPill: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#000', marginTop: 3},
-  fuStatusText: {fontSize: 8, fontWeight: '900', textTransform: 'uppercase'},
+  fuStatusText: {fontSize: 8, fontWeight: '600', textTransform: 'uppercase'},
   fuDatePill: {flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderColor: '#000', paddingHorizontal: 7, paddingVertical: 4, backgroundColor: '#fff'},
   fuDateText: {fontSize: 11, fontWeight: '700', color: PRIMARY},
 
   // Empty
   emptyBox: {alignItems: 'center', paddingTop: 60, gap: 10},
-  emptyTitle: {fontSize: 16, fontWeight: '900', color: '#000'},
+  emptyTitle: {fontSize: 16, fontWeight: '600', color: '#000'},
   emptySub: {fontSize: 13, color: '#64748b', textAlign: 'center', paddingHorizontal: 32},
 
   // View toggle (Catalog / Analytics)
@@ -918,8 +918,8 @@ const styles = StyleSheet.create({
   reportCard: {flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff', padding: 12, ...NB_SHADOW},
   reportIconBox: {width: 40, height: 40, borderWidth: 2, alignItems: 'center', justifyContent: 'center'},
   reportCatBadge: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, marginBottom: 3},
-  reportCatBadgeText: {fontSize: 8, fontWeight: '900', color: '#fff', textTransform: 'uppercase'},
-  reportTitle: {fontSize: 13, fontWeight: '900', color: '#000'},
+  reportCatBadgeText: {fontSize: 8, fontWeight: '600', color: '#fff', textTransform: 'uppercase'},
+  reportTitle: {fontSize: 13, fontWeight: '600', color: '#000'},
   reportDesc: {fontSize: 11, color: '#64748b', marginTop: 2},
   generateBtn: {width: 34, height: 34, borderRadius: 17, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center'},
 
@@ -927,11 +927,11 @@ const styles = StyleSheet.create({
   previewOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end'},
   previewSheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, maxHeight: '85%'},
   previewHeader: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'},
-  previewTitle: {fontSize: 16, fontWeight: '900', color: '#000', flex: 1},
+  previewTitle: {fontSize: 16, fontWeight: '600', color: '#000', flex: 1},
   previewSub: {fontSize: 11, color: '#64748b', marginTop: 2},
   previewRow: {flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  previewHeaderCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 10, fontWeight: '900', color: '#000', backgroundColor: '#f1f5f9', textTransform: 'uppercase'},
+  previewHeaderCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 10, fontWeight: '600', color: '#000', backgroundColor: '#f1f5f9', textTransform: 'uppercase'},
   previewCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 11, color: '#000'},
   exportCsvBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#000', paddingVertical: 12},
-  exportCsvBtnText: {fontSize: 13, fontWeight: '900', color: '#fff'},
+  exportCsvBtnText: {fontSize: 13, fontWeight: '600', color: '#fff'},
 });

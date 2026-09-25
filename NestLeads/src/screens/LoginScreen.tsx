@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   // generous transparent padding in their canvas, so the art floats above the centred form.
   lottieLogin: {width: '100%', height: 250, marginTop: -74, marginBottom: 24},
   lottieOtp: {width: '100%', height: 300, marginTop: -204, marginBottom: 24},
-  heading: {fontSize: 26, fontWeight: '900', color: '#000', marginBottom: 18, textAlign: 'center'},
+  heading: {fontSize: 26, fontWeight: '600', color: '#000', marginBottom: 18, textAlign: 'center'},
   errorBox: {flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 2, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.08)', paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16},
   errorText: {fontSize: 13, color: '#EF4444', fontWeight: '600', flex: 1},
   fieldGroup: {marginBottom: 16},
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   eyeBtn: {borderLeftWidth: 2, borderLeftColor: '#000', paddingHorizontal: 12, paddingVertical: 12},
   submitBtn: {backgroundColor: '#024BAB', borderWidth: 2, borderColor: '#000', paddingVertical: 14, alignItems: 'center', justifyContent: 'center', marginTop: 4},
   row: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  submitText: {fontSize: 14, fontWeight: '900', color: '#fff', letterSpacing: 0.3, textTransform: 'uppercase'},
+  submitText: {fontSize: 14, fontWeight: '600', color: '#fff', letterSpacing: 0.3, textTransform: 'uppercase'},
   linkBtn: {alignItems: 'center', paddingVertical: 10, marginTop: 4},
   linkText: {fontSize: 13, fontWeight: '700', color: '#024BAB'},
   otpInput: {borderWidth: 2, borderColor: '#000', backgroundColor: '#fff', paddingVertical: 14, paddingHorizontal: 16, fontSize: 24, fontWeight: '700', letterSpacing: 10, textAlign: 'center', color: '#000'},

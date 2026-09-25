@@ -464,24 +464,6 @@ export default function SocialPlannerScreen({navigation}: any) {
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.divider} />
-
-      {/* Stats strip */}
-      {stats && (
-        <View style={styles.statsStrip}>
-          {[
-            {label: 'TOTAL', value: stats.total, color: '#000'},
-            {label: 'PENDING', value: stats.pending, color: '#d97706'},
-            {label: 'SCHEDULED', value: stats.scheduled, color: PRIMARY},
-            {label: 'POSTED', value: stats.posted, color: '#16a34a'},
-          ].map(s => (
-            <View key={s.label} style={styles.statCell}>
-              <Text style={[styles.statValue, {color: s.color}]}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-      )}
       <View style={styles.thinDivider} />
 
       {/* Filter tabs */}
@@ -539,20 +521,20 @@ const styles = StyleSheet.create({
   headerActions: {marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 8},
   refreshBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center'},
   newPostBtn: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6},
-  newPostBtnText: {fontSize: 11, fontWeight: '900', color: '#fff'},
-  headerTitle: {fontSize: 20, fontWeight: '900', color: '#000'},
+  newPostBtnText: {fontSize: 11, fontWeight: '600', color: '#fff'},
+  headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
   headerSub: {fontSize: 11, color: '#64748b'},
   divider: {height: 2, backgroundColor: '#000'},
   thinDivider: {height: 1, backgroundColor: '#e2e8f0'},
 
   statsStrip: {flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10},
   statCell: {flex: 1, alignItems: 'center'},
-  statValue: {fontSize: 20, fontWeight: '900'},
-  statLabel: {fontSize: 8, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', marginTop: 1},
+  statValue: {fontSize: 20, fontWeight: '600'},
+  statLabel: {fontSize: 8, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', marginTop: 1},
 
-  filterScroll: {maxHeight: 44},
-  filterRow: {paddingHorizontal: 12, paddingVertical: 8, gap: 6, flexDirection: 'row'},
-  filterChip: {paddingHorizontal: 12, paddingVertical: 5, borderWidth: 2, borderColor: '#e2e8f0'},
+  filterScroll: {flexGrow: 0, flexShrink: 0, height: 54},
+  filterRow: {paddingHorizontal: 12, paddingVertical: 10, gap: 6, alignItems: 'center', flexDirection: 'row'},
+  filterChip: {flexGrow: 0, flexShrink: 0, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 2, borderColor: '#e2e8f0'},
   filterChipActive: {borderColor: '#000', backgroundColor: PRIMARY},
   filterChipText: {fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase'},
   filterChipTextActive: {color: '#fff'},
@@ -560,7 +542,7 @@ const styles = StyleSheet.create({
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   list: {padding: 12, gap: 10},
 
-  card: {backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', ...NB_SHADOW},
+  card: {backgroundColor: '#fff', borderWidth: 2, borderColor: '#000'},
   cardInner: {flexDirection: 'row', alignItems: 'flex-start', padding: 12, gap: 12},
   thumb: {width: 64, height: 64, borderWidth: 2, borderColor: '#000'},
   thumbPlaceholder: {backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center'},
@@ -568,7 +550,7 @@ const styles = StyleSheet.create({
 
   badgeRow: {flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap'},
   statusBadge: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 3, gap: 3, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)'},
-  statusText: {fontSize: 8, fontWeight: '900', textTransform: 'uppercase'},
+  statusText: {fontSize: 8, fontWeight: '600', textTransform: 'uppercase'},
   platformBadge: {flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 3},
   platformText: {fontSize: 9, fontWeight: '700'},
   typeBadge: {backgroundColor: '#f1f5f9', paddingHorizontal: 6, paddingVertical: 3},
@@ -593,7 +575,7 @@ const styles = StyleSheet.create({
   // Modal
   modalContainer: {flex: 1, backgroundColor: '#fff'},
   modalHeader: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12},
-  modalTitle: {fontSize: 18, fontWeight: '900', color: '#000'},
+  modalTitle: {fontSize: 18, fontWeight: '600', color: '#000'},
   modalBody: {padding: 16, gap: 16},
 
   mediaImage: {width: '100%', height: 220, borderWidth: 2, borderColor: '#000'},
@@ -603,13 +585,13 @@ const styles = StyleSheet.create({
   carouselThumb: {width: 72, height: 72, marginRight: 8, borderWidth: 2, borderColor: '#000'},
 
   section: {gap: 6},
-  sectionLabel: {fontSize: 9, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1},
+  sectionLabel: {fontSize: 9, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1},
   captionText: {fontSize: 14, color: '#000', lineHeight: 20},
   hashtagText: {fontSize: 12, color: '#7c3aed', lineHeight: 18},
 
   metaGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 12},
   metaCell: {minWidth: '45%', gap: 3},
-  metaLabel: {fontSize: 9, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8},
+  metaLabel: {fontSize: 9, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8},
   metaValue: {fontSize: 13, fontWeight: '600', color: '#000'},
 
   alertBox: {flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderWidth: 1},
@@ -620,5 +602,5 @@ const styles = StyleSheet.create({
 
   actionRow: {flexDirection: 'row', gap: 10},
   actionBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderWidth: 2},
-  actionBtnText: {fontSize: 13, fontWeight: '900'},
+  actionBtnText: {fontSize: 13, fontWeight: '600'},
 });

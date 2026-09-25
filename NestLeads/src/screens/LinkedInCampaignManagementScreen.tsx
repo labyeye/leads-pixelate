@@ -98,6 +98,6 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12},
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {flex: 1, fontSize: 14, fontWeight: '900', color: '#000'},
+  headerTitle: {flex: 1, fontSize: 14, fontWeight: '600', color: '#000'},
   divider: {height: 2, backgroundColor: '#000'},
 });

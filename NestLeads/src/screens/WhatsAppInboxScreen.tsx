@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import WhatsAppLogo from '../components/WhatsAppLogo';
 import {whatsappAPI} from '../services/api';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
@@ -68,7 +69,7 @@ export default function WhatsAppInboxScreen({navigation}: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
-        <Icon name="logo-whatsapp" size={20} color="#25D366" />
+        <WhatsAppLogo size={20} />
         <Text style={styles.headerTitle}>WhatsApp Inbox</Text>
       </View>
       <View style={styles.divider} />
@@ -78,7 +79,7 @@ export default function WhatsAppInboxScreen({navigation}: any) {
       ) : conversations.length === 0 ? (
         <View style={styles.emptyBox}>
           <View style={styles.emptyIcon}>
-            <Icon name="logo-whatsapp" size={40} color="#25D366" />
+            <WhatsAppLogo size={40} />
           </View>
           <Text style={styles.emptyTitle}>No conversations yet</Text>
           <Text style={styles.emptySub}>WhatsApp messages will appear here</Text>
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 10},
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 18, fontWeight: '900', color: '#000'},
+  headerTitle: {fontSize: 18, fontWeight: '600', color: '#000'},
   divider: {height: 2, backgroundColor: '#000'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   convoItem: {
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
   },
   convoItemUnread: {backgroundColor: '#f0fdf4'},
   avatar: {width: 44, height: 44, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  avatarText: {fontSize: 16, fontWeight: '900'},
+  avatarText: {fontSize: 16, fontWeight: '600'},
   convoInfo: {flex: 1},
   convoTop: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3},
   convoName: {fontSize: 14, fontWeight: '700', color: '#000', flex: 1},
@@ -129,10 +130,10 @@ const styles = StyleSheet.create({
   convoLast: {fontSize: 12, color: '#64748b', flex: 1},
   convoLastUnread: {color: '#000', fontWeight: '600'},
   unreadBadge: {backgroundColor: '#25D366', borderWidth: 2, borderColor: '#000', minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4},
-  unreadText: {fontSize: 10, fontWeight: '900', color: '#fff'},
+  unreadText: {fontSize: 10, fontWeight: '600', color: '#fff'},
   emptyBox: {flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40},
   emptyIcon: {width: 80, height: 80, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginBottom: 16, ...NB_SHADOW},
-  emptyTitle: {fontSize: 18, fontWeight: '900', color: '#000', marginBottom: 4},
+  emptyTitle: {fontSize: 18, fontWeight: '600', color: '#000', marginBottom: 4},
   emptySub: {fontSize: 13, color: '#64748b', marginBottom: 20},
   emptyNote: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#e2e8f0', padding: 10},
   emptyNoteText: {fontSize: 12, color: '#64748b'},

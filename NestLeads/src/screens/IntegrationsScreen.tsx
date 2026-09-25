@@ -1035,7 +1035,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   divider: { height: 2, backgroundColor: '#000' },
   body: { padding: 12, gap: 10 },
@@ -1052,13 +1052,13 @@ const styles = StyleSheet.create({
   },
   summaryNum: {
     fontSize: 22,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#000',
     textAlign: 'center',
   },
   summaryLabel: {
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1066,7 +1066,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 3,
   },
-  cardTitle: { fontSize: 14, fontWeight: '900', color: '#000' },
+  cardTitle: { fontSize: 14, fontWeight: '600', color: '#000' },
   activeBadge: {
     backgroundColor: '#22c55e',
     paddingHorizontal: 5,
@@ -1107,7 +1107,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-  activeBadgeText: { fontSize: 8, fontWeight: '900', color: '#fff' },
+  activeBadgeText: { fontSize: 8, fontWeight: '600', color: '#fff' },
   cardDesc: { fontSize: 11, color: '#64748b', lineHeight: 15 },
   connectBtn: {
     borderWidth: 2,
@@ -1116,7 +1116,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   connectBtnActive: { backgroundColor: '#f0fdf4' },
-  connectBtnText: { fontSize: 11, fontWeight: '900' },
+  connectBtnText: { fontSize: 11, fontWeight: '600' },
   comingSoonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   comingSoonTag: {
     borderWidth: 2,
@@ -1148,7 +1148,7 @@ const wizStyles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logoImg: { width: 30, height: 30 },
-  headerTitle: { fontSize: 16, fontWeight: '900', color: '#000' },
+  headerTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
   closeBtn: {
     width: 36,
@@ -1177,7 +1177,7 @@ const wizStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepNum: { fontSize: 11, fontWeight: '900', color: '#64748b' },
+  stepNum: { fontSize: 11, fontWeight: '600', color: '#64748b' },
   stepLine: {
     flex: 1,
     height: 2,
@@ -1187,7 +1187,7 @@ const wizStyles = StyleSheet.create({
   body: { padding: 16, gap: 14 },
   stepTitle: {
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#000',
     marginBottom: 4,
   },
@@ -1201,7 +1201,7 @@ const wizStyles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 1,
   },
-  instrNumText: { fontSize: 10, fontWeight: '900', color: '#fff' },
+  instrNumText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   instrText: { flex: 1, fontSize: 13, color: '#000', lineHeight: 19 },
   fieldsSection: {
     borderTopWidth: 2,
@@ -1210,7 +1210,7 @@ const wizStyles = StyleSheet.create({
     gap: 14,
   },
   fieldGroup: { gap: 4 },
-  fieldLabel: { fontSize: 12, fontWeight: '900', color: '#000' },
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: '#000' },
   fieldHelp: { fontSize: 10, color: '#64748b', lineHeight: 14 },
   fieldRow: {
     flexDirection: 'row',
@@ -1239,7 +1239,7 @@ const wizStyles = StyleSheet.create({
     borderLeftColor: '#000',
     backgroundColor: '#f1f5f9',
   },
-  copyBtnText: { fontSize: 11, fontWeight: '900', color: '#000' },
+  copyBtnText: { fontSize: 11, fontWeight: '600', color: '#000' },
   eyeBtn: {
     paddingHorizontal: 12,
     justifyContent: 'center',
@@ -1265,7 +1265,7 @@ const wizStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  backBtnText: { fontSize: 13, fontWeight: '900', color: '#000' },
+  backBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
   stepCount: { fontSize: 11, color: '#64748b', fontWeight: '700' },
   nextBtn: {
     flexDirection: 'row',
@@ -1278,5 +1278,5 @@ const wizStyles = StyleSheet.create({
     minWidth: 100,
     justifyContent: 'center',
   },
-  nextBtnText: { fontSize: 13, fontWeight: '900', color: '#fff' },
+  nextBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
 });

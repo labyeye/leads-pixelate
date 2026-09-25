@@ -43,6 +43,7 @@ import {
   IdCard,
   Mail,
   PhoneCall,
+  UserCheck,
   UserIcon,
 } from 'lucide-react-native';
 
@@ -348,9 +349,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                 </View>
               </View>
             </View>
-            <View
-              style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}
-            ></View>
+            
             {l.createdAt ? (
               <View style={styles.leadDetailRow}>
                 <CalendarCheck size={12} color="#000" />
@@ -364,16 +363,8 @@ export default function LeadsListScreen({ navigation }: Props) {
               </View>
             ) : null}
           </View>
+          <SourceBadge source={l.source} size="md" />
         </View>
-
-        {l.followUpDate ? (
-          <View style={styles.followUpRow}>
-            <Icon name="calendar-outline" size={11} color={PRIMARY} />
-            <Text style={styles.followUpText}>
-              {new Date(l.followUpDate).toLocaleDateString('en-IN')}
-            </Text>
-          </View>
-        ) : null}
 
         <View style={styles.cardFooter}>
           <View style={styles.cardFooterLeft}>
@@ -385,21 +376,18 @@ export default function LeadsListScreen({ navigation }: Props) {
                 </Text>
               </View>
             ) : null}
-            {l.remarks ? (
-              <Text style={styles.remarksText} numberOfLines={2}>
-                {l.remarks}
-              </Text>
-            ) : null}
             {l.assignedTo?.name ? (
-              <Text style={styles.assignedText}>
-                Assigned: {l.assignedTo.name}
-              </Text>
+              <View style={styles.assignedRow}>
+                <UserCheck size={14} color="#000" />
+                <Text style={styles.assignedText}>
+                  Assigned: {l.assignedTo.name}
+                </Text>
+              </View>
             ) : null}
           </View>
         </View>
 
         <View style={styles.sourceStatusRow}>
-          <SourceBadge source={l.source} size="md" />
           {tag && (
             <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
               <Text style={[styles.tagPillText, { color: tag.text }]}>
@@ -1058,7 +1046,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b', fontWeight: '500' },
   syncRow: {
     flexDirection: 'row',
@@ -1088,7 +1076,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    ...NB_SHADOW,
   },
   filterBtnActive: { backgroundColor: PRIMARY },
   filterDot: {
@@ -1104,7 +1091,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 2,
   },
-  filterDotText: { fontSize: 8, fontWeight: '900', color: '#fff' },
+  filterDotText: { fontSize: 8, fontWeight: '600', color: '#fff' },
 
   // Active filter chips
   activeFiltersRow: {
@@ -1129,7 +1116,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  clearAllText: { fontSize: 11, fontWeight: '900', color: '#fff' },
+  clearAllText: { fontSize: 11, fontWeight: '600', color: '#fff' },
   activeChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1175,9 +1162,8 @@ const styles = StyleSheet.create({
     backgroundColor: PRIMARY,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    ...NB_SHADOW,
   },
-  addBtnInlineText: { fontSize: 13, fontWeight: '900', color: '#fff' },
+  addBtnInlineText: { fontSize: 13, fontWeight: '600', color: '#fff' },
 
   // Tabs
   // Fixed height so this row can never stretch to fill leftover vertical
@@ -1222,7 +1208,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tabCountActive: { backgroundColor: '#fff' },
-  tabCountText: { fontSize: 10, fontWeight: '900', color: '#fff' },
+  tabCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   tabCountTextActive: { color: PRIMARY },
   divider: { height: 2, backgroundColor: '#000' },
 
@@ -1235,7 +1221,6 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     padding: 14,
     marginBottom: 2,
-    ...NB_SHADOW,
   },
   cardTop: {
     flexDirection: 'row',
@@ -1251,7 +1236,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   leadDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  leadName: { fontSize: 15, fontWeight: '900', color: '#000' },
+  leadName: { fontSize: 15, fontWeight: '600', color: '#000' },
   leadCompany: {
     fontSize: 12,
     color: '#64748b',
@@ -1265,7 +1250,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  tagPillText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
+  tagPillText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1289,14 +1274,19 @@ const styles = StyleSheet.create({
   statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2 },
   statusPillText: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     textTransform: 'uppercase',
   },
+  assignedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+  },
   assignedText: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#000',
     fontWeight: '700',
-    marginTop: 2,
   },
   sourceStatusRow: {
     flexDirection: 'row',
@@ -1347,7 +1337,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '900', color: '#000' },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
   emptySub: { fontSize: 13, color: '#64748b', marginTop: 4 },
 
   // Filter modal
@@ -1369,7 +1359,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { fontSize: 18, fontWeight: '900', color: '#000' },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
   modalHeaderBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   resetBtn: {
     paddingHorizontal: 10,
@@ -1377,7 +1367,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#ef4444',
   },
-  resetBtnText: { fontSize: 12, fontWeight: '900', color: '#ef4444' },
+  resetBtnText: { fontSize: 12, fontWeight: '600', color: '#ef4444' },
   modalCloseBtn: {
     width: 32,
     height: 32,
@@ -1399,15 +1389,14 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: '#fff',
     marginBottom: 4,
-    ...NB_SHADOW,
   },
   allBtnActive: { backgroundColor: PRIMARY },
-  allBtnText: { fontSize: 14, fontWeight: '900', color: '#000' },
+  allBtnText: { fontSize: 14, fontWeight: '600', color: '#000' },
   allBtnTextActive: { color: '#fff' },
 
   filterSectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -1445,7 +1434,7 @@ const styles = StyleSheet.create({
   dateRangeField: { flex: 1 },
   dateRangeFieldLabel: {
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1462,7 +1451,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   dateRangeSep: { paddingBottom: 10 },
-  dateRangeSepText: { fontSize: 16, fontWeight: '900', color: '#000' },
+  dateRangeSepText: { fontSize: 16, fontWeight: '600', color: '#000' },
   budgetCustomRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1502,7 +1491,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '900', color: '#000' },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#000' },
   applyBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -1513,9 +1502,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
     paddingVertical: 13,
-    ...NB_SHADOW,
   },
-  applyBtnText: { fontSize: 14, fontWeight: '900', color: '#fff' },
+  applyBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 
   syncDateRow: { flexDirection: 'row', gap: 8 },
   syncDateBtn: {
@@ -1533,7 +1521,7 @@ const styles = StyleSheet.create({
   customDateField: { flex: 1 },
   customDateLabel: {
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.8,

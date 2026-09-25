@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import WhatsAppLogo from '../components/WhatsAppLogo';
 import {whatsappAPI} from '../services/api';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
@@ -69,7 +70,7 @@ export default function WhatsAppLogsScreen({navigation}: any) {
       <View style={styles.card}>
         <TouchableOpacity onPress={() => toggleDetail(c._id)}>
           <View style={styles.cardHeader}>
-            <Icon name="logo-whatsapp" size={16} color="#25D366" />
+            <WhatsAppLogo size={16} />
             <Text style={styles.campaignName} numberOfLines={1}>{c.name}</Text>
             <View style={[styles.statusPill, {borderColor: STATUS_COLORS[c.status] || '#94a3b8'}]}>
               <Text style={[styles.statusPillText, {color: STATUS_COLORS[c.status] || '#94a3b8'}]}>{c.status}</Text>
@@ -151,7 +152,7 @@ export default function WhatsAppLogsScreen({navigation}: any) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchCampaigns(true)} tintColor="#024BAB" />}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Icon name="logo-whatsapp" size={40} color="#94a3b8" />
+              <WhatsAppLogo size={40} style={{opacity: 0.5}} />
               <Text style={styles.emptyText}>No campaigns yet</Text>
             </View>
           }
@@ -165,12 +166,12 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 10},
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 18, fontWeight: '900', color: '#000'},
+  headerTitle: {fontSize: 18, fontWeight: '600', color: '#000'},
   divider: {height: 2, backgroundColor: '#000'},
   thinDivider: {height: 1, backgroundColor: '#e2e8f0'},
   summaryRow: {flexDirection: 'row', padding: 12, gap: 8},
   summaryCard: {flex: 1, borderWidth: 2, borderColor: '#000', padding: 10, alignItems: 'center'},
-  summaryValue: {fontSize: 16, fontWeight: '900', color: '#000'},
+  summaryValue: {fontSize: 16, fontWeight: '600', color: '#000'},
   summaryLabel: {fontSize: 9, color: '#64748b', fontWeight: '700', textTransform: 'uppercase', marginTop: 2},
   searchRow: {paddingHorizontal: 12, paddingBottom: 10},
   searchBox: {flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: '#000', paddingHorizontal: 10},
@@ -179,9 +180,9 @@ const styles = StyleSheet.create({
   list: {padding: 12, gap: 10},
   card: {backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12, ...NB_SHADOW},
   cardHeader: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8},
-  campaignName: {flex: 1, fontSize: 13, fontWeight: '900', color: '#000'},
+  campaignName: {flex: 1, fontSize: 13, fontWeight: '600', color: '#000'},
   statusPill: {borderWidth: 2, paddingHorizontal: 6, paddingVertical: 2},
-  statusPillText: {fontSize: 9, fontWeight: '900'},
+  statusPillText: {fontSize: 9, fontWeight: '600'},
   statRow: {flexDirection: 'row', gap: 10, flexWrap: 'wrap'},
   statItem: {fontSize: 11, color: '#64748b'},
   pctRow: {flexDirection: 'row', gap: 12, marginTop: 6, alignItems: 'center'},

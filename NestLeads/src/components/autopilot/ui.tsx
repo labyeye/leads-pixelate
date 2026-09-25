@@ -145,7 +145,7 @@ const s = StyleSheet.create({
   kpiTop: {flexDirection: 'row', alignItems: 'center'},
   kpiDot: {width: 10, height: 10, borderWidth: 1, borderColor: '#000', marginRight: 6},
   kpiLabel: {fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#475569'},
-  kpiValue: {fontSize: 28, fontWeight: '900', color: '#000', marginTop: 4},
+  kpiValue: {fontSize: 28, fontWeight: '600', color: '#000', marginTop: 4},
   kpiHint: {fontSize: 11, color: '#64748b'},
   barTrack: {height: 12, borderWidth: 2, borderColor: '#000', backgroundColor: '#e2e8f0'},
   barFill: {height: '100%'},

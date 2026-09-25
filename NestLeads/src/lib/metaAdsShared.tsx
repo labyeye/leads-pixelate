@@ -273,12 +273,12 @@ export function DeliveryFilterBar({
 
 export const sharedStyles = StyleSheet.create({
   badge: {paddingHorizontal: 7, paddingVertical: 3, borderWidth: 2, borderColor: '#000', alignSelf: 'flex-start'},
-  badgeText: {fontSize: 9, fontWeight: '900'},
+  badgeText: {fontSize: 9, fontWeight: '600'},
   toggleTrack: {width: 36, height: 20, borderWidth: 2, borderColor: '#000'},
   toggleThumb: {position: 'absolute', top: 1, width: 14, height: 14, backgroundColor: '#fff', borderWidth: 1, borderColor: '#000'},
   filterRow: {flexDirection: 'row', borderWidth: 2, borderColor: '#000', alignSelf: 'flex-start', overflow: 'hidden'},
   filterChip: {paddingHorizontal: 10, paddingVertical: 7, backgroundColor: '#fff'},
   filterChipBorder: {borderLeftWidth: 2, borderLeftColor: '#000'},
-  filterChipText: {fontSize: 11, fontWeight: '900', color: '#000'},
+  filterChipText: {fontSize: 11, fontWeight: '600', color: '#000'},
   searchInput: {borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 8, fontSize: 12},
 });

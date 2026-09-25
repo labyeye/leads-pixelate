@@ -5,13 +5,13 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import WhatsAppLogo from '../components/WhatsAppLogo';
 import {leadsAPI} from '../services/api';
 import {getStatusColor, getStatusLabel} from '../constants/statusConstants';
 import UserAvatar from '../components/UserAvatar';
 
 const PRIMARY   = '#024BAB';
 const SECONDARY = '#FF751F';
-const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 const DAYS   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -243,7 +243,9 @@ export default function ScheduleScreen({navigation}: any) {
                         )}
                         {l.phone && (
                           <TouchableOpacity style={[styles.actionBtn, {backgroundColor: '#25D366'}]} onPress={() => Linking.openURL(`whatsapp://send?phone=${l.phone}`)}>
-                            <Icon name="logo-whatsapp" size={14} color="#fff" />
+                            <View style={styles.whatsappLogoChip}>
+                              <WhatsAppLogo size={11} />
+                            </View>
                           </TouchableOpacity>
                         )}
                         <TouchableOpacity style={[styles.actionBtn, {backgroundColor: PRIMARY}]} onPress={() => goToLead(l._id)}>
@@ -266,26 +268,26 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f8fafc'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: '#fff'},
   backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 16, fontWeight: '900', color: '#000'},
+  headerTitle: {fontSize: 16, fontWeight: '600', color: '#000'},
   headerSub: {fontSize: 10, color: '#64748b'},
   headerBadge: {flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: PRIMARY, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 2, borderColor: '#000'},
   headerBadgeText: {fontSize: 11, fontWeight: '700', color: '#fff'},
   divider: {height: 2, backgroundColor: '#000'},
   toggle: {flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   toggleBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff'},
-  toggleText: {fontSize: 12, fontWeight: '900', color: '#000', textTransform: 'uppercase'},
+  toggleText: {fontSize: 12, fontWeight: '600', color: '#000', textTransform: 'uppercase'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
   monthNav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   navBtn: {width: 40, height: 40, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'},
   monthCenter: {alignItems: 'center'},
-  monthLabel: {fontSize: 20, fontWeight: '900', color: '#000'},
+  monthLabel: {fontSize: 20, fontWeight: '600', color: '#000'},
   yearLabel: {fontSize: 12, color: '#64748b', fontWeight: '600'},
 
-  calCard: {margin: 12, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', ...NB_SHADOW},
+  calCard: {margin: 12, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000'},
   weekRow: {flexDirection: 'row', paddingVertical: 4},
   dayHeader: {flex: 1, alignItems: 'center', paddingVertical: 8},
-  dayHeaderText: {fontSize: 10, fontWeight: '900', color: '#64748b', textTransform: 'uppercase'},
+  dayHeaderText: {fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase'},
   dayHeaderWeekend: {color: SECONDARY},
   calDivider: {height: 2, backgroundColor: '#000'},
   grid: {flexDirection: 'row', flexWrap: 'wrap'},
@@ -296,37 +298,38 @@ const styles = StyleSheet.create({
   dayCellPast: {opacity: 0.45},
   dayText: {fontSize: 14, fontWeight: '700', color: '#000'},
   dayTextWeekend: {color: '#64748b'},
-  dayTextToday: {color: PRIMARY, fontWeight: '900'},
-  dayTextSelected: {color: '#fff', fontWeight: '900'},
+  dayTextToday: {color: PRIMARY, fontWeight: '600'},
+  dayTextSelected: {color: '#fff', fontWeight: '600'},
   dayTextPast: {color: '#94a3b8'},
   dot: {position: 'absolute', bottom: 5, minWidth: 18, height: 18, backgroundColor: SECONDARY, borderWidth: 1, borderColor: '#000', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3},
   dotSelected: {backgroundColor: '#fff'},
   dotPast: {backgroundColor: '#94a3b8'},
-  dotText: {fontSize: 9, fontWeight: '900', color: '#fff'},
+  dotText: {fontSize: 9, fontWeight: '600', color: '#fff'},
 
   legend: {flexDirection: 'row', gap: 14, paddingHorizontal: 16, paddingVertical: 8},
   legendItem: {flexDirection: 'row', alignItems: 'center', gap: 5},
   legendDot: {width: 12, height: 12, borderWidth: 1, borderColor: '#000'},
   legendText: {fontSize: 11, color: '#64748b', fontWeight: '600'},
 
-  panel: {margin: 12, marginTop: 4, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 14, ...NB_SHADOW},
+  panel: {margin: 12, marginTop: 4, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 14},
   panelHeader: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14},
   panelIconBox: {width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000'},
-  panelTitle: {flex: 1, fontSize: 13, fontWeight: '900', color: '#000'},
+  panelTitle: {flex: 1, fontSize: 13, fontWeight: '600', color: '#000'},
   panelBadge: {backgroundColor: PRIMARY, width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000'},
-  panelBadgeText: {fontSize: 12, fontWeight: '900', color: '#fff'},
+  panelBadgeText: {fontSize: 12, fontWeight: '600', color: '#fff'},
 
   emptyPanel: {alignItems: 'center', paddingVertical: 20, gap: 8},
   emptyPanelText: {fontSize: 13, color: '#64748b', fontWeight: '600'},
 
   leadCard: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   timeBox: {width: 44, height: 44, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 2},
-  timeText: {fontSize: 9, fontWeight: '900', color: '#fff'},
+  timeText: {fontSize: 9, fontWeight: '600', color: '#fff'},
   leadInfo: {flex: 1},
-  leadName: {fontSize: 13, fontWeight: '900', color: '#000'},
+  leadName: {fontSize: 13, fontWeight: '600', color: '#000'},
   leadSub: {fontSize: 11, color: '#64748b', marginTop: 1},
   statusPill: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#000', marginTop: 4},
-  statusPillText: {fontSize: 9, fontWeight: '900', textTransform: 'uppercase'},
+  statusPillText: {fontSize: 9, fontWeight: '600', textTransform: 'uppercase'},
   leadActions: {flexDirection: 'row', gap: 6},
   actionBtn: {width: 32, height: 32, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  whatsappLogoChip: {backgroundColor: '#fff', borderRadius: 20, padding: 2},
 });

@@ -199,14 +199,14 @@ export default function AutopilotReportTab({overview, selection}: {overview: any
 }
 
 const s = StyleSheet.create({
-  scope: {fontSize: 16, fontWeight: '900', color: '#000', marginBottom: 6},
+  scope: {fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 6},
   cmpRow: {flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   cmpNum: {fontSize: 12, color: '#334155', marginLeft: 10, minWidth: 54, textAlign: 'right'},
   chips: {flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6},
   tiles: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
   tile: {flexBasis: '47%', flexGrow: 1, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12},
   tileLabel: {fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#475569'},
-  tileValue: {fontSize: 24, fontWeight: '900', color: '#000', marginTop: 2},
+  tileValue: {fontSize: 24, fontWeight: '600', color: '#000', marginTop: 2},
   tileHint: {fontSize: 11, color: '#64748b'},
   muted: {fontSize: 12, color: '#64748b'},
   error: {fontSize: 13, color: '#b91c1c', marginTop: 12},

@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import WhatsAppLogo from '../components/WhatsAppLogo';
 import {leadsAPI, settingsAPI} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
 import {
@@ -297,7 +298,9 @@ export default function LeadDetailScreen({navigation, route}: any) {
             <TouchableOpacity
               style={[styles.actionBtn, {backgroundColor: '#25D366'}]}
               onPress={handleWhatsApp}>
-              <Icon name="logo-whatsapp" size={16} color="#fff" />
+              <View style={styles.whatsappLogoChip}>
+                <WhatsAppLogo size={12} />
+              </View>
               <Text style={styles.actionBtnText}>WhatsApp</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -535,7 +538,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Update Status</Text>
             <Text style={styles.modalSub}>
-              Changing to: <Text style={{fontWeight: '900'}}>{pendingStatus}</Text>
+              Changing to: <Text style={{fontWeight: '600'}}>{pendingStatus}</Text>
             </Text>
             <Text style={styles.modalLabel}>REMARKS (OPTIONAL)</Text>
             <TextInput
@@ -655,7 +658,7 @@ const styles = StyleSheet.create({
   },
   backBtn: {paddingVertical: 4, paddingRight: 4},
   backBtnText: {fontSize: 14, fontWeight: '700', color: '#024BAB'},
-  headerTitle: {flex: 1, fontSize: 18, fontWeight: '900', color: '#000'},
+  headerTitle: {flex: 1, fontSize: 18, fontWeight: '600', color: '#000'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   loadingText: {marginTop: 12, color: '#64748b', fontSize: 14},
   scroll: {padding: 16, gap: 12},
@@ -666,12 +669,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
     padding: 14,
-    ...NB_SHADOW,
     marginBottom: 0,
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -689,9 +691,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {fontSize: 18, fontWeight: '900', color: '#fff'},
+  avatarText: {fontSize: 18, fontWeight: '600', color: '#fff'},
   nameInfo: {flex: 1},
-  leadName: {fontSize: 17, fontWeight: '900', color: '#000'},
+  leadName: {fontSize: 17, fontWeight: '600', color: '#000'},
   leadCompany: {fontSize: 12, color: '#64748b', fontWeight: '500'},
   tagPill: {
     paddingHorizontal: 8,
@@ -699,14 +701,14 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  tagPillText: {fontSize: 11, fontWeight: '900'},
+  tagPillText: {fontSize: 11, fontWeight: '600'},
   badgesRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
   statusPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 2,
   },
-  statusPillText: {fontSize: 10, fontWeight: '900', textTransform: 'uppercase'},
+  statusPillText: {fontSize: 10, fontWeight: '600', textTransform: 'uppercase'},
   sourcePill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -734,9 +736,13 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 2,
     borderColor: '#000',
-    ...NB_SHADOW,
   },
-  actionBtnText: {fontSize: 12, fontWeight: '900', color: '#fff'},
+  whatsappLogoChip: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 2,
+  },
+  actionBtnText: {fontSize: 12, fontWeight: '600', color: '#fff'},
 
   // Products
   chipsWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
@@ -756,7 +762,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 2,
   },
-  statusOptionText: {fontSize: 11, fontWeight: '900', textTransform: 'uppercase'},
+  statusOptionText: {fontSize: 11, fontWeight: '600', textTransform: 'uppercase'},
 
   // Notes
   noteInputRow: {flexDirection: 'row', gap: 8, marginBottom: 12},
@@ -777,9 +783,8 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    ...NB_SHADOW,
   },
-  noteSendText: {color: '#fff', fontWeight: '900', fontSize: 13},
+  noteSendText: {color: '#fff', fontWeight: '600', fontSize: 13},
   notesList: {gap: 8},
   noteItem: {
     borderWidth: 2,
@@ -807,7 +812,7 @@ const styles = StyleSheet.create({
   },
   historyContent: {flex: 1},
   historyTop: {flexDirection: 'row', justifyContent: 'space-between'},
-  historyStatus: {fontSize: 12, fontWeight: '900', color: '#000'},
+  historyStatus: {fontSize: 12, fontWeight: '600', color: '#000'},
   historyDate: {fontSize: 11, color: '#94a3b8'},
   historyRemarks: {fontSize: 12, color: '#475569', marginTop: 2},
   historyBy: {fontSize: 11, color: '#94a3b8', marginTop: 1},
@@ -826,11 +831,11 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     padding: 24,
   },
-  modalTitle: {fontSize: 20, fontWeight: '900', color: '#000', marginBottom: 4},
+  modalTitle: {fontSize: 20, fontWeight: '600', color: '#000', marginBottom: 4},
   modalSub: {fontSize: 13, color: '#64748b', marginBottom: 16, fontWeight: '500'},
   modalLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '600',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 6,
@@ -863,17 +868,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
     alignItems: 'center',
-    ...NB_SHADOW,
   },
-  modalConfirmText: {fontWeight: '900', color: '#fff', fontSize: 14},
+  modalConfirmText: {fontWeight: '600', color: '#fff', fontSize: 14},
   tagOptionBtn: {
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#000',
     marginBottom: 8,
-    ...NB_SHADOW,
   },
-  tagOptionText: {fontSize: 16, fontWeight: '900'},
+  tagOptionText: {fontSize: 16, fontWeight: '600'},
 });
 

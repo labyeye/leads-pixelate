@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NestLeads.ipa</key>
+	<array>
+		<dict>
+			<key>architectures</key>
+			<array>
+				<string>arm64</string>
+			</array>
+			<key>buildNumber</key>
+			<string>2</string>
+			<key>certificate</key>
+			<dict>
+				<key>SHA1</key>
+				<string>A62584CA19F6DC7D4F0C416758B0CE84E57FA107</string>
+				<key>dateExpires</key>
+				<string>25/09/27</string>
+				<key>type</key>
+				<string>Cloud Managed Apple Distribution</string>
+			</dict>
+			<key>embeddedBinaries</key>
+			<array>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>A62584CA19F6DC7D4F0C416758B0CE84E57FA107</string>
+						<key>dateExpires</key>
+						<string>25/09/27</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>React.framework</string>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>5UNNVWBHTU</string>
+						<key>name</key>
+						<string>Labh Bothra</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>A62584CA19F6DC7D4F0C416758B0CE84E57FA107</string>
+						<key>dateExpires</key>
+						<string>25/09/27</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>ReactNativeDependencies.framework</string>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>5UNNVWBHTU</string>
+						<key>name</key>
+						<string>Labh Bothra</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0</string>
+				</dict>
+				<dict>
+					<key>architectures</key>
+					<array>
+						<string>arm64</string>
+					</array>
+					<key>buildNumber</key>
+					<string>1.0.0</string>
+					<key>certificate</key>
+					<dict>
+						<key>SHA1</key>
+						<string>A62584CA19F6DC7D4F0C416758B0CE84E57FA107</string>
+						<key>dateExpires</key>
+						<string>25/09/27</string>
+						<key>type</key>
+						<string>Cloud Managed Apple Distribution</string>
+					</dict>
+					<key>name</key>
+					<string>hermesvm.framework</string>
+					<key>symbols</key>
+					<true/>
+					<key>team</key>
+					<dict>
+						<key>id</key>
+						<string>5UNNVWBHTU</string>
+						<key>name</key>
+						<string>Labh Bothra</string>
+					</dict>
+					<key>versionNumber</key>
+					<string>1.0.0</string>
+				</dict>
+			</array>
+			<key>entitlements</key>
+			<dict>
+				<key>application-identifier</key>
+				<string>5UNNVWBHTU.com.nestleads</string>
+				<key>beta-reports-active</key>
+				<true/>
+				<key>com.apple.developer.team-identifier</key>
+				<string>5UNNVWBHTU</string>
+				<key>get-task-allow</key>
+				<false/>
+			</dict>
+			<key>name</key>
+			<string>NestLeads.app</string>
+			<key>profile</key>
+			<dict>
+				<key>UUID</key>
+				<string>38a705c8-ac70-4206-adb3-cb0619277cb5</string>
+				<key>dateExpires</key>
+				<string>25/09/27</string>
+				<key>name</key>
+				<string>iOS Team Store Provisioning Profile: com.nestleads</string>
+			</dict>
+			<key>symbols</key>
+			<true/>
+			<key>team</key>
+			<dict>
+				<key>id</key>
+				<string>5UNNVWBHTU</string>
+				<key>name</key>
+				<string>Labh Bothra</string>
+			</dict>
+			<key>versionNumber</key>
+			<string>1.0</string>
+		</dict>
+	</array>
+</dict>
+</plist>

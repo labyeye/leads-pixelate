@@ -1,9 +1,10 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, ActivityIndicator, Image, StatusBar, Linking} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthNavigator from './src/navigation/AuthNavigator';
+import AnimatedSplashScreen from './src/screens/AnimatedSplashScreen';
 import {
   createNotificationChannels,
   requestNotificationPermission,
@@ -86,6 +87,17 @@ function RootNavigator() {
 }
 
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
+
+  if (!splashDone) {
+    return (
+      <>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <AnimatedSplashScreen onDone={() => setSplashDone(true)} />
+      </>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
