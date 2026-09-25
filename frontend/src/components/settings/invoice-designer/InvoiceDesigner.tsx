@@ -134,7 +134,9 @@ export default function InvoiceDesigner({ kind = "invoice", settings, active, on
     try {
       const clean = normalizeTemplate(tpl);
       const res = await settingsAPI.update({ [field]: clean });
-      const stored = normalizeTemplate(res.data?.[field] ?? clean);
+      // The server echoes the saved design. If it is missing, this backend dropped it (an older build without the designer fields), so say so instead of pretending it saved.
+      if (!res.data?.[field]) throw new Error("The server did not store the design. The backend needs the latest version deployed.");
+      const stored = normalizeTemplate(res.data[field]);
       savedRef.current = tpl;
       onSaved(stored);
       toast({ title: quotation ? "Quotation design saved" : "Invoice design saved", description: quotation ? "New quotation PDFs will use it." : "New invoices, sales orders and purchase orders will use it." });
