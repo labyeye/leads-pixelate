@@ -1079,6 +1079,9 @@ export default function IntegrationsPage() {
   const [jdAssigneeIds, setJdAssigneeIds] = useState<string[]>([]);
   const [jdBatchSize, setJdBatchSize] = useState(1);
   const [jdSavingAssignees, setJdSavingAssignees] = useState(false);
+  const [fbAssigneeIds, setFbAssigneeIds] = useState<string[]>([]);
+  const [fbBatchSize, setFbBatchSize] = useState(1);
+  const [fbSavingAssignees, setFbSavingAssignees] = useState(false);
 
   // Check DB on mount for existing connections
   useEffect(() => {
@@ -1088,6 +1091,9 @@ export default function IntegrationsPage() {
         if (res.hasToken) setFbHasToken(true);
         if (res.data.length > 0) {
           setConnectedIds((prev) => new Set([...prev, "facebook"]));
+          const firstPage = res.data[0] as any;
+          setFbAssigneeIds(firstPage?.assigneeIds || []);
+          setFbBatchSize(firstPage?.assignBatchSize || 1);
         }
       })
       .catch(() => {});
@@ -1457,6 +1463,26 @@ export default function IntegrationsPage() {
                   )}
 
                 {/* Lead Assignment panel: which of the team these leads go to, batch round-robin size */}
+                {integ.id === "facebook" && isConnected && (
+                  <LeadAssignmentPanel
+                    users={imUsers}
+                    assigneeIds={fbAssigneeIds}
+                    onAssigneeIdsChange={setFbAssigneeIds}
+                    batchSize={fbBatchSize}
+                    onBatchSizeChange={setFbBatchSize}
+                    saving={fbSavingAssignees}
+                    onSave={async () => {
+                      setFbSavingAssignees(true);
+                      try {
+                        await facebookAPI.updateSettings(fbAssigneeIds, fbBatchSize);
+                        toast({ title: "Saved!", description: "Facebook lead assignment updated." });
+                      } catch {
+                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      }
+                      setFbSavingAssignees(false);
+                    }}
+                  />
+                )}
                 {integ.id === "indiamart" && isConnected && (
                   <LeadAssignmentPanel
                     users={imUsers}

@@ -15,9 +15,10 @@ import {
   Upload,
   Download,
   IndianRupee,
+  Sparkles,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { productsAPI, uploadAPI } from "@/services/api";
+import { autopilotAPI, productsAPI, uploadAPI } from "@/services/api";
 import { ImportProductsDialog, PRODUCT_HEADERS } from "@/components/products/ImportProductsDialog";
 import { downloadXLSX } from "@/lib/tableExport";
 import { useNotify } from "@/components/ui/Notification";
@@ -72,6 +73,21 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [shootStyle, setShootStyle] = useState("studio");
+  const [shooting, setShooting] = useState(false);
+
+  // AI photoshoot: the main photo re-shot professionally, added as another photo.
+  const runPhotoshoot = async () => {
+    setShooting(true);
+    try {
+      const { url } = await autopilotAPI.photoshoot(form.photos[0], shootStyle);
+      setForm((prev) => ({ ...prev, photos: [...prev.photos, url].slice(0, MAX_PHOTOS) }));
+    } catch (err: any) {
+      notify.error("Photoshoot Failed", err.message);
+    } finally {
+      setShooting(false);
+    }
+  };
   const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
@@ -642,6 +658,37 @@ export default function ProductsPage() {
                   Up to {MAX_PHOTOS} photos · PNG, JPG, WebP or GIF · max{" "}
                   {PHOTO_MAX_MB}MB each · first photo shows in the table
                 </p>
+                {form.photos.length > 0 && form.photos.length < MAX_PHOTOS && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 border-2 border-black bg-primary/5 p-2">
+                    <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-xs font-bold">AI photoshoot of the main photo</span>
+                    <select
+                      aria-label="Photoshoot style"
+                      value={shootStyle}
+                      onChange={(e) => setShootStyle(e.target.value)}
+                      disabled={shooting}
+                      className="h-8 border-2 border-black bg-white px-2 text-xs"
+                    >
+                      <option value="studio">Studio (clean backdrop)</option>
+                      <option value="lifestyle">Lifestyle (in use)</option>
+                      <option value="flatlay">Flat lay (top-down)</option>
+                      <option value="festive">Festive (Indian festival)</option>
+                      <option value="premium">Premium (dark, dramatic)</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={runPhotoshoot}
+                      disabled={shooting}
+                      className="h-8 inline-flex items-center gap-1 border-2 border-black bg-primary px-3 text-xs font-bold text-white disabled:opacity-60"
+                    >
+                      {shooting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {shooting ? "Shooting… (~30s)" : "Create"}
+                    </button>
+                    <span className="basis-full text-[10px] text-gray-500">
+                      Autopilot also puts your real product photos into its posters.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {}

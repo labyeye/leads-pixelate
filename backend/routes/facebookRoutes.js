@@ -8,7 +8,7 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const CampaignAssignment = require("../models/CampaignAssignment");
-const { nextBatchAssignee, assignmentFields } = require("../utils/leadAssignment");
+const { nextBatchAssignee, assignmentFields, clampBatchSize } = require("../utils/leadAssignment");
 const log = require("../utils/logger").scope("Facebook Ads");
 
 const FB_API = "https://graph.facebook.com/v20.0";
@@ -26,6 +26,8 @@ const FB_SCOPES = [
   "ads_management",
   "instagram_basic",
   "instagram_content_publish",
+  "instagram_manage_messages",
+  "pages_messaging",
 ].join(",");
 
 async function fbGet(path, token, params = {}) {
@@ -269,12 +271,25 @@ async function subscribePageToWebhook(pageId, pageToken) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      subscribed_fields: ["leadgen"],
+      subscribed_fields: ["leadgen", "messages"],
       access_token: pageToken,
     }),
   });
   const data = await res.json();
   return data.success === true;
+}
+
+// A Page's linked Instagram professional account, if any. Instagram DM webhooks
+// arrive under object "instagram" keyed by this id, not the Facebook Page id.
+async function getInstagramAccountId(pageId, pageToken) {
+  try {
+    const data = await fbGet(`/${pageId}`, pageToken, {
+      fields: "instagram_business_account",
+    });
+    return data.instagram_business_account?.id || "";
+  } catch {
+    return "";
+  }
 }
 
 router.get(
@@ -513,11 +528,13 @@ router.post(
       userToken,
     );
     const subscribed = await subscribePageToWebhook(pageId, pageToken);
+    const instagramId = await getInstagramAccountId(pageId, pageToken);
 
     const pageEntry = {
       pageId,
       pageName,
       accessToken: pageToken,
+      instagramId,
       selectedFormIds,
       allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
       defaultAssigneeId,
@@ -591,6 +608,44 @@ router.post(
       });
     }
     res.json({ success: true, message: "Facebook disconnected" });
+  }),
+);
+
+// Lead assignment lives per-page (see connect-page), but the Integrations card only edits one
+// set of settings — apply it to the first connected page, same one shown as "Manage Connection".
+router.post(
+  "/settings",
+  protect,
+  asyncHandler(async (req, res) => {
+    const { assigneeIds, batchSize } = req.body;
+    const query = req.user.tenantId
+      ? { _id: req.user.tenantId }
+      : { ownerUser: req.user._id };
+
+    const tenant = await Tenant.findOne(query);
+    const firstPage = tenant?.integrations?.facebook?.pages?.[0];
+    if (!firstPage) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No Facebook Page connected" });
+    }
+
+    await Tenant.findOneAndUpdate(
+      query,
+      {
+        $set: {
+          "integrations.facebook.pages.$[elem].assigneeIds": Array.isArray(assigneeIds)
+            ? assigneeIds
+            : [],
+          ...(batchSize !== undefined
+            ? { "integrations.facebook.pages.$[elem].assignBatchSize": clampBatchSize(batchSize) }
+            : {}),
+        },
+      },
+      { arrayFilters: [{ "elem.pageId": firstPage.pageId }] },
+    );
+
+    res.json({ success: true, message: "Facebook settings updated" });
   }),
 );
 
@@ -970,22 +1025,102 @@ router.post(
       return res.sendStatus(400);
     }
 
-    if (body.object !== "page") return res.sendStatus(404);
+    if (body.object !== "page" && body.object !== "instagram")
+      return res.sendStatus(404);
 
     res.status(200).send("EVENT_RECEIVED");
 
     for (const entry of body.entry || []) {
-      const pageId = entry.id;
+      // "page" events are keyed by the Facebook Page id; "instagram" events (DMs)
+      // are keyed by the linked Instagram business account id instead.
+      const entryId = entry.id;
       const tenant = await Tenant.findOne({
-        "integrations.facebook.pages.pageId": pageId,
+        $or: [
+          { "integrations.facebook.pages.pageId": entryId },
+          { "integrations.facebook.pages.instagramId": entryId },
+        ],
         "integrations.facebook.enabled": true,
       });
       if (!tenant) continue;
 
       const pageConfig = tenant.integrations.facebook.pages.find(
-        (p) => p.pageId === pageId,
+        (p) => p.pageId === entryId || p.instagramId === entryId,
       );
       if (!pageConfig) continue;
+
+      for (const msgEvent of entry.messaging || []) {
+        if (msgEvent.message?.is_echo) continue; // our own outgoing message
+        const text = msgEvent.message?.text;
+        const senderId = msgEvent.sender?.id;
+        const mid = msgEvent.message?.mid;
+        if (!text?.trim() || !senderId || !mid) continue;
+
+        try {
+          const existing = await Lead.findOne({ instagramDmMessageId: mid });
+          if (existing) continue;
+
+          let profileName = "Instagram User";
+          try {
+            const profile = await fbGet(`/${senderId}`, pageConfig.accessToken, {
+              fields: "name,username",
+            });
+            profileName = profile.name || profile.username || profileName;
+          } catch {}
+
+          // If they messaged via a "Send Message" button on an ad, Meta includes
+          // the ad id in the referral — attribute the lead to that ad/campaign.
+          const adId =
+            msgEvent.message?.referral?.ad_id || msgEvent.referral?.ad_id || "";
+          let adMeta = { adsetName: "", campaignName: "" };
+          if (adId) {
+            adMeta = await resolveAdPlatform(adId, pageConfig.accessToken, {});
+          }
+
+          let assigneeId = null;
+          if (pageConfig.assigneeIds?.length) {
+            assigneeId = await nextBatchAssignee({
+              tenantId: tenant._id,
+              key: `facebook-dm:${pageConfig.pageId}`,
+              assigneeIds: pageConfig.assigneeIds,
+              batchSize: pageConfig.assignBatchSize || 1,
+            });
+          }
+          if (!assigneeId && pageConfig.defaultAssigneeId) {
+            const u = await User.findById(pageConfig.defaultAssigneeId).catch(
+              () => null,
+            );
+            assigneeId = u?._id || null;
+          }
+          if (!assigneeId) {
+            const adminUser = await User.findOne({
+              ...(tenant._id ? { tenantId: tenant._id } : {}),
+              role: { $in: ["admin", "super_admin"] },
+            });
+            if (!adminUser) continue;
+            assigneeId = adminUser._id;
+          }
+
+          await Lead.create({
+            name: profileName,
+            company: "N/A",
+            phone: "",
+            email: "",
+            requirement: text,
+            source: "Instagram",
+            adPlatforms: ["ig"],
+            facebookAdId: adId || null,
+            facebookAdsetName: adMeta.adsetName,
+            facebookCampaignName: adMeta.campaignName,
+            facebookPageName: pageConfig.pageName || "",
+            status: "PENDING CONTACT",
+            assignedTo: assigneeId,
+            tenantId: tenant._id || null,
+            instagramDmMessageId: mid,
+          });
+        } catch (err) {
+          log.error("Failed to save Instagram DM lead", { message: err.message });
+        }
+      }
 
       for (const change of entry.changes || []) {
         if (change.field !== "leadgen") continue;

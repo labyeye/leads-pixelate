@@ -2,8 +2,8 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 
 export const GEN_STEPS = [
   { key: "planning", label: "Planning your post", hint: "Choosing a topic that fits your brand" },
-  { key: "creating", label: "Writing the caption & creating the image", hint: "Gemini is drafting and designing" },
-  { key: "review", label: "Quality check", hint: "Claude reviews the caption and image" },
+  { key: "creating", label: "Writing the caption & creating the image", hint: "Writing the caption and designing your poster" },
+  { key: "review", label: "Quality check", hint: "Checking spelling, design and facts" },
 ] as const;
 
 // -1 = not started; GEN_STEPS.length = finished
@@ -21,7 +21,7 @@ export function GenerationProgress({ stage }: { stage?: string }) {
         </span>
         <div>
           <p className="font-semibold text-sm">Creating your first post</p>
-          <p className="text-xs text-muted-foreground">This takes about a minute.</p>
+          <p className="text-xs text-muted-foreground">Usually 1–2 minutes. The rest of your month is prepared in the background after this.</p>
         </div>
       </div>
 

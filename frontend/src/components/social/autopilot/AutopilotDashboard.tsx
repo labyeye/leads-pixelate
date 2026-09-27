@@ -194,7 +194,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
                     : stats?.next
                       ? `Next: ${when(stats.next.scheduledAt)} · ${stats.next.status === "PENDING_APPROVAL" ? "needs your approval" : "scheduled"}`
                       : enabled
-                        ? "Nothing scheduled yet. New posts are prepared a day ahead."
+                        ? "Nothing scheduled yet. New posts are prepared a month ahead."
                         : "Turn this campaign on to start creating posts."}
                 </span>
               </div>

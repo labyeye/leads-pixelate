@@ -46,7 +46,7 @@ export function ContentBrief({
   onSave: (patch: BriefPatch) => void;
 }) {
   const b = status.settings.brief;
-  const [format, setFormat] = useState<"image" | "carousel">(b.format);
+  const [format, setFormat] = useState<"image" | "carousel" | "reel">(b.format);
   const [slides, setSlides] = useState(b.slides);
   const [goal, setGoal] = useState(b.goal);
   const [include, setInclude] = useState<string[]>(b.include);
@@ -57,6 +57,7 @@ export function ContentBrief({
   const [ctaPhone, setCtaPhone] = useState(b.cta.phone);
   const [instructions, setInstructions] = useState(b.instructions);
   const [days, setDays] = useState(status.settings.timeline.days);
+  const [story, setStory] = useState(!!b.story);
 
   const addInclude = () => {
     const v = draft.trim();
@@ -71,6 +72,7 @@ export function ContentBrief({
   const formats = [
     { id: "image", label: "Single image", icon: ImageIcon, hint: "One picture per post" },
     { id: "carousel", label: "Carousel", icon: GalleryHorizontal, hint: "Swipeable slides telling a story" },
+    { id: "reel", label: "Video / Reel", icon: Video, hint: "AI-generated short vertical video" },
   ] as const;
 
   return (
@@ -93,11 +95,6 @@ export function ContentBrief({
               <p className="text-xs text-muted-foreground">{f.hint}</p>
             </button>
           ))}
-          <div className="rounded-lg border-2 border-dashed border-black/20 p-3 opacity-60" aria-disabled="true">
-            <Video className="w-5 h-5 mb-1" />
-            <p className="text-sm font-semibold">Video / Reel</p>
-            <p className="text-xs text-muted-foreground">Coming soon</p>
-          </div>
         </div>
         {format === "carousel" && (
           <div className="flex items-center gap-2 pt-1">
@@ -118,6 +115,17 @@ export function ContentBrief({
             </Select>
             <span className="text-xs text-muted-foreground">Each slide is an AI image, so more slides use more AI credits.</span>
           </div>
+        )}
+        {format !== "reel" && (
+          <label className="flex items-start gap-3 rounded-lg border-2 border-black/20 p-3 cursor-pointer has-[:checked]:border-black">
+            <input type="checkbox" className="mt-1 accent-primary" checked={story} onChange={(e) => setStory(e.target.checked)} />
+            <span>
+              <span className="block text-sm font-medium">Also share every post as a Story</span>
+              <span className="block text-xs text-muted-foreground">
+                A full-screen 9:16 version of each poster goes to your Instagram and Facebook Stories at the same time. Uses one more AI image per post.
+              </span>
+            </span>
+          </label>
         )}
       </section>
 
@@ -256,6 +264,7 @@ export function ContentBrief({
               cta: { type: ctaType, text: ctaText.trim(), link: ctaLink.trim(), phone: ctaPhone.trim() },
               include,
               instructions: instructions.trim(),
+              story: format !== "reel" && story,
             },
             timeline: { days },
           })

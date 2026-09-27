@@ -182,6 +182,19 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
   return published.id || "";
 }
 
+// A 9:16 Story that goes out with the post (Autopilot makes one per post when the owner asked).
+async function postStory(account, imageUrl) {
+  if (account.platform === "instagram") {
+    const ig = account.instagramBusinessAccountId || account.accountId;
+    const container = await fbCall(`${ig}/media`, account.accessToken, { media_type: "STORIES", image_url: imageUrl });
+    await waitForMediaReady(container.id, account.accessToken);
+    return fbCall(`${ig}/media_publish`, account.accessToken, { creation_id: container.id });
+  }
+  // Facebook Page stories: upload the photo unpublished, then publish it as a story.
+  const photo = await fbCall(`${account.accountId}/photos`, account.accessToken, { url: imageUrl, published: false });
+  return fbCall(`${account.accountId}/photo_stories`, account.accessToken, { photo_id: photo.id });
+}
+
 async function uploadLinkedInImage(orgUrn, imageUrl, accessToken) {
   const initRes = await fetch(`${LINKEDIN_REST}/images?action=initializeUpload`, {
     method: "POST",
@@ -310,6 +323,12 @@ async function executePublish(post) {
         );
       }
       results.push({ accountId: account._id, platform: account.platform, postId });
+      // Best effort: a failed story never fails the post itself.
+      if (post.storyImageUrl && account.platform !== "linkedin") {
+        await postStory(account, post.storyImageUrl).catch((err) =>
+          log.warn("Story publish failed", { postId: String(post._id), platform: account.platform, message: err.message }),
+        );
+      }
     } catch (err) {
       errors.push(`${account.accountName}: ${err.message}`);
     }

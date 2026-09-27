@@ -76,6 +76,9 @@ const tenantSchema = new mongoose.Schema(
             pageId: { type: String, required: true },
             pageName: { type: String, default: "" },
             accessToken: { type: String, default: "" },
+            // The Page's linked Instagram professional account, if any — Instagram DM
+            // webhooks arrive keyed by this id, not the Page id.
+            instagramId: { type: String, default: "" },
             selectedFormIds: { type: [String], default: [] },
 
             allowedStates: { type: [String], default: [] },
@@ -85,6 +88,12 @@ const tenantSchema = new mongoose.Schema(
             assignBatchSize: { type: Number, default: 1 },
             webhookVerified: { type: Boolean, default: false },
             connectedAt: { type: Date, default: null },
+            // Comment/DM auto-reply (Claude drafts, using the same brand tone as Autopilot).
+            // "review": every draft waits for approval. "auto": sent immediately.
+            autoReply: {
+              enabled: { type: Boolean, default: false },
+              mode: { type: String, enum: ["review", "auto"], default: "review" },
+            },
           },
         ],
       },

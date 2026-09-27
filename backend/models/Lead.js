@@ -39,6 +39,7 @@ const leadSchema = new mongoose.Schema(
     },
     facebookLeadgenId: { type: String, default: null },
     facebookFormId: { type: String, default: null },
+    instagramDmMessageId: { type: String, default: null },
     facebookAdId: { type: String, default: null },
     facebookAdName: { type: String, default: null },
     facebookPageName: { type: String, default: null },
@@ -198,6 +199,10 @@ leadSchema.index(
 );
 leadSchema.index(
   { tenantId: 1, facebookLeadgenId: 1 },
+  { sparse: true, unique: true },
+);
+leadSchema.index(
+  { instagramDmMessageId: 1 },
   { sparse: true, unique: true },
 );
 leadSchema.index(

@@ -70,6 +70,10 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, ha
   }, [finished, onComplete]);
 
   const Icon = platform === "facebook" ? Facebook : Instagram;
+  // Instagram/Facebook profile picture URLs are signed and often fail to load cross-origin —
+  // fall back to the platform icon instead of leaving the circle blank.
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  useEffect(() => setAvatarFailed(false), [avatar]);
 
   return (
     <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center" aria-live="polite">
@@ -84,8 +88,13 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, ha
             />
           ))}
         <div className="absolute inset-[22%] rounded-full border-2 border-black bg-background nb-shadow overflow-hidden flex items-center justify-center">
-          {avatar ? (
-            <img src={avatar} alt="" className="w-full h-full object-cover" />
+          {avatar && !avatarFailed ? (
+            <img
+              src={avatar}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={() => setAvatarFailed(true)}
+            />
           ) : (
             <Icon className="w-10 h-10 text-primary" />
           )}

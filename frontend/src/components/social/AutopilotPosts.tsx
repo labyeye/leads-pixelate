@@ -5,11 +5,14 @@ import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ReviewActions } from "@/components/social/autopilot/ReviewActions";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface Post {
   _id: string;
   caption: string;
   imageUrl: string;
+  mediaUrls?: string[];
+  storyImageUrl?: string;
   platforms: string[];
   scheduledAt: string;
   status: string;
@@ -55,6 +58,7 @@ export function AutopilotPosts({
 }) {
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [open, setOpen] = useState<Post | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -116,13 +120,24 @@ export function AutopilotPosts({
     return (
       <li key={p._id} className="flex gap-3 rounded-lg border p-3 bg-background">
         {p.imageUrl && (
-          <img
-            src={p.imageUrl}
-            alt=""
-            loading="lazy"
-            className="w-16 h-20 object-cover rounded border bg-muted shrink-0"
-            onError={(e) => (e.currentTarget.style.display = "none")}
-          />
+          <button
+            type="button"
+            onClick={() => setOpen(p)}
+            aria-label="View the full poster"
+            className="relative shrink-0 rounded border bg-muted overflow-hidden hover:ring-2 hover:ring-primary focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <img
+              src={p.imageUrl}
+              alt=""
+              loading="lazy"
+              className="w-20 h-[100px] object-cover"
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+            {(p.mediaUrls?.length || 0) > 1 && (
+              <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 text-[10px] text-white">{p.mediaUrls!.length}</span>
+            )}
+            {p.storyImageUrl && <span className="absolute top-1 left-1 rounded-full bg-black/70 px-1.5 text-[10px] text-white">+Story</span>}
+          </button>
         )}
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -189,6 +204,34 @@ export function AutopilotPosts({
           <h3 className="text-sm font-semibold">Recently published</h3>
           <ul className="space-y-2">{history.map(row)}</ul>
         </section>
+      )}
+      <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle>Post preview</DialogTitle>
+          {open && <PostMedia post={open} />}
+          {open && <p className="text-sm whitespace-pre-line">{open.caption}</p>}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// The post at full size: every slide (4:5) and its Story (9:16), side by side, scrolling sideways.
+function PostMedia({ post }: { post: Post }) {
+  const images = post.mediaUrls?.length ? post.mediaUrls : [post.imageUrl];
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
+      {images.map((src, i) => (
+        <figure key={src} className="snap-start shrink-0 space-y-1">
+          <img src={src} alt={images.length > 1 ? `Slide ${i + 1}` : "Poster"} className="h-[60vh] max-h-[520px] aspect-[4/5] object-cover rounded-lg border-2 border-black" />
+          {images.length > 1 && <figcaption className="text-xs text-muted-foreground">Slide {i + 1}</figcaption>}
+        </figure>
+      ))}
+      {post.storyImageUrl && (
+        <figure className="snap-start shrink-0 space-y-1">
+          <img src={post.storyImageUrl} alt="Story version" className="h-[60vh] max-h-[520px] aspect-[9/16] object-cover rounded-lg border-2 border-black" />
+          <figcaption className="text-xs text-muted-foreground">Story</figcaption>
+        </figure>
       )}
     </div>
   );

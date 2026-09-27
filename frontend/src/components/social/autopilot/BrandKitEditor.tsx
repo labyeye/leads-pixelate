@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { BrandKit, LogoPosition } from "./useAutopilot";
+import type { BrandKit, HeadlinePosition, LogoPosition, TextSize } from "./useAutopilot";
 
 const MAX_LOGOS = 5;
 const MAX_COLORS = 4;
@@ -15,6 +15,17 @@ const POSITIONS: { id: LogoPosition; label: string; cls: string }[] = [
   { id: "bottom-left", label: "Bottom left", cls: "bottom-2 left-2" },
   { id: "bottom-right", label: "Bottom right", cls: "bottom-2 right-2" },
 ];
+const HEADLINE_POSITIONS: { id: HeadlinePosition; label: string; cls: string }[] = [
+  { id: "top", label: "Top", cls: "top-2" },
+  { id: "center", label: "Middle", cls: "top-1/2 -translate-y-1/2" },
+  { id: "bottom", label: "Bottom", cls: "bottom-8" },
+];
+const SIZES: { id: TextSize; label: string }[] = [
+  { id: "small", label: "Small" },
+  { id: "medium", label: "Medium" },
+  { id: "large", label: "Large" },
+];
+const SIZE_TEXT_CLS: Record<TextSize, string> = { small: "text-[7px]", medium: "text-[9px]", large: "text-[11px]" };
 
 interface Props {
   kit: BrandKit;
@@ -218,6 +229,76 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
                   onClick={() => save({ logoPosition: p.id })}
                 >
                   {p.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Poster text layout: where the headline sits and how big the headline/CTA are. Presets,
+          not free placement — Autopilot still decides the exact wording and the CTA button text. */}
+      <div className="grid sm:grid-cols-[180px_minmax(0,1fr)] gap-5 items-start">
+        <div
+          className="relative w-[180px] aspect-[4/5] rounded-lg border-2 border-black bg-gradient-to-br from-primary/20 via-muted to-primary/10 overflow-hidden"
+          aria-label="Poster text preview"
+        >
+          <span
+            className={`absolute inset-x-3 flex justify-center font-extrabold text-center leading-tight text-white drop-shadow ${SIZE_TEXT_CLS[kit.headlineSize]} ${HEADLINE_POSITIONS.find((p) => p.id === kit.headlinePosition)?.cls || "top-2"}`}
+          >
+            Your Headline Here
+          </span>
+          <span
+            className={`absolute inset-x-0 bottom-2 flex justify-center font-bold text-white rounded-full bg-primary px-2 py-1 mx-auto w-fit ${SIZE_TEXT_CLS[kit.ctaSize]}`}
+          >
+            Book Now
+          </span>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Headline position</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {HEADLINE_POSITIONS.map((p) => (
+                <Button
+                  key={p.id}
+                  type="button"
+                  size="sm"
+                  variant={kit.headlinePosition === p.id ? "default" : "outline"}
+                  onClick={() => save({ headlinePosition: p.id })}
+                >
+                  {p.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Headline size</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {SIZES.map((s) => (
+                <Button
+                  key={s.id}
+                  type="button"
+                  size="sm"
+                  variant={kit.headlineSize === s.id ? "default" : "outline"}
+                  onClick={() => save({ headlineSize: s.id })}
+                >
+                  {s.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Button size</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {SIZES.map((s) => (
+                <Button
+                  key={s.id}
+                  type="button"
+                  size="sm"
+                  variant={kit.ctaSize === s.id ? "default" : "outline"}
+                  onClick={() => save({ ctaSize: s.id })}
+                >
+                  {s.label}
                 </Button>
               ))}
             </div>

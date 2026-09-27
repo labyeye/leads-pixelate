@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Facebook,
   FileText,
   Instagram,
@@ -30,10 +31,11 @@ import { PostingPlan, type PlanPatch } from "./PostingPlan";
 import { ReferencesCompetitors } from "./ReferencesCompetitors";
 import { ReviewActions } from "./ReviewActions";
 import { ScanAnimation } from "./ScanAnimation";
+import { BrandSnapshotCard } from "./BrandSnapshotCard";
 import type { AutopilotStatus } from "./useAutopilot";
 
 const STEPS = ["Brand intro", "Accounts", "References", "Scan", "Brand profile", "Logos", "Schedule", "Content", "Preview"];
-const GIVE_UP_MS = 3 * 60 * 1000;
+const GIVE_UP_MS = 5 * 60 * 1000;
 
 interface Post {
   _id: string;
@@ -64,7 +66,28 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
   const api = useCampaignApi();
   const scanState = status.analysis.status;
   const hasIntro = !!(status.intro?.text?.trim() || status.intro?.pdfName);
-  const [step, setStep] = useState(scanState === "running" || scanState === "done" ? 3 : 0);
+  // Reopening setup resumes where the owner left off. A finished scan is never replayed: its
+  // step (the scan animation) is only shown while a scan is actually running.
+  const stepKey = `autopilot-setup-step:${status.campaign.id}`;
+  const [step, setStepState] = useState(() => {
+    if (scanState === "running") return 3;
+    let saved = 0;
+    try {
+      saved = Number(localStorage.getItem(stepKey)) || 0;
+    } catch {
+      /* storage blocked: start from the defaults */
+    }
+    if (saved === 3 || (scanState === "done" && saved < 4)) return scanState === "done" ? 4 : 2;
+    return saved;
+  });
+  const setStep = (n: number) => {
+    setStepState(n);
+    try {
+      localStorage.setItem(stepKey, String(n));
+    } catch {
+      /* per-browser convenience only */
+    }
+  };
   const [busy, setBusy] = useState(false);
   const [scanFinished, setScanFinished] = useState(false);
   // Accounts this campaign posts to (an account belongs to one campaign): none until the owner picks.
@@ -111,9 +134,10 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
   const onScanComplete = useCallback(() => setScanFinished(true), []);
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className={step === 3 ? "max-w-6xl space-y-6" : "max-w-3xl space-y-6"}>
       <Stepper step={step} />
 
+      <div className={step === 3 ? "grid lg:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start" : ""}>
       <div key={step} className="animate-fade-in rounded-lg border-2 border-black bg-background nb-shadow p-5 sm:p-6 space-y-5">
         {step === 0 && (
           <>
@@ -193,13 +217,26 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
             />
             <ReferencesCompetitors status={status} toast={toast} onChanged={reload} />
             <div className="flex flex-wrap gap-3">
-              <Button onClick={startScan} disabled={busy || !status.configured}>
-                {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
-                Scan my profile
-              </Button>
-              <Button variant="ghost" disabled={busy} onClick={() => setStep(4)}>
-                Skip scan, I'll fill it in myself
-              </Button>
+              {scanState === "done" ? (
+                <>
+                  <Button disabled={busy} onClick={() => setStep(4)}>
+                    Continue with my brand profile <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                  <Button variant="outline" onClick={startScan} disabled={busy || !status.configured}>
+                    {busy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Scan again
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button onClick={startScan} disabled={busy || !status.configured}>
+                    {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                    Scan my profile
+                  </Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => setStep(4)}>
+                    Skip scan, I'll fill it in myself
+                  </Button>
+                </>
+              )}
               <BackButton onClick={() => setStep(1)} />
             </div>
             {!status.configured && (
@@ -324,6 +361,15 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
 
         {step === 8 && <Launch status={status} reload={reload} toast={toast} onDone={onDone} onBack={() => setStep(7)} />}
       </div>
+      {step === 3 && (
+        <BrandSnapshotCard
+          profile={status.brandProfile}
+          accountName={scanAccount?.accountName}
+          avatar={scanAccount?.profilePicture}
+          stale={scanState === "running"}
+        />
+      )}
+      </div>
     </div>
   );
 }
@@ -376,21 +422,40 @@ function BackButton({ onClick }: { onClick: () => void }) {
 
 // ------------------------------------------------------------------- final step
 
-type Phase = "ready" | "generating" | "review" | "live";
+type Phase = "plan" | "ready" | "generating" | "review" | "live";
+type PlanItem = Awaited<ReturnType<ReturnType<typeof useCampaignApi>["previewPlan"]>>["data"][number];
 
 function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () => void }) {
   const api = useCampaignApi();
-  const [phase, setPhase] = useState<Phase>("ready");
+  const [phase, setPhase] = useState<Phase>("plan");
   const [post, setPost] = useState<Post | null>(null);
   const [busy, setBusy] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [sample, setSample] = useState<Awaited<ReturnType<typeof api.preview>>["data"] | null>(null);
   const [sampling, setSampling] = useState(false);
+  const [planItems, setPlanItems] = useState<PlanItem[] | null>(null);
+  const [planning, setPlanning] = useState(false);
   const launchedAt = useRef(0);
   const postId = useRef<string | null>(null);
   const failed = status.progress?.stage === "failed" && !status.running;
 
   const fail = (err: any) => toast({ title: "Something went wrong", description: err.message, variant: "destructive" });
+
+  const loadPlan = useCallback(async () => {
+    setPlanning(true);
+    try {
+      setPlanItems((await api.previewPlan()).data);
+    } catch (err) {
+      fail(err);
+    } finally {
+      setPlanning(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api]);
+
+  useEffect(() => {
+    if (phase === "plan" && planItems === null && !planning) loadPlan();
+  }, [phase, planItems, planning, loadPlan]);
 
   const launch = async () => {
     setBusy(true);
@@ -491,6 +556,57 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
     await reload();
   };
 
+  if (phase === "plan") {
+    return (
+      <>
+        <Heading
+          icon={<Sparkles className="w-5 h-5 text-white" />}
+          title="Here's what Autopilot plans to post"
+          text="Before we spend anything on a sample image, take a look at the topics it picked from your settings."
+        />
+        {planning && !planItems && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+            <Loader2 className="w-4 h-4 animate-spin" /> Planning your first posts…
+          </p>
+        )}
+        {planItems && !planItems.length && (
+          <p className="text-sm text-amber-800">Couldn't plan any posts yet. You can still continue and try a sample.</p>
+        )}
+        {!!planItems?.length && (
+          <ul className="space-y-2">
+            {planItems.map((it, i) => (
+              <li key={i} className="rounded-lg border-2 border-black/20 p-3 space-y-1">
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    {it.platforms.map((p) => (
+                      <span key={p}>{PLATFORM_ICON[p]}</span>
+                    ))}
+                  </span>
+                  <span>
+                    {new Date(it.scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+                  </span>
+                </div>
+                <p className="font-medium text-sm">{it.headline || it.topic}</p>
+                <p className="text-xs text-muted-foreground">{it.angle}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex flex-wrap gap-3">
+          <Button disabled={planning} onClick={() => setPhase("ready")}>
+            Looks good, show me a sample image <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+          {!planning && (
+            <Button variant="outline" onClick={loadPlan}>
+              Re-plan
+            </Button>
+          )}
+          <BackButton onClick={onBack} />
+        </div>
+      </>
+    );
+  }
+
   if (phase === "ready") {
     const logos = status.brandKit.logos;
     const s = status.settings;
@@ -559,7 +675,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
               Preview a sample post
             </Button>
           )}
-          <BackButton onClick={onBack} />
+          <BackButton onClick={() => setPhase("plan")} />
         </div>
         {!sample && (
           <button type="button" className="text-xs text-muted-foreground underline" onClick={launch} disabled={busy || !status.configured}>
@@ -646,8 +762,8 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
       </span>
       <h2 className="text-xl font-semibold">Autopilot is live</h2>
       <p className="text-sm text-muted-foreground max-w-md mx-auto">
-        New posts are prepared a day ahead at the times you chose. During your free trial you approve each one, and what you
-        approve or correct teaches Autopilot your style. You can pause any time.
+        A month of posts is prepared upfront at the times you chose. During your free trial you approve each one, and what
+        you approve or correct teaches Autopilot your style. You can pause any time.
       </p>
       <Button size="lg" onClick={onDone}>
         Go to my Autopilot <ArrowRight className="w-4 h-4 ml-1" />
@@ -657,11 +773,17 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
 }
 
 // The sample post: the caption and the picture(s); a carousel scrolls sideways.
-function SamplePost({ sample }: { sample: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: string } }) {
+function SamplePost({
+  sample,
+}: {
+  sample: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: string; imagePrompt?: string; story?: string };
+}) {
   const [i, setI] = useState(0);
+  const [showPrompt, setShowPrompt] = useState(false);
   const n = sample.images.length;
   return (
-    <div className="grid sm:grid-cols-[220px_minmax(0,1fr)] gap-5 items-start animate-fade-in">
+    <div className="grid sm:grid-cols-[300px_minmax(0,1fr)] gap-5 items-start animate-fade-in">
+      <div className="space-y-3">
       <div className="relative">
         <img
           src={sample.images[i]}
@@ -694,6 +816,13 @@ function SamplePost({ sample }: { sample: { caption: string; hashtags: string[];
           </>
         )}
       </div>
+      {sample.story && (
+        <a href={sample.story} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-xs font-semibold text-primary hover:underline">
+          <img src={sample.story} alt="Story version" className="w-16 aspect-[9/16] object-cover rounded border-2 border-black" />
+          Story version (opens full size)
+        </a>
+      )}
+      </div>
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {sample.platforms.map((p) => (
@@ -703,6 +832,29 @@ function SamplePost({ sample }: { sample: { caption: string; hashtags: string[];
         </div>
         <p className="text-sm whitespace-pre-line">{sample.caption}</p>
         {!!sample.hashtags.length && <p className="text-sm text-primary">{sample.hashtags.map((h) => `#${h}`).join(" ")}</p>}
+        {sample.imagePrompt && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowPrompt((s) => !s)}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              {showPrompt ? "Hide" : "View"} image prompt used
+            </button>
+            {showPrompt && (
+              <div className="mt-1.5 rounded-lg border-2 border-black/20 bg-muted/40 p-2.5">
+                <p className="text-xs whitespace-pre-line font-mono">{sample.imagePrompt}</p>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(sample.imagePrompt!)}
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                >
+                  <Copy className="w-3 h-3" /> Copy
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

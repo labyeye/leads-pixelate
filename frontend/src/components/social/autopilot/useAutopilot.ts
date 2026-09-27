@@ -33,6 +33,8 @@ export interface Reference {
 }
 
 export type LogoPosition = "bottom-right" | "bottom-left" | "top-right" | "top-left";
+export type HeadlinePosition = "top" | "center" | "bottom";
+export type TextSize = "small" | "medium" | "large";
 
 export interface BrandKit {
   logos: { id: string; name: string; url: string }[];
@@ -41,6 +43,9 @@ export interface BrandKit {
   logoMode: "fixed" | "auto";
   logoPosition: LogoPosition;
   colors: string[];
+  headlinePosition: HeadlinePosition;
+  headlineSize: TextSize;
+  ctaSize: TextSize;
 }
 
 // One campaign's full state (GET /autopilot/campaigns/:id).
@@ -63,12 +68,13 @@ export interface AutopilotStatus {
     contentTypes: string[];
     lessons: string[];
     brief: {
-      format: "image" | "carousel";
+      format: "image" | "carousel" | "reel";
       slides: number;
       goal: string;
       cta: { type: string; text: string; link: string; phone: string };
       include: string[];
       instructions: string;
+      story?: boolean;
     };
     timeline: { days: number; startsOn: string | null; endsOn: string | null };
   };

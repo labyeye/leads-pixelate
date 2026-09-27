@@ -93,7 +93,7 @@ export function PostingPlan({
       <div className="space-y-2">
         <Label>Time of day (India time)</Label>
         <p className="text-xs text-muted-foreground">
-          One post is published at each time, up to {MAX_TIMES} a day. Autopilot prepares each post about a day ahead.
+          One post is published at each time, up to {MAX_TIMES} a day. Autopilot prepares a month of posts upfront.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {times.map((t, i) => (

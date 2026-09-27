@@ -1,7 +1,9 @@
-import { NavLink, Navigate, useSearchParams } from "react-router-dom";
-import { BarChart3, LayoutDashboard, Plus, Settings2 } from "lucide-react";
+import { useState } from "react";
+import { NavLink, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { BarChart3, LayoutDashboard, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,10 +18,31 @@ const NEW = "__new";
 
 // Picks the campaign every Autopilot page works on (the choice lives in the URL).
 function CampaignSwitcher() {
-  const { overview, selection, select, openNewCampaign, allowAll } = useCampaigns();
+  const { overview, selection, select, api, reloadOverview, openNewCampaign, allowAll } = useCampaigns();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
   const campaigns = overview?.campaigns ?? [];
   if (!campaigns.length) return null;
   const canAdd = campaigns.length < (overview?.limits.campaigns ?? 1);
+  const current = campaigns.find((c) => c.id === selection);
+
+  const remove = async () => {
+    if (!current || !api) return;
+    if (!confirm(`Delete the campaign "${current.name}"? Its queued posts go back to drafts. Published posts stay.`)) return;
+    setDeleting(true);
+    try {
+      await api.remove();
+      await reloadOverview();
+      toast({ title: "Campaign deleted" });
+      navigate("/social-autopilot");
+    } catch (err: any) {
+      toast({ title: "Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <Select value={selection ?? undefined} onValueChange={(v) => (v === NEW ? openNewCampaign() : select(v))}>
@@ -41,6 +64,19 @@ function CampaignSwitcher() {
       {canAdd && (
         <Button type="button" variant="outline" size="icon" className="border-2 border-black" aria-label="New campaign" onClick={openNewCampaign}>
           <Plus className="w-4 h-4" />
+        </Button>
+      )}
+      {current && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="border-2 border-black text-red-700 hover:text-red-800"
+          aria-label="Delete campaign"
+          disabled={deleting}
+          onClick={remove}
+        >
+          {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
         </Button>
       )}
     </div>

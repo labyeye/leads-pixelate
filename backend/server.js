@@ -23,6 +23,11 @@ connectDB().then(async () => {
 
   cron.schedule("* * * * *", runScheduledPosts);
   cron.schedule("0 * * * *", runAutopilotCron);
+  // A restart kills any run in flight; free their locks so "Try again" works right away.
+  // ponytail: assumes one backend process; with several instances this would free a live run's lock.
+  require("./models/AutopilotCampaign")
+    .updateMany({ runningSince: { $ne: null } }, { $set: { runningSince: null, "progress.stage": "failed" } })
+    .catch(() => {});
 
   cron.schedule("*/5 * * * *", async () => {
     try {

@@ -38,6 +38,7 @@ const socialPostSchema = new mongoose.Schema(
     },
     videoUrl: { type: String, default: "" },
     coverImageUrl: { type: String, default: "" },
+    storyImageUrl: { type: String, default: "" }, // 9:16 Story published alongside (Instagram/Facebook)
 
     scheduledAt: {
       type: Date,
@@ -104,10 +105,16 @@ const socialPostSchema = new mongoose.Schema(
         keyElements: { type: [String], default: [] },
         colorMood: { type: String, default: "" },
         differentiation: { type: String, default: "" },
+        layout: { type: String, default: "" },
+        typography: { type: String, default: "" },
+        headline: { type: String, default: "" },
+        subline: { type: String, default: "" },
+        priceOrOffer: { type: String, default: "" },
       },
       topic: { type: String, default: "" },
       angle: { type: String, default: "" },
       captionBrief: { type: String, default: "" },
+      script: { type: String, default: "" }, // what the AI actor says in a reel
       revising: { type: Boolean, default: false },
       revisions: { type: Number, default: 0 },
       revisionError: { type: String, default: "" },

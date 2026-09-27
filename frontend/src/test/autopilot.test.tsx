@@ -539,7 +539,7 @@ describe("PostingPlan", () => {
   it("content brief: carousel, include list, CTA and duration are sent together", () => {
     const onSave = vi.fn();
     render(<ContentBrief status={status() as any} onSave={onSave} />);
-    expect(screen.getByText("Coming soon")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Video \/ Reel/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Carousel/ }));
     fireEvent.change(screen.getByLabelText(/goal of these posts/), { target: { value: "Get demo bookings" } });
     fireEvent.change(screen.getByLabelText(/should the posts include/), { target: { value: "free setup" } });

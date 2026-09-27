@@ -37,9 +37,9 @@ const campaignSchema = new mongoose.Schema(
     },
     contentTypes: { type: [String], default: [] },
     // What each post should be: format, goal, what to include, the call to action and free-form
-    // instructions. Video is not generated yet, so only image / carousel are accepted.
+    // instructions.
     brief: {
-      format: { type: String, enum: ["image", "carousel"], default: "image" },
+      format: { type: String, enum: ["image", "carousel", "reel"], default: "image" },
       slides: { type: Number, default: 5, min: 2, max: 8 },
       goal: { type: String, default: "", maxlength: 200 },
       cta: {
@@ -50,6 +50,7 @@ const campaignSchema = new mongoose.Schema(
       },
       include: { type: [String], default: [] },
       instructions: { type: String, default: "", maxlength: 1500 },
+      story: { type: Boolean, default: false },
     },
     // How long the campaign runs. days 0 = until paused. startsOn / endsOn are set when it starts.
     timeline: {
@@ -104,6 +105,11 @@ const campaignSchema = new mongoose.Schema(
         default: "bottom-right",
       },
       colors: { type: [String], default: [] },
+      // Poster text layout (see applyPosterText): presets, not free placement — a small,
+      // reusable set of positions/sizes rather than a full drag-and-resize canvas.
+      headlinePosition: { type: String, enum: ["top", "center", "bottom"], default: "top" },
+      headlineSize: { type: String, enum: ["small", "medium", "large"], default: "medium" },
+      ctaSize: { type: String, enum: ["small", "medium", "large"], default: "medium" },
     },
 
     // Instagram accounts to learn from (Meta Business Discovery) plus the owner's own notes.
@@ -120,6 +126,15 @@ const campaignSchema = new mongoose.Schema(
         },
       ],
       default: [],
+    },
+    // The AI presenter who speaks in the campaign's reels: a photo (uploaded with the person's
+    // consent, or AI-generated) and a voice description. Stored in the campaign's brand dir.
+    actor: {
+      file: { type: String, default: "" },
+      url: { type: String, default: "" },
+      voice: { type: String, default: "", maxlength: 150 },
+      source: { type: String, enum: ["", "upload", "generated"], default: "" },
+      consentAt: { type: Date, default: null },
     },
     // Moodboard images (stored resized, under uploads/autopilot/<tenant>/brand/<campaign>/refs/).
     references: {

@@ -23,6 +23,8 @@ const RUN_COOLDOWN_MS = 10 * 1000; // TEMP local testing: restore to 10 * 60 * 1
 const ANALYZE_COOLDOWN_MS = 60 * 1000;
 const HEX = /^#[0-9a-f]{6}$/i;
 const POSITIONS = ["bottom-right", "bottom-left", "top-right", "top-left"];
+const HEADLINE_POSITIONS = ["top", "center", "bottom"];
+const SIZES = ["small", "medium", "large"];
 const MAX_LOGOS = 5;
 const isId = (v) => /^[0-9a-f]{24}$/i.test(String(v || ""));
 
@@ -43,6 +45,38 @@ const monthCounts = async (tenantId) => {
   ]);
   return { byCampaign: Object.fromEntries(rows.map((r) => [String(r._id), r.n])), total: rows.reduce((n, r) => n + r.n, 0) };
 };
+
+// ------------------------------------------------------------------ AI product photoshoot
+
+const shootTimes = new Map(); // tenantId -> recent photoshoot times (in-memory cost guard)
+router.post(
+  "/photoshoot",
+  asyncHandler(async (req, res) => {
+    const tenant = await getTenant(req, res);
+    if (!svc.isConfigured()) {
+      res.status(503);
+      throw new Error("AI photoshoots are not switched on for this server yet");
+    }
+    if (!svc.isEntitled(svc.effectiveAutopilot(tenant))) {
+      res.status(402);
+      throw new Error("AI photoshoots come with Autopilot. Start your trial or upgrade your plan.");
+    }
+    const style = Object.hasOwn(svc.PHOTOSHOOT_STYLES, req.body?.style) ? req.body.style : "studio";
+    const key = String(tenant._id);
+    const recent = (shootTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    if (recent.length >= 10) {
+      res.status(429);
+      throw new Error("That's 10 photoshoots this hour. Try again in a while.");
+    }
+    shootTimes.set(key, [...recent, Date.now()]);
+    try {
+      res.json({ success: true, url: await svc.photoshoot(tenant._id, String(req.body?.photoUrl || ""), style) });
+    } catch (err) {
+      res.status(502);
+      throw new Error(err.message);
+    }
+  }),
+);
 
 // ------------------------------------------------------------------ overview + campaigns
 
@@ -154,6 +188,7 @@ async function campaignStatus(tenant, campaign) {
         },
         include: a.brief?.include || [],
         instructions: a.brief?.instructions || "",
+        story: !!a.brief?.story,
       },
       timeline: {
         days: a.timeline?.days || 0,
@@ -175,6 +210,7 @@ async function campaignStatus(tenant, campaign) {
       at: a.analysis?.at || null,
     },
     brandProfile: a.brandProfile,
+    actor: { url: a.actor?.url || "", voice: a.actor?.voice || "", source: a.actor?.source || "" },
     brandKit: {
       logos: (a.brandKit?.logos || []).map((l) => ({ id: l.id, name: l.name, url: l.url })),
       logoId: a.brandKit?.logoId || "",
@@ -182,6 +218,9 @@ async function campaignStatus(tenant, campaign) {
       logoMode: a.brandKit?.logoMode || "fixed",
       logoPosition: a.brandKit?.logoPosition || "bottom-right",
       colors: a.brandKit?.colors || [],
+      headlinePosition: a.brandKit?.headlinePosition || "top",
+      headlineSize: a.brandKit?.headlineSize || "medium",
+      ctaSize: a.brandKit?.ctaSize || "medium",
     },
     competitors: (a.competitors || []).map((c) => ({
       id: c.id,
@@ -281,6 +320,33 @@ one.put(
     }
 
     res.json({ success: true });
+  }),
+);
+
+// The upcoming topics only, text, no image — so the owner can see what's coming before
+// spending on a sample image or the real run.
+const planPreviewTimes = new Map();
+one.post(
+  "/preview-plan",
+  asyncHandler(async (req, res) => {
+    const { tenant, campaign } = req;
+    if (!svc.isConfigured()) {
+      res.status(503);
+      throw new Error("Autopilot is not configured on the server yet");
+    }
+    const key = String(campaign._id);
+    const recent = (planPreviewTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    if (recent.length >= 10) {
+      res.status(429);
+      throw new Error("You've made a few preview plans already. Try again in a while.");
+    }
+    planPreviewTimes.set(key, [...recent, Date.now()]);
+    try {
+      res.json({ success: true, data: await svc.planPreviewForCampaign(tenant, campaign) });
+    } catch (err) {
+      res.status(502);
+      throw new Error(err.message);
+    }
   }),
 );
 
@@ -411,6 +477,9 @@ one.put(
     if (["fixed", "auto"].includes(b.logoMode)) $set["brandKit.logoMode"] = b.logoMode;
     if (POSITIONS.includes(b.logoPosition)) $set["brandKit.logoPosition"] = b.logoPosition;
     if (Array.isArray(b.colors)) $set["brandKit.colors"] = b.colors.filter((c) => HEX.test(c)).slice(0, 4);
+    if (HEADLINE_POSITIONS.includes(b.headlinePosition)) $set["brandKit.headlinePosition"] = b.headlinePosition;
+    if (SIZES.includes(b.headlineSize)) $set["brandKit.headlineSize"] = b.headlineSize;
+    if (SIZES.includes(b.ctaSize)) $set["brandKit.ctaSize"] = b.ctaSize;
 
     if (Object.keys($set).length) await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $set });
     res.json({ success: true });
@@ -486,6 +555,104 @@ one.post(
     if (!campaign.brandKit.logoId) update.$set = { "brandKit.logoId": id };
     await AutopilotCampaign.updateOne({ _id: campaign._id }, update);
     res.status(201).json({ success: true, data: { id, name, url: logo.url } });
+  }),
+);
+
+// ------------------------------------------------------------------------ AI actor
+
+// Replaces the campaign's actor photo (one per campaign) with a re-encoded portrait.
+async function saveActor(tenant, campaign, buf, source, voice) {
+  const jpg = await sharp(buf).rotate().resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 90 }).toBuffer();
+  const dir = svc.brandDir(tenant._id, campaign._id);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = `actor-${crypto.randomBytes(6).toString("hex")}.jpg`;
+  fs.writeFileSync(path.join(dir, file), jpg);
+  if (campaign.actor?.file) fs.rm(path.join(dir, path.basename(campaign.actor.file)), { force: true }, () => {});
+  const actor = {
+    file,
+    url: `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${campaign._id}/${file}`,
+    voice: svc.clean(voice ?? campaign.actor?.voice, 150),
+    source,
+    consentAt: source === "upload" ? new Date() : null,
+  };
+  await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set: { actor } });
+  return { url: actor.url, voice: actor.voice, source };
+}
+
+// A real person's photo: only with their consent (the owner confirms it).
+one.post(
+  "/actor",
+  logoUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      res.status(400);
+      throw new Error("No photo uploaded");
+    }
+    if (req.body?.consent !== "true") {
+      res.status(400);
+      throw new Error("Confirm that the person in the photo agreed to be your AI presenter");
+    }
+    let data;
+    try {
+      data = await saveActor(req.tenant, req.campaign, req.file.buffer, "upload", req.body?.voice);
+    } catch {
+      res.status(400);
+      throw new Error("That file isn't a valid image");
+    }
+    res.status(201).json({ success: true, data });
+  }),
+);
+
+// An AI-made presenter from a short description (not a real person).
+const actorTimes = new Map();
+one.post(
+  "/actor/generate",
+  asyncHandler(async (req, res) => {
+    const description = svc.clean(req.body?.description, 300);
+    if (!description) {
+      res.status(400);
+      throw new Error("Describe your presenter first");
+    }
+    if (!svc.isConfigured()) {
+      res.status(503);
+      throw new Error("Autopilot is not configured on the server yet");
+    }
+    const key = String(req.campaign._id);
+    const recent = (actorTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    if (recent.length >= 6) {
+      res.status(429);
+      throw new Error("You've made a few presenters already. Try again in a while.");
+    }
+    actorTimes.set(key, [...recent, Date.now()]);
+    let buf;
+    try {
+      buf = await svc.generateActor(description);
+    } catch (err) {
+      res.status(502);
+      throw new Error(err.message);
+    }
+    res.status(201).json({ success: true, data: await saveActor(req.tenant, req.campaign, buf, "generated", req.body?.voice) });
+  }),
+);
+
+one.put(
+  "/actor",
+  asyncHandler(async (req, res) => {
+    const voice = svc.clean(req.body?.voice, 150);
+    await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $set: { "actor.voice": voice } });
+    res.json({ success: true });
+  }),
+);
+
+one.delete(
+  "/actor",
+  asyncHandler(async (req, res) => {
+    const { tenant, campaign } = req;
+    if (campaign.actor?.file) {
+      fs.rm(path.join(svc.brandDir(tenant._id, campaign._id), path.basename(campaign.actor.file)), { force: true }, () => {});
+    }
+    await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set: { actor: { file: "", url: "", voice: "", source: "", consentAt: null } } });
+    res.json({ success: true });
   }),
 );
 

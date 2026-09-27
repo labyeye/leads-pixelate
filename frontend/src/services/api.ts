@@ -676,11 +676,27 @@ function autopilotCampaignApi(id: string) {
     update: (body: Record<string, unknown>) => send("", "PUT", body),
     remove: () => send("", "DELETE"),
     run: () => send("/run", "POST"),
+    // The upcoming topics only (text, no image) — cheap, so it can be shown before the owner
+    // agrees to spend on a sample image.
+    previewPlan: () =>
+      request<{
+        success: boolean;
+        data: { scheduledAt: string; platforms: string[]; topic: string; angle: string; headline: string }[];
+      }>(`${base}/preview-plan`, { method: "POST" }),
     // One sample post from the current settings (nothing is scheduled).
     preview: () =>
       request<{
         success: boolean;
-        data: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: "image" | "carousel"; topic: string };
+        data: {
+          caption: string;
+          hashtags: string[];
+          images: string[];
+          platforms: string[];
+          format: "image" | "carousel" | "reel";
+          topic: string;
+          imagePrompt: string;
+          story?: string;
+        };
       }>(`${base}/preview`, { method: "POST" }),
     analyze: (accountId?: string) =>
       request<{ success: boolean; started: boolean }>(`${base}/analyze`, {
@@ -729,6 +745,12 @@ function autopilotCampaignApi(id: string) {
 export type CampaignAPI = ReturnType<typeof autopilotCampaignApi>;
 
 export const autopilotAPI = {
+  // AI product photoshoot: one of our uploaded product photos re-shot in a style; returns the new photo URL.
+  photoshoot: (photoUrl: string, style: string) =>
+    request<{ success: boolean; url: string }>("/autopilot/photoshoot", {
+      method: "POST",
+      body: JSON.stringify({ photoUrl, style }),
+    }),
   overview: () => request<{ success: boolean; data: AutopilotOverview }>("/autopilot"),
   createCampaign: (name: string) =>
     request<{ success: boolean; data: { id: string; name: string } }>("/autopilot/campaigns", {
@@ -904,6 +926,11 @@ export const facebookAPI = {
     request<{ success: boolean; message: string }>("/facebook/disconnect", {
       method: "POST",
       body: JSON.stringify({ pageId }),
+    }),
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>("/facebook/settings", {
+      method: "POST",
+      body: JSON.stringify({ assigneeIds, batchSize }),
     }),
   getMetaCampaigns: () =>
     request<{
