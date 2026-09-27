@@ -377,14 +377,14 @@ describe("Setup", () => {
     expect(screen.getByRole("tab", { name: /References & competitors/ })).toBeInTheDocument();
   });
 
-  it("settings: accounts used by another campaign are locked, saving sends the chosen ones", async () => {
+  it("settings: accounts shared with another campaign stay selectable, saving sends the chosen ones", async () => {
     scoped.update.mockResolvedValue({ success: true });
     mockStatus({ settings: { ...status().settings, accountIds: [] } });
     renderPage("/social-autopilot/setup");
     await screen.findByText("Campaign settings");
-    expect(screen.getByText(/used by Cafe/)).toBeInTheDocument();
+    expect(screen.getByText(/also in Cafe/)).toBeInTheDocument();
     const boxes = screen.getAllByRole("checkbox"); // the campaign's accounts come first
-    expect(boxes[1]).toBeDisabled(); // the Facebook page belongs to "Cafe"
+    expect(boxes[1]).toBeEnabled(); // the Facebook page is also in "Cafe"
     fireEvent.click(boxes[0]);
     fireEvent.click(screen.getByRole("button", { name: /Save accounts/ }));
     await waitFor(() => expect(scoped.update).toHaveBeenCalledWith({ accountIds: ["a1"] }));
@@ -419,9 +419,9 @@ describe("Setup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(scoped.saveIntro).toHaveBeenCalledWith("We bake sourdough.", null));
 
-    // 2. accounts: none picked yet, one is taken by another campaign
+    // 2. accounts: none picked yet, one is shared with another campaign
     expect(await screen.findByText(/Which accounts does this campaign post to/)).toBeInTheDocument();
-    expect(screen.getByText(/used by Cafe/)).toBeInTheDocument();
+    expect(screen.getByText(/also in Cafe/)).toBeInTheDocument();
     const next = screen.getByRole("button", { name: /Continue/ });
     expect(next).toBeDisabled();
     fireEvent.click(screen.getAllByRole("checkbox")[0]);

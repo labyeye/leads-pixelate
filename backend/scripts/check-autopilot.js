@@ -396,8 +396,7 @@ async function routesCheck() {
     assert.deepStrictEqual([...b.contentTypes], ["tips"]);
     assert.strictEqual(b.postsPerDay, 1, "one post per chosen time");
     r = await call("PUT", "/api/autopilot/campaigns/" + cafe, { accountIds: [String(ig1._id)] });
-    assert.strictEqual(r.status, 409, "an account belongs to one campaign only");
-    assert.ok(/Bakery UK/.test(r.body.message));
+    assert.strictEqual(r.status, 200, "campaigns can share an account");
     assert.strictEqual((await call("PUT", "/api/autopilot/campaigns/" + cafe, { accountIds: [String(ig2._id)] })).status, 200);
     r = await call("GET", "/api/autopilot");
     assert.deepStrictEqual(r.body.data.campaigns.map((c) => c.name), ["Bakery UK", "Cafe", "Bistro"]);
@@ -642,12 +641,6 @@ async function migrationCheck() {
   assert.strictEqual(await campaigns.ensureDefaultCampaign(legacy), null, "idempotent: a second look creates nothing");
   assert.strictEqual(store.length, 1);
 
-  // account exclusivity across campaigns
-  store.push(new AutopilotCampaign({ tenantId, name: "Second", accountIds: [] }));
-  const clash = await campaigns.findAccountConflict(tenantId, [String(a1._id)], store[1]._id);
-  assert.deepStrictEqual(clash, { accountId: String(a1._id), campaignName: "Main" });
-  assert.strictEqual(await campaigns.findAccountConflict(tenantId, [String(a1._id)], store[0]._id), null, "its own accounts don't clash");
-  assert.strictEqual(await campaigns.findAccountConflict(tenantId, [], undefined), null);
   cleanup(tenantId);
 }
 

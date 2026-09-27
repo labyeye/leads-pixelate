@@ -96,7 +96,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
   const fail = (err: any) => toast({ title: "Something went wrong", description: err.message, variant: "destructive" });
   const chosen = status.accounts.filter((a) => selected.includes(a._id));
   const scanAccount = chosen.find((a) => a.platform === "instagram") || chosen.find((a) => a.platform === "facebook");
-  const noAccounts = status.accounts.filter((a) => !a.campaign || a.campaign.id === status.campaign.id).length === 0;
+  const noAccounts = status.accounts.length === 0;
 
   const startScan = async () => {
     setBusy(true);
@@ -174,11 +174,10 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                       <li key={a._id}>
                         <label
                           className={`flex items-center gap-3 rounded-lg border-2 p-3 ${
-                            elsewhere ? "border-black/10 opacity-60" : "border-black/20 has-[:checked]:border-black has-[:checked]:nb-shadow-sm cursor-pointer"
+                            "border-black/20 has-[:checked]:border-black has-[:checked]:nb-shadow-sm cursor-pointer"
                           }`}
                         >
                           <Checkbox
-                            disabled={!!elsewhere}
                             checked={selected.includes(a._id)}
                             onCheckedChange={(c) =>
                               setSelected(c === true ? [...selected, a._id] : selected.filter((x) => x !== a._id))
@@ -186,7 +185,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                           />
                           {PLATFORM_ICON[a.platform]}
                           <span className="text-sm truncate">{a.accountName}</span>
-                          {elsewhere && <span className="ml-auto text-[11px] text-muted-foreground">used by {elsewhere}</span>}
+                          {elsewhere && <span className="ml-auto text-[11px] text-muted-foreground">also in {elsewhere}</span>}
                         </label>
                       </li>
                     );
@@ -194,7 +193,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
                 </ul>
                 {noAccounts && (
                   <p className="text-xs text-amber-800">
-                    Every connected account already belongs to another campaign. Remove one there or connect another account.
+                    Connect an account in Social Media Planner → Connected Accounts first.
                   </p>
                 )}
               </div>

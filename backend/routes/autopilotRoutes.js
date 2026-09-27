@@ -268,15 +268,10 @@ one.put(
       }
     }
 
-    // Accounts: the caller's own, and each account belongs to one campaign only.
+    // Accounts: the caller's own. Several campaigns may share one; the scheduler keeps their posts apart.
     if (patch.accountIds) {
       const own = await SocialAccount.find({ _id: { $in: patch.accountIds }, tenantId: tenant._id }).select("_id").lean();
       patch.accountIds = own.map((x) => String(x._id));
-      const clash = await campaigns.findAccountConflict(tenant._id, patch.accountIds, campaign._id);
-      if (clash) {
-        res.status(409);
-        throw new Error(`That account already posts for the campaign "${clash.campaignName}". Remove it there first.`);
-      }
     }
 
     // Enabling starts the one-time trial, so don't let it burn with nowhere to post.

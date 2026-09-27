@@ -98,7 +98,7 @@ export function CampaignSettings({
       <div className="space-y-2">
         <Label>Posts to</Label>
         <p className="text-xs text-muted-foreground">
-          An account can belong to one campaign only, so two campaigns never post to the same page.
+          Several campaigns can share an account; their posts are kept at least an hour apart.
         </p>
         {noAccounts ? (
           <p className="text-sm text-muted-foreground">Connect an account in Social Media Planner → Connected Accounts first.</p>
@@ -110,17 +110,16 @@ export function CampaignSettings({
                 <li key={a._id}>
                   <label
                     className={`flex items-center gap-3 rounded-lg border-2 p-3 ${
-                      elsewhere ? "border-black/10 opacity-60" : "border-black/20 has-[:checked]:border-black cursor-pointer"
+                      "border-black/20 has-[:checked]:border-black cursor-pointer"
                     }`}
                   >
                     <Checkbox
-                      disabled={!!elsewhere}
                       checked={accountIds.includes(a._id)}
                       onCheckedChange={(c) => setAccountIds(c === true ? [...accountIds, a._id] : accountIds.filter((x) => x !== a._id))}
                     />
                     <span className="capitalize text-xs text-muted-foreground">{a.platform}</span>
                     <span className="text-sm truncate">{a.accountName}</span>
-                    {elsewhere && <span className="ml-auto text-[11px] text-muted-foreground">used by {elsewhere}</span>}
+                    {elsewhere && <span className="ml-auto text-[11px] text-muted-foreground">also in {elsewhere}</span>}
                   </label>
                 </li>
               );

@@ -1086,10 +1086,21 @@ async function runForCampaign(tenantDoc, campaignDoc, { manual = false } = {}) {
   if (!accounts.length) return { skipped: "no connected accounts" };
 
   const until = new Date(now.getTime() + HORIZON_DAYS * DAY_MS);
-  const [filled, monthCount] = await Promise.all([
+  const [filled, sharedTaken, monthCount] = await Promise.all([
     SocialPost.find({
       tenantId: tenant._id,
       campaignId: campaignDoc._id,
+      source: "autopilot",
+      status: { $in: FILLED },
+      scheduledAt: { $gt: now, $lte: until },
+    })
+      .select("scheduledAt")
+      .lean(),
+    // Other campaigns can share an account: their posts on it block those times here too.
+    SocialPost.find({
+      tenantId: tenant._id,
+      campaignId: { $ne: campaignDoc._id },
+      accountIds: { $in: accounts.map((acc) => String(acc._id)) },
       source: "autopilot",
       status: { $in: FILLED },
       scheduledAt: { $gt: now, $lte: until },
@@ -1106,7 +1117,8 @@ async function runForCampaign(tenantDoc, campaignDoc, { manual = false } = {}) {
     now,
     until,
   );
-  const freeSlots = slots?.filter((sl) => !filled.some((p) => Math.abs(p.scheduledAt - sl) < 60 * 60 * 1000));
+  const taken = [...filled, ...sharedTaken];
+  const freeSlots = slots?.filter((sl) => !taken.some((p) => Math.abs(p.scheduledAt - sl) < 60 * 60 * 1000));
   const count = freeSlots
     ? Math.max(0, Math.min(freeSlots.length, limits.monthlyPosts - monthCount))
     : postsToCreate({ postsPerDay: a.postsPerDay, existing: filled.length, monthCount, cap: limits.monthlyPosts });
@@ -1275,7 +1287,7 @@ async function runForCampaign(tenantDoc, campaignDoc, { manual = false } = {}) {
 
   try {
     const ctx = await buildContext(tenant, accounts, now);
-    ctx.alreadyScheduled = filled.map((p) => p.scheduledAt.toISOString());
+    ctx.alreadyScheduled = taken.map((p) => p.scheduledAt.toISOString());
     // The very first post is made on its own so the owner sees it in a minute or two; the rest of
     // the month follows in small batches (one huge plan was slow and could hit Claude's output cap).
     let created = 0;

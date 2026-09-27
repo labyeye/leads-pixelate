@@ -88,21 +88,6 @@ async function ensureDefaultCampaign(tenant) {
   return campaign;
 }
 
-// An account can belong to one campaign only (otherwise both would post to it).
-// Returns { accountId, campaignName } for the first account already used elsewhere, else null.
-async function findAccountConflict(tenantId, accountIds, exceptCampaignId) {
-  if (!accountIds?.length) return null;
-  const others = await AutopilotCampaign.find({
-    tenantId,
-    ...(exceptCampaignId ? { _id: { $ne: exceptCampaignId } } : {}),
-  });
-  for (const c of others) {
-    const hit = (c.accountIds || []).find((id) => accountIds.includes(String(id)));
-    if (hit) return { accountId: String(hit), campaignName: c.name };
-  }
-  return null;
-}
-
 // One row of the campaign list.
 function campaignSummary(c, { monthPosts = 0, next = null, now = new Date() } = {}) {
   return {
@@ -120,7 +105,6 @@ function campaignSummary(c, { monthPosts = 0, next = null, now = new Date() } = 
 
 module.exports = {
   ensureDefaultCampaign,
-  findAccountConflict,
   campaignSummary,
   privateDir,
   MAX_COMPETITORS,
