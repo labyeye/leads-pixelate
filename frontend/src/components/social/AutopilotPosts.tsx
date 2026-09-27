@@ -13,6 +13,7 @@ interface Post {
   imageUrl: string;
   mediaUrls?: string[];
   storyImageUrl?: string;
+  videoUrl?: string;
   platforms: string[];
   scheduledAt: string;
   status: string;
@@ -219,6 +220,17 @@ export function AutopilotPosts({
 // The post at full size: every slide (4:5) and its Story (9:16), side by side, scrolling sideways.
 function PostMedia({ post }: { post: Post }) {
   const images = post.mediaUrls?.length ? post.mediaUrls : [post.imageUrl];
+  if (post.videoUrl) {
+    return (
+      <video
+        src={post.videoUrl}
+        poster={post.imageUrl}
+        controls
+        playsInline
+        className="h-[60vh] max-h-[560px] aspect-[9/16] mx-auto rounded-lg border-2 border-black bg-black"
+      />
+    );
+  }
   return (
     <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
       {images.map((src, i) => (

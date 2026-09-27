@@ -120,6 +120,8 @@ export function BrandSection({ status, reload, toast }: { status: AutopilotStatu
           <ContentBrief
             status={status}
             saving={saving}
+            toast={toast}
+            onChanged={reload}
             onSave={(p: BriefPatch) => saveWith(() => api.update({ ...p }), "Content brief saved")}
           />
         </TabsContent>

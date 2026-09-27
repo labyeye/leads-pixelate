@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { AutopilotStatus } from "./useAutopilot";
+import { ActorEditor } from "./ActorEditor";
 
 export const CTA_TYPES: Record<string, string> = {
   none: "No call to action",
@@ -39,11 +40,15 @@ export function ContentBrief({
   saving,
   saveLabel = "Save",
   onSave,
+  toast,
+  onChanged,
 }: {
   status: AutopilotStatus;
   saving?: boolean;
   saveLabel?: string;
   onSave: (patch: BriefPatch) => void;
+  toast: any;
+  onChanged: () => Promise<unknown>;
 }) {
   const b = status.settings.brief;
   const [format, setFormat] = useState<"image" | "carousel" | "reel">(b.format);
@@ -116,6 +121,7 @@ export function ContentBrief({
             <span className="text-xs text-muted-foreground">Each slide is an AI image, so more slides use more AI credits.</span>
           </div>
         )}
+        {format === "reel" && <ActorEditor status={status} toast={toast} onChanged={onChanged} />}
         {format !== "reel" && (
           <label className="flex items-start gap-3 rounded-lg border-2 border-black/20 p-3 cursor-pointer has-[:checked]:border-black">
             <input type="checkbox" className="mt-1 accent-primary" checked={story} onChange={(e) => setStory(e.target.checked)} />

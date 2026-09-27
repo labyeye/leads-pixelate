@@ -538,7 +538,7 @@ describe("PostingPlan", () => {
 
   it("content brief: carousel, include list, CTA and duration are sent together", () => {
     const onSave = vi.fn();
-    render(<ContentBrief status={status() as any} onSave={onSave} />);
+    render(<ContentBrief status={status() as any} onSave={onSave} toast={vi.fn()} onChanged={async () => {}} />);
     expect(screen.getByRole("button", { name: /Video \/ Reel/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Carousel/ }));
     fireEvent.change(screen.getByLabelText(/goal of these posts/), { target: { value: "Get demo bookings" } });
@@ -554,7 +554,7 @@ describe("PostingPlan", () => {
   it("content brief: a link without http(s) blocks saving", () => {
     const s = status();
     s.settings.brief.cta = { type: "book", text: "Book", link: "yoursite.com", phone: "" };
-    render(<ContentBrief status={s as any} onSave={vi.fn()} />);
+    render(<ContentBrief status={s as any} onSave={vi.fn()} toast={vi.fn()} onChanged={async () => {}} />);
     expect(screen.getByText(/must start with http/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });

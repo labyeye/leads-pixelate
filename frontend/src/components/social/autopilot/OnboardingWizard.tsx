@@ -354,7 +354,7 @@ export function OnboardingWizard({ status, reload, toast, onDone }: Props) {
               title="What should each post be?"
               text="Choose image or carousel, the goal, what to include, your call to action and any instructions. The more detail you give, the closer the posts get to what you want."
             />
-            <ContentBrief status={status} saving={busy} saveLabel="Continue" onSave={saveBrief} />
+            <ContentBrief status={status} saving={busy} saveLabel="Continue" onSave={saveBrief} toast={toast} onChanged={reload} />
             <BackButton onClick={() => setStep(6)} />
           </>
         )}
@@ -637,7 +637,18 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
           />
           <Fact label="When" value={when} />
           <Fact label="Language" value={s.language} />
-          <Fact label="Format" value={s.brief.format === "carousel" ? `Carousel, ${s.brief.slides} slides` : "Single image"} />
+          <Fact
+            label="Format"
+            value={
+              s.brief.format === "carousel"
+                ? `Carousel, ${s.brief.slides} slides`
+                : s.brief.format === "reel"
+                  ? status.actor?.url
+                    ? "Talking reel with your AI presenter"
+                    : "Reel"
+                  : "Single image"
+            }
+          />
           <Fact label="Call to action" value={s.brief.cta.type === "none" ? "None" : s.brief.cta.text || CTA_TYPES[s.brief.cta.type]} />
           <Fact label="Runs for" value={s.timeline.days ? `${s.timeline.days} days` : "Until you pause it"} />
           <Fact
@@ -776,7 +787,7 @@ function Launch({ status, reload, toast, onDone, onBack }: Props & { onBack: () 
 function SamplePost({
   sample,
 }: {
-  sample: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: string; imagePrompt?: string; story?: string };
+  sample: { caption: string; hashtags: string[]; images: string[]; platforms: string[]; format: string; imagePrompt?: string; story?: string; video?: string };
 }) {
   const [i, setI] = useState(0);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -785,11 +796,15 @@ function SamplePost({
     <div className="grid sm:grid-cols-[300px_minmax(0,1fr)] gap-5 items-start animate-fade-in">
       <div className="space-y-3">
       <div className="relative">
+        {sample.video ? (
+          <video src={sample.video} poster={sample.images[0]} controls playsInline className="w-full aspect-[9/16] rounded-lg border-2 border-black nb-shadow bg-black" />
+        ) : (
         <img
           src={sample.images[i]}
           alt={n > 1 ? `Sample slide ${i + 1} of ${n}` : "Sample post"}
           className="w-full aspect-[4/5] object-cover rounded-lg border-2 border-black nb-shadow bg-muted"
         />
+        )}
         {n > 1 && (
           <>
             <button

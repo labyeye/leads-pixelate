@@ -640,7 +640,8 @@ async function imageWithOpenAI(imagePrompt, { refs = [], size = POSTER_SIZE } = 
 
 // A Reel clip from Veo (predictLongRunning, then poll the operation, then download the MP4).
 // refs: up to 3 images whose subject must appear (the AI actor, the product) — 8s clips only.
-// extend: a previous Veo clip to continue by up to 7s; the result is the whole combined video.
+// extend: a clip this function returned (it carries its Veo URI), continued by ~7s; the result is
+// the whole combined video. Live-verified 2026-09-27: 8s + extension = 15s 720x1280 H.264/AAC in ~95s.
 // Veo speaks quoted dialogue with lip sync and makes its own sound (docs: ai.google.dev/gemini-api/docs/veo).
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 // Verified live 2026-09-27: the docs show inlineData and string durations, the API wants these.

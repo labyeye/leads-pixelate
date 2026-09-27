@@ -93,6 +93,7 @@ export interface AutopilotStatus {
   };
   brandProfile: BrandProfile;
   brandKit: BrandKit;
+  actor?: { url: string; voice: string; source: "" | "upload" | "generated" };
   competitors: Competitor[];
   references: Reference[];
   campaignMonthCount: number;

@@ -696,6 +696,7 @@ function autopilotCampaignApi(id: string) {
           topic: string;
           imagePrompt: string;
           story?: string;
+          video?: string;
         };
       }>(`${base}/preview`, { method: "POST" }),
     analyze: (accountId?: string) =>
@@ -723,6 +724,17 @@ function autopilotCampaignApi(id: string) {
       );
     },
     deleteLogo: (logoId: string) => send(`/logos/${logoId}`, "DELETE"),
+    // The AI presenter for talking reels: a consented photo, or an AI-made face from a description.
+    uploadActor: (file: File, voice: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("voice", voice);
+      formData.append("consent", "true");
+      return postForm<{ success: boolean }>(`${base}/actor`, formData, "Photo upload failed");
+    },
+    generateActor: (description: string, voice: string) => send("/actor/generate", "POST", { description, voice }),
+    saveActorVoice: (voice: string) => send("/actor", "PUT", { voice }),
+    deleteActor: () => send("/actor", "DELETE"),
     addCompetitor: (c: { username?: string; notes?: string }) =>
       request<{ success: boolean; data: { id: string; username: string; notes: string } }>(`${base}/competitors`, {
         method: "POST",
