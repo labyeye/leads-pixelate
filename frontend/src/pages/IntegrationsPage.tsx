@@ -1476,8 +1476,8 @@ export default function IntegrationsPage() {
                       try {
                         await facebookAPI.updateSettings(fbAssigneeIds, fbBatchSize);
                         toast({ title: "Saved!", description: "Facebook lead assignment updated." });
-                      } catch {
-                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
                       }
                       setFbSavingAssignees(false);
                     }}
@@ -1496,8 +1496,8 @@ export default function IntegrationsPage() {
                       try {
                         await indiamartAPI.updateSettings(imAssigneeIds, imBatchSize);
                         toast({ title: "Saved!", description: "IndiaMART lead assignment updated." });
-                      } catch {
-                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
                       }
                       setImSavingAssignees(false);
                     }}
@@ -1516,8 +1516,8 @@ export default function IntegrationsPage() {
                       try {
                         await tradeindiaSyncAPI.updateSettings(tiAssigneeIds, tiBatchSize);
                         toast({ title: "Saved!", description: "TradeIndia lead assignment updated." });
-                      } catch {
-                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
                       }
                       setTiSavingAssignees(false);
                     }}
@@ -1536,8 +1536,8 @@ export default function IntegrationsPage() {
                       try {
                         await justdialSyncAPI.updateSettings(jdAssigneeIds, jdBatchSize);
                         toast({ title: "Saved!", description: "Justdial lead assignment updated." });
-                      } catch {
-                        toast({ title: "Error", description: "Could not save assignment settings.", variant: "destructive" });
+                      } catch (err: any) {
+                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
                       }
                       setJdSavingAssignees(false);
                     }}
