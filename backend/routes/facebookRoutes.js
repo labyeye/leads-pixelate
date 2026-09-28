@@ -281,14 +281,15 @@ async function subscribePageToWebhook(pageId, pageToken) {
 
 // A Page's linked Instagram professional account, if any. Instagram DM webhooks
 // arrive under object "instagram" keyed by this id, not the Facebook Page id.
-async function getInstagramAccountId(pageId, pageToken) {
+async function getInstagramAccount(pageId, pageToken) {
   try {
     const data = await fbGet(`/${pageId}`, pageToken, {
-      fields: "instagram_business_account",
+      fields: "instagram_business_account{id,username}",
     });
-    return data.instagram_business_account?.id || "";
+    const ig = data.instagram_business_account || {};
+    return { instagramId: ig.id || "", instagramUsername: ig.username || "" };
   } catch {
-    return "";
+    return { instagramId: "", instagramUsername: "" };
   }
 }
 
@@ -383,6 +384,12 @@ router.get(
       "integrations.facebook.oauthUserId": userId,
     });
 
+    // Same login also fills Social Media Planner → Connected Accounts, so nobody connects twice.
+    // Background: a failed import must not break the leads connection.
+    require("../controllers/socialController")
+      .savePagesAsSocialAccounts(longLivedToken, userId, tenantId && tenantId !== "global" ? tenantId : null)
+      .catch((err) => log.error("Social accounts auto-import failed", { message: err.message }));
+
     res.redirect(`${frontendBase}/integrations?fb_step=select_page`);
   }),
 );
@@ -407,7 +414,7 @@ router.get(
     const token = tenant.integrations.facebook.userAccessToken;
 
     const personalData = await fbGet("/me/accounts", token, {
-      fields: "id,name,picture,fan_count,category",
+      fields: "id,name,picture,fan_count,category,instagram_business_account{username}",
     });
     const personalPages = personalData.data || [];
 
@@ -419,7 +426,7 @@ router.get(
       for (const biz of businesses.data || []) {
         try {
           const bizPages = await fbGet(`/${biz.id}/owned_pages`, token, {
-            fields: "id,name,picture,fan_count,category",
+            fields: "id,name,picture,fan_count,category,instagram_business_account{username}",
           });
           businessPages = businessPages.concat(bizPages.data || []);
         } catch (_) {}
@@ -439,6 +446,7 @@ router.get(
       category: p.category,
       picture: p.picture?.data?.url || null,
       fanCount: p.fan_count || 0,
+      instagramUsername: p.instagram_business_account?.username || "",
     }));
 
     res.json({ success: true, data: pages });
@@ -528,13 +536,14 @@ router.post(
       userToken,
     );
     const subscribed = await subscribePageToWebhook(pageId, pageToken);
-    const instagramId = await getInstagramAccountId(pageId, pageToken);
+    const { instagramId, instagramUsername } = await getInstagramAccount(pageId, pageToken);
 
     const pageEntry = {
       pageId,
       pageName,
       accessToken: pageToken,
       instagramId,
+      instagramUsername,
       selectedFormIds,
       allowedStates: allowedStates.map((s) => s.toLowerCase().trim()),
       defaultAssigneeId,
@@ -661,6 +670,8 @@ router.get(
     const pages = (tenant?.integrations?.facebook?.pages || []).map((p) => ({
       pageId: p.pageId,
       pageName: p.pageName,
+      instagramId: p.instagramId || "",
+      instagramUsername: p.instagramUsername || "",
       selectedFormIds: p.selectedFormIds || [],
       allowedStates: p.allowedStates || [],
       defaultAssigneeId: p.defaultAssigneeId || "",

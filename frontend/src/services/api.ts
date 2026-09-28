@@ -872,6 +872,7 @@ export const facebookAPI = {
         category: string;
         picture: string | null;
         fanCount: number;
+        instagramUsername?: string;
       }>;
     }>("/facebook/pages"),
   getForms: (pageId: string) =>
@@ -929,6 +930,8 @@ export const facebookAPI = {
       data: Array<{
         pageId: string;
         pageName: string;
+        instagramId?: string;
+        instagramUsername?: string;
         selectedFormIds: string[];
         webhookVerified: boolean;
         connectedAt: string;

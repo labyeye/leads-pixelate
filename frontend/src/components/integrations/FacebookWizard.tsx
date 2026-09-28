@@ -29,6 +29,7 @@ interface FbPage {
   category: string;
   picture: string | null;
   fanCount: number;
+  instagramUsername?: string;
 }
 
 interface FbForm {
@@ -93,6 +94,8 @@ export function FacebookWizard({
     Array<{
       pageId: string;
       pageName: string;
+      instagramId?: string;
+      instagramUsername?: string;
       webhookVerified: boolean;
       allowedStates: string[];
       selectedFormIds: string[];
@@ -579,6 +582,11 @@ export function FacebookWizard({
                           <Users className="w-3 h-3 inline mr-0.5" />
                           {page.fanCount.toLocaleString()} followers
                         </p>
+                        {page.instagramUsername && (
+                          <p className="text-[11px] text-[#E1306C] font-medium">
+                            Instagram: @{page.instagramUsername}
+                          </p>
+                        )}
                       </div>
                       {isSelected && (
                         <div className="w-6 h-6 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
@@ -860,6 +868,11 @@ export function FacebookWizard({
                       <p className="font-bold text-sm text-black truncate">
                         {cp.pageName}
                       </p>
+                      {(cp.instagramUsername || cp.instagramId) && (
+                        <p className="text-[11px] text-[#E1306C] font-medium">
+                          Instagram: {cp.instagramUsername ? `@${cp.instagramUsername}` : "linked"}
+                        </p>
+                      )}
                       <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                         {cp.webhookVerified ? (
                           <>

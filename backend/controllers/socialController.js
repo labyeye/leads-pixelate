@@ -878,6 +878,7 @@ exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { authUrl } });
 });
 
+exports.savePagesAsSocialAccounts = savePagesAsSocialAccounts;
 async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null) {
   try {
     const permRes = await fetch(

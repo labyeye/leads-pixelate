@@ -43,7 +43,6 @@ import {
   Eye,
   Pencil,
   Trash2,
-  Link2,
   Link2Off,
   ChevronRight,
   ChevronLeft,
@@ -1960,27 +1959,17 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// Accounts come from the Facebook login on the Integrations page: on open (and on Refresh) we
+// import every page / Instagram account that login can reach, then list them as cards.
 function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [manualDialogOpen, setManualDialogOpen] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
-  const [liOauthLoading, setLiOauthLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  const [manualForm, setManualForm] = useState({
-    platform: "facebook",
-    accountId: "",
-    accountName: "",
-    accessToken: "",
-    instagramBusinessAccountId: "",
-  });
-  const [connecting, setConnecting] = useState(false);
-  const [importing, setImporting] = useState(false);
-
   const fetchAccounts = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await socialAPI.getAccounts();
       setAccounts(res.data);
@@ -1991,89 +1980,23 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchAccounts();
+  const sync = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await socialAPI.importFromIntegration();
+      setSyncError("");
+    } catch (err: any) {
+      setSyncError(err.message || "Couldn't fetch accounts from Integrations");
+    } finally {
+      await fetchAccounts();
+      setSyncing(false);
+    }
   }, [fetchAccounts]);
 
-  const handleOAuthConnect = async () => {
-    setOauthLoading(true);
-    try {
-      const res = await socialAPI.getFacebookAuthUrl();
-      window.location.href = res.data.authUrl;
-    } catch (err: any) {
-      toast({
-        title: "Failed to get auth URL",
-        description: err.message,
-        variant: "destructive",
-      });
-      setOauthLoading(false);
-    }
-  };
-
-  const handleLinkedInConnect = async () => {
-    setLiOauthLoading(true);
-    try {
-      const res = await socialAPI.getLinkedInAuthUrl();
-      window.location.href = res.data.authUrl;
-    } catch (err: any) {
-      toast({
-        title: "Failed to get LinkedIn auth URL",
-        description: err.message,
-        variant: "destructive",
-      });
-      setLiOauthLoading(false);
-    }
-  };
-
-  const handleImportFromIntegration = async () => {
-    setImporting(true);
-    try {
-      const res = await socialAPI.importFromIntegration();
-      toast({
-        title: `Imported! ${res.data.connected} account(s) saved.`,
-      });
-      await fetchAccounts();
-    } catch (err: any) {
-      toast({
-        title: "Import failed",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const handleManualConnect = async () => {
-    if (
-      !manualForm.accountId ||
-      !manualForm.accountName ||
-      !manualForm.accessToken
-    )
-      return;
-    setConnecting(true);
-    try {
-      await socialAPI.connectAccount(manualForm);
-      toast({ title: "Account connected!" });
-      setManualDialogOpen(false);
-      setManualForm({
-        platform: "facebook",
-        accountId: "",
-        accountName: "",
-        accessToken: "",
-        instagramBusinessAccountId: "",
-      });
-      await fetchAccounts();
-    } catch (err: any) {
-      toast({
-        title: "Failed",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setConnecting(false);
-    }
-  };
+  // Show what's saved right away, then pull in anything new from Integrations.
+  useEffect(() => {
+    fetchAccounts().then(sync);
+  }, [fetchAccounts, sync]);
 
   const handleDisconnect = async () => {
     if (!disconnectId) return;
@@ -2090,360 +2013,133 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     }
   };
 
-  const fbAccounts = accounts.filter((a) => a.platform === "facebook");
-  const igAccounts = accounts.filter((a) => a.platform === "instagram");
-  const liAccounts = accounts.filter((a) => a.platform === "linkedin");
+  const noFacebook = /No Facebook account connected/i.test(syncError);
+  const groups = [
+    { label: "Instagram", platform: "instagram", Icon: Instagram, badge: "bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 text-white" },
+    { label: "Facebook Pages", platform: "facebook", Icon: Facebook, badge: "bg-blue-600 text-white" },
+    { label: "LinkedIn", platform: "linkedin", Icon: LinkedInIcon, badge: "bg-white" },
+  ].map((g) => ({ ...g, items: accounts.filter((a) => a.platform === g.platform) }));
 
   return (
-    <div className="p-6 max-w-2xl">
-      <div className="flex items-center justify-between mb-5">
+    <div className="p-6 max-w-4xl">
+      <div className="flex items-start justify-between gap-4 mb-5">
         <div>
           <h2 className="font-semibold text-base">Connected Accounts</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Connect your Facebook Pages, Instagram Business accounts, and
-            LinkedIn Company Pages
+            Fetched from the Facebook account connected on{" "}
+            <Link to="/integrations" className="underline underline-offset-2">
+              Integrations
+            </Link>
+            .
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAccounts}>
-          <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+        <Button variant="outline" size="sm" onClick={sync} disabled={syncing}>
+          <RefreshCw className={cn("w-4 h-4 mr-1", syncing && "animate-spin")} />
+          {syncing ? "Syncing…" : "Refresh"}
         </Button>
       </div>
 
-      {}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {}
-        <button
-          onClick={handleImportFromIntegration}
-          disabled={importing}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50/30 transition-all"
-        >
-          {importing ? (
-            <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
-          ) : (
-            <RefreshCw className="w-8 h-8 text-green-600" />
-          )}
-          <div className="text-center">
-            <p className="text-sm font-semibold text-green-700">
-              Import from Integrations
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Already connected Facebook under Integrations? Reuse it — no
-              re-login needed
-            </p>
-          </div>
-          <span className="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">
-            Recommended
-          </span>
-        </button>
+      {syncError && !noFacebook && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+          Couldn't fetch accounts from Integrations: {syncError}
+        </div>
+      )}
 
-        {}
-        <button
-          onClick={handleOAuthConnect}
-          disabled={oauthLoading}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50/30 transition-all"
-        >
-          {oauthLoading ? (
-            <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-          ) : (
-            <Facebook className="w-8 h-8 text-blue-600" />
-          )}
-          <div className="text-center">
-            <p className="text-sm font-semibold text-blue-700">
-              Connect via Facebook
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              OAuth — connects all your Pages & Instagram accounts automatically
-            </p>
-          </div>
-        </button>
-
-        {}
-        <button
-          onClick={handleLinkedInConnect}
-          disabled={liOauthLoading}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-sky-200 hover:border-sky-400 hover:bg-sky-50/30 transition-all"
-        >
-          {liOauthLoading ? (
-            <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
-          ) : (
-            <LinkedInIcon className="w-8 h-8" />
-          )}
-          <div className="text-center">
-            <p className="text-sm font-semibold text-sky-700">
-              Connect via LinkedIn
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              OAuth — connects LinkedIn Company Pages you administer
-            </p>
-          </div>
-        </button>
-
-        {}
-        <button
-          onClick={() => setManualDialogOpen(true)}
-          className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 hover:bg-gray-50/30 transition-all"
-        >
-          <Link2 className="w-8 h-8 text-gray-500" />
-          <div className="text-center">
-            <p className="text-sm font-semibold text-gray-700">
-              Manual Connect
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Paste Page ID and Access Token manually
-            </p>
-          </div>
-          <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-            Advanced
-          </span>
-        </button>
-      </div>
-
-      {}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2">
-          Setup Requirements
-        </h3>
-        <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-          <li>
-            Create a <strong>Meta App</strong> at developers.facebook.com with{" "}
-            <em>Business</em> type
-          </li>
-          <li>
-            Add <strong>FACEBOOK_APP_ID</strong> and{" "}
-            <strong>FACEBOOK_APP_SECRET</strong> to backend .env
-          </li>
-          <li>
-            Register callback:{" "}
-            <code className="bg-blue-100 px-1 rounded">
-              YOUR_API_URL/api/social/auth/facebook/callback
-            </code>
-          </li>
-          <li>
-            Your Instagram account must be a <strong>Business/Creator</strong>{" "}
-            account linked to a Facebook Page
-          </li>
-        </ol>
-      </div>
-
-      {}
       {loading ? (
-        <div className="flex justify-center py-8">
+        <div className="flex justify-center py-10">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       ) : accounts.length === 0 ? (
-        <div className="flex flex-col items-center py-10 gap-2 text-center border border-dashed border-border rounded-xl">
-          <Globe className="w-8 h-8 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">
-            No accounts connected yet.
-          </p>
+        <div className="flex flex-col items-center py-12 gap-3 text-center border border-dashed border-border rounded-xl">
+          {syncing ? (
+            <>
+              <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Fetching your pages and Instagram accounts…</p>
+            </>
+          ) : (
+            <>
+              <Globe className="w-8 h-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground max-w-sm">
+                {noFacebook
+                  ? "Connect Facebook on the Integrations page. Your pages and Instagram accounts will show up here automatically."
+                  : "No pages or Instagram accounts found for the connected Facebook login."}
+              </p>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/integrations">Go to Integrations</Link>
+              </Button>
+            </>
+          )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {[
-            {
-              label: "Facebook Pages",
-              items: fbAccounts,
-              Icon: Facebook,
-              color: "text-blue-600 bg-blue-100",
-            },
-            {
-              label: "Instagram Accounts",
-              items: igAccounts,
-              Icon: Instagram,
-              color: "text-primary-900 bg-purple-100",
-            },
-            {
-              label: "LinkedIn Pages",
-              items: liAccounts,
-              Icon: LinkedInIcon,
-              color: "text-sky-700 bg-sky-100",
-            },
-          ].map(({ label, items, Icon, color }) =>
+        <div className="space-y-6">
+          {groups.map(({ label, Icon, badge, items }) =>
             items.length === 0 ? null : (
-              <div key={label}>
+              <section key={label}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                  {label}
+                  {label} · {items.length}
                 </p>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {items.map((acc) => (
                     <div
                       key={acc._id}
-                      className="flex items-center gap-3 p-3 border border-border rounded-lg bg-white"
+                      className="flex items-center gap-3 p-4 border border-border rounded-xl bg-white hover:shadow-sm transition-shadow"
                     >
-                      {acc.profilePicture ? (
-                        <img
-                          src={acc.profilePicture}
-                          alt=""
-                          className="w-9 h-9 rounded-full object-cover shrink-0"
-                        />
-                      ) : (
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${color}`}
-                        >
-                          <Icon className="w-5 h-5" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {acc.accountName}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {acc.accountId}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                          Active
-                        </span>
-                        {isAdmin && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 text-red-500 hover:bg-red-50"
-                            onClick={() => setDisconnectId(acc._id)}
-                          >
-                            <Link2Off className="w-3.5 h-3.5" />
-                          </Button>
+                      <div className="relative shrink-0">
+                        {acc.profilePicture ? (
+                          <img
+                            src={acc.profilePicture}
+                            alt=""
+                            className="w-12 h-12 rounded-full object-cover border border-border bg-muted"
+                            onError={(e) => (e.currentTarget.style.visibility = "hidden")}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold text-muted-foreground">
+                            {acc.accountName.replace(/^@/, "").charAt(0).toUpperCase()}
+                          </div>
                         )}
+                        <span
+                          className={cn(
+                            "absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white",
+                            badge,
+                          )}
+                        >
+                          <Icon className="w-3 h-3" />
+                        </span>
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{acc.accountName}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate">{acc.accountId}</p>
+                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-green-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active
+                        </span>
+                      </div>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Disconnect ${acc.accountName}`}
+                          className="h-7 w-7 p-0 text-red-500 hover:bg-red-50 shrink-0"
+                          onClick={() => setDisconnectId(acc._id)}
+                        >
+                          <Link2Off className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
-              </div>
+              </section>
             ),
           )}
         </div>
       )}
 
-      {}
-      <Dialog open={manualDialogOpen} onOpenChange={setManualDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Manual Account Connect</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label>Platform</Label>
-              <div className="flex gap-2 mt-1">
-                {["facebook", "instagram", "linkedin"].map((p) => (
-                  <button
-                    key={p}
-                    onClick={() =>
-                      setManualForm((f) => ({ ...f, platform: p }))
-                    }
-                    className={`flex-1 py-2 rounded-lg border text-sm font-medium capitalize transition-colors ${manualForm.platform === p ? "border-purple-500 bg-purple-50 text-purple-700" : "border-border text-muted-foreground hover:border-muted-foreground/40"}`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label>
-                Account / Page Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                placeholder="My Business Page"
-                value={manualForm.accountName}
-                onChange={(e) =>
-                  setManualForm((f) => ({ ...f, accountName: e.target.value }))
-                }
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label>
-                {manualForm.platform === "facebook"
-                  ? "Facebook Page ID"
-                  : manualForm.platform === "linkedin"
-                    ? "LinkedIn Organization ID"
-                    : "Instagram Business Account ID"}{" "}
-                <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                placeholder="123456789"
-                value={manualForm.accountId}
-                onChange={(e) =>
-                  setManualForm((f) => ({ ...f, accountId: e.target.value }))
-                }
-                className="mt-1 font-mono"
-              />
-            </div>
-            <div>
-              <Label>
-                Page Access Token <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                placeholder="EAAxxxxx..."
-                value={manualForm.accessToken}
-                onChange={(e) =>
-                  setManualForm((f) => ({ ...f, accessToken: e.target.value }))
-                }
-                className="mt-1 font-mono text-xs"
-                type="password"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Get this from Meta Business Suite → Settings → Page Access
-                Tokens
-              </p>
-            </div>
-            {manualForm.platform === "facebook" && (
-              <div>
-                <Label>
-                  Instagram Business Account ID{" "}
-                  <span className="text-muted-foreground text-xs">
-                    (optional)
-                  </span>
-                </Label>
-                <Input
-                  placeholder="Leave blank if not using Instagram"
-                  value={manualForm.instagramBusinessAccountId}
-                  onChange={(e) =>
-                    setManualForm((f) => ({
-                      ...f,
-                      instagramBusinessAccountId: e.target.value,
-                    }))
-                  }
-                  className="mt-1 font-mono"
-                />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setManualDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleManualConnect}
-              disabled={
-                connecting ||
-                !manualForm.accountId ||
-                !manualForm.accountName ||
-                !manualForm.accessToken
-              }
-              className="bg-primary hover:bg-purple-700 text-white"
-            >
-              {connecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />}{" "}
-              Connect
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {}
-      <AlertDialog
-        open={!!disconnectId}
-        onOpenChange={() => setDisconnectId(null)}
-      >
+      <AlertDialog open={!!disconnectId} onOpenChange={() => setDisconnectId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect Account?</AlertDialogTitle>
             <AlertDialogDescription>
-              Scheduled posts targeting this account will fail. You can
-              reconnect anytime.
+              Scheduled posts targeting this account will fail. Refresh brings it back while the
+              Integrations login can still reach it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2453,10 +2149,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               disabled={disconnecting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {disconnecting && (
-                <Loader2 className="w-4 h-4 animate-spin mr-1" />
-              )}{" "}
-              Disconnect
+              {disconnecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Disconnect
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

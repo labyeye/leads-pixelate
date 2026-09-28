@@ -79,6 +79,7 @@ const tenantSchema = new mongoose.Schema(
             // The Page's linked Instagram professional account, if any — Instagram DM
             // webhooks arrive keyed by this id, not the Page id.
             instagramId: { type: String, default: "" },
+            instagramUsername: { type: String, default: "" },
             selectedFormIds: { type: [String], default: [] },
 
             allowedStates: { type: [String], default: [] },
