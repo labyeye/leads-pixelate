@@ -39,7 +39,8 @@ const leadSchema = new mongoose.Schema(
     },
     facebookLeadgenId: { type: String, default: null },
     facebookFormId: { type: String, default: null },
-    instagramDmMessageId: { type: String, default: null },
+    // No default: the sparse unique index only skips a missing field, not null.
+    instagramDmMessageId: { type: String },
     facebookAdId: { type: String, default: null },
     facebookAdName: { type: String, default: null },
     facebookPageName: { type: String, default: null },
