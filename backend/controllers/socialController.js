@@ -289,6 +289,7 @@ async function executePublish(post) {
     // Backward compatibility for posts created before account selection existed.
     accounts = await SocialAccount.find({
       platform: { $in: post.platforms },
+      tenantId: post.tenantId || null,
       isActive: true,
     });
   }
