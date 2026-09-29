@@ -31,11 +31,12 @@ const findItem = (r: any, title: string) =>
 describe("WhatsApp navigation", () => {
   it("is one dropdown with every page for admins, and no flat WhatsApp group", () => {
     const wa = findItem("admin", "WhatsApp")!;
-    expect(wa.children!.map((c) => c.title)).toEqual(["Inbox", "Campaigns", "Logs", "Setup"]);
+    expect(wa.children!.map((c) => c.title)).toEqual(["Inbox", "Campaigns", "Logs", "Document Vault", "Setup"]);
     expect(wa.children!.map((c) => c.href)).toEqual([
       "/whatsapp/inbox",
       "/whatsapp/campaigns",
       "/whatsapp/logs",
+      "/documents",
       "/whatsapp/setup",
     ]);
     expect(getNavGroupsForRole("admin").map((g) => g.label)).not.toContain("WhatsApp");
@@ -46,6 +47,7 @@ describe("WhatsApp navigation", () => {
       "Inbox",
       "Campaigns",
       "Logs",
+      "Document Vault",
     ]);
     expect(findItem("accountant", "WhatsApp")).toBeUndefined();
     expect(findItem("service_manager", "WhatsApp")).toBeUndefined();
@@ -149,7 +151,11 @@ describe("WhatsApp campaign wizard", () => {
 
   // Walks the real 4-step wizard: name -> template -> leads -> review/send.
   const runWizard = async () => {
-    render(<WhatsappMessagingPage />);
+    render(
+      <MemoryRouter>
+        <WhatsappMessagingPage />
+      </MemoryRouter>,
+    );
     fireEvent.click(await screen.findByRole("button", { name: /New Campaign/ }));
     fireEvent.change(await screen.findByPlaceholderText(/Diwali Offer/), { target: { value: "Diwali blast" } });
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
@@ -171,6 +177,21 @@ describe("WhatsApp campaign wizard", () => {
         expect.objectContaining({ name: "Diwali blast", templateId: "t1", leadIds: ["l1"], phoneNumberId: "pn1" }),
       ),
     );
+  });
+
+  it("opens the wizard with leads handed over from the Leads page already ticked", async () => {
+    setup([number("pn1", "Sales")]);
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/whatsapp/campaigns", state: { leadIds: ["l1"] } }]}>
+        <WhatsappMessagingPage />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("Step 1 of 4")).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(/Diwali Offer/), { target: { value: "From leads" } });
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    fireEvent.click(await screen.findByText("Promo Offer"));
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    expect(await screen.findByText("1 selected")).toBeInTheDocument();
   });
 
   it("doesn't bother with a picker when there is one number", async () => {

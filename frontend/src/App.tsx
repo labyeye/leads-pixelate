@@ -31,6 +31,7 @@ import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
 import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
 import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
 import WhatsappMessagingPage from "./pages/WhatsappMessagingPage";
+import DocumentVaultPage from "./pages/DocumentVaultPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
 import SocialAutopilotPage from "./pages/SocialAutopilotPage";
@@ -336,6 +337,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <WhatsAppSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/documents"
+        element={
+          <ProtectedRoute>
+            <DocumentVaultPage />
           </ProtectedRoute>
         }
       />

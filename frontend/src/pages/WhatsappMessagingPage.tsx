@@ -39,6 +39,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useLocation, useNavigate } from "react-router-dom";
+import { VaultDocPicker } from "@/components/documents/VaultDocPicker";
 
 interface Campaign {
   _id: string;
@@ -63,6 +65,7 @@ interface Template {
   displayName: string;
   bodyText: string;
   headerText?: string;
+  headerType?: string;
   footerText?: string;
   category: string;
   language: string;
@@ -164,6 +167,9 @@ export default function WhatsappMessagingPage() {
     }[]
   >([]);
   const [senderId, setSenderId] = useState("");
+  const [documentId, setDocumentId] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const fetchCampaigns = useCallback(async () => {
     setLoadingCampaigns(true);
@@ -181,11 +187,20 @@ export default function WhatsappMessagingPage() {
     fetchCampaigns();
   }, [fetchCampaigns]);
 
-  const openWizard = async () => {
+  useEffect(() => {
+    const ids = (location.state as { leadIds?: string[] } | null)?.leadIds;
+    if (!ids?.length) return;
+    navigate(location.pathname, { replace: true, state: null }); // don't reopen on refresh
+    openWizard(ids);
+  }, []);
+
+  // preselected: lead ids handed over from the Leads page bulk action.
+  const openWizard = async (preselected: string[] = []) => {
     setStep(1);
     setCampaignName("");
     setSelectedTemplate(null);
-    setSelectedLeadIds(new Set());
+    setDocumentId("");
+    setSelectedLeadIds(new Set(preselected));
     setLeadSearch("");
     setLeadStatusFilter("ALL");
     setVariableMapping([]);
@@ -236,6 +251,7 @@ export default function WhatsappMessagingPage() {
 
   const selectTemplate = (t: Template) => {
     setSelectedTemplate(t);
+    setDocumentId("");
     const vars: { position: number; fieldKey: string; customValue: string }[] =
       [];
     for (let i = 1; i <= t.variableCount; i++) {
@@ -273,6 +289,7 @@ export default function WhatsappMessagingPage() {
         leadIds: Array.from(selectedLeadIds),
         variableMapping,
         phoneNumberId: senderId || undefined,
+        documentId: documentId || undefined,
       });
       toast({
         title: "Campaign launched!",
@@ -355,7 +372,7 @@ export default function WhatsappMessagingPage() {
             <Button
               size="sm"
               className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={openWizard}
+              onClick={() => openWizard()}
             >
               <Plus className="w-4 h-4 mr-1" />
               New Campaign
@@ -772,6 +789,23 @@ export default function WhatsappMessagingPage() {
                     </span>
                   </div>
                 </div>
+
+                {["DOCUMENT", "IMAGE"].includes(selectedTemplate.headerType || "") && (
+                  <div>
+                    <p className="text-sm font-medium">
+                      Attach {selectedTemplate.headerType === "IMAGE" ? "image" : "document"} from vault
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Every lead gets this file as the message header.
+                    </p>
+                    <VaultDocPicker
+                      value={documentId}
+                      onChange={setDocumentId}
+                      imagesOnly={selectedTemplate.headerType === "IMAGE"}
+                      optional
+                    />
+                  </div>
+                )}
 
                 {senders.length > 1 && (
                   <div>

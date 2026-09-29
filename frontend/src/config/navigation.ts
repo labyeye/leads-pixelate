@@ -32,6 +32,7 @@ import {
   Tag,
   ShoppingCart,
   Receipt,
+  FolderOpen,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
@@ -358,6 +359,12 @@ const allGroups: NavGroup[] = [
             title: "Logs",
             href: "/whatsapp/logs",
             icon: FileText,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Document Vault",
+            href: "/documents",
+            icon: FolderOpen,
             roles: ["super_admin", "admin", "sales_executive"],
           },
           {

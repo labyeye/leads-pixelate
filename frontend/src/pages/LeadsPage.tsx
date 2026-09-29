@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -31,6 +32,7 @@ import {
   BookmarkPlus,
   Trash2,
   Users,
+  Send,
 } from "lucide-react";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
 import { cn } from "@/lib/utils";
@@ -237,6 +239,7 @@ export default function LeadsPage() {
   const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const navigate = useNavigate();
   const [bulkReassignTo, setBulkReassignTo] = useState("");
   const [bulkReassigning, setBulkReassigning] = useState(false);
   const [bulkStatus, setBulkStatus] = useState("");
@@ -1619,6 +1622,20 @@ export default function LeadsPage() {
             >
               <Plus className="w-3.5 h-3.5" />
               Add Lead
+            </button>
+
+            <button
+              onClick={() =>
+                navigate("/whatsapp/campaigns", {
+                  state: { leadIds: filtered.map((l) => l._id || l.id) },
+                })
+              }
+              disabled={filtered.length === 0}
+              title="Send a WhatsApp campaign to the leads shown by the current filters"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-700 font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              WhatsApp ({filtered.length})
             </button>
 
             <DropdownMenu>

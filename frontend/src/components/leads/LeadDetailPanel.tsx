@@ -57,6 +57,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { statusColors, getCategoryByStatus, getStatusColorClasses, getStatusLabel } from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
+import { VaultDocPicker } from "../documents/VaultDocPicker";
 import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
 import { WhatsAppIcon } from "../icons/WhatsAppIcon";
 import { ManualCallDialog } from "./ManualCallDialog";
@@ -794,7 +795,8 @@ function WhatsAppSendDialog({
   lead: any;
   toast: any;
 }) {
-  const [mode, setMode] = useState<"text" | "template">("text");
+  const [mode, setMode] = useState<"text" | "document" | "template">("text");
+  const [documentId, setDocumentId] = useState("");
   const [messageText, setMessageText] = useState("");
   const [templates, setTemplates] = useState<any[]>([]);
   const [templateId, setTemplateId] = useState("");
@@ -808,8 +810,12 @@ function WhatsAppSendDialog({
   const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
 
   const selectedTemplate = templates.find((t: any) => t._id === templateId);
+  const mediaHeader = ["DOCUMENT", "IMAGE"].includes(selectedTemplate?.headerType)
+    ? selectedTemplate.headerType
+    : null;
 
   useEffect(() => {
+    if (mode === "template") setDocumentId("");
     if (!selectedTemplate) {
       setVariableMapping([]);
       return;
@@ -849,6 +855,7 @@ function WhatsAppSendDialog({
   const handleSend = async () => {
     if (mode === "text" && !messageText.trim()) return;
     if (mode === "template" && !templateId) return;
+    if (mode === "document" && !documentId) return;
     if (!canSend) return;
 
     setSending(true);
@@ -856,14 +863,17 @@ function WhatsAppSendDialog({
       await whatsappAPI.sendMessage({
         leadId: lead._id,
         ...(mode === "template"
-          ? { templateId, variableMapping }
-          : { messageType: "text", messageText }),
+          ? { templateId, variableMapping, ...(mediaHeader && documentId ? { documentId } : {}) }
+          : mode === "document"
+            ? { messageType: "document", documentId, messageText }
+            : { messageType: "text", messageText }),
         ...(selectedPhoneNumberId
           ? { phoneNumberId: selectedPhoneNumberId }
           : {}),
       });
       toast({ title: "Message sent successfully" });
       setMessageText("");
+      setDocumentId("");
       setTemplateId("");
       setVariableMapping([]);
       onClose();
@@ -946,14 +956,47 @@ function WhatsAppSendDialog({
                 Free Text
               </button>
               <button
-                onClick={() => setMode("template")}
+                onClick={() => {
+                  setMode("document");
+                  setDocumentId("");
+                }}
+                className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "document" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+              >
+                Document
+              </button>
+              <button
+                onClick={() => {
+                  setMode("template");
+                  setDocumentId("");
+                }}
                 className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${mode === "template" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
               >
                 Template
               </button>
             </div>
 
-            {mode === "text" ? (
+            {mode === "document" ? (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Document from vault</Label>
+                  <VaultDocPicker value={documentId} onChange={setDocumentId} />
+                </div>
+                <div>
+                  <Label className="text-xs">Caption (optional)</Label>
+                  <Textarea
+                    placeholder="Hi, sharing our brochure..."
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    rows={2}
+                    className="mt-1 text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Direct documents only reach leads who messaged you in the last 24h.
+                    For new leads use a Template with a Document header.
+                  </p>
+                </div>
+              </div>
+            ) : mode === "text" ? (
               <div>
                 <Label className="text-xs">Message</Label>
                 <Textarea
@@ -1012,6 +1055,20 @@ function WhatsAppSendDialog({
                       This template isn't approved by Meta yet — sending may
                       fail until it's synced/approved in Settings → WhatsApp.
                     </p>
+                  </div>
+                )}
+
+                {mediaHeader && (
+                  <div className="mt-3">
+                    <Label className="text-xs">
+                      Attach {mediaHeader === "IMAGE" ? "image" : "document"} from vault
+                    </Label>
+                    <VaultDocPicker
+                      value={documentId}
+                      onChange={setDocumentId}
+                      imagesOnly={mediaHeader === "IMAGE"}
+                      optional
+                    />
                   </div>
                 )}
 
@@ -1098,7 +1155,11 @@ function WhatsAppSendDialog({
               sending ||
               loadingInit ||
               !canSend ||
-              (mode === "text" ? !messageText.trim() : !templateId)
+              (mode === "text"
+                ? !messageText.trim()
+                : mode === "document"
+                  ? !documentId
+                  : !templateId)
             }
             className="bg-green-600 hover:bg-green-700 text-white gap-1"
           >

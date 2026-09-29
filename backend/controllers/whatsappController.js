@@ -4,6 +4,8 @@ const WhatsappTemplate = require("../models/WhatsappTemplate");
 const WhatsappCampaign = require("../models/WhatsappCampaign");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
+const Document = require("../models/Document");
+const path = require("path");
 const { encrypt, decrypt } = require("../utils/encryption");
 const log = require("../utils/logger").scope("WhatsApp");
 
@@ -59,10 +61,22 @@ function resolveVariable(fieldKey, customValue, lead) {
   return map[fieldKey] || customValue || "";
 }
 
-function buildTemplateComponents(template, variableMapping, lead) {
+// headerMedia ({ id, filename }) swaps the template's saved header file for a vault document.
+function buildTemplateComponents(template, variableMapping, lead, headerMedia) {
   const components = [];
 
-  if (template.headerType === "TEXT" && template.headerText) {
+  if (headerMedia && ["DOCUMENT", "IMAGE"].includes(template.headerType)) {
+    const type = template.headerType.toLowerCase();
+    components.push({
+      type: "header",
+      parameters: [
+        {
+          type,
+          [type]: type === "document" ? { id: headerMedia.id, filename: headerMedia.filename } : { id: headerMedia.id },
+        },
+      ],
+    });
+  } else if (template.headerType === "TEXT" && template.headerText) {
     components.push({
       type: "header",
       parameters: [{ type: "text", text: template.headerText }],
@@ -99,6 +113,58 @@ function buildTemplateComponents(template, variableMapping, lead) {
   }
 
   return components;
+}
+
+// Loads a vault document of this tenant and uploads it to WhatsApp (media ids are per
+// number and expire after 30 days, so we upload per send instead of caching).
+async function loadVaultDoc(user, documentId) {
+  const doc = await Document.findOne({
+    _id: documentId,
+    ...(user.tenantId ? { tenantId: user.tenantId } : {}),
+  });
+  if (!doc) throw new Error("Document not found in the vault");
+  return doc;
+}
+
+async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
+  const buffer = await require("fs").promises.readFile(
+    path.join(__dirname, "../uploads", doc.filePath),
+  );
+  const form = new FormData();
+  form.append("messaging_product", "whatsapp");
+  form.append("type", doc.mimeType);
+  form.append("file", new Blob([buffer], { type: doc.mimeType }), doc.fileName);
+  const r = await fetch(`${WA_API}/${phoneNumberId}/media`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: form,
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || "Document upload to WhatsApp failed");
+  return { id: data.id, filename: doc.fileName };
+}
+
+// A template can only carry a vault file if its header is a matching media slot.
+function checkHeaderFits(template, doc) {
+  if (!["DOCUMENT", "IMAGE"].includes(template.headerType))
+    return "This template has no Document/Image header. Pick a template with a Document header to attach a file.";
+  if (template.headerType === "IMAGE" && !doc.mimeType.startsWith("image/"))
+    return "This template's header is an image. Pick an image from the vault, or use a Document-header template.";
+  return null;
+}
+
+async function postWa(phoneNumberId, accessToken, body) {
+  const r = await fetch(`${WA_API}/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ messaging_product: "whatsapp", ...body }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error?.message || "WhatsApp API error");
+  return data;
 }
 
 async function sendWaMessage(
@@ -782,7 +848,7 @@ exports.getCampaign = asyncHandler(async (req, res) => {
 });
 
 exports.createCampaign = asyncHandler(async (req, res) => {
-  const { name, templateId, leadIds, variableMapping, phoneNumberId } =
+  const { name, templateId, leadIds, variableMapping, phoneNumberId, documentId } =
     req.body;
   if (!name || !templateId || !leadIds?.length) {
     res.status(400);
@@ -815,6 +881,18 @@ exports.createCampaign = asyncHandler(async (req, res) => {
     );
   }
 
+  let doc = null;
+  let headerMedia = null;
+  if (documentId) {
+    doc = await loadVaultDoc(req.user, documentId);
+    const misfit = checkHeaderFits(template, doc);
+    if (misfit) {
+      res.status(400);
+      throw new Error(misfit);
+    }
+    headerMedia = await uploadVaultDoc(resolvedPhoneNumberId, wa.accessToken, doc);
+  }
+
   const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter });
   const messages = leads.map((lead) => ({
     lead: lead._id,
@@ -835,6 +913,8 @@ exports.createCampaign = asyncHandler(async (req, res) => {
       footerText: template.footerText,
     },
     variableMapping: variableMapping || [],
+    document: doc?._id || null,
+    documentName: doc?.name || "",
     messages,
     totalCount: messages.length,
     status: "SENDING",
@@ -867,6 +947,7 @@ exports.createCampaign = asyncHandler(async (req, res) => {
           template,
           variableMapping,
           lead,
+          headerMedia,
         );
         const apiRes = await sendWaMessage(
           resolvedPhoneNumberId,
@@ -937,6 +1018,20 @@ exports.resendCampaign = asyncHandler(async (req, res) => {
     );
   }
 
+  let headerMedia = null;
+  if (campaign.document) {
+    try {
+      headerMedia = await uploadVaultDoc(
+        phoneNumberId,
+        wa.accessToken,
+        await loadVaultDoc(req.user, campaign.document),
+      );
+    } catch (err) {
+      res.status(400);
+      throw new Error(`Attached document: ${err.message}`);
+    }
+  }
+
   const claimed = await WhatsappCampaign.findOneAndUpdate(
     { _id: campaign._id, status: { $ne: "SENDING" } },
     { status: "SENDING" },
@@ -969,7 +1064,7 @@ exports.resendCampaign = asyncHandler(async (req, res) => {
           phone,
           template.metaTemplateName || template.name,
           template.language,
-          buildTemplateComponents(template, campaign.variableMapping, lead),
+          buildTemplateComponents(template, campaign.variableMapping, lead, headerMedia),
         );
         set = {
           status: "SENT",
@@ -1028,6 +1123,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     messageType,
     messageText,
     phoneNumberId,
+    documentId,
   } = req.body;
   if (!leadId) {
     res.status(400);
@@ -1063,25 +1159,29 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     throw new Error("Lead has no valid phone number");
   }
 
+  const doc = documentId ? await loadVaultDoc(req.user, documentId) : null;
+
   let waResult;
-  if (messageType === "text" && messageText) {
-    const body = {
-      messaging_product: "whatsapp",
+  if (messageType === "document" && doc) {
+    // Free-form: only delivered inside the 24h window after the lead's last message.
+    const media = await uploadVaultDoc(resolvedPhoneNumberId, wa.accessToken, doc);
+    const caption = (messageText || "").trim();
+    const kind = doc.mimeType.startsWith("image/") ? "image" : "document";
+    waResult = await postWa(resolvedPhoneNumberId, wa.accessToken, {
+      to: phone,
+      type: kind,
+      [kind]: {
+        id: media.id,
+        ...(kind === "document" ? { filename: media.filename } : {}),
+        ...(caption ? { caption } : {}),
+      },
+    });
+  } else if (messageType === "text" && messageText) {
+    waResult = await postWa(resolvedPhoneNumberId, wa.accessToken, {
       to: phone,
       type: "text",
       text: { body: messageText },
-    };
-    const r = await fetch(`${WA_API}/${resolvedPhoneNumberId}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${wa.accessToken}`,
-      },
-      body: JSON.stringify(body),
     });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data?.error?.message || "WhatsApp API error");
-    waResult = data;
   } else if (templateId) {
     const template = await WhatsappTemplate.findOne({
       _id: templateId,
@@ -1091,10 +1191,20 @@ exports.sendMessage = asyncHandler(async (req, res) => {
       res.status(404);
       throw new Error("Template not found");
     }
+    let headerMedia = null;
+    if (doc) {
+      const misfit = checkHeaderFits(template, doc);
+      if (misfit) {
+        res.status(400);
+        throw new Error(misfit);
+      }
+      headerMedia = await uploadVaultDoc(resolvedPhoneNumberId, wa.accessToken, doc);
+    }
     const components = buildTemplateComponents(
       template,
       variableMapping || [],
       lead,
+      headerMedia,
     );
     waResult = await sendWaMessage(
       resolvedPhoneNumberId,
@@ -1106,7 +1216,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     );
   } else {
     res.status(400);
-    throw new Error("Either templateId or messageType+messageText is required");
+    throw new Error("Choose a template, type a message, or pick a document");
   }
 
   res.json({
@@ -1280,3 +1390,5 @@ exports.uploadMedia = asyncHandler(async (req, res) => {
     data: { mediaId: data.id, handle, filename: originalname, mimetype },
   });
 });
+
+exports._test = { buildTemplateComponents, checkHeaderFits };

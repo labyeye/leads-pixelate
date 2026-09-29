@@ -1449,6 +1449,7 @@ export const whatsappAPI = {
     messageType?: string;
     messageText?: string;
     phoneNumberId?: string;
+    documentId?: string;
   }) =>
     request<{ success: boolean; data: any }>("/whatsapp/send", {
       method: "POST",
@@ -1478,6 +1479,53 @@ export const whatsappAPI = {
       return data;
     });
   },
+};
+
+export interface VaultDocument {
+  _id: string;
+  name: string;
+  category: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  url: string; // "/uploads/..." on the backend origin
+  createdAt: string;
+  uploadedBy?: { name: string };
+}
+
+// Absolute link to a vault file (served by the backend, not under /api).
+export const documentFileUrl = (d: VaultDocument) =>
+  String(API_BASE).replace(/\/api\/?$/, "") + d.url;
+
+export const documentsAPI = {
+  getAll: () => request<{ success: boolean; data: VaultDocument[] }>("/documents"),
+  upload: (file: File, name: string, category: string) => {
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("category", category);
+    formData.append("file", file);
+    const csrf = getCsrfToken();
+    return fetch(`${API_BASE}/documents`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {}),
+      },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Upload failed");
+      return data as { success: boolean; data: VaultDocument };
+    });
+  },
+  update: (id: string, data: { name?: string; category?: string }) =>
+    request<{ success: boolean; data: VaultDocument }>(`/documents/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean }>(`/documents/${id}`, { method: "DELETE" }),
 };
 
 export const socialAPI = {
