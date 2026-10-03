@@ -1258,10 +1258,10 @@ export default function ReportsPage() {
                         value={filters.status}
                         onValueChange={(v) => setFilter("status", v)}
                       >
-                        <SelectTrigger className="h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                        <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                           <SelectValue placeholder="All Statuses" />
                         </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-none">
+                        <SelectContent className="border-2 border-black rounded-lg">
                           <SelectItem value="all" className="font-bold">
                             All Statuses
                           </SelectItem>
@@ -1286,10 +1286,10 @@ export default function ReportsPage() {
                         value={filters.source}
                         onValueChange={(v) => setFilter("source", v)}
                       >
-                        <SelectTrigger className="h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                        <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                           <SelectValue placeholder="All Sources" />
                         </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-none">
+                        <SelectContent className="border-2 border-black rounded-lg">
                           <SelectItem value="all" className="font-bold">
                             All Sources
                           </SelectItem>
@@ -1314,10 +1314,10 @@ export default function ReportsPage() {
                         value={filters.assignedTo}
                         onValueChange={(v) => setFilter("assignedTo", v)}
                       >
-                        <SelectTrigger className="h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                        <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                           <SelectValue placeholder="All Members" />
                         </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-none">
+                        <SelectContent className="border-2 border-black rounded-lg">
                           <SelectItem value="all" className="font-bold">
                             All Members
                           </SelectItem>
@@ -1695,10 +1695,10 @@ export default function ReportsPage() {
                       value={activityUser}
                       onValueChange={(v) => setActivityUser(v)}
                     >
-                      <SelectTrigger className="w-48 h-9 border-2 border-black rounded-none text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                      <SelectTrigger className="w-48 h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
                         <SelectValue placeholder="All Members" />
                       </SelectTrigger>
-                      <SelectContent className="border-2 border-black rounded-none">
+                      <SelectContent className="border-2 border-black rounded-lg">
                         <SelectItem value="all" className="font-bold">
                           All Members
                         </SelectItem>

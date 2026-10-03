@@ -51,6 +51,21 @@ async function tryRefresh(): Promise<boolean> {
   return refreshInFlight;
 }
 
+const NETWORK_MSG =
+  "Can't reach the server. Please check your internet connection and try again.";
+const statusMsg = (s: number) =>
+  s === 429
+    ? "Too many attempts. Please wait a minute and try again."
+    : s === 413
+      ? "That file is too large. Please choose a smaller one."
+      : s === 403
+        ? "You don't have permission to do this."
+        : s === 404
+          ? "We couldn't find what you were looking for."
+          : s >= 500
+            ? "Something went wrong on our side. Please try again in a moment."
+            : "Something went wrong. Please try again.";
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -69,11 +84,16 @@ async function request<T>(
     if (csrf) headers["X-CSRF-Token"] = csrf;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiError(NETWORK_MSG, 0);
+  }
 
   let data: any = {};
   try {
@@ -98,7 +118,10 @@ async function request<T>(
     ) {
       window.dispatchEvent(new Event("subscription-expired"));
     }
-    throw new ApiError(data.message || "Something went wrong", response.status);
+    throw new ApiError(
+      data.message || statusMsg(response.status),
+      response.status,
+    );
   }
 
   return data;

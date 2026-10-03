@@ -723,11 +723,21 @@ export default function DashboardScreen({ navigation }: any) {
 function KpiCard({ title, value, icon, iconBg, iconColor, urgent }: any) {
   return (
     <View style={[styles.kpiCard, urgent && styles.kpiCardUrgent]}>
-      <View style={[styles.kpiIcon, { backgroundColor: iconBg }]}>
-        <Icon name={icon} size={22} color={iconColor} />
+      <View
+        style={[
+          styles.kpiIcon,
+          { backgroundColor: iconBg + '1A', borderColor: iconBg },
+        ]}>
+        <Icon name={icon} size={22} color={iconBg} />
       </View>
-      <Text style={styles.kpiValue}>{value}</Text>
-      <Text style={styles.kpiTitle}>{title}</Text>
+      <View style={styles.kpiBody}>
+        <Text style={styles.kpiTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={styles.kpiValue} numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -833,6 +843,7 @@ const styles = StyleSheet.create({
     height: 32,
     backgroundColor: PRIMARY,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
@@ -842,6 +853,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
@@ -882,6 +894,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
@@ -900,6 +913,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
   },
   notifItemBadgeText: { fontSize: 10, fontWeight: '600', color: '#fff' },
@@ -907,6 +921,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     backgroundColor: '#fff',
   },
@@ -930,6 +945,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     minHeight: 34,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     backgroundColor: '#fff',
     gap: 5,
@@ -961,7 +977,7 @@ const styles = StyleSheet.create({
 
   // Period selector
   periodWrap: { marginBottom: 12 },
-  periodRow: { flexDirection: 'row', borderWidth: 2, borderColor: '#000' },
+  periodRow: { flexDirection: 'row', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000' },
   periodBtn: {
     flex: 1,
     paddingVertical: 8,
@@ -980,6 +996,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: SECONDARY,
     backgroundColor: '#fff7ed',
     paddingHorizontal: 10,
@@ -1030,33 +1047,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
     borderColor: '#000',
-    padding: 14,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   kpiCardUrgent: { backgroundColor: '#fff7ed' },
+  kpiBody: { flex: 1, minWidth: 0 },
   kpiIcon: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     borderWidth: 2,
-    borderColor: '#000',
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
   },
-  kpiValue: { fontSize: 32, fontWeight: '600', color: '#000', lineHeight: 36 },
+  kpiValue: { fontSize: 24, fontWeight: '700', color: '#000' },
   kpiTitle: {
-    fontSize: 9,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#64748b',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: 4,
+    letterSpacing: 0.6,
   },
 
   // Section box
   section: {
     backgroundColor: '#fff',
     borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
     borderColor: '#000',
     padding: 14,
   },
@@ -1074,6 +1103,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1101,6 +1131,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 28,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     backgroundColor: '#fff',
     overflow: 'hidden',
@@ -1127,6 +1158,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',

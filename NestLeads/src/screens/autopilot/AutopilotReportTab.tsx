@@ -204,7 +204,7 @@ const s = StyleSheet.create({
   cmpNum: {fontSize: 12, color: '#334155', marginLeft: 10, minWidth: 54, textAlign: 'right'},
   chips: {flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6},
   tiles: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
-  tile: {flexBasis: '47%', flexGrow: 1, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12},
+  tile: {flexBasis: '47%', flexGrow: 1, backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 12},
   tileLabel: {fontSize: 10, fontWeight: '800', textTransform: 'uppercase', color: '#475569'},
   tileValue: {fontSize: 24, fontWeight: '600', color: '#000', marginTop: 2},
   tileHint: {fontSize: 11, color: '#64748b'},

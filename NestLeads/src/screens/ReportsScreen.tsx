@@ -81,12 +81,14 @@ function Bar({pct, color, height = 28}: {pct: number; color: string; height?: nu
 function KpiCard({title, value, icon, iconBg, sub}: {title: string; value: string | number; icon: string; iconBg: string; sub?: string}) {
   return (
     <View style={styles.kpiCard}>
-      <View style={[styles.kpiIcon, {backgroundColor: iconBg}]}>
-        <Icon name={icon} size={20} color="#fff" />
+      <View style={[styles.kpiIcon, {backgroundColor: iconBg + '1A', borderColor: iconBg}]}>
+        <Icon name={icon} size={20} color={iconBg} />
       </View>
-      <Text style={styles.kpiValue}>{value}</Text>
-      <Text style={styles.kpiTitle}>{title}</Text>
-      {sub ? <Text style={styles.kpiSub}>{sub}</Text> : null}
+      <View style={styles.kpiBody}>
+        <Text style={styles.kpiTitle} numberOfLines={1}>{title}</Text>
+        <Text style={styles.kpiValue} numberOfLines={1}>{value}</Text>
+        {sub ? <Text style={styles.kpiSub} numberOfLines={1}>{sub}</Text> : null}
+      </View>
     </View>
   );
 }
@@ -768,7 +770,7 @@ export default function ReportsScreen({navigation}: any) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f8fafc'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: '#fff'},
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
   headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
   headerSub: {fontSize: 11, color: '#64748b', fontWeight: '500'},
   divider: {height: 2, backgroundColor: '#000'},
@@ -776,7 +778,7 @@ const styles = StyleSheet.create({
 
   tabBar: {backgroundColor: '#fff', maxHeight: 52},
   tabBarContent: {paddingHorizontal: 12, paddingVertical: 8, gap: 6},
-  tab: {flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff'},
+  tab: {flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 2, borderRadius: 8, borderColor: '#000', backgroundColor: '#fff'},
   tabActive: {backgroundColor: PRIMARY},
   tabText: {fontSize: 11, fontWeight: '600', color: '#000', textTransform: 'uppercase'},
   tabTextActive: {color: '#fff'},
@@ -784,7 +786,7 @@ const styles = StyleSheet.create({
   tabContent: {padding: 14, gap: 12, paddingBottom: 40},
 
   // Section
-  section: {backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 14, ...NB_SHADOW},
+  section: {backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 14,},
   sectionHeaderRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14},
   sectionLabel: {fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 1},
   sectionBadge: {backgroundColor: SECONDARY, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1.5, borderColor: '#000'},
@@ -792,25 +794,26 @@ const styles = StyleSheet.create({
 
   // KPI grid
   kpiGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 10},
-  kpiCard: {width: '47%', backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12, ...NB_SHADOW},
-  kpiIcon: {width: 38, height: 38, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginBottom: 8},
-  kpiValue: {fontSize: 28, fontWeight: '600', color: '#000'},
-  kpiTitle: {fontSize: 9, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.7, marginTop: 2},
-  kpiSub: {fontSize: 10, color: '#94a3b8', marginTop: 2},
+  kpiCard: {width: '47%', backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10,},
+  kpiBody: {flex: 1, minWidth: 0},
+  kpiIcon: {width: 38, height: 38, borderWidth: 2, borderRadius: 8, alignItems: 'center', justifyContent: 'center'},
+  kpiValue: {fontSize: 22, fontWeight: '700', color: '#000'},
+  kpiTitle: {fontSize: 10, fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6},
+  kpiSub: {fontSize: 10, color: '#94a3b8'},
 
   // Acquisition
   acqRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10},
-  acqIcon: {width: 28, height: 28, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  acqIcon: {width: 28, height: 28, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
   acqLabel: {width: 72, fontSize: 11, fontWeight: '700', color: '#000'},
   acqValue: {width: 60, fontSize: 11, fontWeight: '600', color: '#000'},
-  acqBar: {height: 16, borderWidth: 2, borderColor: '#000', overflow: 'hidden', justifyContent: 'center', backgroundColor: '#f8fafc'},
+  acqBar: {height: 16, borderWidth: 2, borderRadius: 8, borderColor: '#000', overflow: 'hidden', justifyContent: 'center', backgroundColor: '#f8fafc'},
   acqBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0},
 
   // Temperature
   tempRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8},
-  tempPill: {width: 48, paddingVertical: 4, alignItems: 'center', borderWidth: 2, borderColor: '#000'},
+  tempPill: {width: 48, paddingVertical: 4, alignItems: 'center', borderWidth: 2, borderRadius: 8, borderColor: '#000'},
   tempPillText: {fontSize: 9, fontWeight: '600'},
-  tempBarWrap: {flex: 1, height: 20, borderWidth: 2, borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc'},
+  tempBarWrap: {flex: 1, height: 20, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc'},
   tempBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0, opacity: 0.7},
   tempCount: {fontSize: 13, fontWeight: '600', color: '#000', width: 28, textAlign: 'right'},
   tempPct: {fontSize: 10, color: '#64748b', width: 36},
@@ -819,7 +822,7 @@ const styles = StyleSheet.create({
   funnelRow: {flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 7},
   funnelIcon: {width: 24, height: 24, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
   funnelLabel: {width: 80, fontSize: 10, fontWeight: '700', color: '#000'},
-  funnelBarWrap: {flex: 1, height: 24, borderWidth: 2, borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc', justifyContent: 'center'},
+  funnelBarWrap: {flex: 1, height: 24, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', overflow: 'hidden', backgroundColor: '#f8fafc', justifyContent: 'center'},
   funnelBarFill: {position: 'absolute', top: 0, left: 0, bottom: 0},
   funnelCount: {paddingLeft: 8, fontSize: 11, fontWeight: '600', color: '#000'},
 
@@ -845,7 +848,7 @@ const styles = StyleSheet.create({
   topPerformerRow: {flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10},
   topPerformerName: {fontSize: 16, fontWeight: '600', color: '#fff'},
   topPerformerStat: {fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2},
-  trophyBox: {width: 44, height: 44, borderWidth: 2, borderColor: SECONDARY, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)'},
+  trophyBox: {width: 44, height: 44, borderWidth: 2, borderRadius: 8, borderColor: SECONDARY, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)'},
 
   agentRow: {flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   agentRank: {width: 24, height: 24, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
@@ -855,12 +858,12 @@ const styles = StyleSheet.create({
   agentStats: {alignItems: 'flex-end'},
   agentLeadsCount: {fontSize: 15, fontWeight: '600', color: '#000'},
   agentClientsCount: {fontSize: 10, color: '#64748b', fontWeight: '600'},
-  agentRatePill: {paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderColor: '#000'},
+  agentRatePill: {paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
   agentRateText: {fontSize: 11, fontWeight: '600'},
 
   hotRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   hotAgentName: {flex: 1, fontSize: 13, fontWeight: '700', color: '#000'},
-  hotPill: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderColor: '#000'},
+  hotPill: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
   hotPillText: {fontSize: 11, fontWeight: '600', color: '#fff'},
   noDataText: {fontSize: 13, color: '#94a3b8', fontWeight: '600', textAlign: 'center', paddingVertical: 16},
 
@@ -883,18 +886,18 @@ const styles = StyleSheet.create({
 
   // Follow-ups
   fuKpiRow: {flexDirection: 'row', gap: 10},
-  fuKpi: {flex: 1, backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 12, alignItems: 'center', gap: 4, ...NB_SHADOW},
+  fuKpi: {flex: 1, backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 12, alignItems: 'center', gap: 4,},
   fuKpiValue: {fontSize: 26, fontWeight: '600'},
   fuKpiLabel: {fontSize: 8, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center'},
   fuRow: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   fuInfo: {flex: 1},
   fuName: {fontSize: 13, fontWeight: '700', color: '#000'},
   fuSub: {fontSize: 11, color: '#64748b', marginTop: 1},
-  fuOverduePill: {backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderColor: '#000'},
+  fuOverduePill: {backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
   fuOverdueText: {fontSize: 10, fontWeight: '600', color: '#fff'},
   fuStatusPill: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#000', marginTop: 3},
   fuStatusText: {fontSize: 8, fontWeight: '600', textTransform: 'uppercase'},
-  fuDatePill: {flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderColor: '#000', paddingHorizontal: 7, paddingVertical: 4, backgroundColor: '#fff'},
+  fuDatePill: {flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderRadius: 8, borderColor: '#000', paddingHorizontal: 7, paddingVertical: 4, backgroundColor: '#fff'},
   fuDateText: {fontSize: 11, fontWeight: '700', color: PRIMARY},
 
   // Empty
@@ -911,12 +914,12 @@ const styles = StyleSheet.create({
 
   // Report catalog
   catFilters: {padding: 12, gap: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  catSearchBox: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 8},
+  catSearchBox: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 10, paddingVertical: 8},
   catSearchInput: {flex: 1, fontSize: 12, color: '#000'},
-  catChip: {borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 7, backgroundColor: '#fff'},
+  catChip: {borderWidth: 2, borderRadius: 8, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 7, backgroundColor: '#fff'},
   catChipText: {fontSize: 11, fontWeight: '800', color: '#000'},
-  reportCard: {flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff', padding: 12, ...NB_SHADOW},
-  reportIconBox: {width: 40, height: 40, borderWidth: 2, alignItems: 'center', justifyContent: 'center'},
+  reportCard: {flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', backgroundColor: '#fff', padding: 12,},
+  reportIconBox: {width: 40, height: 40, borderWidth: 2, borderRadius: 8, alignItems: 'center', justifyContent: 'center'},
   reportCatBadge: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, marginBottom: 3},
   reportCatBadgeText: {fontSize: 8, fontWeight: '600', color: '#fff', textTransform: 'uppercase'},
   reportTitle: {fontSize: 13, fontWeight: '600', color: '#000'},
@@ -932,6 +935,6 @@ const styles = StyleSheet.create({
   previewRow: {flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
   previewHeaderCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 10, fontWeight: '600', color: '#000', backgroundColor: '#f1f5f9', textTransform: 'uppercase'},
   previewCell: {minWidth: 110, paddingVertical: 8, paddingHorizontal: 8, fontSize: 11, color: '#000'},
-  exportCsvBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#000', paddingVertical: 12},
+  exportCsvBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: PRIMARY, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingVertical: 12},
   exportCsvBtnText: {fontSize: 13, fontWeight: '600', color: '#fff'},
 });

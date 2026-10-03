@@ -38,11 +38,13 @@ export default function UserAvatar({name, avatar, size = 38, index = 0, style, t
 const styles = StyleSheet.create({
   img: {
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     overflow: 'hidden',
   },
   initials: {
     borderWidth: 2,
+    borderRadius: 8,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',

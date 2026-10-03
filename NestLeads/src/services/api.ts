@@ -15,6 +15,21 @@ class ApiError extends Error {
   }
 }
 
+const NETWORK_MSG =
+  'Cannot reach the server. Please check your internet connection and try again.';
+const statusMsg = (s: number) =>
+  s === 429
+    ? 'Too many attempts. Please wait a minute and try again.'
+    : s === 413
+      ? 'That file is too large. Please choose a smaller one.'
+      : s === 403
+        ? 'You do not have permission to do this.'
+        : s === 404
+          ? 'We could not find what you were looking for.'
+          : s >= 500
+            ? 'Something went wrong on our side. Please try again in a moment.'
+            : 'Something went wrong. Please try again.';
+
 async function getToken(): Promise<string | null> {
   return storage.getItem('token');
 }
@@ -39,10 +54,15 @@ async function request<T>(
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch {
+    throw new ApiError(NETWORK_MSG, 0);
+  }
 
   let data: any = {};
   try {
@@ -51,7 +71,7 @@ async function request<T>(
   } catch {}
 
   if (!response.ok) {
-    throw new ApiError(data.message || 'Something went wrong', response.status);
+    throw new ApiError(data.message || statusMsg(response.status), response.status);
   }
   return data;
 }

@@ -100,15 +100,15 @@ export default function TrashScreen({navigation}: any) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: '#fff'},
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
   headerTitle: {flex: 1, fontSize: 17, fontWeight: '600', color: '#000'},
   divider: {height: 2, backgroundColor: '#000'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8},
   muted: {fontSize: 12, color: '#64748b'},
-  card: {borderWidth: 2, borderColor: '#000', padding: 12, marginBottom: 10, gap: 3},
+  card: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 12, marginBottom: 10, gap: 3},
   type: {fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 1},
   title: {fontSize: 15, fontWeight: '800', color: '#000'},
   actions: {flexDirection: 'row', gap: 8, marginTop: 8},
-  btn: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 7},
+  btn: {flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 10, paddingVertical: 7},
   btnText: {fontSize: 11, fontWeight: '600', color: '#000', textTransform: 'uppercase'},
 });

@@ -123,7 +123,7 @@ export default function PhoneInput({
 
 const styles = StyleSheet.create({
   label: {fontSize: 11, fontWeight: '600', color: '#000', textTransform: 'uppercase', letterSpacing: 0.5},
-  row: {flexDirection: 'row', borderWidth: 2, borderColor: '#000'},
+  row: {flexDirection: 'row', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000'},
   countryBtn: {
     flexDirection: 'row',
     alignItems: 'center',

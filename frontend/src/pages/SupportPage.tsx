@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { toast as appToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -75,7 +76,7 @@ export default function SupportPage() {
       setDescription("");
       setPriority("medium");
     },
-    onError: (err: any) => toast.error(err.message || "Failed to raise ticket"),
+    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to raise ticket" }),
   });
 
   const updateMutation = useMutation({
@@ -91,7 +92,7 @@ export default function SupportPage() {
       setSelected(res.data);
       setIsEditing(false);
     },
-    onError: (err: any) => toast.error(err.message || "Failed to update ticket"),
+    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to update ticket" }),
   });
 
   const deleteMutation = useMutation({
@@ -101,7 +102,7 @@ export default function SupportPage() {
       toast.success("Ticket deleted");
       setSelected(null);
     },
-    onError: (err: any) => toast.error(err.message || "Failed to delete ticket"),
+    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to delete ticket" }),
   });
 
   const tickets: SupportTicket[] = data?.data || [];

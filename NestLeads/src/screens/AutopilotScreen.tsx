@@ -200,10 +200,10 @@ export default function AutopilotScreen({navigation}: any) {
 const s = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f1f5f9'},
   header: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 2, borderBottomColor: '#000'},
-  backBtn: {width: 34, height: 34, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: '#fff'},
+  backBtn: {width: 34, height: 34, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: '#fff'},
   title: {fontSize: 18, fontWeight: '600', color: '#000'},
   tabs: {flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, gap: 8},
-  tab: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderColor: '#000', paddingVertical: 8, backgroundColor: '#fff'},
+  tab: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderRadius: 8, borderColor: '#000', paddingVertical: 8, backgroundColor: '#fff'},
   tabActive: {backgroundColor: PRIMARY},
   tabText: {fontSize: 12, fontWeight: '800', color: '#000'},
   campaignBar: {backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
@@ -211,6 +211,6 @@ const s = StyleSheet.create({
   error: {color: '#b91c1c', fontSize: 14, textAlign: 'center'},
   emptyTitle: {fontSize: 18, fontWeight: '600', color: '#000', marginBottom: 6},
   emptyText: {fontSize: 13, color: '#475569', textAlign: 'center', marginBottom: 14},
-  createBtn: {backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#000', paddingVertical: 11, paddingHorizontal: 18},
+  createBtn: {backgroundColor: PRIMARY, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingVertical: 11, paddingHorizontal: 18},
   createText: {color: '#fff', fontWeight: '800', fontSize: 13},
 });

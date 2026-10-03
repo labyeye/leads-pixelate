@@ -77,9 +77,9 @@ const s = StyleSheet.create({
   sheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, ...NB_SHADOW},
   title: {fontSize: 17, fontWeight: '800', color: '#000'},
   sub: {fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 10},
-  input: {borderWidth: 2, borderColor: '#000', padding: 10, fontSize: 14, color: '#000'},
+  input: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 10, fontSize: 14, color: '#000'},
   error: {color: '#b91c1c', fontSize: 12, marginTop: 6},
   row: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12},
-  btn: {paddingVertical: 11, paddingHorizontal: 16, borderWidth: 2, borderColor: '#000', marginLeft: 8, minWidth: 96, alignItems: 'center'},
+  btn: {paddingVertical: 11, paddingHorizontal: 16, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', marginLeft: 8, minWidth: 96, alignItems: 'center'},
   btnText: {fontSize: 13, fontWeight: '800', color: '#fff'},
 });

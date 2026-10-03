@@ -111,8 +111,8 @@ const styles = StyleSheet.create({
   checkboxChecked: {backgroundColor: '#024BAB'},
   fieldLabel: {fontSize: 13, color: '#000', fontWeight: '600'},
   footer: {flexDirection: 'row', gap: 10, borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 12},
-  cancelBtn: {flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000', paddingVertical: 12},
+  cancelBtn: {flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingVertical: 12},
   cancelBtnText: {fontSize: 12, fontWeight: '600', color: '#000'},
-  exportBtn: {flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000', backgroundColor: '#024BAB', paddingVertical: 12},
+  exportBtn: {flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', backgroundColor: '#024BAB', paddingVertical: 12},
   exportBtnText: {fontSize: 12, fontWeight: '600', color: '#fff'},
 });

@@ -478,7 +478,7 @@ export default function QuotationsPage() {
             </DialogTrigger>
           )}
 
-          <DialogContent className="sm:max-w-[700px] border-2 border-black rounded-none shadow-[6px_6px_0px_#000] p-0 gap-0 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[700px] border-2 border-black rounded-lg shadow-[6px_6px_0px_#000] p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4 sticky top-0 z-10">
                 <DialogTitle className="text-white uppercase tracking-wider text-base">
@@ -838,10 +838,10 @@ export default function QuotationsPage() {
                       value={formData.status}
                       onValueChange={(v) => setField("status", v)}
                     >
-                      <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 bg-white font-bold h-10">
+                      <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 bg-white font-bold h-10">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-2 border-black rounded-none">
+                      <SelectContent className="border-2 border-black rounded-lg">
                         {["Draft", "Sent", "Approved", "Rejected"].map((s) => (
                           <SelectItem key={s} value={s} className="font-bold">
                             {s}
@@ -1081,7 +1081,7 @@ export default function QuotationsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="border-2 border-black rounded-none bg-white min-w-[160px] p-0"
+                          className="border-2 border-black rounded-lg bg-white min-w-[160px] p-0"
                         >
                           <DropdownMenuItem
                             onClick={() => handleDownloadPDF(q)}
@@ -1137,7 +1137,7 @@ export default function QuotationsPage() {
         open={isPreviewOpen}
         onOpenChange={(open) => !open && closePreview()}
       >
-        <DialogContent className="sm:max-w-[950px] w-[95vw] h-[92vh] p-0 flex flex-col gap-0 border-2 border-black rounded-none shadow-[6px_6px_0px_#000] overflow-hidden">
+        <DialogContent className="sm:max-w-[950px] w-[95vw] h-[92vh] p-0 flex flex-col gap-0 border-2 border-black rounded-lg shadow-[6px_6px_0px_#000] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 border-b-2 border-black bg-[#024BAB]">
             <span className="text-white font-black uppercase tracking-widest text-sm">
               Quotation Preview

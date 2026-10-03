@@ -517,10 +517,10 @@ export default function SocialPlannerScreen({navigation}: any) {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff'},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12},
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
   headerActions: {marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 8},
   refreshBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center'},
-  newPostBtn: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: PRIMARY, borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6},
+  newPostBtn: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: PRIMARY, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6},
   newPostBtnText: {fontSize: 11, fontWeight: '600', color: '#fff'},
   headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
   headerSub: {fontSize: 11, color: '#64748b'},
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
 
   filterScroll: {flexGrow: 0, flexShrink: 0, height: 54},
   filterRow: {paddingHorizontal: 12, paddingVertical: 10, gap: 6, alignItems: 'center', flexDirection: 'row'},
-  filterChip: {flexGrow: 0, flexShrink: 0, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 2, borderColor: '#e2e8f0'},
+  filterChip: {flexGrow: 0, flexShrink: 0, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 2, borderRadius: 8, borderColor: '#e2e8f0'},
   filterChipActive: {borderColor: '#000', backgroundColor: PRIMARY},
   filterChipText: {fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase'},
   filterChipTextActive: {color: '#fff'},
@@ -542,9 +542,9 @@ const styles = StyleSheet.create({
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   list: {padding: 12, gap: 10},
 
-  card: {backgroundColor: '#fff', borderWidth: 2, borderColor: '#000'},
+  card: {backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000'},
   cardInner: {flexDirection: 'row', alignItems: 'flex-start', padding: 12, gap: 12},
-  thumb: {width: 64, height: 64, borderWidth: 2, borderColor: '#000'},
+  thumb: {width: 64, height: 64, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
   thumbPlaceholder: {backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center'},
   cardBody: {flex: 1, gap: 4},
 
@@ -578,11 +578,11 @@ const styles = StyleSheet.create({
   modalTitle: {fontSize: 18, fontWeight: '600', color: '#000'},
   modalBody: {padding: 16, gap: 16},
 
-  mediaImage: {width: '100%', height: 220, borderWidth: 2, borderColor: '#000'},
-  videoPlaceholder: {width: '100%', height: 140, backgroundColor: '#f1f5f9', borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 8},
+  mediaImage: {width: '100%', height: 220, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
+  videoPlaceholder: {width: '100%', height: 140, backgroundColor: '#f1f5f9', borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 8},
   videoPlaceholderText: {fontSize: 13, color: '#94a3b8', fontWeight: '600'},
   carouselRow: {marginBottom: 4},
-  carouselThumb: {width: 72, height: 72, marginRight: 8, borderWidth: 2, borderColor: '#000'},
+  carouselThumb: {width: 72, height: 72, marginRight: 8, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
 
   section: {gap: 6},
   sectionLabel: {fontSize: 9, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1},
@@ -601,6 +601,6 @@ const styles = StyleSheet.create({
   linkBtnText: {flex: 1, fontSize: 13, fontWeight: '700'},
 
   actionRow: {flexDirection: 'row', gap: 10},
-  actionBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderWidth: 2},
+  actionBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A',},
   actionBtnText: {fontSize: 13, fontWeight: '600'},
 });

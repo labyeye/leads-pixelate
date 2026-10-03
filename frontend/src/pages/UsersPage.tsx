@@ -419,7 +419,7 @@ export default function UsersPage() {
               <Plus className="w-4 h-4" /> Add User
             </button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg border-2 border-black rounded-none p-0 gap-0">
+          <DialogContent className="sm:max-w-lg border-2 border-black rounded-lg p-0 gap-0">
             <form onSubmit={handleSubmitUser}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4">
                 <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
@@ -523,10 +523,10 @@ export default function UsersPage() {
                       setFormData({ ...formData, roleId: v })
                     }
                   >
-                    <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                    <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
-                    <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                    <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
                       {roles.map((r) => (
                         <SelectItem
                           key={r._id}
@@ -651,10 +651,10 @@ export default function UsersPage() {
                             setFormData({ ...formData, employmentType: v })
                           }
                         >
-                          <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                          <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
-                          <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                          <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
                             {[
                               { value: "full_time", label: "Full-time" },
                               { value: "part_time", label: "Part-time" },
@@ -711,10 +711,10 @@ export default function UsersPage() {
                           setFormData({ ...formData, gender: v })
                         }
                       >
-                        <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                        <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
                           {["male", "female", "other"].map((g) => (
                             <SelectItem key={g} value={g} className="font-bold capitalize">
                               {g}
@@ -872,10 +872,10 @@ export default function UsersPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Select value={docType} onValueChange={setDocType}>
-                        <SelectTrigger className="border-2 border-black rounded-none focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10 w-44">
+                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10 w-44">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+                        <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
                           {DOCUMENT_TYPES.map((d) => (
                             <SelectItem
                               key={d.value}
@@ -1172,7 +1172,7 @@ export default function UsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            className="border-2 border-black rounded-none bg-white min-w-[140px] p-0"
+                            className="border-2 border-black rounded-lg bg-white min-w-[140px] p-0"
                           >
                             <DropdownMenuItem
                               onClick={() => handleEditClick(user)}

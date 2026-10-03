@@ -157,10 +157,10 @@ const NbSelect = ({ label, value, onChange, options }: any) => (
       {label}
     </label>
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="border-2 border-black rounded-none nb-shadow-sm focus:ring-0 bg-white font-bold h-10">
+      <SelectTrigger className="border-2 border-black rounded-lg nb-shadow-sm focus:ring-0 bg-white font-bold h-10">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000]">
+      <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
         {options.map((o: string) => (
           <SelectItem key={o} value={o} className="font-bold">
             {o}
@@ -392,7 +392,7 @@ export default function ClientsPage() {
               </button>
             </DialogTrigger>
           )}
-          <DialogContent className="sm:max-w-lg border-2 border-black rounded-none p-0 gap-0 max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-lg border-2 border-black rounded-lg p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4 sticky top-0 z-10">
                 <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
@@ -676,7 +676,7 @@ export default function ClientsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="border-2 border-black rounded-none shadow-[4px_4px_0px_#000] bg-white min-w-[140px] p-0"
+                          className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000] bg-white min-w-[140px] p-0"
                         >
                           {can("Clients", "update") && (
                             <DropdownMenuItem

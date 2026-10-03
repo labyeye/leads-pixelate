@@ -42,6 +42,8 @@ import {
   Filter,
   X,
 } from "lucide-react";
+import { StatCard as UiStatCard } from "@/components/ui/StatCard";
+import type { LucideIcon } from "lucide-react";
 
 interface ActivityLog {
   _id: string;
@@ -185,8 +187,16 @@ function timeAgo(ts: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+const ACCENT_HEX: Record<string, string> = {
+  primary: "#024BAB",
+  secondary: "#FA731C",
+  success: "#00C48C",
+  warning: "#F59E0B",
+  destructive: "#EF4444",
+};
+
 function StatCard({
-  icon: Icon,
+  icon,
   label,
   value,
   accent,
@@ -198,24 +208,15 @@ function StatCard({
   accent: string;
   sub?: string;
 }) {
+  const key = accent.match(/text-(\w+)/)?.[1] ?? "primary";
   return (
-    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 card-shadow">
-      <div
-        className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-          accent,
-        )}
-      >
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-2xl font-bold text-foreground leading-tight">
-          {value}
-        </p>
-        {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
-      </div>
-    </div>
+    <UiStatCard
+      label={label}
+      value={value}
+      icon={icon as LucideIcon}
+      color={ACCENT_HEX[key] ?? "#024BAB"}
+      sub={sub}
+    />
   );
 }
 

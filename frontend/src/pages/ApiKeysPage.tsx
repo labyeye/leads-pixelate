@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { toast as appToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -359,7 +360,7 @@ export default function ApiKeysPage() {
       setRevealedKey(res.data.key);
       setRevealedKeyData(created);
     },
-    onError: (err: any) => toast.error(err.message || "Failed to create key"),
+    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to create key" }),
   });
 
   const revokeMutation = useMutation({
@@ -369,7 +370,7 @@ export default function ApiKeysPage() {
       setRevokeTarget(null);
       toast.success("API key revoked");
     },
-    onError: (err: any) => toast.error(err.message || "Failed to revoke key"),
+    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to revoke key" }),
   });
 
   const copyText = (text: string, label = "Copied!") => {

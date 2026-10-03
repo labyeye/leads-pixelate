@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { cloneElement, useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { CheckCircle2, Clock, Loader2, Plus, Send, ThumbsDown, Zap } from "lucide-react";
 import { aiUsageAPI, autopilotAPI, type AIUsage, type CampaignSummary } from "@/services/api";
@@ -38,16 +38,23 @@ function Kpi({
   icon: JSX.Element;
   highlight?: boolean;
 }) {
+  const tint = color.startsWith("#") ? color : "#024BAB";
   return (
-    <div className={cn("nb-card p-4 bg-white space-y-1", highlight && "border-[#FA731C] border-4")} data-testid={`kpi-${label}`}>
-      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        <span className="w-6 h-6 border-2 border-black flex items-center justify-center" style={{ background: color }}>
-          {icon}
-        </span>
-        {label}
+    <div
+      className={cn("nb-card p-4 bg-white flex items-center gap-3", highlight && "border-[#FA731C] border-4")}
+      data-testid={`kpi-${label}`}
+    >
+      <span
+        className="w-10 h-10 border-2 flex items-center justify-center shrink-0"
+        style={{ backgroundColor: `${tint}1A`, borderColor: tint }}
+      >
+        {cloneElement(icon, { className: "w-5 h-5", style: { color: tint } })}
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">{label}</p>
+        <p className="text-2xl font-bold text-black">{value}</p>
+        {hint && <p className="text-xs text-muted-foreground truncate">{hint}</p>}
       </div>
-      <p className="font-display font-bold text-3xl text-black">{value}</p>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

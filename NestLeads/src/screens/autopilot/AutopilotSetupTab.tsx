@@ -605,7 +605,7 @@ const s = StyleSheet.create({
   muted: {fontSize: 12, color: '#64748b', marginTop: 6},
   error: {fontSize: 12, color: '#b91c1c', marginTop: 8},
   count: {fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 2},
-  input: {borderWidth: 2, borderColor: '#000', padding: 10, fontSize: 14, color: '#000', textAlignVertical: 'top', backgroundColor: '#fff'},
+  input: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 10, fontSize: 14, color: '#000', textAlignVertical: 'top', backgroundColor: '#fff'},
   timeInput: {width: 90, marginRight: 6, marginBottom: 8, textAlign: 'center', textAlignVertical: 'center'},
   chips: {flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center'},
   tick: {width: 24, fontSize: 15, color: '#16a34a', fontWeight: '600'},
@@ -619,6 +619,6 @@ const s = StyleSheet.create({
   logoName: {fontSize: 13, fontWeight: '700', color: '#000'},
   link: {fontSize: 12, color: '#024BAB', fontWeight: '800', marginTop: 4},
   delete: {fontSize: 12, color: '#b91c1c', fontWeight: '800', paddingHorizontal: 6},
-  refThumb: {width: 64, height: 64, borderWidth: 2, borderColor: '#000', marginRight: 8, marginBottom: 8, backgroundColor: '#e2e8f0'},
+  refThumb: {width: 64, height: 64, borderWidth: 2, borderRadius: 8, borderColor: '#000', marginRight: 8, marginBottom: 8, backgroundColor: '#e2e8f0'},
   rival: {borderWidth: 1, borderColor: '#e2e8f0', padding: 8, marginTop: 8},
 });
