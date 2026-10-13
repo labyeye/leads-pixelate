@@ -126,6 +126,32 @@ async function loadVaultDoc(user, documentId) {
   return doc;
 }
 
+// Plain-language reasons for the Meta error codes we actually see in practice.
+const WA_ERROR_REASONS = {
+  10: "App has no permission for this WhatsApp account (token / assets / WABA ID)",
+  190: "Access token expired or invalid",
+  100: "Invalid parameter (wrong Phone Number ID / WABA ID, or bad payload)",
+  130429: "Rate limit hit — sending too fast",
+  131000: "Something went wrong on Meta's side",
+  131026: "Message undeliverable — recipient is not on WhatsApp or hasn't accepted the new Terms",
+  131030: "Recipient not in the allowed list (app/number in sandbox or Development mode)",
+  131042: "Payment issue — add a payment method to the WhatsApp Business account",
+  131045: "Sending number is not registered / needs registration",
+  131047: "More than 24h since the lead last replied — a template is required",
+  131048: "Spam rate limit hit for this number",
+  131049: "Meta limited this marketing message to this user (frequency cap / low engagement)",
+  131051: "Unsupported message type",
+  131053: "Media upload / format problem",
+  131056: "Too many messages to the same recipient too fast",
+  132000: "Template variable count doesn't match the template",
+  132001: "Template or language not found / not approved in this WABA — press Sync Templates",
+  132005: "Translated template text is too long",
+  132012: "Template variable format mismatch",
+  132015: "Template is paused (poor quality)",
+  132016: "Template is disabled (poor quality)",
+  133010: "Sending number is not registered",
+};
+
 // Meta errors carry code/subcode/fbtrace_id that the plain message hides. Log them
 // (never the token) and surface the code in the message so it shows in the UI.
 function metaError(step, data, ctx = {}) {
@@ -141,13 +167,8 @@ function metaError(step, data, ctx = {}) {
     ...ctx,
   });
   const tag = e.code ? ` [Meta ${e.code}${e.error_subcode ? "/" + e.error_subcode : ""}]` : "";
-  const hints = {
-    132001: " — This template/language is not approved in the connected WhatsApp account. Go to WhatsApp → Setup → Templates and press Sync Templates, then pick the approved one.",
-    132000: " — The number of template variables does not match the template.",
-    131042: " — Add a payment method to your WhatsApp Business account in Meta Business Manager.",
-    131047: " — More than 24 hours since the lead last replied; use an approved template instead.",
-  };
-  return new Error((e.error_user_msg || e.message || "WhatsApp API error") + tag + (hints[e.code] || ""));
+  const hint = WA_ERROR_REASONS[e.code] ? ` — ${WA_ERROR_REASONS[e.code]}` : "";
+  return new Error((e.error_user_msg || e.message || "WhatsApp API error") + tag + hint);
 }
 
 async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
@@ -188,6 +209,12 @@ async function postWa(phoneNumberId, accessToken, body) {
   });
   const data = await r.json();
   if (!r.ok) throw metaError("send message", data, { phoneNumberId, type: body.type });
+  log.info("Message ACCEPTED by Meta (waiting for sent/delivered/read)", {
+    wamid: data?.messages?.[0]?.id,
+    to: body.to,
+    type: body.type,
+    phoneNumberId,
+  });
   return data;
 }
 
@@ -218,6 +245,13 @@ async function sendWaMessage(
   const data = await res.json();
   if (!res.ok)
     throw metaError("send template", data, { phoneNumberId, template: templateName, language });
+  log.info("Template message ACCEPTED by Meta (waiting for sent/delivered/read)", {
+    wamid: data?.messages?.[0]?.id,
+    to,
+    template: templateName,
+    language,
+    phoneNumberId,
+  });
   return data;
 }
 
@@ -1280,22 +1314,39 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
 
     for (const change of entry.changes || []) {
       const value = change.value || {};
+      log.info("Webhook change", {
+        field: change.field,
+        statuses: (value.statuses || []).length,
+        messages: (value.messages || []).length,
+      });
 
       for (const statusObj of value.statuses || []) {
         const waMessageId = statusObj.id;
         const newStatus = (statusObj.status || "").toUpperCase();
         // Delivery receipts arrive here, long after the /send call returned 200.
+        // Lifecycle for one message: ACCEPTED -> SENT -> DELIVERED -> READ (or FAILED).
         const wErr = statusObj.errors?.[0];
-        const logFn = newStatus === "FAILED" ? log.error : log.info;
-        logFn(`Delivery status: ${newStatus}`, {
-          waMessageId,
+        const base = {
+          wamid: waMessageId,
           to: statusObj.recipient_id,
           phoneNumberId: value.metadata?.phone_number_id,
-          code: wErr?.code,
-          title: wErr?.title,
-          message: wErr?.message || wErr?.error_data?.details,
-          conversation: statusObj.conversation?.origin?.type,
-        });
+        };
+        if (newStatus === "FAILED") {
+          log.error("Message FAILED", {
+            ...base,
+            code: wErr?.code,
+            title: wErr?.title,
+            reason: WA_ERROR_REASONS[wErr?.code] || wErr?.message || "Unknown",
+            metaMessage: wErr?.message,
+            details: wErr?.error_data?.details,
+          });
+        } else {
+          const label = { SENT: "SENT to WhatsApp servers", DELIVERED: "DELIVERED to phone", READ: "READ by recipient" }[newStatus];
+          log.info(`Message ${label || newStatus}`, {
+            ...base,
+            category: statusObj.pricing?.category || statusObj.conversation?.origin?.type,
+          });
+        }
         const statusMap = {
           SENT: "SENT",
           DELIVERED: "DELIVERED",
