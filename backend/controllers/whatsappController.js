@@ -126,6 +126,24 @@ async function loadVaultDoc(user, documentId) {
   return doc;
 }
 
+// Meta errors carry code/subcode/fbtrace_id that the plain message hides. Log them
+// (never the token) and surface the code in the message so it shows in the UI.
+function metaError(step, data, ctx = {}) {
+  const e = data?.error || {};
+  log.error(`Meta API error during ${step}`, {
+    code: e.code,
+    subcode: e.error_subcode,
+    type: e.type,
+    message: e.message,
+    userMsg: e.error_user_msg,
+    details: e.error_data?.details,
+    fbtrace_id: e.fbtrace_id,
+    ...ctx,
+  });
+  const tag = e.code ? ` [Meta ${e.code}${e.error_subcode ? "/" + e.error_subcode : ""}]` : "";
+  return new Error((e.error_user_msg || e.message || "WhatsApp API error") + tag);
+}
+
 async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
   const buffer = await require("fs").promises.readFile(
     path.join(__dirname, "../uploads", doc.filePath),
@@ -140,7 +158,7 @@ async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
     body: form,
   });
   const data = await r.json();
-  if (!r.ok) throw new Error(data?.error?.message || "Document upload to WhatsApp failed");
+  if (!r.ok) throw metaError("media upload", data, { phoneNumberId });
   return { id: data.id, filename: doc.fileName };
 }
 
@@ -163,7 +181,7 @@ async function postWa(phoneNumberId, accessToken, body) {
     body: JSON.stringify({ messaging_product: "whatsapp", ...body }),
   });
   const data = await r.json();
-  if (!r.ok) throw new Error(data?.error?.message || "WhatsApp API error");
+  if (!r.ok) throw metaError("send message", data, { phoneNumberId, type: body.type });
   return data;
 }
 
@@ -192,7 +210,8 @@ async function sendWaMessage(
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || "WhatsApp API error");
+  if (!res.ok)
+    throw metaError("send template", data, { phoneNumberId, template: templateName, language });
   return data;
 }
 

@@ -75,6 +75,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SendWhatsAppDialog } from "@/components/leads/SendWhatsAppDialog";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -239,6 +240,7 @@ export default function LeadsPage() {
   const [isAddingProduct, setIsAddingProduct] = useState(false);
 
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [waDialogOpen, setWaDialogOpen] = useState(false);
   const navigate = useNavigate();
   const [bulkReassignTo, setBulkReassignTo] = useState("");
   const [bulkReassigning, setBulkReassigning] = useState(false);
@@ -1625,17 +1627,13 @@ export default function LeadsPage() {
             </button>
 
             <button
-              onClick={() =>
-                navigate("/whatsapp/campaigns", {
-                  state: { leadIds: filtered.map((l) => l._id || l.id) },
-                })
-              }
+              onClick={() => setWaDialogOpen(true)}
               disabled={filtered.length === 0}
-              title="Send a WhatsApp campaign to the leads shown by the current filters"
+              title="Send a WhatsApp template (with a Document Vault file if the template has one) to the selected leads — or to all leads shown if none are selected"
               className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-700 font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              WhatsApp ({filtered.length})
+              WhatsApp ({selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected` : filtered.length})
             </button>
 
             <DropdownMenu>
@@ -2246,7 +2244,17 @@ export default function LeadsPage() {
                 <thead className="sticky top-0 z-20">
                   <tr className="border-b-2 border-black bg-[#024BAB]">
                     <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
-                      Name
+                      <div className="flex items-center gap-2.5">
+                        <Checkbox
+                          aria-label="Select all leads"
+                          className="border-white data-[state=checked]:bg-white data-[state=checked]:text-black"
+                          checked={filtered.length > 0 && filtered.every((x) => selectedLeadIds.includes(x._id || x.id))}
+                          onCheckedChange={(c) =>
+                            setSelectedLeadIds(c ? filtered.map((x) => x._id || x.id) : [])
+                          }
+                        />
+                        Name
+                      </div>
                     </th>
                     {isColVisible("source") && (
                       <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest group">
@@ -2483,6 +2491,17 @@ export default function LeadsPage() {
                           >
                             <td className="px-5 py-3.5">
                               <div className="flex items-center gap-2.5">
+                                <span onClick={(e) => e.stopPropagation()}>
+                                  <Checkbox
+                                    aria-label={`Select ${l.name}`}
+                                    checked={selectedLeadIds.includes(l._id || l.id)}
+                                    onCheckedChange={(c) =>
+                                      setSelectedLeadIds((p) =>
+                                        c ? [...p, l._id || l.id] : p.filter((id) => id !== (l._id || l.id)),
+                                      )
+                                    }
+                                  />
+                                </span>
                                 <Users className="w-4 h-4 shrink-0 text-black/60" />
                                 <div className="min-w-0">
                                   <p className="font-medium text-foreground">
@@ -2986,6 +3005,17 @@ export default function LeadsPage() {
       </Dialog>
 
       {}
+      <SendWhatsAppDialog
+        open={waDialogOpen}
+        onOpenChange={setWaDialogOpen}
+        leads={
+          selectedLeadIds.length > 0
+            ? filtered.filter((l) => selectedLeadIds.includes(l._id || l.id))
+            : filtered
+        }
+        onSent={() => setSelectedLeadIds([])}
+      />
+
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

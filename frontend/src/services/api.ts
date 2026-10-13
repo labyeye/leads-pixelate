@@ -66,6 +66,26 @@ const statusMsg = (s: number) =>
             ? "Something went wrong on our side. Please try again in a moment."
             : "Something went wrong. Please try again.";
 
+// Reads an upload response without assuming JSON — proxies (nginx 413, 502, rate
+// limits) answer with plain text/HTML, which would otherwise surface as
+// "Unexpected token ... is not valid JSON".
+async function readUploadResponse(res: Response, fallback: string) {
+  const text = await res.text();
+  let data: any = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {}
+  if (!res.ok) {
+    throw new Error(
+      data.message ||
+        (res.status === 413
+          ? statusMsg(413)
+          : `${fallback} (${res.status})`),
+    );
+  }
+  return data;
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -400,11 +420,7 @@ export const uploadAPI = {
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
-    }).then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload failed");
-      return data as { success: boolean; url: string };
-    });
+    }).then(async (res) => (await readUploadResponse(res, "Upload failed")) as { success: boolean; url: string });
   },
 };
 
@@ -1496,11 +1512,7 @@ export const whatsappAPI = {
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
-    }).then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload failed");
-      return data;
-    });
+    }).then(async (res) => (await readUploadResponse(res, "Upload failed")));
   },
 };
 
@@ -1536,11 +1548,7 @@ export const documentsAPI = {
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
-    }).then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload failed");
-      return data as { success: boolean; data: VaultDocument };
-    });
+    }).then(async (res) => (await readUploadResponse(res, "Upload failed")) as { success: boolean; data: VaultDocument });
   },
   update: (id: string, data: { name?: string; category?: string }) =>
     request<{ success: boolean; data: VaultDocument }>(`/documents/${id}`, {

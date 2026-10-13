@@ -288,14 +288,36 @@ function TemplatesTab({ toast }: { toast: any }) {
     }
     setSaving(true);
     try {
+      // Saved templates go straight to Meta for approval. Already-submitted
+      // (PENDING/APPROVED) templates are only saved, never re-submitted.
+      let toSubmitId: string | null = null;
       if (editing) {
         await whatsappAPI.updateTemplate(editing._id, form);
-        toast({ title: "Template updated" });
+        if (editing.status === "DRAFT" || editing.status === "REJECTED") {
+          toSubmitId = editing._id;
+        } else {
+          toast({ title: "Template updated" });
+        }
       } else {
-        await whatsappAPI.createTemplate(form);
-        toast({ title: "Template created" });
+        const created = await whatsappAPI.createTemplate(form);
+        toSubmitId = created.data?._id || null;
       }
       setFormOpen(false);
+      if (toSubmitId) {
+        try {
+          const res = await whatsappAPI.submitTemplate(toSubmitId);
+          toast({
+            title: "Saved & submitted to Meta for approval",
+            description: res.message,
+          });
+        } catch (err: any) {
+          toast({
+            title: "Template saved, but Meta submission failed",
+            description: `${err.message} — fix it and press Submit on the template.`,
+            variant: "destructive",
+          });
+        }
+      }
       await fetchTemplates();
     } catch (err: any) {
       toast({
@@ -777,7 +799,7 @@ function TemplatesTab({ toast }: { toast: any }) {
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
-              {editing ? "Save Changes" : "Create Template"}
+              {editing ? "Save Changes" : "Create & Submit to Meta"}
             </Button>
           </DialogFooter>
         </DialogContent>
