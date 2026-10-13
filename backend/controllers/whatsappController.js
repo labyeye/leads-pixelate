@@ -141,7 +141,13 @@ function metaError(step, data, ctx = {}) {
     ...ctx,
   });
   const tag = e.code ? ` [Meta ${e.code}${e.error_subcode ? "/" + e.error_subcode : ""}]` : "";
-  return new Error((e.error_user_msg || e.message || "WhatsApp API error") + tag);
+  const hints = {
+    132001: " — This template/language is not approved in the connected WhatsApp account. Go to WhatsApp → Setup → Templates and press Sync Templates, then pick the approved one.",
+    132000: " — The number of template variables does not match the template.",
+    131042: " — Add a payment method to your WhatsApp Business account in Meta Business Manager.",
+    131047: " — More than 24 hours since the lead last replied; use an approved template instead.",
+  };
+  return new Error((e.error_user_msg || e.message || "WhatsApp API error") + tag + (hints[e.code] || ""));
 }
 
 async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
@@ -1262,6 +1268,7 @@ exports.verifyWebhook = asyncHandler(async (req, res) => {
 exports.handleWebhook = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true });
   const body = req.body;
+  log.debug("WhatsApp webhook received", { object: body?.object });
   if (body?.object !== "whatsapp_business_account") return;
 
   for (const entry of body.entry || []) {
@@ -1277,6 +1284,18 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
       for (const statusObj of value.statuses || []) {
         const waMessageId = statusObj.id;
         const newStatus = (statusObj.status || "").toUpperCase();
+        // Delivery receipts arrive here, long after the /send call returned 200.
+        const wErr = statusObj.errors?.[0];
+        const logFn = newStatus === "FAILED" ? log.error : log.info;
+        logFn(`Delivery status: ${newStatus}`, {
+          waMessageId,
+          to: statusObj.recipient_id,
+          phoneNumberId: value.metadata?.phone_number_id,
+          code: wErr?.code,
+          title: wErr?.title,
+          message: wErr?.message || wErr?.error_data?.details,
+          conversation: statusObj.conversation?.origin?.type,
+        });
         const statusMap = {
           SENT: "SENT",
           DELIVERED: "DELIVERED",
