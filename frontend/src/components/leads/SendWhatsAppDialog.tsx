@@ -20,6 +20,7 @@ import {
 import { VaultDocPicker } from "@/components/documents/VaultDocPicker";
 import { useToast } from "@/hooks/use-toast";
 import { whatsappAPI } from "@/services/api";
+import { mappingFromNotes } from "@/config/whatsappTemplateLibrary";
 
 interface Template {
   _id: string;
@@ -29,6 +30,7 @@ interface Template {
   headerType?: string;
   variableCount: number;
   status: string;
+  notes?: string;
 }
 
 type Mapping = { position: number; fieldKey: string; customValue: string };
@@ -103,11 +105,7 @@ export function SendWhatsAppDialog({
     setTemplateId(id);
     setDocumentId("");
     const t = templates.find((x) => x._id === id);
-    const vars: Mapping[] = [];
-    for (let i = 1; i <= (t?.variableCount || 0); i++) {
-      vars.push({ position: i, fieldKey: i === 1 ? "name" : i === 2 ? "company" : "custom", customValue: "" });
-    }
-    setMapping(vars);
+    setMapping(mappingFromNotes(t?.notes, t?.variableCount || 0));
   };
 
   // Preview using the first lead's real values.

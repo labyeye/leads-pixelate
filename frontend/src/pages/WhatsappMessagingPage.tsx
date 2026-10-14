@@ -41,6 +41,7 @@ import {
 import { format } from "date-fns";
 import { useLocation, useNavigate } from "react-router-dom";
 import { VaultDocPicker } from "@/components/documents/VaultDocPicker";
+import { mappingFromNotes } from "@/config/whatsappTemplateLibrary";
 
 interface Campaign {
   _id: string;
@@ -72,6 +73,7 @@ interface Template {
   variableCount: number;
   status: string;
   metaTemplateName?: string;
+  notes?: string;
 }
 
 interface Lead {
@@ -252,13 +254,7 @@ export default function WhatsappMessagingPage() {
   const selectTemplate = (t: Template) => {
     setSelectedTemplate(t);
     setDocumentId("");
-    const vars: { position: number; fieldKey: string; customValue: string }[] =
-      [];
-    for (let i = 1; i <= t.variableCount; i++) {
-      const defaultField = i === 1 ? "name" : i === 2 ? "company" : "custom";
-      vars.push({ position: i, fieldKey: defaultField, customValue: "" });
-    }
-    setVariableMapping(vars);
+    setVariableMapping(mappingFromNotes(t.notes, t.variableCount));
   };
 
   const toggleAllLeads = () => {

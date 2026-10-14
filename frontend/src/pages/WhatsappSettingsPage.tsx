@@ -60,6 +60,7 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
+import { TemplateLibraryDialog } from "@/components/whatsapp/TemplateLibraryDialog";
 
 interface Template {
   _id: string;
@@ -215,6 +216,7 @@ function TemplatesTab({ toast }: { toast: any }) {
   const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const handleSubmitToMeta = async (t: Template) => {
     setSubmittingId(t._id);
@@ -252,6 +254,13 @@ function TemplatesTab({ toast }: { toast: any }) {
   const openCreate = () => {
     setEditing(null);
     setForm(EMPTY_TEMPLATE);
+    setFormOpen(true);
+  };
+
+  // A library pick pre-fills the normal create form; the user can still edit it.
+  const openFromLibrary = (values: any) => {
+    setEditing(null);
+    setForm({ ...EMPTY_TEMPLATE, ...values });
     setFormOpen(true);
   };
 
@@ -394,6 +403,9 @@ function TemplatesTab({ toast }: { toast: any }) {
           <Button variant="outline" size="sm" onClick={fetchTemplates}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setLibraryOpen(true)}>
+            <FileText className="w-4 h-4 mr-1" /> Template Library
+          </Button>
           <Button
             size="sm"
             className="bg-green-600 hover:bg-green-700 text-white"
@@ -431,6 +443,13 @@ function TemplatesTab({ toast }: { toast: any }) {
       )}
 
       {}
+      <TemplateLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        onPick={openFromLibrary}
+        existingNames={templates.map((t) => t.metaTemplateName || t.name)}
+      />
+
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
