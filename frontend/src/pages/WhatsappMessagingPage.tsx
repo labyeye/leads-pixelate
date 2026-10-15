@@ -41,6 +41,7 @@ import {
 import { format } from "date-fns";
 import { useLocation, useNavigate } from "react-router-dom";
 import { VaultDocPicker } from "@/components/documents/VaultDocPicker";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 import { mappingFromNotes } from "@/config/whatsappTemplateLibrary";
 
 interface Campaign {
@@ -381,9 +382,7 @@ export default function WhatsappMessagingPage() {
           {}
           <div className="w-full md:w-1/2 xl:w-2/5 border-r border-border overflow-y-auto">
             {loadingCampaigns ? (
-              <div className="flex items-center justify-center h-40">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
+              <ListSkeleton />
             ) : campaigns.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 gap-3 text-center px-6">
                 <MessageSquare className="w-10 h-10 text-muted-foreground/40" />
@@ -462,9 +461,7 @@ export default function WhatsappMessagingPage() {
           {}
           <div className="hidden md:flex flex-1 flex-col overflow-y-auto">
             {loadingDetail ? (
-              <div className="flex items-center justify-center h-40">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
+              <ListSkeleton />
             ) : !selectedCampaign ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
                 <BarChart3 className="w-10 h-10 text-muted-foreground/30" />

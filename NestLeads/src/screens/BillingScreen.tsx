@@ -6,6 +6,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {billingAPI} from '../services/api';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 const WEB_BILLING_URL = 'https://leads.pixelatenest.com/billing';
@@ -76,7 +77,7 @@ export default function BillingScreen({navigation}: any) {
           <Text style={styles.headerTitle}>Billing</Text>
         </View>
         <View style={styles.divider} />
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <ScreenSkeleton />
       </View>
     );
   }

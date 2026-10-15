@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { SubscriptionExpiredModal } from "./SubscriptionExpiredModal";
@@ -14,12 +15,14 @@ export function AppLayout({ title, children }: AppLayoutProps) {
   return (
     <div className="min-h-screen flex w-full bg-background">
       <SubscriptionExpiredModal />
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      <div
+        aria-hidden
+        className={cn(
+          "fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-500",
+          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+        onClick={() => setMobileOpen(false)}
+      />
 
       <AppSidebar
         mobileOpen={mobileOpen}
@@ -28,7 +31,9 @@ export function AppLayout({ title, children }: AppLayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0">
         <AppHeader title={title} onMenuOpen={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 overflow-auto">
+          <div className="animate-page-in">{children}</div>
+        </main>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import Icon from '../components/Icon';
 import {usersAPI, rolesAPI, uploadFile} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
 import PhoneInput from '../components/PhoneInput';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
@@ -303,7 +304,7 @@ export default function UsersScreen({navigation}: any) {
       <View style={styles.thinDivider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={filtered}

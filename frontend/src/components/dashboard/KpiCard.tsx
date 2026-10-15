@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { ArrowUpRight, ArrowDownRight, LucideIcon } from "lucide-react";
 
 interface KpiCardProps {
@@ -13,6 +14,8 @@ interface KpiCardProps {
   trendLabel?: string;
   to?: string;
   urgent?: boolean;
+  /** Entrance delay in ms, for staggering a row of cards. */
+  delay?: number;
 }
 
 /**
@@ -29,15 +32,17 @@ export function KpiCard({
   trendLabel,
   to,
   urgent,
+  delay = 0,
 }: KpiCardProps) {
   const hex = bg.match(/#[0-9A-Fa-f]{6}/)?.[0]?.toUpperCase() ?? "#6B7280";
   const color = hex;
   const inner = (
     <div
       className={cn(
-        "border-2 border-black p-4 flex items-center gap-3 nb-card-hover",
+        "border-2 border-black p-4 flex items-center gap-3 nb-card-hover animate-enter-up",
         urgent ? "bg-[#FFF0F0]" : "bg-white",
       )}
+      style={{ animationDelay: `${delay}ms` }}
     >
       <div
         className="w-10 h-10 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center shrink-0"
@@ -46,7 +51,7 @@ export function KpiCard({
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-2xl font-bold text-black leading-tight">{value}</p>
+        <p className="text-2xl font-bold text-black leading-tight"><AnimatedNumber value={value} /></p>
         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">
           {title}
         </p>

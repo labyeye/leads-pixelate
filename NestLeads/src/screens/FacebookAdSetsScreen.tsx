@@ -12,6 +12,7 @@ import {
   DeliveryToggle, DeliveryFilterBar, PeriodFilterBar, usePeriodFilter,
   OPTIMIZATION_GOALS, BILLING_EVENTS, StatusBadge, type Insight, type DeliveryFilter,
 } from '../lib/metaAdsShared';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const FB_COLOR = '#1877F2';
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
@@ -172,7 +173,7 @@ export default function FacebookAdSetsScreen({navigation}: any) {
       </View>
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={FB_COLOR} /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={filtered}

@@ -1,7 +1,7 @@
 const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
-const RN_SHIM_PATH = path.resolve(__dirname, 'src/shims/react-native.tsx');
+const RN_SHIM_PATH = path.resolve(__dirname, 'src/shims/react-native.ts');
 
 /**
  * Metro configuration

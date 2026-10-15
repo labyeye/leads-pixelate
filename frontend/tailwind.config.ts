@@ -116,6 +116,18 @@ export default {
           "70%": { transform: "scale(1.12)", opacity: "1" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        "enter-up": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "page-in": {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "grow-x": {
+          from: { transform: "scaleX(0)" },
+          to: { transform: "scaleX(1)" },
+        },
         slideInRight: {
           from: { opacity: "0", transform: "translateX(110%)" },
           to: { opacity: "1", transform: "translateX(0)" },
@@ -128,13 +140,18 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in": "fade-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both",
         "scan-sweep": "scan-sweep 2.4s ease-in-out infinite",
         "ring-pulse": "ring-pulse 2.4s ease-out infinite",
-        shimmer: "shimmer 2.2s linear infinite",
-        "pop-in": "pop-in 0.35s ease-out both",
+        shimmer: "shimmer 1.8s ease-in-out infinite",
+        "pop-in": "pop-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both",
+        // `backwards` (not `both`) so the end-state transform is released and
+        // hover/active transforms on the element keep working afterwards.
+        "enter-up": "enter-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards",
+        "page-in": "page-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards",
+        "grow-x": "grow-x 1.1s cubic-bezier(0.22, 1, 0.36, 1) backwards",
         "slide-in-left":
-          "slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+          "slide-in-left 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },

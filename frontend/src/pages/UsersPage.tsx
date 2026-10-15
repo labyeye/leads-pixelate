@@ -45,6 +45,7 @@ import { useState, useEffect } from "react";
 import { usersAPI, uploadAPI, rolesAPI, Role } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotify } from "@/components/ui/Notification";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 const DOCUMENT_TYPES: { value: string; label: string }[] = [
   { value: "resume", label: "Resume" },
@@ -1054,14 +1055,7 @@ export default function UsersPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-14">
-                    <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
-                      Loading...
-                    </p>
-                  </td>
-                </tr>
+                <TableSkeletonRows cols={8} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td

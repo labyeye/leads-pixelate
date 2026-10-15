@@ -4,6 +4,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {useAuth} from '../contexts/AuthContext';
 import {trashAPI} from '../services/api';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 export default function TrashScreen({navigation}: any) {
   const insets = useSafeAreaInsets();
@@ -62,7 +63,7 @@ export default function TrashScreen({navigation}: any) {
           <Text style={styles.muted}>Admins only</Text>
         </View>
       ) : loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#22c55e" /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={items}

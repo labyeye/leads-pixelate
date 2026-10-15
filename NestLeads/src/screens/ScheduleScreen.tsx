@@ -9,20 +9,24 @@ import WhatsAppLogo from '../components/WhatsAppLogo';
 import {leadsAPI} from '../services/api';
 import {getStatusColor, getStatusLabel} from '../constants/statusConstants';
 import UserAvatar from '../components/UserAvatar';
+import {useTheme} from '../contexts/ThemeContext';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
-const PRIMARY   = '#024BAB';
 const SECONDARY = '#FF751F';
 const DAYS   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 type Mode = 'followup' | 'visit';
-const MODES: Record<Mode, {field: string; label: string; plural: string; icon: string; accent: string}> = {
+const getModes = (PRIMARY: string): Record<Mode, {field: string; label: string; plural: string; icon: string; accent: string}> => ({
   followup: {field: 'followUpDate',       label: 'Follow-ups', plural: 'follow-ups', icon: 'calendar-outline', accent: PRIMARY},
   visit:    {field: 'visitScheduledDate', label: 'Visits',     plural: 'visits',     icon: 'business-outline', accent: SECONDARY},
-};
+});
 
 export default function ScheduleScreen({navigation}: any) {
   const insets = useSafeAreaInsets();
+  const {colors} = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const MODES = useMemo(() => getModes(colors.primary), [colors.primary]);
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [mode, setMode]       = useState<Mode>('followup');
   const [loading, setLoading] = useState(true);
@@ -71,12 +75,12 @@ export default function ScheduleScreen({navigation}: any) {
 
   return (
     <View style={[styles.container, {paddingTop: insets.top}]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.surface} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
+          <Icon name="arrow-back" size={18} color={colors.text} />
         </TouchableOpacity>
         <View style={{flex: 1}}>
           <Text style={styles.headerTitle}>Schedule</Text>
@@ -102,21 +106,21 @@ export default function ScheduleScreen({navigation}: any) {
       </View>
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={PRIMARY} /></View>
+        <ScreenSkeleton />
       ) : (
         <ScrollView contentContainerStyle={{paddingBottom: insets.bottom + 24}}>
 
           {/* Month navigator */}
           <View style={styles.monthNav}>
             <TouchableOpacity style={styles.navBtn} onPress={() => setCurrent(new Date(year, month - 1, 1))}>
-              <Icon name="chevron-back" size={20} color="#000" />
+              <Icon name="chevron-back" size={20} color={colors.text} />
             </TouchableOpacity>
             <View style={styles.monthCenter}>
               <Text style={styles.monthLabel}>{MONTHS[month]}</Text>
               <Text style={styles.yearLabel}>{year}</Text>
             </View>
             <TouchableOpacity style={styles.navBtn} onPress={() => setCurrent(new Date(year, month + 1, 1))}>
-              <Icon name="chevron-forward" size={20} color="#000" />
+              <Icon name="chevron-forward" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -176,7 +180,7 @@ export default function ScheduleScreen({navigation}: any) {
           {/* Legend */}
           <View style={styles.legend}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, {backgroundColor: PRIMARY, borderColor: '#000'}]} />
+              <View style={[styles.legendDot, {backgroundColor: colors.primary, borderColor: colors.border}]} />
               <Text style={styles.legendText}>Today</Text>
             </View>
             <View style={styles.legendItem}>
@@ -216,7 +220,7 @@ export default function ScheduleScreen({navigation}: any) {
                   return (
                     <TouchableOpacity key={l._id} style={styles.leadCard} onPress={() => goToLead(l._id)} activeOpacity={0.75}>
                       {mode === 'visit' ? (
-                        <View style={[styles.timeBox, {backgroundColor: idx % 2 === 0 ? PRIMARY : SECONDARY}]}>
+                        <View style={[styles.timeBox, {backgroundColor: idx % 2 === 0 ? colors.primary : SECONDARY}]}>
                           <Icon name="time-outline" size={11} color="#fff" />
                           <Text style={styles.timeText}>{time}</Text>
                         </View>
@@ -248,7 +252,7 @@ export default function ScheduleScreen({navigation}: any) {
                             </View>
                           </TouchableOpacity>
                         )}
-                        <TouchableOpacity style={[styles.actionBtn, {backgroundColor: PRIMARY}]} onPress={() => goToLead(l._id)}>
+                        <TouchableOpacity style={[styles.actionBtn, {backgroundColor: colors.primary}]} onPress={() => goToLead(l._id)}>
                           <Icon name="arrow-forward" size={14} color="#fff" />
                         </TouchableOpacity>
                       </View>
@@ -264,72 +268,74 @@ export default function ScheduleScreen({navigation}: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f8fafc'},
-  header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: '#fff'},
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 16, fontWeight: '600', color: '#000'},
-  headerSub: {fontSize: 10, color: '#64748b'},
-  headerBadge: {flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: PRIMARY, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
+function makeStyles(colors: import('../contexts/ThemeContext').ThemeColors) {
+  return StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.surfaceMuted},
+  header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12, backgroundColor: colors.surface},
+  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: colors.border, alignItems: 'center', justifyContent: 'center'},
+  headerTitle: {fontSize: 16, fontWeight: '600', color: colors.text},
+  headerSub: {fontSize: 10, color: colors.textMuted},
+  headerBadge: {flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 2, borderRadius: 8, borderColor: colors.border},
   headerBadgeText: {fontSize: 11, fontWeight: '700', color: '#fff'},
-  divider: {height: 2, backgroundColor: '#000'},
-  toggle: {flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  toggleBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderWidth: 2, borderRadius: 8, borderColor: '#000', backgroundColor: '#fff'},
-  toggleText: {fontSize: 12, fontWeight: '600', color: '#000', textTransform: 'uppercase'},
+  divider: {height: 2, backgroundColor: colors.border},
+  toggle: {flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.divider},
+  toggleBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderWidth: 2, borderRadius: 8, borderColor: colors.border, backgroundColor: colors.surface},
+  toggleText: {fontSize: 12, fontWeight: '600', color: colors.text, textTransform: 'uppercase'},
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
 
-  monthNav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  navBtn: {width: 40, height: 40, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff'},
+  monthNav: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.divider},
+  navBtn: {width: 40, height: 40, borderWidth: 2, borderRadius: 8, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface},
   monthCenter: {alignItems: 'center'},
-  monthLabel: {fontSize: 20, fontWeight: '600', color: '#000'},
-  yearLabel: {fontSize: 12, color: '#64748b', fontWeight: '600'},
+  monthLabel: {fontSize: 20, fontWeight: '600', color: colors.text},
+  yearLabel: {fontSize: 12, color: colors.textMuted, fontWeight: '600'},
 
-  calCard: {margin: 12, backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000'},
+  calCard: {margin: 12, backgroundColor: colors.surface, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: colors.shadowColor, borderBottomColor: colors.shadowColor, borderColor: colors.border},
   weekRow: {flexDirection: 'row', paddingVertical: 4},
   dayHeader: {flex: 1, alignItems: 'center', paddingVertical: 8},
-  dayHeaderText: {fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase'},
+  dayHeaderText: {fontSize: 10, fontWeight: '600', color: colors.textMuted, textTransform: 'uppercase'},
   dayHeaderWeekend: {color: SECONDARY},
-  calDivider: {height: 2, backgroundColor: '#000'},
+  calDivider: {height: 2, backgroundColor: colors.border},
   grid: {flexDirection: 'row', flexWrap: 'wrap'},
-  dayCell: {width: `${100 / 7}%` as any, height: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: '#e2e8f0'},
-  dayCellWeekend: {backgroundColor: '#fafafa'},
-  dayCellToday: {borderWidth: 2, borderRadius: 8, borderColor: PRIMARY, zIndex: 1},
-  dayCellSelected: {backgroundColor: PRIMARY},
+  dayCell: {width: `${100 / 7}%` as any, height: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: colors.divider},
+  dayCellWeekend: {backgroundColor: colors.surfaceMuted},
+  dayCellToday: {borderWidth: 2, borderRadius: 8, borderColor: colors.primary, zIndex: 1},
+  dayCellSelected: {backgroundColor: colors.primary},
   dayCellPast: {opacity: 0.45},
-  dayText: {fontSize: 14, fontWeight: '700', color: '#000'},
-  dayTextWeekend: {color: '#64748b'},
-  dayTextToday: {color: PRIMARY, fontWeight: '600'},
+  dayText: {fontSize: 14, fontWeight: '700', color: colors.text},
+  dayTextWeekend: {color: colors.textMuted},
+  dayTextToday: {color: colors.primary, fontWeight: '600'},
   dayTextSelected: {color: '#fff', fontWeight: '600'},
-  dayTextPast: {color: '#94a3b8'},
-  dot: {position: 'absolute', bottom: 5, minWidth: 18, height: 18, backgroundColor: SECONDARY, borderWidth: 1, borderColor: '#000', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3},
+  dayTextPast: {color: colors.placeholder},
+  dot: {position: 'absolute', bottom: 5, minWidth: 18, height: 18, backgroundColor: SECONDARY, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3},
   dotSelected: {backgroundColor: '#fff'},
-  dotPast: {backgroundColor: '#94a3b8'},
+  dotPast: {backgroundColor: colors.placeholder},
   dotText: {fontSize: 9, fontWeight: '600', color: '#fff'},
 
   legend: {flexDirection: 'row', gap: 14, paddingHorizontal: 16, paddingVertical: 8},
   legendItem: {flexDirection: 'row', alignItems: 'center', gap: 5},
-  legendDot: {width: 12, height: 12, borderWidth: 1, borderColor: '#000'},
-  legendText: {fontSize: 11, color: '#64748b', fontWeight: '600'},
+  legendDot: {width: 12, height: 12, borderWidth: 1, borderColor: colors.border},
+  legendText: {fontSize: 11, color: colors.textMuted, fontWeight: '600'},
 
-  panel: {margin: 12, marginTop: 4, backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 14},
+  panel: {margin: 12, marginTop: 4, backgroundColor: colors.surface, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: colors.shadowColor, borderBottomColor: colors.shadowColor, borderColor: colors.border, padding: 14},
   panelHeader: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14},
-  panelIconBox: {width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 8, borderColor: '#000'},
-  panelTitle: {flex: 1, fontSize: 13, fontWeight: '600', color: '#000'},
-  panelBadge: {backgroundColor: PRIMARY, width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000'},
+  panelIconBox: {width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 8, borderColor: colors.border},
+  panelTitle: {flex: 1, fontSize: 13, fontWeight: '600', color: colors.text},
+  panelBadge: {backgroundColor: colors.primary, width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.border},
   panelBadgeText: {fontSize: 12, fontWeight: '600', color: '#fff'},
 
   emptyPanel: {alignItems: 'center', paddingVertical: 20, gap: 8},
-  emptyPanelText: {fontSize: 13, color: '#64748b', fontWeight: '600'},
+  emptyPanelText: {fontSize: 13, color: colors.textMuted, fontWeight: '600'},
 
-  leadCard: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  timeBox: {width: 44, height: 44, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 2},
+  leadCard: {flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider},
+  timeBox: {width: 44, height: 44, borderWidth: 2, borderRadius: 8, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', gap: 2},
   timeText: {fontSize: 9, fontWeight: '600', color: '#fff'},
   leadInfo: {flex: 1},
-  leadName: {fontSize: 13, fontWeight: '600', color: '#000'},
-  leadSub: {fontSize: 11, color: '#64748b', marginTop: 1},
-  statusPill: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#000', marginTop: 4},
+  leadName: {fontSize: 13, fontWeight: '600', color: colors.text},
+  leadSub: {fontSize: 11, color: colors.textMuted, marginTop: 1},
+  statusPill: {alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: colors.border, marginTop: 4},
   statusPillText: {fontSize: 9, fontWeight: '600', textTransform: 'uppercase'},
   leadActions: {flexDirection: 'row', gap: 6},
-  actionBtn: {width: 32, height: 32, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  actionBtn: {width: 32, height: 32, borderWidth: 2, borderRadius: 8, borderColor: colors.border, alignItems: 'center', justifyContent: 'center'},
   whatsappLogoChip: {backgroundColor: '#fff', borderRadius: 20, padding: 2},
-});
+  });
+}

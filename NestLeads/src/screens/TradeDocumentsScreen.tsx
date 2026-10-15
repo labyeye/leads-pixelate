@@ -6,6 +6,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {invoicesAPI, productsAPI, purchaseOrdersAPI, salesOrdersAPI} from '../services/api';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 const PRIMARY = '#024BAB';
@@ -206,7 +207,7 @@ export default function TradeDocumentsScreen({navigation, route}: any) {
       <View style={styles.thinDivider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={PRIMARY} /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={filtered}

@@ -11,6 +11,7 @@ import {Selection, pickCampaign} from '../lib/autopilot';
 import AutopilotDashboardTab from './autopilot/AutopilotDashboardTab';
 import AutopilotSetupTab from './autopilot/AutopilotSetupTab';
 import AutopilotReportTab from './autopilot/AutopilotReportTab';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const PRIMARY = '#024BAB';
 type Tab = 'dashboard' | 'setup' | 'report';
@@ -179,9 +180,7 @@ export default function AutopilotScreen({navigation}: any) {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={s.center}>
-            <ActivityIndicator size="large" color={PRIMARY} />
-          </View>
+          <ScreenSkeleton />
         )
       ) : (
         <AutopilotReportTab overview={overview} selection={selection} />

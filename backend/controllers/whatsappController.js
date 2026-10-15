@@ -65,6 +65,7 @@ function resolveVariable(fieldKey, customValue, lead) {
 function buildTemplateComponents(template, variableMapping, lead, headerMedia) {
   const components = [];
 
+  const headerHasVar = template.headerType === "TEXT" && /\{\{\d+\}\}/.test(template.headerText || "");
   if (headerMedia && ["DOCUMENT", "IMAGE"].includes(template.headerType)) {
     const type = template.headerType.toLowerCase();
     components.push({
@@ -76,10 +77,12 @@ function buildTemplateComponents(template, variableMapping, lead, headerMedia) {
         },
       ],
     });
-  } else if (template.headerType === "TEXT" && template.headerText) {
+  } else if (headerHasVar) {
+    const headerVar = variableMapping?.find((v) => v.target === "header" || v.isHeader)
+      || { fieldKey: "name", customValue: "" };
     components.push({
       type: "header",
-      parameters: [{ type: "text", text: template.headerText }],
+      parameters: [{ type: "text", text: resolveVariable(headerVar.fieldKey, headerVar.customValue, lead) }],
     });
   } else if (template.headerType === "DOCUMENT" && template.headerMediaId) {
     components.push({

@@ -7,6 +7,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {clientsAPI} from '../services/api';
 import ExportFieldsDialog, {type ExportField} from '../components/ExportFieldsDialog';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const CLIENT_EXPORT_FIELDS: ExportField[] = [
   {key: 'name', label: 'Name', get: (c: any) => c.name || ''},
@@ -193,7 +194,7 @@ export default function ClientsScreen() {
       <View style={styles.thinDivider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={filtered}

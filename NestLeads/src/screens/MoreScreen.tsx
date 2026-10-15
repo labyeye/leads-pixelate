@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,8 @@ import Icon from '../components/Icon';
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from '../components/UserAvatar';
+import {useTheme} from '../contexts/ThemeContext';
 
-const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
 
 const NB_SHADOW = {
@@ -33,7 +33,7 @@ type MenuItem = {
   adminOnly?: boolean;
 };
 
-const MENU_ITEMS: MenuItem[] = [
+const getMenuItems = (PRIMARY: string, NEUTRAL: string): MenuItem[] => [
   {
     icon: 'briefcase-outline',
     label: 'Clients',
@@ -187,7 +187,7 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Activity Log',
     sub: 'Admin & team activity history',
     screen: 'ActivityLog',
-    color: '#000',
+    color: NEUTRAL,
     adminOnly: true,
   },
   {
@@ -195,7 +195,7 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Trash',
     sub: 'Restore deleted leads, clients & more',
     screen: 'Trash',
-    color: '#000',
+    color: NEUTRAL,
     adminOnly: true,
   },
   {
@@ -210,6 +210,9 @@ const MENU_ITEMS: MenuItem[] = [
 export default function MoreScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const MENU_ITEMS = useMemo(() => getMenuItems(colors.primary, colors.text), [colors.primary, colors.text]);
   const initial = (user?.name || user?.email || 'U')[0].toUpperCase();
   const isAdmin = ['admin', 'super_admin'].includes(user?.role);
   const menuItems = MENU_ITEMS.filter(item => !item.adminOnly || isAdmin);
@@ -224,16 +227,16 @@ export default function MoreScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Icon name="grid-outline" size={22} color="#000" />
+          <Icon name="grid-outline" size={22} color={colors.text} />
           <Text style={styles.headerTitle}>More</Text>
         </View>
         <TouchableOpacity style={styles.bellBtn}>
-          <Icon name="notifications-outline" size={22} color="#000" />
+          <Icon name="notifications-outline" size={22} color={colors.text} />
         </TouchableOpacity>
       </View>
 
@@ -248,62 +251,58 @@ export default function MoreScreen({ navigation }: any) {
         <View style={styles.profileCard}>
           <UserAvatar name={user?.name} avatar={user?.avatar} size={64} index={0} />
 
-          <View style={styles.profileActions}>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                {(user?.name || 'User').toUpperCase()}
-              </Text>
-              <Text style={styles.profileRole}>
-                {(user?.role || 'AGENT').toUpperCase()}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.editBtn}
-              onPress={() => navigation.navigate('Settings')}
-            >
-              <Icon name="person-outline" size={14} color={PRIMARY} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.logoutBtnSmall}
-              onPress={handleLogout}
-            >
-              <Icon name="log-out-outline" size={14} color="#EF4444" />
-            </TouchableOpacity>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>
+              {(user?.name || 'User').toUpperCase()}
+            </Text>
+            <Text style={styles.profileRole}>
+              {(user?.role || 'AGENT').toUpperCase()}
+            </Text>
           </View>
+          <TouchableOpacity
+            style={[styles.roundBtn, { borderColor: colors.primary }]}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Icon name="person-outline" size={16} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roundBtn, { borderColor: colors.danger }]}
+            onPress={handleLogout}
+          >
+            <Icon name="log-out-outline" size={16} color={colors.danger} />
+          </TouchableOpacity>
         </View>
 
-        {/* Menu list card */}
-        <View style={styles.menuCard}>
-          {menuItems.map((item, idx) => (
-            <View key={item.screen}>
-              {idx > 0 && <View style={styles.menuDivider} />}
-              <TouchableOpacity
-                style={styles.menuRow}
-                onPress={() => navigation.navigate(item.screen)}
-              >
-                <View style={[styles.menuIconBox, { borderColor: item.color }]}>
-                  {item.icon === 'logo-whatsapp' ? (
-                    <WhatsAppLogo size={22} />
-                  ) : (
-                    <Icon name={item.icon} size={22} color={item.color} />
-                  )}
-                </View>
-                <View style={styles.menuText}>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Text style={styles.menuSub}>{item.sub}</Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color="#94a3b8" />
-              </TouchableOpacity>
+        {/* Individual menu cards */}
+        {menuItems.map(item => (
+          <TouchableOpacity
+            key={item.screen}
+            style={styles.menuRow}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate(item.screen)}
+          >
+            <View style={[styles.menuIconBox, { borderColor: item.color }]}>
+              {item.icon === 'logo-whatsapp' ? (
+                <WhatsAppLogo size={22} />
+              ) : (
+                <Icon name={item.icon} size={22} color={item.color} />
+              )}
             </View>
-          ))}
-        </View>
+            <View style={styles.menuText}>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Text style={styles.menuSub}>{item.sub}</Text>
+            </View>
+            <Icon name="chevron-forward" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+function makeStyles(colors: import('../contexts/ThemeContext').ThemeColors) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   // Header
   header: {
@@ -312,10 +311,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '600', color: colors.text },
   bellBtn: {
     width: 42,
     height: 42,
@@ -336,9 +335,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -347,62 +346,40 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     letterSpacing: 0.3,
-    maxWidth: 200, 
   },
   profileRole: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#64748b',
+    color: colors.textMuted,
     marginTop: 2,
   },
-  profileActions: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' },
-  editBtn: {
-    flex: 1,
-    flexDirection: 'row',
+  roundBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderColor: PRIMARY,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: colors.surface,
   },
-  editBtnText: { fontSize: 11, fontWeight: '600', color: PRIMARY },
-  logoutBtnSmall: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderColor: '#EF4444',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  logoutBtnSmallText: { fontSize: 11, fontWeight: '600', color: '#EF4444' },
 
-  // Menu list
-  menuCard: {
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
-    backgroundColor: '#fff',
-  },
-  menuDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  // Menu cards
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 14,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   menuIconBox: {
     width: 46,
@@ -413,6 +390,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   menuText: { flex: 1 },
-  menuLabel: { fontSize: 15, fontWeight: '800', color: '#000' },
-  menuSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
-});
+  menuLabel: { fontSize: 15, fontWeight: '800', color: colors.text },
+  menuSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  });
+}

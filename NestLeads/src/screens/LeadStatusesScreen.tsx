@@ -12,6 +12,7 @@ import {
   setCustomLeadStatuses,
   CustomLeadStatus,
 } from '../constants/statusConstants';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
@@ -92,7 +93,7 @@ export default function LeadStatusesScreen({navigation}: any) {
       <View style={styles.divider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <ScreenSkeleton />
       ) : (
         <ScrollView contentContainerStyle={[styles.scroll, {paddingBottom: insets.bottom + 32}]}>
           <View style={styles.noteBox}>

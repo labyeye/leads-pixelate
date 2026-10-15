@@ -8,6 +8,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
 import Icon from '../components/Icon';
 import {socialAPI, uploadFile} from '../services/api';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const PRIMARY = '#024BAB';
 const ORANGE = '#FF751F';
@@ -460,7 +461,7 @@ export default function CreatePostScreen({navigation}: any) {
       <Text style={styles.hint}>Tap accounts to select. You can pick multiple.</Text>
 
       {loadingAccounts ? (
-        <View style={styles.centerBox}><ActivityIndicator color={PRIMARY} /></View>
+        <ScreenSkeleton />
       ) : accounts.length === 0 ? (
         <View style={styles.emptyBox}>
           <Icon name="link-outline" size={40} color="#e2e8f0" />

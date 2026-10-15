@@ -28,6 +28,7 @@ import { leadsAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { statusColors, getStatusColorClasses } from "@/components/leads/statusConstants";
 import { DateLeadModal } from "@/components/leads/DateLeadModal";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 // Parse a DB date string to a local-midnight Date to avoid UTC-offset day shifts
 const toLocalDate = (dateStr: string): Date => {
@@ -270,9 +271,7 @@ export default function FollowupCalendarPage() {
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </div>
+              <ListSkeleton rows={6} />
             ) : (
               <div className="flex-1 flex flex-col overflow-y-auto">
                 {}

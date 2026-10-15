@@ -2,6 +2,7 @@
  * @format
  */
 
+import 'react-native-gesture-handler';
 import {AppRegistry} from 'react-native';
 import './src/utils/errorAlert';
 import App from './App';

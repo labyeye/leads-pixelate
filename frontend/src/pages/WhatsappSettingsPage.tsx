@@ -60,6 +60,7 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 import { TemplateLibraryDialog } from "@/components/whatsapp/TemplateLibraryDialog";
 
 interface Template {
@@ -417,9 +418,7 @@ function TemplatesTab({ toast }: { toast: any }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton />
       ) : templates.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <MessageSquare className="w-10 h-10 text-muted-foreground/30" />
@@ -1066,9 +1065,7 @@ function AnalyticsTab({ toast }: { toast: any }) {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton />
       ) : campaigns.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <BarChart3 className="w-10 h-10 text-muted-foreground/30" />
@@ -1341,9 +1338,7 @@ function RepliesTab({ toast }: { toast: any }) {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton />
       ) : replies.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <MessageCircle className="w-10 h-10 text-muted-foreground/30" />
@@ -1679,9 +1674,7 @@ function ConnectionTab({ toast }: { toast: any }) {
       <AutomationsCard toast={toast} />
 
       {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton />
       ) : (
         <>
           {}

@@ -7,6 +7,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {googleAdsAPI, leadsAPI, usersAPI} from '../services/api';
 import AssigneePicker, {describeAssignment} from '../components/AssigneePicker';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const GA_COLOR = '#4285F4';
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
@@ -214,7 +215,7 @@ export default function GoogleAdsSetupScreen({navigation}: any) {
       <View style={styles.divider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={GA_COLOR} /></View>
+        <ScreenSkeleton />
       ) : (
         <ScrollView
           contentContainerStyle={[styles.body, {paddingBottom: insets.bottom + 32}]}

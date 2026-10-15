@@ -72,6 +72,7 @@ import {
   isToday,
 } from "date-fns";
 import { Link, useSearchParams } from "react-router-dom";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 interface SocialPost {
   _id: string;
@@ -501,9 +502,7 @@ function PostsTab({
       {}
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
+          <ListSkeleton />
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
             <Calendar className="w-10 h-10 text-muted-foreground/30" />
@@ -1482,9 +1481,7 @@ function PostWizard({
 
         <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0 space-y-4">
           {loadingMeta ? (
-            <div className="flex justify-center py-10">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
+            <ListSkeleton />
           ) : (
             <>
               {}
@@ -2046,9 +2043,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton />
       ) : accounts.length === 0 ? (
         <div className="flex flex-col items-center py-12 gap-3 text-center border border-dashed border-border rounded-xl">
           {syncing ? (
@@ -2514,9 +2509,7 @@ function AnalyticsTab() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-      </div>
+      <ListSkeleton />
     );
   }
 

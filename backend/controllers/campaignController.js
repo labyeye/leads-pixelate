@@ -58,10 +58,13 @@ function resolveVariable(fieldKey, customValue, lead) {
 
 function buildTemplateComponents(template, variableMapping, lead) {
   const components = [];
-  if (template.headerType === "TEXT" && template.headerText) {
+  const headerHasVar = template.headerType === "TEXT" && /\{\{\d+\}\}/.test(template.headerText || "");
+  if (headerHasVar) {
+    const headerVar = variableMapping?.find((v) => v.target === "header" || v.isHeader)
+      || { fieldKey: "name", customValue: "" };
     components.push({
       type: "header",
-      parameters: [{ type: "text", text: template.headerText }],
+      parameters: [{ type: "text", text: resolveVariable(headerVar.fieldKey, headerVar.customValue, lead) }],
     });
   } else if (template.headerType === "DOCUMENT" && template.headerMediaId) {
     components.push({

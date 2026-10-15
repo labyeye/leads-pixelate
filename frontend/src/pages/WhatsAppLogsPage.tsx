@@ -21,6 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 interface Campaign {
   _id: string;
@@ -195,9 +196,7 @@ export default function WhatsAppLogsPage() {
           {}
           <div className="px-6 pb-6 space-y-3">
             {loading ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
+              <ListSkeleton />
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                 <FontAwesomeIcon

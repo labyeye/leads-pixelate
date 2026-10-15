@@ -36,6 +36,9 @@ import {
   ALL_STATUSES,
 } from '../constants/statusConstants';
 import SourceBadge from '../components/SourceBadge';
+import {useTheme} from '../contexts/ThemeContext';
+import FadeInUp from '../components/motion/FadeInUp';
+import Skeleton from '../components/motion/Skeleton';
 import {
   Building2,
   Calendar,
@@ -47,7 +50,6 @@ import {
   UserIcon,
 } from 'lucide-react-native';
 
-const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -85,7 +87,7 @@ const CATEGORY_SHORT: Record<string, string> = {
 const TAG_COLORS: Record<string, { bg: string; text: string }> = {
   HOT: { bg: '#ef4444', text: '#fff' },
   WARM: { bg: '#FFDE00', text: '#000' },
-  COLD: { bg: PRIMARY, text: '#fff' },
+  COLD: { bg: '#024BAB', text: '#fff' },
 };
 
 const BLANK_FILTER: FilterState = {
@@ -108,6 +110,8 @@ const BUDGET_PRESETS = [
 export default function LeadsListScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -306,10 +310,11 @@ export default function LeadsListScreen({ navigation }: Props) {
     runSync(dateModalSource, from, to);
   };
 
-  const renderLeadCard = ({ item: l }: { item: any }) => {
+  const renderLeadCard = ({ item: l, index }: { item: any; index: number }) => {
     const sc = getStatusColor(l.status);
     const tag = l.contactTag ? TAG_COLORS[l.contactTag] : null;
     return (
+      <FadeInUp delay={Math.min(index, 8) * 70} duration={650} distance={10}>
       <TouchableOpacity
         style={styles.card}
         onPress={() =>
@@ -352,7 +357,7 @@ export default function LeadsListScreen({ navigation }: Props) {
             
             {l.createdAt ? (
               <View style={styles.leadDetailRow}>
-                <CalendarCheck size={12} color="#000" />
+                <CalendarCheck size={12} color={colors.text} />
                 <Text style={styles.inquiryDate}>
                   {new Date(l.createdAt).toLocaleDateString('en-IN', {
                     day: '2-digit',
@@ -378,23 +383,13 @@ export default function LeadsListScreen({ navigation }: Props) {
             ) : null}
             {l.assignedTo?.name ? (
               <View style={styles.assignedRow}>
-                <UserCheck size={14} color="#000" />
+                <UserCheck size={14} color={colors.text} />
                 <Text style={styles.assignedText}>
                   Assigned: {l.assignedTo.name}
                 </Text>
               </View>
             ) : null}
           </View>
-        </View>
-
-        <View style={styles.sourceStatusRow}>
-          {tag && (
-            <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
-              <Text style={[styles.tagPillText, { color: tag.text }]}>
-                {l.contactTag}
-              </Text>
-            </View>
-          )}
           <View
             style={[
               styles.statusPill,
@@ -407,13 +402,23 @@ export default function LeadsListScreen({ navigation }: Props) {
           </View>
         </View>
 
+        {tag && (
+          <View style={styles.sourceStatusRow}>
+            <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
+              <Text style={[styles.tagPillText, { color: tag.text }]}>
+                {l.contactTag}
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.cardActionsRow}>
           {l.phone ? (
             <TouchableOpacity
               style={styles.cardActionBtn}
               onPress={() => Linking.openURL(`tel:${l.phone}`)}
             >
-              <PhoneCall size={13} color={PRIMARY} />
+              <PhoneCall size={13} color={colors.primary} />
               <Text style={styles.cardActionText}>Call</Text>
             </TouchableOpacity>
           ) : null}
@@ -422,7 +427,7 @@ export default function LeadsListScreen({ navigation }: Props) {
               style={styles.cardActionBtn}
               onPress={() => Linking.openURL(`mailto:${l.email}`)}
             >
-              <Mail size={13} color={PRIMARY} />
+              <Mail size={13} color={colors.primary} />
               <Text style={styles.cardActionText}>Email</Text>
             </TouchableOpacity>
           ) : null}
@@ -432,17 +437,18 @@ export default function LeadsListScreen({ navigation }: Props) {
               navigation.navigate('LeadDetail', { leadId: l._id || l.id })
             }
           >
-            <IdCard size={13} color={PRIMARY} />
+            <IdCard size={13} color={colors.primary} />
             <Text style={styles.cardActionText}>Details</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
+      </FadeInUp>
     );
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -481,14 +487,14 @@ export default function LeadsListScreen({ navigation }: Props) {
                   }))
                 }
               >
-                <Text style={styles.activeChipText}>{s}</Text>
+                <Text style={[styles.activeChipText, {color: '#000'}]}>{s}</Text>
                 <Icon name="close" size={10} color="#000" />
               </TouchableOpacity>
             ))}
             {filters.statuses.map(s => (
               <TouchableOpacity
                 key={s}
-                style={[styles.activeChip, { backgroundColor: '#e0e7ff' }]}
+                style={[styles.activeChip, { backgroundColor: colors.primarySoft }]}
                 onPress={() =>
                   setFilters(f => ({
                     ...f,
@@ -497,7 +503,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                 }
               >
                 <Text style={styles.activeChipText}>{s}</Text>
-                <Icon name="close" size={10} color="#000" />
+                <Icon name="close" size={10} color={colors.text} />
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -510,7 +516,7 @@ export default function LeadsListScreen({ navigation }: Props) {
           <Icon
             name="search-outline"
             size={14}
-            color="#000"
+            color={colors.text}
             style={{ marginRight: 6 }}
           />
           <TextInput
@@ -522,7 +528,7 @@ export default function LeadsListScreen({ navigation }: Props) {
           />
           {!!search && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Icon name="close" size={14} color="#000" />
+              <Icon name="close" size={14} color={colors.text} />
             </TouchableOpacity>
           )}
         </View>
@@ -583,9 +589,10 @@ export default function LeadsListScreen({ navigation }: Props) {
       <View style={styles.divider} />
 
       {loading ? (
-        <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={PRIMARY} />
-          <Text style={styles.loadingText}>Loading leads...</Text>
+        <View style={styles.listContent}>
+          {[0, 1, 2, 3, 4, 5].map(i => (
+            <Skeleton key={i} height={88} style={{ marginBottom: 12 }} />
+          ))}
         </View>
       ) : (
         <FlatList
@@ -601,12 +608,12 @@ export default function LeadsListScreen({ navigation }: Props) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => fetchLeads(true)}
-              tintColor={PRIMARY}
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Icon name="people-outline" size={40} color="#e2e8f0" />
+              <Icon name="people-outline" size={40} color={colors.divider} />
               <Text style={styles.emptyTitle}>No leads found</Text>
               <Text style={styles.emptySub}>
                 {search
@@ -640,7 +647,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                 style={styles.modalCloseBtn}
                 onPress={() => setDateModalSource(null)}
               >
-                <Icon name="close" size={20} color="#000" />
+                <Icon name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
             <View style={styles.modalDivider} />
@@ -748,7 +755,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                   style={styles.modalCloseBtn}
                   onPress={() => setFilterOpen(false)}
                 >
-                  <Icon name="close" size={20} color="#000" />
+                  <Icon name="close" size={20} color={colors.text} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -805,7 +812,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                         <Icon
                           name="checkmark-circle"
                           size={16}
-                          color={PRIMARY}
+                          color={colors.primary}
                           style={{ marginLeft: 'auto' }}
                         />
                       )}
@@ -907,7 +914,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                       <Icon
                         name="cash-outline"
                         size={14}
-                        color={active ? PRIMARY : '#64748b'}
+                        color={active ? colors.primary : '#64748b'}
                       />
                       <Text
                         style={[
@@ -921,7 +928,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                         <Icon
                           name="checkmark-circle"
                           size={14}
-                          color={PRIMARY}
+                          color={colors.primary}
                           style={{ marginLeft: 'auto' }}
                         />
                       )}
@@ -981,7 +988,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                         <Icon
                           name="cube-outline"
                           size={14}
-                          color={active ? PRIMARY : '#64748b'}
+                          color={active ? colors.primary : '#64748b'}
                         />
                         <Text
                           style={[
@@ -996,7 +1003,7 @@ export default function LeadsListScreen({ navigation }: Props) {
                           <Icon
                             name="checkmark-circle"
                             size={14}
-                            color={PRIMARY}
+                            color={colors.primary}
                             style={{ marginLeft: 'auto' }}
                           />
                         )}
@@ -1032,29 +1039,30 @@ export default function LeadsListScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+function makeStyles(colors: import('../contexts/ThemeContext').ThemeColors) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   // Header
   header: {
     height: 64,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderBottomWidth: 2,
-    borderBottomColor: '#000',
+    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
-  headerSub: { fontSize: 11, color: '#64748b', fontWeight: '500' },
+  headerTitle: { fontSize: 20, fontWeight: '600', color: colors.text },
+  headerSub: { fontSize: 11, color: colors.textMuted, fontWeight: '500' },
   syncRow: {
     flexDirection: 'row',
     marginHorizontal: 12,
     marginVertical: 8,
     gap: 6,
   },
-  syncRowDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  syncRowDivider: { height: 1, backgroundColor: colors.divider },
   syncChip: {
     flex: 1,
     flexDirection: 'column',
@@ -1062,7 +1070,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     paddingTop: 8,
     paddingBottom: 6,
     gap: 4,
@@ -1074,12 +1082,12 @@ const styles = StyleSheet.create({
     height: 39.5,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnActive: { backgroundColor: PRIMARY },
+  filterBtnActive: { backgroundColor: colors.primary },
   filterDot: {
     position: 'absolute',
     top: -5,
@@ -1088,7 +1096,7 @@ const styles = StyleSheet.create({
     height: 16,
     backgroundColor: SECONDARY,
     borderWidth: 1.5,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 2,
@@ -1098,8 +1106,8 @@ const styles = StyleSheet.create({
   // Active filter chips
   activeFiltersRow: {
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
+    borderBottomColor: colors.divider,
+    backgroundColor: colors.surfaceMuted,
   },
   activeFiltersScroll: {
     paddingHorizontal: 12,
@@ -1119,9 +1127,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
   },
   clearAllText: { fontSize: 11, fontWeight: '600', color: '#fff' },
   activeChip: {
@@ -1133,9 +1141,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
-  activeChipText: { fontSize: 10, fontWeight: '700', color: '#000' },
+  activeChipText: { fontSize: 10, fontWeight: '700', color: colors.text },
 
   // Search
   searchRow: {
@@ -1144,9 +1152,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.divider,
   },
   searchBox: {
     flex: 1,
@@ -1156,17 +1164,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
-    backgroundColor: '#fff',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     paddingHorizontal: 10,
   },
   searchInput: {
     flex: 1,
     paddingVertical: 9,
     fontSize: 13,
-    color: '#000',
+    color: colors.text,
     fontWeight: '500',
   },
   addBtnInline: {
@@ -1174,10 +1182,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
-    backgroundColor: PRIMARY,
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
+    backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
@@ -1194,7 +1202,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     gap: 6,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   tab: {
     flexDirection: 'row',
@@ -1206,14 +1214,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 2,
     borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     gap: 5,
   },
-  tabActive: { backgroundColor: PRIMARY },
+  tabActive: { backgroundColor: colors.primary },
   tabText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#000',
+    color: colors.text,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
@@ -1221,28 +1229,28 @@ const styles = StyleSheet.create({
   tabCount: {
     minWidth: 18,
     height: 18,
-    backgroundColor: '#000',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  tabCountActive: { backgroundColor: '#fff' },
+  tabCountActive: { backgroundColor: colors.surface },
   tabCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
-  tabCountTextActive: { color: PRIMARY },
-  divider: { height: 2, backgroundColor: '#000' },
+  tabCountTextActive: { color: colors.primary },
+  divider: { height: 2, backgroundColor: colors.border },
 
   // Cards
   leadsList: { flex: 1 },
   listContent: { padding: 12, gap: 10 },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     padding: 14,
     marginBottom: 2,
   },
@@ -1260,20 +1268,20 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   leadDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  leadName: { fontSize: 15, fontWeight: '600', color: '#000' },
+  leadName: { fontSize: 15, fontWeight: '600', color: colors.text },
   leadCompany: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textMuted,
     fontWeight: '500',
     marginTop: 1,
   },
-  leadPhone: { fontSize: 12, color: '#000', fontWeight: '500', marginTop: 1 },
+  leadPhone: { fontSize: 12, color: colors.text, fontWeight: '500', marginTop: 1 },
   tagPill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
   tagPillText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
   cardFooter: {
@@ -1292,11 +1300,18 @@ const styles = StyleSheet.create({
   productText: { fontSize: 11, color: '#7c3aed', fontWeight: '700', flex: 1 },
   remarksText: {
     fontSize: 11,
-    color: '#64748b',
+    color: colors.textMuted,
     fontWeight: '500',
     lineHeight: 15,
   },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 8, },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 2,
+    borderRadius: 8,
+    ...NB_SHADOW,
+    shadowColor: colors.shadowColor,
+  },
   statusPillText: {
     fontSize: 10,
     fontWeight: '600',
@@ -1310,13 +1325,13 @@ const styles = StyleSheet.create({
   },
   assignedText: {
     fontSize: 13,
-    color: '#000',
+    color: colors.text,
     fontWeight: '700',
   },
   sourceStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     width: '100%',
     flexWrap: 'wrap',
     gap: 8,
@@ -1324,11 +1339,11 @@ const styles = StyleSheet.create({
   },
   cardActionsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 10,
+    gap: 10,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: colors.divider,
   },
   cardActionBtn: {
     flex: 1,
@@ -1336,19 +1351,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingVertical: 7,
-    borderWidth: 1.5,
-    borderColor: PRIMARY,
-    backgroundColor: '#eff6ff',
+    paddingVertical: 8,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    ...NB_SHADOW,
+    shadowColor: colors.shadowColor,
   },
-  cardActionText: { fontSize: 11, fontWeight: '800', color: PRIMARY },
+  cardActionText: { fontSize: 11, fontWeight: '800', color: colors.primary },
   followUpRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     marginTop: 2,
   },
-  followUpText: { fontSize: 11, color: PRIMARY, fontWeight: '700' },
+  followUpText: { fontSize: 11, color: colors.primary, fontWeight: '700' },
   centerBox: {
     flex: 1,
     alignItems: 'center',
@@ -1357,13 +1375,13 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: '#64748b',
+    color: colors.textMuted,
     fontSize: 14,
     fontWeight: '500',
   },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
-  emptySub: { fontSize: 13, color: '#64748b', marginTop: 4 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
+  emptySub: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
 
   // Filter modal
   modalOverlay: {
@@ -1372,9 +1390,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderTopWidth: 3,
-    borderTopColor: '#000',
+    borderTopColor: colors.border,
     maxHeight: '88%',
   },
   modalHeader: {
@@ -1384,7 +1402,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: colors.text },
   modalHeaderBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   resetBtn: {
     paddingHorizontal: 10,
@@ -1399,11 +1417,11 @@ const styles = StyleSheet.create({
     height: 32,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalDivider: { height: 2, backgroundColor: '#000' },
+  modalDivider: { height: 2, backgroundColor: colors.border },
   modalBody: { padding: 16, gap: 8 },
 
   // "All" button
@@ -1415,21 +1433,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     marginBottom: 4,
   },
-  allBtnActive: { backgroundColor: PRIMARY },
-  allBtnText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  allBtnActive: { backgroundColor: colors.primary },
+  allBtnText: { fontSize: 14, fontWeight: '600', color: colors.text },
   allBtnTextActive: { color: '#fff' },
 
   filterSectionLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginTop: 8,
@@ -1446,17 +1464,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
+    borderColor: colors.divider,
+    backgroundColor: colors.surfaceMuted,
   },
-  sourceChipActive: { borderColor: PRIMARY, backgroundColor: '#eff6ff' },
+  sourceChipActive: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   sourceChipLabel: {
     flex: 1,
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
   },
-  sourceChipLabelActive: { color: PRIMARY, fontWeight: '800' },
+  sourceChipLabelActive: { color: colors.primary, fontWeight: '800' },
   // Date range in filter
   dateRangeRow: {
     flexDirection: 'row',
@@ -1468,7 +1486,7 @@ const styles = StyleSheet.create({
   dateRangeFieldLabel: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -1478,18 +1496,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 13,
     fontWeight: '700',
-    color: '#000',
-    backgroundColor: '#fff',
+    color: colors.text,
+    backgroundColor: colors.surface,
   },
   dateRangeSep: { paddingBottom: 10 },
-  dateRangeSepText: { fontSize: 16, fontWeight: '600', color: '#000' },
+  dateRangeSepText: { fontSize: 16, fontWeight: '600', color: colors.text },
   budgetCustomRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1498,7 +1516,7 @@ const styles = StyleSheet.create({
   },
   filterEmptyText: {
     fontSize: 12,
-    color: '#000',
+    color: colors.text,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -1510,14 +1528,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   statusChipText: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
-    color: '#000',
+    color: colors.text,
   },
 
   // Modal footer
@@ -1528,14 +1546,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     paddingVertical: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: colors.text },
   applyBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -1547,9 +1565,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     paddingVertical: 13,
   },
   applyBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
@@ -1562,21 +1580,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
-  syncDateBtnActive: { backgroundColor: PRIMARY },
-  syncDateText: { fontSize: 12, fontWeight: '700', color: '#000' },
+  syncDateBtnActive: { backgroundColor: colors.primary },
+  syncDateText: { fontSize: 12, fontWeight: '700', color: colors.text },
   syncDateTextActive: { color: '#fff' },
   customDateRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   customDateField: { flex: 1 },
   customDateLabel: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 4,
@@ -1586,13 +1604,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     paddingHorizontal: 10,
     paddingVertical: 9,
     fontSize: 13,
-    color: '#000',
+    color: colors.text,
     fontWeight: '500',
   },
-});
+  });
+}

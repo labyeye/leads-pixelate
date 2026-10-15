@@ -1,10 +1,17 @@
 import React from 'react';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {View, Text, StyleSheet, TouchableOpacity, LayoutChangeEvent} from 'react-native';
+import Svg, {Path} from 'react-native-svg';
+import {
+  createBottomTabNavigator,
+  BottomTabBarProps,
+} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
 import {navigationRef} from './navigationRef';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import TabBounce from '../components/motion/TabBounce';
+import {useTheme} from '../contexts/ThemeContext';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import LeadsListScreen from '../screens/LeadsListScreen';
@@ -23,6 +30,7 @@ import ProductsScreen from '../screens/ProductsScreen';
 import PriceBooksScreen from '../screens/PriceBooksScreen';
 import TradeDocumentsScreen from '../screens/TradeDocumentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import PersonaliseScreen from '../screens/PersonaliseScreen';
 import CampaignsScreen from '../screens/CampaignsScreen';
 import UsersScreen from '../screens/UsersScreen';
 import IntegrationsScreen from '../screens/IntegrationsScreen';
@@ -82,6 +90,7 @@ export type MoreStackParamList = {
   PurchaseOrders: {kind: "purchase_order"} | undefined;
   Invoices: {kind: "invoice"} | undefined;
   Settings: undefined;
+  Personalise: undefined;
   Campaigns: undefined;
   Users: undefined;
   Integrations: undefined;
@@ -151,6 +160,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="PurchaseOrders" component={TradeDocumentsScreen} initialParams={{kind: "purchase_order"}} />
       <MoreStack.Screen name="Invoices" component={TradeDocumentsScreen} initialParams={{kind: "invoice"}} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} />
+      <MoreStack.Screen name="Personalise" component={PersonaliseScreen} />
       <MoreStack.Screen name="Campaigns" component={CampaignsScreen} />
       <MoreStack.Screen name="Users" component={UsersScreen} />
       <MoreStack.Screen name="Integrations" component={IntegrationsScreen} />
@@ -185,29 +195,138 @@ function MoreNavigator() {
   );
 }
 
-export default function AppNavigator() {
+const BAR_ROW = 60;
+const FAB = 64;
+const NOTCH_W = 60;
+const NOTCH_DEPTH = 40;
+
+// Bottom bar with the Leads tab raised in the middle, sitting in a curved
+// notch — same shape/behavior as NestSports' tab bar, re-themed to NestLeads.
+function CustomTabBar({state, descriptors, navigation}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const {colors} = useTheme();
+  const [width, setWidth] = React.useState(0);
+  const height = BAR_ROW + insets.bottom;
+  const centerIndex = Math.floor(state.routes.length / 2);
+  const hasCenter =
+    state.routes.length === 5 && state.routes[centerIndex].name === 'LeadsStack';
+  const cx = width / 2;
+  const path = hasCenter
+    ? `M-2,0 L${cx - NOTCH_W},0 C${cx - NOTCH_W + 22},0 ${
+        cx - 36
+      },${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH} C${cx + 36},${NOTCH_DEPTH} ${
+        cx + NOTCH_W - 22
+      },0 ${cx + NOTCH_W},0 L${width + 2},0 L${width + 2},${height + 2} L-2,${
+        height + 2
+      } Z`
+    : `M-2,0 L${width + 2},0 L${width + 2},${height + 2} L-2,${height + 2} Z`;
+
+  return (
+    <View
+      style={[tabBarStyles.barWrap, {height}]}
+      onLayout={(e: LayoutChangeEvent) => setWidth(Math.floor(e.nativeEvent.layout.width))}
+    >
+      {width > 0 && (
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          <Path
+            d={path}
+            fill={colors.surface}
+            stroke={colors.border}
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+        </Svg>
+      )}
+      <View style={[tabBarStyles.barRow, {paddingBottom: insets.bottom}]}>
+        {state.routes.map((route, index) => {
+          const {options} = descriptors[route.key];
+          const focused = state.index === index;
+          const raised = hasCenter && index === centerIndex;
+          const color = focused ? colors.primary : colors.textMuted;
+          const label =
+            typeof options.tabBarLabel === 'string'
+              ? options.tabBarLabel
+              : options.title ?? route.name;
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name as never);
+            }
+          };
+          return (
+            <TouchableOpacity
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={focused ? {selected: true} : {}}
+              onPress={onPress}
+              activeOpacity={0.8}
+              style={tabBarStyles.tabItem}
+            >
+              {raised ? (
+                <>
+                  <View style={[tabBarStyles.fab, {backgroundColor: colors.primary, borderColor: colors.border}]}>
+                    <Icon name="people" size={28} color="#fff" />
+                  </View>
+                  <View style={tabBarStyles.iconWrap} />
+                </>
+              ) : (
+                <TabBounce focused={focused}>{options.tabBarIcon?.({focused, color, size: 20})}</TabBounce>
+              )}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={[tabBarStyles.tabLabel, raised && tabBarStyles.tabLabelRaised, {color}]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const tabBarStyles = StyleSheet.create({
+  barWrap: {backgroundColor: 'transparent'},
+  barRow: {flexDirection: 'row', flex: 1, paddingTop: 4},
+  tabItem: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  fab: {
+    position: 'absolute',
+    top: -(FAB / 2) - 2,
+    width: FAB,
+    height: FAB,
+    borderRadius: FAB / 2,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    maxWidth: '100%',
+  },
+  tabLabelRaised: {marginTop: 5},
+  iconWrap: {width: 32, height: 28, alignItems: 'center', justifyContent: 'center'},
+});
+
+export default function AppNavigator() {
+  const {colors} = useTheme();
   return (
     <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
+        tabBar={props => <CustomTabBar {...props} />}
         screenOptions={({route}) => ({
           headerShown: false,
-          tabBarStyle: {
-            height: 60 + insets.bottom,
-            borderTopWidth: 2,
-            borderTopColor: '#000',
-            backgroundColor: '#fff',
-            paddingBottom: 6 + insets.bottom,
-            paddingTop: 6,
-          },
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.3,
-          },
-          tabBarActiveTintColor: '#024BAB',
-          tabBarInactiveTintColor: '#94a3b8',
+          animation: 'fade',
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textMuted,
           tabBarIcon: ({color, size, focused}) => {
             const icons: Record<string, string> = {
               Dashboard:        focused ? 'grid'             : 'grid-outline',
@@ -219,16 +338,16 @@ export default function AppNavigator() {
             return <Icon name={icons[route.name] || 'ellipse-outline'} size={size} color={color} />;
           },
         })}>
-        <Tab.Screen name="Dashboard" component={DashboardScreen} />
-        <Tab.Screen
-          name="LeadsStack"
-          component={LeadsNavigator}
-          options={{tabBarLabel: 'Leads'}}
-        />
+        <Tab.Screen name="Dashboard" component={DashboardScreen} options={{tabBarLabel: 'Home'}} />
         <Tab.Screen
           name="Schedule"
           component={ScheduleScreen}
           options={{tabBarLabel: 'Schedule'}}
+        />
+        <Tab.Screen
+          name="LeadsStack"
+          component={LeadsNavigator}
+          options={{tabBarLabel: 'Leads'}}
         />
         <Tab.Screen
           name="SocialStack"

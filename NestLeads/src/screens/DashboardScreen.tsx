@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,13 +18,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
 import SourceBadge from '../components/SourceBadge';
 import UserAvatar from '../components/UserAvatar';
+import FadeInUp from '../components/motion/FadeInUp';
+import Skeleton from '../components/motion/Skeleton';
+import AnimatedNumber from '../components/motion/AnimatedNumber';
 import { PieChart } from 'react-native-gifted-charts';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const Logo = require('../assets/images/Logo.png');
 
-const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
 
 const PIE_COLORS = [
@@ -66,6 +69,8 @@ type Period = 'all' | 'today' | 'week' | 'month';
 export default function DashboardScreen({ navigation }: any) {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -135,7 +140,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
 
       {/* Header — NestHR structure, neubrutalism style */}
       <View style={styles.header}>
@@ -156,7 +161,7 @@ export default function DashboardScreen({ navigation }: any) {
           style={styles.bellBtn}
           onPress={() => setNotifOpen(true)}
         >
-          <Icon name="notifications" size={28} color="#000" />
+          <Icon name="notifications" size={28} color={colors.text} />
           {recentLeads.length > 0 && (
             <View style={styles.bellBadge}>
               <Text style={styles.bellBadgeText}>
@@ -169,8 +174,15 @@ export default function DashboardScreen({ navigation }: any) {
       <View style={styles.divider} />
 
       {loading ? (
-        <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={PRIMARY} />
+        <View style={styles.scroll}>
+          <Skeleton height={44} style={{ marginBottom: 16 }} />
+          {[0, 1, 2].map(r => (
+            <View key={r} style={[styles.kpiRow, { marginBottom: 10 }]}>
+              <Skeleton height={68} style={{ flex: 1 }} />
+              <Skeleton height={68} style={{ flex: 1 }} />
+            </View>
+          ))}
+          <Skeleton height={180} style={{ marginTop: 6 }} />
         </View>
       ) : (
         <ScrollView
@@ -182,7 +194,7 @@ export default function DashboardScreen({ navigation }: any) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => fetchAll(true)}
-              tintColor={PRIMARY}
+              tintColor={colors.primary}
             />
           }
         >
@@ -218,42 +230,22 @@ export default function DashboardScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Alert strip */}
-          {data?.stats &&
-            (data.stats.overdueFollowUps > 0 || data.stats.hotLeads > 0) && (
-              <View style={styles.alertStrip}>
-                <Icon name="warning-outline" size={14} color={SECONDARY} />
-                <Text style={styles.alertText}>Action needed: </Text>
-                {data.stats.hotLeads > 0 && (
-                  <View style={styles.alertPill}>
-                    <Icon name="flame" size={11} color="#fff" />
-                    <Text style={styles.alertPillText}>
-                      {data.stats.hotLeads} hot
-                    </Text>
-                  </View>
-                )}
-                {data.stats.overdueFollowUps > 0 && (
-                  <View style={[styles.alertPill, { backgroundColor: '#000' }]}>
-                    <Icon name="time-outline" size={11} color="#fff" />
-                    <Text style={styles.alertPillText}>
-                      {data.stats.overdueFollowUps} overdue
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
 
           {/* OVERVIEW — 2×3 stat cards */}
           <Text style={styles.sectionLabel}>OVERVIEW</Text>
           <View style={styles.kpiRow}>
             <KpiCard
+              styles={styles}
+              index={0}
               title="NEW LEADS"
               value={newLeadsValue}
               icon="flash-outline"
-              iconBg={PRIMARY}
+              iconBg={colors.primary}
               iconColor="#fff"
             />
             <KpiCard
+              styles={styles}
+              index={1}
               title="FOLLOW-UPS"
               value={data?.todayFollowUps?.length ?? 0}
               icon="calendar-outline"
@@ -263,6 +255,8 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
           <View style={[styles.kpiRow, { marginTop: 10 }]}>
             <KpiCard
+              styles={styles}
+              index={2}
               title="HOT LEADS"
               value={data?.stats?.hotLeads ?? 0}
               icon="flame-outline"
@@ -271,6 +265,8 @@ export default function DashboardScreen({ navigation }: any) {
               urgent
             />
             <KpiCard
+              styles={styles}
+              index={3}
               title="OVERDUE"
               value={data?.stats?.overdueFollowUps ?? 0}
               icon="time-outline"
@@ -280,6 +276,8 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
           <View style={[styles.kpiRow, { marginTop: 10 }]}>
             <KpiCard
+              styles={styles}
+              index={4}
               title="CONVERTED"
               value={data?.stats?.convertedClients ?? 0}
               icon="checkmark-circle-outline"
@@ -287,10 +285,12 @@ export default function DashboardScreen({ navigation }: any) {
               iconColor="#fff"
             />
             <KpiCard
+              styles={styles}
+              index={5}
               title="TOTAL LEADS"
               value={data?.stats?.totalLeads ?? 0}
               icon="people-outline"
-              iconBg={PRIMARY}
+              iconBg={colors.primary}
               iconColor="#fff"
             />
           </View>
@@ -301,13 +301,15 @@ export default function DashboardScreen({ navigation }: any) {
           </Text>
           <View style={[styles.section, { padding: 0 }]}>
             <MonthRow
+              styles={styles}
               icon="flash-outline"
-              iconBg={PRIMARY}
+              iconBg={colors.primary}
               label="New Leads"
               value={newLeadsValue}
             />
             <View style={styles.rowDivider} />
             <MonthRow
+              styles={styles}
               icon="calendar-outline"
               iconBg="#10b981"
               label="Follow-ups"
@@ -315,6 +317,7 @@ export default function DashboardScreen({ navigation }: any) {
             />
             <View style={styles.rowDivider} />
             <MonthRow
+              styles={styles}
               icon="flame-outline"
               iconBg={SECONDARY}
               label="Hot Leads"
@@ -322,6 +325,7 @@ export default function DashboardScreen({ navigation }: any) {
             />
             <View style={styles.rowDivider} />
             <MonthRow
+              styles={styles}
               icon="checkmark-circle-outline"
               iconBg="#10b981"
               label="Clients Won"
@@ -339,7 +343,7 @@ export default function DashboardScreen({ navigation }: any) {
                   1,
                 );
                 const pct = Math.max((stage.count / max) * 100, 4);
-                const fillColor = idx % 2 === 0 ? PRIMARY : SECONDARY;
+                const fillColor = idx % 2 === 0 ? colors.primary : SECONDARY;
                 return (
                   <View key={stage.label} style={styles.funnelRow}>
                     <View
@@ -404,7 +408,7 @@ export default function DashboardScreen({ navigation }: any) {
                       {lead.company || lead.phone}
                     </Text>
                   </View>
-                  <Icon name="chevron-forward" size={16} color="#94a3b8" />
+                  <Icon name="chevron-forward" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
               ))
             ) : (
@@ -446,11 +450,11 @@ export default function DashboardScreen({ navigation }: any) {
                         donut
                         radius={90}
                         innerRadius={58}
-                        innerCircleColor={'#fff'}
+                        innerCircleColor={colors.surface}
                         innerCircleBorderWidth={2}
-                        innerCircleBorderColor={'#000'}
+                        innerCircleBorderColor={colors.border}
                         strokeWidth={2}
-                        strokeColor={'#000'}
+                        strokeColor={colors.border}
                         focusOnPress
                         onPress={(_item: any, idx: number) =>
                           setSourceFocusedIdx(idx)
@@ -549,7 +553,7 @@ export default function DashboardScreen({ navigation }: any) {
                             {
                               width: `${rate}%` as any,
                               backgroundColor:
-                                i % 2 === 0 ? PRIMARY : SECONDARY,
+                                i % 2 === 0 ? colors.primary : SECONDARY,
                             },
                           ]}
                         />
@@ -588,7 +592,7 @@ export default function DashboardScreen({ navigation }: any) {
                 style={styles.notifCloseBtn}
                 onPress={() => setNotifOpen(false)}
               >
-                <Icon name="close" size={18} color="#000" />
+                <Icon name="close" size={18} color={colors.text} />
               </TouchableOpacity>
             </View>
             <View style={styles.notifDivider} />
@@ -606,7 +610,7 @@ export default function DashboardScreen({ navigation }: any) {
                         styles.notifItemIcon,
                         {
                           backgroundColor:
-                            act.type === 'login' ? PRIMARY : '#ef4444',
+                            act.type === 'login' ? colors.primary : '#ef4444',
                         },
                       ]}
                     >
@@ -636,7 +640,7 @@ export default function DashboardScreen({ navigation }: any) {
                         styles.notifItemBadge,
                         {
                           backgroundColor:
-                            act.type === 'login' ? PRIMARY : '#ef4444',
+                            act.type === 'login' ? colors.primary : '#ef4444',
                         },
                       ]}
                     >
@@ -662,7 +666,7 @@ export default function DashboardScreen({ navigation }: any) {
                 </View>
                 {recentLeads.length === 0 ? (
                   <View style={styles.notifEmpty}>
-                    <Icon name="people-outline" size={28} color="#e2e8f0" />
+                    <Icon name="people-outline" size={28} color={colors.divider} />
                     <Text style={styles.notifEmptyText}>No recent leads</Text>
                   </View>
                 ) : (
@@ -720,8 +724,9 @@ export default function DashboardScreen({ navigation }: any) {
   );
 }
 
-function KpiCard({ title, value, icon, iconBg, iconColor, urgent }: any) {
+function KpiCard({ title, value, icon, iconBg, iconColor, urgent, index = 0, styles }: any) {
   return (
+    <FadeInUp delay={index * 110} style={{ flex: 1 }}>
     <View style={[styles.kpiCard, urgent && styles.kpiCardUrgent]}>
       <View
         style={[
@@ -734,11 +739,10 @@ function KpiCard({ title, value, icon, iconBg, iconColor, urgent }: any) {
         <Text style={styles.kpiTitle} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={styles.kpiValue} numberOfLines={1}>
-          {value}
-        </Text>
+        <AnimatedNumber style={styles.kpiValue} value={value} />
       </View>
     </View>
+    </FadeInUp>
   );
 }
 
@@ -747,11 +751,13 @@ function MonthRow({
   iconBg,
   label,
   value,
+  styles,
 }: {
   icon: string;
   iconBg: string;
   label: string;
   value: number;
+  styles: any;
 }) {
   return (
     <View style={styles.monthRow}>
@@ -759,13 +765,14 @@ function MonthRow({
         <Icon name={icon} size={16} color={iconBg} />
       </View>
       <Text style={styles.monthRowLabel}>{label}</Text>
-      <Text style={styles.monthRowValue}>{value}</Text>
+      <AnimatedNumber style={styles.monthRowValue} value={value} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+function makeStyles(colors: import('../contexts/ThemeContext').ThemeColors) {
+  return StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   // Header — NestHR structure with neubrutalism style
   header: {
@@ -773,29 +780,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     gap: 12,
   },
   headerAvatar: {
     width: 50,
     height: 50,
     borderWidth: 2,
-    borderColor: '#000',
-    backgroundColor: PRIMARY,
+    borderColor: colors.border,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 50,
   },
   headerAvatarText: { fontSize: 18, fontWeight: '600', color: '#fff' },
   headerInfo: { flex: 1 },
-  headerGreeting: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  headerGreeting: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
   headerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     letterSpacing: 0.3,
   },
-  headerCompany: { fontSize: 13, color: '#64748b', fontWeight: '500' },
+  headerCompany: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
   bellBtn: {
     width: 42,
     height: 42,
@@ -808,9 +815,9 @@ const styles = StyleSheet.create({
     right: -4,
     minWidth: 20,
     height: 20,
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     borderWidth: 1.5,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 2,
@@ -825,9 +832,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   notifSheet: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderTopWidth: 3,
-    borderTopColor: '#000',
+    borderTopColor: colors.border,
     maxHeight: '88%',
   },
   notifHeader: {
@@ -841,24 +848,24 @@ const styles = StyleSheet.create({
   notifHeaderIcon: {
     width: 32,
     height: 32,
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifHeaderTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  notifHeaderTitle: { fontSize: 18, fontWeight: '600', color: colors.text },
   notifCloseBtn: {
     width: 32,
     height: 32,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifDivider: { height: 2, backgroundColor: '#000' },
+  notifDivider: { height: 2, backgroundColor: colors.border },
   notifSection: { padding: 16 },
   notifSectionRow: {
     flexDirection: 'row',
@@ -869,7 +876,7 @@ const styles = StyleSheet.create({
   notifSectionLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 12,
@@ -879,7 +886,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderWidth: 1.5,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
   notifCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   notifItem: {
@@ -888,24 +895,24 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.divider,
   },
   notifItemIcon: {
     width: 38,
     height: 38,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   notifItemInitial: { fontSize: 15, fontWeight: '600', color: '#fff' },
   notifItemInfo: { flex: 1 },
-  notifItemTitle: { fontSize: 13, fontWeight: '700', color: '#000' },
-  notifItemSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
+  notifItemTitle: { fontSize: 13, fontWeight: '700', color: colors.text },
+  notifItemSub: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
   notifItemTime: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: colors.placeholder,
     marginTop: 2,
     fontWeight: '600',
   },
@@ -914,7 +921,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
   notifItemBadgeText: { fontSize: 10, fontWeight: '600', color: '#fff' },
   notifLeadStatus: {
@@ -922,19 +929,19 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   notifLeadStatusText: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
     textTransform: 'uppercase',
   },
   notifEmpty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  notifEmptyText: { fontSize: 13, color: '#94a3b8', fontWeight: '600' },
+  notifEmptyText: { fontSize: 13, color: colors.placeholder, fontWeight: '600' },
 
-  divider: { height: 2, backgroundColor: '#000' },
+  divider: { height: 2, backgroundColor: colors.border },
 
   // Category tabs
   tabsRow: { paddingLeft: 12, paddingRight: 12, paddingVertical: 8, gap: 6 },
@@ -946,15 +953,15 @@ const styles = StyleSheet.create({
     minHeight: 34,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     gap: 5,
   },
-  tabActive: { backgroundColor: PRIMARY },
+  tabActive: { backgroundColor: colors.primary },
   tabText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#000',
+    color: colors.text,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
@@ -962,33 +969,33 @@ const styles = StyleSheet.create({
   tabCount: {
     minWidth: 18,
     height: 18,
-    backgroundColor: '#000',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  tabCountActive: { backgroundColor: '#fff' },
+  tabCountActive: { backgroundColor: colors.surface },
   tabCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
-  tabCountTextActive: { color: PRIMARY },
-  tabDivider: { height: 2, backgroundColor: '#000' },
+  tabCountTextActive: { color: colors.primary },
+  tabDivider: { height: 2, backgroundColor: colors.border },
 
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: 14, gap: 0 },
 
   // Period selector
   periodWrap: { marginBottom: 12 },
-  periodRow: { flexDirection: 'row', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000' },
+  periodRow: { flexDirection: 'row', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: colors.shadowColor, borderBottomColor: colors.shadowColor, borderColor: colors.border },
   periodBtn: {
     flex: 1,
     paddingVertical: 8,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRightWidth: 1,
     borderRightColor: '#000',
     alignItems: 'center',
   },
   periodBtnLast: { borderRightWidth: 0 },
-  periodBtnActive: { backgroundColor: PRIMARY },
-  periodBtnText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  periodBtnActive: { backgroundColor: colors.primary },
+  periodBtnText: { fontSize: 11, fontWeight: '700', color: colors.text },
   periodBtnTextActive: { color: '#fff' },
 
   // Alert
@@ -998,7 +1005,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 8,
     borderColor: SECONDARY,
-    backgroundColor: '#fff7ed',
+    backgroundColor: colors.warningSoft,
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 6,
@@ -1013,7 +1020,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     gap: 3,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
   alertPillText: { fontSize: 10, fontWeight: '600', color: '#fff' },
 
@@ -1021,7 +1028,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 10,
@@ -1033,11 +1040,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionCount: {
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
   sectionCountText: { fontSize: 11, fontWeight: '600', color: '#fff' },
 
@@ -1045,20 +1052,20 @@ const styles = StyleSheet.create({
   kpiRow: { flexDirection: 'row', gap: 10 },
   kpiCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  kpiCardUrgent: { backgroundColor: '#fff7ed' },
+  kpiCardUrgent: { backgroundColor: colors.warningSoft },
   kpiBody: { flex: 1, minWidth: 0 },
   kpiIcon: {
     width: 42,
@@ -1068,30 +1075,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  kpiValue: { fontSize: 24, fontWeight: '700', color: '#000' },
+  kpiValue: { fontSize: 24, fontWeight: '700', color: colors.text },
   kpiTitle: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#64748b',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
 
   // Section box
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    borderRightColor: colors.shadowColor,
+    borderBottomColor: colors.shadowColor,
+    borderColor: colors.border,
     padding: 14,
   },
 
   // This Month rows
-  rowDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  rowDivider: { height: 1, backgroundColor: colors.divider },
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1104,12 +1111,12 @@ const styles = StyleSheet.create({
     height: 34,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthRowLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: '#000' },
-  monthRowValue: { fontSize: 16, fontWeight: '600', color: '#000' },
+  monthRowLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: colors.text },
+  monthRowValue: { fontSize: 16, fontWeight: '600', color: colors.text },
 
   // Funnel
   funnelRow: {
@@ -1124,16 +1131,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
-  funnelLabel: { width: 70, fontSize: 11, fontWeight: '700', color: '#000' },
+  funnelLabel: { width: 70, fontSize: 11, fontWeight: '700', color: colors.text },
   funnelBar: {
     flex: 1,
     height: 28,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
-    backgroundColor: '#fff',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     overflow: 'hidden',
     justifyContent: 'center',
   },
@@ -1142,7 +1149,7 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     fontSize: 11,
     fontWeight: '600',
-    color: '#000',
+    color: colors.text,
   },
 
   // Lead items
@@ -1151,7 +1158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.divider,
     gap: 10,
   },
   leadAvatar: {
@@ -1159,19 +1166,19 @@ const styles = StyleSheet.create({
     height: 34,
     borderWidth: 2,
     borderRadius: 8,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   leadAvatarText: { fontSize: 13, fontWeight: '600', color: '#fff' },
   leadInfo: { flex: 1 },
-  leadName: { fontSize: 13, fontWeight: '700', color: '#000' },
-  leadSub: { fontSize: 11, color: '#64748b' },
+  leadName: { fontSize: 13, fontWeight: '700', color: colors.text },
+  leadSub: { fontSize: 11, color: colors.textMuted },
   leadRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   leadStatus: {
     fontSize: 9,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     textTransform: 'uppercase',
     maxWidth: 80,
   },
@@ -1182,15 +1189,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: colors.divider,
     marginTop: 4,
   },
-  viewMoreText: { fontSize: 12, fontWeight: '700', color: PRIMARY },
+  viewMoreText: { fontSize: 12, fontWeight: '700', color: colors.primary },
 
   // Empty
   emptyBox: { alignItems: 'center', paddingVertical: 20 },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: '#000', marginTop: 8 },
-  emptySub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  emptyTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginTop: 8 },
+  emptySub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
 
   // Pie chart
   pieWrapper: {
@@ -1216,12 +1223,12 @@ const styles = StyleSheet.create({
   pieCenterPct: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#64748b',
+    color: colors.textMuted,
   },
   pieCenterName: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#000',
+    color: colors.text,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -1243,21 +1250,21 @@ const styles = StyleSheet.create({
   },
   pieLegendRowActive: {
     borderWidth: 1,
-    borderColor: '#000',
-    backgroundColor: '#f8fafc',
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
   },
   pieLegendDot: {
     width: 10,
     height: 10,
     borderRadius: 0,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: colors.border,
   },
   pieLegendLabel: {
     flex: 1,
     fontSize: 11,
     fontWeight: '700',
-    color: '#000',
+    color: colors.text,
   },
   pieLegendVal: {
     fontSize: 13,
@@ -1266,7 +1273,7 @@ const styles = StyleSheet.create({
   pieLegendPct: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textMuted,
     minWidth: 30,
     textAlign: 'right',
   },
@@ -1277,7 +1284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.divider,
     gap: 8,
   },
   sourceInfo: { flex: 1 },
@@ -1287,14 +1294,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  sourceLabel: { fontSize: 12, fontWeight: '700', color: '#000' },
-  sourceCount: { fontSize: 12, fontWeight: '600', color: '#000' },
-  sourcePct: { fontSize: 10, fontWeight: '500', color: '#64748b' },
+  sourceLabel: { fontSize: 12, fontWeight: '700', color: colors.text },
+  sourceCount: { fontSize: 12, fontWeight: '600', color: colors.text },
+  sourcePct: { fontSize: 10, fontWeight: '500', color: colors.textMuted },
   sourceBarBg: {
     height: 6,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: colors.divider,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   sourceBarFill: { height: '100%' },
@@ -1305,30 +1312,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.divider,
     gap: 10,
   },
   lbRank: {
     width: 26,
     height: 26,
     borderWidth: 2,
-    borderColor: '#000',
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   lbRankText: { fontSize: 11, fontWeight: '600' },
   lbInfo: { flex: 1 },
-  lbName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  lbName: { fontSize: 13, fontWeight: '700', color: colors.text },
   lbBar: {
     height: 5,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: colors.divider,
     borderWidth: 0.5,
-    borderColor: '#000',
+    borderColor: colors.border,
     marginTop: 4,
     overflow: 'hidden',
   },
   lbFill: { height: '100%' },
   lbRight: { alignItems: 'flex-end' },
-  lbConv: { fontSize: 14, fontWeight: '600', color: '#000' },
-  lbLeads: { fontSize: 10, color: '#64748b' },
-});
+  lbConv: { fontSize: 14, fontWeight: '600', color: colors.text },
+  lbLeads: { fontSize: 10, color: colors.textMuted },
+  });
+}

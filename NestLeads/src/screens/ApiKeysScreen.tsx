@@ -7,6 +7,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {apiKeysAPI, usersAPI} from '../services/api';
 import AssigneePicker from '../components/AssigneePicker';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
@@ -109,7 +110,7 @@ export default function ApiKeysScreen({navigation}: any) {
       </View>
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={keys}

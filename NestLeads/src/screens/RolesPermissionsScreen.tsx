@@ -6,6 +6,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {rolesAPI, settingsAPI} from '../services/api';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 // Admin-only. Two parts, matching the web Settings page:
 //  • Roles: named labels a tenant maps onto one of four permission tiers.
@@ -196,7 +197,7 @@ export default function RolesPermissionsScreen({navigation}: any) {
       </View>
 
       {loading ? (
-        <View style={s.center}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <ScreenSkeleton />
       ) : tab === 'roles' ? (
         <ScrollView contentContainerStyle={{padding: 12, gap: 10, paddingBottom: insets.bottom + 24}}>
           <Text style={s.hint}>A role is a name you can assign to team members. Each role starts with its permission tier's access; customise a custom role on the Permissions tab.</Text>

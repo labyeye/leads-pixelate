@@ -4,6 +4,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {useAuth} from '../contexts/AuthContext';
 import {activityAPI} from '../services/api';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const ACTION_COLOR: Record<string, string> = {
   CREATE: '#00C48C', LOGIN: '#00C48C', REGISTER: '#00C48C', LEAD_CONVERTED: '#00C48C',
@@ -105,7 +106,7 @@ export default function ActivityLogScreen({navigation}: any) {
       </View>
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#22c55e" /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={logs}

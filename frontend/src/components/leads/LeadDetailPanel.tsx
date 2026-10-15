@@ -795,7 +795,7 @@ function WhatsAppSendDialog({
   lead: any;
   toast: any;
 }) {
-  const [mode, setMode] = useState<"text" | "document" | "template">("text");
+  const [mode, setMode] = useState<"text" | "document" | "template">("template");
   const [documentId, setDocumentId] = useState("");
   const [messageText, setMessageText] = useState("");
   const [templates, setTemplates] = useState<any[]>([]);

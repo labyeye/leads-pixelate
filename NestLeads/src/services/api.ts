@@ -1,10 +1,8 @@
-import { Platform } from 'react-native';
 import storage from '../utils/storage';
 
 // Android emulator: 10.0.2.2 → Mac's localhost
 // iOS (simulator + real iPhone): Mac's LAN IP — real device can't reach localhost
-const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : '192.168.1.128';
-export const API_BASE = `http://${DEV_HOST}:4100/api`;
+export const API_BASE = `https://leads-backend.pixelatenest.com/api`;
 
 class ApiError extends Error {
   status: number;
@@ -645,11 +643,13 @@ export async function uploadFile(fileUri: string, fileName: string, mimeType: st
 export const whatsappAPI = {
   getConversations: () =>
     request<{ success: boolean; data: any[] }>('/whatsapp/conversations'),
-  sendMessage: (phone: string, message: string) =>
-    request<{ success: boolean }>('/whatsapp/send', {
+  sendMessage: (arg1: any, arg2?: string) => {
+    const payload = typeof arg1 === 'string' ? { phone: arg1, message: arg2 } : arg1;
+    return request<{ success: boolean; data?: any }>('/whatsapp/send', {
       method: 'POST',
-      body: JSON.stringify({ phone, message }),
-    }),
+      body: JSON.stringify(payload),
+    });
+  },
   getStatus: () => request<{success: boolean; data: any}>('/whatsapp/status'),
   getConfig: () => request<{success: boolean; data: any}>('/whatsapp/config'),
   getTemplates: () =>
@@ -660,6 +660,11 @@ export const whatsappAPI = {
   },
   getCampaign: (id: string) =>
     request<{success: boolean; data: any}>(`/whatsapp/campaigns/${id}`),
+  createCampaign: (data: any) =>
+    request<{success: boolean; data: any}>('/whatsapp/campaigns', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 export const apiKeysAPI = {

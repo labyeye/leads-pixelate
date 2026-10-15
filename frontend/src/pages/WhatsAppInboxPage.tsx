@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 interface Reply {
   _id: string;
@@ -118,9 +119,7 @@ export default function WhatsAppInboxPage() {
           {}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-              </div>
+              <ListSkeleton />
             ) : grouped.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3 px-6 text-center">
                 <FontAwesomeIcon

@@ -106,6 +106,7 @@ import {
   ExportFieldsDialog,
   type ExportField,
 } from "@/components/export/ExportFieldsDialog";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 const LEAD_EXPORT_FIELDS: ExportField[] = [
   { key: "name", label: "Name", get: (l) => l.name || "" },
@@ -2418,17 +2419,7 @@ export default function LeadsPage() {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr>
-                      <td
-                        colSpan={visibleColumnCount}
-                        className="text-center py-10"
-                      >
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-black" />
-                        <p className="text-sm text-black mt-2">
-                          Loading leads...
-                        </p>
-                      </td>
-                    </tr>
+                    <TableSkeletonRows cols={visibleColumnCount} rows={8} />
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td

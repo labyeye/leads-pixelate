@@ -5,6 +5,7 @@ import {PieChart} from 'react-native-gifted-charts';
 import Icon from '../components/Icon';
 import {facebookAPI} from '../services/api';
 import {parseInsight, statusBadge, PeriodFilterBar, usePeriodFilter, type Insight} from '../lib/metaAdsShared';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const FB_COLOR = '#1877F2';
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
@@ -91,7 +92,7 @@ export default function FacebookAdsDashboardScreen({navigation}: any) {
       <View style={styles.divider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={FB_COLOR} /></View>
+        <ScreenSkeleton />
       ) : error ? (
         <View style={styles.body}>
           <View style={styles.errorBox}>

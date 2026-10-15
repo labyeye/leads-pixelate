@@ -5,6 +5,7 @@ import { useNotify } from "@/components/ui/Notification";
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { RotateCcw, Trash2 } from "lucide-react";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 export default function TrashPage() {
   const { user } = useAuth();
@@ -72,7 +73,7 @@ export default function TrashPage() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={4} className="p-4 text-muted-foreground">Loading…</td></tr>
+                <TableSkeletonRows cols={4} rows={4} />
               )}
               {!loading && items.length === 0 && (
                 <tr><td colSpan={4} className="p-4 text-muted-foreground">Trash is empty.</td></tr>

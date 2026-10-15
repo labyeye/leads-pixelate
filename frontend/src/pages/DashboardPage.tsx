@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Link } from "react-router-dom";
 import { dashboardAPI } from "@/services/api";
@@ -30,7 +31,30 @@ import {
   Zap,
   TrendingUp,
 } from "lucide-react";
-import nestleadslogosmall from "../../public/favicon.png";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function DashboardSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading dashboard">
+      <Skeleton className="h-8 w-64 mb-2" />
+      <Skeleton className="h-4 w-80 mb-6" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-[76px] border-2 border-black" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+        <Skeleton className="h-72 lg:col-span-2 border-2 border-black" />
+        <Skeleton className="h-72 lg:col-span-3 border-2 border-black" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-64 border-2 border-black" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type Period = "today" | "week" | "month";
 
@@ -63,8 +87,9 @@ function SalesFunnel({
             </div>
             <div className="flex-1 h-8 border-2 border-black bg-white relative overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 border-r-2 border-black flex items-center pl-2 transition-all duration-500"
+                className="absolute inset-y-0 left-0 border-r-2 border-black flex items-center pl-2 origin-left animate-grow-x"
                 style={{
+                  animationDelay: `${i * 110}ms`,
                   width: `${width}%`,
                   backgroundColor: stage.color + "44",
                 }}
@@ -94,8 +119,13 @@ function TodayFollowUpsList({ leads }: { leads: any[] }) {
   }
   return (
     <div className="space-y-2">
-      {leads.slice(0, 6).map((lead) => (
-        <Link key={lead._id} to="/leads">
+      {leads.slice(0, 6).map((lead, i) => (
+        <Link
+          key={lead._id}
+          to="/leads"
+          className="block animate-enter-up"
+          style={{ animationDelay: `${i * 100}ms` }}
+        >
           <div className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black hover: transition-all">
             <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center text-xs font-bold text-black shrink-0">
               {(lead.name || "U")[0].toUpperCase()}
@@ -136,7 +166,8 @@ function Leaderboard({ performers }: { performers: any[] }) {
         return (
           <div
             key={p._id}
-            className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black transition-all"
+            className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black transition-all animate-enter-up"
+            style={{ animationDelay: `${i * 100}ms` }}
           >
             <span
               className={cn(
@@ -164,8 +195,11 @@ function Leaderboard({ performers }: { performers: any[] }) {
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex-1 h-1.5 bg-white border border-black overflow-hidden">
                   <div
-                    className="h-full bg-[#044bab]"
-                    style={{ width: `${convRate}%` }}
+                    className="h-full bg-[#044bab] origin-left animate-grow-x"
+                    style={{
+                      width: `${convRate}%`,
+                      animationDelay: `${i * 100 + 300}ms`,
+                    }}
                   />
                 </div>
                 <span className="text-[10px] font-bold text-black shrink-0">
@@ -208,30 +242,23 @@ const NbTooltip = ({ active, payload, label }: any) => {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("week");
 
-  useEffect(() => {
-    dashboardAPI
-      .getStats()
-      .then((res) => {
-        if (res.success) setData(res.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  // Cached: revisiting the dashboard shows the last data instantly and
+  // refreshes it in the background.
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      const res = await dashboardAPI.getStats();
+      return res.success ? res.data : null;
+    },
+    staleTime: 60_000,
+  });
 
   if (loading || !data) {
     return (
       <AppLayout title="Dashboard">
-        <div className="flex h-[80vh] items-center justify-center">
-          <img
-            src={nestleadslogosmall}
-            alt="NestLeads"
-            className="hidden items-center justify-center w-10 h-10 shrink-0 animate-bounce"
-          />
-        </div>
+        <DashboardSkeleton />
       </AppLayout>
     );
   }
@@ -332,6 +359,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
         <KpiCard
           title="Total Leads"
+          delay={0}
           value={stats.totalLeads}
           sub={`${newLeadsValue} new this ${period}`}
           icon={Target}
@@ -348,6 +376,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Hot Leads"
+          delay={110}
           value={stats.hotLeads}
           sub="Need immediate action"
           icon={Flame}
@@ -357,6 +386,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Today's Follow-ups"
+          delay={220}
           value={todayFollowUps?.length ?? 0}
           sub="Scheduled for today"
           icon={Clock}
@@ -365,6 +395,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Won This Month"
+          delay={330}
           value={stats.convertedClients ?? 0}
           sub={`${stats.totalLeads > 0 ? Math.round(((stats.convertedClients ?? 0) / stats.totalLeads) * 100) : 0}% conversion rate`}
           icon={TrendingUp}
@@ -376,7 +407,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
-        <div className="lg:col-span-2 border-2 bg-white p-5">
+        <div className="lg:col-span-2 border-2 bg-white p-5 animate-enter-up [animation-delay:450ms]">
           <h3 className="font-display font-bold text-base text-black mb-1">
             Sales Funnel
           </h3>
@@ -386,7 +417,7 @@ export default function DashboardPage() {
           <SalesFunnel stages={funnelStages || []} />
         </div>
 
-        <div className="lg:col-span-3 border-2 bg-white p-5">
+        <div className="lg:col-span-3 border-2 bg-white p-5 animate-enter-up [animation-delay:560ms]">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-display font-bold text-base text-black">
@@ -447,7 +478,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border-2 bg-white p-5">
+        <div className="border-2 bg-white p-5 animate-enter-up [animation-delay:640ms]">
           <h3 className="font-display font-bold text-base text-black mb-1">
             Lead Sources
           </h3>
@@ -504,7 +535,7 @@ export default function DashboardPage() {
         </div>
 
         {}
-        <div className="border-2 bg-white p-5">
+        <div className="border-2 bg-white p-5 animate-enter-up [animation-delay:790ms]">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-display font-bold text-base text-black">
@@ -524,7 +555,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Team leaderboard */}
-        <div className="border-2 bg-white p-5">
+        <div className="border-2 bg-white p-5 animate-enter-up [animation-delay:940ms]">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-display font-bold text-base text-black">
@@ -546,7 +577,7 @@ export default function DashboardPage() {
 
       {/* FAB */}
       <Link to="/leads" className="fixed bottom-6 right-6 z-50">
-        <button className="border-2 w-14 h-14 bg-[#024BAB] text-white flex items-center justify-center">
+        <button className="border-2 w-14 h-14 bg-[#024BAB] text-white flex items-center justify-center animate-pop-in [animation-delay:980ms]">
           <Plus className="w-6 h-6" />
         </button>
       </Link>

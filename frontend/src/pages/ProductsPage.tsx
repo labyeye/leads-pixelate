@@ -23,6 +23,7 @@ import { ImportProductsDialog, PRODUCT_HEADERS } from "@/components/products/Imp
 import { downloadXLSX } from "@/lib/tableExport";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 const PHOTO_MAX_MB = 5;
 const MAX_PHOTOS = 5;
@@ -408,14 +409,7 @@ export default function ProductsPage() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={10} className="text-center py-16">
-                      <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                      <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
-                        Loading...
-                      </p>
-                    </td>
-                  </tr>
+                  <TableSkeletonRows cols={10} />
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="text-center py-16">

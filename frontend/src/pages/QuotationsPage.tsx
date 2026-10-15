@@ -84,6 +84,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { downloadQuotationPDF, quotationPdfBlob } from "@/lib/quotationPdf";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 const STATUS_NB: Record<string, string> = {
   Draft: "bg-white text-black border-black",
@@ -966,14 +967,7 @@ export default function QuotationsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={12} className="text-center py-14">
-                    <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
-                      Loading...
-                    </p>
-                  </td>
-                </tr>
+                <TableSkeletonRows cols={12} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td

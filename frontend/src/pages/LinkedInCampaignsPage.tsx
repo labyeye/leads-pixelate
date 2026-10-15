@@ -19,6 +19,7 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 interface ConnectedAccount {
   adAccountId: string;
@@ -270,9 +271,7 @@ export default function LinkedInCampaignsPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton />
       ) : !hasToken ? (
         <div className="border-2 bg-white p-8 max-w-lg mx-auto text-center space-y-4">
           <div className="w-14 h-14 bg-white border-2 border-black flex items-center justify-center mx-auto">

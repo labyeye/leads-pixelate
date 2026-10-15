@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   ActivityIndicator, StatusBar, RefreshControl, Alert,
@@ -8,8 +8,9 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import {socialAPI} from '../services/api';
 import {useAuth} from '../contexts/AuthContext';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
+import {useTheme} from '../contexts/ThemeContext';
 
-const PRIMARY = '#024BAB';
 const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
 
 const STATUS_CONFIG: Record<string, {bg: string; text: string; icon: string; label: string}> = {
@@ -47,11 +48,11 @@ function timeAgo(dateStr: string) {
 
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function PostDetailModal({
-  post, visible, isAdmin, onClose, onApprove, onReject, onPublishNow,
+  post, visible, isAdmin, onClose, onApprove, onReject, onPublishNow, styles, colors,
 }: {
   post: any; visible: boolean; isAdmin: boolean;
   onClose: () => void; onApprove: () => void;
-  onReject: () => void; onPublishNow: () => void;
+  onReject: () => void; onPublishNow: () => void; styles: any; colors: import('../contexts/ThemeContext').ThemeColors;
 }) {
   const insets = useSafeAreaInsets();
   if (!post) return null;
@@ -72,11 +73,11 @@ function PostDetailModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.modalContainer, {paddingTop: insets.top}]}>
-        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
         {/* Header */}
         <View style={styles.modalHeader}>
           <TouchableOpacity onPress={onClose} style={styles.backBtn}>
-            <Icon name="arrow-back" size={18} color="#000" />
+            <Icon name="arrow-back" size={18} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.modalTitle}>Post Details</Text>
         </View>
@@ -88,7 +89,7 @@ function PostDetailModal({
             <Image source={{uri: post.imageUrl}} style={styles.mediaImage} resizeMode="cover" />
           ) : post.videoUrl ? (
             <View style={styles.videoPlaceholder}>
-              <Icon name="videocam-outline" size={40} color="#94a3b8" />
+              <Icon name="videocam-outline" size={40} color={colors.placeholder} />
               <Text style={styles.videoPlaceholderText}>Video Post</Text>
             </View>
           ) : null}
@@ -241,7 +242,7 @@ function PostDetailModal({
             </View>
           )}
           {isAdmin && ['SCHEDULED', 'FAILED', 'APPROVED', 'PARTIALLY_POSTED'].includes(post.status) && (
-            <TouchableOpacity style={[styles.actionBtn, {backgroundColor: PRIMARY, borderColor: '#000'}]} onPress={onPublishNow}>
+            <TouchableOpacity style={[styles.actionBtn, {backgroundColor: colors.primary, borderColor: colors.border}]} onPress={onPublishNow}>
               <Icon name="flash-outline" size={14} color="#fff" />
               <Text style={[styles.actionBtnText, {color: '#fff'}]}>Post Now</Text>
             </TouchableOpacity>
@@ -254,6 +255,8 @@ function PostDetailModal({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SocialPlannerScreen({navigation}: any) {
+  const {colors} = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const {user} = useAuth();
   const isAdmin = user?.role === 'super_admin' || user?.role === 'admin';
@@ -359,7 +362,7 @@ export default function SocialPlannerScreen({navigation}: any) {
             <Image source={{uri: p.imageUrl}} style={styles.thumb} />
           ) : (
             <View style={[styles.thumb, styles.thumbPlaceholder]}>
-              <Icon name={p.videoUrl ? 'videocam-outline' : 'image-outline'} size={20} color="#94a3b8" />
+              <Icon name={p.videoUrl ? 'videocam-outline' : 'image-outline'} size={20} color={colors.placeholder} />
             </View>
           )}
 
@@ -387,10 +390,10 @@ export default function SocialPlannerScreen({navigation}: any) {
             )}
 
             <View style={styles.cardMeta}>
-              <Icon name="calendar-outline" size={11} color="#94a3b8" />
+              <Icon name="calendar-outline" size={11} color={colors.placeholder} />
               <Text style={styles.metaText}>{fmt(p.scheduledAt)}</Text>
               {p.createdBy?.name && <>
-                <Icon name="person-outline" size={11} color="#94a3b8" />
+                <Icon name="person-outline" size={11} color={colors.placeholder} />
                 <Text style={styles.metaText}>{p.createdBy.name}</Text>
               </>}
             </View>
@@ -413,7 +416,7 @@ export default function SocialPlannerScreen({navigation}: any) {
             )}
           </View>
 
-          <Icon name="chevron-forward" size={16} color="#cbd5e1" />
+          <Icon name="chevron-forward" size={16} color={colors.placeholder} />
         </View>
 
         {/* Quick approve/reject bar for pending */}
@@ -441,12 +444,12 @@ export default function SocialPlannerScreen({navigation}: any) {
 
   return (
     <View style={[styles.container, {paddingTop: insets.top}]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
+          <Icon name="arrow-back" size={18} color={colors.text} />
         </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>Social Planner</Text>
@@ -454,7 +457,7 @@ export default function SocialPlannerScreen({navigation}: any) {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={() => fetchData(true)} style={styles.refreshBtn}>
-            <Icon name="refresh-outline" size={20} color="#000" />
+            <Icon name="refresh-outline" size={20} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.newPostBtn}
@@ -482,17 +485,17 @@ export default function SocialPlannerScreen({navigation}: any) {
       <View style={styles.thinDivider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={PRIMARY} /></View>
+        <ScreenSkeleton />
       ) : (
         <FlatList
           data={posts}
           keyExtractor={p => p._id}
           renderItem={renderPost}
           contentContainerStyle={[styles.list, {paddingBottom: insets.bottom + 24}]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={PRIMARY} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={colors.primary} />}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Icon name="image-outline" size={44} color="#e2e8f0" />
+              <Icon name="image-outline" size={44} color={colors.divider} />
               <Text style={styles.emptyTitle}>No posts</Text>
               <Text style={styles.emptySub}>Create posts from the web app</Text>
             </View>
@@ -502,6 +505,8 @@ export default function SocialPlannerScreen({navigation}: any) {
 
       {/* Detail modal */}
       <PostDetailModal
+        styles={styles}
+        colors={colors}
         post={viewingPost}
         visible={!!viewingPost}
         isAdmin={isAdmin}
@@ -514,38 +519,39 @@ export default function SocialPlannerScreen({navigation}: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+function makeStyles(colors: import('../contexts/ThemeContext').ThemeColors) {
+  return StyleSheet.create({
+  container: {flex: 1, backgroundColor: colors.background},
   header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12},
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
+  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: colors.border, alignItems: 'center', justifyContent: 'center'},
   headerActions: {marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 8},
   refreshBtn: {width: 36, height: 36, alignItems: 'center', justifyContent: 'center'},
-  newPostBtn: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: PRIMARY, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6},
+  newPostBtn: {flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.primary, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: colors.shadowColor, borderBottomColor: colors.shadowColor, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 6},
   newPostBtnText: {fontSize: 11, fontWeight: '600', color: '#fff'},
-  headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
-  headerSub: {fontSize: 11, color: '#64748b'},
-  divider: {height: 2, backgroundColor: '#000'},
-  thinDivider: {height: 1, backgroundColor: '#e2e8f0'},
+  headerTitle: {fontSize: 20, fontWeight: '600', color: colors.text},
+  headerSub: {fontSize: 11, color: colors.textMuted},
+  divider: {height: 2, backgroundColor: colors.border},
+  thinDivider: {height: 1, backgroundColor: colors.divider},
 
   statsStrip: {flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10},
   statCell: {flex: 1, alignItems: 'center'},
   statValue: {fontSize: 20, fontWeight: '600'},
-  statLabel: {fontSize: 8, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', marginTop: 1},
+  statLabel: {fontSize: 8, fontWeight: '600', color: colors.placeholder, textTransform: 'uppercase', marginTop: 1},
 
   filterScroll: {flexGrow: 0, flexShrink: 0, height: 54},
   filterRow: {paddingHorizontal: 12, paddingVertical: 10, gap: 6, alignItems: 'center', flexDirection: 'row'},
-  filterChip: {flexGrow: 0, flexShrink: 0, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 2, borderRadius: 8, borderColor: '#e2e8f0'},
-  filterChipActive: {borderColor: '#000', backgroundColor: PRIMARY},
-  filterChipText: {fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase'},
+  filterChip: {flexGrow: 0, flexShrink: 0, alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 8, borderWidth: 2, borderRadius: 8, borderColor: colors.divider},
+  filterChipActive: {borderColor: colors.border, backgroundColor: colors.primary},
+  filterChipText: {fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase'},
   filterChipTextActive: {color: '#fff'},
 
   centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   list: {padding: 12, gap: 10},
 
-  card: {backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000'},
+  card: {backgroundColor: colors.surface, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: colors.shadowColor, borderBottomColor: colors.shadowColor, borderColor: colors.border},
   cardInner: {flexDirection: 'row', alignItems: 'flex-start', padding: 12, gap: 12},
-  thumb: {width: 64, height: 64, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
-  thumbPlaceholder: {backgroundColor: '#f1f5f9', alignItems: 'center', justifyContent: 'center'},
+  thumb: {width: 64, height: 64, borderWidth: 2, borderRadius: 8, borderColor: colors.border},
+  thumbPlaceholder: {backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center'},
   cardBody: {flex: 1, gap: 4},
 
   badgeRow: {flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap'},
@@ -553,46 +559,46 @@ const styles = StyleSheet.create({
   statusText: {fontSize: 8, fontWeight: '600', textTransform: 'uppercase'},
   platformBadge: {flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 3},
   platformText: {fontSize: 9, fontWeight: '700'},
-  typeBadge: {backgroundColor: '#f1f5f9', paddingHorizontal: 6, paddingVertical: 3},
-  typeBadgeText: {fontSize: 8, fontWeight: '700', color: '#64748b'},
+  typeBadge: {backgroundColor: colors.surfaceMuted, paddingHorizontal: 6, paddingVertical: 3},
+  typeBadgeText: {fontSize: 8, fontWeight: '700', color: colors.textMuted},
 
-  caption: {fontSize: 13, color: '#000', lineHeight: 18},
+  caption: {fontSize: 13, color: colors.text, lineHeight: 18},
   hashtags: {fontSize: 11, color: '#7c3aed'},
   cardMeta: {flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2},
-  metaText: {fontSize: 10, color: '#94a3b8'},
+  metaText: {fontSize: 10, color: colors.placeholder},
   errorText: {fontSize: 11, color: '#dc2626', marginTop: 2},
   postedRow: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2},
   postedText: {fontSize: 11, color: '#16a34a'},
 
-  quickActions: {flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#e2e8f0'},
+  quickActions: {flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.divider},
   quickBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 9, gap: 5},
   quickBtnText: {fontSize: 12, fontWeight: '800'},
 
   emptyBox: {alignItems: 'center', paddingTop: 60, gap: 8},
-  emptyTitle: {fontSize: 14, fontWeight: '700', color: '#94a3b8'},
+  emptyTitle: {fontSize: 14, fontWeight: '700', color: colors.placeholder},
   emptySub: {fontSize: 12, color: '#cbd5e1'},
 
   // Modal
-  modalContainer: {flex: 1, backgroundColor: '#fff'},
+  modalContainer: {flex: 1, backgroundColor: colors.background},
   modalHeader: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12},
-  modalTitle: {fontSize: 18, fontWeight: '600', color: '#000'},
+  modalTitle: {fontSize: 18, fontWeight: '600', color: colors.text},
   modalBody: {padding: 16, gap: 16},
 
-  mediaImage: {width: '100%', height: 220, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
-  videoPlaceholder: {width: '100%', height: 140, backgroundColor: '#f1f5f9', borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', gap: 8},
-  videoPlaceholderText: {fontSize: 13, color: '#94a3b8', fontWeight: '600'},
+  mediaImage: {width: '100%', height: 220, borderWidth: 2, borderRadius: 8, borderColor: colors.border},
+  videoPlaceholder: {width: '100%', height: 140, backgroundColor: colors.surfaceMuted, borderWidth: 2, borderRadius: 8, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', gap: 8},
+  videoPlaceholderText: {fontSize: 13, color: colors.placeholder, fontWeight: '600'},
   carouselRow: {marginBottom: 4},
-  carouselThumb: {width: 72, height: 72, marginRight: 8, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
+  carouselThumb: {width: 72, height: 72, marginRight: 8, borderWidth: 2, borderRadius: 8, borderColor: colors.border},
 
   section: {gap: 6},
-  sectionLabel: {fontSize: 9, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1},
-  captionText: {fontSize: 14, color: '#000', lineHeight: 20},
+  sectionLabel: {fontSize: 9, fontWeight: '600', color: colors.placeholder, textTransform: 'uppercase', letterSpacing: 1},
+  captionText: {fontSize: 14, color: colors.text, lineHeight: 20},
   hashtagText: {fontSize: 12, color: '#7c3aed', lineHeight: 18},
 
   metaGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 12},
   metaCell: {minWidth: '45%', gap: 3},
-  metaLabel: {fontSize: 9, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8},
-  metaValue: {fontSize: 13, fontWeight: '600', color: '#000'},
+  metaLabel: {fontSize: 9, fontWeight: '600', color: colors.placeholder, textTransform: 'uppercase', letterSpacing: 0.8},
+  metaValue: {fontSize: 13, fontWeight: '600', color: colors.text},
 
   alertBox: {flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 10, borderWidth: 1},
   alertText: {flex: 1, fontSize: 13, lineHeight: 18},
@@ -601,6 +607,7 @@ const styles = StyleSheet.create({
   linkBtnText: {flex: 1, fontSize: 13, fontWeight: '700'},
 
   actionRow: {flexDirection: 'row', gap: 10},
-  actionBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A',},
+  actionBtn: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: colors.shadowColor, borderBottomColor: colors.shadowColor,},
   actionBtnText: {fontSize: 13, fontWeight: '600'},
-});
+  });
+}

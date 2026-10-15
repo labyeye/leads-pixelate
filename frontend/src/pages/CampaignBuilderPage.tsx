@@ -31,6 +31,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -501,9 +502,7 @@ export default function CampaignBuilderPage() {
           {step === 3 && (
             <>
               {templatesLoading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                </div>
+                <ListSkeleton />
               ) : templates.length === 0 ? (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
                   <AlertCircle className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />

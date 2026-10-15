@@ -38,12 +38,10 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   ];
 
   const [
-    totalLeads,
     newLeadsToday,
     newLeadsThisWeek,
     leadsThisMonth,
     leadsLastMonth,
-    convertedClients,
     totalUsers,
     statusCounts,
     sourceCounts,
@@ -53,7 +51,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     uncontactedLeadsCount,
     userPerformanceData,
   ] = await Promise.all([
-    Lead.countDocuments({ ...tf }),
     Lead.countDocuments({
       ...tf,
       createdAt: { $gte: todayStart, $lte: todayEnd },
@@ -64,7 +61,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       ...tf,
       createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
     }),
-    Lead.countDocuments({ ...tf, status: "WON" }),
     User.countDocuments({ ...tf, status: "active" }),
     Lead.aggregate([
       { $match: { ...tf } },
@@ -99,36 +95,36 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       createdAt: { $lt: twoDaysAgo },
     }),
 
-    User.aggregate([
-      { $match: { ...tf, status: "active" } },
+    Lead.aggregate([
+      { $match: { ...tf, assignedTo: { $ne: null } } },
+      {
+        $group: {
+          _id: "$assignedTo",
+          leadsCount: { $sum: 1 },
+          conversions: { $sum: { $cond: [{ $eq: ["$status", "WON"] }, 1, 0] } },
+        },
+      },
+      { $sort: { conversions: -1, leadsCount: -1 } },
       {
         $lookup: {
-          from: "leads",
+          from: "users",
           localField: "_id",
-          foreignField: "assignedTo",
-          as: "myLeads",
+          foreignField: "_id",
+          as: "user",
         },
       },
+      { $unwind: "$user" },
+      { $match: { "user.status": "active" } },
+      { $limit: 5 },
       {
         $project: {
-          name: 1,
-          role: 1,
-          avatar: 1,
-          leadsCount: { $size: "$myLeads" },
-          conversions: {
-            $size: {
-              $filter: {
-                input: "$myLeads",
-                as: "lead",
-                cond: { $eq: ["$$lead.status", "WON"] },
-              },
-            },
-          },
+          name: "$user.name",
+          role: "$user.role",
+          avatar: "$user.avatar",
+          leadsCount: 1,
+          conversions: 1,
         },
       },
-      { $match: { leadsCount: { $gt: 0 } } },
-      { $sort: { conversions: -1, leadsCount: -1 } },
-      { $limit: 5 },
     ]),
   ]);
 
@@ -148,33 +144,40 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     return { monthStart, monthEnd, monthName };
   });
 
-  const chartResults = await Promise.all(
-    monthBoundaries.map(({ monthStart, monthEnd }) =>
-      Promise.all([
-        Lead.countDocuments({
-          ...tf,
-          createdAt: { $gte: monthStart, $lte: monthEnd },
-        }),
-        Lead.countDocuments({
-          ...tf,
-          status: "WON",
-          updatedAt: { $gte: monthStart, $lte: monthEnd },
-        }),
-      ]),
-    ),
-  );
+  const boundaries = [
+    ...monthBoundaries.map((m) => m.monthStart),
+    new Date(now.getFullYear(), now.getMonth() + 1, 1),
+  ];
+  const bucketByMonth = (extraMatch, field) =>
+    Lead.aggregate([
+      { $match: { ...tf, ...extraMatch, [field]: { $gte: boundaries[0], $lt: boundaries[6] } } },
+      { $bucket: { groupBy: `$${field}`, boundaries, default: "other", output: { count: { $sum: 1 } } } },
+    ]);
+  const [createdBuckets, wonBuckets] = await Promise.all([
+    bucketByMonth({}, "createdAt"),
+    bucketByMonth({ status: "WON" }, "updatedAt"),
+  ]);
+  const countFor = (buckets, monthStart) =>
+    buckets.find((b) => new Date(b._id).getTime() === monthStart.getTime())?.count || 0;
 
-  const leadsChartData = chartResults.map(([leads, converted], i) => ({
-    month: monthBoundaries[i].monthName,
-    leads,
-    converted,
-    conversionRate: leads > 0 ? Math.round((converted / leads) * 100) : 0,
-  }));
+  const leadsChartData = monthBoundaries.map(({ monthStart, monthName }) => {
+    const leads = countFor(createdBuckets, monthStart);
+    const converted = countFor(wonBuckets, monthStart);
+    return {
+      month: monthName,
+      leads,
+      converted,
+      conversionRate: leads > 0 ? Math.round((converted / leads) * 100) : 0,
+    };
+  });
 
   const statusCountsMap = statusCounts.reduce((acc, item) => {
     acc[item._id] = item.count;
     return acc;
   }, {});
+
+  const totalLeads = statusCounts.reduce((n, r) => n + r.count, 0);
+  const convertedClients = statusCountsMap["WON"] || 0;
 
   const sourceCountsMap = sourceCounts.reduce((acc, item) => {
     acc[item._id] = item.count;

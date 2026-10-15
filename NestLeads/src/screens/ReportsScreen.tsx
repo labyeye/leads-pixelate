@@ -10,6 +10,7 @@ import SourceBadge from '../components/SourceBadge';
 import {leadsAPI, usersAPI, clientsAPI, quotationsAPI, reportsAPI} from '../services/api';
 import {getStatusColor, getStatusLabel, sourceColors, getCategoryByStatus} from '../constants/statusConstants';
 import {shareCSV} from '../lib/csvExport';
+import ScreenSkeleton from '../components/motion/ScreenSkeleton';
 
 const PRIMARY   = '#024BAB';
 const SECONDARY = '#FF751F';
@@ -757,7 +758,7 @@ export default function ReportsScreen({navigation}: any) {
       )}
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color={PRIMARY} /></View>
+        <ScreenSkeleton />
       ) : view === 'catalog' ? (
         renderCatalog()
       ) : (

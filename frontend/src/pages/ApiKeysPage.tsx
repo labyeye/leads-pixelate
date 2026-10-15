@@ -36,6 +36,7 @@ import {
   Lock,
   Shield,
 } from "lucide-react";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -481,9 +482,7 @@ export default function ApiKeysPage() {
             </div>
 
             {isLoading ? (
-              <div className="py-12 text-center text-muted-foreground text-sm">
-                Loading...
-              </div>
+              <ListSkeleton rows={3} />
             ) : keys.length === 0 ? (
               <div className="py-16 text-center border-2 border-dashed border-black">
                 <Key className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />

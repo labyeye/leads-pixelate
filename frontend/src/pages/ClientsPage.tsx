@@ -91,6 +91,7 @@ import { useState, useEffect } from "react";
 import { clientsAPI } from "@/services/api";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[6-9]\d{9}$/;
@@ -572,14 +573,7 @@ export default function ClientsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-14">
-                    <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
-                      Loading...
-                    </p>
-                  </td>
-                </tr>
+                <TableSkeletonRows cols={6} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-14">

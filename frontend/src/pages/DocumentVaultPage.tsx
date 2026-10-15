@@ -21,6 +21,7 @@ import {
 import { Download, FileText, FolderOpen, ImageIcon, Loader2, Search, Trash2, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { documentsAPI, documentFileUrl, type VaultDocument } from "@/services/api";
+import { ListSkeleton } from "@/components/ui/loading-skeletons";
 
 const DOC_CATEGORIES: Record<string, string> = {
   brochure: "Brochure",
@@ -145,9 +146,7 @@ export default function DocumentVaultPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
+          <ListSkeleton />
         ) : shown.length === 0 ? (
           <div className="flex flex-col items-center py-16 gap-2 text-center text-sm text-muted-foreground">
             <FolderOpen className="w-10 h-10 opacity-30" />

@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 
 const statusColors: Record<string, string> = {
   Pending: "bg-gray-100 text-gray-700 border-gray-400",
@@ -407,14 +408,7 @@ export default function ServicesPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-16">
-                    <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
-                      Loading...
-                    </p>
-                  </td>
-                </tr>
+                <TableSkeletonRows cols={9} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="text-center py-16">
