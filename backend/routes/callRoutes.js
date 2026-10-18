@@ -21,13 +21,18 @@ router.post(
     const { leadId, agentPhone, remember } = req.body || {};
     if (!twilio.isConfigured()) {
       res.status(503);
-      throw new Error("Calling isn't set up on the server yet (Twilio keys missing).");
+      throw new Error(
+        "Calling isn't set up on the server yet (Twilio keys missing).",
+      );
     }
     if (!isId(leadId)) {
       res.status(400);
       throw new Error("Choose a lead to call");
     }
-    const lead = await Lead.findOne({ _id: leadId, ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}) });
+    const lead = await Lead.findOne({
+      _id: leadId,
+      ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+    });
     if (!lead) {
       res.status(404);
       throw new Error("Lead not found");
@@ -40,7 +45,9 @@ router.post(
     const agent = twilio.e164(agentPhone || req.user.phone);
     if (!agent) {
       res.status(400);
-      throw new Error("Enter the phone number we should ring you on (with country code, like +91…).");
+      throw new Error(
+        "Enter the phone number we should ring you on (with country code, like +91…).",
+      );
     }
     if (agent === to) {
       res.status(400);
@@ -57,7 +64,10 @@ router.post(
     });
 
     try {
-      const { sid } = await twilio.startCall({ agentPhone: agent, callLogId: String(callLog._id) });
+      const { sid } = await twilio.startCall({
+        agentPhone: agent,
+        callLogId: String(callLog._id),
+      });
       callLog.conversationId = sid;
       await callLog.save();
     } catch (err) {
@@ -76,7 +86,8 @@ router.post(
 
     res.status(201).json({
       success: true,
-      message: "Your phone is ringing. Pick up and we'll connect you to the lead.",
+      message:
+        "Your phone is ringing. Pick up and we'll connect you to the lead.",
       data: { callLogId: String(callLog._id), callSid: callLog.conversationId },
     });
   }),
@@ -87,13 +98,23 @@ router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     const c = isId(req.params.id)
-      ? await CallLog.findOne({ _id: req.params.id, ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}) })
+      ? await CallLog.findOne({
+          _id: req.params.id,
+          ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+        })
       : null;
     if (!c) {
       res.status(404);
       throw new Error("Call not found");
     }
-    res.json({ success: true, data: { status: c.status, durationSeconds: c.durationSeconds, errorReason: c.errorReason } });
+    res.json({
+      success: true,
+      data: {
+        status: c.status,
+        durationSeconds: c.durationSeconds,
+        errorReason: c.errorReason,
+      },
+    });
   }),
 );
 

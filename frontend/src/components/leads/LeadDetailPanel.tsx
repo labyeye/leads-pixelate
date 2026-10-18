@@ -55,7 +55,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { statusColors, getCategoryByStatus, getStatusColorClasses, getStatusLabel } from "./statusConstants";
+import {
+  statusColors,
+  getCategoryByStatus,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { VaultDocPicker } from "../documents/VaultDocPicker";
 import { StatusHistoryTimeline } from "./StatusHistoryTimeline";
@@ -140,7 +145,11 @@ export function LeadDetailPanel({
       onClose();
       onRefresh();
     } catch (err: any) {
-      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -172,7 +181,9 @@ export function LeadDetailPanel({
     } catch (err: any) {
       toast({
         title: "Failed to trigger AI Call",
-        description: err.message || "Ensure ElevenLabs API key and Agent ID are configured in Settings.",
+        description:
+          err.message ||
+          "Ensure ElevenLabs API key and Agent ID are configured in Settings.",
         variant: "destructive",
       });
     } finally {
@@ -409,14 +420,14 @@ export function LeadDetailPanel({
             </Button>
           </div>
         )}
-      {editOpen && (
-        <EditLeadDialog
-          lead={lead}
-          onClose={() => setEditOpen(false)}
-          onSaved={onRefresh}
-          toast={toast}
-        />
-      )}
+        {editOpen && (
+          <EditLeadDialog
+            lead={lead}
+            onClose={() => setEditOpen(false)}
+            onSaved={onRefresh}
+            toast={toast}
+          />
+        )}
         <ManualCallDialog
           open={callDialogOpen}
           onClose={() => setCallDialogOpen(false)}
@@ -810,7 +821,9 @@ function WhatsAppSendDialog({
   const [selectedPhoneNumberId, setSelectedPhoneNumberId] = useState("");
 
   const selectedTemplate = templates.find((t: any) => t._id === templateId);
-  const mediaHeader = ["DOCUMENT", "IMAGE"].includes(selectedTemplate?.headerType)
+  const mediaHeader = ["DOCUMENT", "IMAGE"].includes(
+    selectedTemplate?.headerType,
+  )
     ? selectedTemplate.headerType
     : null;
 
@@ -863,7 +876,11 @@ function WhatsAppSendDialog({
       await whatsappAPI.sendMessage({
         leadId: lead._id,
         ...(mode === "template"
-          ? { templateId, variableMapping, ...(mediaHeader && documentId ? { documentId } : {}) }
+          ? {
+              templateId,
+              variableMapping,
+              ...(mediaHeader && documentId ? { documentId } : {}),
+            }
           : mode === "document"
             ? { messageType: "document", documentId, messageText }
             : { messageType: "text", messageText }),
@@ -991,8 +1008,9 @@ function WhatsAppSendDialog({
                     className="mt-1 text-sm"
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Direct documents only reach leads who messaged you in the last 24h.
-                    For new leads use a Template with a Document header.
+                    Direct documents only reach leads who messaged you in the
+                    last 24h. For new leads use a Template with a Document
+                    header.
                   </p>
                 </div>
               </div>
@@ -1061,7 +1079,8 @@ function WhatsAppSendDialog({
                 {mediaHeader && (
                   <div className="mt-3">
                     <Label className="text-xs">
-                      Attach {mediaHeader === "IMAGE" ? "image" : "document"} from vault
+                      Attach {mediaHeader === "IMAGE" ? "image" : "document"}{" "}
+                      from vault
                     </Label>
                     <VaultDocPicker
                       value={documentId}
@@ -1176,7 +1195,6 @@ function WhatsAppSendDialog({
   );
 }
 
-
 const EDIT_FIELDS = [
   ["name", "Name"],
   ["company", "Company"],
@@ -1217,7 +1235,11 @@ function EditLeadDialog({
       onSaved();
       onClose();
     } catch (err: any) {
-      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Update failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }

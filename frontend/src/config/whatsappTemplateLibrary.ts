@@ -300,14 +300,19 @@ export const TEMPLATE_LIBRARY: LibraryTemplate[] = [
     headerType: "NONE",
     vars: ["Lead name", "Business name", "Offer details"],
     map: ["name", "custom", "custom"],
-    samples: ["Rajesh", "Sharma Enterprises", "10% off on all orders till 30 Nov"],
+    samples: [
+      "Rajesh",
+      "Sharma Enterprises",
+      "10% off on all orders till 30 Nov",
+    ],
     en: "Hi {{1}}, warm wishes from {{2}}!\n\nThis season we have a special offer for you: {{3}}.\n\nReply to this message to know more or to place your order.",
     hi: "नमस्ते {{1}} जी, {{2}} की तरफ़ से शुभकामनाएँ!\n\nइस season आपके लिए special offer है: {{3}}।\n\nजानने या order देने के लिए इस message पर reply करें।",
   },
 ];
 
 /** Meta template name: lowercase, digits, underscore; language suffix keeps EN/HI apart. */
-export const libraryName = (t: LibraryTemplate, lang: "en" | "hi") => `${t.id}_${lang}`;
+export const libraryName = (t: LibraryTemplate, lang: "en" | "hi") =>
+  `${t.id}_${lang}`;
 
 /** Builds the form values for the existing "Create template" dialog. */
 export function libraryToForm(t: LibraryTemplate, lang: "en" | "hi") {
@@ -331,21 +336,36 @@ export function libraryToForm(t: LibraryTemplate, lang: "en" | "hi") {
   };
 }
 
-const MAP_KEYS = ["name", "company", "phone", "location", "requirement", "budget", "custom"];
+const MAP_KEYS = [
+  "name",
+  "company",
+  "phone",
+  "location",
+  "requirement",
+  "budget",
+  "custom",
+];
 
 /** Parses the "MAP: name,requirement,custom" hint stored in a template's notes. */
 export function mappingFromNotes(
   notes: string | undefined,
   variableCount: number,
 ): { position: number; fieldKey: string; customValue: string }[] {
-  const hint = /MAP:\s*([a-z,\s]+)/i.exec(notes || "")?.[1]
+  const hint = /MAP:\s*([a-z,\s]+)/i
+    .exec(notes || "")?.[1]
     .split(",")
     .map((s) => s.trim().toLowerCase());
   const out = [];
   for (let i = 1; i <= variableCount; i++) {
     const fromHint = hint?.[i - 1];
     const fieldKey =
-      fromHint && MAP_KEYS.includes(fromHint) ? fromHint : i === 1 ? "name" : i === 2 ? "company" : "custom";
+      fromHint && MAP_KEYS.includes(fromHint)
+        ? fromHint
+        : i === 1
+          ? "name"
+          : i === 2
+            ? "company"
+            : "custom";
     out.push({ position: i, fieldKey, customValue: "" });
   }
   return out;

@@ -111,7 +111,10 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState("");
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ imported: number; skipped: Skipped[] } | null>(null);
+  const [result, setResult] = useState<{
+    imported: number;
+    skipped: Skipped[];
+  } | null>(null);
 
   const reset = () => {
     setFileName("");
@@ -140,9 +143,13 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
         setError("No rows found in the first sheet of this file.");
         return;
       }
-      const missing = REQUIRED.filter(([key]) => !parsed.some((r) => key in r)).map(([, label]) => label);
+      const missing = REQUIRED.filter(
+        ([key]) => !parsed.some((r) => key in r),
+      ).map(([, label]) => label);
       if (missing.length) {
-        setError(`Missing column(s): ${missing.join(", ")}. Download the template to see the expected columns.`);
+        setError(
+          `Missing column(s): ${missing.join(", ")}. Download the template to see the expected columns.`,
+        );
         return;
       }
       setRows(parsed);
@@ -182,7 +189,8 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
         {result ? (
           <div className="space-y-3">
             <p className="text-sm">
-              <strong>{result.imported}</strong> client{result.imported === 1 ? "" : "s"} imported
+              <strong>{result.imported}</strong> client
+              {result.imported === 1 ? "" : "s"} imported
               {result.skipped.length > 0 && (
                 <>
                   , <strong>{result.skipped.length}</strong> skipped
@@ -207,9 +215,13 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Upload an .xlsx, .xls or .csv file. Required columns: <strong>Name, Company, Email, Phone, Address,
-              Business Type</strong>. Optional: GST, Services (comma-separated), Project Status, Payment Status. Rows
-              that fail validation are skipped and listed afterwards.
+              Upload an .xlsx, .xls or .csv file. Required columns:{" "}
+              <strong>
+                Name, Company, Email, Phone, Address, Business Type
+              </strong>
+              . Optional: GST, Services (comma-separated), Project Status,
+              Payment Status. Rows that fail validation are skipped and listed
+              afterwards.
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -217,14 +229,27 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => downloadXLSX("clients-import-template.xlsx", TEMPLATE_HEADERS, [TEMPLATE_EXAMPLE], "Clients")}
+                onClick={() =>
+                  downloadXLSX(
+                    "clients-import-template.xlsx",
+                    TEMPLATE_HEADERS,
+                    [TEMPLATE_EXAMPLE],
+                    "Clients",
+                  )
+                }
               >
                 <Download className="w-4 h-4 mr-1" /> Download template
               </Button>
-              <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+              >
                 <Upload className="w-4 h-4 mr-1" /> Choose file
               </Button>
-              <span className="text-xs text-muted-foreground self-center">.xlsx, .xls or .csv · max 5MB</span>
+              <span className="text-xs text-muted-foreground self-center">
+                .xlsx, .xls or .csv · max 5MB
+              </span>
               <input
                 ref={fileRef}
                 type="file"
@@ -239,7 +264,8 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
               <div className="rounded border p-3 space-y-2">
                 <p className="text-sm flex items-center gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                  {fileName} — <strong>{rows.length}</strong> row{rows.length === 1 ? "" : "s"} found
+                  {fileName} — <strong>{rows.length}</strong> row
+                  {rows.length === 1 ? "" : "s"} found
                 </p>
                 <div className="text-xs text-muted-foreground space-y-0.5">
                   {rows.slice(0, 3).map((r, i) => (
@@ -264,9 +290,15 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
               <Button variant="outline" onClick={() => close(false)}>
                 Cancel
               </Button>
-              <Button onClick={runImport} disabled={rows.length === 0 || importing}>
+              <Button
+                onClick={runImport}
+                disabled={rows.length === 0 || importing}
+              >
                 {importing && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                Import {rows.length > 0 ? `${rows.length} client${rows.length === 1 ? "" : "s"}` : ""}
+                Import{" "}
+                {rows.length > 0
+                  ? `${rows.length} client${rows.length === 1 ? "" : "s"}`
+                  : ""}
               </Button>
             </>
           )}

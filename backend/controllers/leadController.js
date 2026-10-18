@@ -1,4 +1,7 @@
 const asyncHandler = require("express-async-handler");
+const { safeEqual } = require("../utils/safeEqual");
+const escapeRegex = require("../utils/escapeRegex");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const mongoose = require("mongoose");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
@@ -146,10 +149,10 @@ const getLeads = asyncHandler(async (req, res) => {
 
   if (search) {
     query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { company: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
-      { phone: { $regex: search, $options: "i" } },
+      { name: { $regex: escapeRegex(search), $options: "i" } },
+      { company: { $regex: escapeRegex(search), $options: "i" } },
+      { email: { $regex: escapeRegex(search), $options: "i" } },
+      { phone: { $regex: escapeRegex(search), $options: "i" } },
     ];
   }
 
@@ -171,7 +174,7 @@ const getLeads = asyncHandler(async (req, res) => {
 });
 
 const getLead = asyncHandler(async (req, res) => {
-  const lead = await Lead.findById(req.params.id)
+  const lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) })
     .populate("assignedTo", "name email")
     .populate("notes.addedBy", "name")
     .populate("statusHistory.changedBy", "name");
@@ -263,7 +266,7 @@ const createLead = asyncHandler(async (req, res) => {
 });
 
 const updateLead = asyncHandler(async (req, res) => {
-  let lead = await Lead.findById(req.params.id);
+  let lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!lead || lead.deletedAt) {
     res.status(404);
@@ -332,7 +335,7 @@ const updateLead = asyncHandler(async (req, res) => {
     }
   }
 
-  const { statusHistory: _ignored, ...updateFields } = req.body;
+  const { statusHistory: _ignored, ...updateFields } = safeBody(req.body);
 
   let updateOp;
 
@@ -367,7 +370,7 @@ const updateLead = asyncHandler(async (req, res) => {
     updateOp = { $set: updateFields };
   }
 
-  lead = await Lead.findByIdAndUpdate(req.params.id, updateOp, {
+  lead = await Lead.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, updateOp, {
     new: true,
     runValidators: true,
   })
@@ -406,7 +409,10 @@ const bulkAssignLeads = asyncHandler(async (req, res) => {
   }
 
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter }).select("name");
+  const leads = await Lead.find({
+    _id: { $in: leadIds },
+    ...tenantFilter,
+  }).select("name");
 
   if (leads.length === 0) {
     res.status(404);
@@ -414,10 +420,7 @@ const bulkAssignLeads = asyncHandler(async (req, res) => {
   }
 
   const foundIds = leads.map((l) => l._id);
-  await Lead.updateMany(
-    { _id: { $in: foundIds } },
-    { $set: { assignedTo } },
-  );
+  await Lead.updateMany({ _id: { $in: foundIds } }, { $set: { assignedTo } });
 
   logActivity({
     user: req.user,
@@ -457,7 +460,11 @@ const bulkUpdateStatus = asyncHandler(async (req, res) => {
 
   for (const lead of leads) {
     if (!isValidTransition(lead.status, status, VALID_TRANSITIONS)) {
-      skipped.push({ id: lead._id, name: lead.name, reason: `Invalid transition from "${lead.status}"` });
+      skipped.push({
+        id: lead._id,
+        name: lead.name,
+        reason: `Invalid transition from "${lead.status}"`,
+      });
       continue;
     }
 
@@ -521,14 +528,21 @@ const bulkEmailLeads = asyncHandler(async (req, res) => {
   }
 
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter }).select("name email");
+  const leads = await Lead.find({
+    _id: { $in: leadIds },
+    ...tenantFilter,
+  }).select("name email");
 
   const sent = [];
   const skipped = [];
 
   for (const lead of leads) {
     if (!lead.email) {
-      skipped.push({ id: lead._id, name: lead.name, reason: "No email on file" });
+      skipped.push({
+        id: lead._id,
+        name: lead.name,
+        reason: "No email on file",
+      });
       continue;
     }
     try {
@@ -586,11 +600,8 @@ const deleteLead = asyncHandler(async (req, res) => {
   });
 });
 
-const tenantScope = (req) =>
-  req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-
 const addNote = asyncHandler(async (req, res) => {
-  const lead = await Lead.findById(req.params.id);
+  const lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!lead) {
     res.status(404);
@@ -624,7 +635,7 @@ const addNote = asyncHandler(async (req, res) => {
 });
 
 const convertToClient = asyncHandler(async (req, res) => {
-  const lead = await Lead.findById(req.params.id);
+  const lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!lead) {
     res.status(404);
@@ -842,6 +853,12 @@ const getIndiamartSyncStatus = asyncHandler(async (req, res) => {
 });
 
 const indiamartWebhook = asyncHandler(async (req, res) => {
+  // Anyone can POST here, and the leads land in a tenant's account, so require the shared secret once configured
+  // (put it in the URL registered with IndiaMART: /api/leads/indiamart/webhook?key=<INDIAMART_WEBHOOK_SECRET>).
+  const secret = process.env.INDIAMART_WEBHOOK_SECRET;
+  if (secret && !safeEqual(req.query.key, secret)) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
   let records = [];
   if (Array.isArray(req.body)) {
     records = req.body;
@@ -870,7 +887,9 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
   });
 
   if (!tenant) {
-    log.warn("No active IndiaMART tenant found — leads created without tenantId");
+    log.warn(
+      "No active IndiaMART tenant found — leads created without tenantId",
+    );
   }
 
   let createdCount = 0;
@@ -895,7 +914,8 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
                 tenantId: tenant?._id,
                 key: "indiamart",
                 assigneeIds: savedIds,
-                batchSize: tenant?.integrations?.indiamart?.assignBatchSize || 1,
+                batchSize:
+                  tenant?.integrations?.indiamart?.assignBatchSize || 1,
               })
             : await getRoundRobinAssigneeId(tenant?._id);
         const leadData = mapIMLeadToModel(record, assignToId);
@@ -906,7 +926,10 @@ const indiamartWebhook = asyncHandler(async (req, res) => {
         createdCount++;
       }
     } catch (err) {
-      log.error("Error processing IndiaMART webhook lead", { qid, message: err.message });
+      log.error("Error processing IndiaMART webhook lead", {
+        qid,
+        message: err.message,
+      });
     }
   }
 
@@ -1071,10 +1094,12 @@ const connectJustdial = asyncHandler(async (req, res) => {
     "integrations.justdial.webhookToken": token,
   });
 
-  const backendUrl = process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
+  const backendUrl =
+    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
   res.json({
     success: true,
-    message: "Webhook URL generated — share it with Justdial business support to activate.",
+    message:
+      "Webhook URL generated — share it with Justdial business support to activate.",
     data: { webhookUrl: `${backendUrl}/api/leads/justdial/webhook/${token}` },
   });
 });
@@ -1112,7 +1137,8 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
     createdAt: { $gte: lastWeek },
   });
 
-  const backendUrl = process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
+  const backendUrl =
+    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
 
   res.json({
     success: true,
@@ -1141,10 +1167,18 @@ const justdialWebhook = asyncHandler(async (req, res) => {
   });
 
   if (!tenant) {
-    return res.status(404).json({ success: false, message: "Unknown webhook token" });
+    return res
+      .status(404)
+      .json({ success: false, message: "Unknown webhook token" });
   }
 
-  const leadId = pickJDField(req.body, ["lead_id", "leadid", "id", "call_id", "enquiry_id"]);
+  const leadId = pickJDField(req.body, [
+    "lead_id",
+    "leadid",
+    "id",
+    "call_id",
+    "enquiry_id",
+  ]);
 
   try {
     if (leadId) {
@@ -1153,7 +1187,9 @@ const justdialWebhook = asyncHandler(async (req, res) => {
         tenantId: tenant._id,
       });
       if (existing) {
-        return res.status(200).json({ success: true, message: "Already recorded" });
+        return res
+          .status(200)
+          .json({ success: true, message: "Already recorded" });
       }
     }
 
@@ -1266,7 +1302,8 @@ const getStatusHistoryReport = asyncHandler(async (req, res) => {
   res.json({ success: true, count: results.length, data: results });
 });
 
-const clampBatchSize = (v) => Math.max(1, Math.min(1000, Math.round(Number(v)) || 1));
+const clampBatchSize = (v) =>
+  Math.max(1, Math.min(1000, Math.round(Number(v)) || 1));
 
 const updateIndiamartSettings = asyncHandler(async (req, res) => {
   const { assigneeIds, batchSize } = req.body;
@@ -1274,8 +1311,12 @@ const updateIndiamartSettings = asyncHandler(async (req, res) => {
     ? { _id: req.user.tenantId }
     : { ownerUser: req.user._id };
   await Tenant.findOneAndUpdate(query, {
-    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
-    ...(batchSize !== undefined ? { "integrations.indiamart.assignBatchSize": clampBatchSize(batchSize) } : {}),
+    "integrations.indiamart.assigneeIds": Array.isArray(assigneeIds)
+      ? assigneeIds
+      : [],
+    ...(batchSize !== undefined
+      ? { "integrations.indiamart.assignBatchSize": clampBatchSize(batchSize) }
+      : {}),
   });
   res.json({ success: true, message: "IndiaMART settings updated" });
 });
@@ -1286,8 +1327,12 @@ const updateTradeindiaSettings = asyncHandler(async (req, res) => {
     ? { _id: req.user.tenantId }
     : { ownerUser: req.user._id };
   await Tenant.findOneAndUpdate(query, {
-    "integrations.tradeindia.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
-    ...(batchSize !== undefined ? { "integrations.tradeindia.assignBatchSize": clampBatchSize(batchSize) } : {}),
+    "integrations.tradeindia.assigneeIds": Array.isArray(assigneeIds)
+      ? assigneeIds
+      : [],
+    ...(batchSize !== undefined
+      ? { "integrations.tradeindia.assignBatchSize": clampBatchSize(batchSize) }
+      : {}),
   });
   res.json({ success: true, message: "TradeIndia settings updated" });
 });
@@ -1298,8 +1343,12 @@ const updateJustdialSettings = asyncHandler(async (req, res) => {
     ? { _id: req.user.tenantId }
     : { ownerUser: req.user._id };
   await Tenant.findOneAndUpdate(query, {
-    "integrations.justdial.assigneeIds": Array.isArray(assigneeIds) ? assigneeIds : [],
-    ...(batchSize !== undefined ? { "integrations.justdial.assignBatchSize": clampBatchSize(batchSize) } : {}),
+    "integrations.justdial.assigneeIds": Array.isArray(assigneeIds)
+      ? assigneeIds
+      : [],
+    ...(batchSize !== undefined
+      ? { "integrations.justdial.assignBatchSize": clampBatchSize(batchSize) }
+      : {}),
   });
   res.json({ success: true, message: "Justdial settings updated" });
 });
@@ -1345,9 +1394,7 @@ const importLeads = asyncHandler(async (req, res) => {
     ],
   }));
 
-  const invalid = docs
-    .map((d, i) => (!d.name ? i + 1 : null))
-    .filter(Boolean);
+  const invalid = docs.map((d, i) => (!d.name ? i + 1 : null)).filter(Boolean);
   if (invalid.length > 0) {
     res.status(400);
     throw new Error(
@@ -1402,9 +1449,7 @@ const resolveTenantId = async (req) => {
 
 const getSavedViews = asyncHandler(async (req, res) => {
   const tenantId = await resolveTenantId(req);
-  const views = tenantId
-    ? await SavedView.find({ tenantId }).sort("name")
-    : [];
+  const views = tenantId ? await SavedView.find({ tenantId }).sort("name") : [];
   res.json({ success: true, data: views });
 });
 

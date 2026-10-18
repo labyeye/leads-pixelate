@@ -27,7 +27,10 @@ const GROUPS: ("All" | LibraryCategory)[] = [
 ];
 
 const fillSamples = (text: string, samples: string[]) =>
-  text.replace(/\{\{(\d+)\}\}/g, (_, n) => `*${samples[Number(n) - 1] ?? "…"}*`);
+  text.replace(
+    /\{\{(\d+)\}\}/g,
+    (_, n) => `*${samples[Number(n) - 1] ?? "…"}*`,
+  );
 
 /**
  * Demo templates the client can start from. Picking one fills the normal
@@ -64,8 +67,8 @@ export function TemplateLibraryDialog({
         <DialogHeader>
           <DialogTitle>Template library</DialogTitle>
           <DialogDescription>
-            Pick a ready-made template, edit it if you like, then send it to Meta for approval.
-            Approval usually takes a few hours to 2 days.
+            Pick a ready-made template, edit it if you like, then send it to
+            Meta for approval. Approval usually takes a few hours to 2 days.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,20 +109,27 @@ export function TemplateLibraryDialog({
             const form = libraryToForm(t, lang);
             const exists = existingNames.includes(form.metaTemplateName);
             return (
-              <div key={t.id} className="border-2 border-black bg-white p-4 flex flex-col gap-3">
+              <div
+                key={t.id}
+                className="border-2 border-black bg-white p-4 flex flex-col gap-3"
+              >
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-bold text-sm">{t.title}</h4>
                     <span
                       className={cn(
                         "text-[10px] font-bold px-2 py-0.5 border-2 border-black shrink-0",
-                        t.category === "UTILITY" ? "bg-[#DBEAFE]" : "bg-[#FFEDD5]",
+                        t.category === "UTILITY"
+                          ? "bg-[#DBEAFE]"
+                          : "bg-[#FFEDD5]",
                       )}
                     >
                       {t.category}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t.when}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {t.when}
+                  </p>
                 </div>
 
                 <div className="bg-[#DCF8C6] border-2 border-black p-3 text-xs whitespace-pre-wrap flex-1">
@@ -128,18 +138,23 @@ export function TemplateLibraryDialog({
                   )}
                   {t.headerType === "DOCUMENT" && (
                     <p className="flex items-center gap-1 font-bold mb-1">
-                      <FileText className="w-3.5 h-3.5" /> Document attached (PDF)
+                      <FileText className="w-3.5 h-3.5" /> Document attached
+                      (PDF)
                     </p>
                   )}
                   {fillSamples(form.bodyText, t.samples)}
-                  <p className="text-[10px] text-muted-foreground mt-2">{form.footerText}</p>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    {form.footerText}
+                  </p>
                 </div>
 
                 <div className="text-[11px] text-muted-foreground">
-                  Variables: {t.vars.map((v, i) => `{{${i + 1}}} ${v}`).join(" · ")}
+                  Variables:{" "}
+                  {t.vars.map((v, i) => `{{${i + 1}}} ${v}`).join(" · ")}
                   {t.headerType === "DOCUMENT" && (
                     <p className="mt-1">
-                      Needs a sample PDF for Meta review — you'll upload it in the next step.
+                      Needs a sample PDF for Meta review — you'll upload it in
+                      the next step.
                     </p>
                   )}
                 </div>

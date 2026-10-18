@@ -275,7 +275,11 @@ export default function LeadsListScreen({ navigation }: Props) {
   const handleSyncPress = (
     source: 'indiamart' | 'facebook' | 'googleAds' | 'tradeindia' | 'justdial',
   ) => {
-    if (source === 'indiamart' || source === 'facebook' || source === 'googleAds') {
+    if (
+      source === 'indiamart' ||
+      source === 'facebook' ||
+      source === 'googleAds'
+    ) {
       setDateModalSource(source);
       setSyncDateOption('today');
       setCustomFrom('');
@@ -343,13 +347,13 @@ export default function LeadsListScreen({ navigation }: Props) {
                   ) : null}
                   {l.phone ? (
                     <View style={styles.leadDetailRow}>
-                      <Text style={styles.leadPhone}>|  {l.phone}</Text>
+                      <Text style={styles.leadPhone}>| {l.phone}</Text>
                     </View>
                   ) : null}
                 </View>
               </View>
             </View>
-            
+
             {l.createdAt ? (
               <View style={styles.leadDetailRow}>
                 <CalendarCheck size={12} color="#000" />
@@ -544,7 +548,7 @@ export default function LeadsListScreen({ navigation }: Props) {
       </View>
 
       {/* Sync row — equal width chips, no scroll */}
-      
+
       <View style={styles.syncRowDivider} />
 
       {/* Category tabs */}
@@ -665,8 +669,8 @@ export default function LeadsListScreen({ navigation }: Props) {
                       {opt === 'today'
                         ? 'Today'
                         : opt === 'yesterday'
-                        ? 'Yesterday'
-                        : 'Custom'}
+                          ? 'Yesterday'
+                          : 'Custom'}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -1296,7 +1300,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 15,
   },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 8, },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 2,
+    borderRadius: 8,
+  },
   statusPillText: {
     fontSize: 10,
     fontWeight: '600',

@@ -201,7 +201,8 @@ export function usePermission() {
     if (!resourcePerms) {
       return op === "read" || user.role === "admin";
     }
-    const perms = (user.roleId && resourcePerms[user.roleId]) || resourcePerms[user.role];
+    const perms =
+      (user.roleId && resourcePerms[user.roleId]) || resourcePerms[user.role];
     return perms?.[op] ?? false;
   }
 

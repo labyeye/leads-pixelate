@@ -31,7 +31,15 @@ const CallLogSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["initiated", "ringing", "in_progress", "completed", "failed", "no_answer", "busy"],
+      enum: [
+        "initiated",
+        "ringing",
+        "in_progress",
+        "completed",
+        "failed",
+        "no_answer",
+        "busy",
+      ],
       default: "initiated",
     },
     phoneNumber: {
@@ -82,7 +90,7 @@ const CallLogSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("CallLog", CallLogSchema);

@@ -149,9 +149,7 @@ export function GoogleAdsWizard({
         {step === "select_account" && (
           <div className="space-y-3">
             <p className="text-sm font-bold">Choose a Google Ads account</p>
-            {loading && (
-              <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
-            )}
+            {loading && <RefreshCw className="w-5 h-5 animate-spin mx-auto" />}
             {accounts.map((a) => (
               <button
                 key={a.id}
@@ -234,8 +232,8 @@ export function GoogleAdsWizard({
             <p className="font-bold">Google Ads connected!</p>
             <p className="text-sm text-black/70">
               We'll sync leads periodically. For instant delivery, add this
-              webhook URL to your Lead Form asset's webhook delivery settings
-              in Google Ads.
+              webhook URL to your Lead Form asset's webhook delivery settings in
+              Google Ads.
             </p>
             {webhookUrl && (
               <div className="flex items-center gap-2 border-2 border-black p-3 nb-shadow-sm text-xs font-mono break-all">
@@ -250,7 +248,10 @@ export function GoogleAdsWizard({
                 </button>
               </div>
             )}
-            <button onClick={onClose} className="nb-btn px-6 py-2.5 text-sm font-bold">
+            <button
+              onClick={onClose}
+              className="nb-btn px-6 py-2.5 text-sm font-bold"
+            >
               Done
             </button>
           </div>

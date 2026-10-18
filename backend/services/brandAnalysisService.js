@@ -22,9 +22,11 @@ const RUN_LOCK_MS = 5 * 60 * 1000;
 const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
 
 // The owner's brand PDF lives outside uploads/ (which is served publicly): it may be confidential.
-const introPdfPath = (tenantId, campaignId) => path.join(privateDir(tenantId, campaignId), "intro.pdf");
+const introPdfPath = (tenantId, campaignId) =>
+  path.join(privateDir(tenantId, campaignId), "intro.pdf");
 // Moodboard images: resized JPEGs next to the campaign's logos.
-const refsDir = (tenantId, campaignId) => path.join(svc.brandDir(tenantId, campaignId), "refs");
+const refsDir = (tenantId, campaignId) =>
+  path.join(svc.brandDir(tenantId, campaignId), "refs");
 
 const STR_LIST = { type: "array", items: { type: "string" } };
 const PROFILE_SCHEMA = {
@@ -43,7 +45,11 @@ const PROFILE_SCHEMA = {
     palette: STR_LIST,
     competitive: {
       type: "object",
-      properties: { positioning: { type: "string" }, whatTheyDoWell: STR_LIST, gapsToExploit: STR_LIST },
+      properties: {
+        positioning: { type: "string" },
+        whatTheyDoWell: STR_LIST,
+        gapsToExploit: STR_LIST,
+      },
       required: ["positioning", "whatTheyDoWell", "gapsToExploit"],
       additionalProperties: false,
     },
@@ -83,7 +89,11 @@ const HEX = /^#[0-9a-f]{6}$/i;
 // Also used to sanitise owner edits coming from the UI.
 function sanitizeProfile(p = {}) {
   const str = (v, n) => clean(v, n);
-  const list = (v, n, len) => (Array.isArray(v) ? v : []).map((x) => str(x, len)).filter(Boolean).slice(0, n);
+  const list = (v, n, len) =>
+    (Array.isArray(v) ? v : [])
+      .map((x) => str(x, len))
+      .filter(Boolean)
+      .slice(0, n);
   const c = p.competitive || {};
   return {
     summary: str(p.summary, 600),
@@ -96,7 +106,9 @@ function sanitizeProfile(p = {}) {
     topPerformingThemes: list(p.topPerformingThemes, 6, 80),
     doList: list(p.doList, 6, 120),
     avoidList: list(p.avoidList, 6, 120),
-    palette: (Array.isArray(p.palette) ? p.palette : []).filter((x) => HEX.test(x)).slice(0, 5),
+    palette: (Array.isArray(p.palette) ? p.palette : [])
+      .filter((x) => HEX.test(x))
+      .slice(0, 5),
     competitive: {
       positioning: str(c.positioning, 400),
       whatTheyDoWell: list(c.whatTheyDoWell, 5, 120),
@@ -107,11 +119,15 @@ function sanitizeProfile(p = {}) {
 
 async function graph(path, token) {
   const sep = path.includes("?") ? "&" : "?";
-  const res = await fetch(`${GRAPH}/${path}${sep}access_token=${encodeURIComponent(token)}`, {
-    signal: AbortSignal.timeout(20_000),
-  });
+  const res = await fetch(
+    `${GRAPH}/${path}${sep}access_token=${encodeURIComponent(token)}`,
+    {
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error?.message || `Graph API ${res.status}`);
+  if (!res.ok)
+    throw new Error(data?.error?.message || `Graph API ${res.status}`);
   return data;
 }
 
@@ -150,8 +166,16 @@ async function readInstagram(account) {
 
 async function readFacebook(account) {
   const id = account.accountId;
-  const profile = await graph(`${id}?fields=name,about,category,fan_count,website`, account.accessToken);
-  const posts = (await graph(`${id}/posts?fields=message,created_time,full_picture&limit=12`, account.accessToken)).data;
+  const profile = await graph(
+    `${id}?fields=name,about,category,fan_count,website`,
+    account.accessToken,
+  );
+  const posts = (
+    await graph(
+      `${id}/posts?fields=message,created_time,full_picture&limit=12`,
+      account.accessToken,
+    )
+  ).data;
   return {
     platform: "facebook",
     profile: {
@@ -178,7 +202,8 @@ async function readCompetitor(lens, username) {
   const fields =
     `business_discovery.username(${username}){followers_count,biography,media_count,` +
     `media.limit(12){caption,like_count,comments_count,media_type,media_url,timestamp}}`;
-  const bd = (await graph(`${id}?fields=${fields}`, lens.accessToken)).business_discovery;
+  const bd = (await graph(`${id}?fields=${fields}`, lens.accessToken))
+    .business_discovery;
   if (!bd) throw new Error("No public data for that account");
   return {
     username,
@@ -193,7 +218,14 @@ async function readCompetitor(lens, username) {
   };
 }
 
-const toBlock = (buf) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: buf.toString("base64") } });
+const toBlock = (buf) => ({
+  type: "image",
+  source: {
+    type: "base64",
+    media_type: "image/jpeg",
+    data: buf.toString("base64"),
+  },
+});
 
 // Small JPEGs keep the Claude request cheap and fast.
 async function thumbs(urls) {
@@ -217,17 +249,34 @@ async function thumbs(urls) {
 }
 
 const setStage = (campaignId, stage) =>
-  AutopilotCampaign.updateOne({ _id: campaignId }, { $set: { "analysis.stage": stage } });
+  AutopilotCampaign.updateOne(
+    { _id: campaignId },
+    { $set: { "analysis.stage": stage } },
+  );
 
 async function runAnalysis(tenantId, campaignId, accountId) {
-  const [tenant, campaign] = await Promise.all([Tenant.findById(tenantId), AutopilotCampaign.findById(campaignId)]);
+  const [tenant, campaign] = await Promise.all([
+    Tenant.findById(tenantId),
+    AutopilotCampaign.findById(campaignId),
+  ]);
   if (!tenant || !campaign) return;
 
   try {
-    const accountFilter = { tenantId, isActive: true, _id: { $in: campaign.accountIds || [] } };
+    const accountFilter = {
+      tenantId,
+      isActive: true,
+      _id: { $in: campaign.accountIds || [] },
+    };
     const account = accountId
-      ? await SocialAccount.findOne({ _id: accountId, tenantId, isActive: true })
-      : await SocialAccount.findOne({ ...accountFilter, platform: { $in: ["instagram", "facebook"] } }).sort({
+      ? await SocialAccount.findOne({
+          _id: accountId,
+          tenantId,
+          isActive: true,
+        })
+      : await SocialAccount.findOne({
+          ...accountFilter,
+          platform: { $in: ["instagram", "facebook"] },
+        }).sort({
           platform: -1, // "instagram" sorts after "facebook": prefer Instagram
         });
 
@@ -240,10 +289,19 @@ async function runAnalysis(tenantId, campaignId, accountId) {
         try {
           introPdf = {
             type: "document",
-            source: { type: "base64", media_type: "application/pdf", data: fs.readFileSync(introPdfPath(tenantId, campaignId)).toString("base64") },
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: fs
+                .readFileSync(introPdfPath(tenantId, campaignId))
+                .toString("base64"),
+            },
           };
         } catch (err) {
-          log.warn("Brand PDF unreadable", { tenantId: String(tenantId), message: err.message });
+          log.warn("Brand PDF unreadable", {
+            tenantId: String(tenantId),
+            message: err.message,
+          });
         }
       }
     }
@@ -253,27 +311,54 @@ async function runAnalysis(tenantId, campaignId, accountId) {
     let note = "";
     if (account && account.platform !== "linkedin") {
       try {
-        source = account.platform === "instagram" ? await readInstagram(account) : await readFacebook(account);
+        source =
+          account.platform === "instagram"
+            ? await readInstagram(account)
+            : await readFacebook(account);
       } catch (err) {
-        log.warn("Social read failed", { tenantId: String(tenantId), message: err.message });
+        log.warn("Social read failed", {
+          tenantId: String(tenantId),
+          message: err.message,
+        });
         note = `Couldn't read your ${account.platform} account (${clean(err.message, 120)}). Reconnect it in Connected Accounts to let Autopilot learn from your posts.`;
       }
     } else {
-      note = introText || introPdf ? "" : "No Instagram or Facebook account to read. Built from your business details only.";
+      note =
+        introText || introPdf
+          ? ""
+          : "No Instagram or Facebook account to read. Built from your business details only.";
     }
 
     await setStage(campaignId, "posts");
-    const images = source ? await thumbs(source.posts.map((p) => p.image).filter(Boolean).slice(0, MAX_THUMBS)) : [];
-    if (source && !source.posts.length) note = "Your account has no posts to learn from yet. Built from your bio and business details.";
+    const images = source
+      ? await thumbs(
+          source.posts
+            .map((p) => p.image)
+            .filter(Boolean)
+            .slice(0, MAX_THUMBS),
+        )
+      : [];
+    if (source && !source.posts.length)
+      note =
+        "Your account has no posts to learn from yet. Built from your bio and business details.";
 
     // Reference images (already resized JPEGs on disk).
     await setStage(campaignId, "references");
     const refImages = [];
     for (const r of (campaign.references || []).slice(0, MAX_REF_IMAGES)) {
       try {
-        refImages.push(toBlock(fs.readFileSync(path.join(refsDir(tenantId, campaignId), path.basename(r.file)))));
+        refImages.push(
+          toBlock(
+            fs.readFileSync(
+              path.join(refsDir(tenantId, campaignId), path.basename(r.file)),
+            ),
+          ),
+        );
       } catch (err) {
-        log.warn("Reference image unreadable", { tenantId: String(tenantId), message: err.message });
+        log.warn("Reference image unreadable", {
+          tenantId: String(tenantId),
+          message: err.message,
+        });
       }
     }
 
@@ -284,11 +369,16 @@ async function runAnalysis(tenantId, campaignId, accountId) {
     const compImages = [];
     const updates = [];
     for (const c of campaign.competitors || []) {
-      const entry = { id: c.id, username: clean(c.username, 60), ownerNotes: clean(c.notes, 500) };
+      const entry = {
+        id: c.id,
+        username: clean(c.username, 60),
+        ownerNotes: clean(c.notes, 500),
+      };
       const patch = { readAt: new Date(), error: "" };
       if (entry.username && HANDLE.test(entry.username)) {
         if (!lens) {
-          patch.error = "Needs a connected Instagram Business account to read competitors.";
+          patch.error =
+            "Needs a connected Instagram Business account to read competitors.";
         } else {
           try {
             const r = await readCompetitor(lens, entry.username);
@@ -299,12 +389,27 @@ async function runAnalysis(tenantId, campaignId, accountId) {
             patch.summary = clean(r.bio, 300);
             const left = MAX_COMPETITOR_IMAGES - compImages.length;
             if (left > 0) {
-              const got = await thumbs(r.posts.map((p) => p.image).filter(Boolean).slice(0, Math.min(2, left)));
-              if (got.length) compImages.push({ type: "text", text: `Images from competitor @${entry.username}:` }, ...got);
+              const got = await thumbs(
+                r.posts
+                  .map((p) => p.image)
+                  .filter(Boolean)
+                  .slice(0, Math.min(2, left)),
+              );
+              if (got.length)
+                compImages.push(
+                  {
+                    type: "text",
+                    text: `Images from competitor @${entry.username}:`,
+                  },
+                  ...got,
+                );
             }
           } catch (err) {
             patch.error = clean(err.message, 200);
-            log.warn("Competitor read failed", { tenantId: String(tenantId), message: err.message });
+            log.warn("Competitor read failed", {
+              tenantId: String(tenantId),
+              message: err.message,
+            });
           }
         }
       } else if (entry.username) {
@@ -314,36 +419,80 @@ async function runAnalysis(tenantId, campaignId, accountId) {
       updates.push([c.id, patch]);
     }
     for (const [id, patch] of updates) {
-      const $set = Object.fromEntries(Object.entries(patch).map(([k, v]) => [`competitors.$.${k}`, v]));
-      await AutopilotCampaign.updateOne({ _id: campaignId, "competitors.id": id }, { $set });
+      const $set = Object.fromEntries(
+        Object.entries(patch).map(([k, v]) => [`competitors.$.${k}`, v]),
+      );
+      await AutopilotCampaign.updateOne(
+        { _id: campaignId, "competitors.id": id },
+        { $set },
+      );
     }
 
     const [setting, products] = await Promise.all([
       Setting.findOne({ tenantId }).select("companyName companyWebsite").lean(),
-      Product.find({ tenantId, status: "Active" }).limit(10).select("name category description").lean(),
+      Product.find({ tenantId, status: "Active" })
+        .limit(10)
+        .select("name category description")
+        .lean(),
     ]);
     const data = {
       business: {
-        name: clean(setting?.companyName && setting.companyName !== "Agency Flow CRM" ? setting.companyName : tenant.name, 100),
+        name: clean(
+          setting?.companyName && setting.companyName !== "Agency Flow CRM"
+            ? setting.companyName
+            : tenant.name,
+          100,
+        ),
         campaign: clean(campaign.name, 60),
         website: clean(setting?.companyWebsite, 100),
         ownerNotes: clean(campaign.notes, 500),
       },
       brandIntro: introText,
-      products: products.map((p) => ({ name: clean(p.name, 80), category: p.category, description: clean(p.description, 200) })),
-      social: source && { platform: source.platform, profile: source.profile, posts: source.posts.map(({ image, ...rest }) => rest) },
+      products: products.map((p) => ({
+        name: clean(p.name, 80),
+        category: p.category,
+        description: clean(p.description, 200),
+      })),
+      social: source && {
+        platform: source.platform,
+        profile: source.profile,
+        posts: source.posts.map(({ image, ...rest }) => rest),
+      },
       competitors: rivals,
     };
 
     await setStage(campaignId, "style");
     const content = [
       ...(introPdf ? [introPdf] : []),
-      ...(refImages.length ? [{ type: "text", text: "Reference images the owner wants the brand's look to be close to:" }, ...refImages] : []),
-      ...(images.length ? [{ type: "text", text: "Recent posts of the business itself:" }, ...images] : []),
+      ...(refImages.length
+        ? [
+            {
+              type: "text",
+              text: "Reference images the owner wants the brand's look to be close to:",
+            },
+            ...refImages,
+          ]
+        : []),
+      ...(images.length
+        ? [
+            { type: "text", text: "Recent posts of the business itself:" },
+            ...images,
+          ]
+        : []),
       ...compImages,
-      { type: "text", text: `<business_data>\n${JSON.stringify(data)}\n</business_data>\nWrite the Brand Profile.` },
+      {
+        type: "text",
+        text: `<business_data>\n${JSON.stringify(data)}\n</business_data>\nWrite the Brand Profile.`,
+      },
     ];
-    const profile = sanitizeProfile(await svc.claudeJson({ system: SYSTEM, content, schema: PROFILE_SCHEMA, effort: "low" }));
+    const profile = sanitizeProfile(
+      await svc.claudeJson({
+        system: SYSTEM,
+        content,
+        schema: PROFILE_SCHEMA,
+        effort: "low",
+      }),
+    );
 
     await setStage(campaignId, "profile_built");
     await AutopilotCampaign.updateOne(
@@ -360,12 +509,27 @@ async function runAnalysis(tenantId, campaignId, accountId) {
         },
       },
     );
-    log.info("Brand scan done", { tenantId: String(tenantId), posts: source?.posts.length || 0, images: images.length, refs: refImages.length, rivals: rivals.length });
+    log.info("Brand scan done", {
+      tenantId: String(tenantId),
+      posts: source?.posts.length || 0,
+      images: images.length,
+      refs: refImages.length,
+      rivals: rivals.length,
+    });
   } catch (err) {
-    log.error("Brand scan failed", { tenantId: String(tenantId), message: err.message });
+    log.error("Brand scan failed", {
+      tenantId: String(tenantId),
+      message: err.message,
+    });
     await AutopilotCampaign.updateOne(
       { _id: campaignId },
-      { $set: { "analysis.status": "failed", "analysis.error": clean(err.message, 300), "analysis.at": new Date() } },
+      {
+        $set: {
+          "analysis.status": "failed",
+          "analysis.error": clean(err.message, 300),
+          "analysis.at": new Date(),
+        },
+      },
     );
   }
 }
@@ -378,7 +542,10 @@ async function startAnalysis(tenantId, campaignId, accountId) {
     {
       _id: campaignId,
       tenantId,
-      $or: [{ "analysis.status": { $ne: "running" } }, { "analysis.at": { $lt: stale } }],
+      $or: [
+        { "analysis.status": { $ne: "running" } },
+        { "analysis.at": { $lt: stale } },
+      ],
     },
     {
       $set: {
@@ -395,4 +562,12 @@ async function startAnalysis(tenantId, campaignId, accountId) {
   return true;
 }
 
-module.exports = { startAnalysis, sanitizeProfile, runAnalysis, introPdfPath, refsDir, readCompetitor, HANDLE };
+module.exports = {
+  startAnalysis,
+  sanitizeProfile,
+  runAnalysis,
+  introPdfPath,
+  refsDir,
+  readCompetitor,
+  HANDLE,
+};

@@ -1,7 +1,14 @@
-import React, {useEffect, useState} from 'react';
-import {View, StyleSheet, ActivityIndicator, Image, StatusBar, Linking} from 'react-native';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {AuthProvider, useAuth} from './src/contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+  StatusBar,
+  Linking,
+} from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import AnimatedSplashScreen from './src/screens/AnimatedSplashScreen';
@@ -12,14 +19,14 @@ import {
   getInitialNotification,
   clearAllNotifications,
 } from './src/services/notificationService';
-import {navigateToLead} from './src/navigation/navigationRef';
-import {useLeadPolling} from './src/hooks/useLeadPolling';
+import { navigateToLead } from './src/navigation/navigationRef';
+import { useLeadPolling } from './src/hooks/useLeadPolling';
 import storage from './src/utils/storage';
 
 const LogoWithName = require('./src/assets/images/NestLeads_Logo_Name.png');
 
 function NotificationInit() {
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     (async () => {
@@ -46,7 +53,7 @@ function NotificationInit() {
 
   // Foreground notification press handler
   useEffect(() => {
-    const unsub = setupForegroundNotificationHandler((leadId) => {
+    const unsub = setupForegroundNotificationHandler(leadId => {
       navigateToLead(leadId);
     });
     return () => unsub();
@@ -63,7 +70,7 @@ function NotificationInit() {
 }
 
 function RootNavigator() {
-  const {user, isLoading} = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Poll for new leads only when logged in
   useLeadPolling(!!user);
@@ -77,7 +84,11 @@ function RootNavigator() {
           style={styles.splashLogo}
           resizeMode="contain"
         />
-        <ActivityIndicator color="#024BAB" size="large" style={{marginTop: 32}} />
+        <ActivityIndicator
+          color="#024BAB"
+          size="large"
+          style={{ marginTop: 32 }}
+        />
       </View>
     );
   }
@@ -116,5 +127,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
-  splashLogo: {width: 220, height: 80},
+  splashLogo: { width: 220, height: 80 },
 });

@@ -339,7 +339,11 @@ export default function ApiKeysPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => apiKeysAPI.generate(newKeyName.trim(), newKeyFields, { assigneeIds, assignBatchSize }),
+    mutationFn: () =>
+      apiKeysAPI.generate(newKeyName.trim(), newKeyFields, {
+        assigneeIds,
+        assignBatchSize,
+      }),
     onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ["api-keys"] });
       setShowCreate(false);
@@ -360,7 +364,12 @@ export default function ApiKeysPage() {
       setRevealedKey(res.data.key);
       setRevealedKeyData(created);
     },
-    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to create key" }),
+    onError: (err: any) =>
+      appToast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to create key",
+      }),
   });
 
   const revokeMutation = useMutation({
@@ -370,7 +379,12 @@ export default function ApiKeysPage() {
       setRevokeTarget(null);
       toast.success("API key revoked");
     },
-    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to revoke key" }),
+    onError: (err: any) =>
+      appToast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to revoke key",
+      }),
   });
 
   const copyText = (text: string, label = "Copied!") => {

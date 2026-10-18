@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { useHistoryState } from "@/hooks/useHistoryState";
 
 describe("useHistoryState (undo / redo)", () => {
-  const run = <T,>(initial: T) => renderHook(() => useHistoryState<T>(initial));
+  const run = <T>(initial: T) => renderHook(() => useHistoryState<T>(initial));
 
   it("undoes and redoes steps, and a new edit clears redo", () => {
     const { result } = run(0);

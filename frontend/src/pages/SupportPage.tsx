@@ -14,7 +14,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supportAPI } from "@/services/api";
-import { LifeBuoy, Plus, Clock, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import {
+  LifeBuoy,
+  Plus,
+  Clock,
+  MessageSquare,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
 interface Reply {
   message: string;
@@ -58,7 +65,8 @@ export default function SupportPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editSubject, setEditSubject] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editPriority, setEditPriority] = useState<SupportTicket["priority"]>("medium");
+  const [editPriority, setEditPriority] =
+    useState<SupportTicket["priority"]>("medium");
 
   const { data, isLoading } = useQuery({
     queryKey: ["support-tickets"],
@@ -67,7 +75,11 @@ export default function SupportPage() {
 
   const createMutation = useMutation({
     mutationFn: () =>
-      supportAPI.create({ subject: subject.trim(), description: description.trim(), priority }),
+      supportAPI.create({
+        subject: subject.trim(),
+        description: description.trim(),
+        priority,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["support-tickets"] });
       toast.success("Ticket raised — our team will get back to you shortly.");
@@ -76,7 +88,12 @@ export default function SupportPage() {
       setDescription("");
       setPriority("medium");
     },
-    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to raise ticket" }),
+    onError: (err: any) =>
+      appToast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to raise ticket",
+      }),
   });
 
   const updateMutation = useMutation({
@@ -92,7 +109,12 @@ export default function SupportPage() {
       setSelected(res.data);
       setIsEditing(false);
     },
-    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to update ticket" }),
+    onError: (err: any) =>
+      appToast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to update ticket",
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -102,11 +124,17 @@ export default function SupportPage() {
       toast.success("Ticket deleted");
       setSelected(null);
     },
-    onError: (err: any) => appToast({ variant: "destructive", title: "Error", description: err.message || "Failed to delete ticket" }),
+    onError: (err: any) =>
+      appToast({
+        variant: "destructive",
+        title: "Error",
+        description: err.message || "Failed to delete ticket",
+      }),
   });
 
   const tickets: SupportTicket[] = data?.data || [];
-  const isEditable = (t: SupportTicket) => t.status === "open" && (t.replies?.length || 0) === 0;
+  const isEditable = (t: SupportTicket) =>
+    t.status === "open" && (t.replies?.length || 0) === 0;
 
   return (
     <AppLayout title="Support">
@@ -196,7 +224,9 @@ export default function SupportPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">Subject</label>
+              <label className="text-sm font-semibold text-black">
+                Subject
+              </label>
               <Input
                 placeholder="Briefly describe the issue"
                 value={subject}
@@ -205,7 +235,9 @@ export default function SupportPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">Description</label>
+              <label className="text-sm font-semibold text-black">
+                Description
+              </label>
               <Textarea
                 placeholder="Give us the details — what happened, what you expected, steps to reproduce."
                 value={description}
@@ -214,7 +246,9 @@ export default function SupportPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">Priority</label>
+              <label className="text-sm font-semibold text-black">
+                Priority
+              </label>
               <div className="flex gap-2">
                 {(["low", "medium", "high", "critical"] as const).map((p) => (
                   <button
@@ -243,7 +277,11 @@ export default function SupportPage() {
             </Button>
             <Button
               onClick={() => createMutation.mutate()}
-              disabled={!subject.trim() || !description.trim() || createMutation.isPending}
+              disabled={
+                !subject.trim() ||
+                !description.trim() ||
+                createMutation.isPending
+              }
               className="bg-[#024BAB] text-white border-2 border-black hover:bg-[#013a87]"
             >
               {createMutation.isPending ? "Submitting..." : "Submit Ticket"}
@@ -264,12 +302,16 @@ export default function SupportPage() {
       >
         <DialogContent className="border-2 border-black max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Edit Ticket" : selected?.subject}</DialogTitle>
+            <DialogTitle>
+              {isEditing ? "Edit Ticket" : selected?.subject}
+            </DialogTitle>
           </DialogHeader>
           {selected && isEditing && (
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-black">Subject</label>
+                <label className="text-sm font-semibold text-black">
+                  Subject
+                </label>
                 <Input
                   value={editSubject}
                   onChange={(e) => setEditSubject(e.target.value)}
@@ -277,7 +319,9 @@ export default function SupportPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-black">Description</label>
+                <label className="text-sm font-semibold text-black">
+                  Description
+                </label>
                 <Textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
@@ -285,7 +329,9 @@ export default function SupportPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-black">Priority</label>
+                <label className="text-sm font-semibold text-black">
+                  Priority
+                </label>
                 <div className="flex gap-2">
                   {(["low", "medium", "high", "critical"] as const).map((p) => (
                     <button
@@ -304,12 +350,20 @@ export default function SupportPage() {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setIsEditing(false)} className="border-2 border-black">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                  className="border-2 border-black"
+                >
                   Cancel
                 </Button>
                 <Button
                   onClick={() => updateMutation.mutate()}
-                  disabled={!editSubject.trim() || !editDescription.trim() || updateMutation.isPending}
+                  disabled={
+                    !editSubject.trim() ||
+                    !editDescription.trim() ||
+                    updateMutation.isPending
+                  }
                   className="bg-[#024BAB] text-white border-2 border-black hover:bg-[#013a87]"
                 >
                   {updateMutation.isPending ? "Saving..." : "Save Changes"}
@@ -356,7 +410,9 @@ export default function SupportPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (confirm("Delete this ticket? This can't be undone.")) {
+                      if (
+                        confirm("Delete this ticket? This can't be undone.")
+                      ) {
                         deleteMutation.mutate();
                       }
                     }}
@@ -384,7 +440,8 @@ export default function SupportPage() {
                       }`}
                     >
                       <p className="font-semibold text-black text-xs mb-1">
-                        {reply.senderName || (reply.from === "crm" ? "You" : "Support Team")}
+                        {reply.senderName ||
+                          (reply.from === "crm" ? "You" : "Support Team")}
                       </p>
                       <p className="text-black">{reply.message}</p>
                     </div>

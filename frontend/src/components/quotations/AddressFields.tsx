@@ -10,18 +10,58 @@ export interface AddressValue {
   country: string;
 }
 
-export const blankAddress: AddressValue = { addressLine: "", city: "", state: "", zip: "", country: "India" };
+export const blankAddress: AddressValue = {
+  addressLine: "",
+  city: "",
+  state: "",
+  zip: "",
+  country: "India",
+};
 
 // The single-line form stored in `address`, which PDFs and older screens still read.
 export const joinAddress = (a: AddressValue) =>
-  [a.addressLine, a.city, [a.state, a.zip].filter(Boolean).join(" "), a.country].map((x) => x.trim()).filter(Boolean).join(", ");
+  [a.addressLine, a.city, [a.state, a.zip].filter(Boolean).join(" "), a.country]
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .join(", ");
 
 const IN_STATES = [
-  "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chandigarh",
-  "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa", "Gujarat", "Haryana",
-  "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala", "Ladakh", "Lakshadweep",
-  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Puducherry",
-  "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
 ];
 
 const box = "border-2 w-full px-3 py-2 text-sm bg-white";
@@ -54,13 +94,26 @@ export function AddressFields({ value, onChange }: Props) {
       const res = await fetch(`https://api.postalpincode.in/pincode/${zip}`);
       const data = (await res.json())[0];
       if (token !== pinToken.current) return;
-      const offices: any[] = data?.Status === "Success" ? data.PostOffice || [] : [];
-      if (!offices.length) return setPinNote("PIN code not found — fill city and state manually.");
-      const state = IN_STATES.find((s) => s.toLowerCase() === String(offices[0].State).toLowerCase()) || offices[0].State;
+      const offices: any[] =
+        data?.Status === "Success" ? data.PostOffice || [] : [];
+      if (!offices.length)
+        return setPinNote("PIN code not found — fill city and state manually.");
+      const state =
+        IN_STATES.find(
+          (s) => s.toLowerCase() === String(offices[0].State).toLowerCase(),
+        ) || offices[0].State;
       setAreas([...new Set<string>(offices.map((o) => o.Name))]);
-      onChange({ zip, city: offices[0].District || offices[0].Block || "", state, country: "India" });
+      onChange({
+        zip,
+        city: offices[0].District || offices[0].Block || "",
+        state,
+        country: "India",
+      });
     } catch {
-      if (token === pinToken.current) setPinNote("Could not look up the PIN code — fill city and state manually.");
+      if (token === pinToken.current)
+        setPinNote(
+          "Could not look up the PIN code — fill city and state manually.",
+        );
     } finally {
       if (token === pinToken.current) setLookingUp(false);
     }
@@ -71,7 +124,9 @@ export function AddressFields({ value, onChange }: Props) {
     setCities([]);
     if (!isIndia || !value.state) return;
     let stale = false;
-    fetch(`https://countriesnow.space/api/v0.1/countries/state/cities/q?country=India&state=${encodeURIComponent(value.state)}`)
+    fetch(
+      `https://countriesnow.space/api/v0.1/countries/state/cities/q?country=India&state=${encodeURIComponent(value.state)}`,
+    )
       .then((r) => r.json())
       .then((d) => !stale && Array.isArray(d?.data) && setCities(d.data))
       .catch(() => {});
@@ -80,13 +135,17 @@ export function AddressFields({ value, onChange }: Props) {
     };
   }, [isIndia, value.state]);
 
-  const suggestions = [...new Set([value.city, ...areas, ...cities].filter(Boolean))].slice(0, 400);
+  const suggestions = [
+    ...new Set([value.city, ...areas, ...cities].filter(Boolean)),
+  ].slice(0, 400);
 
   return (
     // Fragment: the four fields sit directly in the parent 4-column grid, one row like GST / Mobile / Aadhar / PAN.
     <>
       <div className="col-span-1 sm:col-span-4 space-y-1">
-        <label htmlFor="addressLine" className={lbl}>Address line (optional)</label>
+        <label htmlFor="addressLine" className={lbl}>
+          Address line (optional)
+        </label>
         <textarea
           id="addressLine"
           rows={2}
@@ -100,7 +159,9 @@ export function AddressFields({ value, onChange }: Props) {
       <div className="space-y-1">
         <label htmlFor="zip" className={lbl}>
           {isIndia ? "PIN code" : "ZIP / postal code"}
-          {lookingUp && <Loader2 className="inline w-3 h-3 ml-1 animate-spin" />}
+          {lookingUp && (
+            <Loader2 className="inline w-3 h-3 ml-1 animate-spin" />
+          )}
         </label>
         <input
           id="zip"
@@ -114,12 +175,21 @@ export function AddressFields({ value, onChange }: Props) {
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="country" className={lbl}>Country</label>
-        <input id="country" value={value.country} onChange={(e) => onChange({ country: e.target.value })} className={box} />
+        <label htmlFor="country" className={lbl}>
+          Country
+        </label>
+        <input
+          id="country"
+          value={value.country}
+          onChange={(e) => onChange({ country: e.target.value })}
+          className={box}
+        />
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="state" className={lbl}>State</label>
+        <label htmlFor="state" className={lbl}>
+          State
+        </label>
         {isIndia ? (
           <select
             id="state"
@@ -128,18 +198,29 @@ export function AddressFields({ value, onChange }: Props) {
             className={box}
           >
             <option value="">Select state</option>
-            {value.state && !IN_STATES.includes(value.state) && <option value={value.state}>{value.state}</option>}
+            {value.state && !IN_STATES.includes(value.state) && (
+              <option value={value.state}>{value.state}</option>
+            )}
             {IN_STATES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         ) : (
-          <input id="state" value={value.state} onChange={(e) => onChange({ state: e.target.value })} className={box} />
+          <input
+            id="state"
+            value={value.state}
+            onChange={(e) => onChange({ state: e.target.value })}
+            className={box}
+          />
         )}
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="city" className={lbl}>City</label>
+        <label htmlFor="city" className={lbl}>
+          City
+        </label>
         <input
           id="city"
           list="addr-cities"

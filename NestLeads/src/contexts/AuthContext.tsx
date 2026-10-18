@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import {authAPI, settingsAPI, setToken, removeToken} from '../services/api';
+import { authAPI, settingsAPI, setToken, removeToken } from '../services/api';
 import storage from '../utils/storage';
 import {
   setStatusOverrides,
@@ -25,7 +25,10 @@ function loadStatusSettings() {
 interface AuthContextType {
   user: any | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{requires2FA?: boolean; userId?: string}>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ requires2FA?: boolean; userId?: string }>;
   loginWithToken: (userData: any, token: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -40,7 +43,7 @@ const AuthContext = createContext<AuthContextType>({
   refreshUser: async () => {},
 });
 
-export function AuthProvider({children}: {children: ReactNode}) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -99,7 +102,9 @@ export function AuthProvider({children}: {children: ReactNode}) {
   };
 
   return (
-    <AuthContext.Provider value={{user, isLoading, login, loginWithToken, logout, refreshUser}}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, loginWithToken, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

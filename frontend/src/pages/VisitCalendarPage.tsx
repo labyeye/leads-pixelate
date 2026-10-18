@@ -26,7 +26,10 @@ import {
 import { cn } from "@/lib/utils";
 import { leadsAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { statusColors, getStatusColorClasses } from "@/components/leads/statusConstants";
+import {
+  statusColors,
+  getStatusColorClasses,
+} from "@/components/leads/statusConstants";
 import { DateLeadModal } from "@/components/leads/DateLeadModal";
 
 type TagFilter = "ALL" | "HOT" | "WARM" | "COLD";

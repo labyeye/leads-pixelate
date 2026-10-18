@@ -4,13 +4,28 @@ import { ActivityChart, RangePicker, StatusDonut } from "./AutopilotCharts";
 import { useCampaigns } from "./CampaignContext";
 import { useAutopilotStats, type RangeDays } from "./useAutopilotStats";
 
-const platformLabel: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", linkedin: "LinkedIn" };
-const pct = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : "—");
+const platformLabel: Record<string, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  linkedin: "LinkedIn",
+};
+const pct = (n: number, of: number) =>
+  of ? `${Math.round((n / of) * 100)}%` : "—";
 
-function Tile({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+function Tile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
   return (
     <div className="nb-card p-4 bg-white" data-testid={`tile-${label}`}>
-      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
       <p className="font-display font-bold text-2xl text-black">{value}</p>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
@@ -23,7 +38,9 @@ export function AutopilotReport() {
   const [days, setDays] = useState<RangeDays>(30);
   const campaignId = selection && selection !== "all" ? selection : undefined;
   const { stats, error } = useAutopilotStats(days, campaignId);
-  const scope = campaignId ? overview?.campaigns.find((c) => c.id === campaignId)?.name : "All campaigns";
+  const scope = campaignId
+    ? overview?.campaigns.find((c) => c.id === campaignId)?.name
+    : "All campaigns";
 
   if (!stats) {
     return error ? (
@@ -43,9 +60,16 @@ export function AutopilotReport() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display font-bold text-xl text-black">Report{scope ? ` · ${scope}` : ""}</h2>
+          <h2 className="font-display font-bold text-xl text-black">
+            Report{scope ? ` · ${scope}` : ""}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            {new Date(stats.range.since).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} to today
+            {new Date(stats.range.since).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}{" "}
+            to today
           </p>
         </div>
         <RangePicker value={days} onChange={setDays} />
@@ -53,14 +77,31 @@ export function AutopilotReport() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tile label="Posts created" value={t.generated} />
-        <Tile label="Posted" value={t.posted} hint={`${pct(t.posted, t.generated)} of created`} />
-        <Tile label="Rejected" value={t.rejected} hint={`${pct(t.rejected, t.generated)} of created`} />
-        <Tile label="Failed to post" value={t.failed} hint={t.failed ? "check Connected Accounts" : "none"} />
+        <Tile
+          label="Posted"
+          value={t.posted}
+          hint={`${pct(t.posted, t.generated)} of created`}
+        />
+        <Tile
+          label="Rejected"
+          value={t.rejected}
+          hint={`${pct(t.rejected, t.generated)} of created`}
+        />
+        <Tile
+          label="Failed to post"
+          value={t.failed}
+          hint={t.failed ? "check Connected Accounts" : "none"}
+        />
       </div>
 
       {!campaignId && stats.byCampaign.length > 0 && (
-        <section className="nb-card p-4 bg-white space-y-3" aria-label="Campaign comparison">
-          <h3 className="font-display font-bold text-base text-black">By campaign</h3>
+        <section
+          className="nb-card p-4 bg-white space-y-3"
+          aria-label="Campaign comparison"
+        >
+          <h3 className="font-display font-bold text-base text-black">
+            By campaign
+          </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -74,7 +115,11 @@ export function AutopilotReport() {
               </thead>
               <tbody>
                 {stats.byCampaign.map((c) => (
-                  <tr key={c.campaignId} className="border-b border-black/10" data-testid={`row-${c.name}`}>
+                  <tr
+                    key={c.campaignId}
+                    className="border-b border-black/10"
+                    data-testid={`row-${c.name}`}
+                  >
                     <td className="py-2 pr-4 font-medium">{c.name}</td>
                     <td className="py-2 pr-4">{c.generated}</td>
                     <td className="py-2 pr-4">{c.posted}</td>
@@ -89,45 +134,71 @@ export function AutopilotReport() {
       )}
 
       <section className="nb-card p-4 bg-white space-y-3">
-        <h3 className="font-display font-bold text-base text-black">Activity</h3>
+        <h3 className="font-display font-bold text-base text-black">
+          Activity
+        </h3>
         <ActivityChart series={stats.series} />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">Where the posts ended up</h3>
+          <h3 className="font-display font-bold text-base text-black">
+            Where the posts ended up
+          </h3>
           <StatusDonut totals={t} />
         </section>
 
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">Review loop</h3>
+          <h3 className="font-display font-bold text-base text-black">
+            Review loop
+          </h3>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div data-testid="tile-Approval rate">
               <dt className="text-xs text-muted-foreground">Approval rate</dt>
-              <dd className="font-display font-bold text-2xl">{r.approvalRate == null ? "—" : `${r.approvalRate}%`}</dd>
-              <dd className="text-xs text-muted-foreground">of posts you reviewed</dd>
+              <dd className="font-display font-bold text-2xl">
+                {r.approvalRate == null ? "—" : `${r.approvalRate}%`}
+              </dd>
+              <dd className="text-xs text-muted-foreground">
+                of posts you reviewed
+              </dd>
             </div>
             <div data-testid="tile-Time to approve">
               <dt className="text-xs text-muted-foreground">Time to approve</dt>
-              <dd className="font-display font-bold text-2xl">{r.avgApprovalHours == null ? "—" : `${r.avgApprovalHours} h`}</dd>
+              <dd className="font-display font-bold text-2xl">
+                {r.avgApprovalHours == null ? "—" : `${r.avgApprovalHours} h`}
+              </dd>
               <dd className="text-xs text-muted-foreground">average</dd>
             </div>
             <div data-testid="tile-Posts you changed">
-              <dt className="text-xs text-muted-foreground">Posts you changed</dt>
-              <dd className="font-display font-bold text-2xl">{r.revisedPosts}</dd>
-              <dd className="text-xs text-muted-foreground">{pct(r.revisedPosts, t.generated)} of created</dd>
+              <dt className="text-xs text-muted-foreground">
+                Posts you changed
+              </dt>
+              <dd className="font-display font-bold text-2xl">
+                {r.revisedPosts}
+              </dd>
+              <dd className="text-xs text-muted-foreground">
+                {pct(r.revisedPosts, t.generated)} of created
+              </dd>
             </div>
             <div data-testid="tile-Change requests">
               <dt className="text-xs text-muted-foreground">Change requests</dt>
               <dd className="font-display font-bold text-2xl">{r.revisions}</dd>
-              <dd className="text-xs text-muted-foreground">fixed and regenerated</dd>
+              <dd className="text-xs text-muted-foreground">
+                fixed and regenerated
+              </dd>
             </div>
           </dl>
-          {decided === 0 && <p className="text-xs text-muted-foreground">Numbers appear once posts have been reviewed.</p>}
+          {decided === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Numbers appear once posts have been reviewed.
+            </p>
+          )}
         </section>
 
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">By platform</h3>
+          <h3 className="font-display font-bold text-base text-black">
+            By platform
+          </h3>
           {stats.platforms.length ? (
             <ul className="space-y-2">
               {stats.platforms.map((p) => (
@@ -137,7 +208,10 @@ export function AutopilotReport() {
                     <b>{p.count}</b>
                   </div>
                   <div className="h-2.5 border-2 border-black bg-black/10">
-                    <div className="h-full bg-[#024BAB]" style={{ width: `${(p.count / maxPlatform) * 100}%` }} />
+                    <div
+                      className="h-full bg-[#024BAB]"
+                      style={{ width: `${(p.count / maxPlatform) * 100}%` }}
+                    />
                   </div>
                 </li>
               ))}
@@ -148,17 +222,22 @@ export function AutopilotReport() {
         </section>
 
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">Topics Autopilot covered</h3>
+          <h3 className="font-display font-bold text-base text-black">
+            Topics Autopilot covered
+          </h3>
           {stats.topics.length ? (
             <ol className="space-y-1.5 text-sm list-decimal list-inside">
               {stats.topics.map((x) => (
                 <li key={x.topic}>
-                  {x.topic} <span className="text-muted-foreground">· {x.count}</span>
+                  {x.topic}{" "}
+                  <span className="text-muted-foreground">· {x.count}</span>
                 </li>
               ))}
             </ol>
           ) : (
-            <p className="text-sm text-muted-foreground">Topics show up once posts are created.</p>
+            <p className="text-sm text-muted-foreground">
+              Topics show up once posts are created.
+            </p>
           )}
         </section>
       </div>

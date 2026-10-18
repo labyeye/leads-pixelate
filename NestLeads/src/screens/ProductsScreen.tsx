@@ -1,18 +1,45 @@
-﻿import React, {useState, useEffect, useCallback} from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, Image, FlatList, TextInput, TouchableOpacity, Modal,
-  StyleSheet, ActivityIndicator, StatusBar, RefreshControl, Alert, ScrollView,
+  View,
+  Text,
+  Image,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  ActivityIndicator,
+  StatusBar,
+  RefreshControl,
+  Alert,
+  ScrollView,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import {productsAPI} from '../services/api';
+import { productsAPI } from '../services/api';
 
-const NB_SHADOW = {shadowColor: '#000', shadowOpacity: 1, shadowRadius: 0, shadowOffset: {width: 4, height: 4}, elevation: 4};
+const NB_SHADOW = {
+  shadowColor: '#000',
+  shadowOpacity: 1,
+  shadowRadius: 0,
+  shadowOffset: { width: 4, height: 4 },
+  elevation: 4,
+};
 
 const UNITS = ['pcs', 'kg', 'box', 'meter', 'liter', 'set', 'hour'];
-const BLANK = {name: '', description: '', price: '', unit: 'pcs', category: '', sku: '', stockQuantity: '', taxRate: '18', hsnCode: ''};
+const BLANK = {
+  name: '',
+  description: '',
+  price: '',
+  unit: 'pcs',
+  category: '',
+  sku: '',
+  stockQuantity: '',
+  taxRate: '18',
+  hsnCode: '',
+};
 
-export default function ProductsScreen({navigation}: any) {
+export default function ProductsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,24 +52,37 @@ export default function ProductsScreen({navigation}: any) {
 
   const fetchProducts = useCallback(async (isRefresh = false) => {
     try {
-      if (isRefresh) setRefreshing(true); else setLoading(true);
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
       const res = await productsAPI.getAll();
       setProducts(res.data || []);
-    } catch (e: any) {Alert.alert('Error', e.message);}
-    finally {setLoading(false); setRefreshing(false);}
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => {fetchProducts();}, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const filtered = products.filter(p => {
     if (!search) return true;
     const s = search.toLowerCase();
-    return (p.name || '').toLowerCase().includes(s) ||
-           (p.category || '').toLowerCase().includes(s) ||
-           (p.sku || '').toLowerCase().includes(s);
+    return (
+      (p.name || '').toLowerCase().includes(s) ||
+      (p.category || '').toLowerCase().includes(s) ||
+      (p.sku || '').toLowerCase().includes(s)
+    );
   });
 
-  const openAdd = () => {setEditing(null); setForm(BLANK); setModalVisible(true);};
+  const openAdd = () => {
+    setEditing(null);
+    setForm(BLANK);
+    setModalVisible(true);
+  };
   const openEdit = (p: any) => {
     setEditing(p);
     setForm({
@@ -60,7 +100,10 @@ export default function ProductsScreen({navigation}: any) {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) {Alert.alert('Error', 'Product name is required'); return;}
+    if (!form.name.trim()) {
+      Alert.alert('Error', 'Product name is required');
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -76,51 +119,79 @@ export default function ProductsScreen({navigation}: any) {
       }
       setModalVisible(false);
       fetchProducts();
-    } catch (e: any) {Alert.alert('Error', e.message);}
-    finally {setSaving(false);}
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (id: string, name: string) => {
     Alert.alert('Delete Product', `Move "${name}" to trash?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Delete', style: 'destructive', onPress: async () => {
-        try {await productsAPI.delete(id); fetchProducts();}
-        catch (e: any) {Alert.alert('Error', e.message);}
-      }},
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await productsAPI.delete(id);
+            fetchProducts();
+          } catch (e: any) {
+            Alert.alert('Error', e.message);
+          }
+        },
+      },
     ]);
   };
 
-  const renderCard = ({item: p}: {item: any}) => (
+  const renderCard = ({ item: p }: { item: any }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <View style={styles.productIcon}>
           {p.photoUrl ? (
-            <Image source={{uri: p.photoUrl}} style={{width: 32, height: 32}} />
+            <Image
+              source={{ uri: p.photoUrl }}
+              style={{ width: 32, height: 32 }}
+            />
           ) : (
             <Icon name="cube-outline" size={18} color="#024BAB" />
           )}
         </View>
         <View style={styles.cardInfo}>
-          <Text style={styles.productName} numberOfLines={1}>{p.name}</Text>
-          {p.category ? <Text style={styles.productCat} numberOfLines={1}>{p.category}</Text> : null}
+          <Text style={styles.productName} numberOfLines={1}>
+            {p.name}
+          </Text>
+          {p.category ? (
+            <Text style={styles.productCat} numberOfLines={1}>
+              {p.category}
+            </Text>
+          ) : null}
           <Text style={styles.productCat} numberOfLines={1}>
-            {p.sku ? `SKU ${p.sku} · ` : ''}Stock {p.stockQuantity ?? 0} {p.unit || 'pcs'}
+            {p.sku ? `SKU ${p.sku} · ` : ''}Stock {p.stockQuantity ?? 0}{' '}
+            {p.unit || 'pcs'}
           </Text>
         </View>
         <View style={styles.priceBox}>
-          <Text style={styles.priceText}>â‚¹{(p.price || 0).toLocaleString('en-IN')}</Text>
+          <Text style={styles.priceText}>
+            â‚¹{(p.price || 0).toLocaleString('en-IN')}
+          </Text>
           {p.unit ? <Text style={styles.unitText}>/{p.unit}</Text> : null}
         </View>
       </View>
       {p.description ? (
-        <Text style={styles.description} numberOfLines={2}>{p.description}</Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {p.description}
+        </Text>
       ) : null}
       <View style={styles.cardActions}>
         <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(p)}>
           <Icon name="pencil-outline" size={13} color="#024BAB" />
           <Text style={styles.editBtnText}>Edit</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(p._id, p.name)}>
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => handleDelete(p._id, p.name)}
+        >
           <Icon name="trash-outline" size={13} color="#EF4444" />
           <Text style={styles.deleteBtnText}>Delete</Text>
         </TouchableOpacity>
@@ -129,10 +200,13 @@ export default function ProductsScreen({navigation}: any) {
   );
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top}]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+        >
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Products</Text>
@@ -146,7 +220,12 @@ export default function ProductsScreen({navigation}: any) {
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <Icon name="search-outline" size={14} color="#94a3b8" style={{marginRight: 6}} />
+          <Icon
+            name="search-outline"
+            size={14}
+            color="#94a3b8"
+            style={{ marginRight: 6 }}
+          />
           <TextInput
             style={styles.searchInput}
             placeholder="Search products..."
@@ -164,14 +243,25 @@ export default function ProductsScreen({navigation}: any) {
       <View style={styles.thinDivider} />
 
       {loading ? (
-        <View style={styles.centerBox}><ActivityIndicator size="large" color="#024BAB" /></View>
+        <View style={styles.centerBox}>
+          <ActivityIndicator size="large" color="#024BAB" />
+        </View>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={i => i._id}
           renderItem={renderCard}
-          contentContainerStyle={[styles.list, {paddingBottom: insets.bottom + 24}]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchProducts(true)} tintColor="#024BAB" />}
+          contentContainerStyle={[
+            styles.list,
+            { paddingBottom: insets.bottom + 24 },
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchProducts(true)}
+              tintColor="#024BAB"
+            />
+          }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <View style={styles.emptyIcon}>
@@ -187,17 +277,32 @@ export default function ProductsScreen({navigation}: any) {
         />
       )}
 
-      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, {paddingBottom: insets.bottom + 16}]}>
+          <View
+            style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editing ? 'Edit Product' : 'Add Product'}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalClose}>
+              <Text style={styles.modalTitle}>
+                {editing ? 'Edit Product' : 'Add Product'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.modalClose}
+              >
                 <Icon name="close" size={18} color="#000" />
               </TouchableOpacity>
             </View>
             <View style={styles.modalDivider} />
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.modalBody}
+              showsVerticalScrollIndicator={false}
+            >
               <Text style={styles.fieldLabel}>PRODUCT NAME *</Text>
               <TextInput
                 style={styles.input}
@@ -205,7 +310,7 @@ export default function ProductsScreen({navigation}: any) {
                 placeholderTextColor="#94a3b8"
                 maxLength={120}
                 value={form.name}
-                onChangeText={v => setForm(f => ({...f, name: v}))}
+                onChangeText={v => setForm(f => ({ ...f, name: v }))}
               />
               <Text style={styles.fieldLabel}>SKU / PRODUCT CODE</Text>
               <TextInput
@@ -214,7 +319,7 @@ export default function ProductsScreen({navigation}: any) {
                 placeholderTextColor="#94a3b8"
                 value={form.sku}
                 maxLength={40}
-                onChangeText={v => setForm(f => ({...f, sku: v}))}
+                onChangeText={v => setForm(f => ({ ...f, sku: v }))}
               />
               <Text style={styles.fieldLabel}>CATEGORY</Text>
               <TextInput
@@ -222,29 +327,31 @@ export default function ProductsScreen({navigation}: any) {
                 placeholder="e.g. Software, Service, Hardware"
                 placeholderTextColor="#94a3b8"
                 value={form.category}
-                onChangeText={v => setForm(f => ({...f, category: v}))}
+                onChangeText={v => setForm(f => ({ ...f, category: v }))}
               />
               <View style={styles.rowInputs}>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>PRICE (â‚¹)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
                     placeholderTextColor="#94a3b8"
                     value={form.price}
-                    onChangeText={v => setForm(f => ({...f, price: v}))}
+                    onChangeText={v => setForm(f => ({ ...f, price: v }))}
                     keyboardType="numeric"
                     maxLength={8}
                   />
                 </View>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>STOCK QTY</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
                     placeholderTextColor="#94a3b8"
                     value={form.stockQuantity}
-                    onChangeText={v => setForm(f => ({...f, stockQuantity: v}))}
+                    onChangeText={v =>
+                      setForm(f => ({ ...f, stockQuantity: v }))
+                    }
                     keyboardType="numeric"
                     maxLength={7}
                   />
@@ -255,33 +362,44 @@ export default function ProductsScreen({navigation}: any) {
                 {UNITS.map(u => (
                   <TouchableOpacity
                     key={u}
-                    style={[styles.unitChip, form.unit === u && styles.unitChipOn]}
-                    onPress={() => setForm(f => ({...f, unit: u}))}>
-                    <Text style={[styles.unitChipText, form.unit === u && {color: '#fff'}]}>{u}</Text>
+                    style={[
+                      styles.unitChip,
+                      form.unit === u && styles.unitChipOn,
+                    ]}
+                    onPress={() => setForm(f => ({ ...f, unit: u }))}
+                  >
+                    <Text
+                      style={[
+                        styles.unitChipText,
+                        form.unit === u && { color: '#fff' },
+                      ]}
+                    >
+                      {u}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
               <View style={styles.rowInputs}>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>TAX RATE (%)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="18"
                     placeholderTextColor="#94a3b8"
                     value={form.taxRate}
-                    onChangeText={v => setForm(f => ({...f, taxRate: v}))}
+                    onChangeText={v => setForm(f => ({ ...f, taxRate: v }))}
                     keyboardType="numeric"
                     maxLength={5}
                   />
                 </View>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.fieldLabel}>HSN / SAC (FOR GST)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. 998315"
                     placeholderTextColor="#94a3b8"
                     value={form.hsnCode}
-                    onChangeText={v => setForm(f => ({...f, hsnCode: v}))}
+                    onChangeText={v => setForm(f => ({ ...f, hsnCode: v }))}
                     maxLength={10}
                   />
                 </View>
@@ -292,7 +410,7 @@ export default function ProductsScreen({navigation}: any) {
                 placeholder="Product description..."
                 placeholderTextColor="#94a3b8"
                 value={form.description}
-                onChangeText={v => setForm(f => ({...f, description: v}))}
+                onChangeText={v => setForm(f => ({ ...f, description: v }))}
                 multiline
                 maxLength={500}
                 numberOfLines={3}
@@ -300,14 +418,25 @@ export default function ProductsScreen({navigation}: any) {
               />
             </ScrollView>
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setModalVisible(false)}
+              >
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : (
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
                   <>
                     <Icon name="checkmark" size={16} color="#fff" />
-                    <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Save'}</Text>
+                    <Text style={styles.saveBtnText}>
+                      {editing ? 'Update' : 'Save'}
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -320,69 +449,245 @@ export default function ProductsScreen({navigation}: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
-  header: {height: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 10},
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 18, fontWeight: '600', color: '#000'},
-  headerSub: {fontSize: 11, color: '#64748b'},
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    height: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerSub: { fontSize: 11, color: '#64748b' },
   addBtn: {
     marginLeft: 'auto' as any,
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#FF751F', borderWidth: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FF751F',
+    borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
     borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A', borderColor: '#000',
-    paddingHorizontal: 12, paddingVertical: 7,
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
-  addBtnText: {fontSize: 12, fontWeight: '600', color: '#fff'},
-  divider: {height: 2, backgroundColor: '#000'},
-  thinDivider: {height: 1, backgroundColor: '#e2e8f0'},
-  searchRow: {paddingHorizontal: 12, paddingVertical: 10},
-  searchBox: {flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 10},
-  searchInput: {flex: 1, paddingVertical: 9, fontSize: 13, color: '#000'},
-  centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  list: {padding: 12, gap: 10},
-  card: {backgroundColor: '#fff', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 14,},
-  cardHeader: {flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8},
-  productIcon: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  cardInfo: {flex: 1},
-  productName: {fontSize: 14, fontWeight: '600', color: '#000'},
-  productCat: {fontSize: 11, color: '#64748b', marginTop: 1},
-  priceBox: {flexDirection: 'row', alignItems: 'baseline', gap: 1, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#f8fafc'},
-  priceText: {fontSize: 14, fontWeight: '600', color: '#000'},
-  unitText: {fontSize: 10, color: '#64748b', fontWeight: '600'},
-  description: {fontSize: 12, color: '#64748b', marginBottom: 8},
-  cardActions: {flexDirection: 'row', gap: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0'},
-  editBtn: {flexDirection: 'row', alignItems: 'center', gap: 4},
-  editBtnText: {fontSize: 12, fontWeight: '700', color: '#024BAB'},
-  deleteBtn: {flexDirection: 'row', alignItems: 'center', gap: 4},
-  deleteBtnText: {fontSize: 12, fontWeight: '700', color: '#EF4444'},
-  emptyBox: {alignItems: 'center', paddingTop: 60, gap: 12},
-  emptyIcon: {width: 80, height: 80, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', ...NB_SHADOW},
-  emptyText: {fontSize: 14, fontWeight: '700', color: '#94a3b8'},
-  emptyAddBtn: {flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF751F', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 16, paddingVertical: 10,},
-  emptyAddBtnText: {fontSize: 13, fontWeight: '600', color: '#fff'},
-  modalOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end'},
-  modalSheet: {backgroundColor: '#fff', borderTopWidth: 2, borderTopColor: '#000', maxHeight: '90%'},
-  modalHeader: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14},
-  modalTitle: {flex: 1, fontSize: 16, fontWeight: '600', color: '#000'},
-  modalClose: {width: 32, height: 32, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  modalDivider: {height: 2, backgroundColor: '#000'},
-  modalBody: {padding: 16},
-  fieldLabel: {fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4, marginTop: 12},
-  input: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#000'},
-  textArea: {minHeight: 80},
-  rowInputs: {flexDirection: 'row', gap: 12},
-  unitRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
-  unitChip: {borderWidth: 2, borderRadius: 8, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6},
-  unitChipOn: {backgroundColor: '#024BAB'},
-  unitChipText: {fontSize: 12, fontWeight: '800', color: '#000'},
-  modalFooter: {flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 2, borderTopColor: '#000'},
-  cancelBtn: {flex: 1, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', alignItems: 'center', justifyContent: 'center', paddingVertical: 12},
-  cancelBtnText: {fontSize: 13, fontWeight: '600', color: '#000'},
-  saveBtn: {flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#024BAB', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingVertical: 12,},
-  saveBtnText: {fontSize: 13, fontWeight: '600', color: '#fff'},
+  addBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  divider: { height: 2, backgroundColor: '#000' },
+  thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  searchRow: { paddingHorizontal: 12, paddingVertical: 10 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingHorizontal: 10,
+  },
+  searchInput: { flex: 1, paddingVertical: 9, fontSize: 13, color: '#000' },
+  centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { padding: 12, gap: 10 },
+  card: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    padding: 14,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  productIcon: {
+    width: 36,
+    height: 36,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: { flex: 1 },
+  productName: { fontSize: 14, fontWeight: '600', color: '#000' },
+  productCat: { fontSize: 11, color: '#64748b', marginTop: 1 },
+  priceBox: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 1,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#f8fafc',
+  },
+  priceText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  unitText: { fontSize: 10, color: '#64748b', fontWeight: '600' },
+  description: { fontSize: 12, color: '#64748b', marginBottom: 8 },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  editBtnText: { fontSize: 12, fontWeight: '700', color: '#024BAB' },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  deleteBtnText: { fontSize: 12, fontWeight: '700', color: '#EF4444' },
+  emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...NB_SHADOW,
+  },
+  emptyText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FF751F',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  emptyAddBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopWidth: 2,
+    borderTopColor: '#000',
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  modalTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#000' },
+  modalClose: {
+    width: 32,
+    height: 32,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalDivider: { height: 2, backgroundColor: '#000' },
+  modalBody: { padding: 16 },
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+    marginTop: 12,
+  },
+  input: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#000',
+  },
+  textArea: { minHeight: 80 },
+  rowInputs: { flexDirection: 'row', gap: 12 },
+  unitRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  unitChip: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  unitChipOn: { backgroundColor: '#024BAB' },
+  unitChipText: { fontSize: 12, fontWeight: '800', color: '#000' },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 16,
+    borderTopWidth: 2,
+    borderTopColor: '#000',
+  },
+  cancelBtn: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  cancelBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  saveBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#024BAB',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingVertical: 12,
+  },
+  saveBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
 });
-

@@ -1,3 +1,5 @@
+const { tenantScope, safeBody } = require("../utils/tenantScope");
+const { safeEqual } = require("../utils/safeEqual");
 const SupportTicket = require("../models/SupportTicket");
 const { pushTicket } = require("../utils/finalPixelatePush");
 
@@ -33,7 +35,9 @@ const getTicket = async (req, res) => {
 
     const ticket = await SupportTicket.findOne(filter);
     if (!ticket)
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
 
     res.json({ success: true, data: ticket });
   } catch (err) {
@@ -86,12 +90,15 @@ const updateTicket = async (req, res) => {
 
     const ticket = await SupportTicket.findOne(filter);
     if (!ticket)
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
 
     if (ticket.status !== "open" || ticket.replies.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Ticket can no longer be edited — support has already started working on it",
+        message:
+          "Ticket can no longer be edited — support has already started working on it",
       });
     }
 
@@ -120,12 +127,15 @@ const deleteTicket = async (req, res) => {
 
     const ticket = await SupportTicket.findOne(filter);
     if (!ticket)
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
 
     if (ticket.status !== "open" || ticket.replies.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "Ticket can no longer be deleted — support has already started working on it",
+        message:
+          "Ticket can no longer be deleted — support has already started working on it",
       });
     }
 
@@ -138,23 +148,31 @@ const deleteTicket = async (req, res) => {
 
 // POST /api/support/webhook/:id — called by final-pixelate when its support team replies to, or
 // changes the status of, a ticket pushed from here. No JWT: guarded by a shared secret instead.
-const NL_STATUS = { new: "open", in_progress: "in_progress", resolved: "resolved", closed: "closed" };
+const NL_STATUS = {
+  new: "open",
+  in_progress: "in_progress",
+  resolved: "resolved",
+  closed: "closed",
+};
 const webhookUpdate = async (req, res) => {
   try {
     const apiKey = req.headers["x-api-key"];
-    if (!apiKey || apiKey !== process.env.FINAL_PIXELATE_SECRET) {
+    if (!apiKey || !safeEqual(apiKey, process.env.FINAL_PIXELATE_SECRET)) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const ticket = await SupportTicket.findById(req.params.id);
+    const ticket = await SupportTicket.findOne({ _id: req.params.id, ...tenantScope(req) });
     if (!ticket) {
-      return res.status(404).json({ success: false, message: "Ticket not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Ticket not found" });
     }
 
     const { status, message, senderName } = req.body;
     if (status && NL_STATUS[status]) {
       ticket.status = NL_STATUS[status];
-      if (ticket.status === "resolved" && !ticket.resolvedAt) ticket.resolvedAt = new Date();
+      if (ticket.status === "resolved" && !ticket.resolvedAt)
+        ticket.resolvedAt = new Date();
     }
     if (message && String(message).trim()) {
       ticket.replies.push({
@@ -171,4 +189,11 @@ const webhookUpdate = async (req, res) => {
   }
 };
 
-module.exports = { getTickets, getTicket, createTicket, updateTicket, deleteTicket, webhookUpdate };
+module.exports = {
+  getTickets,
+  getTicket,
+  createTicket,
+  updateTicket,
+  deleteTicket,
+  webhookUpdate,
+};

@@ -17,7 +17,11 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 
 function pickField(record, candidates) {
   for (const key of candidates) {
-    if (record[key] !== undefined && record[key] !== null && record[key] !== "") {
+    if (
+      record[key] !== undefined &&
+      record[key] !== null &&
+      record[key] !== ""
+    ) {
       return record[key];
     }
   }
@@ -44,7 +48,10 @@ function findRecordsArray(payload) {
   return null;
 }
 
-function buildRequestUrl(apiUrl, { userId, profileId, apiKey, startDate, endDate }) {
+function buildRequestUrl(
+  apiUrl,
+  { userId, profileId, apiKey, startDate, endDate },
+) {
   const url = new URL(apiUrl);
   const setIfMissing = (key, value) => {
     if (value && !url.searchParams.has(key)) url.searchParams.set(key, value);
@@ -92,15 +99,50 @@ async function fetchFromTradeIndia(apiUrl, credentials) {
 }
 
 function mapTILeadToModel(record, defaultAssignedTo) {
-  const name = pickField(record, ["sender_name", "name", "buyer_name", "enquiry_name"]) || "TradeIndia Buyer";
-  const phone = pickField(record, ["sender_mobile", "mobile", "phone", "contact_no", "buyer_mobile"]) || "0000000000";
-  const queryId = pickField(record, ["query_id", "inquiry_id", "enquiry_id", "id", "unique_id"]);
-  const email = pickField(record, ["sender_email", "email", "buyer_email"]) || `${queryId || Date.now()}@tradeindia.noreply`;
-  const company = pickField(record, ["sender_company", "company", "company_name", "buyer_company"]) || "Not Provided";
-  const requirement = pickField(record, ["message", "query_message", "requirement", "product_name", "subject"]) || "TradeIndia enquiry";
+  const name =
+    pickField(record, ["sender_name", "name", "buyer_name", "enquiry_name"]) ||
+    "TradeIndia Buyer";
+  const phone =
+    pickField(record, [
+      "sender_mobile",
+      "mobile",
+      "phone",
+      "contact_no",
+      "buyer_mobile",
+    ]) || "0000000000";
+  const queryId = pickField(record, [
+    "query_id",
+    "inquiry_id",
+    "enquiry_id",
+    "id",
+    "unique_id",
+  ]);
+  const email =
+    pickField(record, ["sender_email", "email", "buyer_email"]) ||
+    `${queryId || Date.now()}@tradeindia.noreply`;
+  const company =
+    pickField(record, [
+      "sender_company",
+      "company",
+      "company_name",
+      "buyer_company",
+    ]) || "Not Provided";
+  const requirement =
+    pickField(record, [
+      "message",
+      "query_message",
+      "requirement",
+      "product_name",
+      "subject",
+    ]) || "TradeIndia enquiry";
   const city = pickField(record, ["sender_city", "city"]);
   const state = pickField(record, ["sender_state", "state"]);
-  const dateStr = pickField(record, ["query_time", "inquiry_date", "date", "created_at"]);
+  const dateStr = pickField(record, [
+    "query_time",
+    "inquiry_date",
+    "date",
+    "created_at",
+  ]);
   const queryTime = dateStr ? new Date(dateStr) : new Date();
   const validTime = isNaN(queryTime.getTime()) ? new Date() : queryTime;
 
@@ -165,7 +207,13 @@ async function syncTradeIndiaLeads({
 
   for (const record of records) {
     try {
-      const queryId = pickField(record, ["query_id", "inquiry_id", "enquiry_id", "id", "unique_id"]);
+      const queryId = pickField(record, [
+        "query_id",
+        "inquiry_id",
+        "enquiry_id",
+        "id",
+        "unique_id",
+      ]);
       if (queryId) {
         const existing = await Lead.findOne({
           tradeindiaQueryId: String(queryId),
@@ -189,7 +237,12 @@ async function syncTradeIndiaLeads({
 
       const assignedToId =
         assigneeIds.length > 0
-          ? await nextBatchAssignee({ tenantId, key: "tradeindia", assigneeIds, batchSize })
+          ? await nextBatchAssignee({
+              tenantId,
+              key: "tradeindia",
+              assigneeIds,
+              batchSize,
+            })
           : await getRoundRobinAssigneeId(tenantId);
 
       const leadData = mapTILeadToModel(record, assignedToId);

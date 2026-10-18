@@ -209,11 +209,13 @@ async function hasPermission(user, resource, op) {
   if (!role) return false;
   if (role === "super_admin") return true;
 
-  const matrix = (await getTenantPermissions(user.tenantId)) || DEFAULT_PERMISSIONS;
+  const matrix =
+    (await getTenantPermissions(user.tenantId)) || DEFAULT_PERMISSIONS;
   const resourcePerms = matrix[resource];
   if (!resourcePerms) return op === "read" || role === "admin";
   // A custom role's own column (keyed by roleId) wins; otherwise it inherits its tier's column.
-  const perms = (user.roleId && resourcePerms[String(user.roleId)]) || resourcePerms[role];
+  const perms =
+    (user.roleId && resourcePerms[String(user.roleId)]) || resourcePerms[role];
   return !!perms?.[op];
 }
 

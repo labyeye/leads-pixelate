@@ -1,4 +1,5 @@
 const express = require("express");
+const { signState, readState } = require("../utils/oauthState");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
@@ -7,7 +8,10 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
-const { nextBatchAssignee, assignmentFields } = require("../utils/leadAssignment");
+const {
+  nextBatchAssignee,
+  assignmentFields,
+} = require("../utils/leadAssignment");
 const googleAds = require("../services/googleAdsService");
 const log = require("../utils/logger").scope("Google Ads");
 
@@ -44,9 +48,7 @@ router.get(
         message: "Google Ads integration not configured",
       });
     }
-    const state = Buffer.from(
-      `${req.user.tenantId || "global"}:${req.user._id}`,
-    ).toString("base64");
+    const state = signState(`${req.user.tenantId || "global"}:${req.user._id}`);
     const authUrl = googleAds.buildAuthUrl(getRedirectUri(), state);
     res.json({ success: true, data: { authUrl } });
   }),
@@ -66,7 +68,7 @@ router.get(
 
     let tenantId, userId;
     try {
-      const decoded = Buffer.from(String(state), "base64").toString("utf8");
+      const decoded = readState(state);
       [tenantId, userId] = decoded.split(":");
       if (!userId) throw new Error("Invalid state");
     } catch {
@@ -113,7 +115,10 @@ router.get(
     if (!refreshToken) {
       return res
         .status(400)
-        .json({ success: false, message: "Please connect your Google account first" });
+        .json({
+          success: false,
+          message: "Please connect your Google account first",
+        });
     }
 
     try {
@@ -338,7 +343,7 @@ async function upsertLeadFromSubmission({
   const extractCity = (m) =>
     m.city || m.city_town || m["city/town"] || m.district || m.town || "";
 
-  let stateRaw = (m => m.state || m.province || m.region || "")(fMap).trim();
+  let stateRaw = ((m) => m.state || m.province || m.region || "")(fMap).trim();
   let cityRaw = extractCity(fMap).trim();
 
   if (isPincode(stateRaw)) {
@@ -513,7 +518,10 @@ router.post(
         }
       } catch (err) {
         accountResult.error = err.message;
-        log.error("Sync failed for account", { customerName: account.customerName, message: err.message });
+        log.error("Sync failed for account", {
+          customerName: account.customerName,
+          message: err.message,
+        });
       }
 
       accountResults.push(accountResult);
@@ -546,8 +554,14 @@ router.post(
   express.json(),
   asyncHandler(async (req, res) => {
     const body = req.body || {};
-    const { google_key, lead_id, campaign_id, form_id, user_column_data, is_test } =
-      body;
+    const {
+      google_key,
+      lead_id,
+      campaign_id,
+      form_id,
+      user_column_data,
+      is_test,
+    } = body;
 
     if (!google_key) return res.sendStatus(400);
 

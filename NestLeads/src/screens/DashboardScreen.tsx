@@ -120,17 +120,17 @@ export default function DashboardScreen({ navigation }: any) {
     hour < 12
       ? 'Good Morning,'
       : hour < 17
-      ? 'Good Afternoon,'
-      : 'Good Evening,';
+        ? 'Good Afternoon,'
+        : 'Good Evening,';
 
   const newLeadsValue = data?.stats
     ? period === 'today'
       ? data.stats.newLeadsToday
       : period === 'week'
-      ? data.stats.newLeadsThisWeek
-      : period === 'month'
-      ? data.stats.leadsThisMonth
-      : data.stats.totalLeads ?? 0
+        ? data.stats.newLeadsThisWeek
+        : period === 'month'
+          ? data.stats.leadsThisMonth
+          : (data.stats.totalLeads ?? 0)
     : 0;
 
   return (
@@ -208,10 +208,10 @@ export default function DashboardScreen({ navigation }: any) {
                     {p === 'all'
                       ? 'All'
                       : p === 'today'
-                      ? 'Today'
-                      : p === 'week'
-                      ? 'Week'
-                      : 'Month'}
+                        ? 'Today'
+                        : p === 'week'
+                          ? 'Week'
+                          : 'Month'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -727,7 +727,8 @@ function KpiCard({ title, value, icon, iconBg, iconColor, urgent }: any) {
         style={[
           styles.kpiIcon,
           { backgroundColor: iconBg + '1A', borderColor: iconBg },
-        ]}>
+        ]}
+      >
         <Icon name={icon} size={22} color={iconBg} />
       </View>
       <View style={styles.kpiBody}>
@@ -977,7 +978,16 @@ const styles = StyleSheet.create({
 
   // Period selector
   periodWrap: { marginBottom: 12 },
-  periodRow: { flexDirection: 'row', borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000' },
+  periodRow: {
+    flexDirection: 'row',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+  },
   periodBtn: {
     flex: 1,
     paddingVertical: 8,

@@ -8,7 +8,10 @@ const log = require("../utils/logger").scope("ElevenLabsService");
  * Build dynamic system prompt and dynamic variables for ElevenLabs Voice Agent
  */
 function buildAgentPrompt(settings, lead, tenantName) {
-  const greeting = (settings.agentGreeting || "Hello {lead_name}, I am calling from {company_name}!")
+  const greeting = (
+    settings.agentGreeting ||
+    "Hello {lead_name}, I am calling from {company_name}!"
+  )
     .replace(/{lead_name}/g, lead.name || "Client")
     .replace(/{company_name}/g, tenantName || "our company");
 
@@ -54,18 +57,29 @@ function apiErrorReason(body, status) {
  * Number (imported into ElevenLabs) the agent dials out from: the one assigned to this agent, else the first.
  */
 async function resolveAgentPhoneNumberId(apiKey, agentId) {
-  const res = await fetch(`${ELEVENLABS_API}/phone-numbers`, { headers: { "xi-api-key": apiKey } });
+  const res = await fetch(`${ELEVENLABS_API}/phone-numbers`, {
+    headers: { "xi-api-key": apiKey },
+  });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(apiErrorReason(body, res.status));
   const numbers = Array.isArray(body) ? body : body.phone_numbers || [];
   if (!numbers.length) {
     throw new Error(
-      "No phone number found in ElevenLabs. Import a Twilio/SIP (Exotel) number in ElevenLabs -> Agents -> Phone Numbers first."
+      "No phone number found in ElevenLabs. Import a Twilio/SIP (Exotel) number in ElevenLabs -> Agents -> Phone Numbers first.",
     );
   }
-  const n = numbers.find((x) => x.assigned_agent?.agent_id === agentId) || numbers[0];
+  const n =
+    numbers.find((x) => x.assigned_agent?.agent_id === agentId) || numbers[0];
   // provider: "twilio" | "sip_trunk" | "exotel" -> matching outbound-call endpoint
-  return { id: n.phone_number_id, route: n.provider === "sip_trunk" ? "sip-trunk" : n.provider === "exotel" ? "exotel" : "twilio" };
+  return {
+    id: n.phone_number_id,
+    route:
+      n.provider === "sip_trunk"
+        ? "sip-trunk"
+        : n.provider === "exotel"
+          ? "exotel"
+          : "twilio",
+  };
 }
 
 /**
@@ -76,10 +90,14 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
   const agentId = settings.agentId || process.env.ELEVENLABS_AGENT_ID;
 
   if (!apiKey) {
-    throw new Error("ElevenLabs API key is missing. Please configure it in Settings -> AI Calling.");
+    throw new Error(
+      "ElevenLabs API key is missing. Please configure it in Settings -> AI Calling.",
+    );
   }
   if (!agentId) {
-    throw new Error("ElevenLabs Agent ID is missing. Please configure it in Settings -> AI Calling.");
+    throw new Error(
+      "ElevenLabs Agent ID is missing. Please configure it in Settings -> AI Calling.",
+    );
   }
   if (!lead.phone) {
     throw new Error(`Lead "${lead.name}" does not have a valid phone number.`);
@@ -88,7 +106,10 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
   // Twilio needs E.164; leads store bare 10-digit Indian numbers
   const digits = String(lead.phone).replace(/\D/g, "");
   const toNumber = `+${digits.length === 10 ? `91${digits}` : digits}`;
-  const { id: agentPhoneNumberId, route } = await resolveAgentPhoneNumberId(apiKey, agentId);
+  const { id: agentPhoneNumberId, route } = await resolveAgentPhoneNumberId(
+    apiKey,
+    agentId,
+  );
 
   // Get Tenant Name
   let tenantName = "NestLeads";
@@ -97,7 +118,11 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
     if (tenant && tenant.name) tenantName = tenant.name;
   }
 
-  const { greeting, systemPrompt } = buildAgentPrompt(settings, lead, tenantName);
+  const { greeting, systemPrompt } = buildAgentPrompt(
+    settings,
+    lead,
+    tenantName,
+  );
 
   // Create CallLog in initiated status
   const callLog = await CallLog.create({
@@ -156,7 +181,8 @@ async function triggerElevenLabsOutboundCall(lead, settings, userId = null) {
       throw new Error(apiErrorReason(resData, response.status));
     }
 
-    const conversationId = resData.conversation_id || resData.call_id || resData.id || "";
+    const conversationId =
+      resData.conversation_id || resData.call_id || resData.id || "";
 
     await CallLog.findByIdAndUpdate(callLog._id, {
       status: "ringing",
@@ -206,7 +232,8 @@ async function autoCallNewLeadIfEnabled(lead) {
     if (
       settings.callingHoursStart &&
       settings.callingHoursEnd &&
-      (currentTimeStr < settings.callingHoursStart || currentTimeStr > settings.callingHoursEnd)
+      (currentTimeStr < settings.callingHoursStart ||
+        currentTimeStr > settings.callingHoursEnd)
     ) {
       log.info("Skipping auto-call: outside allowed calling hours", {
         currentTimeStr,

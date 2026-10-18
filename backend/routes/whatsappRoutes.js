@@ -50,52 +50,27 @@ router.post("/webhook", handleWebhook);
 router.use(protect);
 
 router.post("/setup", ownerOnly, setup);
-router.post(
-  "/phone-numbers",
-  ownerOnly,
-  addPhoneNumber,
-);
-router.post(
-  "/phone-numbers/sync",
-  ownerOnly,
-  syncPhoneNumbers,
-);
-router.delete(
-  "/phone-numbers/:phoneNumberId",
-  ownerOnly,
-  removePhoneNumber,
-);
+router.post("/phone-numbers", ownerOnly, addPhoneNumber);
+router.post("/phone-numbers/sync", ownerOnly, syncPhoneNumbers);
+router.delete("/phone-numbers/:phoneNumberId", ownerOnly, removePhoneNumber);
 router.post("/disconnect", ownerOnly, disconnect);
 router.get("/status", getStatus);
 router.get("/config", getConfig);
-router.route("/automations").get(getAutomations).put(ownerOnly, saveAutomations);
-
-router.post(
-  "/upload-media",
-  ownerOnly,
-  upload.single("file"),
-  uploadMedia,
-);
-
 router
-  .route("/templates")
-  .get(getTemplates)
-  .post(ownerOnly, createTemplate);
+  .route("/automations")
+  .get(getAutomations)
+  .put(ownerOnly, saveAutomations);
+
+router.post("/upload-media", ownerOnly, upload.single("file"), uploadMedia);
+
+router.route("/templates").get(getTemplates).post(ownerOnly, createTemplate);
 router
   .route("/templates/:id")
   .put(ownerOnly, updateTemplate)
   .delete(ownerOnly, deleteTemplate);
-router.post(
-  "/templates/sync",
-  ownerOnly,
-  syncTemplates,
-);
+router.post("/templates/sync", ownerOnly, syncTemplates);
 
-router.post(
-  "/templates/:id/submit",
-  ownerOnly,
-  submitTemplate,
-);
+router.post("/templates/:id/submit", ownerOnly, submitTemplate);
 
 router.route("/campaigns").get(getCampaigns).post(createCampaign);
 router.route("/campaigns/:id").get(getCampaign);

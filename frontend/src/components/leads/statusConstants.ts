@@ -145,16 +145,46 @@ export type StatusOverrideMap = Record<string, StatusOverride>;
 // (persisted) so mobile can map the same key to its own hex palette
 // without the DB storing platform-specific styling.
 export const COLOR_PRESETS: { name: string; classes: string }[] = [
-  { name: "Slate", classes: "bg-slate-200 text-slate-900 border-slate-400 font-semibold" },
-  { name: "Orange", classes: "bg-orange-300 text-slate-900 border-orange-500 font-semibold" },
-  { name: "Red", classes: "bg-red-300 text-slate-900 border-red-500 font-semibold" },
-  { name: "Blue", classes: "bg-blue-300 text-slate-900 border-blue-500 font-semibold" },
-  { name: "Purple", classes: "bg-purple-300 text-slate-900 border-purple-500 font-semibold" },
-  { name: "Cyan", classes: "bg-cyan-300 text-slate-900 border-cyan-500 font-semibold" },
-  { name: "Teal", classes: "bg-teal-300 text-slate-900 border-teal-500 font-semibold" },
-  { name: "Emerald", classes: "bg-emerald-300 text-slate-900 border-emerald-500 font-semibold" },
-  { name: "Pink", classes: "bg-pink-300 text-slate-900 border-pink-500 font-semibold" },
-  { name: "Zinc", classes: "bg-zinc-300 text-slate-900 border-zinc-500 font-semibold" },
+  {
+    name: "Slate",
+    classes: "bg-slate-200 text-slate-900 border-slate-400 font-semibold",
+  },
+  {
+    name: "Orange",
+    classes: "bg-orange-300 text-slate-900 border-orange-500 font-semibold",
+  },
+  {
+    name: "Red",
+    classes: "bg-red-300 text-slate-900 border-red-500 font-semibold",
+  },
+  {
+    name: "Blue",
+    classes: "bg-blue-300 text-slate-900 border-blue-500 font-semibold",
+  },
+  {
+    name: "Purple",
+    classes: "bg-purple-300 text-slate-900 border-purple-500 font-semibold",
+  },
+  {
+    name: "Cyan",
+    classes: "bg-cyan-300 text-slate-900 border-cyan-500 font-semibold",
+  },
+  {
+    name: "Teal",
+    classes: "bg-teal-300 text-slate-900 border-teal-500 font-semibold",
+  },
+  {
+    name: "Emerald",
+    classes: "bg-emerald-300 text-slate-900 border-emerald-500 font-semibold",
+  },
+  {
+    name: "Pink",
+    classes: "bg-pink-300 text-slate-900 border-pink-500 font-semibold",
+  },
+  {
+    name: "Zinc",
+    classes: "bg-zinc-300 text-slate-900 border-zinc-500 font-semibold",
+  },
 ];
 
 const COLOR_PRESET_BY_KEY: Record<string, string> = Object.fromEntries(
@@ -184,13 +214,17 @@ export function getStatusLabel(status: string | null | undefined): string {
   return statusOverrides[status]?.label?.trim() || status;
 }
 
-export function getStatusColorClasses(status: string | null | undefined): string {
+export function getStatusColorClasses(
+  status: string | null | undefined,
+): string {
   if (!status) return "bg-muted";
   if (customStatusMeta[status]) {
     return colorKeyToClasses(customStatusMeta[status].colorKey);
   }
   return (
-    statusOverrides[status]?.color || statusColors[status] || "bg-muted text-foreground border-border"
+    statusOverrides[status]?.color ||
+    statusColors[status] ||
+    "bg-muted text-foreground border-border"
   );
 }
 

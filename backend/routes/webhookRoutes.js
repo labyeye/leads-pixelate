@@ -4,7 +4,9 @@ const CallLog = require("../models/CallLog");
 const Lead = require("../models/Lead");
 const twilio = require("../services/twilioService");
 const analysis = require("../services/callAnalysisService");
-const { handleElevenLabsWebhook } = require("../controllers/aiCallingController");
+const {
+  handleElevenLabsWebhook,
+} = require("../controllers/aiCallingController");
 
 // Public webhook route for ElevenLabs post-call analysis and transcripts
 router.post("/elevenlabs", handleElevenLabsWebhook);
@@ -13,7 +15,9 @@ router.post("/elevenlabs", handleElevenLabsWebhook);
 // Twilio signature computed over the exact URL Twilio called.
 const fromTwilio = (req, res, next) => {
   const url = twilio.webhookBase() + req.originalUrl;
-  if (!twilio.validSignature(req.get("X-Twilio-Signature"), url, req.body || {})) {
+  if (
+    !twilio.validSignature(req.get("X-Twilio-Signature"), url, req.body || {})
+  ) {
     return res.status(403).type("text/plain").send("Invalid signature");
   }
   next();
@@ -24,7 +28,9 @@ const TERMINAL = ["completed", "failed", "no_answer", "busy"];
 
 // The agent picked up: tell them who they're calling, then dial the lead.
 router.post("/twilio/connect/:id", fromTwilio, async (req, res) => {
-  const call = isId(req.params.id) ? await CallLog.findById(req.params.id) : null;
+  const call = isId(req.params.id)
+    ? await CallLog.findById(req.params.id)
+    : null;
   if (!call) return twiml(res, twilio.emptyTwiml());
   const lead = await Lead.findById(call.leadId).select("name");
   call.status = "in_progress";
@@ -42,25 +48,37 @@ router.post("/twilio/connect/:id", fromTwilio, async (req, res) => {
 });
 
 // Played to the lead when they answer: "this call is recorded".
-router.post("/twilio/whisper", fromTwilio, (req, res) => twiml(res, twilio.whisperTwiml()));
+router.post("/twilio/whisper", fromTwilio, (req, res) =>
+  twiml(res, twilio.whisperTwiml()),
+);
 
 // The recording is ready. Answer Twilio at once, then transcribe + analyse in the background.
 router.post("/twilio/recording/:id", fromTwilio, async (req, res) => {
   res.sendStatus(204);
   const { RecordingStatus, RecordingUrl, RecordingDuration } = req.body;
-  if (!isId(req.params.id) || RecordingStatus !== "completed" || !RecordingUrl) return;
-  analysis.processRecording(req.params.id, RecordingUrl, Number(RecordingDuration) || 0).catch(() => {});
+  if (!isId(req.params.id) || RecordingStatus !== "completed" || !RecordingUrl)
+    return;
+  analysis
+    .processRecording(
+      req.params.id,
+      RecordingUrl,
+      Number(RecordingDuration) || 0,
+    )
+    .catch(() => {});
 });
 
 // The lead's leg ended: this is the real outcome and talk time.
 router.post("/twilio/dial-done/:id", fromTwilio, async (req, res) => {
-  const call = isId(req.params.id) ? await CallLog.findById(req.params.id) : null;
+  const call = isId(req.params.id)
+    ? await CallLog.findById(req.params.id)
+    : null;
   if (call) {
     const st = twilio.mapStatus(req.body.DialCallStatus);
     if (st && TERMINAL.includes(st)) {
       call.status = st;
       call.durationSeconds = Number(req.body.DialCallDuration) || 0;
-      if (st !== "completed") call.errorReason = `The lead's phone: ${st.replace("_", " ")}`;
+      if (st !== "completed")
+        call.errorReason = `The lead's phone: ${st.replace("_", " ")}`;
       await call.save();
     }
   }
@@ -69,7 +87,9 @@ router.post("/twilio/dial-done/:id", fromTwilio, async (req, res) => {
 
 // The agent's leg: ringing / answered / ended. It never overrides the lead's outcome.
 router.post("/twilio/status/:id", fromTwilio, async (req, res) => {
-  const call = isId(req.params.id) ? await CallLog.findById(req.params.id) : null;
+  const call = isId(req.params.id)
+    ? await CallLog.findById(req.params.id)
+    : null;
   const st = twilio.mapStatus(req.body.CallStatus);
   if (call && st) {
     const settled = TERMINAL.includes(call.status);

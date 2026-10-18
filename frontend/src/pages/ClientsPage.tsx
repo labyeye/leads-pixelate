@@ -24,7 +24,12 @@ const CLIENT_EXPORT_FIELDS: ExportField[] = [
   { key: "company", label: "Company", get: (c) => c.company || "" },
   { key: "email", label: "Email", get: (c) => c.email || "" },
   { key: "phone", label: "Phone", get: (c) => c.phone || "" },
-  { key: "address", label: "Address", default: false, get: (c) => c.address || "" },
+  {
+    key: "address",
+    label: "Address",
+    default: false,
+    get: (c) => c.address || "",
+  },
   {
     key: "businessType",
     label: "Business Type",
@@ -584,12 +589,15 @@ export default function ClientsPage() {
                 <tr>
                   <td colSpan={6} className="text-center py-14">
                     <p className="text-sm font-black uppercase tracking-widest text-black/30">
-                      {search ? "No clients match your search." : "No clients yet"}
+                      {search
+                        ? "No clients match your search."
+                        : "No clients yet"}
                     </p>
                     {!search && (
                       <>
                         <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                          When a lead is won, they'll appear here. You can also add a client manually.
+                          When a lead is won, they'll appear here. You can also
+                          add a client manually.
                         </p>
                         {can("Clients", "create") && (
                           <button

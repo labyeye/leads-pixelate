@@ -53,7 +53,9 @@ export default function FacebookAdCampaignsPage() {
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
   const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
-  const [adAccounts, setAdAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [adAccounts, setAdAccounts] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [insights, setInsights] = useState<Record<string, Insight>>({});
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -77,7 +79,8 @@ export default function FacebookAdCampaignsPage() {
       setInsights((prev) => {
         const next = { ...prev };
         results.forEach((r, i) => {
-          if (r.status === "fulfilled") next[ids[i]] = parseInsight(r.value.data);
+          if (r.status === "fulfilled")
+            next[ids[i]] = parseInsight(r.value.data);
         });
         return next;
       });
@@ -127,23 +130,38 @@ export default function FacebookAdCampaignsPage() {
 
   const filtered = useMemo(() => {
     return campaigns.filter((c) => {
-      if (search.trim() && !c.name.toLowerCase().includes(search.trim().toLowerCase()))
+      if (
+        search.trim() &&
+        !c.name.toLowerCase().includes(search.trim().toLowerCase())
+      )
         return false;
-      return matchesDeliveryFilter(c.effective_status || c.status, deliveryFilter);
+      return matchesDeliveryFilter(
+        c.effective_status || c.status,
+        deliveryFilter,
+      );
     });
   }, [campaigns, search, deliveryFilter]);
 
   const handleToggleStatus = async (c: MetaCampaign) => {
-    const next = (c.effective_status || c.status) === "ACTIVE" ? "PAUSED" : "ACTIVE";
+    const next =
+      (c.effective_status || c.status) === "ACTIVE" ? "PAUSED" : "ACTIVE";
     setActionId(c.id);
     try {
       await facebookAPI.updateCampaign(c.id, { status: next });
       setCampaigns((prev) =>
-        prev.map((x) => (x.id === c.id ? { ...x, status: next, effective_status: next } : x)),
+        prev.map((x) =>
+          x.id === c.id ? { ...x, status: next, effective_status: next } : x,
+        ),
       );
-      toast({ title: next === "ACTIVE" ? "Campaign resumed" : "Campaign paused" });
+      toast({
+        title: next === "ACTIVE" ? "Campaign resumed" : "Campaign paused",
+      });
     } catch (err: any) {
-      toast({ title: "Action failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Action failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActionId(null);
     }
@@ -158,7 +176,11 @@ export default function FacebookAdCampaignsPage() {
       toast({ title: "Campaign deleted" });
       setDeleteTarget(null);
     } catch (err: any) {
-      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActionId(null);
     }
@@ -209,7 +231,9 @@ export default function FacebookAdCampaignsPage() {
       render: (c) => {
         const st = statusBadge(c.effective_status || c.status);
         return (
-          <span className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}>
+          <span
+            className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}
+          >
             {st.label}
           </span>
         );
@@ -247,7 +271,8 @@ export default function FacebookAdCampaignsPage() {
     {
       header: "Amount Spent",
       align: "right",
-      render: (c) => `₹${(insights[c.id]?.spend ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      render: (c) =>
+        `₹${(insights[c.id]?.spend ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
     },
     {
       header: "Impressions",
@@ -260,7 +285,9 @@ export default function FacebookAdCampaignsPage() {
         c.start_time ? (
           <span className="whitespace-nowrap text-[11px]">
             {format(new Date(c.start_time), "dd MMM")} →{" "}
-            {c.stop_time ? format(new Date(c.stop_time), "dd MMM yyyy") : "ongoing"}
+            {c.stop_time
+              ? format(new Date(c.stop_time), "dd MMM yyyy")
+              : "ongoing"}
           </span>
         ) : (
           "—"
@@ -407,14 +434,17 @@ export default function FacebookAdCampaignsPage() {
         }}
       />
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Campaign?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This will remove <strong>{deleteTarget?.name}</strong> from Facebook.
-            This cannot be undone.
+            This will remove <strong>{deleteTarget?.name}</strong> from
+            Facebook. This cannot be undone.
           </p>
           <DialogFooter className="gap-2">
             <button
@@ -477,10 +507,14 @@ function CampaignFormDialog({
           : "",
     );
     setStartDate(
-      campaign?.start_time ? format(new Date(campaign.start_time), "yyyy-MM-dd") : "",
+      campaign?.start_time
+        ? format(new Date(campaign.start_time), "yyyy-MM-dd")
+        : "",
     );
     setStopDate(
-      campaign?.stop_time ? format(new Date(campaign.stop_time), "yyyy-MM-dd") : "",
+      campaign?.stop_time
+        ? format(new Date(campaign.stop_time), "yyyy-MM-dd")
+        : "",
     );
   }, [open, campaign, adAccounts]);
 
@@ -508,7 +542,11 @@ function CampaignFormDialog({
       }
       onSaved();
     } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Save failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -518,7 +556,9 @@ function CampaignFormDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{campaign ? "Edit Campaign" : "New Campaign"}</DialogTitle>
+          <DialogTitle>
+            {campaign ? "Edit Campaign" : "New Campaign"}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {!campaign && (

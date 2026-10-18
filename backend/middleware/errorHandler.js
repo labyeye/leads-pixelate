@@ -32,9 +32,7 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.name === "ValidationError") {
     statusCode = 400;
-    message = Object.values(err.errors)
-      .map(friendly)
-      .join(", ");
+    message = Object.values(err.errors).map(friendly).join(", ");
   }
 
   if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {

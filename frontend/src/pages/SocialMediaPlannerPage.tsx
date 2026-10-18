@@ -477,12 +477,7 @@ function PostsTab({
           ))}
         </div>
         <div className="flex gap-2 ml-3 shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchPosts}
-            className=""
-          >
+          <Button variant="outline" size="sm" onClick={fetchPosts} className="">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button
@@ -718,8 +713,7 @@ function CalendarTab({ toast }: { toast: any }) {
   const getPostsForDate = (date: Date) =>
     posts
       .filter(
-        (p) =>
-          new Date(p.scheduledAt).toDateString() === date.toDateString(),
+        (p) => new Date(p.scheduledAt).toDateString() === date.toDateString(),
       )
       .sort(
         (a, b) =>
@@ -2015,10 +2009,29 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
 
   const noFacebook = /No Facebook account connected/i.test(syncError);
   const groups = [
-    { label: "Instagram", platform: "instagram", Icon: Instagram, badge: "bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 text-white" },
-    { label: "Facebook Pages", platform: "facebook", Icon: Facebook, badge: "bg-blue-600 text-white" },
-    { label: "LinkedIn", platform: "linkedin", Icon: LinkedInIcon, badge: "bg-white" },
-  ].map((g) => ({ ...g, items: accounts.filter((a) => a.platform === g.platform) }));
+    {
+      label: "Instagram",
+      platform: "instagram",
+      Icon: Instagram,
+      badge:
+        "bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 text-white",
+    },
+    {
+      label: "Facebook Pages",
+      platform: "facebook",
+      Icon: Facebook,
+      badge: "bg-blue-600 text-white",
+    },
+    {
+      label: "LinkedIn",
+      platform: "linkedin",
+      Icon: LinkedInIcon,
+      badge: "bg-white",
+    },
+  ].map((g) => ({
+    ...g,
+    items: accounts.filter((a) => a.platform === g.platform),
+  }));
 
   return (
     <div className="p-6 max-w-4xl">
@@ -2034,7 +2047,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={sync} disabled={syncing}>
-          <RefreshCw className={cn("w-4 h-4 mr-1", syncing && "animate-spin")} />
+          <RefreshCw
+            className={cn("w-4 h-4 mr-1", syncing && "animate-spin")}
+          />
           {syncing ? "Syncing…" : "Refresh"}
         </Button>
       </div>
@@ -2054,7 +2069,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           {syncing ? (
             <>
               <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Fetching your pages and Instagram accounts…</p>
+              <p className="text-sm text-muted-foreground">
+                Fetching your pages and Instagram accounts…
+              </p>
             </>
           ) : (
             <>
@@ -2090,11 +2107,16 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                             src={acc.profilePicture}
                             alt=""
                             className="w-12 h-12 rounded-full object-cover border border-border bg-muted"
-                            onError={(e) => (e.currentTarget.style.visibility = "hidden")}
+                            onError={(e) =>
+                              (e.currentTarget.style.visibility = "hidden")
+                            }
                           />
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold text-muted-foreground">
-                            {acc.accountName.replace(/^@/, "").charAt(0).toUpperCase()}
+                            {acc.accountName
+                              .replace(/^@/, "")
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
                         )}
                         <span
@@ -2107,10 +2129,15 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{acc.accountName}</p>
-                        <p className="text-[11px] text-muted-foreground font-mono truncate">{acc.accountId}</p>
+                        <p className="text-sm font-semibold truncate">
+                          {acc.accountName}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate">
+                          {acc.accountId}
+                        </p>
                         <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-green-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />{" "}
+                          Active
                         </span>
                       </div>
                       {isAdmin && (
@@ -2133,13 +2160,16 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </div>
       )}
 
-      <AlertDialog open={!!disconnectId} onOpenChange={() => setDisconnectId(null)}>
+      <AlertDialog
+        open={!!disconnectId}
+        onOpenChange={() => setDisconnectId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect Account?</AlertDialogTitle>
             <AlertDialogDescription>
-              Scheduled posts targeting this account will fail. Refresh brings it back while the
-              Integrations login can still reach it.
+              Scheduled posts targeting this account will fail. Refresh brings
+              it back while the Integrations login can still reach it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2149,7 +2179,10 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               disabled={disconnecting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {disconnecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Disconnect
+              {disconnecting && (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              )}{" "}
+              Disconnect
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

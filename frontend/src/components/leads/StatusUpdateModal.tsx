@@ -27,7 +27,11 @@ import {
   IndianRupee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { statusColors, getStatusColorClasses, getStatusLabel } from "./statusConstants";
+import {
+  statusColors,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "./statusConstants";
 import { leadsAPI, productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 

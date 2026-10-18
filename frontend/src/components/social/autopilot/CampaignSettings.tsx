@@ -8,8 +8,14 @@ import { Switch } from "@/components/ui/switch";
 import { useCampaignApi, useCampaigns } from "./CampaignContext";
 import type { AutopilotStatus } from "./useAutopilot";
 
-const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-const daysLeft = (d: string) => Math.max(1, Math.ceil((new Date(d).getTime() - Date.now()) / 86_400_000));
+const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+const daysLeft = (d: string) =>
+  Math.max(1, Math.ceil((new Date(d).getTime() - Date.now()) / 86_400_000));
 
 // One campaign's basics: name, the accounts it posts to (an account belongs to one campaign),
 // the on/off switch, and deleting it.
@@ -27,7 +33,9 @@ export function CampaignSettings({
   const api = useCampaignApi();
   const { reloadOverview } = useCampaigns();
   const [name, setName] = useState(status.campaign.name);
-  const [accountIds, setAccountIds] = useState<string[]>(status.settings.accountIds);
+  const [accountIds, setAccountIds] = useState<string[]>(
+    status.settings.accountIds,
+  );
   const [busy, setBusy] = useState<string | null>(null);
   const { entitlement: ent, settings } = status;
 
@@ -38,7 +46,11 @@ export function CampaignSettings({
       await Promise.all([reload(), reloadOverview()]);
       toast({ title: ok });
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setBusy(null);
     }
@@ -53,7 +65,8 @@ export function CampaignSettings({
           ? "Your Autopilot access has ended. Choose a NestLeads plan to keep it running."
           : `Free for ${status.trialDays} days, then it comes with your NestLeads plan. Turn it on to start your trial.`;
   const noAccounts = status.accounts.length === 0;
-  const accountsChanged = [...accountIds].sort().join() !== [...settings.accountIds].sort().join();
+  const accountsChanged =
+    [...accountIds].sort().join() !== [...settings.accountIds].sort().join();
 
   return (
     <div className="rounded-lg border-2 border-black p-4 space-y-5 bg-background">
@@ -67,59 +80,105 @@ export function CampaignSettings({
           <Switch
             aria-label="Autopilot on or off"
             checked={settings.enabled}
-            disabled={busy === "toggle" || (ent.state === "expired" && !settings.enabled) || (!settings.enabled && !settings.accountIds.length)}
-            onCheckedChange={(on) => act("toggle", () => api.update({ enabled: on }), on ? "Campaign is on" : "Campaign paused")}
+            disabled={
+              busy === "toggle" ||
+              (ent.state === "expired" && !settings.enabled) ||
+              (!settings.enabled && !settings.accountIds.length)
+            }
+            onCheckedChange={(on) =>
+              act(
+                "toggle",
+                () => api.update({ enabled: on }),
+                on ? "Campaign is on" : "Campaign paused",
+              )
+            }
           />
         </label>
       </div>
       {!settings.enabled && !settings.accountIds.length && (
         <p className="flex gap-2 text-xs text-amber-800 rounded-lg border border-amber-300 bg-amber-50 p-3">
-          <AlertCircle className="w-4 h-4 shrink-0" /> Choose the account(s) this campaign posts to, then you can turn it on.
+          <AlertCircle className="w-4 h-4 shrink-0" /> Choose the account(s)
+          this campaign posts to, then you can turn it on.
         </p>
       )}
       {!status.configured && (
-        <p className="text-xs text-amber-800">Autopilot isn't switched on for this server yet. Contact support.</p>
+        <p className="text-xs text-amber-800">
+          Autopilot isn't switched on for this server yet. Contact support.
+        </p>
       )}
 
       <div className="grid sm:grid-cols-[minmax(0,1fr)_auto] gap-2 items-end">
         <div className="space-y-1.5">
           <Label htmlFor="campaign-rename">Campaign name</Label>
-          <Input id="campaign-rename" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
+          <Input
+            id="campaign-rename"
+            value={name}
+            maxLength={60}
+            onChange={(e) => setName(e.target.value)}
+          />
         </div>
         <Button
           variant="outline"
-          disabled={busy === "name" || !name.trim() || name.trim() === status.campaign.name}
-          onClick={() => act("name", () => api.update({ name: name.trim() }), "Campaign renamed")}
+          disabled={
+            busy === "name" ||
+            !name.trim() ||
+            name.trim() === status.campaign.name
+          }
+          onClick={() =>
+            act(
+              "name",
+              () => api.update({ name: name.trim() }),
+              "Campaign renamed",
+            )
+          }
         >
-          {busy === "name" && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Rename
+          {busy === "name" && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+          Rename
         </Button>
       </div>
 
       <div className="space-y-2">
         <Label>Posts to</Label>
         <p className="text-xs text-muted-foreground">
-          Several campaigns can share an account; their posts are kept at least an hour apart.
+          Several campaigns can share an account; their posts are kept at least
+          an hour apart.
         </p>
         {noAccounts ? (
-          <p className="text-sm text-muted-foreground">Connect an account in Social Media Planner → Connected Accounts first.</p>
+          <p className="text-sm text-muted-foreground">
+            Connect an account in Social Media Planner → Connected Accounts
+            first.
+          </p>
         ) : (
           <ul className="grid sm:grid-cols-2 gap-2">
             {status.accounts.map((a) => {
-              const elsewhere = a.campaign && a.campaign.id !== status.campaign.id ? a.campaign.name : null;
+              const elsewhere =
+                a.campaign && a.campaign.id !== status.campaign.id
+                  ? a.campaign.name
+                  : null;
               return (
                 <li key={a._id}>
                   <label
-                    className={`flex items-center gap-3 rounded-lg border-2 p-3 ${
-                      "border-black/20 has-[:checked]:border-black cursor-pointer"
-                    }`}
+                    className={`flex items-center gap-3 rounded-lg border-2 p-3 ${"border-black/20 has-[:checked]:border-black cursor-pointer"}`}
                   >
                     <Checkbox
                       checked={accountIds.includes(a._id)}
-                      onCheckedChange={(c) => setAccountIds(c === true ? [...accountIds, a._id] : accountIds.filter((x) => x !== a._id))}
+                      onCheckedChange={(c) =>
+                        setAccountIds(
+                          c === true
+                            ? [...accountIds, a._id]
+                            : accountIds.filter((x) => x !== a._id),
+                        )
+                      }
                     />
-                    <span className="capitalize text-xs text-muted-foreground">{a.platform}</span>
+                    <span className="capitalize text-xs text-muted-foreground">
+                      {a.platform}
+                    </span>
                     <span className="text-sm truncate">{a.accountName}</span>
-                    {elsewhere && <span className="ml-auto text-[11px] text-muted-foreground">also in {elsewhere}</span>}
+                    {elsewhere && (
+                      <span className="ml-auto text-[11px] text-muted-foreground">
+                        also in {elsewhere}
+                      </span>
+                    )}
                   </label>
                 </li>
               );
@@ -129,9 +188,14 @@ export function CampaignSettings({
         <Button
           variant="outline"
           disabled={busy === "accounts" || !accountsChanged}
-          onClick={() => act("accounts", () => api.update({ accountIds }), "Accounts saved")}
+          onClick={() =>
+            act("accounts", () => api.update({ accountIds }), "Accounts saved")
+          }
         >
-          {busy === "accounts" && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}Save accounts
+          {busy === "accounts" && (
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+          )}
+          Save accounts
         </Button>
       </div>
 
@@ -141,7 +205,12 @@ export function CampaignSettings({
           className="text-red-700 hover:text-red-800"
           disabled={busy === "delete"}
           onClick={async () => {
-            if (!confirm(`Delete the campaign "${status.campaign.name}"? Its queued posts go back to drafts. Published posts stay.`)) return;
+            if (
+              !confirm(
+                `Delete the campaign "${status.campaign.name}"? Its queued posts go back to drafts. Published posts stay.`,
+              )
+            )
+              return;
             setBusy("delete");
             try {
               await api.remove();
@@ -149,7 +218,11 @@ export function CampaignSettings({
               toast({ title: "Campaign deleted" });
               onDeleted();
             } catch (err: any) {
-              toast({ title: "Failed", description: err.message, variant: "destructive" });
+              toast({
+                title: "Failed",
+                description: err.message,
+                variant: "destructive",
+              });
               setBusy(null);
             }
           }}

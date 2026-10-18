@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 const {
   getSettings,
   updateSettings,
@@ -12,8 +12,8 @@ const {
 router.use(protect);
 
 router.get("/settings", getSettings);
-router.put("/settings", updateSettings);
-router.post("/test-connection", testConnection);
+router.put("/settings", authorize("super_admin", "admin"), updateSettings);
+router.post("/test-connection", authorize("super_admin", "admin"), testConnection);
 router.post("/call-lead/:leadId", callLead);
 router.get("/logs/:leadId", getLeadCallLogs);
 

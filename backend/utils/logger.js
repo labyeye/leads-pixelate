@@ -1,10 +1,13 @@
 const LEVELS = { error: 0, warn: 1, info: 2, debug: 3 };
-const currentLevel = LEVELS[process.env.LOG_LEVEL] ?? (process.env.NODE_ENV === "production" ? LEVELS.info : LEVELS.debug);
+const currentLevel =
+  LEVELS[process.env.LOG_LEVEL] ??
+  (process.env.NODE_ENV === "production" ? LEVELS.info : LEVELS.debug);
 
 function write(level, scope, message, meta) {
   if (LEVELS[level] > currentLevel) return;
   const line = `${new Date().toISOString()} [${level.toUpperCase()}] [${scope}] ${message}`;
-  const out = level === "error" || level === "warn" ? console.error : console.log;
+  const out =
+    level === "error" || level === "warn" ? console.error : console.log;
   out(meta !== undefined ? `${line} ${JSON.stringify(meta)}` : line);
 }
 

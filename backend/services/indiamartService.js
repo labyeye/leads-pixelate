@@ -408,7 +408,12 @@ async function syncIndiamartLeads({
 
       const assignedToId =
         assigneeIds.length > 0
-          ? await nextBatchAssignee({ tenantId, key: "indiamart", assigneeIds, batchSize })
+          ? await nextBatchAssignee({
+              tenantId,
+              key: "indiamart",
+              assigneeIds,
+              batchSize,
+            })
           : await getRoundRobinAssigneeId(tenantId);
       const leadData = mapIMLeadToModel(record, assignedToId);
       if (tenantId) leadData.tenantId = tenantId;
@@ -424,7 +429,12 @@ async function syncIndiamartLeads({
 
 let lastSyncEndTime = null;
 
-async function runScheduledSync(tenantId, apiKey, assigneeIds = [], batchSize = 1) {
+async function runScheduledSync(
+  tenantId,
+  apiKey,
+  assigneeIds = [],
+  batchSize = 1,
+) {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
@@ -452,7 +462,9 @@ async function runScheduledSync(tenantId, apiKey, assigneeIds = [], batchSize = 
     skipped: result.skipped,
   });
   if (result.errors.length) {
-    log.warn("Sync completed with errors", { errorCount: result.errors.length });
+    log.warn("Sync completed with errors", {
+      errorCount: result.errors.length,
+    });
   }
 
   return result;

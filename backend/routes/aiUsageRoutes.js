@@ -18,7 +18,9 @@ router.get(
   "/",
   protect,
   asyncHandler(async (req, res) => {
-    const tenant = req.user.tenantId ? await Tenant.findById(req.user.tenantId) : null;
+    const tenant = req.user.tenantId
+      ? await Tenant.findById(req.user.tenantId)
+      : null;
     if (!tenant) {
       res.status(400);
       throw new Error("No organisation found for this account");
@@ -26,7 +28,9 @@ router.get(
 
     const now = new Date();
     const start = svc.monthStart(now);
-    const resetsAt = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1));
+    const resetsAt = new Date(
+      Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1),
+    );
     const limits = PLAN_LIMITS[tenant.plan] || PLAN_LIMITS.trial;
     const a = svc.effectiveAutopilot(tenant, now);
     const ent = svc.entitlement(a, now);
@@ -34,8 +38,16 @@ router.get(
     const tenantId = tenant._id;
 
     const [posts, aiCalls, leads, team, campaignCount] = await Promise.all([
-      SocialPost.countDocuments({ tenantId, source: "autopilot", createdAt: { $gte: start } }),
-      CallLog.countDocuments({ tenantId, callType: "automated_ai", createdAt: { $gte: start } }),
+      SocialPost.countDocuments({
+        tenantId,
+        source: "autopilot",
+        createdAt: { $gte: start },
+      }),
+      CallLog.countDocuments({
+        tenantId,
+        callType: "automated_ai",
+        createdAt: { $gte: start },
+      }),
       Lead.countDocuments({ tenantId, createdAt: { $gte: start } }),
       User.countDocuments({ tenantId, status: "active" }),
       AutopilotCampaign.countDocuments({ tenantId }),

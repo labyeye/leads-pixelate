@@ -5,13 +5,17 @@ const CallLog = require("../models/CallLog");
 const Lead = require("../models/Lead");
 const Setting = require("../models/Setting");
 const twilio = require("./twilioService");
-const { buildTransitionMaps, PROTECTED_STATUSES } = require("../utils/leadStatuses");
+const {
+  buildTransitionMaps,
+  PROTECTED_STATUSES,
+} = require("../utils/leadStatuses");
 const log = require("../utils/logger").scope("CallAnalysis");
 
 const MIN_SECONDS = 15; // shorter than this is a hang-up / voicemail, nothing to analyse
 const SENTIMENTS = ["Positive", "Neutral", "Negative", "Unresponsive"];
 
-const isConfigured = () => !!(process.env.ELEVENLABS_API_KEY && process.env.GEMINI_API_KEY);
+const isConfigured = () =>
+  !!(process.env.ELEVENLABS_API_KEY && process.env.GEMINI_API_KEY);
 
 // ---------------------------------------------------------------------- ElevenLabs Scribe
 
@@ -31,7 +35,9 @@ async function transcribe(audio) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const d = data?.detail;
-    throw new Error(`ElevenLabs ${res.status}: ${typeof d === "string" ? d : d?.message || "speech-to-text failed"}`);
+    throw new Error(
+      `ElevenLabs ${res.status}: ${typeof d === "string" ? d : d?.message || "speech-to-text failed"}`,
+    );
   }
   return turnsFrom(data);
 }
@@ -40,7 +46,11 @@ async function transcribe(audio) {
 function turnsFrom(data) {
   const channels = data.transcripts || [{ ...data, channel_index: 0 }];
   const words = channels
-    .flatMap((t) => (t.words || []).filter((w) => w.type === "word").map((w) => ({ ...w, side: t.channel_index === 0 ? "agent" : "user" })))
+    .flatMap((t) =>
+      (t.words || [])
+        .filter((w) => w.type === "word")
+        .map((w) => ({ ...w, side: t.channel_index === 0 ? "agent" : "user" })),
+    )
     .sort((a, b) => a.start - b.start);
   const turns = [];
   for (const w of words) {
@@ -54,25 +64,51 @@ function turnsFrom(data) {
 // ---------------------------------------------------------------------- Gemini
 
 async function gemini(input) {
-  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY },
-    body: JSON.stringify({ model: process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash", input }),
-    signal: AbortSignal.timeout(120_000),
-  });
+  const res = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/interactions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": process.env.GEMINI_API_KEY,
+      },
+      body: JSON.stringify({
+        model: process.env.GEMINI_TEXT_MODEL || "gemini-3.8-flash",
+        input,
+      }),
+      signal: AbortSignal.timeout(120_000),
+    },
+  );
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.status === "failed") {
-    throw new Error(`Gemini ${res.status}: ${data?.error?.message || data?.errors?.[0]?.message || "request failed"}`);
+    throw new Error(
+      `Gemini ${res.status}: ${data?.error?.message || data?.errors?.[0]?.message || "request failed"}`,
+    );
   }
-  const text = (data.steps || []).filter((s) => s.type === "model_output").flatMap((s) => s.content || []).find((b) => b.type === "text")?.text || "";
-  return JSON.parse(text.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "").trim());
+  const text =
+    (data.steps || [])
+      .filter((s) => s.type === "model_output")
+      .flatMap((s) => s.content || [])
+      .find((b) => b.type === "text")?.text || "";
+  return JSON.parse(
+    text
+      .replace(/^\s*```(?:json)?/i, "")
+      .replace(/```\s*$/, "")
+      .trim(),
+  );
 }
 
 // Only statuses reachable from the lead's current one, minus the ones other features key off.
-const nextStatuses = (current, transitions) => (transitions[current] || []).filter((s) => s !== current && !PROTECTED_STATUSES.includes(s));
+const nextStatuses = (current, transitions) =>
+  (transitions[current] || []).filter(
+    (s) => s !== current && !PROTECTED_STATUSES.includes(s),
+  );
 
 function analyse(lead, turns, allowed) {
-  const transcript = turns.map((t) => `${t.role === "agent" ? "AGENT" : "LEAD"}: ${t.message}`).join("\n").slice(0, 30_000);
+  const transcript = turns
+    .map((t) => `${t.role === "agent" ? "AGENT" : "LEAD"}: ${t.message}`)
+    .join("\n")
+    .slice(0, 30_000);
   return gemini(`You review a sales call between our AGENT and a LEAD (Hindi / English / Hinglish). Write in English.
 Lead: ${lead.name}. Current pipeline status: "${lead.status}". Requirement on file: ${lead.requirement || "none"}.
 Status meanings: 1/2/3 = contact attempts, COMPLETED = contact attempts done, DISCUSSION* = talking requirements, QUOTATION* = quotes being shared.
@@ -88,7 +124,10 @@ Return ONLY JSON: {"summary": string (2-4 sentences: what was discussed, what th
 
 // ---------------------------------------------------------------------- orchestration
 
-const clip = (s, n) => String(s ?? "").trim().slice(0, n);
+const clip = (s, n) =>
+  String(s ?? "")
+    .trim()
+    .slice(0, n);
 
 // The webhook fires this without awaiting. Safe to call twice for one call: only the first claim runs.
 async function processRecording(callLogId, recordingUrl, seconds) {
@@ -98,18 +137,28 @@ async function processRecording(callLogId, recordingUrl, seconds) {
     { new: true },
   );
   if (!claimed) return;
-  const fail = (state, msg) => CallLog.updateOne({ _id: callLogId }, { $set: { analysisState: state, analysisError: clip(msg, 300) } });
+  const fail = (state, msg) =>
+    CallLog.updateOne(
+      { _id: callLogId },
+      { $set: { analysisState: state, analysisError: clip(msg, 300) } },
+    );
 
   try {
-    if (!isConfigured()) return await fail("skipped", "ElevenLabs / Gemini keys not set");
+    if (!isConfigured())
+      return await fail("skipped", "ElevenLabs / Gemini keys not set");
     if (seconds < MIN_SECONDS) return await fail("skipped", "call too short");
 
-    const turns = await transcribe(await twilio.downloadRecording(recordingUrl));
-    if (!turns.some((t) => t.role === "user")) return await fail("skipped", "no speech from the lead");
+    const turns = await transcribe(
+      await twilio.downloadRecording(recordingUrl),
+    );
+    if (!turns.some((t) => t.role === "user"))
+      return await fail("skipped", "no speech from the lead");
 
     const lead = await Lead.findById(claimed.leadId);
     if (!lead) return await fail("failed", "lead not found");
-    const setting = await Setting.findOne({ tenantId: lead.tenantId || null }).select("customLeadStatuses").lean();
+    const setting = await Setting.findOne({ tenantId: lead.tenantId || null })
+      .select("customLeadStatuses")
+      .lean();
     const maps = buildTransitionMaps(setting?.customLeadStatuses || []);
     const allowed = nextStatuses(lead.status, maps.VALID_TRANSITIONS);
 
@@ -121,16 +170,25 @@ async function processRecording(callLogId, recordingUrl, seconds) {
     const n = Math.round(Number(out.followUpInDays));
     const days = n >= 1 ? Math.min(30, n) : 0; // 0 = Gemini gave none
     const wants = allowed.includes(out.status) ? out.status : "";
-    const needsDate = wants && maps.REQUIRES_DATE.includes(wants) && !["VISIT SCHEDULED", "VISITED"].includes(wants);
+    const needsDate =
+      wants &&
+      maps.REQUIRES_DATE.includes(wants) &&
+      !["VISIT SCHEDULED", "VISITED"].includes(wants);
     const apply = !!wants && (!needsDate || days > 0);
-    const followUpDate = days > 0 ? new Date(Date.now() + days * 86_400_000) : null;
+    const followUpDate =
+      days > 0 ? new Date(Date.now() + days * 86_400_000) : null;
 
     const remark = `[📞 Call notes ${new Date().toLocaleDateString("en-IN")}] ${summary}`;
     lead.remarks = lead.remarks ? `${lead.remarks}\n\n${remark}` : remark;
     if (followUpDate) lead.followUpDate = followUpDate;
     if (out.budget && !lead.budget) lead.budget = clip(out.budget, 100);
     if (apply) {
-      lead.stagePath = [...new Set([...(lead.stagePath?.length ? lead.stagePath : [lead.status]), wants])];
+      lead.stagePath = [
+        ...new Set([
+          ...(lead.stagePath?.length ? lead.stagePath : [lead.status]),
+          wants,
+        ]),
+      ];
       lead.status = wants;
       lead.statusHistory.push({
         status: wants,
@@ -148,7 +206,9 @@ async function processRecording(callLogId, recordingUrl, seconds) {
         $set: {
           transcript: turns,
           aiSummary: summary,
-          sentiment: SENTIMENTS.includes(out.sentiment) ? out.sentiment : "Neutral",
+          sentiment: SENTIMENTS.includes(out.sentiment)
+            ? out.sentiment
+            : "Neutral",
           suggestedStatus: wants,
           statusApplied: apply,
           recordingUrl,
@@ -156,7 +216,11 @@ async function processRecording(callLogId, recordingUrl, seconds) {
         },
       },
     );
-    log.info("Call analysed", { callLogId, leadId: lead._id, status: apply ? wants : "unchanged" });
+    log.info("Call analysed", {
+      callLogId,
+      leadId: lead._id,
+      status: apply ? wants : "unchanged",
+    });
   } catch (err) {
     log.error("Call analysis failed", { callLogId, message: err.message });
     await fail("failed", err.message);

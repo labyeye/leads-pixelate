@@ -26,7 +26,10 @@ connectDB().then(async () => {
   // A restart kills any run in flight; free their locks so "Try again" works right away.
   // ponytail: assumes one backend process; with several instances this would free a live run's lock.
   require("./models/AutopilotCampaign")
-    .updateMany({ runningSince: { $ne: null } }, { $set: { runningSince: null, "progress.stage": "failed" } })
+    .updateMany(
+      { runningSince: { $ne: null } },
+      { $set: { runningSince: null, "progress.stage": "failed" } },
+    )
     .catch(() => {});
 
   cron.schedule("*/5 * * * *", async () => {
@@ -69,13 +72,18 @@ connectDB().then(async () => {
 
     const connectedUsers = await User.find({
       "emailIntegration.gmail.connected": true,
-    }).select("+emailIntegration.gmail.accessToken +emailIntegration.gmail.refreshToken +emailIntegration.gmail.tokenExpiresAt");
+    }).select(
+      "+emailIntegration.gmail.accessToken +emailIntegration.gmail.refreshToken +emailIntegration.gmail.tokenExpiresAt",
+    );
 
     for (const user of connectedUsers) {
       try {
         await syncGmailForUser(user);
       } catch (err) {
-        log.error("Gmail cron sync failed", { userId: user._id, message: err.message });
+        log.error("Gmail cron sync failed", {
+          userId: user._id,
+          message: err.message,
+        });
       }
     }
   });
@@ -84,6 +92,7 @@ connectDB().then(async () => {
 const app = express();
 
 app.set("trust proxy", 1);
+app.use(require("compression")());
 
 app.use(
   helmet({
@@ -92,18 +101,28 @@ app.use(
   }),
 );
 
+// Cookies/credentials are only honoured for our own front-end origin(s). Public endpoints (lead-capture forms,
+// webhooks) stay callable from any website, but without credentials, so a third-party page can never ride a
+// logged-in user's session cookie.
+const trustedOrigins = (process.env.CLIENT_URL || "http://localhost:8081")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow the CRM frontend and all origins for the public API
-      const allowed = process.env.CLIENT_URL || "http://localhost:8081";
-      if (!origin || origin === allowed) return callback(null, true);
-      // Public endpoints are called from any website
-      callback(null, true);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-CSRF-Token", "X-Requested-With"],
+  cors((req, callback) => {
+    const origin = req.header("Origin");
+    callback(null, {
+      origin: true,
+      credentials: !!origin && trustedOrigins.includes(origin),
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-API-Key",
+        "X-CSRF-Token",
+        "X-Requested-With",
+      ],
+    });
   }),
 );
 
@@ -137,7 +156,7 @@ app.use("/api/facebook/webhook", express.raw({ type: "*/*" }));
 
 app.use((req, res, next) => {
   if (req.path === "/api/facebook/webhook") return next();
-  express.json({ limit: "5mb" })(req, res, next);
+  express.json({ limit: "5mb", verify: (r, _res, buf) => { r.rawBody = buf; } })(req, res, next);
 });
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(cookieParser());
@@ -145,7 +164,13 @@ app.use(cookieParser());
 app.use(
   "/uploads",
   require("express").static(require("path").join(__dirname, "uploads"), {
-    setHeaders: (res) => res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"),
+    setHeaders: (res, filePath) => {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      // Active content that may already sit in uploads/ is downloaded, never rendered on the API origin.
+      if (/\.(html?|svg|xml|xhtml|js|mjs)$/i.test(filePath))
+        res.setHeader("Content-Disposition", "attachment");
+    },
   }),
 );
 

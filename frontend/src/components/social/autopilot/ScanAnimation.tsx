@@ -9,8 +9,14 @@ export const SCAN_STEPS = [
 ] as const;
 
 const INTRO_STEP = { key: "intro", label: "Reading your brand notes" } as const;
-const REFERENCES_STEP = { key: "references", label: "Studying your reference images" } as const;
-const COMPETITORS_STEP = { key: "competitors", label: "Looking at your competitors" } as const;
+const REFERENCES_STEP = {
+  key: "references",
+  label: "Studying your reference images",
+} as const;
+const COMPETITORS_STEP = {
+  key: "competitors",
+  label: "Looking at your competitors",
+} as const;
 
 // What the scan does depends on what the owner added; the order matches the server's stages.
 export interface ScanOptions {
@@ -35,9 +41,18 @@ export const scanSteps = (o: ScanOptions | boolean = {}) => {
 const STEP_MS = 1300; // each step stays visible at least this long, even if the server is faster
 
 // Which step the server is on; a finished scan means every step is done.
-export const scanTarget = (status: string, stage: string, options?: ScanOptions | boolean) => {
+export const scanTarget = (
+  status: string,
+  stage: string,
+  options?: ScanOptions | boolean,
+) => {
   const steps = scanSteps(options);
-  return status === "done" ? steps.length : Math.max(0, steps.findIndex((s) => s.key === stage));
+  return status === "done"
+    ? steps.length
+    : Math.max(
+        0,
+        steps.findIndex((s) => s.key === stage),
+      );
 };
 
 interface Props {
@@ -52,8 +67,22 @@ interface Props {
   onComplete?: () => void;
 }
 
-export function ScanAnimation({ status, stage, accountName, platform, avatar, hasIntro, hasReferences, hasCompetitors, onComplete }: Props) {
-  const options = { intro: hasIntro, references: hasReferences, competitors: hasCompetitors };
+export function ScanAnimation({
+  status,
+  stage,
+  accountName,
+  platform,
+  avatar,
+  hasIntro,
+  hasReferences,
+  hasCompetitors,
+  onComplete,
+}: Props) {
+  const options = {
+    intro: hasIntro,
+    references: hasReferences,
+    competitors: hasCompetitors,
+  };
   const steps = scanSteps(options);
   const target = scanTarget(status, stage, options);
   const [shown, setShown] = useState(0);
@@ -76,7 +105,10 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, ha
   useEffect(() => setAvatarFailed(false), [avatar]);
 
   return (
-    <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center" aria-live="polite">
+    <div
+      className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center"
+      aria-live="polite"
+    >
       {/* Radar + post grid */}
       <div className="relative mx-auto w-full max-w-[260px] aspect-square">
         {!finished &&
@@ -135,7 +167,8 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, ha
       <div className="space-y-3">
         {accountName && (
           <p className="text-sm text-muted-foreground">
-            Scanning <span className="font-semibold text-foreground">{accountName}</span>
+            Scanning{" "}
+            <span className="font-semibold text-foreground">{accountName}</span>
           </p>
         )}
         <ol className="space-y-2.5">
@@ -151,7 +184,11 @@ export function ScanAnimation({ status, stage, accountName, platform, avatar, ha
               >
                 <span
                   className={`w-6 h-6 shrink-0 rounded-full border-2 border-black flex items-center justify-center ${
-                    done ? "bg-green-500" : active ? "bg-primary/10" : "bg-background"
+                    done
+                      ? "bg-green-500"
+                      : active
+                        ? "bg-primary/10"
+                        : "bg-background"
                   }`}
                 >
                   {done ? (

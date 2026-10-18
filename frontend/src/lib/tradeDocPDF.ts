@@ -1,17 +1,36 @@
-import { isInterState, resolveLogo, saveInvoicePDF, settingsToCompany } from "@/lib/invoicePdf";
+import {
+  isInterState,
+  resolveLogo,
+  saveInvoicePDF,
+  settingsToCompany,
+} from "@/lib/invoicePdf";
 
 // Sales orders, purchase orders and invoices print on the Pixelate Nest tax-invoice template
 // (components/pdf/InvoicePDFDocument). The issuing company, with its own logo, comes from the
 // tenant's Settings; the party from the client record.
 const KINDS = {
-  sales_order: { title: "SALES ORDER", labels: { number: "Order No.", date: "Order Date", due: "Delivery Date" } },
-  purchase_order: { title: "PURCHASE ORDER", labels: { number: "PO No.", date: "PO Date", due: "Delivery Date" } },
-  invoice: { title: "TAX INVOICE", labels: { number: "Invoice No.", date: "Invoice Date", due: "Due Date" } },
+  sales_order: {
+    title: "SALES ORDER",
+    labels: { number: "Order No.", date: "Order Date", due: "Delivery Date" },
+  },
+  purchase_order: {
+    title: "PURCHASE ORDER",
+    labels: { number: "PO No.", date: "PO Date", due: "Delivery Date" },
+  },
+  invoice: {
+    title: "TAX INVOICE",
+    labels: { number: "Invoice No.", date: "Invoice Date", due: "Due Date" },
+  },
 } as const;
 
 export type TradeKind = keyof typeof KINDS;
 
-export function tradeDocToInvoice(kind: TradeKind, d: any, sellerGst?: string, client?: any) {
+export function tradeDocToInvoice(
+  kind: TradeKind,
+  d: any,
+  sellerGst?: string,
+  client?: any,
+) {
   return {
     invoiceNo: d.number,
     createdAt: d.date,
@@ -33,7 +52,12 @@ export function tradeDocToInvoice(kind: TradeKind, d: any, sellerGst?: string, c
   };
 }
 
-export async function downloadTradeDocPDF(kind: TradeKind, d: any, settings: any, client?: any) {
+export async function downloadTradeDocPDF(
+  kind: TradeKind,
+  d: any,
+  settings: any,
+  client?: any,
+) {
   const company = settingsToCompany(settings);
   const cfg = KINDS[kind];
   await saveInvoicePDF(d.number, {

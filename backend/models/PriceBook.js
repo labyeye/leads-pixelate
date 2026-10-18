@@ -4,13 +4,22 @@ const mongoose = require("mongoose");
 // product's normal price.
 const priceBookSchema = new mongoose.Schema(
   {
-    name: { type: String, required: [true, "Please name the price book"], trim: true, maxlength: 80 },
+    name: {
+      type: String,
+      required: [true, "Please name the price book"],
+      trim: true,
+      maxlength: 80,
+    },
     description: { type: String, default: "", maxlength: 300 },
     status: { type: String, enum: ["Active", "Inactive"], default: "Active" },
     items: {
       type: [
         {
-          product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+          product: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true,
+          },
           name: { type: String, default: "" }, // kept so the book still reads well if the product is renamed or removed
           price: { type: Number, required: true, min: 0 },
           _id: false,
@@ -18,7 +27,11 @@ const priceBookSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", default: null },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   { timestamps: true },
 );

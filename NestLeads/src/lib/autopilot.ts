@@ -34,13 +34,13 @@ export const TIME_SLOTS_MAX = 2;
 
 // Monday first, like the web app; the number is the JS weekday (Sunday = 0) the server uses.
 export const WEEKDAYS = [
-  {d: 1, label: 'Mon'},
-  {d: 2, label: 'Tue'},
-  {d: 3, label: 'Wed'},
-  {d: 4, label: 'Thu'},
-  {d: 5, label: 'Fri'},
-  {d: 6, label: 'Sat'},
-  {d: 0, label: 'Sun'},
+  { d: 1, label: 'Mon' },
+  { d: 2, label: 'Tue' },
+  { d: 3, label: 'Wed' },
+  { d: 4, label: 'Thu' },
+  { d: 5, label: 'Fri' },
+  { d: 6, label: 'Sat' },
+  { d: 0, label: 'Sun' },
 ];
 
 export const CONTENT_TYPES: Record<string, string> = {
@@ -74,7 +74,10 @@ export function shortDate(iso: string): string {
 
 // Points for react-native-gifted-charts LineChart. Only some points carry an x label so a
 // 90-day range stays readable.
-export function lineData(series: Series[], key: 'generated' | 'posted' | 'rejected') {
+export function lineData(
+  series: Series[],
+  key: 'generated' | 'posted' | 'rejected',
+) {
   const every = series.length > 45 ? 15 : series.length > 10 ? 7 : 1;
   return series.map((s, i) => ({
     value: s[key],
@@ -83,21 +86,29 @@ export function lineData(series: Series[], key: 'generated' | 'posted' | 'reject
 }
 
 export function chartMax(series: Series[]): number {
-  return Math.max(3, ...series.map(s => Math.max(s.generated, s.posted, s.rejected)));
+  return Math.max(
+    3,
+    ...series.map(s => Math.max(s.generated, s.posted, s.rejected)),
+  );
 }
 
 // Donut segments (only outcomes that happened).
 export function pieData(totals: Totals) {
   return [
-    {label: 'Posted', value: totals.posted, color: COLORS.posted},
-    {label: 'Waiting for approval', value: totals.pending, color: COLORS.pending},
-    {label: 'Scheduled', value: totals.scheduled, color: COLORS.scheduled},
-    {label: 'Rejected', value: totals.rejected, color: COLORS.rejected},
-    {label: 'Failed', value: totals.failed, color: COLORS.failed},
+    { label: 'Posted', value: totals.posted, color: COLORS.posted },
+    {
+      label: 'Waiting for approval',
+      value: totals.pending,
+      color: COLORS.pending,
+    },
+    { label: 'Scheduled', value: totals.scheduled, color: COLORS.scheduled },
+    { label: 'Rejected', value: totals.rejected, color: COLORS.rejected },
+    { label: 'Failed', value: totals.failed, color: COLORS.failed },
   ].filter(s => s.value > 0);
 }
 
-export const pctOf = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+export const pctOf = (n: number, of: number) =>
+  of ? `${Math.round((n / of) * 100)}%` : '—';
 
 export function daysLeft(iso: string, now = Date.now()): number {
   return Math.max(1, Math.ceil((new Date(iso).getTime() - now) / 86_400_000));
@@ -105,47 +116,66 @@ export function daysLeft(iso: string, now = Date.now()): number {
 
 // The pill at the top of the dashboard.
 export function statePill(status: {
-  settings: {enabled: boolean};
-  entitlement: {state: string; endsAt: string | null};
-}): {text: string; bg: string; fg: string} {
-  const {enabled} = status.settings;
-  const {state, endsAt} = status.entitlement;
-  if (!enabled) return {text: 'Paused', bg: '#e2e8f0', fg: '#000'};
+  settings: { enabled: boolean };
+  entitlement: { state: string; endsAt: string | null };
+}): { text: string; bg: string; fg: string } {
+  const { enabled } = status.settings;
+  const { state, endsAt } = status.entitlement;
+  if (!enabled) return { text: 'Paused', bg: '#e2e8f0', fg: '#000' };
   if (state === 'trial' && endsAt) {
-    return {text: `Free trial · ${daysLeft(endsAt)} day(s) left`, bg: '#FFDE00', fg: '#000'};
+    return {
+      text: `Free trial · ${daysLeft(endsAt)} day(s) left`,
+      bg: '#FFDE00',
+      fg: '#000',
+    };
   }
-  if (state === 'paid') return {text: 'Live', bg: '#22c55e', fg: '#000'};
-  return {text: 'Needs a plan', bg: '#FF3366', fg: '#fff'};
+  if (state === 'paid') return { text: 'Live', bg: '#22c55e', fg: '#000' };
+  return { text: 'Needs a plan', bg: '#FF3366', fg: '#fff' };
 }
 
-export const POST_STATUS: Record<string, {label: string; bg: string; fg: string}> = {
-  PENDING_APPROVAL: {label: 'Needs your approval', bg: '#fed7aa', fg: '#92400e'},
-  SCHEDULED: {label: 'Scheduled', bg: '#ede9fe', fg: '#5b21b6'},
-  APPROVED: {label: 'Approved', bg: '#dbeafe', fg: '#1e40af'},
-  POSTING: {label: 'Posting…', bg: '#dbeafe', fg: '#1e40af'},
-  POSTED: {label: 'Posted', bg: '#dcfce7', fg: '#166534'},
-  PARTIALLY_POSTED: {label: 'Partly posted', bg: '#fef9c3', fg: '#713f12'},
-  FAILED: {label: 'Failed', bg: '#fee2e2', fg: '#991b1b'},
+export const POST_STATUS: Record<
+  string,
+  { label: string; bg: string; fg: string }
+> = {
+  PENDING_APPROVAL: {
+    label: 'Needs your approval',
+    bg: '#fed7aa',
+    fg: '#92400e',
+  },
+  SCHEDULED: { label: 'Scheduled', bg: '#ede9fe', fg: '#5b21b6' },
+  APPROVED: { label: 'Approved', bg: '#dbeafe', fg: '#1e40af' },
+  POSTING: { label: 'Posting…', bg: '#dbeafe', fg: '#1e40af' },
+  POSTED: { label: 'Posted', bg: '#dcfce7', fg: '#166534' },
+  PARTIALLY_POSTED: { label: 'Partly posted', bg: '#fef9c3', fg: '#713f12' },
+  FAILED: { label: 'Failed', bg: '#fee2e2', fg: '#991b1b' },
 };
 
 // Queue order: posts waiting for the owner first, then by publish time.
-export function sortQueue<T extends {status: string; scheduledAt: string}>(posts: T[]): T[] {
+export function sortQueue<T extends { status: string; scheduledAt: string }>(
+  posts: T[],
+): T[] {
   return [...posts].sort(
     (a, b) =>
-      Number(b.status === 'PENDING_APPROVAL') - Number(a.status === 'PENDING_APPROVAL') ||
+      Number(b.status === 'PENDING_APPROVAL') -
+        Number(a.status === 'PENDING_APPROVAL') ||
       +new Date(a.scheduledAt) - +new Date(b.scheduledAt),
   );
 }
 
-export const UPCOMING = ['SCHEDULED', 'APPROVED', 'PENDING_APPROVAL', 'POSTING'];
+export const UPCOMING = [
+  'SCHEDULED',
+  'APPROVED',
+  'PENDING_APPROVAL',
+  'POSTING',
+];
 export const HISTORY = ['POSTED', 'PARTIALLY_POSTED', 'FAILED'];
 
 // Scan progress: which checklist step the server is on (mirrors the web ScanAnimation).
 export const SCAN_STEPS = [
-  {key: 'profile', label: 'Reading your profile'},
-  {key: 'posts', label: 'Studying your recent posts'},
-  {key: 'style', label: 'Learning your visual style'},
-  {key: 'profile_built', label: 'Building your brand profile'},
+  { key: 'profile', label: 'Reading your profile' },
+  { key: 'posts', label: 'Studying your recent posts' },
+  { key: 'style', label: 'Learning your visual style' },
+  { key: 'profile_built', label: 'Building your brand profile' },
 ];
 export interface ScanOptions {
   intro?: boolean;
@@ -153,22 +183,33 @@ export interface ScanOptions {
   competitors?: boolean;
 }
 export function scanSteps(o: ScanOptions | boolean = {}) {
-  const opt = typeof o === 'boolean' ? {intro: o} : o;
+  const opt = typeof o === 'boolean' ? { intro: o } : o;
   const [profile, posts, style, built] = SCAN_STEPS;
   return [
-    ...(opt.intro ? [{key: 'intro', label: 'Reading your brand notes'}] : []),
+    ...(opt.intro ? [{ key: 'intro', label: 'Reading your brand notes' }] : []),
     profile,
     posts,
-    ...(opt.references ? [{key: 'references', label: 'Studying your reference images'}] : []),
-    ...(opt.competitors ? [{key: 'competitors', label: 'Looking at your competitors'}] : []),
+    ...(opt.references
+      ? [{ key: 'references', label: 'Studying your reference images' }]
+      : []),
+    ...(opt.competitors
+      ? [{ key: 'competitors', label: 'Looking at your competitors' }]
+      : []),
     style,
     built,
   ];
 }
-export function scanStepIndex(status: string, stage: string, options: ScanOptions | boolean = {}): number {
+export function scanStepIndex(
+  status: string,
+  stage: string,
+  options: ScanOptions | boolean = {},
+): number {
   const steps = scanSteps(options);
   if (status === 'done') return steps.length;
-  return Math.max(0, steps.findIndex(s => s.key === stage));
+  return Math.max(
+    0,
+    steps.findIndex(s => s.key === stage),
+  );
 }
 
 // Posting plan form -> the PUT /autopilot body. Returns an error message instead when invalid.
@@ -184,20 +225,28 @@ export function planPayload(
     accountIds: string[];
   },
   maxDays: number,
-): {error: string} | {body: Record<string, unknown>} {
-  if (form.days.length === 0) return {error: 'Pick at least one posting day.'};
+): { error: string } | { body: Record<string, unknown> } {
+  if (form.days.length === 0)
+    return { error: 'Pick at least one posting day.' };
   if (form.days.length > maxDays) {
-    return {error: `Your plan allows ${maxDays} posting day${maxDays === 1 ? '' : 's'} a week.`};
+    return {
+      error: `Your plan allows ${maxDays} posting day${maxDays === 1 ? '' : 's'} a week.`,
+    };
   }
   const times = [...new Set(form.times.map(t => t.trim()))].filter(Boolean);
-  if (times.length === 0) return {error: 'Add a posting time, like 10:00.'};
-  if (times.length > TIME_SLOTS_MAX) return {error: `Up to ${TIME_SLOTS_MAX} posts a day.`};
+  if (times.length === 0) return { error: 'Add a posting time, like 10:00.' };
+  if (times.length > TIME_SLOTS_MAX)
+    return { error: `Up to ${TIME_SLOTS_MAX} posts a day.` };
   const bad = times.find(t => !TIME_RE.test(t));
-  if (bad) return {error: `"${bad}" is not a valid time. Use 24-hour HH:MM, like 18:30.`};
-  if (form.contentTypes.length === 0) return {error: 'Pick at least one kind of post.'};
+  if (bad)
+    return {
+      error: `"${bad}" is not a valid time. Use 24-hour HH:MM, like 18:30.`,
+    };
+  if (form.contentTypes.length === 0)
+    return { error: 'Pick at least one kind of post.' };
   return {
     body: {
-      schedule: {days: form.days, times: times.sort()},
+      schedule: { days: form.days, times: times.sort() },
       contentTypes: form.contentTypes,
       language: form.language,
       tone: form.tone,
@@ -215,7 +264,11 @@ export type Selection = string | 'all' | null;
 
 // Which campaign a screen works on: the wanted one if it exists, else the only / first campaign
 // ("all" only where the screen can show every campaign and there is more than one).
-export function pickCampaign(campaigns: {id: string}[], wanted: Selection, allowAll: boolean): Selection {
+export function pickCampaign(
+  campaigns: { id: string }[],
+  wanted: Selection,
+  allowAll: boolean,
+): Selection {
   if (!campaigns.length) return null;
   if (wanted === 'all' && allowAll && campaigns.length > 1) return 'all';
   if (wanted && campaigns.some(c => c.id === wanted)) return wanted;
@@ -225,10 +278,12 @@ export function pickCampaign(campaigns: {id: string}[], wanted: Selection, allow
 
 // An account belongs to one campaign: the name of the other campaign that already uses it, or null.
 export function accountTakenBy(
-  account: {campaign?: {id: string; name: string} | null},
+  account: { campaign?: { id: string; name: string } | null },
   campaignId: string,
 ): string | null {
-  return account.campaign && account.campaign.id !== campaignId ? account.campaign.name : null;
+  return account.campaign && account.campaign.id !== campaignId
+    ? account.campaign.name
+    : null;
 }
 
 export const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
@@ -239,24 +294,34 @@ export const MAX_REFERENCES = 8;
 export function competitorPayload(
   username: string,
   notes: string,
-  existing: {username: string}[] = [],
-): {error: string} | {body: {username: string; notes: string}} {
+  existing: { username: string }[] = [],
+): { error: string } | { body: { username: string; notes: string } } {
   const handle = username.trim().replace(/^@+/, '');
-  if (!handle && !notes.trim()) return {error: 'Add an Instagram username or a note about the competitor.'};
+  if (!handle && !notes.trim())
+    return {
+      error: 'Add an Instagram username or a note about the competitor.',
+    };
   if (handle && !HANDLE.test(handle)) {
-    return {error: 'That does not look like an Instagram username (letters, numbers, dots and underscores).'};
+    return {
+      error:
+        'That does not look like an Instagram username (letters, numbers, dots and underscores).',
+    };
   }
-  if (existing.length >= MAX_COMPETITORS) return {error: `You can add up to ${MAX_COMPETITORS} competitors.`};
-  if (handle && existing.some(c => c.username.toLowerCase() === handle.toLowerCase())) {
-    return {error: 'That competitor is already added.'};
+  if (existing.length >= MAX_COMPETITORS)
+    return { error: `You can add up to ${MAX_COMPETITORS} competitors.` };
+  if (
+    handle &&
+    existing.some(c => c.username.toLowerCase() === handle.toLowerCase())
+  ) {
+    return { error: 'That competitor is already added.' };
   }
-  return {body: {username: handle, notes: notes.trim()}};
+  return { body: { username: handle, notes: notes.trim() } };
 }
 
 // The pill on a campaign: paused, trial countdown, live, or needs a plan.
 export function campaignPill(
   enabled: boolean,
-  ent: {state: string; endsAt: string | null},
-): {text: string; bg: string; fg: string} {
-  return statePill({settings: {enabled}, entitlement: ent});
+  ent: { state: string; endsAt: string | null },
+): { text: string; bg: string; fg: string } {
+  return statePill({ settings: { enabled }, entitlement: ent });
 }

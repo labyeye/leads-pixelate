@@ -193,7 +193,9 @@ async function downloadInvoicePDF(invoice: any, settings: any) {
           price: paid / (1 + gstPct / 100), // the amount paid already includes GST
         },
       ],
-      notes: invoice.hdfcTrackingId ? `Paid in full. Payment reference: ${invoice.hdfcTrackingId}.` : "Paid in full. Thank you for choosing Pixelate Nest.",
+      notes: invoice.hdfcTrackingId
+        ? `Paid in full. Payment reference: ${invoice.hdfcTrackingId}.`
+        : "Paid in full. Thank you for choosing Pixelate Nest.",
     },
     client: {
       name: settings?.companyName || "Customer",
@@ -589,7 +591,10 @@ export default function BillingPage() {
                 <h2 className="font-display font-bold text-2xl text-black">
                   {currentPlanId === "trial" ? "Choose a Plan" : "Change Plan"}
                 </h2>
-                <Link to="/ai-usage" className="text-xs font-bold text-[#024BAB] underline sm:order-none">
+                <Link
+                  to="/ai-usage"
+                  className="text-xs font-bold text-[#024BAB] underline sm:order-none"
+                >
                   See what your plan includes & your AI usage
                 </Link>
                 <div className="flex items-center border-2 border-black nb-shadow-sm overflow-hidden self-start">
@@ -835,7 +840,9 @@ export default function BillingPage() {
                           {capitalise(inv.status)}
                         </span>
                         <button
-                          onClick={() => downloadInvoicePDF(inv, settings).catch(() => {})}
+                          onClick={() =>
+                            downloadInvoicePDF(inv, settings).catch(() => {})
+                          }
                           className="text-xs font-bold text-black underline hover:text-[#FF3366] transition-colors flex items-center gap-1"
                         >
                           <Download className="w-3 h-3" /> Download

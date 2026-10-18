@@ -85,7 +85,12 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 };
 
 const BLOCK_DEFAULTS: Record<BlockType, Record<string, any>> = {
-  title: { text: "", align: "center", filled: false, subtitle: "Original for Recipient" },
+  title: {
+    text: "",
+    align: "center",
+    filled: false,
+    subtitle: "Original for Recipient",
+  },
   header: {
     layout: "split", // company beside the invoice details, or stacked
     swap: false,
@@ -100,7 +105,12 @@ const BLOCK_DEFAULTS: Record<BlockType, Record<string, any>> = {
     showMeta: true,
     showPlace: true,
   },
-  parties: { label: "Bill To", showEmail: true, showPhone: true, showGst: true },
+  parties: {
+    label: "Bill To",
+    showEmail: true,
+    showPhone: true,
+    showGst: true,
+  },
   items: {
     sno: true,
     hsn: true,
@@ -115,9 +125,23 @@ const BLOCK_DEFAULTS: Record<BlockType, Record<string, any>> = {
     descLabel: "Description of Services / Goods",
   },
   words: { label: "Amount in Words:", tint: true },
-  summary: { showBank: true, showTerms: true, showTotals: true, totalsSide: "right", termsLabel: "Terms & Notes" },
+  summary: {
+    showBank: true,
+    showTerms: true,
+    showTotals: true,
+    totalsSide: "right",
+    termsLabel: "Terms & Notes",
+  },
   taxSummary: {},
-  footer: { showDeclaration: true, declaration: "", showSignature: true, signatoryLabel: "Authorised Signatory", signatureSrc: "", signatureWidth: 120, signatureHeight: 40 },
+  footer: {
+    showDeclaration: true,
+    declaration: "",
+    showSignature: true,
+    signatoryLabel: "Authorised Signatory",
+    signatureSrc: "",
+    signatureWidth: 120,
+    signatureHeight: 40,
+  },
   note: {
     text: "This is a computer-generated invoice and does not require a physical signature.",
     size: 7.5,
@@ -144,10 +168,19 @@ export const DEFAULT_THEME: Theme = {
 };
 
 let counter = 0;
-export const uid = () => `${Date.now().toString(36)}${(counter++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+export const uid = () =>
+  `${Date.now().toString(36)}${(counter++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
-export function newBlock(type: BlockType, props: Record<string, any> = {}): Block {
-  return { id: uid(), type, visible: true, props: { ...BLOCK_DEFAULTS[type], ...props } };
+export function newBlock(
+  type: BlockType,
+  props: Record<string, any> = {},
+): Block {
+  return {
+    id: uid(),
+    type,
+    visible: true,
+    props: { ...BLOCK_DEFAULTS[type], ...props },
+  };
 }
 
 // Free sizing: every block has a width (props.w, % of the row, default 100) and an optional
@@ -155,9 +188,14 @@ export function newBlock(type: BlockType, props: Record<string, any> = {}): Bloc
 // 100 or less share one row; the next block that doesn't fit starts a new row. The items table and
 // tax summary need the full width, so only their height can change.
 export const CAN_WIDTH = (t: BlockType) => t !== "items" && t !== "taxSummary";
-export const blockW = (b: Block) => (CAN_WIDTH(b.type) ? Math.min(100, Math.max(10, Number(b.props.w) || 100)) : 100);
-export const blockH = (b: Block) => Math.min(800, Math.max(0, Number(b.props.h) || 0));
-export const isPlainRow = (row: Block[]) => row.length === 1 && blockW(row[0]) === 100 && !blockH(row[0]);
+export const blockW = (b: Block) =>
+  CAN_WIDTH(b.type)
+    ? Math.min(100, Math.max(10, Number(b.props.w) || 100))
+    : 100;
+export const blockH = (b: Block) =>
+  Math.min(800, Math.max(0, Number(b.props.h) || 0));
+export const isPlainRow = (row: Block[]) =>
+  row.length === 1 && blockW(row[0]) === 100 && !blockH(row[0]);
 
 export function groupRows(blocks: Block[]): Block[][] {
   const rows: Block[][] = [];
@@ -165,13 +203,16 @@ export function groupRows(blocks: Block[]): Block[][] {
   for (const b of blocks) {
     const w = blockW(b);
     if (rows.length && sum + w <= 100.01) rows[rows.length - 1].push(b);
-    else rows.push([b]), (sum = 0);
+    else (rows.push([b]), (sum = 0));
     sum += w;
   }
   return rows;
 }
 
-export function newFloat(kind: Float["kind"], patch: Partial<Float> = {}): Float {
+export function newFloat(
+  kind: Float["kind"],
+  patch: Partial<Float> = {},
+): Float {
   return {
     id: uid(),
     kind,
@@ -197,7 +238,19 @@ export function defaultTemplate(): InvoiceTemplate {
   return {
     v: 1,
     theme: { ...DEFAULT_THEME },
-    blocks: (["title", "header", "parties", "items", "words", "summary", "taxSummary", "footer", "note"] as BlockType[]).map((t) => newBlock(t)),
+    blocks: (
+      [
+        "title",
+        "header",
+        "parties",
+        "items",
+        "words",
+        "summary",
+        "taxSummary",
+        "footer",
+        "note",
+      ] as BlockType[]
+    ).map((t) => newBlock(t)),
     floats: [],
   };
 }
@@ -206,33 +259,70 @@ export function defaultTemplate(): InvoiceTemplate {
 // quotations have their own (Settings.quotationTemplate). Same editor, different wording.
 export type DocKind = "invoice" | "quotation";
 
-export function localize(t: InvoiceTemplate, kind: DocKind, footer?: string): InvoiceTemplate {
+export function localize(
+  t: InvoiceTemplate,
+  kind: DocKind,
+  footer?: string,
+): InvoiceTemplate {
   if (kind === "invoice") return t;
   return {
     ...t,
     blocks: t.blocks.map((b) =>
       b.type === "footer" && !b.props.declaration
-        ? { ...b, props: { ...b.props, declaration: "We declare that this quotation shows the price of the goods/services described and that all particulars are true and correct." } }
+        ? {
+            ...b,
+            props: {
+              ...b.props,
+              declaration:
+                "We declare that this quotation shows the price of the goods/services described and that all particulars are true and correct.",
+            },
+          }
         : b.type === "note" && b.props.text === BLOCK_DEFAULTS.note.text
-          ? { ...b, props: { ...b.props, text: footer || "Thank you for your business!" } }
+          ? {
+              ...b,
+              props: {
+                ...b.props,
+                text: footer || "Thank you for your business!",
+              },
+            }
           : b,
     ),
   };
 }
 
 // The template to print with: the tenant's saved design, else the classic layout in that document's wording.
-export const templateFor = (kind: DocKind, saved: any, footer?: string): InvoiceTemplate =>
+export const templateFor = (
+  kind: DocKind,
+  saved: any,
+  footer?: string,
+): InvoiceTemplate =>
   saved ? normalizeTemplate(saved) : localize(defaultTemplate(), kind, footer);
 
-export const PRESETS: Record<string, { label: string; build: () => InvoiceTemplate }> = {
+export const PRESETS: Record<
+  string,
+  { label: string; build: () => InvoiceTemplate }
+> = {
   classic: { label: "Classic (boxed)", build: defaultTemplate },
   modern: {
     label: "Modern (accent colour)",
     build: () => {
       const t = defaultTemplate();
-      t.theme = { ...t.theme, borders: "lines", border: "#d1d5db", headerBg: "#eef2ff", muted: "#6b7280" };
+      t.theme = {
+        ...t.theme,
+        borders: "lines",
+        border: "#d1d5db",
+        headerBg: "#eef2ff",
+        muted: "#6b7280",
+      };
       t.blocks = t.blocks.map((b) =>
-        b.type === "title" ? { ...b, props: { ...b.props, filled: true, align: "left", subtitle: "" } } : b.type === "items" ? { ...b, props: { ...b.props, accentHeader: true } } : b,
+        b.type === "title"
+          ? {
+              ...b,
+              props: { ...b.props, filled: true, align: "left", subtitle: "" },
+            }
+          : b.type === "items"
+            ? { ...b, props: { ...b.props, accentHeader: true } }
+            : b,
       );
       return t;
     },
@@ -243,7 +333,13 @@ export const PRESETS: Record<string, { label: string; build: () => InvoiceTempla
       const t = defaultTemplate();
       t.theme = { ...t.theme, borders: "none", muted: "#8a8a8a" };
       t.blocks = t.blocks.map((b) =>
-        b.type === "title" ? { ...b, props: { ...b.props, align: "left", subtitle: "" } } : b.type === "items" ? { ...b, props: { ...b.props, zebra: false } } : b.type === "words" ? { ...b, props: { ...b.props, tint: false } } : b,
+        b.type === "title"
+          ? { ...b, props: { ...b.props, align: "left", subtitle: "" } }
+          : b.type === "items"
+            ? { ...b, props: { ...b.props, zebra: false } }
+            : b.type === "words"
+              ? { ...b, props: { ...b.props, tint: false } }
+              : b,
       );
       return t;
     },
@@ -259,7 +355,8 @@ const num = (v: any, min: number, max: number, dflt: number) => {
 // Fills gaps in a stored (possibly older or partial) template with defaults, so a renderer never
 // has to guess. null / garbage gives the default template.
 export function normalizeTemplate(raw: any): InvoiceTemplate {
-  if (!raw || typeof raw !== "object" || !Array.isArray(raw.blocks)) return defaultTemplate();
+  if (!raw || typeof raw !== "object" || !Array.isArray(raw.blocks))
+    return defaultTemplate();
   const th = raw.theme || {};
   const theme: Theme = {
     primary: isHex(th.primary) ? th.primary : DEFAULT_THEME.primary,
@@ -267,23 +364,40 @@ export function normalizeTemplate(raw: any): InvoiceTemplate {
     muted: isHex(th.muted) ? th.muted : DEFAULT_THEME.muted,
     border: isHex(th.border) ? th.border : DEFAULT_THEME.border,
     headerBg: isHex(th.headerBg) ? th.headerBg : DEFAULT_THEME.headerBg,
-    font: ["Helvetica", "Times", "Courier"].includes(th.font) ? th.font : "Helvetica",
+    font: ["Helvetica", "Times", "Courier"].includes(th.font)
+      ? th.font
+      : "Helvetica",
     scale: num(th.scale, 0.8, 1.3, 1),
-    borders: ["full", "lines", "none"].includes(th.borders) ? th.borders : "full",
+    borders: ["full", "lines", "none"].includes(th.borders)
+      ? th.borders
+      : "full",
     margin: num(th.margin, 8, 60, 22),
   };
   const blocks: Block[] = raw.blocks
     .filter((b: any) => b && b.type in BLOCK_DEFAULTS)
     .map((b: any) => {
-      const props = { ...BLOCK_DEFAULTS[b.type as BlockType], ...(b.props || {}) };
-      for (const key of ["color", "fill"]) if (key in props && !isHex(props[key])) props[key] = ""; // half-typed colour = theme default
-      return { id: String(b.id || uid()), type: b.type, visible: b.visible !== false, props };
+      const props = {
+        ...BLOCK_DEFAULTS[b.type as BlockType],
+        ...(b.props || {}),
+      };
+      for (const key of ["color", "fill"])
+        if (key in props && !isHex(props[key])) props[key] = ""; // half-typed colour = theme default
+      return {
+        id: String(b.id || uid()),
+        type: b.type,
+        visible: b.visible !== false,
+        props,
+      };
     });
   const floats: Float[] = (Array.isArray(raw.floats) ? raw.floats : [])
     .filter((f: any) => f && (f.kind === "image" || f.kind === "text"))
     .map((f: any) => {
       const m = { ...newFloat(f.kind), ...f, id: String(f.id || uid()) };
-      return { ...m, color: isHex(m.color) ? m.color : "#111111", opacity: num(m.opacity, 0.05, 1, 1) };
+      return {
+        ...m,
+        color: isHex(m.color) ? m.color : "#111111",
+        opacity: num(m.opacity, 0.05, 1, 1),
+      };
     });
   return { v: 1, theme, blocks, floats };
 }

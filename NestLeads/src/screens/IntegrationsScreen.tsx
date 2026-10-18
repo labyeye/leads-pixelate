@@ -658,8 +658,8 @@ function WizardModal({
                 {current.fields.map(field => {
                   const isReadonly = field.type === 'readonly';
                   const val = isReadonly
-                    ? field.value ?? ''
-                    : fields[field.key] ?? '';
+                    ? (field.value ?? '')
+                    : (fields[field.key] ?? '');
                   const isCopied = copied === field.label;
 
                   return (

@@ -3,7 +3,7 @@ import notifee, {
   AndroidVisibility,
   EventType,
 } from '@notifee/react-native';
-import {Platform, PermissionsAndroid} from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 import storage from '../utils/storage';
 
 export const CHANNEL_ID = 'nestleads_leads';
@@ -66,21 +66,21 @@ export async function showNewLeadNotification(lead: {
     id: `lead_${lead._id}`,
     title: '🎯 New Lead Arrived!',
     body: `${lead.name}${lead.company ? ` · ${lead.company}` : ''}${lead.source ? ` via ${lead.source}` : ''}`,
-    data: {leadId: lead._id, type: 'new_lead'},
+    data: { leadId: lead._id, type: 'new_lead' },
     android: {
       channelId: CHANNEL_ID,
       importance: AndroidImportance.HIGH,
       smallIcon: 'ic_notification',
       color: '#024BAB',
-      pressAction: {id: 'open_lead', launchActivity: 'default'},
+      pressAction: { id: 'open_lead', launchActivity: 'default' },
       actions: [
         {
           title: 'View Lead',
-          pressAction: {id: 'open_lead', launchActivity: 'default'},
+          pressAction: { id: 'open_lead', launchActivity: 'default' },
         },
         {
           title: 'Call',
-          pressAction: {id: 'call_lead'},
+          pressAction: { id: 'call_lead' },
         },
       ],
     },
@@ -102,13 +102,13 @@ export async function showFollowupNotification(lead: {
     id: `followup_${lead._id}`,
     title: '📅 Follow-up Due',
     body: `${lead.name} · Scheduled at ${time}`,
-    data: {leadId: lead._id, type: 'followup'},
+    data: { leadId: lead._id, type: 'followup' },
     android: {
       channelId: CHANNEL_FOLLOWUP,
       importance: AndroidImportance.HIGH,
       smallIcon: 'ic_notification',
       color: '#FF751F',
-      pressAction: {id: 'open_lead', launchActivity: 'default'},
+      pressAction: { id: 'open_lead', launchActivity: 'default' },
     },
   });
 }
@@ -128,13 +128,13 @@ export async function showVisitNotification(lead: {
     id: `visit_${lead._id}`,
     title: '🏢 Visit Scheduled',
     body: `${lead.name} · Visit at ${time}`,
-    data: {leadId: lead._id, type: 'visit'},
+    data: { leadId: lead._id, type: 'visit' },
     android: {
       channelId: CHANNEL_FOLLOWUP,
       importance: AndroidImportance.HIGH,
       smallIcon: 'ic_notification',
       color: '#FF751F',
-      pressAction: {id: 'open_lead', launchActivity: 'default'},
+      pressAction: { id: 'open_lead', launchActivity: 'default' },
     },
   });
 }
@@ -175,11 +175,8 @@ export async function setLastLeadIds(ids: string[]) {
 export function setupForegroundNotificationHandler(
   onLeadPress: (leadId: string) => void,
 ) {
-  return notifee.onForegroundEvent(({type, detail}) => {
-    if (
-      type === EventType.PRESS ||
-      type === EventType.ACTION_PRESS
-    ) {
+  return notifee.onForegroundEvent(({ type, detail }) => {
+    if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
       const leadId = detail.notification?.data?.leadId as string | undefined;
       if (leadId) onLeadPress(leadId);
     }
@@ -187,7 +184,7 @@ export function setupForegroundNotificationHandler(
 }
 
 export function setupBackgroundNotificationHandler() {
-  notifee.onBackgroundEvent(async ({type, detail}) => {
+  notifee.onBackgroundEvent(async ({ type, detail }) => {
     // Background tap is handled by the app resume flow via initial notification
     if (type === EventType.ACTION_PRESS) {
       const action = detail.pressAction?.id;

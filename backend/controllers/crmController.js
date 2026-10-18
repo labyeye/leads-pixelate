@@ -1,25 +1,34 @@
 const Tenant = require("../models/Tenant");
+const { safeEqual } = require("../utils/safeEqual");
 const Subscription = require("../models/Subscription");
 const OfferCode = require("../models/OfferCode");
 
 // API key guard — every request must carry x-api-key matching NESTLEADS_SECRET
 const checkApiKey = (req, res, next) => {
   const key = req.headers["x-api-key"];
-  if (!process.env.NESTLEADS_SECRET || key !== process.env.NESTLEADS_SECRET) {
+  if (!process.env.NESTLEADS_SECRET || !safeEqual(key, process.env.NESTLEADS_SECRET)) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
   next();
 };
 
 const ALLOWED_TENANT_STATUS = ["active", "suspended", "cancelled"];
-const ALLOWED_SUBSCRIPTION_STATUS = ["active", "cancelled", "past_due", "trialing"];
+const ALLOWED_SUBSCRIPTION_STATUS = [
+  "active",
+  "cancelled",
+  "past_due",
+  "trialing",
+];
 const ALLOWED_INVOICE_STATUS = ["paid", "unpaid", "overdue"];
 
 // GET /api/crm/invoices — flattened list of every subscription's embedded
 // invoices across all tenants, for the external CRM dashboard's invoice list.
 const getCrmInvoices = async (req, res) => {
   try {
-    if (req.query.status && !ALLOWED_INVOICE_STATUS.includes(req.query.status)) {
+    if (
+      req.query.status &&
+      !ALLOWED_INVOICE_STATUS.includes(req.query.status)
+    ) {
       return res.status(400).json({
         success: false,
         message: `Invalid status. Use ${ALLOWED_INVOICE_STATUS.join(", ")}.`,
@@ -37,10 +46,18 @@ const getCrmInvoices = async (req, res) => {
     let invoices = [];
     for (const sub of subs) {
       for (const inv of sub.invoices || []) {
-        const status = inv.status === "paid" ? "paid" : inv.status === "failed" ? "overdue" : "unpaid";
+        const status =
+          inv.status === "paid"
+            ? "paid"
+            : inv.status === "failed"
+              ? "overdue"
+              : "unpaid";
         invoices.push({
           invoiceNumber:
-            inv.invoiceNumber || inv.razorpayOrderId || inv.hdfcOrderId || `NL-${String(inv._id).slice(-8).toUpperCase()}`,
+            inv.invoiceNumber ||
+            inv.razorpayOrderId ||
+            inv.hdfcOrderId ||
+            `NL-${String(inv._id).slice(-8).toUpperCase()}`,
           clientName: sub.tenant?.name || "Unknown",
           clientEmail: sub.tenant?.ownerUser?.email || "",
           amount: Math.round((inv.amount || 0) / 100), // stored in paise
@@ -80,7 +97,9 @@ const updateTenantSubscription = async (req, res) => {
 
     const tenant = await Tenant.findById(tenantId);
     if (!tenant) {
-      return res.status(404).json({ success: false, message: "Tenant not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Tenant not found" });
     }
 
     if (status !== undefined) tenant.status = status;
@@ -91,9 +110,14 @@ const updateTenantSubscription = async (req, res) => {
     if (subscription) {
       if (status !== undefined) {
         subscription.status =
-          status === "active" ? "active" : status === "suspended" ? "past_due" : "cancelled";
+          status === "active"
+            ? "active"
+            : status === "suspended"
+              ? "past_due"
+              : "cancelled";
       }
-      if (renewalDate !== undefined) subscription.currentPeriodEnd = new Date(renewalDate);
+      if (renewalDate !== undefined)
+        subscription.currentPeriodEnd = new Date(renewalDate);
       await subscription.save();
     }
 
@@ -120,7 +144,10 @@ const getCrmOffers = async (req, res) => {
 const getCrmOfferById = async (req, res) => {
   try {
     const offer = await OfferCode.findById(req.params.id).lean();
-    if (!offer) return res.status(404).json({ success: false, message: "Offer not found" });
+    if (!offer)
+      return res
+        .status(404)
+        .json({ success: false, message: "Offer not found" });
     res.json({ success: true, offer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -130,10 +157,22 @@ const getCrmOfferById = async (req, res) => {
 // POST /api/crm/offers — create a new offer code
 const createCrmOffer = async (req, res) => {
   try {
-    const { code, description, bonusMonths, maxUses, expiresAt, createdByEmail } = req.body;
-    if (!code) return res.status(400).json({ success: false, message: "code is required" });
+    const {
+      code,
+      description,
+      bonusMonths,
+      maxUses,
+      expiresAt,
+      createdByEmail,
+    } = req.body;
+    if (!code)
+      return res
+        .status(400)
+        .json({ success: false, message: "code is required" });
     if (!bonusMonths || bonusMonths < 1) {
-      return res.status(400).json({ success: false, message: "bonusMonths must be >= 1" });
+      return res
+        .status(400)
+        .json({ success: false, message: "bonusMonths must be >= 1" });
     }
 
     const offer = await OfferCode.create({
@@ -148,7 +187,9 @@ const createCrmOffer = async (req, res) => {
     res.status(201).json({ success: true, offer });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(409).json({ success: false, message: "Offer code already exists" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Offer code already exists" });
     }
     res.status(500).json({ success: false, message: err.message });
   }
@@ -157,14 +198,25 @@ const createCrmOffer = async (req, res) => {
 // PATCH /api/crm/offers/:id — update offer (activate/deactivate, change limits)
 const updateCrmOffer = async (req, res) => {
   try {
-    const allowed = ["description", "bonusMonths", "maxUses", "isActive", "expiresAt"];
+    const allowed = [
+      "description",
+      "bonusMonths",
+      "maxUses",
+      "isActive",
+      "expiresAt",
+    ];
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
 
-    const offer = await OfferCode.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-usages");
-    if (!offer) return res.status(404).json({ success: false, message: "Offer not found" });
+    const offer = await OfferCode.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    }).select("-usages");
+    if (!offer)
+      return res
+        .status(404)
+        .json({ success: false, message: "Offer not found" });
     res.json({ success: true, offer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -175,7 +227,10 @@ const updateCrmOffer = async (req, res) => {
 const deleteCrmOffer = async (req, res) => {
   try {
     const offer = await OfferCode.findByIdAndDelete(req.params.id);
-    if (!offer) return res.status(404).json({ success: false, message: "Offer not found" });
+    if (!offer)
+      return res
+        .status(404)
+        .json({ success: false, message: "Offer not found" });
     res.json({ success: true, message: "Offer code deleted" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

@@ -22,14 +22,17 @@ const protect = asyncHandler(async (req, res, next) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
   } catch {
     res.status(401);
     throw new Error("Not authorized");
   }
 
-  const user = await User.findById(decoded.id).select("-password");
-  if (!user) {
+  // Only access/bearer tokens authenticate API calls — a refresh token must not work as one.
+  const user =
+    (!decoded.scope || decoded.scope === "access") &&
+    (await User.findById(decoded.id).select("-password"));
+  if (!user || (decoded.tv || 0) !== (user.tokenVersion || 0)) {
     res.status(401);
     throw new Error("Not authorized");
   }
@@ -41,15 +44,21 @@ const protect = asyncHandler(async (req, res, next) => {
 
   const isBillingRoute = req.baseUrl === "/api/billing";
   if (user.tenantId && !isBillingRoute) {
-    const tenant = await Tenant.findById(user.tenantId).select("status planExpiresAt");
+    const tenant = await Tenant.findById(user.tenantId).select(
+      "status planExpiresAt",
+    );
     if (tenant) {
       if (tenant.status !== "active") {
         res.status(403);
-        throw new Error("Your subscription is not active. Contact your account manager.");
+        throw new Error(
+          "Your subscription is not active. Contact your account manager.",
+        );
       }
       if (tenant.planExpiresAt && tenant.planExpiresAt < new Date()) {
         res.status(403);
-        throw new Error("Your subscription has expired. Contact your account manager to renew.");
+        throw new Error(
+          "Your subscription has expired. Contact your account manager to renew.",
+        );
       }
     }
   }
@@ -71,8 +80,12 @@ const authorize = (...roles) => {
 // Account-level settings (e.g. connecting the company's WhatsApp) belong to whoever
 // registered the tenant, not to every admin.
 const ownerOnly = asyncHandler(async (req, res, next) => {
-  const tenant = req.user.tenantId ? await Tenant.findById(req.user.tenantId).select("ownerUser") : null;
-  const isOwner = tenant ? String(tenant.ownerUser) === String(req.user._id) : req.user.role === "super_admin";
+  const tenant = req.user.tenantId
+    ? await Tenant.findById(req.user.tenantId).select("ownerUser")
+    : null;
+  const isOwner = tenant
+    ? String(tenant.ownerUser) === String(req.user._id)
+    : req.user.role === "super_admin";
   if (!isOwner) {
     res.status(403);
     throw new Error("Only the account owner can do this");

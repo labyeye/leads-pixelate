@@ -245,7 +245,13 @@ export default function LoginPage() {
   );
 
   // ── Back link ──────────────────────────────────────────────────────────────
-  const BackLink = ({ label, onClick }: { label: string; onClick: () => void }) => (
+  const BackLink = ({
+    label,
+    onClick,
+  }: {
+    label: string;
+    onClick: () => void;
+  }) => (
     <button
       type="button"
       onClick={onClick}
@@ -266,8 +272,14 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <img src={logoimg} alt="NestLeads" className="w-14 h-14 object-contain" />
-          <span className="font-display font-bold text-white text-2xl">NestLeads</span>
+          <img
+            src={logoimg}
+            alt="NestLeads"
+            className="w-14 h-14 object-contain"
+          />
+          <span className="font-display font-bold text-white text-2xl">
+            NestLeads
+          </span>
         </div>
 
         {/* Headline */}
@@ -305,7 +317,11 @@ export default function LoginPage() {
               key={label}
               className="border-2 border-black bg-white text-black px-3 py-1.5 text-xs font-bold flex items-center gap-2"
             >
-              <img src={logo} alt={label} className="w-4 h-4 object-contain rounded-sm" />
+              <img
+                src={logo}
+                alt={label}
+                className="w-4 h-4 object-contain rounded-sm"
+              />
               {label}
             </div>
           ))}
@@ -317,8 +333,14 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src={logoimg} alt="NestLeads" className="w-10 h-10 object-contain" />
-            <span className="font-display font-bold text-xl text-black">NestLeads</span>
+            <img
+              src={logoimg}
+              alt="NestLeads"
+              className="w-10 h-10 object-contain"
+            />
+            <span className="font-display font-bold text-xl text-black">
+              NestLeads
+            </span>
           </div>
 
           {/* ── 2FA verification ───────────────────────────────── */}
@@ -370,7 +392,6 @@ export default function LoginPage() {
                 />
               </form>
             </>
-
           ) : mode === "phone" ? (
             /* ── Phone OTP login ─────────────────────────────────── */
             <>
@@ -398,7 +419,10 @@ export default function LoginPage() {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => { setPhone(e.target.value); setError(""); }}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setError("");
+                      }}
                       placeholder="+91 98765 43210"
                       className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none focus:border-[#024BAB] transition-colors"
                       required
@@ -410,7 +434,11 @@ export default function LoginPage() {
                   </PrimaryBtn>
                   <BackLink
                     label="Sign in with Email"
-                    onClick={() => { setMode("email"); setError(""); setPhone(""); }}
+                    onClick={() => {
+                      setMode("email");
+                      setError("");
+                      setPhone("");
+                    }}
                   />
                 </form>
               ) : (
@@ -437,12 +465,15 @@ export default function LoginPage() {
                   </PrimaryBtn>
                   <BackLink
                     label="Change number / Resend"
-                    onClick={() => { setOtpSent(false); setOtp(""); setError(""); }}
+                    onClick={() => {
+                      setOtpSent(false);
+                      setOtp("");
+                      setError("");
+                    }}
                   />
                 </form>
               )}
             </>
-
           ) : mode === "passkey" ? (
             /* ── Passkey login ────────────────────────────────────── */
             <>
@@ -454,7 +485,8 @@ export default function LoginPage() {
                   </h2>
                 </div>
                 <p className="text-sm text-gray-500 font-medium">
-                  Use your device's fingerprint, Face ID, or hardware security key.
+                  Use your device's fingerprint, Face ID, or hardware security
+                  key.
                 </p>
               </div>
               <ErrorBanner />
@@ -481,18 +513,29 @@ export default function LoginPage() {
 
                 {/* Info box */}
                 <div className="border-2 border-black/10 p-4 text-xs text-gray-500 space-y-1">
-                  <p className="font-bold text-black text-sm">What is a Passkey?</p>
-                  <p>Passkeys replace passwords with biometric authentication — fingerprint, Face ID, or a hardware security key. They are phishing-resistant and tied to your device.</p>
-                  <p className="mt-2 text-gray-400">You must first register a passkey from your account Settings → Security.</p>
+                  <p className="font-bold text-black text-sm">
+                    What is a Passkey?
+                  </p>
+                  <p>
+                    Passkeys replace passwords with biometric authentication —
+                    fingerprint, Face ID, or a hardware security key. They are
+                    phishing-resistant and tied to your device.
+                  </p>
+                  <p className="mt-2 text-gray-400">
+                    You must first register a passkey from your account Settings
+                    → Security.
+                  </p>
                 </div>
 
                 <BackLink
                   label="Back to login"
-                  onClick={() => { setMode("email"); setError(""); }}
+                  onClick={() => {
+                    setMode("email");
+                    setError("");
+                  }}
                 />
               </div>
             </>
-
           ) : (
             /* ── Email / Password login ──────────────────────────── */
             <>
@@ -515,7 +558,10 @@ export default function LoginPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setError("");
+                    }}
                     placeholder="you@company.com"
                     className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none focus:border-[#024BAB] transition-colors"
                     required
@@ -541,7 +587,10 @@ export default function LoginPage() {
                     <input
                       type={showPw ? "text" : "password"}
                       value={password}
-                      onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
                       placeholder="Your password"
                       className="flex-1 px-4 py-3 bg-white text-sm font-medium outline-none"
                       required
@@ -580,7 +629,10 @@ export default function LoginPage() {
                   {/* Phone OTP */}
                   <button
                     type="button"
-                    onClick={() => { setMode("phone"); setError(""); }}
+                    onClick={() => {
+                      setMode("phone");
+                      setError("");
+                    }}
                     className="flex-1 flex items-center justify-center gap-2 border-2 border-black py-2.5 text-xs font-bold text-black hover:bg-gray-50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0a0a0a] transition-all"
                   >
                     <Smartphone className="w-4 h-4 text-[#024BAB]" />
@@ -590,7 +642,10 @@ export default function LoginPage() {
                   {/* Passkey */}
                   <button
                     type="button"
-                    onClick={() => { setMode("passkey"); setError(""); }}
+                    onClick={() => {
+                      setMode("passkey");
+                      setError("");
+                    }}
                     className="flex-1 flex items-center justify-center gap-2 border-2 border-black py-2.5 text-xs font-bold text-black hover:bg-gray-50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0a0a0a] transition-all"
                   >
                     <KeyRound className="w-4 h-4 text-[#024BAB]" />

@@ -1,9 +1,22 @@
 import { useState } from "react";
-import { GalleryHorizontal, Image as ImageIcon, Loader2, Plus, Video, X } from "lucide-react";
+import {
+  GalleryHorizontal,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Video,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { AutopilotStatus } from "./useAutopilot";
 import { ActorEditor } from "./ActorEditor";
@@ -66,7 +79,8 @@ export function ContentBrief({
 
   const addInclude = () => {
     const v = draft.trim();
-    if (v && !include.includes(v) && include.length < 10) setInclude([...include, v]);
+    if (v && !include.includes(v) && include.length < 10)
+      setInclude([...include, v]);
     setDraft("");
   };
   const needsLink = ["learn_more", "book", "visit", "shop"].includes(ctaType);
@@ -75,9 +89,24 @@ export function ContentBrief({
   const linkBad = !!ctaLink && !/^https?:\/\//i.test(ctaLink);
 
   const formats = [
-    { id: "image", label: "Single image", icon: ImageIcon, hint: "One picture per post" },
-    { id: "carousel", label: "Carousel", icon: GalleryHorizontal, hint: "Swipeable slides telling a story" },
-    { id: "reel", label: "Video / Reel", icon: Video, hint: "AI-generated short vertical video" },
+    {
+      id: "image",
+      label: "Single image",
+      icon: ImageIcon,
+      hint: "One picture per post",
+    },
+    {
+      id: "carousel",
+      label: "Carousel",
+      icon: GalleryHorizontal,
+      hint: "Swipeable slides telling a story",
+    },
+    {
+      id: "reel",
+      label: "Video / Reel",
+      icon: Video,
+      hint: "AI-generated short vertical video",
+    },
   ] as const;
 
   return (
@@ -92,7 +121,9 @@ export function ContentBrief({
               aria-pressed={format === f.id}
               onClick={() => setFormat(f.id)}
               className={`text-left rounded-lg border-2 p-3 transition-colors ${
-                format === f.id ? "border-black bg-primary/10 nb-shadow-sm" : "border-black/20 hover:border-black/50"
+                format === f.id
+                  ? "border-black bg-primary/10 nb-shadow-sm"
+                  : "border-black/20 hover:border-black/50"
               }`}
             >
               <f.icon className="w-5 h-5 mb-1" />
@@ -106,7 +137,10 @@ export function ContentBrief({
             <Label htmlFor="slides" className="text-sm font-normal">
               Slides per post
             </Label>
-            <Select value={String(slides)} onValueChange={(v) => setSlides(Number(v))}>
+            <Select
+              value={String(slides)}
+              onValueChange={(v) => setSlides(Number(v))}
+            >
               <SelectTrigger id="slides" className="w-24">
                 <SelectValue />
               </SelectTrigger>
@@ -118,17 +152,30 @@ export function ContentBrief({
                 ))}
               </SelectContent>
             </Select>
-            <span className="text-xs text-muted-foreground">Each slide is an AI image, so more slides use more AI credits.</span>
+            <span className="text-xs text-muted-foreground">
+              Each slide is an AI image, so more slides use more AI credits.
+            </span>
           </div>
         )}
-        {format === "reel" && <ActorEditor status={status} toast={toast} onChanged={onChanged} />}
+        {format === "reel" && (
+          <ActorEditor status={status} toast={toast} onChanged={onChanged} />
+        )}
         {format !== "reel" && (
           <label className="flex items-start gap-3 rounded-lg border-2 border-black/20 p-3 cursor-pointer has-[:checked]:border-black">
-            <input type="checkbox" className="mt-1 accent-primary" checked={story} onChange={(e) => setStory(e.target.checked)} />
+            <input
+              type="checkbox"
+              className="mt-1 accent-primary"
+              checked={story}
+              onChange={(e) => setStory(e.target.checked)}
+            />
             <span>
-              <span className="block text-sm font-medium">Also share every post as a Story</span>
+              <span className="block text-sm font-medium">
+                Also share every post as a Story
+              </span>
               <span className="block text-xs text-muted-foreground">
-                A full-screen 9:16 version of each poster goes to your Instagram and Facebook Stories at the same time. Uses one more AI image per post.
+                A full-screen 9:16 version of each poster goes to your Instagram
+                and Facebook Stories at the same time. Uses one more AI image
+                per post.
               </span>
             </span>
           </label>
@@ -162,16 +209,28 @@ export function ContentBrief({
               }
             }}
           />
-          <Button type="button" variant="outline" onClick={addInclude} aria-label="Add">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addInclude}
+            aria-label="Add"
+          >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
         {!!include.length && (
           <ul className="flex flex-wrap gap-2">
             {include.map((x) => (
-              <li key={x} className="inline-flex items-center gap-1 rounded-full border-2 border-black px-2.5 py-0.5 text-xs">
+              <li
+                key={x}
+                className="inline-flex items-center gap-1 rounded-full border-2 border-black px-2.5 py-0.5 text-xs"
+              >
                 {x}
-                <button type="button" aria-label={`Remove ${x}`} onClick={() => setInclude(include.filter((y) => y !== x))}>
+                <button
+                  type="button"
+                  aria-label={`Remove ${x}`}
+                  onClick={() => setInclude(include.filter((y) => y !== x))}
+                >
                   <X className="w-3 h-3" />
                 </button>
               </li>
@@ -200,7 +259,11 @@ export function ContentBrief({
               aria-label="Call to action wording"
               value={ctaText}
               maxLength={80}
-              placeholder={ctaType === "custom" ? "Exact wording, e.g. Start your free trial" : "Wording (optional), e.g. Book your free demo"}
+              placeholder={
+                ctaType === "custom"
+                  ? "Exact wording, e.g. Start your free trial"
+                  : "Wording (optional), e.g. Book your free demo"
+              }
               onChange={(e) => setCtaText(e.target.value)}
             />
           )}
@@ -224,9 +287,16 @@ export function ContentBrief({
             />
           )}
         </div>
-        {linkBad && <p className="text-xs text-red-600">The link must start with http:// or https://</p>}
+        {linkBad && (
+          <p className="text-xs text-red-600">
+            The link must start with http:// or https://
+          </p>
+        )}
         {needsLink && (
-          <p className="text-xs text-muted-foreground">Instagram captions can't hold a clickable link, so add it to your bio for Instagram.</p>
+          <p className="text-xs text-muted-foreground">
+            Instagram captions can't hold a clickable link, so add it to your
+            bio for Instagram.
+          </p>
         )}
       </section>
 
@@ -256,7 +326,10 @@ export function ContentBrief({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">The countdown starts when you start the campaign; it stops by itself at the end.</p>
+        <p className="text-xs text-muted-foreground">
+          The countdown starts when you start the campaign; it stops by itself
+          at the end.
+        </p>
       </section>
 
       <Button
@@ -267,7 +340,12 @@ export function ContentBrief({
               format,
               slides,
               goal: goal.trim(),
-              cta: { type: ctaType, text: ctaText.trim(), link: ctaLink.trim(), phone: ctaPhone.trim() },
+              cta: {
+                type: ctaType,
+                text: ctaText.trim(),
+                link: ctaLink.trim(),
+                phone: ctaPhone.trim(),
+              },
               include,
               instructions: instructions.trim(),
               story: format !== "reel" && story,

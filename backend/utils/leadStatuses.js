@@ -111,7 +111,11 @@ function sanitizeCustomLeadStatuses(input, existing = []) {
     let value = typeof raw.value === "string" ? raw.value : "";
     const isKnownValue =
       value && (existingValues.has(value) || ALL_STATUSES.includes(value));
-    if (!isKnownValue || seenValues.has(value) || ALL_STATUSES.includes(value)) {
+    if (
+      !isKnownValue ||
+      seenValues.has(value) ||
+      ALL_STATUSES.includes(value)
+    ) {
       do {
         value = `CUSTOM_${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
       } while (seenValues.has(value) || ALL_STATUSES.includes(value));
@@ -341,8 +345,10 @@ function sanitizeLeadStatusLabels(input) {
     const entry = input[status];
     if (!entry || typeof entry !== "object") continue;
 
-    const label = typeof entry.label === "string" ? entry.label.trim().slice(0, 40) : "";
-    const color = typeof entry.color === "string" ? entry.color.slice(0, 200) : "";
+    const label =
+      typeof entry.label === "string" ? entry.label.trim().slice(0, 40) : "";
+    const color =
+      typeof entry.color === "string" ? entry.color.slice(0, 200) : "";
     if (!label && !color) continue;
 
     clean[status] = {};

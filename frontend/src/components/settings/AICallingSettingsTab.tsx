@@ -53,7 +53,10 @@ export default function AICallingSettingsTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const [settings, setSettings] = useState<AICallSettings>({
     enabled: false,
@@ -66,12 +69,29 @@ export default function AICallingSettingsTab() {
     callDelayMinutes: 1,
     callingHoursStart: "09:00",
     callingHoursEnd: "19:00",
-    agentGreeting: "Hello {lead_name}, I am calling from {company_name}! I noticed your inquiry and wanted to briefly verify your requirements.",
-    agentPersona: "You are a warm, professional, polite sales executive qualification assistant.",
+    agentGreeting:
+      "Hello {lead_name}, I am calling from {company_name}! I noticed your inquiry and wanted to briefly verify your requirements.",
+    agentPersona:
+      "You are a warm, professional, polite sales executive qualification assistant.",
     questions: [
-      { id: "q1", questionText: "What product or service are you primarily looking for?", fieldKey: "interestedProducts", required: true },
-      { id: "q2", questionText: "What is your approximate budget for this requirement?", fieldKey: "budget", required: true },
-      { id: "q3", questionText: "How soon are you planning to make a purchase?", fieldKey: "requirement", required: true },
+      {
+        id: "q1",
+        questionText: "What product or service are you primarily looking for?",
+        fieldKey: "interestedProducts",
+        required: true,
+      },
+      {
+        id: "q2",
+        questionText: "What is your approximate budget for this requirement?",
+        fieldKey: "budget",
+        required: true,
+      },
+      {
+        id: "q3",
+        questionText: "How soon are you planning to make a purchase?",
+        fieldKey: "requirement",
+        required: true,
+      },
     ],
     autoStatusMapping: {
       qualifiedStatus: "QUALIFIED",
@@ -134,7 +154,10 @@ export default function AICallingSettingsTab() {
     try {
       setTesting(true);
       setTestResult(null);
-      const res = await aiCallingAPI.testConnection(settings.elevenLabsApiKey, settings.agentId);
+      const res = await aiCallingAPI.testConnection(
+        settings.elevenLabsApiKey,
+        settings.agentId,
+      );
       setTestResult({
         success: true,
         message: res.message || "ElevenLabs Voice Agent connection verified!",
@@ -146,7 +169,8 @@ export default function AICallingSettingsTab() {
     } catch (err: any) {
       setTestResult({
         success: false,
-        message: err.message || "Connection failed. Check API key and Agent ID.",
+        message:
+          err.message || "Connection failed. Check API key and Agent ID.",
       });
       toast({
         title: "Connection Failed",
@@ -187,7 +211,8 @@ export default function AICallingSettingsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12 text-gray-500 font-medium">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading ElevenLabs AI Calling Settings...
+        <RefreshCw className="w-5 h-5 animate-spin mr-2" /> Loading ElevenLabs
+        AI Calling Settings...
       </div>
     );
   }
@@ -206,7 +231,9 @@ export default function AICallingSettingsTab() {
                 ElevenLabs AI Outbound Voice Assistant
               </h2>
               <p className="text-xs text-blue-200 font-medium mt-1">
-                Automatically call new leads, ask dynamic qualification questions, transcribe & analyze responses, and auto-update lead remarks.
+                Automatically call new leads, ask dynamic qualification
+                questions, transcribe & analyze responses, and auto-update lead
+                remarks.
               </p>
             </div>
           </div>
@@ -215,7 +242,12 @@ export default function AICallingSettingsTab() {
               <input
                 type="checkbox"
                 checked={settings.enabled}
-                onChange={(e) => setSettings((prev) => ({ ...prev, enabled: e.target.checked }))}
+                onChange={(e) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    enabled: e.target.checked,
+                  }))
+                }
                 className="sr-only peer"
               />
               <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none border-2 border-white peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
@@ -238,7 +270,8 @@ export default function AICallingSettingsTab() {
               ElevenLabs Voice Engine Ready
             </h4>
             <p className="text-xs text-emerald-800 font-medium">
-              The AI voice assistant is configured and powered by your system's master ElevenLabs API engine.
+              The AI voice assistant is configured and powered by your system's
+              master ElevenLabs API engine.
             </p>
           </div>
         </div>
@@ -248,7 +281,11 @@ export default function AICallingSettingsTab() {
           disabled={testing}
           className="px-3.5 py-1.5 bg-emerald-700 text-white font-bold text-xs border-2 border-black hover:bg-emerald-800 transition-colors flex items-center gap-1.5 shrink-0"
         >
-          {testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-300" />}
+          {testing ? (
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          )}
           Test Voice Engine
         </button>
       </div>
@@ -261,18 +298,31 @@ export default function AICallingSettingsTab() {
         <input
           type="text"
           value={settings.agentId}
-          onChange={(e) => setSettings((prev) => ({ ...prev, agentId: e.target.value }))}
-          placeholder={settings.envAgentIdSet ? "Leave blank to use the default agent" : "agent_xxxxxxxxxxxxxxxx"}
+          onChange={(e) =>
+            setSettings((prev) => ({ ...prev, agentId: e.target.value }))
+          }
+          placeholder={
+            settings.envAgentIdSet
+              ? "Leave blank to use the default agent"
+              : "agent_xxxxxxxxxxxxxxxx"
+          }
           className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-bold font-mono focus:outline-none focus:border-blue-600"
         />
         <p className="text-xs text-gray-500 font-medium">
-          Paste the agent ID of the male or female voice agent you want for this account, then Save. Use Test Voice Engine to verify it.
+          Paste the agent ID of the male or female voice agent you want for this
+          account, then Save. Use Test Voice Engine to verify it.
         </p>
       </div>
 
       {testResult && (
-        <div className={`p-3 border-2 text-xs font-bold flex items-center gap-2 ${testResult.success ? "bg-emerald-50 border-emerald-500 text-emerald-800" : "bg-red-50 border-red-500 text-red-800"}`}>
-          {testResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+        <div
+          className={`p-3 border-2 text-xs font-bold flex items-center gap-2 ${testResult.success ? "bg-emerald-50 border-emerald-500 text-emerald-800" : "bg-red-50 border-red-500 text-red-800"}`}
+        >
+          {testResult.success ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
           {testResult.message}
         </div>
       )}
@@ -282,10 +332,12 @@ export default function AICallingSettingsTab() {
         <div className="flex items-center justify-between border-b-2 border-black pb-3">
           <div>
             <h3 className="text-lg font-black font-display text-black uppercase flex items-center gap-2">
-              <Sliders className="w-5 h-5 text-blue-600" /> Dynamic Qualification Questions
+              <Sliders className="w-5 h-5 text-blue-600" /> Dynamic
+              Qualification Questions
             </h3>
             <p className="text-xs text-gray-500 font-medium">
-              The ElevenLabs AI assistant will ask these questions during the call and parse the client's answers automatically.
+              The ElevenLabs AI assistant will ask these questions during the
+              call and parse the client's answers automatically.
             </p>
           </div>
           <button
@@ -299,7 +351,10 @@ export default function AICallingSettingsTab() {
 
         <div className="space-y-4">
           {settings.questions.map((q, idx) => (
-            <div key={q.id || idx} className="p-4 border-2 border-black bg-gray-50 flex flex-col md:flex-row gap-4 items-start md:items-center">
+            <div
+              key={q.id || idx}
+              className="p-4 border-2 border-black bg-gray-50 flex flex-col md:flex-row gap-4 items-start md:items-center"
+            >
               <span className="w-7 h-7 shrink-0 bg-black text-white font-black text-xs flex items-center justify-center">
                 {idx + 1}
               </span>
@@ -307,7 +362,9 @@ export default function AICallingSettingsTab() {
                 <input
                   type="text"
                   value={q.questionText}
-                  onChange={(e) => updateQuestion(idx, "questionText", e.target.value)}
+                  onChange={(e) =>
+                    updateQuestion(idx, "questionText", e.target.value)
+                  }
                   placeholder="Enter qualification question text (e.g. What is your estimated budget?)"
                   className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-bold focus:outline-none focus:border-blue-600"
                 />
@@ -316,28 +373,45 @@ export default function AICallingSettingsTab() {
                     <span>Map answer to Lead field:</span>
                     <select
                       value={q.fieldKey}
-                      onChange={(e) => updateQuestion(idx, "fieldKey", e.target.value)}
+                      onChange={(e) =>
+                        updateQuestion(idx, "fieldKey", e.target.value)
+                      }
                       className="px-2 py-1 border-2 border-black bg-white text-xs font-bold"
                     >
                       <option value="">None (Append to remarks only)</option>
                       <option value="budget">Budget</option>
-                      <option value="interestedProducts">Interested Products</option>
+                      <option value="interestedProducts">
+                        Interested Products
+                      </option>
                       <option value="requirement">Requirement</option>
                     </select>
                   </label>
                 </div>
                 <div className="space-y-1.5">
                   <p className="text-xs font-semibold text-gray-600">
-                    Answer options <span className="font-normal">(optional: the assistant offers these choices; leave empty for an open answer)</span>
+                    Answer options{" "}
+                    <span className="font-normal">
+                      (optional: the assistant offers these choices; leave empty
+                      for an open answer)
+                    </span>
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {(q.options || []).map((o, oi) => (
-                      <span key={oi} className="inline-flex items-center gap-1 border-2 border-black bg-white px-2 py-0.5 text-xs font-bold">
+                      <span
+                        key={oi}
+                        className="inline-flex items-center gap-1 border-2 border-black bg-white px-2 py-0.5 text-xs font-bold"
+                      >
                         {o}
                         <button
                           type="button"
                           aria-label={`Remove option ${o}`}
-                          onClick={() => updateQuestion(idx, "options", (q.options || []).filter((_, k) => k !== oi))}
+                          onClick={() =>
+                            updateQuestion(
+                              idx,
+                              "options",
+                              (q.options || []).filter((_, k) => k !== oi),
+                            )
+                          }
                           className="text-red-600"
                         >
                           ×
@@ -356,7 +430,8 @@ export default function AICallingSettingsTab() {
                       e.preventDefault();
                       const v = e.currentTarget.value.trim();
                       const cur = q.options || [];
-                      if (v && !cur.includes(v) && cur.length < 8) updateQuestion(idx, "options", [...cur, v]);
+                      if (v && !cur.includes(v) && cur.length < 8)
+                        updateQuestion(idx, "options", [...cur, v]);
                       e.currentTarget.value = "";
                     }}
                   />
@@ -377,7 +452,8 @@ export default function AICallingSettingsTab() {
       {/* 3. Agent Greeting & Working Hours */}
       <div className="bg-white border-2 border-black p-6 space-y-5 shadow-[4px_4px_0px_#000]">
         <h3 className="text-lg font-black font-display text-black uppercase border-b-2 border-black pb-3 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" /> Greeting Template & Allowed Calling Hours
+          <Clock className="w-5 h-5 text-blue-600" /> Greeting Template &
+          Allowed Calling Hours
         </h3>
 
         <div>
@@ -387,10 +463,19 @@ export default function AICallingSettingsTab() {
           <textarea
             rows={3}
             value={settings.agentGreeting}
-            onChange={(e) => setSettings((prev) => ({ ...prev, agentGreeting: e.target.value }))}
+            onChange={(e) =>
+              setSettings((prev) => ({
+                ...prev,
+                agentGreeting: e.target.value,
+              }))
+            }
             className="w-full px-4 py-2.5 border-2 border-black text-xs font-medium focus:outline-none focus:border-blue-600"
           />
-          <p className="text-[11px] text-gray-500 mt-1">Available dynamic placeholders: <code className="bg-gray-100 font-bold px-1">{`{lead_name}`}</code>, <code className="bg-gray-100 font-bold px-1">{`{company_name}`}</code></p>
+          <p className="text-[11px] text-gray-500 mt-1">
+            Available dynamic placeholders:{" "}
+            <code className="bg-gray-100 font-bold px-1">{`{lead_name}`}</code>,{" "}
+            <code className="bg-gray-100 font-bold px-1">{`{company_name}`}</code>
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
@@ -403,7 +488,12 @@ export default function AICallingSettingsTab() {
               min="0"
               max="60"
               value={settings.callDelayMinutes}
-              onChange={(e) => setSettings((prev) => ({ ...prev, callDelayMinutes: parseInt(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  callDelayMinutes: parseInt(e.target.value) || 0,
+                }))
+              }
               className="w-full px-4 py-2.5 border-2 border-black text-sm focus:outline-none focus:border-blue-600"
             />
           </div>
@@ -415,7 +505,12 @@ export default function AICallingSettingsTab() {
             <input
               type="time"
               value={settings.callingHoursStart}
-              onChange={(e) => setSettings((prev) => ({ ...prev, callingHoursStart: e.target.value }))}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  callingHoursStart: e.target.value,
+                }))
+              }
               className="w-full px-4 py-2.5 border-2 border-black text-sm focus:outline-none focus:border-blue-600"
             />
           </div>
@@ -427,7 +522,12 @@ export default function AICallingSettingsTab() {
             <input
               type="time"
               value={settings.callingHoursEnd}
-              onChange={(e) => setSettings((prev) => ({ ...prev, callingHoursEnd: e.target.value }))}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  callingHoursEnd: e.target.value,
+                }))
+              }
               className="w-full px-4 py-2.5 border-2 border-black text-sm focus:outline-none focus:border-blue-600"
             />
           </div>
@@ -442,7 +542,11 @@ export default function AICallingSettingsTab() {
           disabled={saving}
           className="px-6 py-3 bg-blue-600 text-white font-black text-sm border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#000] transition-all flex items-center gap-2"
         >
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
           Save AI Calling Settings
         </button>
       </div>

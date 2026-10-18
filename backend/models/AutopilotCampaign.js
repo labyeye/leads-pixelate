@@ -6,14 +6,23 @@ const mongoose = require("mongoose");
 
 const campaignSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", required: true, index: true },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
     name: { type: String, required: true, trim: true, maxlength: 60 },
     enabled: { type: Boolean, default: false },
     // Explicit accounts this campaign posts to; an account belongs to at most one campaign.
     accountIds: { type: [String], default: [] },
     postsPerDay: { type: Number, default: 1, min: 1, max: 2 },
     tone: { type: String, default: "", maxlength: 200 },
-    language: { type: String, enum: ["English", "Hindi", "Hinglish"], default: "English" },
+    language: {
+      type: String,
+      enum: ["English", "Hindi", "Hinglish"],
+      default: "English",
+    },
     notes: { type: String, default: "", maxlength: 500 },
     reviewFirst: { type: Boolean, default: false },
     runningSince: { type: Date, default: null },
@@ -39,7 +48,11 @@ const campaignSchema = new mongoose.Schema(
     // What each post should be: format, goal, what to include, the call to action and free-form
     // instructions.
     brief: {
-      format: { type: String, enum: ["image", "carousel", "reel"], default: "image" },
+      format: {
+        type: String,
+        enum: ["image", "carousel", "reel"],
+        default: "image",
+      },
       slides: { type: Number, default: 5, min: 2, max: 8 },
       goal: { type: String, default: "", maxlength: 200 },
       cta: {
@@ -65,7 +78,11 @@ const campaignSchema = new mongoose.Schema(
       at: { type: Date, default: null },
     },
     analysis: {
-      status: { type: String, enum: ["idle", "running", "done", "failed"], default: "idle" },
+      status: {
+        type: String,
+        enum: ["idle", "running", "done", "failed"],
+        default: "idle",
+      },
       stage: { type: String, default: "" }, // intro | profile | posts | references | competitors | style | profile_built
       error: { type: String, default: "" },
       note: { type: String, default: "" },
@@ -93,7 +110,14 @@ const campaignSchema = new mongoose.Schema(
     },
     brandKit: {
       logos: {
-        type: [{ id: String, name: { type: String, maxlength: 60 }, file: String, url: String }],
+        type: [
+          {
+            id: String,
+            name: { type: String, maxlength: 60 },
+            file: String,
+            url: String,
+          },
+        ],
         default: [],
       },
       logoId: { type: String, default: "" },
@@ -107,9 +131,21 @@ const campaignSchema = new mongoose.Schema(
       colors: { type: [String], default: [] },
       // Poster text layout (see applyPosterText): presets, not free placement — a small,
       // reusable set of positions/sizes rather than a full drag-and-resize canvas.
-      headlinePosition: { type: String, enum: ["top", "center", "bottom"], default: "top" },
-      headlineSize: { type: String, enum: ["small", "medium", "large"], default: "medium" },
-      ctaSize: { type: String, enum: ["small", "medium", "large"], default: "medium" },
+      headlinePosition: {
+        type: String,
+        enum: ["top", "center", "bottom"],
+        default: "top",
+      },
+      headlineSize: {
+        type: String,
+        enum: ["small", "medium", "large"],
+        default: "medium",
+      },
+      ctaSize: {
+        type: String,
+        enum: ["small", "medium", "large"],
+        default: "medium",
+      },
     },
 
     // Instagram accounts to learn from (Meta Business Discovery) plus the owner's own notes.
@@ -138,7 +174,14 @@ const campaignSchema = new mongoose.Schema(
     },
     // Moodboard images (stored resized, under uploads/autopilot/<tenant>/brand/<campaign>/refs/).
     references: {
-      type: [{ id: String, file: String, url: String, note: { type: String, default: "", maxlength: 200 } }],
+      type: [
+        {
+          id: String,
+          file: String,
+          url: String,
+          note: { type: String, default: "", maxlength: 200 },
+        },
+      ],
       default: [],
     },
   },

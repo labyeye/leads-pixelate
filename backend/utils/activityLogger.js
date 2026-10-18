@@ -18,7 +18,10 @@ function logActivity({ user, action, module, description, targetId, ip } = {}) {
         timestamp: new Date(),
       });
     } catch (err) {
-      log.error("Failed to write activity log", { action, message: err.message });
+      log.error("Failed to write activity log", {
+        action,
+        message: err.message,
+      });
     }
   })();
 }

@@ -12,13 +12,16 @@ const storage = multer.diskStorage({
   },
 });
 
+const ALLOWED_EXT = new Set([".jpeg", ".jpg", ".png", ".gif", ".webp", ".mp4", ".mov", ".m4v", ".pdf", ".doc", ".docx"]);
+
 const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB (for videos)
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp|mp4|mov|m4v|pdf|doc|docx/;
+    // Extension decides the stored name, so the extension itself must be on the allow-list
+    // (a spoofed mimetype with ".html"/".svg" would otherwise be served as active content).
     const ext = path.extname(file.originalname).toLowerCase();
-    const ok = allowed.test(ext) || allowed.test(file.mimetype.split("/")[1]);
+    const ok = ALLOWED_EXT.has(ext);
     ok
       ? cb(null, true)
       : cb(new Error("Only images, videos, PDFs and Word docs are allowed"));
@@ -27,10 +30,12 @@ const upload = multer({
 
 router.post("/", protect, upload.single("file"), (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ success: false, message: "No file uploaded" });
+    return res
+      .status(400)
+      .json({ success: false, message: "No file uploaded" });
   }
-  const baseUrl = process.env.API_BASE_URL ||
-    `http://localhost:${process.env.PORT || 5000}`;
+  const baseUrl =
+    process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
   const url = `${baseUrl}/uploads/${req.file.filename}`;
   res.json({ success: true, url });
 });

@@ -1,6 +1,6 @@
-import {useEffect, useRef, useCallback} from 'react';
-import {AppState, AppStateStatus} from 'react-native';
-import {leadsAPI} from '../services/api';
+import { useEffect, useRef, useCallback } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
+import { leadsAPI } from '../services/api';
 import {
   showNewLeadNotification,
   showFollowupNotification,
@@ -37,9 +37,7 @@ export function useLeadPolling(enabled: boolean) {
       const previousIds = await getLastLeadIds();
 
       if (!isFirstPollRef.current && previousIds.length > 0) {
-        const newLeads = leads.filter(
-          (l: any) => !previousIds.includes(l._id),
-        );
+        const newLeads = leads.filter((l: any) => !previousIds.includes(l._id));
         for (const lead of newLeads) {
           await showNewLeadNotification(lead);
         }
@@ -54,7 +52,8 @@ export function useLeadPolling(enabled: boolean) {
       // ── Follow-up reminders ──
       const upcoming = leads.filter(
         (l: any) =>
-          l.followUpDate && isWithinMinutes(l.followUpDate, FOLLOWUP_WARN_MINUTES),
+          l.followUpDate &&
+          isWithinMinutes(l.followUpDate, FOLLOWUP_WARN_MINUTES),
       );
       for (const lead of upcoming) {
         await showFollowupNotification(lead);
@@ -95,18 +94,21 @@ export function useLeadPolling(enabled: boolean) {
 
     startPolling();
 
-    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
-      const prev = appStateRef.current;
-      appStateRef.current = nextState;
+    const sub = AppState.addEventListener(
+      'change',
+      (nextState: AppStateStatus) => {
+        const prev = appStateRef.current;
+        appStateRef.current = nextState;
 
-      if (nextState === 'active' && prev !== 'active') {
-        // App came to foreground — poll immediately then restart timer
-        startPolling();
-      } else if (nextState !== 'active' && prev === 'active') {
-        // App went to background — stop the interval (battery friendly)
-        stopPolling();
-      }
-    });
+        if (nextState === 'active' && prev !== 'active') {
+          // App came to foreground — poll immediately then restart timer
+          startPolling();
+        } else if (nextState !== 'active' && prev === 'active') {
+          // App went to background — stop the interval (battery friendly)
+          stopPolling();
+        }
+      },
+    );
 
     return () => {
       stopPolling();

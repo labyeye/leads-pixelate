@@ -78,7 +78,8 @@ const AICallSettingsSchema = new Schema(
       default: [
         {
           id: "q1",
-          questionText: "What product or service are you primarily interested in?",
+          questionText:
+            "What product or service are you primarily interested in?",
           fieldKey: "interestedProducts",
           required: true,
         },
@@ -90,7 +91,8 @@ const AICallSettingsSchema = new Schema(
         },
         {
           id: "q3",
-          questionText: "How soon are you planning to make a purchase decision?",
+          questionText:
+            "How soon are you planning to make a purchase decision?",
           fieldKey: "requirement",
           required: true,
         },
@@ -104,7 +106,7 @@ const AICallSettingsSchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("AICallSettings", AICallSettingsSchema);

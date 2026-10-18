@@ -9,7 +9,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { statusColors, getStatusColorClasses, getStatusLabel } from "./statusConstants";
+import {
+  statusColors,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "./statusConstants";
 import { LeadDetailPanel } from "./LeadDetailPanel";
 
 interface DateLeadModalProps {

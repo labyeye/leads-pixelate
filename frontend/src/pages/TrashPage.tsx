@@ -34,7 +34,9 @@ export default function TrashPage() {
   async function act(kind: "restore" | "purge", item: any) {
     if (
       kind === "purge" &&
-      !window.confirm(`Permanently delete "${item.title}"? This cannot be undone.`)
+      !window.confirm(
+        `Permanently delete "${item.title}"? This cannot be undone.`,
+      )
     )
       return;
     try {
@@ -42,7 +44,9 @@ export default function TrashPage() {
         ? trashAPI.restore(item.type, item._id)
         : trashAPI.purge(item.type, item._id));
       notify.success(
-        kind === "restore" ? `${item.label} restored` : `${item.label} permanently deleted`,
+        kind === "restore"
+          ? `${item.label} restored`
+          : `${item.label} permanently deleted`,
         item.title,
       );
       setItems((l) => l.filter((x) => x._id !== item._id));
@@ -58,7 +62,8 @@ export default function TrashPage() {
       <div className="p-4 md:p-6 max-w-6xl mx-auto">
         <h1 className="text-xl uppercase tracking-widest mb-1">Trash</h1>
         <p className="text-sm text-muted-foreground mb-4">
-          Deleted leads, clients, products, services, quotations and campaigns stay here until you restore them or delete them permanently.
+          Deleted leads, clients, products, services, quotations and campaigns
+          stay here until you restore them or delete them permanently.
         </p>
         <div className="border-2 border-black bg-white overflow-x-auto">
           <table className="w-full text-sm">
@@ -72,14 +77,27 @@ export default function TrashPage() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={4} className="p-4 text-muted-foreground">Loading…</td></tr>
+                <tr>
+                  <td colSpan={4} className="p-4 text-muted-foreground">
+                    Loading…
+                  </td>
+                </tr>
               )}
               {!loading && items.length === 0 && (
-                <tr><td colSpan={4} className="p-4 text-muted-foreground">Trash is empty.</td></tr>
+                <tr>
+                  <td colSpan={4} className="p-4 text-muted-foreground">
+                    Trash is empty.
+                  </td>
+                </tr>
               )}
               {items.map((l) => (
-                <tr key={`${l.type}-${l._id}`} className="border-t border-border">
-                  <td className="p-3 text-xs font-black uppercase">{l.label}</td>
+                <tr
+                  key={`${l.type}-${l._id}`}
+                  className="border-t border-border"
+                >
+                  <td className="p-3 text-xs font-black uppercase">
+                    {l.label}
+                  </td>
                   <td className="p-3">
                     <div className="font-semibold">{l.title}</div>
                     <div className="text-xs text-muted-foreground">{l.sub}</div>

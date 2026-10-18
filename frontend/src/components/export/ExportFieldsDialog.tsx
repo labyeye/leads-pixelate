@@ -79,8 +79,10 @@ export function ExportFieldsDialog({
     setBusy(true);
     setError("");
     try {
-      if (format === "xlsx") await downloadXLSX(`${name}.xlsx`, headers, rows, docTitle);
-      else if (format === "pdf") await downloadPDF(`${name}.pdf`, docTitle, headers, rows);
+      if (format === "xlsx")
+        await downloadXLSX(`${name}.xlsx`, headers, rows, docTitle);
+      else if (format === "pdf")
+        await downloadPDF(`${name}.pdf`, docTitle, headers, rows);
       else downloadCSV(`${name}.csv`, headers, rows);
       onOpenChange(false);
     } catch {
@@ -98,7 +100,11 @@ export function ExportFieldsDialog({
         </DialogHeader>
 
         {formats.length > 1 && (
-          <div className="flex gap-2" role="radiogroup" aria-label="File format">
+          <div
+            className="flex gap-2"
+            role="radiogroup"
+            aria-label="File format"
+          >
             {formats.map((f) => (
               <button
                 key={f}

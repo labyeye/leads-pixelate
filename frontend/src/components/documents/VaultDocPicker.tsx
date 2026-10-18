@@ -32,7 +32,9 @@ export function VaultDocPicker({
       .catch(() => setDocs([]));
   }, []);
 
-  const list = (docs || []).filter((d) => !imagesOnly || d.mimeType.startsWith("image/"));
+  const list = (docs || []).filter(
+    (d) => !imagesOnly || d.mimeType.startsWith("image/"),
+  );
 
   if (docs && list.length === 0)
     return (
@@ -45,12 +47,19 @@ export function VaultDocPicker({
     );
 
   return (
-    <Select value={value || (optional ? NONE : "")} onValueChange={(v) => onChange(v === NONE ? "" : v)}>
+    <Select
+      value={value || (optional ? NONE : "")}
+      onValueChange={(v) => onChange(v === NONE ? "" : v)}
+    >
       <SelectTrigger className="mt-1 text-sm">
-        <SelectValue placeholder={docs ? "Choose a document..." : "Loading..."} />
+        <SelectValue
+          placeholder={docs ? "Choose a document..." : "Loading..."}
+        />
       </SelectTrigger>
       <SelectContent>
-        {optional && <SelectItem value={NONE}>Template's saved file</SelectItem>}
+        {optional && (
+          <SelectItem value={NONE}>Template's saved file</SelectItem>
+        )}
         {list.map((d) => (
           <SelectItem key={d._id} value={d._id}>
             {d.name}

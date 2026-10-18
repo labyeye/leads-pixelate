@@ -27,15 +27,28 @@ export function AssigneePicker({
         {users.map((u) => {
           const checked = assigneeIds.includes(u._id);
           return (
-            <label key={u._id} className="flex items-center gap-2 cursor-pointer text-sm font-medium text-black hover:bg-[#024BAB]/10 px-2 py-1">
+            <label
+              key={u._id}
+              className="flex items-center gap-2 cursor-pointer text-sm font-medium text-black hover:bg-[#024BAB]/10 px-2 py-1"
+            >
               <input
                 type="checkbox"
                 checked={checked}
-                onChange={() => onAssigneeIdsChange(checked ? assigneeIds.filter((id) => id !== u._id) : [...assigneeIds, u._id])}
+                onChange={() =>
+                  onAssigneeIdsChange(
+                    checked
+                      ? assigneeIds.filter((id) => id !== u._id)
+                      : [...assigneeIds, u._id],
+                  )
+                }
                 className="accent-[#024BAB] w-4 h-4"
               />
               {u.name}
-              {u.role ? <span className="text-[10px] text-muted-foreground">({u.role.replace("_", " ")})</span> : null}
+              {u.role ? (
+                <span className="text-[10px] text-muted-foreground">
+                  ({u.role.replace("_", " ")})
+                </span>
+              ) : null}
             </label>
           );
         })}
@@ -48,7 +61,11 @@ export function AssigneePicker({
             min={1}
             max={1000}
             value={batchSize}
-            onChange={(e) => onBatchSizeChange(Math.max(1, Math.min(1000, parseInt(e.target.value, 10) || 1)))}
+            onChange={(e) =>
+              onBatchSizeChange(
+                Math.max(1, Math.min(1000, parseInt(e.target.value, 10) || 1)),
+              )
+            }
             className="w-16 border-2 border-black px-2 py-1 text-sm font-bold"
           />
         </label>
@@ -57,7 +74,11 @@ export function AssigneePicker({
   );
 }
 
-type Assigned = { assigneeIds?: string[]; assignBatchSize?: number; defaultAssigneeId?: string };
+type Assigned = {
+  assigneeIds?: string[];
+  assignBatchSize?: number;
+  defaultAssigneeId?: string;
+};
 
 // One-line summary for a connected page/account card; falls back to the legacy single assignee.
 export function describeAssignment(
@@ -65,8 +86,13 @@ export function describeAssignment(
   users: { _id: string; name: string }[],
   fallback: string,
 ) {
-  const ids = a.assigneeIds?.length ? a.assigneeIds : a.defaultAssigneeId ? [a.defaultAssigneeId] : [];
+  const ids = a.assigneeIds?.length
+    ? a.assigneeIds
+    : a.defaultAssigneeId
+      ? [a.defaultAssigneeId]
+      : [];
   if (ids.length === 0) return fallback;
-  if (ids.length === 1) return users.find((u) => u._id === ids[0])?.name || "Assigned";
+  if (ids.length === 1)
+    return users.find((u) => u._id === ids[0])?.name || "Assigned";
   return `${ids.length} people, ${a.assignBatchSize || 1} at a time`;
 }

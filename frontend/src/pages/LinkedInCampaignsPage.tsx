@@ -5,7 +5,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
-import { AssigneePicker, describeAssignment } from "@/components/integrations/AssigneePicker";
+import {
+  AssigneePicker,
+  describeAssignment,
+} from "@/components/integrations/AssigneePicker";
 import {
   RefreshCw,
   Check,
@@ -55,9 +58,9 @@ export default function LinkedInCampaignsPage() {
   );
   const [allowedStates, setAllowedStates] = useState<string[]>([]);
   const [stateInput, setStateInput] = useState("");
-  const [users, setUsers] = useState<{ _id: string; name: string; role: string }[]>(
-    [],
-  );
+  const [users, setUsers] = useState<
+    { _id: string; name: string; role: string }[]
+  >([]);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [assignBatchSize, setAssignBatchSize] = useState(1);
   const [connecting, setConnecting] = useState(false);
@@ -470,9 +473,7 @@ export default function LinkedInCampaignsPage() {
                         <div
                           className={`w-5 h-5 border-2 border-black flex items-center justify-center shrink-0 ${allForms ? "bg-[#0A66C2]" : "bg-white"}`}
                         >
-                          {allForms && (
-                            <Check className="w-3 h-3 text-white" />
-                          )}
+                          {allForms && <Check className="w-3 h-3 text-white" />}
                         </div>
                         <span className="text-sm font-bold">
                           Capture from all forms

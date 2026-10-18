@@ -1,4 +1,6 @@
 const asyncHandler = require("express-async-handler");
+const escapeRegex = require("../utils/escapeRegex");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const Quotation = require("../models/Quotation");
 const Setting = require("../models/Setting");
 const logActivity = require("../utils/activityLogger");
@@ -23,9 +25,9 @@ const getQuotations = asyncHandler(async (req, res) => {
   if (status) query.status = status;
   if (search) {
     query.$or = [
-      { number: { $regex: search, $options: "i" } },
-      { clientName: { $regex: search, $options: "i" } },
-      { projectTitle: { $regex: search, $options: "i" } },
+      { number: { $regex: escapeRegex(search), $options: "i" } },
+      { clientName: { $regex: escapeRegex(search), $options: "i" } },
+      { projectTitle: { $regex: escapeRegex(search), $options: "i" } },
     ];
   }
 
@@ -51,7 +53,7 @@ const getQuotations = asyncHandler(async (req, res) => {
 });
 
 const getQuotation = asyncHandler(async (req, res) => {
-  const quotation = await Quotation.findById(req.params.id).populate(
+  const quotation = await Quotation.findOne({ _id: req.params.id, ...tenantScope(req) }).populate(
     "createdBy",
     "name email",
   );
@@ -96,7 +98,7 @@ const createQuotation = asyncHandler(async (req, res) => {
 });
 
 const updateQuotation = asyncHandler(async (req, res) => {
-  let quotation = await Quotation.findById(req.params.id);
+  let quotation = await Quotation.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!quotation) {
     res.status(404);
@@ -110,7 +112,7 @@ const updateQuotation = asyncHandler(async (req, res) => {
 
   const wasSent = quotation.status === "Sent";
 
-  quotation = await Quotation.findByIdAndUpdate(req.params.id, req.body, {
+  quotation = await Quotation.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, safeBody(req.body), {
     new: true,
     runValidators: true,
   }).populate("createdBy", "name email");
@@ -134,7 +136,7 @@ const updateQuotation = asyncHandler(async (req, res) => {
 });
 
 const deleteQuotation = asyncHandler(async (req, res) => {
-  const quotation = await Quotation.findById(req.params.id);
+  const quotation = await Quotation.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!quotation) {
     res.status(404);
@@ -146,7 +148,10 @@ const deleteQuotation = asyncHandler(async (req, res) => {
     throw new Error("Cannot delete an approved quotation");
   }
 
-  await Quotation.updateOne({ _id: quotation._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
+  await Quotation.updateOne(
+    { _id: quotation._id },
+    { $set: { deletedAt: new Date(), deletedBy: req.user._id } },
+  );
 
   logActivity({
     user: req.user,

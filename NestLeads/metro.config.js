@@ -12,7 +12,10 @@ const RN_SHIM_PATH = path.resolve(__dirname, 'src/shims/react-native.tsx');
 const config = {
   resolver: {
     resolveRequest: (context, moduleName, platform) => {
-      if (moduleName === 'react-native' && context.originModulePath !== RN_SHIM_PATH) {
+      if (
+        moduleName === 'react-native' &&
+        context.originModulePath !== RN_SHIM_PATH
+      ) {
         return { type: 'sourceFile', filePath: RN_SHIM_PATH };
       }
       return context.resolveRequest(context, moduleName, platform);

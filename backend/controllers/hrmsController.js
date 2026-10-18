@@ -1,11 +1,12 @@
 const Lead = require("../models/Lead");
+const { safeEqual } = require("../utils/safeEqual");
 const Client = require("../models/Client");
 const SupportTicket = require("../models/SupportTicket");
 
 // API key guard — every request must carry x-api-key matching HRMS_API_SECRET
 const checkApiKey = (req, res, next) => {
   const key = req.headers["x-api-key"];
-  if (!process.env.HRMS_API_SECRET || key !== process.env.HRMS_API_SECRET) {
+  if (!process.env.HRMS_API_SECRET || !safeEqual(key, process.env.HRMS_API_SECRET)) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
   next();
@@ -28,7 +29,7 @@ const getLeads = async (req, res) => {
 
     const leads = await Lead.find(filter)
       .select(
-        "name company phone email location state source status contactTag requirement budget followUpDate createdAt updatedAt"
+        "name company phone email location state source status contactTag requirement budget followUpDate createdAt updatedAt",
       )
       .populate("assignedTo", "name email")
       .sort({ createdAt: -1 })
@@ -81,7 +82,7 @@ const getClients = async (req, res) => {
 
     const clients = await Client.find(filter)
       .select(
-        "name company phone email address businessType gst services projectStatus paymentStatus createdAt updatedAt"
+        "name company phone email address businessType gst services projectStatus paymentStatus createdAt updatedAt",
       )
       .sort({ createdAt: -1 })
       .lean();
@@ -116,7 +117,10 @@ const getTickets = async (req, res) => {
 const getTicket = async (req, res) => {
   try {
     const ticket = await SupportTicket.findOne({
-      $or: [{ _id: req.params.id.match(/^[a-f\d]{24}$/i) ? req.params.id : null }, { ticketId: req.params.id }],
+      $or: [
+        { _id: req.params.id.match(/^[a-f\d]{24}$/i) ? req.params.id : null },
+        { ticketId: req.params.id },
+      ],
     });
     if (!ticket)
       return res
@@ -216,15 +220,13 @@ const updateTicket = async (req, res) => {
       {
         $or: [
           {
-            _id: req.params.id.match(/^[a-f\d]{24}$/i)
-              ? req.params.id
-              : null,
+            _id: req.params.id.match(/^[a-f\d]{24}$/i) ? req.params.id : null,
           },
           { ticketId: req.params.id },
         ],
       },
       update,
-      { new: true }
+      { new: true },
     );
 
     if (!ticket)

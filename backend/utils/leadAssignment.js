@@ -3,12 +3,18 @@
 // integration (IndiaMART, TradeIndia, Justdial, Facebook/Google/LinkedIn lead ads, website API).
 const AssignmentCursor = require("../models/AssignmentCursor");
 
-const sameList = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+const sameList = (a, b) =>
+  a.length === b.length && a.every((v, i) => v === b[i]);
 
 // ponytail: read-then-write cursor, so two leads arriving in the same instant can occasionally
 // land on the same person instead of alternating — fine at integration-webhook volumes; move to a
 // single findOneAndUpdate with $inc + modulo math if a source ever bursts leads concurrently.
-async function nextBatchAssignee({ tenantId, key, assigneeIds, batchSize = 1 }) {
+async function nextBatchAssignee({
+  tenantId,
+  key,
+  assigneeIds,
+  batchSize = 1,
+}) {
   const ids = (assigneeIds || []).filter(Boolean).map(String);
   if (!ids.length) return null;
   if (ids.length === 1) return ids[0];
@@ -36,11 +42,14 @@ async function nextBatchAssignee({ tenantId, key, assigneeIds, batchSize = 1 }) 
   return winner;
 }
 
-const clampBatchSize = (v) => Math.max(1, Math.min(1000, Math.round(Number(v)) || 1));
+const clampBatchSize = (v) =>
+  Math.max(1, Math.min(1000, Math.round(Number(v)) || 1));
 
 // Normalises the assignee list + batch size a connect endpoint receives into the stored shape.
 const assignmentFields = ({ assigneeIds, assignBatchSize }) => ({
-  assigneeIds: Array.isArray(assigneeIds) ? assigneeIds.filter(Boolean).map(String) : [],
+  assigneeIds: Array.isArray(assigneeIds)
+    ? assigneeIds.filter(Boolean).map(String)
+    : [],
   assignBatchSize: clampBatchSize(assignBatchSize),
 });
 

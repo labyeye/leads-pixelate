@@ -455,11 +455,10 @@ const INTEGRATIONS: Integration[] = [
     color: "#4285F4",
     bgColor: "#EFF6FF",
     icon: "GA",
-        logo: googleAdsLogo,
+    logo: googleAdsLogo,
 
     connected: false,
-    docsUrl:
-      "https://support.google.com/google-ads/answer/9358723",
+    docsUrl: "https://support.google.com/google-ads/answer/9358723",
     steps: [],
   },
   {
@@ -544,7 +543,7 @@ const INTEGRATIONS: Integration[] = [
           </div>
         ),
         instructions: [
-          "Your details are saved — click \"Sync TradeIndia\" on the Leads page any time to pull in new enquiries",
+          'Your details are saved — click "Sync TradeIndia" on the Leads page any time to pull in new enquiries',
           'Leads will be tagged with source "TradeIndia"',
           "This first sync is the real test — if it fails, double-check the API Link and credentials from TradeIndia's My Inquiry API page",
         ],
@@ -561,8 +560,7 @@ const INTEGRATIONS: Integration[] = [
     icon: "IN",
     logo: linkedinLogo,
     connected: false,
-    docsUrl:
-      "https://www.linkedin.com/help/lms/answer/a425696",
+    docsUrl: "https://www.linkedin.com/help/lms/answer/a425696",
     steps: [],
   },
   {
@@ -611,7 +609,8 @@ const INTEGRATIONS: Integration[] = [
             key: "api_key",
             label: "Justdial API Key (optional)",
             type: "password",
-            placeholder: "Leave blank unless Justdial support asked you to set one",
+            placeholder:
+              "Leave blank unless Justdial support asked you to set one",
             help: "Not required to generate your webhook URL",
           },
         ],
@@ -653,7 +652,9 @@ function IntegrationWizard({
   const [fields, setFields] = useState<Record<string, string>>({});
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
-  const [justdialWebhookUrl, setJustdialWebhookUrl] = useState<string | null>(null);
+  const [justdialWebhookUrl, setJustdialWebhookUrl] = useState<string | null>(
+    null,
+  );
 
   const baseStep = integration.steps[step];
   const isLast = step === integration.steps.length - 1;
@@ -666,7 +667,7 @@ function IntegrationWizard({
           ...baseStep,
           instructions: [
             "Copy the webhook URL below",
-            "Call Justdial business support and give it to them as your \"CRM API Integration\" delivery URL",
+            'Call Justdial business support and give it to them as your "CRM API Integration" delivery URL',
             'Once they confirm it\'s active, new enquiries will appear here tagged source "Justdial" — usually within 1-2 business days',
           ],
           fields: [
@@ -717,7 +718,8 @@ function IntegrationWizard({
           );
           toast({
             title: "Saved!",
-            description: "Run a sync from the Leads page to pull in your first leads.",
+            description:
+              "Run a sync from the Leads page to pull in your first leads.",
           });
         } else if (integration.id === "justdial") {
           const res = await justdialSyncAPI.connect(fields.api_key);
@@ -1235,7 +1237,9 @@ export default function IntegrationsPage() {
       navigate("/campaigns/linkedin");
     } else if (
       connectedIds.has(integ.id) &&
-      (integ.id === "indiamart" || integ.id === "tradeindia" || integ.id === "justdial")
+      (integ.id === "indiamart" ||
+        integ.id === "tradeindia" ||
+        integ.id === "justdial")
     ) {
       setManaging(integ);
     } else {
@@ -1474,10 +1478,22 @@ export default function IntegrationsPage() {
                     onSave={async () => {
                       setFbSavingAssignees(true);
                       try {
-                        await facebookAPI.updateSettings(fbAssigneeIds, fbBatchSize);
-                        toast({ title: "Saved!", description: "Facebook lead assignment updated." });
+                        await facebookAPI.updateSettings(
+                          fbAssigneeIds,
+                          fbBatchSize,
+                        );
+                        toast({
+                          title: "Saved!",
+                          description: "Facebook lead assignment updated.",
+                        });
                       } catch (err: any) {
-                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
+                        toast({
+                          title: "Error",
+                          description:
+                            err?.message ||
+                            "Could not save assignment settings.",
+                          variant: "destructive",
+                        });
                       }
                       setFbSavingAssignees(false);
                     }}
@@ -1494,10 +1510,22 @@ export default function IntegrationsPage() {
                     onSave={async () => {
                       setImSavingAssignees(true);
                       try {
-                        await indiamartAPI.updateSettings(imAssigneeIds, imBatchSize);
-                        toast({ title: "Saved!", description: "IndiaMART lead assignment updated." });
+                        await indiamartAPI.updateSettings(
+                          imAssigneeIds,
+                          imBatchSize,
+                        );
+                        toast({
+                          title: "Saved!",
+                          description: "IndiaMART lead assignment updated.",
+                        });
                       } catch (err: any) {
-                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
+                        toast({
+                          title: "Error",
+                          description:
+                            err?.message ||
+                            "Could not save assignment settings.",
+                          variant: "destructive",
+                        });
                       }
                       setImSavingAssignees(false);
                     }}
@@ -1514,10 +1542,22 @@ export default function IntegrationsPage() {
                     onSave={async () => {
                       setTiSavingAssignees(true);
                       try {
-                        await tradeindiaSyncAPI.updateSettings(tiAssigneeIds, tiBatchSize);
-                        toast({ title: "Saved!", description: "TradeIndia lead assignment updated." });
+                        await tradeindiaSyncAPI.updateSettings(
+                          tiAssigneeIds,
+                          tiBatchSize,
+                        );
+                        toast({
+                          title: "Saved!",
+                          description: "TradeIndia lead assignment updated.",
+                        });
                       } catch (err: any) {
-                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
+                        toast({
+                          title: "Error",
+                          description:
+                            err?.message ||
+                            "Could not save assignment settings.",
+                          variant: "destructive",
+                        });
                       }
                       setTiSavingAssignees(false);
                     }}
@@ -1534,10 +1574,22 @@ export default function IntegrationsPage() {
                     onSave={async () => {
                       setJdSavingAssignees(true);
                       try {
-                        await justdialSyncAPI.updateSettings(jdAssigneeIds, jdBatchSize);
-                        toast({ title: "Saved!", description: "Justdial lead assignment updated." });
+                        await justdialSyncAPI.updateSettings(
+                          jdAssigneeIds,
+                          jdBatchSize,
+                        );
+                        toast({
+                          title: "Saved!",
+                          description: "Justdial lead assignment updated.",
+                        });
                       } catch (err: any) {
-                        toast({ title: "Error", description: err?.message || "Could not save assignment settings.", variant: "destructive" });
+                        toast({
+                          title: "Error",
+                          description:
+                            err?.message ||
+                            "Could not save assignment settings.",
+                          variant: "destructive",
+                        });
                       }
                       setJdSavingAssignees(false);
                     }}
@@ -1553,22 +1605,19 @@ export default function IntegrationsPage() {
             Coming Soon
           </p>
           <div className="flex flex-wrap gap-2">
-            {[
-              "Sulekha",
-              "99acres",
-              "MagicBricks",
-              "IndiaBizForSale",
-            ].map((name) => (
-              <div
-                key={name}
-                className="flex items-center gap-2 border-2 border-dashed border-black px-3 py-1.5"
-              >
-                <div className="w-2 h-2 bg-muted-foreground/30 border border-black" />
-                <span className="text-xs font-bold text-muted-foreground">
-                  {name}
-                </span>
-              </div>
-            ))}
+            {["Sulekha", "99acres", "MagicBricks", "IndiaBizForSale"].map(
+              (name) => (
+                <div
+                  key={name}
+                  className="flex items-center gap-2 border-2 border-dashed border-black px-3 py-1.5"
+                >
+                  <div className="w-2 h-2 bg-muted-foreground/30 border border-black" />
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {name}
+                  </span>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>

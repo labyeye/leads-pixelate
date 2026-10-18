@@ -174,11 +174,9 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
     caption,
   });
   await waitForMediaReady(container.id, accessToken);
-  const published = await fbCall(
-    `${igAccountId}/media_publish`,
-    accessToken,
-    { creation_id: container.id },
-  );
+  const published = await fbCall(`${igAccountId}/media_publish`, accessToken, {
+    creation_id: container.id,
+  });
   return published.id || "";
 }
 
@@ -186,28 +184,45 @@ async function postToInstagram(igAccountId, accessToken, caption, post) {
 async function postStory(account, imageUrl) {
   if (account.platform === "instagram") {
     const ig = account.instagramBusinessAccountId || account.accountId;
-    const container = await fbCall(`${ig}/media`, account.accessToken, { media_type: "STORIES", image_url: imageUrl });
+    const container = await fbCall(`${ig}/media`, account.accessToken, {
+      media_type: "STORIES",
+      image_url: imageUrl,
+    });
     await waitForMediaReady(container.id, account.accessToken);
-    return fbCall(`${ig}/media_publish`, account.accessToken, { creation_id: container.id });
+    return fbCall(`${ig}/media_publish`, account.accessToken, {
+      creation_id: container.id,
+    });
   }
   // Facebook Page stories: upload the photo unpublished, then publish it as a story.
-  const photo = await fbCall(`${account.accountId}/photos`, account.accessToken, { url: imageUrl, published: false });
-  return fbCall(`${account.accountId}/photo_stories`, account.accessToken, { photo_id: photo.id });
+  const photo = await fbCall(
+    `${account.accountId}/photos`,
+    account.accessToken,
+    { url: imageUrl, published: false },
+  );
+  return fbCall(`${account.accountId}/photo_stories`, account.accessToken, {
+    photo_id: photo.id,
+  });
 }
 
 async function uploadLinkedInImage(orgUrn, imageUrl, accessToken) {
-  const initRes = await fetch(`${LINKEDIN_REST}/images?action=initializeUpload`, {
-    method: "POST",
-    headers: linkedinHeaders(accessToken),
-    body: JSON.stringify({ initializeUploadRequest: { owner: orgUrn } }),
-  });
+  const initRes = await fetch(
+    `${LINKEDIN_REST}/images?action=initializeUpload`,
+    {
+      method: "POST",
+      headers: linkedinHeaders(accessToken),
+      body: JSON.stringify({ initializeUploadRequest: { owner: orgUrn } }),
+    },
+  );
   const initData = await initRes.json();
   if (!initRes.ok) {
-    throw new Error(initData?.message || "LinkedIn image upload could not be initialized");
+    throw new Error(
+      initData?.message || "LinkedIn image upload could not be initialized",
+    );
   }
 
   const imgRes = await fetch(imageUrl);
-  if (!imgRes.ok) throw new Error("Could not download image for LinkedIn upload");
+  if (!imgRes.ok)
+    throw new Error("Could not download image for LinkedIn upload");
   const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
 
   const putRes = await fetch(initData.value.uploadUrl, {
@@ -257,7 +272,9 @@ async function postToLinkedIn(orgId, accessToken, caption, post) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data?.message || "LinkedIn post failed");
   }
-  return res.headers.get("x-restli-id") || res.headers.get("x-linkedin-id") || "";
+  return (
+    res.headers.get("x-restli-id") || res.headers.get("x-linkedin-id") || ""
+  );
 }
 
 async function executePublish(post) {
@@ -323,11 +340,19 @@ async function executePublish(post) {
           post,
         );
       }
-      results.push({ accountId: account._id, platform: account.platform, postId });
+      results.push({
+        accountId: account._id,
+        platform: account.platform,
+        postId,
+      });
       // Best effort: a failed story never fails the post itself.
       if (post.storyImageUrl && account.platform !== "linkedin") {
         await postStory(account, post.storyImageUrl).catch((err) =>
-          log.warn("Story publish failed", { postId: String(post._id), platform: account.platform, message: err.message }),
+          log.warn("Story publish failed", {
+            postId: String(post._id),
+            platform: account.platform,
+            message: err.message,
+          }),
         );
       }
     } catch (err) {
@@ -365,8 +390,10 @@ exports.getPosts = asyncHandler(async (req, res) => {
   if (req.user.tenantId) filter.tenantId = req.user.tenantId;
   if (req.query.status) filter.status = req.query.status;
   if (req.query.platform) filter.platforms = req.query.platform;
-  if (["manual", "autopilot"].includes(req.query.source)) filter.source = req.query.source;
-  if (/^[0-9a-f]{24}$/i.test(req.query.campaignId || "")) filter.campaignId = req.query.campaignId; // one Autopilot campaign
+  if (["manual", "autopilot"].includes(req.query.source))
+    filter.source = req.query.source;
+  if (/^[0-9a-f]{24}$/i.test(req.query.campaignId || ""))
+    filter.campaignId = req.query.campaignId; // one Autopilot campaign
 
   const posts = await SocialPost.find(filter)
     .sort({ scheduledAt: 1, createdAt: -1 })
@@ -428,7 +455,12 @@ exports.createPost = asyncHandler(async (req, res) => {
     throw new Error("Select at least one account to post to");
   }
 
-  validatePostMedia({ postType: postType || "image", imageUrl, mediaUrls, videoUrl });
+  validatePostMedia({
+    postType: postType || "image",
+    imageUrl,
+    mediaUrls,
+    videoUrl,
+  });
 
   const post = await SocialPost.create({
     caption,
@@ -589,7 +621,10 @@ exports.approvePost = asyncHandler(async (req, res) => {
   await post.save();
 
   executePublish(post).catch((err) =>
-    log.error("Post publish failed", { postId: post._id, message: err.message }),
+    log.error("Post publish failed", {
+      postId: post._id,
+      message: err.message,
+    }),
   );
 
   res.json({ success: true, data: post });
@@ -656,7 +691,10 @@ exports.runScheduledPosts = async () => {
 
     for (const post of duePosts) {
       await executePublish(post).catch((err) =>
-        log.error("Scheduled post publish failed", { postId: post._id, message: err.message }),
+        log.error("Scheduled post publish failed", {
+          postId: post._id,
+          message: err.message,
+        }),
       );
     }
 
@@ -717,7 +755,10 @@ exports.connectAccount = asyncHandler(async (req, res) => {
 
 exports.disconnectAccount = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
-  const account = await SocialAccount.findOne({ _id: req.params.id, ...tenantFilter });
+  const account = await SocialAccount.findOne({
+    _id: req.params.id,
+    ...tenantFilter,
+  });
   if (!account) {
     res.status(404);
     throw new Error("Account not found");
@@ -758,7 +799,9 @@ async function saveLinkedInOrgsAsSocialAccounts(accessToken, userId, tenantId) {
   );
   const aclData = await aclRes.json();
   if (!aclRes.ok) {
-    throw new Error(aclData?.message || "Failed to list LinkedIn organizations");
+    throw new Error(
+      aclData?.message || "Failed to list LinkedIn organizations",
+    );
   }
 
   const orgUrns = (aclData.elements || []).map((e) => e.organization);
@@ -811,34 +854,45 @@ exports.linkedinCallback = asyncHandler(async (req, res) => {
     );
   }
 
-  const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: config.callbackUrl,
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-    }).toString(),
-  });
+  const tokenRes = await fetch(
+    "https://www.linkedin.com/oauth/v2/accessToken",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: config.callbackUrl,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+      }).toString(),
+    },
+  );
   const tokenData = await tokenRes.json();
 
   if (!tokenRes.ok || tokenData.error) {
     return res.redirect(
       `${frontendUrl}?tab=accounts&error=${encodeURIComponent(
-        tokenData?.error_description || tokenData?.error || "Token exchange failed",
+        tokenData?.error_description ||
+          tokenData?.error ||
+          "Token exchange failed",
       )}`,
     );
   }
 
   const accessToken = tokenData.access_token;
-  const user = await require("../models/User").findById(userId).select("tenantId");
+  const user = await require("../models/User")
+    .findById(userId)
+    .select("tenantId");
   const tenantId = user?.tenantId || null;
 
   let savedCount = 0;
   try {
-    savedCount = await saveLinkedInOrgsAsSocialAccounts(accessToken, userId, tenantId);
+    savedCount = await saveLinkedInOrgsAsSocialAccounts(
+      accessToken,
+      userId,
+      tenantId,
+    );
   } catch (err) {
     return res.redirect(
       `${frontendUrl}?tab=accounts&error=${encodeURIComponent(err.message)}`,
@@ -880,14 +934,20 @@ exports.getFacebookAuthUrl = asyncHandler(async (req, res) => {
 });
 
 exports.savePagesAsSocialAccounts = savePagesAsSocialAccounts;
-async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null) {
+async function savePagesAsSocialAccounts(
+  finalUserToken,
+  userId,
+  tenantId = null,
+) {
   try {
     const permRes = await fetch(
       `https://graph.facebook.com/v18.0/me/permissions?access_token=${finalUserToken}`,
     );
     await permRes.json();
   } catch (err) {
-    log.error("Social import permissions check failed", { message: err.message });
+    log.error("Social import permissions check failed", {
+      message: err.message,
+    });
   }
 
   const pagesRes = await fetch(
@@ -913,7 +973,11 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
       );
       const igData = await igRes.json();
       if (igData.error) {
-        log.error("IG lookup failed for page", { pageId: page.id, pageName: page.name, message: igData.error.message });
+        log.error("IG lookup failed for page", {
+          pageId: page.id,
+          pageName: page.name,
+          message: igData.error.message,
+        });
       } else {
         igId =
           igData?.instagram_business_account?.id ||
@@ -921,7 +985,10 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
           "";
       }
     } catch (err) {
-      log.error("IG fetch failed for page", { pageId: page.id, message: err.message });
+      log.error("IG fetch failed for page", {
+        pageId: page.id,
+        message: err.message,
+      });
     }
 
     await SocialAccount.findOneAndUpdate(
@@ -941,7 +1008,13 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
     savedCount++;
 
     if (igId) {
-      await saveInstagramAccount(igId, page.access_token, page.name, userId, tenantId);
+      await saveInstagramAccount(
+        igId,
+        page.access_token,
+        page.name,
+        userId,
+        tenantId,
+      );
       savedCount++;
     }
   }
@@ -992,7 +1065,11 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
             if (isNew) savedCount++;
           }
         } catch (err) {
-          log.error("Business IG fetch failed", { bizId: biz.id, edge, message: err.message });
+          log.error("Business IG fetch failed", {
+            bizId: biz.id,
+            edge,
+            message: err.message,
+          });
         }
       }
     }
@@ -1003,8 +1080,17 @@ async function savePagesAsSocialAccounts(finalUserToken, userId, tenantId = null
   return savedCount;
 }
 
-async function saveInstagramAccount(igId, pageToken, fallbackName, userId, tenantId, username, profilePicture) {
-  let igName = (username ? `@${username}` : null) || fallbackName + " (Instagram)";
+async function saveInstagramAccount(
+  igId,
+  pageToken,
+  fallbackName,
+  userId,
+  tenantId,
+  username,
+  profilePicture,
+) {
+  let igName =
+    (username ? `@${username}` : null) || fallbackName + " (Instagram)";
   let igPicture = profilePicture || "";
 
   if (!username || !profilePicture) {
@@ -1014,7 +1100,9 @@ async function saveInstagramAccount(igId, pageToken, fallbackName, userId, tenan
       );
       const igInfo = await igInfoRes.json();
       if (!igInfo.error) {
-        igName = igInfo.username ? `@${igInfo.username}` : igInfo.name || igName;
+        igName = igInfo.username
+          ? `@${igInfo.username}`
+          : igInfo.name || igName;
         igPicture = igInfo.profile_picture_url || igPicture;
       }
     } catch (_) {}
@@ -1073,12 +1161,18 @@ exports.facebookCallback = asyncHandler(async (req, res) => {
   const longLivedData = await longLivedRes.json();
   const finalUserToken = longLivedData.access_token || userAccessToken;
 
-  const user = await require("../models/User").findById(userId).select("tenantId");
+  const user = await require("../models/User")
+    .findById(userId)
+    .select("tenantId");
   const tenantId = user?.tenantId || null;
 
   let savedCount = 0;
   try {
-    savedCount = await savePagesAsSocialAccounts(finalUserToken, userId, tenantId);
+    savedCount = await savePagesAsSocialAccounts(
+      finalUserToken,
+      userId,
+      tenantId,
+    );
   } catch (err) {
     return res.redirect(
       `${frontendUrl}?tab=accounts&error=${encodeURIComponent(err.message)}`,
@@ -1106,7 +1200,11 @@ exports.importFromIntegration = asyncHandler(async (req, res) => {
 
   let savedCount;
   try {
-    savedCount = await savePagesAsSocialAccounts(userToken, req.user._id, req.user.tenantId || null);
+    savedCount = await savePagesAsSocialAccounts(
+      userToken,
+      req.user._id,
+      req.user.tenantId || null,
+    );
   } catch (err) {
     res.status(400);
     throw new Error(err.message || "Failed to import pages from Facebook");

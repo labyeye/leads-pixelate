@@ -91,7 +91,11 @@ const socialPostSchema = new mongoose.Schema(
     source: { type: String, enum: ["manual", "autopilot"], default: "manual" },
 
     // The Autopilot campaign that made this post (models/AutopilotCampaign.js).
-    campaignId: { type: mongoose.Schema.Types.ObjectId, ref: "AutopilotCampaign", default: null },
+    campaignId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "AutopilotCampaign",
+      default: null,
+    },
 
     // What an autopilot post was made from, so it can be revised on the owner's feedback.
     autopilotMeta: {

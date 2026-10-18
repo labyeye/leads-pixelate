@@ -8,20 +8,30 @@ const crypto = require("crypto");
 const API = "https://api.twilio.com/2010-04-01/Accounts";
 
 const isConfigured = () =>
-  !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER);
+  !!(
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER
+  );
 
 // Where Twilio calls us back. Must be public https.
 const webhookBase = () =>
-  (process.env.TWILIO_WEBHOOK_BASE || process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com").replace(/\/$/, "");
+  (
+    process.env.TWILIO_WEBHOOK_BASE ||
+    process.env.BACKEND_URL ||
+    "https://leads-backend.pixelatenest.com"
+  ).replace(/\/$/, "");
 
 // Leads store bare 10-digit Indian numbers; Twilio needs E.164. Returns null when it is not a number.
 function e164(phone) {
   const raw = String(phone ?? "").trim();
   const digits = raw.replace(/\D/g, "");
-  if (raw.startsWith("+")) return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
+  if (raw.startsWith("+"))
+    return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : null;
   if (digits.length === 10) return `+91${digits}`;
   if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
-  if (digits.length === 11 && digits.startsWith("0")) return `+91${digits.slice(1)}`;
+  if (digits.length === 11 && digits.startsWith("0"))
+    return `+91${digits.slice(1)}`;
   return null;
 }
 
@@ -29,23 +39,49 @@ function e164(phone) {
 // (sorted by name) as name+value. Proves the webhook really came from Twilio.
 function validSignature(signature, url, params = {}) {
   if (!signature || !process.env.TWILIO_AUTH_TOKEN) return false;
-  const data = url + Object.keys(params).sort().map((k) => k + params[k]).join("");
-  const expected = crypto.createHmac("sha1", process.env.TWILIO_AUTH_TOKEN).update(data).digest("base64");
+  const data =
+    url +
+    Object.keys(params)
+      .sort()
+      .map((k) => k + params[k])
+      .join("");
+  const expected = crypto
+    .createHmac("sha1", process.env.TWILIO_AUTH_TOKEN)
+    .update(data)
+    .digest("base64");
   const a = Buffer.from(expected);
   const b = Buffer.from(String(signature));
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 const xml = (s) =>
-  String(s ?? "").replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]);
+  String(s ?? "").replace(
+    /[<>&"']/g,
+    (c) =>
+      ({
+        "<": "&lt;",
+        ">": "&gt;",
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&apos;",
+      })[c],
+  );
 
 // Spoken to the lead the moment they pick up (the <Number url> below), before the two are bridged.
-const RECORDING_NOTICE = "This call is being recorded for quality and record keeping.";
-const whisperTwiml = () => `<?xml version="1.0" encoding="UTF-8"?><Response><Say>${RECORDING_NOTICE}</Say></Response>`;
+const RECORDING_NOTICE =
+  "This call is being recorded for quality and record keeping.";
+const whisperTwiml = () =>
+  `<?xml version="1.0" encoding="UTF-8"?><Response><Say>${RECORDING_NOTICE}</Say></Response>`;
 
 // TwiML for the moment the agent answers: say who is being called, then dial the lead. The bridged call is
 // recorded on two channels (agent = 1st, lead = 2nd) and Twilio reports the file to recordingUrl.
-function connectTwiml({ leadName, leadPhone, dialActionUrl, recordingUrl, whisperUrl }) {
+function connectTwiml({
+  leadName,
+  leadPhone,
+  dialActionUrl,
+  recordingUrl,
+  whisperUrl,
+}) {
   return (
     `<?xml version="1.0" encoding="UTF-8"?><Response>` +
     `<Say>Connecting you to ${xml(leadName || "the lead")}. This call is recorded.</Say>` +
@@ -85,13 +121,21 @@ async function startCall({ agentPhone, callLogId }) {
   });
   // Trial accounts reject StatusCallbackEvent ("limited parameter access"); default = completed only.
 
-  const auth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString("base64");
-  const res = await fetch(`${API}/${process.env.TWILIO_ACCOUNT_SID}/Calls.json`, {
-    method: "POST",
-    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-    signal: AbortSignal.timeout(20_000),
-  });
+  const auth = Buffer.from(
+    `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`,
+  ).toString("base64");
+  const res = await fetch(
+    `${API}/${process.env.TWILIO_ACCOUNT_SID}/Calls.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || `Twilio error ${res.status}`);
   return { sid: data.sid };
@@ -99,10 +143,28 @@ async function startCall({ agentPhone, callLogId }) {
 
 // Download a finished recording (Twilio media needs the account credentials). Returns a Buffer.
 async function downloadRecording(recordingUrl) {
-  const auth = Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString("base64");
-  const res = await fetch(`${recordingUrl}.mp3`, { headers: { Authorization: `Basic ${auth}` }, signal: AbortSignal.timeout(60_000) });
-  if (!res.ok) throw new Error(`Twilio recording download failed (${res.status})`);
+  const auth = Buffer.from(
+    `${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`,
+  ).toString("base64");
+  const res = await fetch(`${recordingUrl}.mp3`, {
+    headers: { Authorization: `Basic ${auth}` },
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok)
+    throw new Error(`Twilio recording download failed (${res.status})`);
   return Buffer.from(await res.arrayBuffer());
 }
 
-module.exports = { isConfigured, webhookBase, e164, validSignature, connectTwiml, whisperTwiml, emptyTwiml, mapStatus, startCall, downloadRecording, xml };
+module.exports = {
+  isConfigured,
+  webhookBase,
+  e164,
+  validSignature,
+  connectTwiml,
+  whisperTwiml,
+  emptyTwiml,
+  mapStatus,
+  startCall,
+  downloadRecording,
+  xml,
+};

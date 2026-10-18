@@ -90,7 +90,11 @@ export function CampaignAssignmentTable({
             ) : sorted.length === 0 ? (
               <tr>
                 <td colSpan={showPlatformColumn ? 7 : 6}>
-                  <EmptyState icon={emptyIcon} title={emptyTitle} desc={emptyDesc} />
+                  <EmptyState
+                    icon={emptyIcon}
+                    title={emptyTitle}
+                    desc={emptyDesc}
+                  />
                 </td>
               </tr>
             ) : (

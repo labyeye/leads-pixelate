@@ -103,9 +103,7 @@ function buildUserPayload(formData: typeof EMPTY_FORM_DATA) {
   } = formData;
   return {
     ...rest,
-    ...(roleId === "__super_admin__"
-      ? { role: "super_admin" }
-      : { roleId }),
+    ...(roleId === "__super_admin__" ? { role: "super_admin" } : { roleId }),
     address: {
       line1: addressLine1,
       city: addressCity,
@@ -456,174 +454,177 @@ export default function UsersPage() {
 
               <div className="grid gap-4 p-5 bg-white max-h-[60vh] overflow-y-auto">
                 {modalTab === "basic" && (
-                <>
-                <NbInput
-                  label="Full Name"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e: any) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="John Doe"
-                  required
-                />
-                <NbInput
-                  label="Email"
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e: any) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="john@example.com"
-                  required
-                />
-                <NbInput
-                  label={
-                    editingUserId
-                      ? "Password (leave blank to keep)"
-                      : "Password"
-                  }
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e: any) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  placeholder={
-                    editingUserId
-                      ? "Leave blank to keep unchanged"
-                      : "Min. 6 characters"
-                  }
-                  required={!editingUserId}
-                />
-                {(!editingUserId || formData.password) && (
-                  <NbInput
-                    label="Confirm Password"
-                    id="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e: any) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    placeholder="Re-enter password"
-                    required={!editingUserId}
-                  />
-                )}
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black">
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    value={formData.roleId}
-                    onValueChange={(v: string) =>
-                      setFormData({ ...formData, roleId: v })
-                    }
-                  >
-                    <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
-                      {roles.map((r) => (
-                        <SelectItem
-                          key={r._id}
-                          value={r._id}
-                          className="font-bold"
-                        >
-                          {r.name}
-                        </SelectItem>
-                      ))}
-                      {currentUser?.role === "super_admin" && (
-                        <SelectItem
-                          value="__super_admin__"
-                          className="font-bold"
-                        >
-                          Super Admin
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <PhoneInput
-                    label="Phone"
-                    value={formData.phone}
-                    onChange={(v) => setFormData({ ...formData, phone: v })}
-                    placeholder="10-digit mobile"
-                  />
-                  <NbInput
-                    label="Department"
-                    id="dept"
-                    value={formData.department}
-                    onChange={(e: any) =>
-                      setFormData({ ...formData, department: e.target.value })
-                    }
-                    placeholder="e.g. Sales"
-                  />
-                </div>
-                {}
-                <div className="space-y-1">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black">
-                    Profile Photo
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] flex items-center justify-center">
-                      {formData.avatar ? (
-                        <img
-                          src={formData.avatar}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Camera className="w-5 h-5 text-white" />
-                      )}
-                    </div>
-                    <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-bold bg-white hover:bg-black hover:text-white transition-colors">
-                      Upload Photo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (file.size > 2 * 1024 * 1024) {
-                            notify.error(
-                              "Image Too Large",
-                              "Max file size is 2MB.",
-                            );
-                            return;
-                          }
-                          const reader = new FileReader();
-                          reader.onload = () =>
-                            setFormData((f) => ({
-                              ...f,
-                              avatar: reader.result as string,
-                            }));
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-                    <span className="text-[10px] text-muted-foreground">
-                      Image · max 2MB
-                    </span>
-                    {formData.avatar && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData((f) => ({ ...f, avatar: "" }))
+                  <>
+                    <NbInput
+                      label="Full Name"
+                      id="name"
+                      value={formData.name}
+                      onChange={(e: any) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      placeholder="John Doe"
+                      required
+                    />
+                    <NbInput
+                      label="Email"
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e: any) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      placeholder="john@example.com"
+                      required
+                    />
+                    <NbInput
+                      label={
+                        editingUserId
+                          ? "Password (leave blank to keep)"
+                          : "Password"
+                      }
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e: any) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      placeholder={
+                        editingUserId
+                          ? "Leave blank to keep unchanged"
+                          : "Min. 6 characters"
+                      }
+                      required={!editingUserId}
+                    />
+                    {(!editingUserId || formData.password) && (
+                      <NbInput
+                        label="Confirm Password"
+                        id="confirmPassword"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
                         }
-                        className="text-xs font-bold text-red-500 underline"
-                      >
-                        Remove
-                      </button>
+                        placeholder="Re-enter password"
+                        required={!editingUserId}
+                      />
                     )}
-                  </div>
-                </div>
-                </>
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                        Role <span className="text-red-500">*</span>
+                      </label>
+                      <Select
+                        value={formData.roleId}
+                        onValueChange={(v: string) =>
+                          setFormData({ ...formData, roleId: v })
+                        }
+                      >
+                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
+                          {roles.map((r) => (
+                            <SelectItem
+                              key={r._id}
+                              value={r._id}
+                              className="font-bold"
+                            >
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                          {currentUser?.role === "super_admin" && (
+                            <SelectItem
+                              value="__super_admin__"
+                              className="font-bold"
+                            >
+                              Super Admin
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <PhoneInput
+                        label="Phone"
+                        value={formData.phone}
+                        onChange={(v) => setFormData({ ...formData, phone: v })}
+                        placeholder="10-digit mobile"
+                      />
+                      <NbInput
+                        label="Department"
+                        id="dept"
+                        value={formData.department}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            department: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. Sales"
+                      />
+                    </div>
+                    {}
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                        Profile Photo
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] flex items-center justify-center">
+                          {formData.avatar ? (
+                            <img
+                              src={formData.avatar}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Camera className="w-5 h-5 text-white" />
+                          )}
+                        </div>
+                        <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-bold bg-white hover:bg-black hover:text-white transition-colors">
+                          Upload Photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 2 * 1024 * 1024) {
+                                notify.error(
+                                  "Image Too Large",
+                                  "Max file size is 2MB.",
+                                );
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = () =>
+                                setFormData((f) => ({
+                                  ...f,
+                                  avatar: reader.result as string,
+                                }));
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </label>
+                        <span className="text-[10px] text-muted-foreground">
+                          Image · max 2MB
+                        </span>
+                        {formData.avatar && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((f) => ({ ...f, avatar: "" }))
+                            }
+                            className="text-xs font-bold text-red-500 underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 {modalTab === "employment" && (
@@ -716,7 +717,11 @@ export default function UsersPage() {
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
                           {["male", "female", "other"].map((g) => (
-                            <SelectItem key={g} value={g} className="font-bold capitalize">
+                            <SelectItem
+                              key={g}
+                              value={g}
+                              className="font-bold capitalize"
+                            >
                               {g}
                             </SelectItem>
                           ))}
@@ -769,7 +774,9 @@ export default function UsersPage() {
                         onChange={(e: any) =>
                           setFormData({
                             ...formData,
-                            addressPincode: e.target.value.replace(/\D/g, "").slice(0, 6),
+                            addressPincode: e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 6),
                           })
                         }
                         inputMode="numeric"
@@ -839,7 +846,10 @@ export default function UsersPage() {
                         onChange={(e: any) =>
                           setFormData({
                             ...formData,
-                            bankAccountNumber: e.target.value.replace(/\D/g, ""),
+                            bankAccountNumber: e.target.value.replace(
+                              /\D/g,
+                              "",
+                            ),
                           })
                         }
                         inputMode="numeric"

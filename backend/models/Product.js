@@ -38,9 +38,13 @@ const productSchema = new mongoose.Schema(
     photos: {
       type: [{ type: String, maxlength: 500 }],
       default: [],
-      validate: { validator: (v) => v.length <= 5, message: "You can add up to 5 photos" },
+      validate: {
+        validator: (v) => v.length <= 5,
+        message: "You can add up to 5 photos",
+      },
     },
-    photoUrl: { // first photo, kept for the table thumbnail
+    photoUrl: {
+      // first photo, kept for the table thumbnail
       type: String,
       default: "",
       maxlength: [500, "Photo URL is too long"],

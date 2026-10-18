@@ -1,10 +1,27 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { autopilotAPI, type AutopilotOverview, type CampaignAPI } from "@/services/api";
+import {
+  autopilotAPI,
+  type AutopilotOverview,
+  type CampaignAPI,
+} from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -25,7 +42,8 @@ const CampaignCtx = createContext<Ctx | null>(null);
 
 export function useCampaigns(): Ctx {
   const ctx = useContext(CampaignCtx);
-  if (!ctx) throw new Error("useCampaigns must be used inside <CampaignProvider>");
+  if (!ctx)
+    throw new Error("useCampaigns must be used inside <CampaignProvider>");
   return ctx;
 }
 
@@ -39,7 +57,13 @@ export function useCampaignApi(): CampaignAPI {
 // Loads the tenant's campaigns, keeps the selected campaign in the URL (?campaign=<id|all>) so
 // every Autopilot page and a page refresh agree, and owns the "New campaign" dialog.
 // allowAll: the page can show every campaign together (Dashboard, Report); Setup works on one.
-export function CampaignProvider({ allowAll, children }: { allowAll: boolean; children: React.ReactNode }) {
+export function CampaignProvider({
+  allowAll,
+  children,
+}: {
+  allowAll: boolean;
+  children: React.ReactNode;
+}) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -85,7 +109,13 @@ export function CampaignProvider({ allowAll, children }: { allowAll: boolean; ch
     [params, setParams],
   );
 
-  const api = useMemo(() => (selection && selection !== "all" ? autopilotAPI.campaign(selection) : null), [selection]);
+  const api = useMemo(
+    () =>
+      selection && selection !== "all"
+        ? autopilotAPI.campaign(selection)
+        : null,
+    [selection],
+  );
 
   const create = async () => {
     if (!name.trim()) return;
@@ -98,18 +128,34 @@ export function CampaignProvider({ allowAll, children }: { allowAll: boolean; ch
       // A new campaign starts in Setup (the wizard).
       navigate(`/social-autopilot/setup?campaign=${res.data.id}`);
     } catch (err: any) {
-      toast({ title: "Couldn't create the campaign", description: err.message, variant: "destructive" });
+      toast({
+        title: "Couldn't create the campaign",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setCreating(false);
     }
   };
 
-  const value: Ctx = { overview, reloadOverview, selection, select, api, openNewCampaign: () => setDialog(true), allowAll };
+  const value: Ctx = {
+    overview,
+    reloadOverview,
+    selection,
+    select,
+    api,
+    openNewCampaign: () => setDialog(true),
+    allowAll,
+  };
 
   if (!overview) {
     return (
       <div className="flex items-center justify-center py-16">
-        {error ? <p className="text-sm text-red-600">{error}</p> : <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />}
+        {error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : (
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        )}
       </div>
     );
   }
@@ -133,8 +179,10 @@ export function CampaignProvider({ allowAll, children }: { allowAll: boolean; ch
               onKeyDown={(e) => e.key === "Enter" && create()}
             />
             <p className="text-xs text-muted-foreground">
-              Each campaign has its own accounts, brand, logos, schedule, references and competitors. Your plan allows{" "}
-              {overview.limits.campaigns} campaign{overview.limits.campaigns === 1 ? "" : "s"}.
+              Each campaign has its own accounts, brand, logos, schedule,
+              references and competitors. Your plan allows{" "}
+              {overview.limits.campaigns} campaign
+              {overview.limits.campaigns === 1 ? "" : "s"}.
             </p>
           </div>
           <DialogFooter>

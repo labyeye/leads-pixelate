@@ -131,13 +131,13 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
     q.terms?.length > 0
       ? q.terms
       : settings?.quotationTerms?.length > 0
-      ? settings.quotationTerms
-      : [
-          "Payment is due within 30 days of invoice date.",
-          "Quote invoice number in all payment references.",
-          "Goods/services remain property of seller until paid in full.",
-          "Interest @ 18% p.a. charged on overdue amounts.",
-        ];
+        ? settings.quotationTerms
+        : [
+            "Payment is due within 30 days of invoice date.",
+            "Quote invoice number in all payment references.",
+            "Goods/services remain property of seller until paid in full.",
+            "Interest @ 18% p.a. charged on overdue amounts.",
+          ];
 
   const invoiceTitle = q.docTitle || settings?.quotationTitle || "TAX INVOICE";
   const footerText =

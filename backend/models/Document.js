@@ -15,7 +15,11 @@ const documentSchema = new mongoose.Schema(
     mimeType: { type: String, required: true },
     size: { type: Number, default: 0 },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", default: null },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
   },
   { timestamps: true },
 );

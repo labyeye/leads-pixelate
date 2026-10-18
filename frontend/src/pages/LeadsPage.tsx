@@ -114,21 +114,41 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
   { key: "email", label: "Email", get: (l) => l.email || "" },
   { key: "source", label: "Source", get: (l) => l.source || "" },
   { key: "status", label: "Status", get: (l) => l.status || "" },
-  { key: "contactTag", label: "Tag", default: false, get: (l) => l.contactTag || "" },
+  {
+    key: "contactTag",
+    label: "Tag",
+    default: false,
+    get: (l) => l.contactTag || "",
+  },
   {
     key: "assignedTo",
     label: "Assigned To",
     get: (l) => l.assignedTo?.name || "Unassigned",
   },
-  { key: "location", label: "Location", default: false, get: (l) => l.location || "" },
-  { key: "budget", label: "Budget", default: false, get: (l) => l.budget || "" },
+  {
+    key: "location",
+    label: "Location",
+    default: false,
+    get: (l) => l.location || "",
+  },
+  {
+    key: "budget",
+    label: "Budget",
+    default: false,
+    get: (l) => l.budget || "",
+  },
   {
     key: "requirement",
     label: "Requirement",
     default: false,
     get: (l) => l.requirement || "",
   },
-  { key: "website", label: "Website", default: false, get: (l) => l.website || "" },
+  {
+    key: "website",
+    label: "Website",
+    default: false,
+    get: (l) => l.website || "",
+  },
   {
     key: "interestedProducts",
     label: "Interested Products",
@@ -139,7 +159,9 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
     key: "followUpDate",
     label: "Follow-up Date",
     get: (l) =>
-      l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "",
+      l.followUpDate
+        ? new Date(l.followUpDate).toLocaleDateString("en-IN")
+        : "",
   },
   {
     key: "visitScheduledDate",
@@ -153,9 +175,15 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
   {
     key: "createdAt",
     label: "Created At",
-    get: (l) => (l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : ""),
+    get: (l) =>
+      l.createdAt ? new Date(l.createdAt).toLocaleDateString("en-IN") : "",
   },
-  { key: "remarks", label: "Remarks", default: false, get: (l) => l.remarks || "" },
+  {
+    key: "remarks",
+    label: "Remarks",
+    default: false,
+    get: (l) => l.remarks || "",
+  },
 ];
 
 export default function LeadsPage() {
@@ -461,7 +489,10 @@ export default function LeadsPage() {
       setActiveSavedViewId(res.data._id);
       setNewViewName("");
       setSaveViewDialogOpen(false);
-      notify.success("View saved", `"${res.data.name}" is now available to your team`);
+      notify.success(
+        "View saved",
+        `"${res.data.name}" is now available to your team`,
+      );
     } catch (error: any) {
       notify.error("Error saving view", error.message);
     } finally {
@@ -1633,7 +1664,11 @@ export default function LeadsPage() {
               className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-700 font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              WhatsApp ({selectedLeadIds.length > 0 ? `${selectedLeadIds.length} selected` : filtered.length})
+              WhatsApp (
+              {selectedLeadIds.length > 0
+                ? `${selectedLeadIds.length} selected`
+                : filtered.length}
+              )
             </button>
 
             <DropdownMenu>
@@ -1644,11 +1679,20 @@ export default function LeadsPage() {
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="border-2 border-black">
-                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-emerald-700" onSelect={() => setImportModalOpen(true)}>
+              <DropdownMenuContent
+                align="start"
+                className="border-2 border-black"
+              >
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-emerald-700"
+                  onSelect={() => setImportModalOpen(true)}
+                >
                   <FileText className="w-3.5 h-3.5" /> Import Excel
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-blue-700" onSelect={() => setShowExportDialog(true)}>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-blue-700"
+                  onSelect={() => setShowExportDialog(true)}
+                >
                   <FileText className="w-3.5 h-3.5" /> Export
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1657,7 +1701,11 @@ export default function LeadsPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#024BAB] font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
-                  {fbSyncing || syncing || tiSyncing || jdSyncing || linkedinSyncing ? (
+                  {fbSyncing ||
+                  syncing ||
+                  tiSyncing ||
+                  jdSyncing ||
+                  linkedinSyncing ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -1666,10 +1714,21 @@ export default function LeadsPage() {
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="border-2 border-black">
+              <DropdownMenuContent
+                align="start"
+                className="border-2 border-black"
+              >
                 {fbConnected && (
-                  <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#1877F2]" disabled={fbSyncing} onSelect={() => setFbSyncModalOpen(true)}>
-                    <img src={metaLogo} alt="" className="w-4 h-4 object-contain" />
+                  <DropdownMenuItem
+                    className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#1877F2]"
+                    disabled={fbSyncing}
+                    onSelect={() => setFbSyncModalOpen(true)}
+                  >
+                    <img
+                      src={metaLogo}
+                      alt=""
+                      className="w-4 h-4 object-contain"
+                    />
                     {fbSyncing ? "Syncing Meta..." : "Sync Meta"}
                   </DropdownMenuItem>
                 )}
@@ -1681,7 +1740,11 @@ export default function LeadsPage() {
                       disabled={syncing}
                       onSelect={() => setSyncModalOpen(true)}
                     >
-                      <img src={imLogo} alt="" className="w-4 h-4 object-contain" />
+                      <img
+                        src={imLogo}
+                        alt=""
+                        className="w-4 h-4 object-contain"
+                      />
                       {syncing ? "Syncing IndiaMART..." : "Sync IndiaMART"}
                     </DropdownMenuItem>
                     {/* <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]/80 pl-8" onSelect={() => setSyncPanelOpen(!syncPanelOpen)}>
@@ -1690,16 +1753,32 @@ export default function LeadsPage() {
                   </>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#22C55E]" disabled={tiSyncing} onSelect={() => handleTradeindiaSyncAttempt()}>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#22C55E]"
+                  disabled={tiSyncing}
+                  onSelect={() => handleTradeindiaSyncAttempt()}
+                >
                   <img src={tiLogo} alt="" className="w-4 h-4 object-contain" />
                   {tiSyncing ? "Syncing TradeIndia..." : "Sync TradeIndia"}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#EF4444]" disabled={jdSyncing} onSelect={() => handleJustdialSyncAttempt()}>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#EF4444]"
+                  disabled={jdSyncing}
+                  onSelect={() => handleJustdialSyncAttempt()}
+                >
                   <img src={jdLogo} alt="" className="w-4 h-4 object-contain" />
                   {jdSyncing ? "Checking Justdial..." : "Justdial Status"}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#0A66C2]" disabled={linkedinSyncing} onSelect={() => handleLinkedinSync()}>
-                  <img src={linkedinLogo} alt="" className="w-4 h-4 object-contain" />
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#0A66C2]"
+                  disabled={linkedinSyncing}
+                  onSelect={() => handleLinkedinSync()}
+                >
+                  <img
+                    src={linkedinLogo}
+                    alt=""
+                    className="w-4 h-4 object-contain"
+                  />
                   {linkedinSyncing ? "Syncing LinkedIn..." : "Sync LinkedIn"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -1826,7 +1905,8 @@ export default function LeadsPage() {
                     : "bg-white text-black hover:bg-[#FFDE00]",
                 )}
               >
-                <List className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Table</span>
+                <List className="w-3.5 h-3.5" />{" "}
+                <span className="hidden xl:inline">Table</span>
               </button>
               <button
                 onClick={() => {
@@ -1841,7 +1921,8 @@ export default function LeadsPage() {
                     : "bg-white text-black hover:bg-[#FFDE00]",
                 )}
               >
-                <LayoutGrid className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Kanban</span>
+                <LayoutGrid className="w-3.5 h-3.5" />{" "}
+                <span className="hidden xl:inline">Kanban</span>
               </button>
             </div>
 
@@ -1879,13 +1960,17 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
 
-            <Dialog open={saveViewDialogOpen} onOpenChange={setSaveViewDialogOpen}>
+            <Dialog
+              open={saveViewDialogOpen}
+              onOpenChange={setSaveViewDialogOpen}
+            >
               <DialogTrigger asChild>
                 <button
                   className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
                   title="Save current filters as a view"
                 >
-                  <BookmarkPlus className="w-3.5 h-3.5" /> <span className="hidden 2xl:inline">Save View</span>
+                  <BookmarkPlus className="w-3.5 h-3.5" />{" "}
+                  <span className="hidden 2xl:inline">Save View</span>
                 </button>
               </DialogTrigger>
               <DialogContent>
@@ -2248,9 +2333,16 @@ export default function LeadsPage() {
                         <Checkbox
                           aria-label="Select all leads"
                           className="border-white data-[state=checked]:bg-white data-[state=checked]:text-black"
-                          checked={filtered.length > 0 && filtered.every((x) => selectedLeadIds.includes(x._id || x.id))}
+                          checked={
+                            filtered.length > 0 &&
+                            filtered.every((x) =>
+                              selectedLeadIds.includes(x._id || x.id),
+                            )
+                          }
                           onCheckedChange={(c) =>
-                            setSelectedLeadIds(c ? filtered.map((x) => x._id || x.id) : [])
+                            setSelectedLeadIds(
+                              c ? filtered.map((x) => x._id || x.id) : [],
+                            )
                           }
                         />
                         Name
@@ -2494,10 +2586,16 @@ export default function LeadsPage() {
                                 <span onClick={(e) => e.stopPropagation()}>
                                   <Checkbox
                                     aria-label={`Select ${l.name}`}
-                                    checked={selectedLeadIds.includes(l._id || l.id)}
+                                    checked={selectedLeadIds.includes(
+                                      l._id || l.id,
+                                    )}
                                     onCheckedChange={(c) =>
                                       setSelectedLeadIds((p) =>
-                                        c ? [...p, l._id || l.id] : p.filter((id) => id !== (l._id || l.id)),
+                                        c
+                                          ? [...p, l._id || l.id]
+                                          : p.filter(
+                                              (id) => id !== (l._id || l.id),
+                                            ),
                                       )
                                     }
                                   />
@@ -2507,7 +2605,9 @@ export default function LeadsPage() {
                                   <p className="font-medium text-foreground">
                                     {l.name}
                                   </p>
-                                  <p className="text-xs text-black">{l.company}</p>
+                                  <p className="text-xs text-black">
+                                    {l.company}
+                                  </p>
                                 </div>
                               </div>
                             </td>

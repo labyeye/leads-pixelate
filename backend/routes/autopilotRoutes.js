@@ -29,7 +29,9 @@ const MAX_LOGOS = 5;
 const isId = (v) => /^[0-9a-f]{24}$/i.test(String(v || ""));
 
 async function getTenant(req, res) {
-  const tenant = req.user.tenantId ? await Tenant.findById(req.user.tenantId) : null;
+  const tenant = req.user.tenantId
+    ? await Tenant.findById(req.user.tenantId)
+    : null;
   if (!tenant) {
     res.status(400);
     throw new Error("No organisation found for this account");
@@ -40,10 +42,19 @@ async function getTenant(req, res) {
 // The tenant's monthly count is shared by all campaigns; each campaign also shows its own.
 const monthCounts = async (tenantId) => {
   const rows = await SocialPost.aggregate([
-    { $match: { tenantId, source: "autopilot", createdAt: { $gte: svc.monthStart() } } },
+    {
+      $match: {
+        tenantId,
+        source: "autopilot",
+        createdAt: { $gte: svc.monthStart() },
+      },
+    },
     { $group: { _id: "$campaignId", n: { $sum: 1 } } },
   ]);
-  return { byCampaign: Object.fromEntries(rows.map((r) => [String(r._id), r.n])), total: rows.reduce((n, r) => n + r.n, 0) };
+  return {
+    byCampaign: Object.fromEntries(rows.map((r) => [String(r._id), r.n])),
+    total: rows.reduce((n, r) => n + r.n, 0),
+  };
 };
 
 // ------------------------------------------------------------------ AI product photoshoot
@@ -59,18 +70,31 @@ router.post(
     }
     if (!svc.isEntitled(svc.effectiveAutopilot(tenant))) {
       res.status(402);
-      throw new Error("AI photoshoots come with Autopilot. Start your trial or upgrade your plan.");
+      throw new Error(
+        "AI photoshoots come with Autopilot. Start your trial or upgrade your plan.",
+      );
     }
-    const style = Object.hasOwn(svc.PHOTOSHOOT_STYLES, req.body?.style) ? req.body.style : "studio";
+    const style = Object.hasOwn(svc.PHOTOSHOOT_STYLES, req.body?.style)
+      ? req.body.style
+      : "studio";
     const key = String(tenant._id);
-    const recent = (shootTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    const recent = (shootTimes.get(key) || []).filter(
+      (t) => Date.now() - t < 60 * 60 * 1000,
+    );
     if (recent.length >= 10) {
       res.status(429);
       throw new Error("That's 10 photoshoots this hour. Try again in a while.");
     }
     shootTimes.set(key, [...recent, Date.now()]);
     try {
-      res.json({ success: true, url: await svc.photoshoot(tenant._id, String(req.body?.photoUrl || ""), style) });
+      res.json({
+        success: true,
+        url: await svc.photoshoot(
+          tenant._id,
+          String(req.body?.photoUrl || ""),
+          style,
+        ),
+      });
     } catch (err) {
       res.status(502);
       throw new Error(err.message);
@@ -87,11 +111,15 @@ router.get(
     await campaigns.ensureDefaultCampaign(tenant); // one-time move of the old single setup
     const [list, accounts, counts] = await Promise.all([
       AutopilotCampaign.find({ tenantId: tenant._id }).sort({ createdAt: 1 }),
-      SocialAccount.find({ tenantId: tenant._id, isActive: true }).select("platform accountName profilePicture").lean(),
+      SocialAccount.find({ tenantId: tenant._id, isActive: true })
+        .select("platform accountName profilePicture")
+        .lean(),
       monthCounts(tenant._id),
     ]);
     const owner = {};
-    for (const c of list) for (const id of c.accountIds || []) owner[String(id)] = { id: String(c._id), name: c.name };
+    for (const c of list)
+      for (const id of c.accountIds || [])
+        owner[String(id)] = { id: String(c._id), name: c.name };
     const eff = svc.effectiveAutopilot(tenant);
     res.json({
       success: true,
@@ -99,12 +127,20 @@ router.get(
         configured: svc.isConfigured(),
         trialDays: svc.TRIAL_DAYS,
         entitlement: svc.entitlement(eff),
-        plan: svc.entitlement(eff).state === "paid" ? svc.planLimits(eff).plan : "",
+        plan:
+          svc.entitlement(eff).state === "paid" ? svc.planLimits(eff).plan : "",
         limits: svc.planLimits(eff),
         monthCount: counts.total,
         monthlyCap: svc.planLimits(eff).monthlyPosts,
-        campaigns: list.map((c) => campaigns.campaignSummary(c, { monthPosts: counts.byCampaign[String(c._id)] || 0 })),
-        accounts: accounts.map((a) => ({ ...a, campaign: owner[String(a._id)] || null })),
+        campaigns: list.map((c) =>
+          campaigns.campaignSummary(c, {
+            monthPosts: counts.byCampaign[String(c._id)] || 0,
+          }),
+        ),
+        accounts: accounts.map((a) => ({
+          ...a,
+          campaign: owner[String(a._id)] || null,
+        })),
       },
     });
   }),
@@ -120,12 +156,19 @@ router.post(
       throw new Error("Give the campaign a name");
     }
     const limit = svc.planLimits(svc.effectiveAutopilot(tenant)).campaigns;
-    if ((await AutopilotCampaign.countDocuments({ tenantId: tenant._id })) >= limit) {
+    if (
+      (await AutopilotCampaign.countDocuments({ tenantId: tenant._id })) >=
+      limit
+    ) {
       res.status(403);
-      throw new Error(`Your plan allows ${limit} Autopilot campaign${limit === 1 ? "" : "s"}. Upgrade your plan to add more.`);
+      throw new Error(
+        `Your plan allows ${limit} Autopilot campaign${limit === 1 ? "" : "s"}. Upgrade your plan to add more.`,
+      );
     }
     const c = await AutopilotCampaign.create({ tenantId: tenant._id, name });
-    res.status(201).json({ success: true, data: { id: String(c._id), name: c.name } });
+    res
+      .status(201)
+      .json({ success: true, data: { id: String(c._id), name: c.name } });
   }),
 );
 
@@ -136,7 +179,10 @@ router.use(
   asyncHandler(async (req, res, next) => {
     req.tenant = await getTenant(req, res);
     req.campaign = isId(req.params.cid)
-      ? await AutopilotCampaign.findOne({ _id: req.params.cid, tenantId: req.tenant._id })
+      ? await AutopilotCampaign.findOne({
+          _id: req.params.cid,
+          tenantId: req.tenant._id,
+        })
       : null;
     if (!req.campaign) {
       res.status(404);
@@ -152,11 +198,15 @@ async function campaignStatus(tenant, campaign) {
   const a = svc.campaignView(tenant, campaign);
   const [all, accounts, counts] = await Promise.all([
     AutopilotCampaign.find({ tenantId: tenant._id }).select("name accountIds"),
-    SocialAccount.find({ tenantId: tenant._id, isActive: true }).select("platform accountName profilePicture").lean(),
+    SocialAccount.find({ tenantId: tenant._id, isActive: true })
+      .select("platform accountName profilePicture")
+      .lean(),
     monthCounts(tenant._id),
   ]);
   const owner = {};
-  for (const c of all) for (const id of c.accountIds || []) owner[String(id)] = { id: String(c._id), name: c.name };
+  for (const c of all)
+    for (const id of c.accountIds || [])
+      owner[String(id)] = { id: String(c._id), name: c.name };
   const lim = svc.planLimits(a);
   return {
     campaign: { id: String(campaign._id), name: campaign.name },
@@ -173,7 +223,10 @@ async function campaignStatus(tenant, campaign) {
       notes: a.notes,
       reviewFirst: a.reviewFirst,
       accountIds: (a.accountIds || []).map(String),
-      schedule: { days: a.schedule?.days || [], times: a.schedule?.times || [] },
+      schedule: {
+        days: a.schedule?.days || [],
+        times: a.schedule?.times || [],
+      },
       contentTypes: a.contentTypes || [],
       lessons: a.lessons || [],
       brief: {
@@ -197,9 +250,14 @@ async function campaignStatus(tenant, campaign) {
       },
     },
     contentTypes: svc.CONTENT_TYPES,
-    intro: { text: a.brandIntro?.text || "", pdfName: a.brandIntro?.hasPdf ? a.brandIntro.pdfName : "" },
+    intro: {
+      text: a.brandIntro?.text || "",
+      pdfName: a.brandIntro?.hasPdf ? a.brandIntro.pdfName : "",
+    },
     running: !!a.runningSince && Date.now() - a.runningSince < svc.LOCK_MS,
-    progress: a.progress?.stage ? { stage: a.progress.stage, at: a.progress.at } : null,
+    progress: a.progress?.stage
+      ? { stage: a.progress.stage, at: a.progress.at }
+      : null,
     onboarded: !!(a.onboardedAt || a.enabled || a.firstApprovedAt),
     firstApproved: !!a.firstApprovedAt,
     analysis: {
@@ -210,9 +268,17 @@ async function campaignStatus(tenant, campaign) {
       at: a.analysis?.at || null,
     },
     brandProfile: a.brandProfile,
-    actor: { url: a.actor?.url || "", voice: a.actor?.voice || "", source: a.actor?.source || "" },
+    actor: {
+      url: a.actor?.url || "",
+      voice: a.actor?.voice || "",
+      source: a.actor?.source || "",
+    },
     brandKit: {
-      logos: (a.brandKit?.logos || []).map((l) => ({ id: l.id, name: l.name, url: l.url })),
+      logos: (a.brandKit?.logos || []).map((l) => ({
+        id: l.id,
+        name: l.name,
+        url: l.url,
+      })),
       logoId: a.brandKit?.logoId || "",
       logoEnabled: a.brandKit?.logoEnabled !== false,
       logoMode: a.brandKit?.logoMode || "fixed",
@@ -231,20 +297,30 @@ async function campaignStatus(tenant, campaign) {
       error: c.error,
       readAt: c.readAt || null,
     })),
-    references: (a.references || []).map((r) => ({ id: r.id, url: r.url, note: r.note })),
+    references: (a.references || []).map((r) => ({
+      id: r.id,
+      url: r.url,
+      note: r.note,
+    })),
     lastRunAt: a.lastRunAt,
     lastError: a.lastError,
     monthCount: counts.total,
     campaignMonthCount: counts.byCampaign[String(campaign._id)] || 0,
     monthlyCap: lim.monthlyPosts,
-    accounts: accounts.map((x) => ({ ...x, campaign: owner[String(x._id)] || null })),
+    accounts: accounts.map((x) => ({
+      ...x,
+      campaign: owner[String(x._id)] || null,
+    })),
   };
 }
 
 one.get(
   "/",
   asyncHandler(async (req, res) => {
-    res.json({ success: true, data: await campaignStatus(req.tenant, req.campaign) });
+    res.json({
+      success: true,
+      data: await campaignStatus(req.tenant, req.campaign),
+    });
   }),
 );
 
@@ -270,16 +346,30 @@ one.put(
 
     // Accounts: the caller's own. Several campaigns may share one; the scheduler keeps their posts apart.
     if (patch.accountIds) {
-      const own = await SocialAccount.find({ _id: { $in: patch.accountIds }, tenantId: tenant._id }).select("_id").lean();
+      const own = await SocialAccount.find({
+        _id: { $in: patch.accountIds },
+        tenantId: tenant._id,
+      })
+        .select("_id")
+        .lean();
       patch.accountIds = own.map((x) => String(x._id));
     }
 
     // Enabling starts the one-time trial, so don't let it burn with nowhere to post.
     if (patch.enabled === true) {
       const ids = patch.accountIds ?? (campaign.accountIds || []).map(String);
-      if (!ids.length || !(await SocialAccount.exists({ tenantId: tenant._id, isActive: true, _id: { $in: ids } }))) {
+      if (
+        !ids.length ||
+        !(await SocialAccount.exists({
+          tenantId: tenant._id,
+          isActive: true,
+          _id: { $in: ids },
+        }))
+      ) {
         res.status(400);
-        throw new Error("Choose a connected Facebook, Instagram or LinkedIn account for this campaign first");
+        throw new Error(
+          "Choose a connected Facebook, Instagram or LinkedIn account for this campaign first",
+        );
       }
     }
 
@@ -287,31 +377,42 @@ one.put(
     const $set = { ...patch };
     // Timeline: keep the start date, and (re)compute the end from it while the campaign is live.
     delete $set.timeline;
-    const days = patch.timeline ? patch.timeline.days : campaign.timeline?.days || 0;
+    const days = patch.timeline
+      ? patch.timeline.days
+      : campaign.timeline?.days || 0;
     if (patch.timeline) $set["timeline.days"] = days;
     if (turningOn || patch.timeline) {
       const live = patch.enabled ?? campaign.enabled;
-      const start = turningOn ? new Date() : campaign.timeline?.startsOn || new Date();
+      const start = turningOn
+        ? new Date()
+        : campaign.timeline?.startsOn || new Date();
       if (live) {
         $set["timeline.startsOn"] = start;
-        $set["timeline.endsOn"] = days ? new Date(start.getTime() + days * 24 * 60 * 60 * 1000) : null;
+        $set["timeline.endsOn"] = days
+          ? new Date(start.getTime() + days * 24 * 60 * 60 * 1000)
+          : null;
       }
     }
     if (patch.enabled && !campaign.onboardedAt) $set.onboardedAt = new Date();
-    if (Object.keys($set).length) await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set });
+    if (Object.keys($set).length)
+      await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set });
     if (patch.enabled) {
       const trial = svc.trialPatch(svc.effectiveAutopilot(tenant));
-      if (Object.keys(trial).length) await Tenant.updateOne({ _id: tenant._id }, { $set: trial });
+      if (Object.keys(trial).length)
+        await Tenant.updateOne({ _id: tenant._id }, { $set: trial });
     }
 
     // Pausing stops everything already queued for this campaign, not just new generation.
-    if (patch.enabled === false) await svc.revertScheduled(tenant._id, campaign._id);
+    if (patch.enabled === false)
+      await svc.revertScheduled(tenant._id, campaign._id);
 
     // First look right away: fill the calendar instead of waiting for the hourly tick.
     if (turningOn && svc.isConfigured()) {
       svc
         .runForTenant(tenant._id, { manual: true, campaignId: campaign._id })
-        .catch((err) => log.error("Autopilot first run failed", { message: err.message }));
+        .catch((err) =>
+          log.error("Autopilot first run failed", { message: err.message }),
+        );
     }
 
     res.json({ success: true });
@@ -330,14 +431,21 @@ one.post(
       throw new Error("Autopilot is not configured on the server yet");
     }
     const key = String(campaign._id);
-    const recent = (planPreviewTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    const recent = (planPreviewTimes.get(key) || []).filter(
+      (t) => Date.now() - t < 60 * 60 * 1000,
+    );
     if (recent.length >= 10) {
       res.status(429);
-      throw new Error("You've made a few preview plans already. Try again in a while.");
+      throw new Error(
+        "You've made a few preview plans already. Try again in a while.",
+      );
     }
     planPreviewTimes.set(key, [...recent, Date.now()]);
     try {
-      res.json({ success: true, data: await svc.planPreviewForCampaign(tenant, campaign) });
+      res.json({
+        success: true,
+        data: await svc.planPreviewForCampaign(tenant, campaign),
+      });
     } catch (err) {
       res.status(502);
       throw new Error(err.message);
@@ -356,14 +464,21 @@ one.post(
       throw new Error("Autopilot is not configured on the server yet");
     }
     const key = String(campaign._id);
-    const recent = (previewTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    const recent = (previewTimes.get(key) || []).filter(
+      (t) => Date.now() - t < 60 * 60 * 1000,
+    );
     if (recent.length >= 5) {
       res.status(429);
-      throw new Error("You've made a few previews already. Try again in a while.");
+      throw new Error(
+        "You've made a few previews already. Try again in a while.",
+      );
     }
     previewTimes.set(key, [...recent, Date.now()]);
     try {
-      res.json({ success: true, data: await svc.previewForCampaign(tenant, campaign) });
+      res.json({
+        success: true,
+        data: await svc.previewForCampaign(tenant, campaign),
+      });
     } catch (err) {
       res.status(502);
       throw new Error(err.message);
@@ -376,7 +491,10 @@ one.delete(
   asyncHandler(async (req, res) => {
     const { tenant, campaign } = req;
     await svc.revertScheduled(tenant._id, campaign._id);
-    for (const dir of [svc.brandDir(tenant._id, campaign._id), campaigns.privateDir(tenant._id, campaign._id)]) {
+    for (const dir of [
+      svc.brandDir(tenant._id, campaign._id),
+      campaigns.privateDir(tenant._id, campaign._id),
+    ]) {
       fs.rm(dir, { recursive: true, force: true }, () => {});
     }
     await AutopilotCampaign.deleteOne({ _id: campaign._id });
@@ -410,7 +528,9 @@ one.post(
     res.status(202).json({ success: true, message: "Started" });
     svc
       .runForTenant(tenant._id, { manual: true, campaignId: campaign._id })
-      .catch((err) => log.error("Autopilot manual run failed", { message: err.message }));
+      .catch((err) =>
+        log.error("Autopilot manual run failed", { message: err.message }),
+      );
   }),
 );
 
@@ -420,13 +540,17 @@ const logoUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) =>
-    /^image\/(png|jpe?g|webp)$/.test(file.mimetype) ? cb(null, true) : cb(new Error("Logo must be a PNG, JPG or WebP image")),
+    /^image\/(png|jpe?g|webp)$/.test(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error("Logo must be a PNG, JPG or WebP image")),
 });
 const pdfUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) =>
-    file.mimetype === "application/pdf" ? cb(null, true) : cb(new Error("The brand document must be a PDF")),
+    file.mimetype === "application/pdf"
+      ? cb(null, true)
+      : cb(new Error("The brand document must be a PDF")),
 });
 
 one.post(
@@ -438,12 +562,22 @@ one.post(
       throw new Error("Autopilot is not configured on the server yet");
     }
     const at = campaign.analysis?.at;
-    if (campaign.analysis?.status !== "running" && at && Date.now() - at < ANALYZE_COOLDOWN_MS) {
+    if (
+      campaign.analysis?.status !== "running" &&
+      at &&
+      Date.now() - at < ANALYZE_COOLDOWN_MS
+    ) {
       res.status(429);
       throw new Error("Scan just ran. Try again in a minute.");
     }
-    const accountId = isId(req.body?.accountId) ? req.body.accountId : undefined;
-    const started = await brand.startAnalysis(tenant._id, campaign._id, accountId);
+    const accountId = isId(req.body?.accountId)
+      ? req.body.accountId
+      : undefined;
+    const started = await brand.startAnalysis(
+      tenant._id,
+      campaign._id,
+      accountId,
+    );
     res.status(202).json({ success: true, started });
   }),
 );
@@ -451,7 +585,10 @@ one.post(
 one.put(
   "/brand-profile",
   asyncHandler(async (req, res) => {
-    await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $set: { brandProfile: brand.sanitizeProfile(req.body) } });
+    await AutopilotCampaign.updateOne(
+      { _id: req.campaign._id },
+      { $set: { brandProfile: brand.sanitizeProfile(req.body) } },
+    );
     res.json({ success: true });
   }),
 );
@@ -464,19 +601,37 @@ one.put(
     const $set = {};
 
     if (Array.isArray(b.logos)) {
-      const names = new Map(b.logos.map((l) => [l?.id, svc.clean(l?.name, 60)]));
-      $set["brandKit.logos"] = kit.logos.map((l) => ({ id: l.id, file: l.file, url: l.url, name: names.get(l.id) || l.name }));
+      const names = new Map(
+        b.logos.map((l) => [l?.id, svc.clean(l?.name, 60)]),
+      );
+      $set["brandKit.logos"] = kit.logos.map((l) => ({
+        id: l.id,
+        file: l.file,
+        url: l.url,
+        name: names.get(l.id) || l.name,
+      }));
     }
-    if (typeof b.logoId === "string" && kit.logos.some((l) => l.id === b.logoId)) $set["brandKit.logoId"] = b.logoId;
-    if (typeof b.logoEnabled === "boolean") $set["brandKit.logoEnabled"] = b.logoEnabled;
-    if (["fixed", "auto"].includes(b.logoMode)) $set["brandKit.logoMode"] = b.logoMode;
-    if (POSITIONS.includes(b.logoPosition)) $set["brandKit.logoPosition"] = b.logoPosition;
-    if (Array.isArray(b.colors)) $set["brandKit.colors"] = b.colors.filter((c) => HEX.test(c)).slice(0, 4);
-    if (HEADLINE_POSITIONS.includes(b.headlinePosition)) $set["brandKit.headlinePosition"] = b.headlinePosition;
-    if (SIZES.includes(b.headlineSize)) $set["brandKit.headlineSize"] = b.headlineSize;
+    if (
+      typeof b.logoId === "string" &&
+      kit.logos.some((l) => l.id === b.logoId)
+    )
+      $set["brandKit.logoId"] = b.logoId;
+    if (typeof b.logoEnabled === "boolean")
+      $set["brandKit.logoEnabled"] = b.logoEnabled;
+    if (["fixed", "auto"].includes(b.logoMode))
+      $set["brandKit.logoMode"] = b.logoMode;
+    if (POSITIONS.includes(b.logoPosition))
+      $set["brandKit.logoPosition"] = b.logoPosition;
+    if (Array.isArray(b.colors))
+      $set["brandKit.colors"] = b.colors.filter((c) => HEX.test(c)).slice(0, 4);
+    if (HEADLINE_POSITIONS.includes(b.headlinePosition))
+      $set["brandKit.headlinePosition"] = b.headlinePosition;
+    if (SIZES.includes(b.headlineSize))
+      $set["brandKit.headlineSize"] = b.headlineSize;
     if (SIZES.includes(b.ctaSize)) $set["brandKit.ctaSize"] = b.ctaSize;
 
-    if (Object.keys($set).length) await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $set });
+    if (Object.keys($set).length)
+      await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $set });
     res.json({ success: true });
   }),
 );
@@ -488,7 +643,8 @@ one.post(
   asyncHandler(async (req, res) => {
     const { tenant, campaign } = req;
     const $set = { "brandIntro.updatedAt": new Date() };
-    if (typeof req.body?.text === "string") $set["brandIntro.text"] = req.body.text.trim().slice(0, 4000);
+    if (typeof req.body?.text === "string")
+      $set["brandIntro.text"] = req.body.text.trim().slice(0, 4000);
 
     if (req.file) {
       if (req.file.buffer.subarray(0, 5).toString() !== "%PDF-") {
@@ -499,7 +655,10 @@ one.post(
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(file, req.file.buffer);
       $set["brandIntro.hasPdf"] = true;
-      $set["brandIntro.pdfName"] = svc.clean(path.basename(req.file.originalname), 200);
+      $set["brandIntro.pdfName"] = svc.clean(
+        path.basename(req.file.originalname),
+        200,
+      );
     }
     await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set });
     res.json({ success: true });
@@ -510,8 +669,15 @@ one.delete(
   "/intro/pdf",
   asyncHandler(async (req, res) => {
     const { tenant, campaign } = req;
-    fs.rm(brand.introPdfPath(tenant._id, campaign._id), { force: true }, () => {});
-    await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set: { "brandIntro.hasPdf": false, "brandIntro.pdfName": "" } });
+    fs.rm(
+      brand.introPdfPath(tenant._id, campaign._id),
+      { force: true },
+      () => {},
+    );
+    await AutopilotCampaign.updateOne(
+      { _id: campaign._id },
+      { $set: { "brandIntro.hasPdf": false, "brandIntro.pdfName": "" } },
+    );
     res.json({ success: true });
   }),
 );
@@ -533,7 +699,15 @@ one.post(
     // Re-encode: proves it is a real image and strips anything odd, whatever the extension said.
     let png;
     try {
-      png = await sharp(req.file.buffer).resize({ width: 1000, height: 1000, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+      png = await sharp(req.file.buffer)
+        .resize({
+          width: 1000,
+          height: 1000,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .png()
+        .toBuffer();
     } catch {
       res.status(400);
       throw new Error("That file isn't a valid image");
@@ -544,8 +718,16 @@ one.post(
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, `${id}.png`), png);
 
-    const name = svc.clean(req.body?.name, 60) || svc.clean(path.parse(req.file.originalname).name, 60) || "Logo";
-    const logo = { id, name, file: `${id}.png`, url: `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${campaign._id}/${id}.png` };
+    const name =
+      svc.clean(req.body?.name, 60) ||
+      svc.clean(path.parse(req.file.originalname).name, 60) ||
+      "Logo";
+    const logo = {
+      id,
+      name,
+      file: `${id}.png`,
+      url: `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${campaign._id}/${id}.png`,
+    };
     const update = { $push: { "brandKit.logos": logo } };
     if (!campaign.brandKit.logoId) update.$set = { "brandKit.logoId": id };
     await AutopilotCampaign.updateOne({ _id: campaign._id }, update);
@@ -557,12 +739,26 @@ one.post(
 
 // Replaces the campaign's actor photo (one per campaign) with a re-encoded portrait.
 async function saveActor(tenant, campaign, buf, source, voice) {
-  const jpg = await sharp(buf).rotate().resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 90 }).toBuffer();
+  const jpg = await sharp(buf)
+    .rotate()
+    .resize({
+      width: 1024,
+      height: 1024,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .jpeg({ quality: 90 })
+    .toBuffer();
   const dir = svc.brandDir(tenant._id, campaign._id);
   fs.mkdirSync(dir, { recursive: true });
   const file = `actor-${crypto.randomBytes(6).toString("hex")}.jpg`;
   fs.writeFileSync(path.join(dir, file), jpg);
-  if (campaign.actor?.file) fs.rm(path.join(dir, path.basename(campaign.actor.file)), { force: true }, () => {});
+  if (campaign.actor?.file)
+    fs.rm(
+      path.join(dir, path.basename(campaign.actor.file)),
+      { force: true },
+      () => {},
+    );
   const actor = {
     file,
     url: `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${campaign._id}/${file}`,
@@ -585,11 +781,19 @@ one.post(
     }
     if (req.body?.consent !== "true") {
       res.status(400);
-      throw new Error("Confirm that the person in the photo agreed to be your AI presenter");
+      throw new Error(
+        "Confirm that the person in the photo agreed to be your AI presenter",
+      );
     }
     let data;
     try {
-      data = await saveActor(req.tenant, req.campaign, req.file.buffer, "upload", req.body?.voice);
+      data = await saveActor(
+        req.tenant,
+        req.campaign,
+        req.file.buffer,
+        "upload",
+        req.body?.voice,
+      );
     } catch {
       res.status(400);
       throw new Error("That file isn't a valid image");
@@ -613,10 +817,14 @@ one.post(
       throw new Error("Autopilot is not configured on the server yet");
     }
     const key = String(req.campaign._id);
-    const recent = (actorTimes.get(key) || []).filter((t) => Date.now() - t < 60 * 60 * 1000);
+    const recent = (actorTimes.get(key) || []).filter(
+      (t) => Date.now() - t < 60 * 60 * 1000,
+    );
     if (recent.length >= 6) {
       res.status(429);
-      throw new Error("You've made a few presenters already. Try again in a while.");
+      throw new Error(
+        "You've made a few presenters already. Try again in a while.",
+      );
     }
     actorTimes.set(key, [...recent, Date.now()]);
     let buf;
@@ -626,7 +834,18 @@ one.post(
       res.status(502);
       throw new Error(err.message);
     }
-    res.status(201).json({ success: true, data: await saveActor(req.tenant, req.campaign, buf, "generated", req.body?.voice) });
+    res
+      .status(201)
+      .json({
+        success: true,
+        data: await saveActor(
+          req.tenant,
+          req.campaign,
+          buf,
+          "generated",
+          req.body?.voice,
+        ),
+      });
   }),
 );
 
@@ -634,7 +853,10 @@ one.put(
   "/actor",
   asyncHandler(async (req, res) => {
     const voice = svc.clean(req.body?.voice, 150);
-    await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $set: { "actor.voice": voice } });
+    await AutopilotCampaign.updateOne(
+      { _id: req.campaign._id },
+      { $set: { "actor.voice": voice } },
+    );
     res.json({ success: true });
   }),
 );
@@ -644,9 +866,23 @@ one.delete(
   asyncHandler(async (req, res) => {
     const { tenant, campaign } = req;
     if (campaign.actor?.file) {
-      fs.rm(path.join(svc.brandDir(tenant._id, campaign._id), path.basename(campaign.actor.file)), { force: true }, () => {});
+      fs.rm(
+        path.join(
+          svc.brandDir(tenant._id, campaign._id),
+          path.basename(campaign.actor.file),
+        ),
+        { force: true },
+        () => {},
+      );
     }
-    await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set: { actor: { file: "", url: "", voice: "", source: "", consentAt: null } } });
+    await AutopilotCampaign.updateOne(
+      { _id: campaign._id },
+      {
+        $set: {
+          actor: { file: "", url: "", voice: "", source: "", consentAt: null },
+        },
+      },
+    );
     res.json({ success: true });
   }),
 );
@@ -665,10 +901,22 @@ one.delete(
       { _id: campaign._id },
       {
         $pull: { "brandKit.logos": { id: logo.id } },
-        $set: { "brandKit.logoId": campaign.brandKit.logoId === logo.id ? rest[0]?.id || "" : campaign.brandKit.logoId },
+        $set: {
+          "brandKit.logoId":
+            campaign.brandKit.logoId === logo.id
+              ? rest[0]?.id || ""
+              : campaign.brandKit.logoId,
+        },
       },
     );
-    fs.rm(path.join(svc.brandDir(tenant._id, campaign._id), path.basename(logo.file)), { force: true }, () => {});
+    fs.rm(
+      path.join(
+        svc.brandDir(tenant._id, campaign._id),
+        path.basename(logo.file),
+      ),
+      { force: true },
+      () => {},
+    );
     res.json({ success: true });
   }),
 );
@@ -683,22 +931,40 @@ one.post(
     const notes = svc.clean(req.body?.notes, 500);
     if (!username && !notes) {
       res.status(400);
-      throw new Error("Add an Instagram username or a note about the competitor");
+      throw new Error(
+        "Add an Instagram username or a note about the competitor",
+      );
     }
     if (username && !brand.HANDLE.test(username)) {
       res.status(400);
-      throw new Error("That doesn't look like an Instagram username (letters, numbers, dots and underscores)");
+      throw new Error(
+        "That doesn't look like an Instagram username (letters, numbers, dots and underscores)",
+      );
     }
     if ((campaign.competitors || []).length >= campaigns.MAX_COMPETITORS) {
       res.status(400);
-      throw new Error(`You can add up to ${campaigns.MAX_COMPETITORS} competitors`);
+      throw new Error(
+        `You can add up to ${campaigns.MAX_COMPETITORS} competitors`,
+      );
     }
-    if (username && (campaign.competitors || []).some((c) => c.username.toLowerCase() === username.toLowerCase())) {
+    if (
+      username &&
+      (campaign.competitors || []).some(
+        (c) => c.username.toLowerCase() === username.toLowerCase(),
+      )
+    ) {
       res.status(409);
       throw new Error("That competitor is already added");
     }
-    const entry = { id: crypto.randomBytes(6).toString("hex"), username, notes };
-    await AutopilotCampaign.updateOne({ _id: campaign._id }, { $push: { competitors: entry } });
+    const entry = {
+      id: crypto.randomBytes(6).toString("hex"),
+      username,
+      notes,
+    };
+    await AutopilotCampaign.updateOne(
+      { _id: campaign._id },
+      { $push: { competitors: entry } },
+    );
     res.status(201).json({ success: true, data: entry });
   }),
 );
@@ -706,7 +972,10 @@ one.post(
 one.delete(
   "/competitors/:id",
   asyncHandler(async (req, res) => {
-    await AutopilotCampaign.updateOne({ _id: req.campaign._id }, { $pull: { competitors: { id: req.params.id } } });
+    await AutopilotCampaign.updateOne(
+      { _id: req.campaign._id },
+      { $pull: { competitors: { id: req.params.id } } },
+    );
     res.json({ success: true });
   }),
 );
@@ -722,11 +991,22 @@ one.post(
     }
     if ((campaign.references || []).length >= campaigns.MAX_REFERENCES) {
       res.status(400);
-      throw new Error(`You can keep up to ${campaigns.MAX_REFERENCES} reference images`);
+      throw new Error(
+        `You can keep up to ${campaigns.MAX_REFERENCES} reference images`,
+      );
     }
     let jpeg;
     try {
-      jpeg = await sharp(req.file.buffer).rotate().resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+      jpeg = await sharp(req.file.buffer)
+        .rotate()
+        .resize({
+          width: 1024,
+          height: 1024,
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: 82 })
+        .toBuffer();
     } catch {
       res.status(400);
       throw new Error("That file isn't a valid image");
@@ -741,8 +1021,13 @@ one.post(
       url: `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${campaign._id}/refs/${id}.jpg`,
       note: svc.clean(req.body?.note, 200),
     };
-    await AutopilotCampaign.updateOne({ _id: campaign._id }, { $push: { references: ref } });
-    res.status(201).json({ success: true, data: { id, url: ref.url, note: ref.note } });
+    await AutopilotCampaign.updateOne(
+      { _id: campaign._id },
+      { $push: { references: ref } },
+    );
+    res
+      .status(201)
+      .json({ success: true, data: { id, url: ref.url, note: ref.note } });
   }),
 );
 
@@ -755,8 +1040,18 @@ one.delete(
       res.status(404);
       throw new Error("Reference not found");
     }
-    await AutopilotCampaign.updateOne({ _id: campaign._id }, { $pull: { references: { id: ref.id } } });
-    fs.rm(path.join(brand.refsDir(tenant._id, campaign._id), path.basename(ref.file)), { force: true }, () => {});
+    await AutopilotCampaign.updateOne(
+      { _id: campaign._id },
+      { $pull: { references: { id: ref.id } } },
+    );
+    fs.rm(
+      path.join(
+        brand.refsDir(tenant._id, campaign._id),
+        path.basename(ref.file),
+      ),
+      { force: true },
+      () => {},
+    );
     res.json({ success: true });
   }),
 );
@@ -768,10 +1063,27 @@ router.get(
   "/stats",
   asyncHandler(async (req, res) => {
     const tenant = await getTenant(req, res);
-    const campaignId = isId(req.query.campaignId) ? req.query.campaignId : undefined;
-    const data = await stats.getStats(tenant._id, Number(req.query.days) || 30, new Date(), campaignId);
-    const names = Object.fromEntries((await AutopilotCampaign.find({ tenantId: tenant._id }).select("name")).map((c) => [String(c._id), c.name]));
-    data.byCampaign = (data.byCampaign || []).map((r) => ({ ...r, name: (r.campaignId === "null" ? "Not in a campaign" : names[r.campaignId] || "Deleted campaign") }));
+    const campaignId = isId(req.query.campaignId)
+      ? req.query.campaignId
+      : undefined;
+    const data = await stats.getStats(
+      tenant._id,
+      Number(req.query.days) || 30,
+      new Date(),
+      campaignId,
+    );
+    const names = Object.fromEntries(
+      (
+        await AutopilotCampaign.find({ tenantId: tenant._id }).select("name")
+      ).map((c) => [String(c._id), c.name]),
+    );
+    data.byCampaign = (data.byCampaign || []).map((r) => ({
+      ...r,
+      name:
+        r.campaignId === "null"
+          ? "Not in a campaign"
+          : names[r.campaignId] || "Deleted campaign",
+    }));
     res.json({ success: true, data });
   }),
 );
@@ -797,7 +1109,9 @@ router.post(
     const post = await svc.startRevision(tenant._id, req.params.id);
     if (!post) {
       res.status(409);
-      throw new Error(`This post can't be revised right now (already being fixed, no longer waiting for approval, or ${svc.MAX_REVISIONS} changes used)`);
+      throw new Error(
+        `This post can't be revised right now (already being fixed, no longer waiting for approval, or ${svc.MAX_REVISIONS} changes used)`,
+      );
     }
     res.status(202).json({ success: true });
     svc.runRevision(post, feedback);

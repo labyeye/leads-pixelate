@@ -15,30 +15,44 @@ const ALLOWED = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
   "application/msword": ".doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    ".docx",
   "application/vnd.ms-excel": ".xls",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
   "application/vnd.ms-powerpoint": ".ppt",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    ".pptx",
 };
 
-const tenantFilter = (user) => (user.tenantId ? { tenantId: user.tenantId } : {});
+const tenantFilter = (user) =>
+  user.tenantId ? { tenantId: user.tenantId } : {};
 
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      const dir = path.join(UPLOADS, "documents", String(req.user.tenantId || "global"));
+      const dir = path.join(
+        UPLOADS,
+        "documents",
+        String(req.user.tenantId || "global"),
+      );
       fs.mkdir(dir, { recursive: true }, (err) => cb(err, dir));
     },
     // Random name: /uploads is public, so the URL must not be guessable.
     filename: (req, file, cb) =>
-      cb(null, `${Date.now()}-${require("crypto").randomBytes(8).toString("hex")}${ALLOWED[file.mimetype]}`),
+      cb(
+        null,
+        `${Date.now()}-${require("crypto").randomBytes(8).toString("hex")}${ALLOWED[file.mimetype]}`,
+      ),
   }),
   limits: { fileSize: MAX_SIZE },
   fileFilter: (req, file, cb) =>
     ALLOWED[file.mimetype]
       ? cb(null, true)
-      : cb(new Error("Only PDF, images, Word, Excel and PowerPoint files are allowed")),
+      : cb(
+          new Error(
+            "Only PDF, images, Word, Excel and PowerPoint files are allowed",
+          ),
+        ),
 });
 
 const withUrl = (d) => ({ ...d.toObject(), url: `/uploads/${d.filePath}` });
@@ -48,7 +62,9 @@ router.use(protect);
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const docs = await Document.find(tenantFilter(req.user)).sort({ createdAt: -1 }).populate("uploadedBy", "name");
+    const docs = await Document.find(tenantFilter(req.user))
+      .sort({ createdAt: -1 })
+      .populate("uploadedBy", "name");
     res.json({ success: true, data: docs.map(withUrl) });
   }),
 );
@@ -63,7 +79,8 @@ router.post(
       throw new Error("No file uploaded");
     }
     const doc = await Document.create({
-      name: (req.body.name || "").trim() || path.parse(req.file.originalname).name,
+      name:
+        (req.body.name || "").trim() || path.parse(req.file.originalname).name,
       category: req.body.category || "other",
       fileName: req.file.originalname,
       filePath: path.relative(UPLOADS, req.file.path).split(path.sep).join("/"),
@@ -83,10 +100,14 @@ router.put(
     const set = {};
     if (req.body.name?.trim()) set.name = req.body.name.trim();
     if (req.body.category) set.category = req.body.category;
-    const doc = await Document.findOneAndUpdate({ _id: req.params.id, ...tenantFilter(req.user) }, set, {
-      new: true,
-      runValidators: true,
-    });
+    const doc = await Document.findOneAndUpdate(
+      { _id: req.params.id, ...tenantFilter(req.user) },
+      set,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
     if (!doc) {
       res.status(404);
       throw new Error("Document not found");
@@ -99,7 +120,10 @@ router.delete(
   "/:id",
   authorize("super_admin", "admin"),
   asyncHandler(async (req, res) => {
-    const doc = await Document.findOneAndDelete({ _id: req.params.id, ...tenantFilter(req.user) });
+    const doc = await Document.findOneAndDelete({
+      _id: req.params.id,
+      ...tenantFilter(req.user),
+    });
     if (!doc) {
       res.status(404);
       throw new Error("Document not found");

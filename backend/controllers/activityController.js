@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const escapeRegex = require("../utils/escapeRegex");
 const ActivityLog = require("../models/ActivityLog");
 
 const getActivityLogs = asyncHandler(async (req, res) => {
@@ -33,9 +34,9 @@ const getActivityLogs = asyncHandler(async (req, res) => {
 
   if (search) {
     query.$or = [
-      { description: { $regex: search, $options: "i" } },
-      { userName: { $regex: search, $options: "i" } },
-      { userEmail: { $regex: search, $options: "i" } },
+      { description: { $regex: escapeRegex(search), $options: "i" } },
+      { userName: { $regex: escapeRegex(search), $options: "i" } },
+      { userEmail: { $regex: escapeRegex(search), $options: "i" } },
     ];
   }
 

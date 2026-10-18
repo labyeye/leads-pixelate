@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { checkApiKey, updateTenantSubscription } = require("../controllers/crmController");
+const {
+  checkApiKey,
+  updateTenantSubscription,
+} = require("../controllers/crmController");
 
 router.use(checkApiKey);
 

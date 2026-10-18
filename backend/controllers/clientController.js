@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const escapeRegex = require("../utils/escapeRegex");
 const Client = require("../models/Client");
 const logActivity = require("../utils/activityLogger");
 
@@ -28,9 +29,9 @@ const getClients = asyncHandler(async (req, res) => {
   if (paymentStatus) query.paymentStatus = paymentStatus;
   if (search) {
     query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { company: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
+      { name: { $regex: escapeRegex(search), $options: "i" } },
+      { company: { $regex: escapeRegex(search), $options: "i" } },
+      { email: { $regex: escapeRegex(search), $options: "i" } },
     ];
   }
 
@@ -179,11 +180,17 @@ function normalizeRow(raw) {
   return {
     name: text(r.name, 100),
     company: text(r.company, 150),
-    email: String(r.email ?? "").trim().toLowerCase().slice(0, 150),
+    email: String(r.email ?? "")
+      .trim()
+      .toLowerCase()
+      .slice(0, 150),
     phone,
     address: text(r.address, 300),
     businessType: text(r.businessType, 100),
-    gst: String(r.gst ?? "").trim().toUpperCase().slice(0, 15),
+    gst: String(r.gst ?? "")
+      .trim()
+      .toUpperCase()
+      .slice(0, 15),
     services: String(r.services ?? "")
       .split(",")
       .map((s) => text(s, 60))
@@ -208,7 +215,11 @@ const importClients = asyncHandler(async (req, res) => {
   }
 
   const emails = clients
-    .map((r) => String(r?.email ?? "").trim().toLowerCase())
+    .map((r) =>
+      String(r?.email ?? "")
+        .trim()
+        .toLowerCase(),
+    )
     .filter(Boolean);
   const existing = new Set(
     (

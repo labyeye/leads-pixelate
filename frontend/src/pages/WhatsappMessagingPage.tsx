@@ -786,10 +786,16 @@ export default function WhatsappMessagingPage() {
                   </div>
                 </div>
 
-                {["DOCUMENT", "IMAGE"].includes(selectedTemplate.headerType || "") && (
+                {["DOCUMENT", "IMAGE"].includes(
+                  selectedTemplate.headerType || "",
+                ) && (
                   <div>
                     <p className="text-sm font-medium">
-                      Attach {selectedTemplate.headerType === "IMAGE" ? "image" : "document"} from vault
+                      Attach{" "}
+                      {selectedTemplate.headerType === "IMAGE"
+                        ? "image"
+                        : "document"}{" "}
+                      from vault
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Every lead gets this file as the message header.
@@ -812,7 +818,10 @@ export default function WhatsappMessagingPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {senders.map((s) => (
-                          <SelectItem key={s.phoneNumberId} value={s.phoneNumberId}>
+                          <SelectItem
+                            key={s.phoneNumberId}
+                            value={s.phoneNumberId}
+                          >
                             {s.label || s.businessName || "WhatsApp number"}
                             {s.phoneNumber ? ` · ${s.phoneNumber}` : ""}
                           </SelectItem>

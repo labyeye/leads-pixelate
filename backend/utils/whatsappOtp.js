@@ -8,8 +8,7 @@ async function sendWhatsAppOtp(phone, code) {
   const phoneNumberId = process.env.WHATSAPP_PLATFORM_PHONE_NUMBER_ID;
   const templateName = process.env.WHATSAPP_OTP_TEMPLATE_NAME || "user_otp";
   const languageCode = process.env.WHATSAPP_OTP_TEMPLATE_LANG || "en_US";
-  const hasCopyCodeButton =
-    process.env.WHATSAPP_OTP_HAS_BUTTON !== "false";
+  const hasCopyCodeButton = process.env.WHATSAPP_OTP_HAS_BUTTON !== "false";
 
   if (!accessToken || !phoneNumberId) {
     throw new Error("WhatsApp platform number is not configured");

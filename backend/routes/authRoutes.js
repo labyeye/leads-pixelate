@@ -44,7 +44,11 @@ router.post("/refresh", refreshAccessToken);
 router.post("/logout", logout);
 router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
 router.post("/reset-password/:token", resetPassword);
-router.get("/forgot-password/methods", forgotPasswordLimiter, forgotPasswordMethods);
+router.get(
+  "/forgot-password/methods",
+  forgotPasswordLimiter,
+  forgotPasswordMethods,
+);
 router.post(
   "/forgot-password/whatsapp",
   forgotPasswordLimiter,

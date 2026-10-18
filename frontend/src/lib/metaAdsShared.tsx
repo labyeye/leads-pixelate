@@ -351,9 +351,13 @@ export function PeriodFilterBar({
   );
 }
 
-export type DeliveryFilter = "all" | "active" | "paused" | "archived" | "deleted";
+export type DeliveryFilter =
+  "all" | "active" | "paused" | "archived" | "deleted";
 
-export function matchesDeliveryFilter(rawStatus: string, filter: DeliveryFilter) {
+export function matchesDeliveryFilter(
+  rawStatus: string,
+  filter: DeliveryFilter,
+) {
   if (filter === "all") return true;
   if (filter === "active") return rawStatus === "ACTIVE";
   if (filter === "paused")

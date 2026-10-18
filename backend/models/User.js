@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        /^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/,
         "Please add a valid email",
       ],
     },
@@ -139,6 +139,11 @@ const userSchema = new mongoose.Schema(
       ref: "Tenant",
       default: null,
     },
+    // Bumped on every password change/reset; tokens carrying an older value are rejected by `protect`.
+    tokenVersion: { type: Number, default: 0 },
+    // Brute-force protection: 10 wrong passwords lock the account for 15 minutes.
+    failedLogins: { type: Number, default: 0 },
+    lockUntil: { type: Date, default: null },
     refreshTokenHash: {
       type: String,
       select: false,

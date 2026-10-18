@@ -161,7 +161,9 @@ router.get(
       .slice(0, 24)
       .map((inv, i, arr) => ({
         _id: inv._id,
-        invoiceNumber: inv.invoiceNumber || `INV-LEADS-${String(arr.length - i).padStart(4, "0")}`,
+        invoiceNumber:
+          inv.invoiceNumber ||
+          `INV-LEADS-${String(arr.length - i).padStart(4, "0")}`,
         plan: inv.plan,
         billingCycle: inv.billingCycle,
         amount: inv.amount,
@@ -533,7 +535,9 @@ router.post(
           amountRupees: amount,
           paymentId: razorpayPaymentId,
           invoiceNumber,
-        }).catch((err) => log.error("Welcome email failed", { message: err.message }));
+        }).catch((err) =>
+          log.error("Welcome email failed", { message: err.message }),
+        );
 
         res.json({
           success: true,

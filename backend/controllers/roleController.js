@@ -11,7 +11,9 @@ const DEFAULT_ROLES = [
 ];
 
 function tenantFilter(req) {
-  return req.user.tenantId ? { tenantId: req.user.tenantId } : { tenantId: null };
+  return req.user.tenantId
+    ? { tenantId: req.user.tenantId }
+    : { tenantId: null };
 }
 
 async function ensureDefaultRoles(filter) {

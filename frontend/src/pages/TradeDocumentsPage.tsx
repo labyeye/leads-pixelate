@@ -1,10 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
-import { Archive, CheckCircle2, Download, IndianRupee, Loader2, Package, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import {
+  Archive,
+  CheckCircle2,
+  Download,
+  IndianRupee,
+  Loader2,
+  Package,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { ImportPurchaseOrdersDialog, exportPurchaseOrders } from "@/components/inventory/ImportPurchaseOrdersDialog";
+import {
+  ImportPurchaseOrdersDialog,
+  exportPurchaseOrders,
+} from "@/components/inventory/ImportPurchaseOrdersDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { DataTable, Modal, SaveBar, StatusPill, Toolbar, fmtDate, inputCls, labelCls, money } from "@/components/inventory/parts";
-import { clientsAPI, invoicesAPI, productsAPI, purchaseOrdersAPI, salesOrdersAPI, settingsAPI } from "@/services/api";
+import {
+  DataTable,
+  Modal,
+  SaveBar,
+  StatusPill,
+  Toolbar,
+  fmtDate,
+  inputCls,
+  labelCls,
+  money,
+} from "@/components/inventory/parts";
+import {
+  clientsAPI,
+  invoicesAPI,
+  productsAPI,
+  purchaseOrdersAPI,
+  salesOrdersAPI,
+  settingsAPI,
+} from "@/services/api";
 import { downloadTradeDocPDF } from "@/lib/tradeDocPDF";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
@@ -18,7 +49,8 @@ const KINDS = {
     perm: "Quotations",
     statuses: ["Draft", "Confirmed", "Fulfilled", "Cancelled"],
     dateLabel: "Expected delivery",
-    empty: "No sales orders yet. Create one when a client confirms a quotation.",
+    empty:
+      "No sales orders yet. Create one when a client confirms a quotation.",
   },
   purchase_order: {
     title: "Purchase Orders",
@@ -42,7 +74,13 @@ const KINDS = {
 
 export type TradeKind = keyof typeof KINDS;
 
-const blankItem = { productId: "", name: "", hsnCode: "", quantity: "1", rate: "" };
+const blankItem = {
+  productId: "",
+  name: "",
+  hsnCode: "",
+  quantity: "1",
+  rate: "",
+};
 const today = () => new Date().toISOString().slice(0, 10);
 const blank = () => ({
   partyName: "",
@@ -122,7 +160,13 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
             discount: String(d.discount ?? 0),
             taxPercent: String(d.taxPercent ?? 18),
             notes: d.notes || "",
-            items: d.items.map((i: any) => ({ productId: i.productId || "", name: i.name, hsnCode: i.hsnCode || "", quantity: String(i.quantity), rate: String(i.rate) })),
+            items: d.items.map((i: any) => ({
+              productId: i.productId || "",
+              name: i.name,
+              hsnCode: i.hsnCode || "",
+              quantity: String(i.quantity),
+              rate: String(i.rate),
+            })),
           }
         : blank(),
     );
@@ -130,16 +174,32 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
   };
 
   const setItem = (i: number, patch: Partial<typeof blankItem>) =>
-    setForm((f) => ({ ...f, items: f.items.map((it, k) => (k === i ? { ...it, ...patch } : it)) }));
+    setForm((f) => ({
+      ...f,
+      items: f.items.map((it, k) => (k === i ? { ...it, ...patch } : it)),
+    }));
 
   // Picking a product name from the list fills its price and HSN.
   const pickProduct = (i: number, name: string) => {
     const p = products.find((x) => x.name === name);
-    setItem(i, p ? { productId: p._id, name, rate: String(p.price), hsnCode: p.hsnCode || "" } : { productId: "", name });
+    setItem(
+      i,
+      p
+        ? {
+            productId: p._id,
+            name,
+            rate: String(p.price),
+            hsnCode: p.hsnCode || "",
+          }
+        : { productId: "", name },
+    );
   };
 
   const totals = useMemo(() => {
-    const sub = form.items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.rate) || 0), 0);
+    const sub = form.items.reduce(
+      (s, i) => s + (Number(i.quantity) || 0) * (Number(i.rate) || 0),
+      0,
+    );
     const taxable = Math.max(0, sub - (Number(form.discount) || 0));
     const tax = (taxable * (Number(form.taxPercent) || 0)) / 100;
     return { sub, tax, total: taxable + tax };
@@ -150,8 +210,15 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
     if (!form.partyName.trim()) return notify.error("Add who this is for");
     const items = form.items.filter((i) => i.name.trim());
     if (!items.length) return notify.error("Add at least one item");
-    if (items.some((i) => !(Number(i.quantity) > 0) || i.rate === "" || Number(i.rate) < 0)) {
-      return notify.error("Check the items", "Each item needs a quantity above 0 and a rate.");
+    if (
+      items.some(
+        (i) => !(Number(i.quantity) > 0) || i.rate === "" || Number(i.rate) < 0,
+      )
+    ) {
+      return notify.error(
+        "Check the items",
+        "Each item needs a quantity above 0 and a rate.",
+      );
     }
     setSaving(true);
     try {
@@ -165,13 +232,24 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
         discount: Number(form.discount) || 0,
         taxPercent: Number(form.taxPercent) || 0,
         notes: form.notes,
-        items: items.map((i) => ({ productId: i.productId || null, name: i.name.trim(), hsnCode: i.hsnCode, quantity: Number(i.quantity), rate: Number(i.rate) })),
+        items: items.map((i) => ({
+          productId: i.productId || null,
+          name: i.name.trim(),
+          hsnCode: i.hsnCode,
+          quantity: Number(i.quantity),
+          rate: Number(i.rate),
+        })),
       };
-      editId ? await cfg.api.update(editId, payload) : await cfg.api.create(payload);
+      editId
+        ? await cfg.api.update(editId, payload)
+        : await cfg.api.create(payload);
       notify.success(`${cfg.one} ${editId ? "updated" : "created"}`);
       setOpen(false);
       load();
-      productsAPI.getAll().then((r) => setProducts(r.data || [])).catch(() => {});
+      productsAPI
+        .getAll()
+        .then((r) => setProducts(r.data || []))
+        .catch(() => {});
     } catch (err: any) {
       notify.error("Error", err.message);
     } finally {
@@ -183,7 +261,9 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
   const pdf = async (d: any) => {
     setPdfId(d._id);
     try {
-      const client = clients.find((c) => c.company === d.partyName || c.name === d.partyName);
+      const client = clients.find(
+        (c) => c.company === d.partyName || c.name === d.partyName,
+      );
       await downloadTradeDocPDF(kind, d, settings, client);
     } catch {
       notify.error("PDF Error", "Could not generate the PDF.");
@@ -206,26 +286,68 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
   const shown = rows.filter(
     (d) =>
       (statusFilter === "all" || d.status === statusFilter) &&
-      [d.number, d.partyName, d.reference].some((x) => (x || "").toLowerCase().includes(q)),
+      [d.number, d.partyName, d.reference].some((x) =>
+        (x || "").toLowerCase().includes(q),
+      ),
   );
-  const shownTotal = shown.reduce((s, d) => s + (d.status === "Cancelled" ? 0 : d.total), 0);
-  const field = (k: "partyName" | "partyPhone" | "reference" | "date" | "dueDate" | "notes" | "discount" | "taxPercent" | "status") =>
-    (e: React.ChangeEvent<any>) => setForm({ ...form, [k]: e.target.value });
+  const shownTotal = shown.reduce(
+    (s, d) => s + (d.status === "Cancelled" ? 0 : d.total),
+    0,
+  );
+  const field =
+    (
+      k:
+        | "partyName"
+        | "partyPhone"
+        | "reference"
+        | "date"
+        | "dueDate"
+        | "notes"
+        | "discount"
+        | "taxPercent"
+        | "status",
+    ) =>
+    (e: React.ChangeEvent<any>) =>
+      setForm({ ...form, [k]: e.target.value });
 
   const isPO = kind === "purchase_order";
   const count = (st: string) => rows.filter((d) => d.status === st).length;
-  const totalValue = rows.reduce((t, d) => t + (d.status === "Cancelled" ? 0 : d.total), 0);
-  const cardBtn = "flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40";
+  const totalValue = rows.reduce(
+    (t, d) => t + (d.status === "Cancelled" ? 0 : d.total),
+    0,
+  );
+  const cardBtn =
+    "flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40";
 
   return (
     <AppLayout title={cfg.title}>
       <div className="space-y-4">
         {isPO && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <KpiCard title="Total Orders" value={loading ? "—" : rows.length} icon={Package} bg="bg-[#024BAB]" />
-            <KpiCard title="Issued" value={loading ? "—" : count("Issued")} icon={Archive} bg="bg-[#FFDE00]" />
-            <KpiCard title="Received" value={loading ? "—" : count("Received")} icon={CheckCircle2} bg="bg-[#00C48C]" />
-            <KpiCard title="Total Value" value={loading ? "—" : money(totalValue)} icon={IndianRupee} bg="bg-gray-300" />
+            <KpiCard
+              title="Total Orders"
+              value={loading ? "—" : rows.length}
+              icon={Package}
+              bg="bg-[#024BAB]"
+            />
+            <KpiCard
+              title="Issued"
+              value={loading ? "—" : count("Issued")}
+              icon={Archive}
+              bg="bg-[#FFDE00]"
+            />
+            <KpiCard
+              title="Received"
+              value={loading ? "—" : count("Received")}
+              icon={CheckCircle2}
+              bg="bg-[#00C48C]"
+            />
+            <KpiCard
+              title="Total Value"
+              value={loading ? "—" : money(totalValue)}
+              icon={IndianRupee}
+              bg="bg-gray-300"
+            />
           </div>
         )}
 
@@ -238,7 +360,11 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
         >
           {isPO && (
             <>
-              <button onClick={() => exportPurchaseOrders(shown)} disabled={!shown.length} className={cardBtn}>
+              <button
+                onClick={() => exportPurchaseOrders(shown)}
+                disabled={!shown.length}
+                className={cardBtn}
+              >
                 <Download className="w-3.5 h-3.5" /> Export
               </button>
               {can(cfg.perm, "create") && (
@@ -262,35 +388,79 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
         </Toolbar>
 
         <DataTable
-          heads={["Number", "Client", "Date", cfg.dateLabel, "Total", "Status", "Actions"]}
+          heads={[
+            "Number",
+            "Client",
+            "Date",
+            cfg.dateLabel,
+            "Total",
+            "Status",
+            "Actions",
+          ]}
           loading={loading}
-          empty={shown.length ? null : rows.length ? "Nothing matches your filters." : cfg.empty}
+          empty={
+            shown.length
+              ? null
+              : rows.length
+                ? "Nothing matches your filters."
+                : cfg.empty
+          }
           footer={`${shown.length} ${cfg.title.toLowerCase()} · ${money(shownTotal)} total (cancelled not counted)`}
         >
           {shown.map((d) => (
-            <tr key={d._id} className="border-b border-gray-200 hover:bg-gray-50">
-              <td className="px-4 py-3 font-black text-black whitespace-nowrap">{d.number}</td>
+            <tr
+              key={d._id}
+              className="border-b border-gray-200 hover:bg-gray-50"
+            >
+              <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                {d.number}
+              </td>
               <td className="px-4 py-3">
                 {d.partyName}
-                {d.reference && <span className="block text-xs text-gray-500">Ref: {d.reference}</span>}
+                {d.reference && (
+                  <span className="block text-xs text-gray-500">
+                    Ref: {d.reference}
+                  </span>
+                )}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">{fmtDate(d.date)}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{fmtDate(d.dueDate)}</td>
-              <td className="px-4 py-3 font-black whitespace-nowrap">{money(d.total)}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                {fmtDate(d.dueDate)}
+              </td>
+              <td className="px-4 py-3 font-black whitespace-nowrap">
+                {money(d.total)}
+              </td>
               <td className="px-4 py-3">
                 <StatusPill status={d.status} />
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <button aria-label={`Download PDF ${d.number}`} onClick={() => pdf(d)} disabled={pdfId === d._id} className="p-1.5 hover:bg-blue-50">
-                  {pdfId === d._id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                <button
+                  aria-label={`Download PDF ${d.number}`}
+                  onClick={() => pdf(d)}
+                  disabled={pdfId === d._id}
+                  className="p-1.5 hover:bg-blue-50"
+                >
+                  {pdfId === d._id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                 </button>
                 {can(cfg.perm, "update") && (
-                  <button aria-label={`Edit ${d.number}`} onClick={() => openForm(d)} className="p-1.5 hover:bg-blue-50">
+                  <button
+                    aria-label={`Edit ${d.number}`}
+                    onClick={() => openForm(d)}
+                    className="p-1.5 hover:bg-blue-50"
+                  >
                     <Pencil className="w-4 h-4" />
                   </button>
                 )}
                 {can(cfg.perm, "delete") && (
-                  <button aria-label={`Delete ${d.number}`} onClick={() => remove(d)} className="p-1.5 text-red-600 hover:bg-red-50">
+                  <button
+                    aria-label={`Delete ${d.number}`}
+                    onClick={() => remove(d)}
+                    className="p-1.5 text-red-600 hover:bg-red-50"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -301,10 +471,18 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
       </div>
 
       {open && (
-        <Modal title={editId ? `Edit ${cfg.one}` : `New ${cfg.one}`} onClose={() => setOpen(false)} wide>
+        <Modal
+          title={editId ? `Edit ${cfg.one}` : `New ${cfg.one}`}
+          onClose={() => setOpen(false)}
+          wide
+        >
           <form onSubmit={submit} className="p-5 space-y-4">
             <datalist id="td-clients">
-              {[...new Set(clients.flatMap((c) => [c.company, c.name]).filter(Boolean))].map((c) => (
+              {[
+                ...new Set(
+                  clients.flatMap((c) => [c.company, c.name]).filter(Boolean),
+                ),
+              ].map((c) => (
                 <option key={c} value={c} />
               ))}
             </datalist>
@@ -319,23 +497,64 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                 <label htmlFor="td-party" className={labelCls}>
                   Client <span className="text-red-500">*</span>
                 </label>
-                <input id="td-party" list="td-clients" className={inputCls} value={form.partyName} onChange={field("partyName")} maxLength={120} />
+                <input
+                  id="td-party"
+                  list="td-clients"
+                  className={inputCls}
+                  value={form.partyName}
+                  onChange={field("partyName")}
+                  maxLength={120}
+                />
               </div>
               <div>
-                <label htmlFor="td-phone" className={labelCls}>WhatsApp number (optional)</label>
-                <input id="td-phone" className={inputCls} value={form.partyPhone} onChange={field("partyPhone")} maxLength={20} placeholder="For automatic WhatsApp messages" />
+                <label htmlFor="td-phone" className={labelCls}>
+                  WhatsApp number (optional)
+                </label>
+                <input
+                  id="td-phone"
+                  className={inputCls}
+                  value={form.partyPhone}
+                  onChange={field("partyPhone")}
+                  maxLength={20}
+                  placeholder="For automatic WhatsApp messages"
+                />
               </div>
               <div>
-                <label htmlFor="td-ref" className={labelCls}>Reference (optional)</label>
-                <input id="td-ref" className={inputCls} value={form.reference} onChange={field("reference")} maxLength={60} placeholder="Quotation or PO number" />
+                <label htmlFor="td-ref" className={labelCls}>
+                  Reference (optional)
+                </label>
+                <input
+                  id="td-ref"
+                  className={inputCls}
+                  value={form.reference}
+                  onChange={field("reference")}
+                  maxLength={60}
+                  placeholder="Quotation or PO number"
+                />
               </div>
               <div>
-                <label htmlFor="td-date" className={labelCls}>Date</label>
-                <input id="td-date" type="date" className={inputCls} value={form.date} onChange={field("date")} />
+                <label htmlFor="td-date" className={labelCls}>
+                  Date
+                </label>
+                <input
+                  id="td-date"
+                  type="date"
+                  className={inputCls}
+                  value={form.date}
+                  onChange={field("date")}
+                />
               </div>
               <div>
-                <label htmlFor="td-due" className={labelCls}>{cfg.dateLabel}</label>
-                <input id="td-due" type="date" className={inputCls} value={form.dueDate} onChange={field("dueDate")} />
+                <label htmlFor="td-due" className={labelCls}>
+                  {cfg.dateLabel}
+                </label>
+                <input
+                  id="td-due"
+                  type="date"
+                  className={inputCls}
+                  value={form.dueDate}
+                  onChange={field("dueDate")}
+                />
               </div>
             </div>
 
@@ -344,70 +563,88 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
               <div className="space-y-2">
                 {form.items.map((it, i) => {
                   const stock = products.find((p) => p._id === it.productId);
-                  const short = kind === "sales_order" && stock && Number(it.quantity) > (stock.stockQuantity ?? 0);
+                  const short =
+                    kind === "sales_order" &&
+                    stock &&
+                    Number(it.quantity) > (stock.stockQuantity ?? 0);
                   return (
-                  <div key={i}>
-                  <div className="grid grid-cols-[minmax(0,1fr)_70px_90px_auto] sm:grid-cols-[minmax(0,1fr)_100px_70px_100px_auto] gap-2 items-center">
-                    <input
-                      aria-label={`Item ${i + 1} name`}
-                      list="td-products"
-                      className={inputCls}
-                      placeholder="Item or service"
-                      maxLength={160}
-                      value={it.name}
-                      onChange={(e) => pickProduct(i, e.target.value)}
-                    />
-                    <input
-                      aria-label={`Item ${i + 1} HSN`}
-                      className={`${inputCls} hidden sm:block`}
-                      placeholder="HSN/SAC"
-                      maxLength={10}
-                      value={it.hsnCode}
-                      onChange={(e) => setItem(i, { hsnCode: e.target.value })}
-                    />
-                    <input
-                      aria-label={`Item ${i + 1} quantity`}
-                      type="number"
-                      min="0"
-                      max="9999999"
-                      step="any"
-                      className={inputCls}
-                      value={it.quantity}
-                      onChange={(e) => setItem(i, { quantity: e.target.value })}
-                    />
-                    <input
-                      aria-label={`Item ${i + 1} rate`}
-                      type="number"
-                      min="0"
-                      step="any"
-                      className={inputCls}
-                      placeholder="Rate ₹"
-                      max="99999999"
-                      value={it.rate}
-                      onChange={(e) => setItem(i, { rate: e.target.value })}
-                    />
-                    <button
-                      type="button"
-                      aria-label={`Remove item ${i + 1}`}
-                      disabled={form.items.length === 1}
-                      onClick={() => setForm({ ...form, items: form.items.filter((_, k) => k !== i) })}
-                      className="p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-30"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {stock && kind !== "invoice" && (
-                    <p className={`text-[11px] mt-0.5 ${short ? "text-red-600 font-bold" : "text-gray-500"}`}>
-                      {short ? "Only " : "In stock: "}{stock.stockQuantity ?? 0} {stock.unit || "pcs"}{short ? " available — order exceeds stock" : ""}
-                    </p>
-                  )}
-                  </div>
+                    <div key={i}>
+                      <div className="grid grid-cols-[minmax(0,1fr)_70px_90px_auto] sm:grid-cols-[minmax(0,1fr)_100px_70px_100px_auto] gap-2 items-center">
+                        <input
+                          aria-label={`Item ${i + 1} name`}
+                          list="td-products"
+                          className={inputCls}
+                          placeholder="Item or service"
+                          maxLength={160}
+                          value={it.name}
+                          onChange={(e) => pickProduct(i, e.target.value)}
+                        />
+                        <input
+                          aria-label={`Item ${i + 1} HSN`}
+                          className={`${inputCls} hidden sm:block`}
+                          placeholder="HSN/SAC"
+                          maxLength={10}
+                          value={it.hsnCode}
+                          onChange={(e) =>
+                            setItem(i, { hsnCode: e.target.value })
+                          }
+                        />
+                        <input
+                          aria-label={`Item ${i + 1} quantity`}
+                          type="number"
+                          min="0"
+                          max="9999999"
+                          step="any"
+                          className={inputCls}
+                          value={it.quantity}
+                          onChange={(e) =>
+                            setItem(i, { quantity: e.target.value })
+                          }
+                        />
+                        <input
+                          aria-label={`Item ${i + 1} rate`}
+                          type="number"
+                          min="0"
+                          step="any"
+                          className={inputCls}
+                          placeholder="Rate ₹"
+                          max="99999999"
+                          value={it.rate}
+                          onChange={(e) => setItem(i, { rate: e.target.value })}
+                        />
+                        <button
+                          type="button"
+                          aria-label={`Remove item ${i + 1}`}
+                          disabled={form.items.length === 1}
+                          onClick={() =>
+                            setForm({
+                              ...form,
+                              items: form.items.filter((_, k) => k !== i),
+                            })
+                          }
+                          className="p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-30"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {stock && kind !== "invoice" && (
+                        <p
+                          className={`text-[11px] mt-0.5 ${short ? "text-red-600 font-bold" : "text-gray-500"}`}
+                        >
+                          {short ? "Only " : "In stock: "}
+                          {stock.stockQuantity ?? 0} {stock.unit || "pcs"}
+                          {short ? " available — order exceeds stock" : ""}
+                        </p>
+                      )}
+                    </div>
                   );
                 })}
               </div>
               <button
                 type="button"
-                onClick={() => setForm({ ...form, items: [...form.items, { ...blankItem }] })}
+                onClick={() =>
+                  setForm({ ...form, items: [...form.items, { ...blankItem }] })
+                }
                 className="mt-2 inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[#024BAB]"
               >
                 <Plus className="w-3.5 h-3.5" /> Add item
@@ -416,16 +653,42 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
 
             <div className="grid sm:grid-cols-[1fr_1fr_1fr] gap-3">
               <div>
-                <label htmlFor="td-disc" className={labelCls}>Discount (₹)</label>
-                <input id="td-disc" type="number" min="0" className={inputCls} value={form.discount} onChange={field("discount")} />
+                <label htmlFor="td-disc" className={labelCls}>
+                  Discount (₹)
+                </label>
+                <input
+                  id="td-disc"
+                  type="number"
+                  min="0"
+                  className={inputCls}
+                  value={form.discount}
+                  onChange={field("discount")}
+                />
               </div>
               <div>
-                <label htmlFor="td-tax" className={labelCls}>GST %</label>
-                <input id="td-tax" type="number" min="0" max="100" className={inputCls} value={form.taxPercent} onChange={field("taxPercent")} />
+                <label htmlFor="td-tax" className={labelCls}>
+                  GST %
+                </label>
+                <input
+                  id="td-tax"
+                  type="number"
+                  min="0"
+                  max="100"
+                  className={inputCls}
+                  value={form.taxPercent}
+                  onChange={field("taxPercent")}
+                />
               </div>
               <div>
-                <label htmlFor="td-status" className={labelCls}>Status</label>
-                <select id="td-status" className={inputCls} value={form.status} onChange={field("status")}>
+                <label htmlFor="td-status" className={labelCls}>
+                  Status
+                </label>
+                <select
+                  id="td-status"
+                  className={inputCls}
+                  value={form.status}
+                  onChange={field("status")}
+                >
                   {cfg.statuses.map((s) => (
                     <option key={s}>{s}</option>
                   ))}
@@ -434,20 +697,51 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
             </div>
 
             <dl className="border-2 border-black bg-gray-50 p-3 text-sm space-y-1 sm:ml-auto sm:max-w-xs">
-              <div className="flex justify-between"><dt>Subtotal</dt><dd>{money(totals.sub)}</dd></div>
-              <div className="flex justify-between"><dt>GST</dt><dd>{money(totals.tax)}</dd></div>
-              <div className="flex justify-between font-black border-t border-black pt-1"><dt>Total</dt><dd>{money(totals.total)}</dd></div>
+              <div className="flex justify-between">
+                <dt>Subtotal</dt>
+                <dd>{money(totals.sub)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>GST</dt>
+                <dd>{money(totals.tax)}</dd>
+              </div>
+              <div className="flex justify-between font-black border-t border-black pt-1">
+                <dt>Total</dt>
+                <dd>{money(totals.total)}</dd>
+              </div>
             </dl>
 
             <div>
-              <label htmlFor="td-notes" className={labelCls}>Notes</label>
-              <textarea id="td-notes" rows={2} className={inputCls} value={form.notes} onChange={field("notes")} maxLength={1000} />
+              <label htmlFor="td-notes" className={labelCls}>
+                Notes
+              </label>
+              <textarea
+                id="td-notes"
+                rows={2}
+                className={inputCls}
+                value={form.notes}
+                onChange={field("notes")}
+                maxLength={1000}
+              />
             </div>
-            <SaveBar saving={saving} onCancel={() => setOpen(false)} label={editId ? "Save changes" : `Create ${cfg.one.toLowerCase()}`} />
+            <SaveBar
+              saving={saving}
+              onCancel={() => setOpen(false)}
+              label={
+                editId ? "Save changes" : `Create ${cfg.one.toLowerCase()}`
+              }
+            />
           </form>
         </Modal>
       )}
-      {isPO && <ImportPurchaseOrdersDialog open={importOpen} onOpenChange={setImportOpen} onImported={load} products={products} />}
+      {isPO && (
+        <ImportPurchaseOrdersDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onImported={load}
+          products={products}
+        />
+      )}
     </AppLayout>
   );
 }

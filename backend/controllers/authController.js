@@ -1,7 +1,7 @@
+const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const validator = require("validator");
 const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Tenant = require("../models/Tenant");
@@ -9,6 +9,7 @@ const {
   generateToken,
   generateAccessToken,
   generateRefreshToken,
+  refreshTokenMatches,
 } = require("../utils/generateToken");
 const { setAuthCookies, clearAuthCookies } = require("../utils/authCookies");
 const logActivity = require("../utils/activityLogger");
@@ -29,7 +30,7 @@ function hashOtp(otp) {
 // Issues the web-app cookie session (access + refresh + csrf) alongside the
 // existing bearer token in the JSON body used by the mobile app.
 async function issueWebSession(res, user) {
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user._id, user.tokenVersion);
   const { raw: refreshToken, hash: refreshTokenHash } =
     await generateRefreshToken(user._id);
 
@@ -43,7 +44,7 @@ async function issueWebSession(res, user) {
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, companyName, phone, department } = req.body;
 
-  if (!name || !email || !password || !companyName) {
+  if (![name, email, password, companyName].every((v) => typeof v === "string" && v)) {
     res.status(400);
     throw new Error("Company name, your name, email and password are required");
   }
@@ -56,9 +57,9 @@ const register = asyncHandler(async (req, res) => {
     throw new Error("Please provide a valid email address");
   }
 
-  if (password.length < 8) {
+  if (password.length < 8 || password.length > 72 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
     res.status(400);
-    throw new Error("Password must be at least 8 characters");
+    throw new Error("Password must be 8-72 characters and include a letter and a number");
   }
 
   if (name.trim().length < 2 || name.trim().length > 80) {
@@ -126,7 +127,7 @@ const register = asyncHandler(async (req, res) => {
       department: user.department,
       status: user.status,
       tenantId: tenant._id,
-      token: generateToken(user._id),
+      token: generateToken(user._id, user.tokenVersion),
       tenant: {
         _id: tenant._id,
         name: tenant.name,
@@ -137,10 +138,15 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
+const MAX_FAILED_LOGINS = 10;
+const LOCK_MS = 15 * 60 * 1000;
+// Valid-looking bcrypt hash, compared against when the email is unknown so response time doesn't reveal it.
+const DUMMY_HASH = "$2a$10$CwTycUXWue0Thq9StjUM0uJ8.G1c/3d1Hn5X9lq0Yx1y6k8mQ5G1e";
+
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
+  if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
     res.status(400);
     throw new Error("Please provide email and password");
   }
@@ -152,6 +158,7 @@ const login = asyncHandler(async (req, res) => {
   );
 
   if (!user) {
+    await bcrypt.compare(password, DUMMY_HASH);
     logActivity({
       user: null,
       action: "LOGIN_FAILED",
@@ -163,14 +170,21 @@ const login = asyncHandler(async (req, res) => {
     throw new Error("Invalid email or password");
   }
 
-  if (user.status === "inactive") {
-    res.status(403);
-    throw new Error("Account is deactivated. Contact your administrator.");
+  if (user.lockUntil && user.lockUntil > new Date()) {
+    res.status(429);
+    throw new Error("Too many failed attempts. Try again in a few minutes.");
   }
 
   const isMatch = await user.matchPassword(password);
 
   if (!isMatch) {
+    const locked = (user.failedLogins || 0) + 1 >= MAX_FAILED_LOGINS;
+    await User.updateOne(
+      { _id: user._id },
+      locked
+        ? { $set: { failedLogins: 0, lockUntil: new Date(Date.now() + LOCK_MS) } }
+        : { $inc: { failedLogins: 1 } },
+    );
     logActivity({
       user,
       action: "LOGIN_FAILED",
@@ -182,6 +196,14 @@ const login = asyncHandler(async (req, res) => {
     throw new Error("Invalid email or password");
   }
 
+  // Checked only after the password is right, so the status isn't disclosed to someone guessing emails.
+  if (user.status === "inactive") {
+    res.status(403);
+    throw new Error("Account is deactivated. Contact your administrator.");
+  }
+
+  user.failedLogins = 0;
+  user.lockUntil = null;
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
@@ -215,7 +237,7 @@ const login = asyncHandler(async (req, res) => {
       status: user.status,
       tenantId: user.tenantId,
       lastLogin: user.lastLogin,
-      token: generateToken(user._id),
+      token: generateToken(user._id, user.tokenVersion),
       tenant: tenant
         ? {
             _id: tenant._id,
@@ -310,7 +332,9 @@ const changePassword = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
+  user.tokenVersion = (user.tokenVersion || 0) + 1; // revokes every older bearer/cookie token
   await user.save();
+  await issueWebSession(res, user);
 
   logActivity({
     user: req.user,
@@ -324,7 +348,7 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Password updated successfully",
-    data: { token: generateToken(user._id) },
+    data: { token: generateToken(user._id, user.tokenVersion) },
   });
 });
 
@@ -368,7 +392,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new Error("Session expired, please log in again");
   }
 
-  const isValid = await bcrypt.compare(token, user.refreshTokenHash);
+  const isValid = await refreshTokenMatches(token, user.refreshTokenHash);
   if (!isValid) {
     // Reused/stale refresh token — revoke the session outright.
     user.refreshTokenHash = undefined;
@@ -500,6 +524,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 
   user.password = password;
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
   user.resetPasswordTokenHash = undefined;
   user.resetPasswordExpires = undefined;
   // Force re-login everywhere else — a password reset should invalidate any
@@ -519,7 +544,10 @@ const resetPassword = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
-  res.json({ success: true, message: "Password has been reset. Please log in." });
+  res.json({
+    success: true,
+    message: "Password has been reset. Please log in.",
+  });
 });
 
 // Lets the "forgot password" screen know which reset methods this account
@@ -593,6 +621,7 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
   }
 
   user.password = password;
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
   user.resetOtpHash = undefined;
   user.resetOtpExpires = undefined;
   user.refreshTokenHash = undefined;
@@ -610,7 +639,10 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
-  res.json({ success: true, message: "Password has been reset. Please log in." });
+  res.json({
+    success: true,
+    message: "Password has been reset. Please log in.",
+  });
 });
 
 const resetPasswordWithTotp = asyncHandler(async (req, res) => {
@@ -634,6 +666,7 @@ const resetPasswordWithTotp = asyncHandler(async (req, res) => {
   }
 
   user.password = password;
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
   user.refreshTokenHash = undefined;
   user.refreshTokenExpires = undefined;
   await user.save();
@@ -649,13 +682,18 @@ const resetPasswordWithTotp = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
-  res.json({ success: true, message: "Password has been reset. Please log in." });
+  res.json({
+    success: true,
+    message: "Password has been reset. Please log in.",
+  });
 });
 
 // --- Passwordless login via WhatsApp OTP (phone must already be verified) ---
 
 function phoneVariants(raw) {
-  const normalised = String(raw || "").replace(/\D/g, "").slice(-10);
+  const normalised = String(raw || "")
+    .replace(/\D/g, "")
+    .slice(-10);
   return [normalised, `+91${normalised}`, `91${normalised}`];
 }
 
@@ -687,7 +725,8 @@ const loginRequestOtp = asyncHandler(async (req, res) => {
   // Generic response regardless of match, to avoid phone-number enumeration.
   res.json({
     success: true,
-    message: "If that phone number is registered and verified, an OTP has been sent.",
+    message:
+      "If that phone number is registered and verified, an OTP has been sent.",
   });
 });
 
@@ -720,7 +759,9 @@ const loginVerifyOtp = asyncHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
 
   const tenant = user.tenantId
-    ? await Tenant.findById(user.tenantId).select("name plan status planExpiresAt")
+    ? await Tenant.findById(user.tenantId).select(
+        "name plan status planExpiresAt",
+      )
     : null;
 
   logActivity({
@@ -747,9 +788,14 @@ const loginVerifyOtp = asyncHandler(async (req, res) => {
       status: user.status,
       tenantId: user.tenantId,
       lastLogin: user.lastLogin,
-      token: generateToken(user._id),
+      token: generateToken(user._id, user.tokenVersion),
       tenant: tenant
-        ? { _id: tenant._id, name: tenant.name, plan: tenant.plan, status: tenant.status }
+        ? {
+            _id: tenant._id,
+            name: tenant.name,
+            plan: tenant.plan,
+            status: tenant.status,
+          }
         : null,
     },
   });

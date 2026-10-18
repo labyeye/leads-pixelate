@@ -7,7 +7,7 @@ const replySchema = new mongoose.Schema(
     from: { type: String, enum: ["hrms", "crm", "platform"], required: true },
     senderName: { type: String, default: "" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const supportTicketSchema = new mongoose.Schema(
@@ -44,7 +44,7 @@ const supportTicketSchema = new mongoose.Schema(
     replies: [replySchema],
     resolvedAt: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 supportTicketSchema.pre("save", async function (next) {

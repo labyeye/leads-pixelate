@@ -1,4 +1,5 @@
 const express = require("express");
+const { signState, readState } = require("../utils/oauthState");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
@@ -7,7 +8,10 @@ const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
-const { nextBatchAssignee, assignmentFields } = require("../utils/leadAssignment");
+const {
+  nextBatchAssignee,
+  assignmentFields,
+} = require("../utils/leadAssignment");
 const linkedinAds = require("../services/linkedinAdsService");
 const log = require("../utils/logger").scope("LinkedIn Ads");
 
@@ -29,7 +33,11 @@ function tenantQuery(req) {
 function mapAnswerFields(answers = []) {
   const map = {};
   for (const a of answers) {
-    const key = (a.answerDetails?.questionType || a.question || "").toLowerCase();
+    const key = (
+      a.answerDetails?.questionType ||
+      a.question ||
+      ""
+    ).toLowerCase();
     const value =
       a.answerDetails?.textQuestionAnswer?.answer ||
       a.answerDetails?.consentQuestionAnswer?.consentAnswer ||
@@ -49,9 +57,7 @@ router.get(
         message: "LinkedIn Ads integration not configured",
       });
     }
-    const state = Buffer.from(
-      `${req.user.tenantId || "global"}:${req.user._id}`,
-    ).toString("base64");
+    const state = signState(`${req.user.tenantId || "global"}:${req.user._id}`);
     const authUrl = linkedinAds.buildAuthUrl(getRedirectUri(), state);
     log.info("Auth URL requested", { userId: req.user._id });
     res.json({ success: true, data: { authUrl } });
@@ -73,7 +79,7 @@ router.get(
 
     let tenantId, userId;
     try {
-      const decoded = Buffer.from(String(state), "base64").toString("utf8");
+      const decoded = readState(state);
       [tenantId, userId] = decoded.split(":");
       if (!userId) throw new Error("Invalid state");
     } catch {
@@ -124,7 +130,10 @@ router.get(
     if (!refreshToken) {
       return res
         .status(400)
-        .json({ success: false, message: "Please connect your LinkedIn account first" });
+        .json({
+          success: false,
+          message: "Please connect your LinkedIn account first",
+        });
     }
 
     try {
@@ -157,7 +166,10 @@ router.get(
 
     try {
       const accessToken = await linkedinAds.refreshAccessToken(refreshToken);
-      const campaigns = await linkedinAds.listCampaigns(adAccountId, accessToken);
+      const campaigns = await linkedinAds.listCampaigns(
+        adAccountId,
+        accessToken,
+      );
       res.json({ success: true, data: campaigns });
     } catch (err) {
       res.status(400).json({ success: false, message: err.message });
@@ -300,7 +312,10 @@ router.post(
         "integrations.linkedinAds.accounts": [],
       });
     }
-    log.info("Disconnected", { tenantId: query._id || query.ownerUser, adAccountId: adAccountId || "all" });
+    log.info("Disconnected", {
+      tenantId: query._id || query.ownerUser,
+      adAccountId: adAccountId || "all",
+    });
     res.json({ success: true, message: "LinkedIn Ads disconnected" });
   }),
 );
@@ -497,7 +512,9 @@ router.post(
         );
 
         for (const row of responses) {
-          const formId = row.leadType?.formResponse?.leadGenFormUrn?.split(":").pop();
+          const formId = row.leadType?.formResponse?.leadGenFormUrn
+            ?.split(":")
+            .pop();
           if (
             account.selectedFormIds?.length &&
             formId &&
@@ -512,7 +529,9 @@ router.post(
             account,
             formId,
             formName: "",
-            leadId: String(row.id || `${account.adAccountId}:${row.submittedAt}`),
+            leadId: String(
+              row.id || `${account.adAccountId}:${row.submittedAt}`,
+            ),
             adminUser,
             assigneeCache,
           });
@@ -589,13 +608,18 @@ router.post(
     );
     if (!account) return;
 
-    const formId = body.leadType?.formResponse?.leadGenFormUrn?.split(":").pop();
+    const formId = body.leadType?.formResponse?.leadGenFormUrn
+      ?.split(":")
+      .pop();
     if (
       account.selectedFormIds?.length &&
       formId &&
       !account.selectedFormIds.includes(String(formId))
     ) {
-      log.info("Webhook lead skipped (form not selected)", { adAccountId: account.adAccountId, formId });
+      log.info("Webhook lead skipped (form not selected)", {
+        adAccountId: account.adAccountId,
+        formId,
+      });
       return;
     }
 
@@ -606,7 +630,9 @@ router.post(
       role: { $in: ["admin", "super_admin"] },
     });
     if (!adminUser) {
-      log.warn("Webhook lead dropped, no admin user for tenant", { tenantId: tenant._id });
+      log.warn("Webhook lead dropped, no admin user for tenant", {
+        tenantId: tenant._id,
+      });
       return;
     }
 
@@ -624,7 +650,11 @@ router.post(
       log.info("Webhook lead received", {
         adAccountId: account.adAccountId,
         formId,
-        result: result.created ? "created" : result.updated ? "updated" : "filtered",
+        result: result.created
+          ? "created"
+          : result.updated
+            ? "updated"
+            : "filtered",
       });
     } catch (err) {
       log.error("Failed to save webhook lead", {

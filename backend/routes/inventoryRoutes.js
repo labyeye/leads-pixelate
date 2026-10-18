@@ -10,7 +10,9 @@ const { crud, tradeDocs } = require("../controllers/inventoryController");
 function mount(handlers, resource) {
   const r = express.Router();
   r.use(protect);
-  r.route("/").get(checkPermission(resource, "read"), handlers.list).post(checkPermission(resource, "create"), handlers.create);
+  r.route("/")
+    .get(checkPermission(resource, "read"), handlers.list)
+    .post(checkPermission(resource, "create"), handlers.create);
   r.route("/:id")
     .get(checkPermission(resource, "read"), handlers.get)
     .put(checkPermission(resource, "update"), handlers.update)
@@ -21,6 +23,9 @@ function mount(handlers, resource) {
 module.exports = {
   priceBooks: mount(crud(PriceBook, { label: "Price book" }), "Products"),
   salesOrders: mount(tradeDocs("sales_order", "Sales order"), "Quotations"),
-  purchaseOrders: mount(tradeDocs("purchase_order", "Purchase order"), "Products"),
+  purchaseOrders: mount(
+    tradeDocs("purchase_order", "Purchase order"),
+    "Products",
+  ),
   invoices: mount(tradeDocs("invoice", "Invoice"), "Quotations"),
 };

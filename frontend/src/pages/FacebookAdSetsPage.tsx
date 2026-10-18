@@ -82,7 +82,8 @@ export default function FacebookAdSetsPage() {
       setInsights((prev) => {
         const next = { ...prev };
         results.forEach((r, i) => {
-          if (r.status === "fulfilled") next[ids[i]] = parseInsight(r.value.data);
+          if (r.status === "fulfilled")
+            next[ids[i]] = parseInsight(r.value.data);
         });
         return next;
       });
@@ -141,7 +142,10 @@ export default function FacebookAdSetsPage() {
         !s.campaignName?.toLowerCase().includes(search.trim().toLowerCase())
       )
         return false;
-      return matchesDeliveryFilter(s.effective_status || s.status, deliveryFilter);
+      return matchesDeliveryFilter(
+        s.effective_status || s.status,
+        deliveryFilter,
+      );
     });
   }, [adSets, search, deliveryFilter]);
 
@@ -154,23 +158,34 @@ export default function FacebookAdSetsPage() {
       toast({ title: "Ad set deleted" });
       setDeleteTarget(null);
     } catch (err: any) {
-      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActionId(null);
     }
   };
 
   const handleToggleStatus = async (s: MetaAdSet) => {
-    const next = (s.effective_status || s.status) === "ACTIVE" ? "PAUSED" : "ACTIVE";
+    const next =
+      (s.effective_status || s.status) === "ACTIVE" ? "PAUSED" : "ACTIVE";
     setActionId(s.id);
     try {
       await facebookAPI.updateAdSet(s.id, { status: next });
       setAdSets((prev) =>
-        prev.map((x) => (x.id === s.id ? { ...x, status: next, effective_status: next } : x)),
+        prev.map((x) =>
+          x.id === s.id ? { ...x, status: next, effective_status: next } : x,
+        ),
       );
       toast({ title: next === "ACTIVE" ? "Ad set resumed" : "Ad set paused" });
     } catch (err: any) {
-      toast({ title: "Action failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Action failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActionId(null);
     }
@@ -205,7 +220,9 @@ export default function FacebookAdSetsPage() {
       render: (s) => {
         const st = statusBadge(s.effective_status || s.status);
         return (
-          <span className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}>
+          <span
+            className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}
+          >
             {st.label}
           </span>
         );
@@ -266,7 +283,8 @@ export default function FacebookAdSetsPage() {
     {
       header: "Amount Spent",
       align: "right",
-      render: (s) => `₹${(insights[s.id]?.spend ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      render: (s) =>
+        `₹${(insights[s.id]?.spend ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
     },
     {
       header: "Age",
@@ -287,7 +305,9 @@ export default function FacebookAdSetsPage() {
         s.start_time ? (
           <span className="whitespace-nowrap text-[11px]">
             {format(new Date(s.start_time), "dd MMM")} →{" "}
-            {s.end_time ? format(new Date(s.end_time), "dd MMM yyyy") : "ongoing"}
+            {s.end_time
+              ? format(new Date(s.end_time), "dd MMM yyyy")
+              : "ongoing"}
           </span>
         ) : (
           "—"
@@ -416,14 +436,17 @@ export default function FacebookAdSetsPage() {
         }}
       />
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Ad Set?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This will remove <strong>{deleteTarget?.name}</strong> from Facebook.
-            This cannot be undone.
+            This will remove <strong>{deleteTarget?.name}</strong> from
+            Facebook. This cannot be undone.
           </p>
           <DialogFooter className="gap-2">
             <button
@@ -491,8 +514,12 @@ function AdSetFormDialog({
     setAgeMax(String(adSet?.targeting?.age_max || 65));
     setOptimizationGoal(adSet?.optimization_goal || "LINK_CLICKS");
     setBillingEvent(adSet?.billing_event || "IMPRESSIONS");
-    setStartDate(adSet?.start_time ? format(new Date(adSet.start_time), "yyyy-MM-dd") : "");
-    setEndDate(adSet?.end_time ? format(new Date(adSet.end_time), "yyyy-MM-dd") : "");
+    setStartDate(
+      adSet?.start_time ? format(new Date(adSet.start_time), "yyyy-MM-dd") : "",
+    );
+    setEndDate(
+      adSet?.end_time ? format(new Date(adSet.end_time), "yyyy-MM-dd") : "",
+    );
   }, [open, adSet, campaigns]);
 
   const handleSave = async () => {
@@ -522,7 +549,11 @@ function AdSetFormDialog({
       }
       onSaved();
     } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Save failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -623,7 +654,9 @@ function AdSetFormDialog({
                 max="65"
                 className="border-2 border-black px-3 py-2 text-sm text-center w-full"
               />
-              <span className="text-xs font-bold text-muted-foreground">to</span>
+              <span className="text-xs font-bold text-muted-foreground">
+                to
+              </span>
               <input
                 type="number"
                 value={ageMax}
@@ -639,7 +672,10 @@ function AdSetFormDialog({
               <label className="block text-xs font-bold uppercase tracking-wide mb-1">
                 Optimization Goal
               </label>
-              <Select value={optimizationGoal} onValueChange={setOptimizationGoal}>
+              <Select
+                value={optimizationGoal}
+                onValueChange={setOptimizationGoal}
+              >
                 <SelectTrigger className="border-2 border-black">
                   <SelectValue />
                 </SelectTrigger>

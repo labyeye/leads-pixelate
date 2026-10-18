@@ -14,9 +14,15 @@ const MAX_LEN = 600; // a reply is a sentence or two, not a caption
 
 async function brandContext(tenantId) {
   const [campaign, setting, products] = await Promise.all([
-    AutopilotCampaign.findOne({ tenantId, "brandProfile.summary": { $ne: "" } }).sort({ updatedAt: -1 }).lean(),
+    AutopilotCampaign.findOne({ tenantId, "brandProfile.summary": { $ne: "" } })
+      .sort({ updatedAt: -1 })
+      .lean(),
     Setting.findOne({ tenantId }).select("companyName").lean(),
-    Product.find({ tenantId, status: "Active" }).sort({ updatedAt: -1 }).limit(15).select("name category description").lean(),
+    Product.find({ tenantId, status: "Active" })
+      .sort({ updatedAt: -1 })
+      .limit(15)
+      .select("name category description")
+      .lean(),
   ]);
   const p = campaign?.brandProfile || {};
   return {
@@ -25,7 +31,11 @@ async function brandContext(tenantId) {
     summary: svc.clean(p.summary, 500),
     doList: (p.doList || []).slice(0, 8).map((x) => svc.clean(x, 80)),
     avoidList: (p.avoidList || []).slice(0, 8).map((x) => svc.clean(x, 80)),
-    products: products.map((x) => ({ name: svc.clean(x.name, 80), category: x.category, description: svc.clean(x.description, 150) })),
+    products: products.map((x) => ({
+      name: svc.clean(x.name, 80),
+      category: x.category,
+      description: svc.clean(x.description, 150),
+    })),
   };
 }
 
@@ -49,7 +59,12 @@ async function draftReply({ tenantId, kind, authorName, incomingText }) {
     `Set skip=true instead of replying if the message is spam, abusive, or needs a human (a complaint, a refund request, ` +
     `anything you're not confident quoting a price or policy on). Keep replies short — one or two sentences.`;
   const content = `Author: ${svc.clean(authorName, 100) || "someone"}\nMessage: ${svc.clean(incomingText, 1000)}`;
-  const out = await svc.claudeJson({ system, content, schema: REPLY_SCHEMA, effort: "low" });
+  const out = await svc.claudeJson({
+    system,
+    content,
+    schema: REPLY_SCHEMA,
+    effort: "low",
+  });
   return { reply: svc.clean(out.reply, MAX_LEN), skip: !!out.skip };
 }
 
@@ -60,26 +75,47 @@ async function sendCommentReply(commentId, message, pageToken) {
     body: JSON.stringify({ message, access_token: pageToken }),
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "Failed to post comment reply");
+  if (data.error)
+    throw new Error(data.error.message || "Failed to post comment reply");
   return data;
 }
 
 async function sendDmReply(pageId, recipientId, message, pageToken) {
-  const res = await fetch(`${FB_API}/${pageId}/messages?access_token=${pageToken}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ recipient: { id: recipientId }, message: { text: message } }),
-  });
+  const res = await fetch(
+    `${FB_API}/${pageId}/messages?access_token=${pageToken}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipient: { id: recipientId },
+        message: { text: message },
+      }),
+    },
+  );
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "Failed to send DM reply");
+  if (data.error)
+    throw new Error(data.error.message || "Failed to send DM reply");
   return data;
 }
 
 // Called from the webhook for both comments (kind="comment") and DMs (kind="dm").
 // pageConfig is the tenant's integrations.facebook.pages entry for this page.
-async function handleIncoming({ tenant, pageConfig, platform, kind, externalId, authorName, incomingText }) {
+async function handleIncoming({
+  tenant,
+  pageConfig,
+  platform,
+  kind,
+  externalId,
+  authorName,
+  incomingText,
+}) {
   if (!incomingText?.trim()) return;
-  const existing = await SocialReply.findOne({ tenantId: tenant._id, pageId: pageConfig.pageId, kind, externalId });
+  const existing = await SocialReply.findOne({
+    tenantId: tenant._id,
+    pageId: pageConfig.pageId,
+    kind,
+    externalId,
+  });
   if (existing) return; // webhook retries/duplicates
 
   const row = await SocialReply.create({
@@ -94,7 +130,12 @@ async function handleIncoming({ tenant, pageConfig, platform, kind, externalId, 
   });
 
   try {
-    const { reply, skip } = await draftReply({ tenantId: tenant._id, kind, authorName, incomingText });
+    const { reply, skip } = await draftReply({
+      tenantId: tenant._id,
+      kind,
+      authorName,
+      incomingText,
+    });
     if (skip || !reply) {
       row.status = "SKIPPED";
       await row.save();
@@ -107,7 +148,11 @@ async function handleIncoming({ tenant, pageConfig, platform, kind, externalId, 
       await row.save();
     }
   } catch (err) {
-    log.error("Draft failed", { tenantId: String(tenant._id), kind, message: err.message });
+    log.error("Draft failed", {
+      tenantId: String(tenant._id),
+      kind,
+      message: err.message,
+    });
     row.status = "FAILED";
     row.error = svc.clean(err.message, 300);
     await row.save();
@@ -116,8 +161,10 @@ async function handleIncoming({ tenant, pageConfig, platform, kind, externalId, 
 
 async function sendNow(row, pageToken) {
   try {
-    if (row.kind === "comment") await sendCommentReply(row.externalId, row.draftText, pageToken);
-    else await sendDmReply(row.pageId, row.externalId, row.draftText, pageToken);
+    if (row.kind === "comment")
+      await sendCommentReply(row.externalId, row.draftText, pageToken);
+    else
+      await sendDmReply(row.pageId, row.externalId, row.draftText, pageToken);
     row.status = "SENT";
     row.sentAt = new Date();
     row.error = "";
@@ -128,4 +175,10 @@ async function sendNow(row, pageToken) {
   await row.save();
 }
 
-module.exports = { handleIncoming, draftReply, sendCommentReply, sendDmReply, sendNow };
+module.exports = {
+  handleIncoming,
+  draftReply,
+  sendCommentReply,
+  sendDmReply,
+  sendNow,
+};

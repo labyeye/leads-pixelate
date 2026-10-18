@@ -25,7 +25,10 @@ export function SubscriptionExpiredModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-sm" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent
+        className="max-w-sm"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <div className="w-10 h-10 bg-[#FF3366] border-2 border-black flex items-center justify-center mb-2">
             <AlertTriangle className="w-5 h-5 text-white" />

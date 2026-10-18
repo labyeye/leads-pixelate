@@ -50,7 +50,10 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
       .catch(() => {})
       .finally(() => setCheckingStatus(false));
     // Prefill a sensible default subject once per open.
-    setSubject((prev) => prev || `Re: ${lead?.requirement || lead?.company || "your enquiry"}`);
+    setSubject(
+      (prev) =>
+        prev || `Re: ${lead?.requirement || lead?.company || "your enquiry"}`,
+    );
   }, [open]);
 
   const loadThread = async () => {
@@ -60,7 +63,11 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
       const res = await emailAPI.getThread(lead._id || lead.id);
       setThread(res.data);
     } catch (err: any) {
-      toast({ title: "Couldn't load email thread", description: err.message, variant: "destructive" });
+      toast({
+        title: "Couldn't load email thread",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoadingThread(false);
     }
@@ -88,17 +95,27 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
       setThread([]);
       toast({ title: "Gmail disconnected" });
     } catch (err: any) {
-      toast({ title: "Failed to disconnect", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to disconnect",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
-      toast({ title: "Subject and message are required", variant: "destructive" });
+      toast({
+        title: "Subject and message are required",
+        variant: "destructive",
+      });
       return;
     }
     if (!lead?.email) {
-      toast({ title: "This lead has no email address on file", variant: "destructive" });
+      toast({
+        title: "This lead has no email address on file",
+        variant: "destructive",
+      });
       return;
     }
     setSending(true);
@@ -116,7 +133,11 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
       setBody("");
       toast({ title: "Email sent" });
     } catch (err: any) {
-      toast({ title: "Failed to send email", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to send email",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSending(false);
     }
@@ -142,13 +163,24 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
               <Mail className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-sm">Connect your Gmail account</p>
+              <p className="font-semibold text-sm">
+                Connect your Gmail account
+              </p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                Send and receive emails with this lead from inside the CRM. New replies sync automatically every few minutes.
+                Send and receive emails with this lead from inside the CRM. New
+                replies sync automatically every few minutes.
               </p>
             </div>
-            <Button onClick={handleConnect} disabled={connecting} className="gap-2">
-              {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+            <Button
+              onClick={handleConnect}
+              disabled={connecting}
+              className="gap-2"
+            >
+              {connecting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
               Connect Gmail
             </Button>
           </div>
@@ -156,13 +188,16 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
           <div className="flex-1 flex flex-col items-center justify-center gap-2 p-8 text-center">
             <Mail className="w-8 h-8 text-muted-foreground" />
             <p className="text-sm font-semibold">No email address on file</p>
-            <p className="text-xs text-muted-foreground">Add an email to this lead before sending.</p>
+            <p className="text-xs text-muted-foreground">
+              Add an email to this lead before sending.
+            </p>
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 text-xs shrink-0">
               <span className="text-muted-foreground">
-                Sending as <span className="font-medium text-foreground">{myEmail}</span>
+                Sending as{" "}
+                <span className="font-medium text-foreground">{myEmail}</span>
               </span>
               <div className="flex items-center gap-1">
                 <button
@@ -170,7 +205,12 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
                   className="p-1 hover:bg-muted rounded"
                   title="Refresh thread"
                 >
-                  <RefreshCw className={cn("w-3.5 h-3.5", loadingThread && "animate-spin")} />
+                  <RefreshCw
+                    className={cn(
+                      "w-3.5 h-3.5",
+                      loadingThread && "animate-spin",
+                    )}
+                  />
                 </button>
                 <button
                   onClick={handleDisconnect}
@@ -197,7 +237,9 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
                     key={email._id}
                     className={cn(
                       "border-2 border-black p-3 text-sm",
-                      email.direction === "outbound" ? "bg-primary/5 ml-6" : "bg-white mr-6",
+                      email.direction === "outbound"
+                        ? "bg-primary/5 ml-6"
+                        : "bg-white mr-6",
                     )}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -235,7 +277,11 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
                 disabled={sending || !body.trim()}
                 className="w-full gap-2 bg-primary text-primary-foreground"
               >
-                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
                 Send Email
               </Button>
             </div>

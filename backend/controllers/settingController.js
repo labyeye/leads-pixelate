@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const { safeBody } = require("../utils/tenantScope");
 const Setting = require("../models/Setting");
 const { invalidatePermissionsCache } = require("../middleware/checkPermission");
 const { sanitizeInvoiceTemplate } = require("../utils/invoiceTemplate");
@@ -27,8 +28,12 @@ const getSettings = asyncHandler(async (req, res) => {
 });
 
 const isOwner = async (user) => {
-  const tenant = user.tenantId ? await Tenant.findById(user.tenantId).select("ownerUser") : null;
-  return tenant ? String(tenant.ownerUser) === String(user._id) : user.role === "super_admin";
+  const tenant = user.tenantId
+    ? await Tenant.findById(user.tenantId).select("ownerUser")
+    : null;
+  return tenant
+    ? String(tenant.ownerUser) === String(user._id)
+    : user.role === "super_admin";
 };
 
 const updateSettings = asyncHandler(async (req, res) => {
@@ -59,9 +64,9 @@ const updateSettings = asyncHandler(async (req, res) => {
   }
 
   if (!setting) {
-    setting = await Setting.create({ ...body, ...tenantFilter });
+    setting = await Setting.create({ ...safeBody(body), ...tenantFilter });
   } else {
-    setting = await Setting.findOneAndUpdate(tenantFilter, body, {
+    setting = await Setting.findOneAndUpdate(tenantFilter, safeBody(body), {
       new: true,
       runValidators: true,
     });
@@ -89,15 +94,27 @@ const saveNumbering = asyncHandler(async (req, res) => {
       res.status(err.statusCode || 400);
       throw err;
     }
-    const current = (await Setting.findOne({ tenantId }).lean())?.numbering?.[type];
-    let next = Number.isInteger(cfg.next) && cfg.next >= 1 && cfg.next <= 99999999 ? cfg.next : current?.next;
+    const current = (await Setting.findOne({ tenantId }).lean())?.numbering?.[
+      type
+    ];
+    let next =
+      Number.isInteger(cfg.next) && cfg.next >= 1 && cfg.next <= 99999999
+        ? cfg.next
+        : current?.next;
     if (!next) {
-      const count = type === "quotation" ? await Quotation.countDocuments({ tenantId }) : await TradeDoc.countDocuments({ tenantId, type });
+      const count =
+        type === "quotation"
+          ? await Quotation.countDocuments({ tenantId })
+          : await TradeDoc.countDocuments({ tenantId, type });
       next = count + 1;
     }
     set[`numbering.${type}`] = { format, next };
   }
-  const setting = await Setting.findOneAndUpdate({ tenantId }, { $set: set }, { new: true, upsert: true });
+  const setting = await Setting.findOneAndUpdate(
+    { tenantId },
+    { $set: set },
+    { new: true, upsert: true },
+  );
   res.json({ success: true, data: setting.numbering });
 });
 

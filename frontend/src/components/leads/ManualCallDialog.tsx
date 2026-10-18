@@ -4,7 +4,13 @@ import { callsAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -57,7 +63,11 @@ export function ManualCallDialog({
   const start = async () => {
     setPhase("placing");
     try {
-      const res = await callsAPI.manual({ leadId: lead._id, agentPhone: phone.trim() || undefined, remember });
+      const res = await callsAPI.manual({
+        leadId: lead._id,
+        agentPhone: phone.trim() || undefined,
+        remember,
+      });
       setStatus("initiated");
       setPhase("live");
       const id = res.data.callLogId;
@@ -66,7 +76,9 @@ export function ManualCallDialog({
           const r = await callsAPI.status(id);
           setStatus(r.data.status);
           setSeconds(r.data.durationSeconds);
-          if (["completed", "busy", "no_answer", "failed"].includes(r.data.status)) {
+          if (
+            ["completed", "busy", "no_answer", "failed"].includes(r.data.status)
+          ) {
             stopPolling();
             setReason(r.data.errorReason || "");
             setPhase(r.data.status === "completed" ? "done" : "failed");
@@ -77,7 +89,11 @@ export function ManualCallDialog({
       }, 2500);
     } catch (err: any) {
       setPhase("ask");
-      toast({ title: "Couldn't place the call", description: err.message, variant: "destructive" });
+      toast({
+        title: "Couldn't place the call",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -98,7 +114,8 @@ export function ManualCallDialog({
         {(phase === "ask" || phase === "placing") && (
           <div className="space-y-4 py-1">
             <p className="text-sm text-muted-foreground">
-              We ring <b>your phone</b> first. When you pick up, we dial <b>{lead.phone}</b> and connect you both.
+              We ring <b>your phone</b> first. When you pick up, we dial{" "}
+              <b>{lead.phone}</b> and connect you both.
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="agent-phone">Your phone number</Label>
@@ -111,7 +128,10 @@ export function ManualCallDialog({
               />
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={remember} onCheckedChange={(c) => setRemember(c === true)} />
+              <Checkbox
+                checked={remember}
+                onCheckedChange={(c) => setRemember(c === true)}
+              />
               Remember this number for next time
             </label>
           </div>
@@ -127,7 +147,11 @@ export function ManualCallDialog({
           <div className="flex items-center gap-3 py-4">
             <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0" />
             <p className="text-sm">
-              Call finished{seconds ? ` (${Math.floor(seconds / 60)}m ${seconds % 60}s)` : ""}. It is saved in the lead's call log.
+              Call finished
+              {seconds
+                ? ` (${Math.floor(seconds / 60)}m ${seconds % 60}s)`
+                : ""}
+              . It is saved in the lead's call log.
             </p>
           </div>
         )}
@@ -135,7 +159,11 @@ export function ManualCallDialog({
           <div className="flex items-start gap-3 py-4">
             <PhoneOff className="w-6 h-6 text-red-600 shrink-0" />
             <p className="text-sm">
-              {status === "busy" ? "The line was busy." : status === "no_answer" ? "No one picked up." : "The call could not be completed."}
+              {status === "busy"
+                ? "The line was busy."
+                : status === "no_answer"
+                  ? "No one picked up."
+                  : "The call could not be completed."}
               {reason ? ` ${reason}.` : ""}
             </p>
           </div>
@@ -143,8 +171,13 @@ export function ManualCallDialog({
 
         <DialogFooter>
           {phase === "ask" || phase === "placing" ? (
-            <Button onClick={start} disabled={phase === "placing" || !phone.trim()}>
-              {phase === "placing" && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+            <Button
+              onClick={start}
+              disabled={phase === "placing" || !phone.trim()}
+            >
+              {phase === "placing" && (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              )}
               <Phone className="w-4 h-4 mr-1" /> Call me now
             </Button>
           ) : (

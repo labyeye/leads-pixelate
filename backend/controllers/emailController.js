@@ -1,4 +1,6 @@
 const asyncHandler = require("express-async-handler");
+const { signState, readState } = require("../utils/oauthState");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const User = require("../models/User");
 const Lead = require("../models/Lead");
 const Email = require("../models/Email");
@@ -19,7 +21,7 @@ const getAuthUrl = asyncHandler(async (req, res) => {
       "Gmail integration not configured — GOOGLE_GMAIL_CLIENT_ID/SECRET must be set on the server.",
     );
   }
-  const state = Buffer.from(String(req.user._id)).toString("base64");
+  const state = signState(String(req.user._id));
   const authUrl = gmail.buildAuthUrl(getRedirectUri(), state);
   res.json({ success: true, data: { authUrl } });
 });
@@ -36,7 +38,7 @@ const gmailCallback = asyncHandler(async (req, res) => {
 
   let userId;
   try {
-    userId = Buffer.from(String(state), "base64").toString("utf8");
+    userId = readState(state);
     if (!userId) throw new Error("Invalid state");
   } catch {
     return res.redirect(`${frontendBase}/leads?gmail_error=invalid_state`);
@@ -98,7 +100,7 @@ const getGmailStatus = asyncHandler(async (req, res) => {
 });
 
 const getLeadThread = asyncHandler(async (req, res) => {
-  const lead = await Lead.findById(req.params.leadId);
+  const lead = await Lead.findOne({ _id: req.params.leadId, ...tenantScope(req) });
   if (!lead) {
     res.status(404);
     throw new Error("Lead not found");
@@ -126,7 +128,7 @@ const sendLeadEmail = asyncHandler(async (req, res) => {
     throw new Error("Subject and message body are required");
   }
 
-  const lead = await Lead.findById(req.params.leadId);
+  const lead = await Lead.findOne({ _id: req.params.leadId, ...tenantScope(req) });
   if (!lead) {
     res.status(404);
     throw new Error("Lead not found");
@@ -155,8 +157,12 @@ const sendLeadEmail = asyncHandler(async (req, res) => {
     subject,
     bodyHtml,
     bodyText,
-    inReplyTo: lastEmail?.providerMessageId ? `<${lastEmail.providerMessageId}>` : undefined,
-    references: lastEmail?.providerMessageId ? `<${lastEmail.providerMessageId}>` : undefined,
+    inReplyTo: lastEmail?.providerMessageId
+      ? `<${lastEmail.providerMessageId}>`
+      : undefined,
+    references: lastEmail?.providerMessageId
+      ? `<${lastEmail.providerMessageId}>`
+      : undefined,
   });
 
   const sent = await gmail.sendMessage(accessToken, {

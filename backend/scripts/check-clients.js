@@ -13,11 +13,22 @@ const call = async (handler, { body = {}, params = {}, query = {} } = {}) => {
   res.status = (c) => ((res.statusCode = c), res);
   res.json = (b) => ((res.body = b), res);
   let error = null;
-  await handler({ user, body, params, query, ip: "127.0.0.1" }, res, (e) => (error = e));
+  await handler(
+    { user, body, params, query, ip: "127.0.0.1" },
+    res,
+    (e) => (error = e),
+  );
   return { res, error };
 };
 const chain = (result) => {
-  const c = { select: () => c, sort: () => c, skip: () => c, limit: () => c, lean: async () => result, populate: () => c };
+  const c = {
+    select: () => c,
+    sort: () => c,
+    skip: () => c,
+    limit: () => c,
+    lean: async () => result,
+    populate: () => c,
+  };
   c.then = (ok, bad) => Promise.resolve(result).then(ok, bad);
   return c;
 };
@@ -51,9 +62,16 @@ async function main() {
     good({ email: "ravi@acme.com" }), // row 7 repeats row 2
     good({ email: "d@acme.com", gst: "BADGST" }), // row 8
     good({ email: "e@acme.com", projectStatus: "Halted" }), // row 9
-    good({ email: "f@acme.com", name: "=HYPERLINK(\"http://x\")", phone: "09876543211", createdBy: "hacker" }), // row 10 ok, sanitised
+    good({
+      email: "f@acme.com",
+      name: '=HYPERLINK("http://x")',
+      phone: "09876543211",
+      createdBy: "hacker",
+    }), // row 10 ok, sanitised
   ];
-  let { res, error } = await call(ctl.importClients, { body: { clients: rows } });
+  let { res, error } = await call(ctl.importClients, {
+    body: { clients: rows },
+  });
   assert.ifError(error);
   assert.strictEqual(res.body.imported, 2);
   assert.deepStrictEqual(
@@ -76,15 +94,25 @@ async function main() {
   assert.strictEqual(a.projectStatus, "On Hold", "case-insensitive status");
   assert.strictEqual(a.paymentStatus, "Pending", "blank falls back to default");
   assert.deepStrictEqual([...a.services], ["SEO", "Web Design"]);
-  assert.strictEqual(String(a.createdBy), String(user._id), "importer is recorded as who added it");
+  assert.strictEqual(
+    String(a.createdBy),
+    String(user._id),
+    "importer is recorded as who added it",
+  );
   assert.strictEqual(String(a.tenantId), String(user.tenantId));
-  assert.strictEqual(String(b.createdBy), String(user._id), "createdBy in the file is ignored");
+  assert.strictEqual(
+    String(b.createdBy),
+    String(user._id),
+    "createdBy in the file is ignored",
+  );
   assert.ok(!b.name.startsWith("="), "formula prefix stripped: " + b.name);
   assert.strictEqual(b.phone, "9876543211", "leading 0 stripped");
 
   // nothing valid: still 200 with the reasons, and no insert
   inserted = null;
-  ({ res } = await call(ctl.importClients, { body: { clients: [good({ address: "" })] } }));
+  ({ res } = await call(ctl.importClients, {
+    body: { clients: [good({ address: "" })] },
+  }));
   assert.strictEqual(res.body.imported, 0);
   assert.strictEqual(res.body.skipped.length, 1);
   assert.strictEqual(inserted, null);
@@ -92,7 +120,9 @@ async function main() {
   // bad payloads
   ({ res, error } = await call(ctl.importClients, { body: { clients: [] } }));
   assert.strictEqual(res.statusCode, 400);
-  ({ res, error } = await call(ctl.importClients, { body: { clients: new Array(1001).fill(good()) } }));
+  ({ res, error } = await call(ctl.importClients, {
+    body: { clients: new Array(1001).fill(good()) },
+  }));
   assert.strictEqual(res.statusCode, 400);
 
   // ---- create: who added it comes from the session, never the body ----
@@ -101,7 +131,9 @@ async function main() {
     created = doc;
     return { ...doc, name: doc.name, populate: async () => {} };
   };
-  ({ res, error } = await call(ctl.createClient, { body: { name: "X", createdBy: "hacker", tenantId: "other" } }));
+  ({ res, error } = await call(ctl.createClient, {
+    body: { name: "X", createdBy: "hacker", tenantId: "other" },
+  }));
   assert.ifError(error);
   assert.strictEqual(res.statusCode, 201);
   assert.strictEqual(String(created.createdBy), String(user._id));
@@ -124,13 +156,19 @@ async function main() {
     seen = { filter, updates };
     return { populate: async () => ({ name: "Y" }) };
   };
-  ({ res } = await call(ctl.updateClient, { params: { id: "abc" }, body: { name: "Y", createdBy: "hacker", tenantId: "other" } }));
+  ({ res } = await call(ctl.updateClient, {
+    params: { id: "abc" },
+    body: { name: "Y", createdBy: "hacker", tenantId: "other" },
+  }));
   assert.strictEqual(res.body.success, true);
   assert.deepStrictEqual(seen.updates, { name: "Y" });
   assert.strictEqual(String(seen.filter.tenantId), String(user.tenantId));
 
   Client.findOneAndUpdate = () => ({ populate: async () => null });
-  ({ res, error } = await call(ctl.updateClient, { params: { id: "abc" }, body: { name: "Y" } }));
+  ({ res, error } = await call(ctl.updateClient, {
+    params: { id: "abc" },
+    body: { name: "Y" },
+  }));
   assert.strictEqual(res.statusCode, 404, "someone else's client is a 404");
 
   let delFilter = null;

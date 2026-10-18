@@ -147,7 +147,7 @@ export function FacebookWizard({
   const loadConnectedPages = async () => {
     try {
       const res = await facebookAPI.getConnectedPages();
-      setConnectedPages(res.data);
+      setConnectedPages(res.data as unknown as typeof connectedPages);
     } catch (_e) {}
   };
 
@@ -821,8 +821,8 @@ export function FacebookWizard({
                   <UserCheck className="w-3.5 h-3.5" /> Default Assignee
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Pick one person, or several to rotate leads between them
-                  (e.g. 2 to A, then 2 to B). Leave empty to assign to the admin.
+                  Pick one person, or several to rotate leads between them (e.g.
+                  2 to A, then 2 to B). Leave empty to assign to the admin.
                 </p>
               </div>
               <AssigneePicker
@@ -870,7 +870,10 @@ export function FacebookWizard({
                       </p>
                       {(cp.instagramUsername || cp.instagramId) && (
                         <p className="text-[11px] text-[#E1306C] font-medium">
-                          Instagram: {cp.instagramUsername ? `@${cp.instagramUsername}` : "linked"}
+                          Instagram:{" "}
+                          {cp.instagramUsername
+                            ? `@${cp.instagramUsername}`
+                            : "linked"}
                         </p>
                       )}
                       <p className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -896,7 +899,11 @@ export function FacebookWizard({
                       {editingFilterPageId !== cp.pageId && (
                         <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
                           <UserCheck className="w-3 h-3" />
-                          {describeAssignment(cp, users, "Auto-assign to admin")}
+                          {describeAssignment(
+                            cp,
+                            users,
+                            "Auto-assign to admin",
+                          )}
                         </p>
                       )}
                     </div>
@@ -991,12 +998,12 @@ export function FacebookWizard({
                           <UserCheck className="w-3 h-3" /> Default Assignee
                         </p>
                         <AssigneePicker
-                users={users}
-                assigneeIds={editAssigneeIds}
-                onAssigneeIdsChange={setEditAssigneeIds}
-                batchSize={editBatchSize}
-                onBatchSizeChange={setEditBatchSize}
-              />
+                          users={users}
+                          assigneeIds={editAssigneeIds}
+                          onAssigneeIdsChange={setEditAssigneeIds}
+                          batchSize={editBatchSize}
+                          onBatchSizeChange={setEditBatchSize}
+                        />
                       </div>
 
                       <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">

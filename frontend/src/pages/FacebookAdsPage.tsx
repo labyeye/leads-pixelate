@@ -59,7 +59,9 @@ export default function FacebookAdsPage() {
   const { toast } = useToast();
   const [ads, setAds] = useState<MetaAd[]>([]);
   const [adSets, setAdSets] = useState<MetaAdSet[]>([]);
-  const [pages, setPages] = useState<{ pageId: string; pageName: string }[]>([]);
+  const [pages, setPages] = useState<{ pageId: string; pageName: string }[]>(
+    [],
+  );
   const [insights, setInsights] = useState<Record<string, Insight>>({});
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -83,7 +85,8 @@ export default function FacebookAdsPage() {
       setInsights((prev) => {
         const next = { ...prev };
         results.forEach((r, i) => {
-          if (r.status === "fulfilled") next[ids[i]] = parseInsight(r.value.data);
+          if (r.status === "fulfilled")
+            next[ids[i]] = parseInsight(r.value.data);
         });
         return next;
       });
@@ -145,7 +148,10 @@ export default function FacebookAdsPage() {
         !a.adSetName?.toLowerCase().includes(search.trim().toLowerCase())
       )
         return false;
-      return matchesDeliveryFilter(a.effective_status || a.status, deliveryFilter);
+      return matchesDeliveryFilter(
+        a.effective_status || a.status,
+        deliveryFilter,
+      );
     });
   }, [ads, search, deliveryFilter]);
 
@@ -158,23 +164,34 @@ export default function FacebookAdsPage() {
       toast({ title: "Ad deleted" });
       setDeleteTarget(null);
     } catch (err: any) {
-      toast({ title: "Delete failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActionId(null);
     }
   };
 
   const handleToggleStatus = async (a: MetaAd) => {
-    const next = (a.effective_status || a.status) === "ACTIVE" ? "PAUSED" : "ACTIVE";
+    const next =
+      (a.effective_status || a.status) === "ACTIVE" ? "PAUSED" : "ACTIVE";
     setActionId(a.id);
     try {
       await facebookAPI.updateAd(a.id, { status: next });
       setAds((prev) =>
-        prev.map((x) => (x.id === a.id ? { ...x, status: next, effective_status: next } : x)),
+        prev.map((x) =>
+          x.id === a.id ? { ...x, status: next, effective_status: next } : x,
+        ),
       );
       toast({ title: next === "ACTIVE" ? "Ad resumed" : "Ad paused" });
     } catch (err: any) {
-      toast({ title: "Action failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Action failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setActionId(null);
     }
@@ -199,7 +216,11 @@ export default function FacebookAdsPage() {
         <div className="flex items-center gap-2 min-w-[240px]">
           <div className="w-8 h-8 bg-[#00C48C] border-2 border-black flex items-center justify-center shrink-0 overflow-hidden">
             {a.creative?.image_url ? (
-              <img src={a.creative.image_url} alt="" className="w-full h-full object-cover" />
+              <img
+                src={a.creative.image_url}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             ) : (
               <ImageIcon className="w-4 h-4 text-black" />
             )}
@@ -218,7 +239,9 @@ export default function FacebookAdsPage() {
       render: (a) => {
         const st = statusBadge(a.effective_status || a.status);
         return (
-          <span className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}>
+          <span
+            className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}
+          >
             {st.label}
           </span>
         );
@@ -269,7 +292,8 @@ export default function FacebookAdsPage() {
     {
       header: "Amount Spent",
       align: "right",
-      render: (a) => `₹${(insights[a.id]?.spend ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      render: (a) =>
+        `₹${(insights[a.id]?.spend ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
     },
     {
       header: "Impressions",
@@ -400,14 +424,17 @@ export default function FacebookAdsPage() {
         }}
       />
 
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Delete Ad?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This will remove <strong>{deleteTarget?.name}</strong> from Facebook.
-            This cannot be undone.
+            This will remove <strong>{deleteTarget?.name}</strong> from
+            Facebook. This cannot be undone.
           </p>
           <DialogFooter className="gap-2">
             <button
@@ -494,7 +521,11 @@ function AdFormDialog({
       }
       onSaved();
     } catch (err: any) {
-      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Save failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -553,7 +584,9 @@ function AdFormDialog({
           </div>
 
           <div className="border-t-2 border-black pt-3">
-            <p className="text-xs font-bold uppercase tracking-wide mb-2">Creative</p>
+            <p className="text-xs font-bold uppercase tracking-wide mb-2">
+              Creative
+            </p>
             <div className="space-y-3">
               {pages.length > 0 && (
                 <div>

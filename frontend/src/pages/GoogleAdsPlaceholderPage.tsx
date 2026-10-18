@@ -3,11 +3,7 @@ import { GoogleAdsIcon } from "@/components/icons/GoogleAdsIcon";
 import { Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export default function GoogleAdsPlaceholderPage({
-  title,
-}: {
-  title: string;
-}) {
+export default function GoogleAdsPlaceholderPage({ title }: { title: string }) {
   const navigate = useNavigate();
 
   return (
@@ -37,9 +33,9 @@ export default function GoogleAdsPlaceholderPage({
           <p className="text-sm text-muted-foreground mt-1">
             Google Ads campaign management ({title.toLowerCase()}) requires
             additional Google Ads API scopes. Right now only Lead Sync is
-            connected, so leads from your Google Ads Lead Form campaigns flow
-            in — spend, campaign, ad group and ad data will show up here once
-            that access is enabled.
+            connected, so leads from your Google Ads Lead Form campaigns flow in
+            — spend, campaign, ad group and ad data will show up here once that
+            access is enabled.
           </p>
         </div>
         <button

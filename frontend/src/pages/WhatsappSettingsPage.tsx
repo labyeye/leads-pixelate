@@ -403,7 +403,11 @@ function TemplatesTab({ toast }: { toast: any }) {
           <Button variant="outline" size="sm" onClick={fetchTemplates}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setLibraryOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLibraryOpen(true)}
+          >
             <FileText className="w-4 h-4 mr-1" /> Template Library
           </Button>
           <Button
@@ -701,8 +705,8 @@ function TemplatesTab({ toast }: { toast: any }) {
               </p>
               {[
                 ...new Set(
-                  (form.bodyText.match(/\{\{(\d+)\}\}/g) || []).map((m: string) =>
-                    parseInt(m.slice(2)),
+                  (form.bodyText.match(/\{\{(\d+)\}\}/g) || []).map(
+                    (m: string) => parseInt(m.slice(2)),
                   ),
                 ),
               ]
@@ -1406,7 +1410,10 @@ function AutomationsCard({ toast }: { toast: any }) {
         setRows(a.data);
         setTemplates(t.data.filter((x: any) => x.status === "APPROVED"));
       } catch {
-        toast({ title: "Failed to load automatic messages", variant: "destructive" });
+        toast({
+          title: "Failed to load automatic messages",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -1420,11 +1427,20 @@ function AutomationsCard({ toast }: { toast: any }) {
     setSaving(true);
     try {
       await whatsappAPI.saveAutomations(
-        Object.fromEntries(rows.map((r) => [r.id, { enabled: r.enabled, templateId: r.templateId }])),
+        Object.fromEntries(
+          rows.map((r) => [
+            r.id,
+            { enabled: r.enabled, templateId: r.templateId },
+          ]),
+        ),
       );
       toast({ title: "Automatic messages saved" });
     } catch (err: any) {
-      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to save",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -1434,17 +1450,21 @@ function AutomationsCard({ toast }: { toast: any }) {
     <div className="bg-muted/30 rounded-lg p-4 border border-border">
       <h3 className="text-sm font-semibold mb-1">Automatic messages</h3>
       <p className="text-xs text-muted-foreground mb-3">
-        Sent from your own WhatsApp number above (Nest Leads never sends for you). Campaigns use the same
-        number. Pick an approved template so the message reaches anyone; without one, plain text is
-        delivered only to people who messaged you in the last 24 hours. Template variables fill in order,
-        as listed next to each message.
+        Sent from your own WhatsApp number above (Nest Leads never sends for
+        you). Campaigns use the same number. Pick an approved template so the
+        message reaches anyone; without one, plain text is delivered only to
+        people who messaged you in the last 24 hours. Template variables fill in
+        order, as listed next to each message.
       </p>
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
       ) : (
         <div className="space-y-3">
           {rows.map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center gap-3 border-b border-border pb-3 last:border-0">
+            <div
+              key={r.id}
+              className="flex flex-wrap items-center gap-3 border-b border-border pb-3 last:border-0"
+            >
               <label className="flex items-center gap-2 min-w-[190px] text-sm font-medium">
                 <input
                   type="checkbox"
@@ -1455,13 +1475,17 @@ function AutomationsCard({ toast }: { toast: any }) {
               </label>
               <Select
                 value={r.templateId || "text"}
-                onValueChange={(v) => patch(r.id, { templateId: v === "text" ? "" : v })}
+                onValueChange={(v) =>
+                  patch(r.id, { templateId: v === "text" ? "" : v })
+                }
               >
                 <SelectTrigger className="max-w-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="text">Plain text (24-hour window only)</SelectItem>
+                  <SelectItem value="text">
+                    Plain text (24-hour window only)
+                  </SelectItem>
                   {templates.map((t) => (
                     <SelectItem key={t._id} value={t._id}>
                       {t.displayName}
@@ -1470,7 +1494,9 @@ function AutomationsCard({ toast }: { toast: any }) {
                 </SelectContent>
               </Select>
               <span className="text-[11px] text-muted-foreground">
-                {r.vars.map((v: string, i: number) => `{{${i + 1}}} ${v}`).join(" · ")}
+                {r.vars
+                  .map((v: string, i: number) => `{{${i + 1}}} ${v}`)
+                  .join(" · ")}
               </span>
             </div>
           ))}

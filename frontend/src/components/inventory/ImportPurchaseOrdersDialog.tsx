@@ -3,7 +3,13 @@ import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import { purchaseOrdersAPI } from "@/services/api";
 import { downloadXLSX } from "@/lib/tableExport";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // One row per item. Export writes these same columns, so an exported file can be re-imported.
 export const PO_HEADERS = [
@@ -22,8 +28,36 @@ export const PO_HEADERS = [
   "Notes",
 ];
 const TEMPLATE_ROWS = [
-  ["PO-1", "2025-04-12", "2025-04-20", "Acme Supplies", "", "Draft", 0, 18, "Steel sheet", "7208", 10, 1200, ""],
-  ["PO-1", "2025-04-12", "2025-04-20", "Acme Supplies", "", "Draft", 0, 18, "Bolts", "7318", 100, 5, ""],
+  [
+    "PO-1",
+    "2025-04-12",
+    "2025-04-20",
+    "Acme Supplies",
+    "",
+    "Draft",
+    0,
+    18,
+    "Steel sheet",
+    "7208",
+    10,
+    1200,
+    "",
+  ],
+  [
+    "PO-1",
+    "2025-04-12",
+    "2025-04-20",
+    "Acme Supplies",
+    "",
+    "Draft",
+    0,
+    18,
+    "Bolts",
+    "7318",
+    100,
+    5,
+    "",
+  ],
 ];
 
 const ALIASES: Record<string, string> = {
@@ -67,15 +101,24 @@ type Failed = { key: string; reason: string };
 
 async function readRows(file: File): Promise<Row[]> {
   const XLSX = await import("xlsx");
-  const wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: "array", cellDates: true });
-  const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+  const wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), {
+    type: "array",
+    cellDates: true,
+  });
+  const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(
+    wb.Sheets[wb.SheetNames[0]],
+    { defval: "" },
+  );
   return raw
     .map((r) => {
       const out: Row = {};
       for (const [k, v] of Object.entries(r)) {
         const f = ALIASES[k.toLowerCase().replace(/[^a-z]/g, "")];
         if (!f) continue;
-        out[f] = v instanceof Date ? `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}` : String(v ?? "").trim();
+        out[f] =
+          v instanceof Date
+            ? `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`
+            : String(v ?? "").trim();
       }
       return out;
     })
@@ -109,7 +152,12 @@ export function exportPurchaseOrders(docs: any[]) {
       d.notes || "",
     ]),
   );
-  return downloadXLSX("purchase-orders.xlsx", PO_HEADERS, rows, "Purchase Orders");
+  return downloadXLSX(
+    "purchase-orders.xlsx",
+    PO_HEADERS,
+    rows,
+    "Purchase Orders",
+  );
 }
 
 interface Props {
@@ -119,13 +167,21 @@ interface Props {
   products: any[];
 }
 
-export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, products }: Props) {
+export function ImportPurchaseOrdersDialog({
+  open,
+  onOpenChange,
+  onImported,
+  products,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState("");
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ imported: number; failed: Failed[] } | null>(null);
+  const [result, setResult] = useState<{
+    imported: number;
+    failed: Failed[];
+  } | null>(null);
 
   const groups = groupRows(rows);
 
@@ -145,12 +201,19 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
     reset();
     if (!file) return;
     setFileName(file.name);
-    if (file.size > 5 * 1024 * 1024) return setError("File is too large. Max file size is 5MB.");
+    if (file.size > 5 * 1024 * 1024)
+      return setError("File is too large. Max file size is 5MB.");
     try {
       const parsed = await readRows(file);
-      if (parsed.length === 0) return setError("No rows found in the first sheet of this file.");
-      const missing = ["partyName", "name", "quantity", "rate"].filter((k) => !parsed.some((r) => k in r));
-      if (missing.length) return setError("Missing columns (Supplier, Item, Qty, Rate are required). Download the template to see the format.");
+      if (parsed.length === 0)
+        return setError("No rows found in the first sheet of this file.");
+      const missing = ["partyName", "name", "quantity", "rate"].filter(
+        (k) => !parsed.some((r) => k in r),
+      );
+      if (missing.length)
+        return setError(
+          "Missing columns (Supplier, Item, Qty, Rate are required). Download the template to see the format.",
+        );
       setRows(parsed);
     } catch {
       setError("Could not read this file. Use an .xlsx, .xls or .csv file.");
@@ -166,7 +229,10 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
       const h = items[0];
       try {
         if (!h.partyName) throw new Error("Supplier missing");
-        const status = STATUSES.find((s) => s.toLowerCase() === (h.status || "").toLowerCase()) || "Draft";
+        const status =
+          STATUSES.find(
+            (s) => s.toLowerCase() === (h.status || "").toLowerCase(),
+          ) || "Draft";
         await purchaseOrdersAPI.create({
           partyName: h.partyName,
           reference: h.reference || "",
@@ -174,10 +240,15 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
           dueDate: h.dueDate || null,
           status,
           discount: Number(h.discount) || 0,
-          taxPercent: h.taxPercent === "" || h.taxPercent === undefined ? 18 : Number(h.taxPercent),
+          taxPercent:
+            h.taxPercent === "" || h.taxPercent === undefined
+              ? 18
+              : Number(h.taxPercent),
           notes: h.notes || (h.no ? `Imported (previous no. ${h.no})` : ""),
           items: items.map((r) => {
-            const p = products.find((x) => (x.name || "").toLowerCase() === r.name.toLowerCase());
+            const p = products.find(
+              (x) => (x.name || "").toLowerCase() === r.name.toLowerCase(),
+            );
             return {
               productId: p?._id || null, // matched by name so a Received order updates that product's stock
               name: r.name,
@@ -189,7 +260,10 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
         });
         imported++;
       } catch (err: any) {
-        failed.push({ key: h.no || `${h.partyName} / ${h.date || ""}`, reason: err.message || "Failed" });
+        failed.push({
+          key: h.no || `${h.partyName} / ${h.date || ""}`,
+          reason: err.message || "Failed",
+        });
       }
     }
     setResult({ imported, failed });
@@ -207,7 +281,8 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
         {result ? (
           <div className="space-y-3">
             <p className="text-sm">
-              <strong>{result.imported}</strong> purchase order{result.imported === 1 ? "" : "s"} imported
+              <strong>{result.imported}</strong> purchase order
+              {result.imported === 1 ? "" : "s"} imported
               {result.failed.length > 0 && (
                 <>
                   , <strong>{result.failed.length}</strong> failed
@@ -228,24 +303,42 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              One row per item; rows with the same <strong>PO Number</strong> become one order. Required:{" "}
-              <strong>Supplier, Item, Qty, Rate</strong>. Status defaults to Draft. New orders get a fresh PO number.{" "}
-              <strong>Orders imported as Received add their quantities to product stock</strong> (items are matched to
-              products by name).
+              One row per item; rows with the same <strong>PO Number</strong>{" "}
+              become one order. Required:{" "}
+              <strong>Supplier, Item, Qty, Rate</strong>. Status defaults to
+              Draft. New orders get a fresh PO number.{" "}
+              <strong>
+                Orders imported as Received add their quantities to product
+                stock
+              </strong>{" "}
+              (items are matched to products by name).
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => downloadXLSX("purchase-orders-import-template.xlsx", PO_HEADERS, TEMPLATE_ROWS, "Purchase Orders")}
+                onClick={() =>
+                  downloadXLSX(
+                    "purchase-orders-import-template.xlsx",
+                    PO_HEADERS,
+                    TEMPLATE_ROWS,
+                    "Purchase Orders",
+                  )
+                }
               >
                 <Download className="w-4 h-4 mr-1" /> Download template
               </Button>
-              <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+              >
                 <Upload className="w-4 h-4 mr-1" /> Choose file
               </Button>
-              <span className="text-xs text-muted-foreground self-center">.xlsx, .xls or .csv · max 5MB</span>
+              <span className="text-xs text-muted-foreground self-center">
+                .xlsx, .xls or .csv · max 5MB
+              </span>
               <input
                 ref={fileRef}
                 type="file"
@@ -258,7 +351,8 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
             {fileName && !error && rows.length > 0 && (
               <p className="text-sm flex items-center gap-2 rounded border p-3">
                 <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                {fileName} — <strong>{groups.size}</strong> order{groups.size === 1 ? "" : "s"} ({rows.length} item rows)
+                {fileName} — <strong>{groups.size}</strong> order
+                {groups.size === 1 ? "" : "s"} ({rows.length} item rows)
               </p>
             )}
           </div>
@@ -274,9 +368,15 @@ export function ImportPurchaseOrdersDialog({ open, onOpenChange, onImported, pro
               <Button variant="outline" onClick={() => close(false)}>
                 Cancel
               </Button>
-              <Button onClick={runImport} disabled={rows.length === 0 || importing}>
+              <Button
+                onClick={runImport}
+                disabled={rows.length === 0 || importing}
+              >
                 {importing && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                Import {groups.size > 0 ? `${groups.size} order${groups.size === 1 ? "" : "s"}` : ""}
+                Import{" "}
+                {groups.size > 0
+                  ? `${groups.size} order${groups.size === 1 ? "" : "s"}`
+                  : ""}
               </Button>
             </>
           )}

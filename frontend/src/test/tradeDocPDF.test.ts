@@ -18,7 +18,9 @@ describe("tradeDocToInvoice", () => {
   };
 
   it("maps a purchase order onto the shared invoice shape", () => {
-    const inv = tradeDocToInvoice("purchase_order", doc, "10ABC", { gst: "27XYZ" });
+    const inv = tradeDocToInvoice("purchase_order", doc, "10ABC", {
+      gst: "27XYZ",
+    });
     expect(inv).toMatchObject({
       invoiceNo: "PO-0003",
       poNumber: "REF-9",
@@ -28,11 +30,23 @@ describe("tradeDocToInvoice", () => {
       notes: "Pay in 7 days",
       interState: true, // different state codes (10 vs 27)
     });
-    expect(inv.items).toEqual([{ description: "Widget", hsnCode: "8471", quantity: 2, price: 100, details: "Qty: 2 x Rs. 100" }]);
+    expect(inv.items).toEqual([
+      {
+        description: "Widget",
+        hsnCode: "8471",
+        quantity: 2,
+        price: 100,
+        details: "Qty: 2 x Rs. 100",
+      },
+    ]);
   });
 
   it("marks a paid invoice as paid in full, and falls back to no notes", () => {
-    const inv = tradeDocToInvoice("invoice", { ...doc, status: "Paid", notes: "" });
+    const inv = tradeDocToInvoice("invoice", {
+      ...doc,
+      status: "Paid",
+      notes: "",
+    });
     expect(inv.paidAmount).toBe(236);
     expect(inv.notes).toBeUndefined();
   });
@@ -48,11 +62,15 @@ describe("isInterState", () => {
 
 describe("settingsToCompany", () => {
   it("only includes bank details when the tenant has set them", () => {
-    expect(settingsToCompany({ companyName: "Acme", bankName: "HDFC" }).bank).toMatchObject({ name: "HDFC" });
+    expect(
+      settingsToCompany({ companyName: "Acme", bankName: "HDFC" }).bank,
+    ).toMatchObject({ name: "HDFC" });
     expect(settingsToCompany({ companyName: "Acme" }).bank).toBeUndefined();
   });
 
   it("splits a multi-line address", () => {
-    expect(settingsToCompany({ companyAddress: "Line 1\nLine 2" }).addressLines).toEqual(["Line 1", "Line 2"]);
+    expect(
+      settingsToCompany({ companyAddress: "Line 1\nLine 2" }).addressLines,
+    ).toEqual(["Line 1", "Line 2"]);
   });
 });

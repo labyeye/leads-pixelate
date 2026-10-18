@@ -1,6 +1,10 @@
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { statusColors, getStatusColorClasses, getStatusLabel } from "./statusConstants";
+import {
+  statusColors,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "./statusConstants";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
 interface StatusHistoryEntry {

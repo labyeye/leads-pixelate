@@ -23,7 +23,7 @@ const QUERY_TYPE_MAP = {
 // remarks "Imported from Zoho (Lead Status: X)" in the DB).
 const STATUS_MAP = {
   "not contacted": "PENDING CONTACT",
-  "contacted": "DISCUSSION",
+  contacted: "DISCUSSION",
   "attempted to contact": "1",
   "pre-qualified": "DISCUSSION",
   "contact in future": "DISCUSSION",
@@ -165,7 +165,8 @@ async function main() {
       contactTag,
       followUpDate,
       assignedTo: ownerId,
-      indiamartQueryType: QUERY_TYPE_MAP[typeCode] || existing.indiamartQueryType,
+      indiamartQueryType:
+        QUERY_TYPE_MAP[typeCode] || existing.indiamartQueryType,
       indiamartQueryTime: queryTime,
     };
 

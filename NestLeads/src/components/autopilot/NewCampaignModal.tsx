@@ -1,10 +1,17 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
-  Modal, View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
-import {autopilotAPI} from '../../services/api';
-import {NB_SHADOW, PRIMARY} from './ui';
+import { autopilotAPI } from '../../services/api';
+import { NB_SHADOW, PRIMARY } from './ui';
 
 // Asks for a campaign name and creates it. The server refuses past the plan's campaign limit and
 // says so in the error, which is shown here.
@@ -39,13 +46,24 @@ export default function NewCampaignModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={s.backdrop}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={s.backdrop}
+      >
         <View style={s.sheet}>
           <Text style={s.title}>New campaign</Text>
           <Text style={s.sub}>
-            Each campaign has its own accounts, brand, logos, schedule, references and competitors.
-            {limit ? ` Your plan allows ${limit} campaign${limit === 1 ? '' : 's'}.` : ''}
+            Each campaign has its own accounts, brand, logos, schedule,
+            references and competitors.
+            {limit
+              ? ` Your plan allows ${limit} campaign${limit === 1 ? '' : 's'}.`
+              : ''}
           </Text>
           <TextInput
             style={s.input}
@@ -59,11 +77,27 @@ export default function NewCampaignModal({
           />
           {error ? <Text style={s.error}>{error}</Text> : null}
           <View style={s.row}>
-            <TouchableOpacity style={[s.btn, {backgroundColor: '#fff'}]} onPress={onClose} disabled={busy}>
-              <Text style={[s.btnText, {color: '#000'}]}>Cancel</Text>
+            <TouchableOpacity
+              style={[s.btn, { backgroundColor: '#fff' }]}
+              onPress={onClose}
+              disabled={busy}
+            >
+              <Text style={[s.btnText, { color: '#000' }]}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.btn, {backgroundColor: PRIMARY}, (!name.trim() || busy) && {opacity: 0.5}]} onPress={create} disabled={!name.trim() || busy}>
-              {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Create campaign</Text>}
+            <TouchableOpacity
+              style={[
+                s.btn,
+                { backgroundColor: PRIMARY },
+                (!name.trim() || busy) && { opacity: 0.5 },
+              ]}
+              onPress={create}
+              disabled={!name.trim() || busy}
+            >
+              {busy ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.btnText}>Create campaign</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -73,13 +107,47 @@ export default function NewCampaignModal({
 }
 
 const s = StyleSheet.create({
-  backdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)'},
-  sheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, ...NB_SHADOW},
-  title: {fontSize: 17, fontWeight: '800', color: '#000'},
-  sub: {fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 10},
-  input: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', padding: 10, fontSize: 14, color: '#000'},
-  error: {color: '#b91c1c', fontSize: 12, marginTop: 6},
-  row: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12},
-  btn: {paddingVertical: 11, paddingHorizontal: 16, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', marginLeft: 8, minWidth: 96, alignItems: 'center'},
-  btnText: {fontSize: 13, fontWeight: '800', color: '#fff'},
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopWidth: 2,
+    borderColor: '#000',
+    padding: 16,
+    ...NB_SHADOW,
+  },
+  title: { fontSize: 17, fontWeight: '800', color: '#000' },
+  sub: { fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 10 },
+  input: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    padding: 10,
+    fontSize: 14,
+    color: '#000',
+  },
+  error: { color: '#b91c1c', fontSize: 12, marginTop: 6 },
+  row: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 },
+  btn: {
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    marginLeft: 8,
+    minWidth: 96,
+    alignItems: 'center',
+  },
+  btnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
 });

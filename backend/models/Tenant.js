@@ -93,7 +93,11 @@ const tenantSchema = new mongoose.Schema(
             // "review": every draft waits for approval. "auto": sent immediately.
             autoReply: {
               enabled: { type: Boolean, default: false },
-              mode: { type: String, enum: ["review", "auto"], default: "review" },
+              mode: {
+                type: String,
+                enum: ["review", "auto"],
+                default: "review",
+              },
             },
           },
         ],
@@ -217,7 +221,11 @@ const tenantSchema = new mongoose.Schema(
       lastError: { type: String, default: "" },
       onboardedAt: { type: Date, default: null },
       // Which Autopilot plan the current paidUntil period was bought on ("" = never paid).
-      plan: { type: String, enum: ["", "starter", "growth", "pro"], default: "" },
+      plan: {
+        type: String,
+        enum: ["", "starter", "growth", "pro"],
+        default: "",
+      },
       // Owner's own words about the brand (typed and/or a PDF kept outside the public uploads dir).
       brandIntro: {
         text: { type: String, default: "", maxlength: 4000 },
@@ -240,7 +248,11 @@ const tenantSchema = new mongoose.Schema(
         at: { type: Date, default: null },
       },
       analysis: {
-        status: { type: String, enum: ["idle", "running", "done", "failed"], default: "idle" },
+        status: {
+          type: String,
+          enum: ["idle", "running", "done", "failed"],
+          default: "idle",
+        },
         stage: { type: String, default: "" }, // profile | posts | style | profile_built
         error: { type: String, default: "" },
         note: { type: String, default: "" },
@@ -262,7 +274,14 @@ const tenantSchema = new mongoose.Schema(
       },
       brandKit: {
         logos: {
-          type: [{ id: String, name: { type: String, maxlength: 60 }, file: String, url: String }],
+          type: [
+            {
+              id: String,
+              name: { type: String, maxlength: 60 },
+              file: String,
+              url: String,
+            },
+          ],
           default: [],
         },
         logoId: { type: String, default: "" },

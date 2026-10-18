@@ -1,9 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import {
-  facebookAPI,
-  usersAPI,
-  campaignAssignmentAPI,
-} from "@/services/api";
+import { facebookAPI, usersAPI, campaignAssignmentAPI } from "@/services/api";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { RefreshCw, Facebook } from "lucide-react";
@@ -45,7 +41,8 @@ export default function FacebookCampaignManagementPage() {
       setInsights((prev) => {
         const next = { ...prev };
         results.forEach((r, i) => {
-          if (r.status === "fulfilled") next[ids[i]] = parseInsight(r.value.data);
+          if (r.status === "fulfilled")
+            next[ids[i]] = parseInsight(r.value.data);
         });
         return next;
       });

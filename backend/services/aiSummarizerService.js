@@ -23,11 +23,17 @@ async function processCallWebhookData(payload) {
   }
 
   if (!callLog && leadId) {
-    callLog = await CallLog.findOne({ leadId, status: { $in: ["initiated", "ringing", "in_progress"] } }).sort({ createdAt: -1 });
+    callLog = await CallLog.findOne({
+      leadId,
+      status: { $in: ["initiated", "ringing", "in_progress"] },
+    }).sort({ createdAt: -1 });
   }
 
   if (!callLog) {
-    log.warn("No matching CallLog found for webhook payload", { conversationId, leadId });
+    log.warn("No matching CallLog found for webhook payload", {
+      conversationId,
+      leadId,
+    });
     return { success: false, message: "No matching CallLog found" };
   }
 
@@ -40,7 +46,8 @@ async function processCallWebhookData(payload) {
   const settings = await AICallSettings.findOne({ tenantId: callLog.tenantId });
 
   // Extract Transcript
-  let rawTranscript = payload.transcript || payload.conversation_transcript || [];
+  let rawTranscript =
+    payload.transcript || payload.conversation_transcript || [];
   let formattedTranscript = [];
 
   if (Array.isArray(rawTranscript)) {
@@ -51,9 +58,13 @@ async function processCallWebhookData(payload) {
     }));
   }
 
-  const durationSeconds = payload.duration_seconds || payload.call_duration || 0;
+  const durationSeconds =
+    payload.duration_seconds || payload.call_duration || 0;
   const recordingUrl = payload.recording_url || payload.audio_url || "";
-  const callStatus = payload.status === "completed" || payload.successful ? "completed" : payload.status || "completed";
+  const callStatus =
+    payload.status === "completed" || payload.successful
+      ? "completed"
+      : payload.status || "completed";
 
   // Build full transcript text for summarization
   const fullTranscriptText = formattedTranscript
@@ -67,7 +78,8 @@ async function processCallWebhookData(payload) {
 
   // Parse ElevenLabs analysis criteria if present
   if (payload.analysis) {
-    aiSummary = payload.analysis.transcript_summary || payload.analysis.summary || "";
+    aiSummary =
+      payload.analysis.transcript_summary || payload.analysis.summary || "";
     sentiment = payload.analysis.call_successful ? "Positive" : "Neutral";
   }
 
@@ -91,7 +103,8 @@ async function processCallWebhookData(payload) {
         // Update lead fields dynamically if fieldKey exists
         if (q.fieldKey && answer) {
           if (q.fieldKey === "budget") updateData.budget = answer;
-          if (q.fieldKey === "interestedProducts") updateData.interestedProducts = answer;
+          if (q.fieldKey === "interestedProducts")
+            updateData.interestedProducts = answer;
           if (q.fieldKey === "requirement") updateData.requirement = answer;
         }
       }
@@ -118,9 +131,11 @@ async function processCallWebhookData(payload) {
   // Auto-status update based on settings
   if (settings && settings.autoStatusMapping) {
     if (callStatus === "completed" && formattedTranscript.length > 2) {
-      updateData.status = settings.autoStatusMapping.qualifiedStatus || "QUALIFIED";
+      updateData.status =
+        settings.autoStatusMapping.qualifiedStatus || "QUALIFIED";
     } else if (callStatus === "no_answer" || callStatus === "failed") {
-      updateData.status = settings.autoStatusMapping.noAnswerStatus || "ATTEMPTED CONTACT";
+      updateData.status =
+        settings.autoStatusMapping.noAnswerStatus || "ATTEMPTED CONTACT";
     }
   }
 

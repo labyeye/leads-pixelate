@@ -83,7 +83,12 @@ function NavNode({
               isWa && "text-[#25D366]",
             )}
           />
-          <span className={cn("flex-1 text-left", collapsed && depth === 0 && "lg:hidden")}>
+          <span
+            className={cn(
+              "flex-1 text-left",
+              collapsed && depth === 0 && "lg:hidden",
+            )}
+          >
             {item.title}
           </span>
           <ChevronDown
@@ -221,7 +226,8 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
         <nav
           ref={navRef}
           onScroll={(e) => (navScrollTop = e.currentTarget.scrollTop)}
-          className="flex-1 py-3 px-2 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          className="flex-1 py-3 px-2 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        >
           {groups.map((group) => (
             <div key={group.label}>
               {!collapsed && (

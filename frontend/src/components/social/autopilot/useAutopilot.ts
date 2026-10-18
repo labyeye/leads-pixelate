@@ -13,7 +13,11 @@ export interface BrandProfile {
   doList: string[];
   avoidList: string[];
   palette: string[];
-  competitive: { positioning: string; whatTheyDoWell: string[]; gapsToExploit: string[] };
+  competitive: {
+    positioning: string;
+    whatTheyDoWell: string[];
+    gapsToExploit: string[];
+  };
 }
 
 export interface Competitor {
@@ -32,7 +36,8 @@ export interface Reference {
   note: string;
 }
 
-export type LogoPosition = "bottom-right" | "bottom-left" | "top-right" | "top-left";
+export type LogoPosition =
+  "bottom-right" | "bottom-left" | "top-right" | "top-left";
 export type HeadlinePosition = "top" | "center" | "bottom";
 export type TextSize = "small" | "medium" | "large";
 
@@ -55,7 +60,10 @@ export interface AutopilotStatus {
   plan: string;
   limits: { plan: string; daysPerWeek: number; monthlyPosts: number };
   trialDays: number;
-  entitlement: { state: "none" | "trial" | "paid" | "expired"; endsAt: string | null };
+  entitlement: {
+    state: "none" | "trial" | "paid" | "expired";
+    endsAt: string | null;
+  };
   settings: {
     enabled: boolean;
     postsPerDay: number;
@@ -112,7 +120,11 @@ export interface AutopilotStatus {
 
 // Loads one campaign's status and keeps it fresh. Pass a short interval while a scan or a
 // generation is running, a long one otherwise, or null to load once. campaignId null = nothing to load.
-export function useAutopilot(campaignId: string | null, intervalMs: number | null, onError?: (message: string) => void) {
+export function useAutopilot(
+  campaignId: string | null,
+  intervalMs: number | null,
+  onError?: (message: string) => void,
+) {
   const [status, setStatus] = useState<AutopilotStatus | null>(null);
   const errRef = useRef(onError);
   errRef.current = onError;

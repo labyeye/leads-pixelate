@@ -152,7 +152,7 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Integrations',
     sub: 'Connect IndiaMart, FB & more',
     screen: 'Integrations',
-    color: PRIMARY  ,
+    color: PRIMARY,
   },
   {
     icon: 'key-outline',
@@ -246,7 +246,12 @@ export default function MoreScreen({ navigation }: any) {
       >
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <UserAvatar name={user?.name} avatar={user?.avatar} size={64} index={0} />
+          <UserAvatar
+            name={user?.name}
+            avatar={user?.avatar}
+            size={64}
+            index={0}
+          />
 
           <View style={styles.profileActions}>
             <View style={styles.profileInfo}>
@@ -349,7 +354,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
     letterSpacing: 0.3,
-    maxWidth: 200, 
+    maxWidth: 200,
   },
   profileRole: {
     fontSize: 11,
@@ -357,7 +362,12 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 2,
   },
-  profileActions: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' },
+  profileActions: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
   editBtn: {
     flex: 1,
     flexDirection: 'row',

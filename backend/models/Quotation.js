@@ -69,7 +69,10 @@ const quotationSchema = new mongoose.Schema(
 
 quotationSchema.pre("validate", async function (next) {
   if (!this.number) {
-    const custom = await require("../utils/docNumber").nextDocNumber(this.tenantId, "quotation");
+    const custom = await require("../utils/docNumber").nextDocNumber(
+      this.tenantId,
+      "quotation",
+    );
     if (custom) {
       this.number = custom;
       return next();
@@ -98,7 +101,12 @@ quotationSchema.pre("validate", function (next) {
 quotationSchema.index({ status: 1 });
 // Numbers are per tenant now (each owner picks their own format), so uniqueness is per tenant.
 quotationSchema.index({ tenantId: 1, number: 1 }, { unique: true });
-mongoose.connection.once("open", () => mongoose.model("Quotation").collection.dropIndex("number_1").catch(() => {})); // the old global unique index
+mongoose.connection.once("open", () =>
+  mongoose
+    .model("Quotation")
+    .collection.dropIndex("number_1")
+    .catch(() => {}),
+); // the old global unique index
 quotationSchema.index({ createdAt: -1 });
 
 quotationSchema.plugin(softDelete);

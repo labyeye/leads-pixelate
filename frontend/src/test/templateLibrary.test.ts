@@ -6,9 +6,11 @@ import {
 } from "@/config/whatsappTemplateLibrary";
 
 const vars = (s: string) =>
-  [...new Set((s.match(/\{\{(\d+)\}\}/g) || []).map((m) => Number(m.slice(2, -2))))].sort(
-    (a, b) => a - b,
-  );
+  [
+    ...new Set(
+      (s.match(/\{\{(\d+)\}\}/g) || []).map((m) => Number(m.slice(2, -2))),
+    ),
+  ].sort((a, b) => a - b);
 
 describe("WhatsApp template library follows Meta's template rules", () => {
   it("has unique ids", () => {
@@ -56,6 +58,10 @@ describe("WhatsApp template library follows Meta's template rules", () => {
 
 describe("mappingFromNotes", () => {
   it("falls back to name/company/custom when there is no hint", () => {
-    expect(mappingFromNotes("", 3).map((x) => x.fieldKey)).toEqual(["name", "company", "custom"]);
+    expect(mappingFromNotes("", 3).map((x) => x.fieldKey)).toEqual([
+      "name",
+      "company",
+      "custom",
+    ]);
   });
 });

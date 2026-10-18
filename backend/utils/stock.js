@@ -14,7 +14,10 @@ async function move(items, sign, tenantId) {
     (items || [])
       .filter((i) => i.productId)
       .map((i) =>
-        Product.updateOne({ _id: i.productId, tenantId: tenantId || null }, { $inc: { stockQuantity: sign * i.quantity } }),
+        Product.updateOne(
+          { _id: i.productId, tenantId: tenantId || null },
+          { $inc: { stockQuantity: sign * i.quantity } },
+        ),
       ),
   );
 }

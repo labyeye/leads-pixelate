@@ -5,7 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { AutopilotStatus } from "./useAutopilot";
 
 const DAYS = [
@@ -21,10 +27,19 @@ const MAX_TIMES = 2;
 
 const TYPES: Record<string, { label: string; hint: string }> = {
   product: { label: "Products & services", hint: "Show what you sell" },
-  behind_the_scenes: { label: "Behind the scenes", hint: "Your team, workspace, process" },
+  behind_the_scenes: {
+    label: "Behind the scenes",
+    hint: "Your team, workspace, process",
+  },
   tips: { label: "Tips & advice", hint: "Useful ideas for your audience" },
-  social_proof: { label: "Customer stories", hint: "Only real ones from your data" },
-  occasion: { label: "Festivals & occasions", hint: "Seasonal and festive posts" },
+  social_proof: {
+    label: "Customer stories",
+    hint: "Only real ones from your data",
+  },
+  occasion: {
+    label: "Festivals & occasions",
+    hint: "Seasonal and festive posts",
+  },
   announcement: { label: "News & announcements", hint: "Launches and updates" },
 };
 
@@ -52,26 +67,42 @@ export function PostingPlan({
   const s = status.settings;
   const maxDays = status.limits?.daysPerWeek ?? 7; // the plan decides how many posting days a week
   const [days, setDays] = useState<number[]>(
-    s.schedule?.days?.length ? s.schedule.days.slice(0, maxDays) : DAYS.slice(0, maxDays).map((x) => x.d),
+    s.schedule?.days?.length
+      ? s.schedule.days.slice(0, maxDays)
+      : DAYS.slice(0, maxDays).map((x) => x.d),
   );
-  const [times, setTimes] = useState<string[]>(s.schedule?.times?.length ? s.schedule.times : ["10:00"]);
-  const [types, setTypes] = useState<string[]>(s.contentTypes?.length ? s.contentTypes : Object.keys(TYPES));
+  const [times, setTimes] = useState<string[]>(
+    s.schedule?.times?.length ? s.schedule.times : ["10:00"],
+  );
+  const [types, setTypes] = useState<string[]>(
+    s.contentTypes?.length ? s.contentTypes : Object.keys(TYPES),
+  );
   const [language, setLanguage] = useState(s.language);
   const [tone, setTone] = useState(s.tone || status.brandProfile?.tone || "");
   const [notes, setNotes] = useState(s.notes);
   const [reviewFirst, setReviewFirst] = useState(s.reviewFirst);
 
-  const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
-  const valid = days.length > 0 && days.length <= maxDays && times.length > 0 && times.every(Boolean) && types.length > 0;
-  const trial = status.entitlement.state === "trial" || status.entitlement.state === "none";
+  const toggle = <T,>(arr: T[], v: T) =>
+    arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+  const valid =
+    days.length > 0 &&
+    days.length <= maxDays &&
+    times.length > 0 &&
+    times.every(Boolean) &&
+    types.length > 0;
+  const trial =
+    status.entitlement.state === "trial" || status.entitlement.state === "none";
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <Label>Days to post</Label>
         <p className="text-xs text-muted-foreground">
-          Your plan allows up to {maxDays} posting day{maxDays === 1 ? "" : "s"} a week
-          {days.length >= maxDays && maxDays < 7 ? ". Untick a day to pick another." : "."}
+          Your plan allows up to {maxDays} posting day{maxDays === 1 ? "" : "s"}{" "}
+          a week
+          {days.length >= maxDays && maxDays < 7
+            ? ". Untick a day to pick another."
+            : "."}
         </p>
         <div className="flex flex-wrap gap-2">
           {DAYS.map(({ d, label }) => (
@@ -93,7 +124,8 @@ export function PostingPlan({
       <div className="space-y-2">
         <Label>Time of day (India time)</Label>
         <p className="text-xs text-muted-foreground">
-          One post is published at each time, up to {MAX_TIMES} a day. Autopilot prepares a month of posts upfront.
+          One post is published at each time, up to {MAX_TIMES} a day. Autopilot
+          prepares a month of posts upfront.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {times.map((t, i) => (
@@ -102,7 +134,9 @@ export function PostingPlan({
                 type="time"
                 aria-label={`Post time ${i + 1}`}
                 value={t}
-                onChange={(e) => setTimes(times.map((x, j) => (j === i ? e.target.value : x)))}
+                onChange={(e) =>
+                  setTimes(times.map((x, j) => (j === i ? e.target.value : x)))
+                }
                 className="w-32"
               />
               {times.length > 1 && (
@@ -119,7 +153,12 @@ export function PostingPlan({
             </span>
           ))}
           {times.length < MAX_TIMES && (
-            <Button type="button" size="sm" variant="outline" onClick={() => setTimes([...times, "18:00"])}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setTimes([...times, "18:00"])}
+            >
               <Plus className="w-4 h-4 mr-1" /> Add a time
             </Button>
           )}
@@ -128,7 +167,9 @@ export function PostingPlan({
 
       <div className="space-y-2">
         <Label>What to post</Label>
-        <p className="text-xs text-muted-foreground">Autopilot rotates through the kinds you tick.</p>
+        <p className="text-xs text-muted-foreground">
+          Autopilot rotates through the kinds you tick.
+        </p>
         <div className="grid sm:grid-cols-2 gap-2">
           {Object.entries(TYPES).map(([key, t]) => (
             <label
@@ -143,7 +184,9 @@ export function PostingPlan({
               />
               <span>
                 <span className="block text-sm font-medium">{t.label}</span>
-                <span className="block text-xs text-muted-foreground">{t.hint}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {t.hint}
+                </span>
               </span>
             </label>
           ))}
@@ -177,7 +220,9 @@ export function PostingPlan({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="plan-notes">Topics to focus on or avoid (optional)</Label>
+        <Label htmlFor="plan-notes">
+          Topics to focus on or avoid (optional)
+        </Label>
         <Textarea
           id="plan-notes"
           rows={3}
@@ -216,7 +261,11 @@ export function PostingPlan({
         {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
         {saveLabel}
       </Button>
-      {!valid && <p className="text-xs text-amber-700">Pick at least one day, one time and one kind of post.</p>}
+      {!valid && (
+        <p className="text-xs text-amber-700">
+          Pick at least one day, one time and one kind of post.
+        </p>
+      )}
     </div>
   );
 }

@@ -134,9 +134,7 @@ export default function LinkedInCampaignManagementPage() {
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
             Who's handling which campaign
-            {!hasToken && !loading
-              ? " — connect LinkedIn Ads first"
-              : ""}
+            {!hasToken && !loading ? " — connect LinkedIn Ads first" : ""}
           </p>
         </div>
         <button

@@ -71,7 +71,11 @@ const whatsappCampaignSchema = new mongoose.Schema(
       footerText: String,
     },
 
-    document: { type: mongoose.Schema.Types.ObjectId, ref: "Document", default: null },
+    document: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Document",
+      default: null,
+    },
     documentName: { type: String, default: "" },
     variableMapping: [
       {

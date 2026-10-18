@@ -6,13 +6,20 @@ import { cn } from "@/lib/utils";
 
 export const inputCls =
   "w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white focus:border-[#024BAB]";
-export const labelCls = "block text-[10px] font-black uppercase tracking-widest text-black mb-1";
+export const labelCls =
+  "block text-[10px] font-black uppercase tracking-widest text-black mb-1";
 
 export const money = (n: number) =>
   `₹${(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
 export const fmtDate = (d?: string | null) =>
-  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  d
+    ? new Date(d).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 
 const STATUS_COLOR: Record<string, string> = {
   Active: "bg-green-100 text-green-800 border-green-300",
@@ -120,7 +127,10 @@ export function DataTable({
               </tr>
             ) : empty ? (
               <tr>
-                <td colSpan={heads.length} className="text-center py-10 text-sm text-gray-500 font-medium">
+                <td
+                  colSpan={heads.length}
+                  className="text-center py-10 text-sm text-gray-500 font-medium"
+                >
                   {empty}
                 </td>
               </tr>
@@ -151,11 +161,26 @@ export function Modal({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-label={title}>
-      <div className={cn("bg-white border-2 border-black w-full max-h-[92vh] overflow-y-auto", wide ? "max-w-3xl" : "max-w-md")}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-label={title}
+    >
+      <div
+        className={cn(
+          "bg-white border-2 border-black w-full max-h-[92vh] overflow-y-auto",
+          wide ? "max-w-3xl" : "max-w-md",
+        )}
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-[#024BAB] sticky top-0">
-          <h2 className="text-sm font-black uppercase tracking-widest text-white">{title}</h2>
-          <button onClick={onClose} aria-label="Close" className="text-white hover:text-orange-300 font-black text-lg leading-none">
+          <h2 className="text-sm font-black uppercase tracking-widest text-white">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-white hover:text-orange-300 font-black text-lg leading-none"
+          >
             ✕
           </button>
         </div>
@@ -165,7 +190,15 @@ export function Modal({
   );
 }
 
-export function SaveBar({ saving, onCancel, label }: { saving: boolean; onCancel: () => void; label: string }) {
+export function SaveBar({
+  saving,
+  onCancel,
+  label,
+}: {
+  saving: boolean;
+  onCancel: () => void;
+  label: string;
+}) {
   return (
     <div className="flex gap-3 pt-2">
       <button

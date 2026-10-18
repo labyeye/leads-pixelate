@@ -6,7 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 
 export interface ReviewablePost {
   _id: string;
-  autopilotMeta?: { revising?: boolean; revisions?: number; revisionError?: string };
+  autopilotMeta?: {
+    revising?: boolean;
+    revisions?: number;
+    revisionError?: string;
+  };
 }
 
 const MAX_REVISIONS = 3;
@@ -43,7 +47,11 @@ export function ReviewActions({
       if (ok) toast({ title: ok });
       await onChanged();
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setBusy(false);
     }
@@ -51,8 +59,12 @@ export function ReviewActions({
 
   if (revising) {
     return (
-      <p className="flex items-center gap-2 text-sm text-blue-700" aria-live="polite">
-        <Loader2 className="w-4 h-4 animate-spin" /> Fixing this post from your feedback…
+      <p
+        className="flex items-center gap-2 text-sm text-blue-700"
+        aria-live="polite"
+      >
+        <Loader2 className="w-4 h-4 animate-spin" /> Fixing this post from your
+        feedback…
       </p>
     );
   }
@@ -61,7 +73,8 @@ export function ReviewActions({
     <div className="space-y-2">
       {post.autopilotMeta?.revisionError && (
         <p className="text-xs text-red-600">
-          Couldn't apply your change: {post.autopilotMeta.revisionError}. Try again.
+          Couldn't apply your change: {post.autopilotMeta.revisionError}. Try
+          again.
         </p>
       )}
       <div className="flex flex-wrap gap-2">
@@ -69,13 +82,25 @@ export function ReviewActions({
           size="sm"
           disabled={busy}
           onClick={() =>
-            act(onApprove ?? (() => socialAPI.approvePost(post._id)), onApprove ? undefined : "Post approved")
+            act(
+              onApprove ?? (() => socialAPI.approvePost(post._id)),
+              onApprove ? undefined : "Post approved",
+            )
           }
         >
-          {busy ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+          {busy ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+          ) : (
+            <Check className="w-3.5 h-3.5 mr-1" />
+          )}
           {approveLabel}
         </Button>
-        <Button size="sm" variant="outline" disabled={busy || used >= MAX_REVISIONS} onClick={() => setOpen(!open)}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy || used >= MAX_REVISIONS}
+          onClick={() => setOpen(!open)}
+        >
           <MessageSquareWarning className="w-3.5 h-3.5 mr-1" /> Request changes
         </Button>
         <Button
@@ -84,7 +109,9 @@ export function ReviewActions({
           disabled={busy}
           onClick={() =>
             act(
-              onReject ?? (() => socialAPI.rejectPost(post._id, "Rejected from Autopilot")),
+              onReject ??
+                (() =>
+                  socialAPI.rejectPost(post._id, "Rejected from Autopilot")),
               onReject ? undefined : "Post rejected",
             )
           }
@@ -93,7 +120,9 @@ export function ReviewActions({
         </Button>
       </div>
       {used >= MAX_REVISIONS && (
-        <p className="text-xs text-muted-foreground">You've used all {MAX_REVISIONS} changes for this post.</p>
+        <p className="text-xs text-muted-foreground">
+          You've used all {MAX_REVISIONS} changes for this post.
+        </p>
       )}
       {open && (
         <div className="space-y-2 rounded-lg border-2 border-black/20 p-3 animate-fade-in">
@@ -121,8 +150,9 @@ export function ReviewActions({
               Fix &amp; regenerate
             </Button>
             <span className="text-xs text-muted-foreground">
-              {MAX_REVISIONS - used} change{MAX_REVISIONS - used === 1 ? "" : "s"} left · Autopilot remembers rules
-              like “never…”
+              {MAX_REVISIONS - used} change
+              {MAX_REVISIONS - used === 1 ? "" : "s"} left · Autopilot remembers
+              rules like “never…”
             </span>
           </div>
         </div>

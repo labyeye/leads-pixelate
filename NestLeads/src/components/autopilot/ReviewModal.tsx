@@ -1,10 +1,17 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
-  Modal, View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
-import {autopilotAPI} from '../../services/api';
-import {NB_SHADOW, PRIMARY} from './ui';
+import { autopilotAPI } from '../../services/api';
+import { NB_SHADOW, PRIMARY } from './ui';
 
 const MAX_REVISIONS = 3;
 
@@ -40,14 +47,21 @@ export default function ReviewModal({
   };
 
   return (
-    <Modal visible={!!post} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={!!post}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={s.backdrop}>
+        style={s.backdrop}
+      >
         <View style={s.sheet}>
           <Text style={s.title}>What should change?</Text>
           <Text style={s.sub}>
-            Autopilot fixes the post and regenerates it. Rules like “never…” are remembered for every later post.
+            Autopilot fixes the post and regenerates it. Rules like “never…” are
+            remembered for every later post.
           </Text>
           <TextInput
             style={s.input}
@@ -62,17 +76,33 @@ export default function ReviewModal({
           />
           {error ? <Text style={s.error}>{error}</Text> : null}
           <Text style={s.hint}>
-            {MAX_REVISIONS - used} change{MAX_REVISIONS - used === 1 ? '' : 's'} left for this post
+            {MAX_REVISIONS - used} change{MAX_REVISIONS - used === 1 ? '' : 's'}{' '}
+            left for this post
           </Text>
           <View style={s.row}>
-            <TouchableOpacity style={[s.btn, s.cancel]} onPress={onClose} disabled={sending}>
-              <Text style={[s.btnText, {color: '#000'}]}>Cancel</Text>
+            <TouchableOpacity
+              style={[s.btn, s.cancel]}
+              onPress={onClose}
+              disabled={sending}
+            >
+              <Text style={[s.btnText, { color: '#000' }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[s.btn, s.send, (!text.trim() || sending || used >= MAX_REVISIONS) && {opacity: 0.5}]}
+              style={[
+                s.btn,
+                s.send,
+                (!text.trim() || sending || used >= MAX_REVISIONS) && {
+                  opacity: 0.5,
+                },
+              ]}
               onPress={send}
-              disabled={!text.trim() || sending || used >= MAX_REVISIONS}>
-              {sending ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Fix &amp; regenerate</Text>}
+              disabled={!text.trim() || sending || used >= MAX_REVISIONS}
+            >
+              {sending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.btnText}>Fix &amp; regenerate</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -82,24 +112,52 @@ export default function ReviewModal({
 }
 
 const s = StyleSheet.create({
-  backdrop: {flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)'},
-  sheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, ...NB_SHADOW},
-  title: {fontSize: 17, fontWeight: '800', color: '#000'},
-  sub: {fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 10},
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopWidth: 2,
+    borderColor: '#000',
+    padding: 16,
+    ...NB_SHADOW,
+  },
+  title: { fontSize: 17, fontWeight: '800', color: '#000' },
+  sub: { fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 10 },
   input: {
     borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,
     borderBottomWidth: 5,
     borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A', borderColor: '#000', minHeight: 90, padding: 10,
-    textAlignVertical: 'top', fontSize: 14, color: '#000',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    minHeight: 90,
+    padding: 10,
+    textAlignVertical: 'top',
+    fontSize: 14,
+    color: '#000',
   },
-  error: {color: '#b91c1c', fontSize: 12, marginTop: 6},
-  hint: {fontSize: 11, color: '#64748b', marginTop: 6},
-  row: {flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12},
-  btn: {paddingVertical: 11, paddingHorizontal: 16, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', marginLeft: 8, minWidth: 96, alignItems: 'center'},
-  cancel: {backgroundColor: '#fff'},
-  send: {backgroundColor: PRIMARY},
-  btnText: {fontSize: 13, fontWeight: '800', color: '#fff'},
+  error: { color: '#b91c1c', fontSize: 12, marginTop: 6 },
+  hint: { fontSize: 11, color: '#64748b', marginTop: 6 },
+  row: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 },
+  btn: {
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    marginLeft: 8,
+    minWidth: 96,
+    alignItems: 'center',
+  },
+  cancel: { backgroundColor: '#fff' },
+  send: { backgroundColor: PRIMARY },
+  btnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
 });

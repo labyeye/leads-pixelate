@@ -9,7 +9,11 @@ export const fmt = (n: number) =>
 export const fmtDate = (v: any) => {
   if (!v) return "—";
   try {
-    return new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(v).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   } catch {
     return String(v);
   }
@@ -17,12 +21,15 @@ export const fmtDate = (v: any) => {
 
 const getItems = (invoice: any): any[] => {
   if (!invoice) return [];
-  if (Array.isArray(invoice.items) && invoice.items.length) return invoice.items;
-  if (Array.isArray(invoice.lineItems) && invoice.lineItems.length) return invoice.lineItems;
+  if (Array.isArray(invoice.items) && invoice.items.length)
+    return invoice.items;
+  if (Array.isArray(invoice.lineItems) && invoice.lineItems.length)
+    return invoice.lineItems;
   if (invoice.amount) {
     return [
       {
-        description: invoice.title || invoice.projectTitle || "Professional Services",
+        description:
+          invoice.title || invoice.projectTitle || "Professional Services",
         hsn: String(invoice?.hsnCode || "998314"),
         quantity: 1,
         unit: "Nos",
@@ -35,18 +42,70 @@ const getItems = (invoice: any): any[] => {
   return [];
 };
 
-const ONES = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
-const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+const ONES = [
+  "",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Eleven",
+  "Twelve",
+  "Thirteen",
+  "Fourteen",
+  "Fifteen",
+  "Sixteen",
+  "Seventeen",
+  "Eighteen",
+  "Nineteen",
+];
+const TENS = [
+  "",
+  "",
+  "Twenty",
+  "Thirty",
+  "Forty",
+  "Fifty",
+  "Sixty",
+  "Seventy",
+  "Eighty",
+  "Ninety",
+];
 
 export function numToWords(n: number): string {
   if (n === 0) return "Zero";
   const w = (x: number): string => {
     if (x < 20) return ONES[x] || "";
-    if (x < 100) return TENS[Math.floor(x / 10)] + (x % 10 ? " " + ONES[x % 10] : "");
-    if (x < 1000) return ONES[Math.floor(x / 100)] + " Hundred" + (x % 100 ? " " + w(x % 100) : "");
-    if (x < 100000) return w(Math.floor(x / 1000)) + " Thousand" + (x % 1000 ? " " + w(x % 1000) : "");
-    if (x < 10000000) return w(Math.floor(x / 100000)) + " Lakh" + (x % 100000 ? " " + w(x % 100000) : "");
-    return w(Math.floor(x / 10000000)) + " Crore" + (x % 10000000 ? " " + w(x % 10000000) : "");
+    if (x < 100)
+      return TENS[Math.floor(x / 10)] + (x % 10 ? " " + ONES[x % 10] : "");
+    if (x < 1000)
+      return (
+        ONES[Math.floor(x / 100)] +
+        " Hundred" +
+        (x % 100 ? " " + w(x % 100) : "")
+      );
+    if (x < 100000)
+      return (
+        w(Math.floor(x / 1000)) +
+        " Thousand" +
+        (x % 1000 ? " " + w(x % 1000) : "")
+      );
+    if (x < 10000000)
+      return (
+        w(Math.floor(x / 100000)) +
+        " Lakh" +
+        (x % 100000 ? " " + w(x % 100000) : "")
+      );
+    return (
+      w(Math.floor(x / 10000000)) +
+      " Crore" +
+      (x % 10000000 ? " " + w(x % 10000000) : "")
+    );
   };
   const paise = Math.round((n % 1) * 100);
   let res = w(Math.floor(n)) + " Rupees";
@@ -64,7 +123,11 @@ export interface CalcItem {
   amt: number;
 }
 
-export function computeInvoice(invoice: any, client: any, company: InvoiceCompany) {
+export function computeInvoice(
+  invoice: any,
+  client: any,
+  company: InvoiceCompany,
+) {
   const raw = getItems(invoice);
   const hsnDefault = String(invoice?.hsnCode || "998314");
 
@@ -95,11 +158,20 @@ export function computeInvoice(invoice: any, client: any, company: InvoiceCompan
   const halfPct = Number((gstPct / 2).toFixed(2));
   const taxAmt = (taxable * gstPct) / 100;
 
-  const clientStateNorm = String(client?.state ?? invoice?.clientState ?? "").trim().toLowerCase();
-  const companyState = String(company.state ?? "").trim().toLowerCase();
+  const clientStateNorm = String(client?.state ?? invoice?.clientState ?? "")
+    .trim()
+    .toLowerCase();
+  const companyState = String(company.state ?? "")
+    .trim()
+    .toLowerCase();
   // invoice.interState (e.g. worked out from the two GSTINs) wins over comparing state names.
   const isInterState: boolean =
-    invoice?.interState ?? !!(clientStateNorm && companyState && !clientStateNorm.includes(companyState));
+    invoice?.interState ??
+    !!(
+      clientStateNorm &&
+      companyState &&
+      !clientStateNorm.includes(companyState)
+    );
   const cgst = isInterState ? 0 : taxAmt / 2;
   const sgst = isInterState ? 0 : taxAmt / 2;
   const igst = isInterState ? taxAmt : 0;
@@ -130,10 +202,18 @@ export function computeInvoice(invoice: any, client: any, company: InvoiceCompan
     balance: total - paidAmount,
     clientName: client?.name || invoice?.clientName || invoice?.client || "—",
     clientState,
-    clientGst: client?.gst || client?.gstNumber || client?.gstin || invoice?.clientGst || invoice?.gstNumber || "",
+    clientGst:
+      client?.gst ||
+      client?.gstNumber ||
+      client?.gstin ||
+      invoice?.clientGst ||
+      invoice?.gstNumber ||
+      "",
     clientEmail: client?.email || invoice?.clientEmail || "",
     clientPhone: client?.phone || invoice?.clientPhone || "",
-    fullAddress: [clientAddress, clientCity, clientState, clientPin].filter(Boolean).join(", "),
+    fullAddress: [clientAddress, clientCity, clientState, clientPin]
+      .filter(Boolean)
+      .join(", "),
     invNo: invoice?.invoiceNo ?? invoice?.id ?? invoice?._id ?? "—",
     invDate: fmtDate(invoice?.createdAt ?? new Date()),
     dueDate: invoice?.dueDate ? fmtDate(invoice.dueDate) : "On Receipt",

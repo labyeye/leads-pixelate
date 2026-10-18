@@ -23,7 +23,11 @@ import { Button } from "@/components/ui/button";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { leadsAPI } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { statusColors, getStatusColorClasses, getStatusLabel } from "@/components/leads/statusConstants";
+import {
+  statusColors,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "@/components/leads/statusConstants";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
 import {
   Popover,

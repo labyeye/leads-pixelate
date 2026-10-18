@@ -14,9 +14,7 @@ class ApiError extends Error {
 // carry cookies (credentials: "include") and echo the CSRF cookie back as a
 // header (double-submit pattern) on mutating requests.
 function readCookie(name: string): string | null {
-  const match = document.cookie.match(
-    new RegExp(`(?:^|; )${name}=([^;]*)`),
-  );
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 }
 
@@ -78,9 +76,7 @@ async function readUploadResponse(res: Response, fallback: string) {
   if (!res.ok) {
     throw new Error(
       data.message ||
-        (res.status === 413
-          ? statusMsg(413)
-          : `${fallback} (${res.status})`),
+        (res.status === 413 ? statusMsg(413) : `${fallback} (${res.status})`),
     );
   }
   return data;
@@ -235,10 +231,10 @@ export const authAPI = {
     }),
 
   verifyPhoneOtp: (otp: string) =>
-    request<{ success: boolean; message: string }>(
-      "/auth/phone/verify-otp",
-      { method: "POST", body: JSON.stringify({ otp }) },
-    ),
+    request<{ success: boolean; message: string }>("/auth/phone/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({ otp }),
+    }),
 
   totpSetup: () =>
     request<{
@@ -307,21 +303,30 @@ export const aiCallingAPI = {
     request<{ success: boolean; data: any }>("/ai-calling/settings"),
 
   updateSettings: (settingsData: object) =>
-    request<{ success: boolean; message: string; data: any }>("/ai-calling/settings", {
-      method: "PUT",
-      body: JSON.stringify(settingsData),
-    }),
+    request<{ success: boolean; message: string; data: any }>(
+      "/ai-calling/settings",
+      {
+        method: "PUT",
+        body: JSON.stringify(settingsData),
+      },
+    ),
 
   testConnection: (apiKey?: string, agentId?: string) =>
-    request<{ success: boolean; message: string; agent?: any }>("/ai-calling/test-connection", {
-      method: "POST",
-      body: JSON.stringify({ apiKey, agentId }),
-    }),
+    request<{ success: boolean; message: string; agent?: any }>(
+      "/ai-calling/test-connection",
+      {
+        method: "POST",
+        body: JSON.stringify({ apiKey, agentId }),
+      },
+    ),
 
   callLead: (leadId: string) =>
-    request<{ success: boolean; message: string; data: any }>(`/ai-calling/call-lead/${leadId}`, {
-      method: "POST",
-    }),
+    request<{ success: boolean; message: string; data: any }>(
+      `/ai-calling/call-lead/${leadId}`,
+      {
+        method: "POST",
+      },
+    ),
 
   getLeadCallLogs: (leadId: string) =>
     request<{ success: boolean; data: any[] }>(`/ai-calling/logs/${leadId}`),
@@ -330,12 +335,19 @@ export const aiCallingAPI = {
 // Manual calls: Twilio rings the agent, then the lead (backend: routes/callRoutes.js).
 export const callsAPI = {
   manual: (body: { leadId: string; agentPhone?: string; remember?: boolean }) =>
-    request<{ success: boolean; message: string; data: { callLogId: string; callSid: string } }>("/calls/manual", {
+    request<{
+      success: boolean;
+      message: string;
+      data: { callLogId: string; callSid: string };
+    }>("/calls/manual", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   status: (id: string) =>
-    request<{ success: boolean; data: { status: string; durationSeconds: number; errorReason: string } }>(`/calls/${id}`),
+    request<{
+      success: boolean;
+      data: { status: string; durationSeconds: number; errorReason: string };
+    }>(`/calls/${id}`),
 };
 
 export const usersAPI = {
@@ -420,7 +432,13 @@ export const uploadAPI = {
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
-    }).then(async (res) => (await readUploadResponse(res, "Upload failed")) as { success: boolean; url: string });
+    }).then(
+      async (res) =>
+        (await readUploadResponse(res, "Upload failed")) as {
+          success: boolean;
+          url: string;
+        },
+    );
   },
 };
 
@@ -513,7 +531,10 @@ export const leadsAPI = {
       method: "POST",
       body: JSON.stringify({ name, filters }),
     }),
-  updateSavedView: (id: string, updates: Partial<{ name: string; filters: Record<string, any> }>) =>
+  updateSavedView: (
+    id: string,
+    updates: Partial<{ name: string; filters: Record<string, any> }>,
+  ) =>
     request<{ success: boolean; data: SavedView }>(`/leads/saved-views/${id}`, {
       method: "PUT",
       body: JSON.stringify(updates),
@@ -551,10 +572,18 @@ export const tradeindiaSyncAPI = {
     ),
   getStatus: () =>
     request<{ success: boolean; data: any }>("/leads/tradeindia/status"),
-  connect: (userId: string, profileId: string, apiKey: string, apiUrl: string) =>
+  connect: (
+    userId: string,
+    profileId: string,
+    apiKey: string,
+    apiUrl: string,
+  ) =>
     request<{ success: boolean; message: string }>(
       "/leads/tradeindia/connect",
-      { method: "POST", body: JSON.stringify({ userId, profileId, apiKey, apiUrl }) },
+      {
+        method: "POST",
+        body: JSON.stringify({ userId, profileId, apiKey, apiUrl }),
+      },
     ),
   disconnect: () =>
     request<{ success: boolean; message: string }>(
@@ -572,20 +601,24 @@ export const justdialSyncAPI = {
   getStatus: () =>
     request<{ success: boolean; data: any }>("/leads/justdial/status"),
   connect: (apiKey?: string) =>
-    request<{ success: boolean; message: string; data: { webhookUrl: string } }>(
-      "/leads/justdial/connect",
-      { method: "POST", body: JSON.stringify({ apiKey: apiKey || "" }) },
-    ),
+    request<{
+      success: boolean;
+      message: string;
+      data: { webhookUrl: string };
+    }>("/leads/justdial/connect", {
+      method: "POST",
+      body: JSON.stringify({ apiKey: apiKey || "" }),
+    }),
   disconnect: () =>
     request<{ success: boolean; message: string }>(
       "/leads/justdial/disconnect",
       { method: "POST" },
     ),
   updateSettings: (assigneeIds: string[], batchSize?: number) =>
-    request<{ success: boolean; message: string }>(
-      "/leads/justdial/settings",
-      { method: "POST", body: JSON.stringify({ assigneeIds, batchSize }) },
-    ),
+    request<{ success: boolean; message: string }>("/leads/justdial/settings", {
+      method: "POST",
+      body: JSON.stringify({ assigneeIds, batchSize }),
+    }),
 };
 
 export const dashboardAPI = {
@@ -616,10 +649,18 @@ export const productsAPI = {
 // Inventory section: price books, sales orders, purchase orders, invoices (same list/create/update/remove shape).
 const inventoryResource = (path: string) => ({
   getAll: () => request<{ success: boolean; count: number; data: any[] }>(path),
-  create: (body: unknown) => request<{ success: boolean; data: any }>(path, { method: "POST", body: JSON.stringify(body) }),
+  create: (body: unknown) =>
+    request<{ success: boolean; data: any }>(path, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   update: (id: string, body: unknown) =>
-    request<{ success: boolean; data: any }>(`${path}/${id}`, { method: "PUT", body: JSON.stringify(body) }),
-  remove: (id: string) => request<{ success: boolean }>(`${path}/${id}`, { method: "DELETE" }),
+    request<{ success: boolean; data: any }>(`${path}/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean }>(`${path}/${id}`, { method: "DELETE" }),
 });
 export const priceBooksAPI = inventoryResource("/price-books");
 export const salesOrdersAPI = inventoryResource("/sales-orders");
@@ -685,7 +726,11 @@ export const billingAPI = {
 
 // Social Autopilot add-on (backend: routes/autopilotRoutes.js + billingRoutes.js).
 // Multipart POST (logo / reference image, brand intro). fetch sets the multipart boundary itself.
-function postForm<T>(endpoint: string, formData: FormData, failMessage: string): Promise<T> {
+function postForm<T>(
+  endpoint: string,
+  formData: FormData,
+  failMessage: string,
+): Promise<T> {
   const csrf = getCsrfToken();
   return fetch(`${API_BASE}${endpoint}`, {
     method: "POST",
@@ -720,7 +765,13 @@ function autopilotCampaignApi(id: string) {
     previewPlan: () =>
       request<{
         success: boolean;
-        data: { scheduledAt: string; platforms: string[]; topic: string; angle: string; headline: string }[];
+        data: {
+          scheduledAt: string;
+          platforms: string[];
+          topic: string;
+          angle: string;
+          headline: string;
+        }[];
       }>(`${base}/preview-plan`, { method: "POST" }),
     // One sample post from the current settings (nothing is scheduled).
     preview: () =>
@@ -743,24 +794,28 @@ function autopilotCampaignApi(id: string) {
         method: "POST",
         body: JSON.stringify({ accountId }),
       }),
-    saveBrandProfile: (profile: Record<string, unknown>) => send("/brand-profile", "PUT", profile),
+    saveBrandProfile: (profile: Record<string, unknown>) =>
+      send("/brand-profile", "PUT", profile),
     saveBrand: (patch: Record<string, unknown>) => send("/brand", "PUT", patch),
     saveIntro: (text: string, file?: File | null) => {
       const formData = new FormData();
       formData.append("text", text);
       if (file) formData.append("file", file);
-      return postForm<{ success: boolean }>(`${base}/intro`, formData, "Could not save your brand intro");
+      return postForm<{ success: boolean }>(
+        `${base}/intro`,
+        formData,
+        "Could not save your brand intro",
+      );
     },
     deleteIntroPdf: () => send("/intro/pdf", "DELETE"),
     uploadLogo: (file: File, name?: string) => {
       const formData = new FormData();
       formData.append("file", file);
       if (name) formData.append("name", name);
-      return postForm<{ success: boolean; data: { id: string; name: string; url: string } }>(
-        `${base}/logos`,
-        formData,
-        "Logo upload failed",
-      );
+      return postForm<{
+        success: boolean;
+        data: { id: string; name: string; url: string };
+      }>(`${base}/logos`, formData, "Logo upload failed");
     },
     deleteLogo: (logoId: string) => send(`/logos/${logoId}`, "DELETE"),
     // The AI presenter for talking reels: a consented photo, or an AI-made face from a description.
@@ -769,26 +824,34 @@ function autopilotCampaignApi(id: string) {
       formData.append("file", file);
       formData.append("voice", voice);
       formData.append("consent", "true");
-      return postForm<{ success: boolean }>(`${base}/actor`, formData, "Photo upload failed");
+      return postForm<{ success: boolean }>(
+        `${base}/actor`,
+        formData,
+        "Photo upload failed",
+      );
     },
-    generateActor: (description: string, voice: string) => send("/actor/generate", "POST", { description, voice }),
+    generateActor: (description: string, voice: string) =>
+      send("/actor/generate", "POST", { description, voice }),
     saveActorVoice: (voice: string) => send("/actor", "PUT", { voice }),
     deleteActor: () => send("/actor", "DELETE"),
     addCompetitor: (c: { username?: string; notes?: string }) =>
-      request<{ success: boolean; data: { id: string; username: string; notes: string } }>(`${base}/competitors`, {
+      request<{
+        success: boolean;
+        data: { id: string; username: string; notes: string };
+      }>(`${base}/competitors`, {
         method: "POST",
         body: JSON.stringify(c),
       }),
-    deleteCompetitor: (competitorId: string) => send(`/competitors/${competitorId}`, "DELETE"),
+    deleteCompetitor: (competitorId: string) =>
+      send(`/competitors/${competitorId}`, "DELETE"),
     uploadReference: (file: File, note?: string) => {
       const formData = new FormData();
       formData.append("file", file);
       if (note) formData.append("note", note);
-      return postForm<{ success: boolean; data: { id: string; url: string; note: string } }>(
-        `${base}/references`,
-        formData,
-        "Image upload failed",
-      );
+      return postForm<{
+        success: boolean;
+        data: { id: string; url: string; note: string };
+      }>(`${base}/references`, formData, "Image upload failed");
     },
     deleteReference: (refId: string) => send(`/references/${refId}`, "DELETE"),
   };
@@ -802,12 +865,16 @@ export const autopilotAPI = {
       method: "POST",
       body: JSON.stringify({ photoUrl, style }),
     }),
-  overview: () => request<{ success: boolean; data: AutopilotOverview }>("/autopilot"),
+  overview: () =>
+    request<{ success: boolean; data: AutopilotOverview }>("/autopilot"),
   createCampaign: (name: string) =>
-    request<{ success: boolean; data: { id: string; name: string } }>("/autopilot/campaigns", {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    }),
+    request<{ success: boolean; data: { id: string; name: string } }>(
+      "/autopilot/campaigns",
+      {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      },
+    ),
   campaign: autopilotCampaignApi,
   stats: (days: 7 | 30 | 90, campaignId?: string) =>
     request<{ success: boolean; data: AutopilotStats }>(
@@ -834,9 +901,17 @@ export interface CampaignSummary {
 export interface AutopilotOverview {
   configured: boolean;
   trialDays: number;
-  entitlement: { state: "none" | "trial" | "paid" | "expired"; endsAt: string | null };
+  entitlement: {
+    state: "none" | "trial" | "paid" | "expired";
+    endsAt: string | null;
+  };
   plan: string;
-  limits: { plan: string; daysPerWeek: number; monthlyPosts: number; campaigns: number };
+  limits: {
+    plan: string;
+    daysPerWeek: number;
+    monthlyPosts: number;
+    campaigns: number;
+  };
   monthCount: number;
   monthlyCap: number;
   campaigns: CampaignSummary[];
@@ -867,11 +942,27 @@ export interface AutopilotStats {
     revisedPosts: number;
     revisions: number;
   };
-  series: { date: string; generated: number; posted: number; rejected: number }[];
+  series: {
+    date: string;
+    generated: number;
+    posted: number;
+    rejected: number;
+  }[];
   platforms: { platform: string; count: number }[];
   topics: { topic: string; count: number }[];
-  byCampaign: { campaignId: string; name: string; generated: number; posted: number; rejected: number }[];
-  next: { scheduledAt: string; status: string; caption: string; platforms: string[] } | null;
+  byCampaign: {
+    campaignId: string;
+    name: string;
+    generated: number;
+    posted: number;
+    rejected: number;
+  }[];
+  next: {
+    scheduledAt: string;
+    status: string;
+    caption: string;
+    platforms: string[];
+  } | null;
 }
 
 // What the tenant used of the AI features in their plan this month (backend: routes/aiUsageRoutes.js).
@@ -929,7 +1020,10 @@ export const facebookAPI = {
     selectedFormIds: string[],
     allowedStates: string[] = [],
     defaultAssigneeId: string = "",
-    assign: { assigneeIds: string[]; assignBatchSize: number } = { assigneeIds: [], assignBatchSize: 1 },
+    assign: { assigneeIds: string[]; assignBatchSize: number } = {
+      assigneeIds: [],
+      assignBatchSize: 1,
+    },
   ) =>
     request<{ success: boolean; message: string; data: any }>(
       "/facebook/connect-page",
@@ -1163,7 +1257,10 @@ export const googleAdsAPI = {
     allowedStates: string[] = [],
     defaultAssigneeId: string = "",
     loginCustomerId: string = "",
-    assign: { assigneeIds: string[]; assignBatchSize: number } = { assigneeIds: [], assignBatchSize: 1 },
+    assign: { assigneeIds: string[]; assignBatchSize: number } = {
+      assigneeIds: [],
+      assignBatchSize: 1,
+    },
   ) =>
     request<{ success: boolean; message: string; data: any }>(
       "/google-ads/connect-account",
@@ -1243,7 +1340,11 @@ export const emailAPI = {
   getStatus: () =>
     request<{
       success: boolean;
-      data: { connected: boolean; emailAddress: string; lastSyncedAt: string | null };
+      data: {
+        connected: boolean;
+        emailAddress: string;
+        lastSyncedAt: string | null;
+      };
     }>("/email/gmail/status"),
   disconnect: () =>
     request<{ success: boolean; message: string }>("/email/gmail/disconnect", {
@@ -1349,7 +1450,8 @@ export const quotationsAPI = {
 };
 
 export const settingsAPI = {
-  get: () => request<{ success: boolean; data: any; isOwner?: boolean }>("/settings"),
+  get: () =>
+    request<{ success: boolean; data: any; isOwner?: boolean }>("/settings"),
   update: (settings: any) =>
     request<{ success: boolean; data: any }>("/settings", {
       method: "PUT",
@@ -1394,13 +1496,19 @@ export const whatsappAPI = {
   getConfig: () => request<{ success: boolean; data: any }>("/whatsapp/config"),
   getAutomations: () =>
     request<{ success: boolean; data: any[] }>("/whatsapp/automations"),
-  saveAutomations: (body: Record<string, { enabled: boolean; templateId: string }>) =>
+  saveAutomations: (
+    body: Record<string, { enabled: boolean; templateId: string }>,
+  ) =>
     request<{ success: boolean }>("/whatsapp/automations", {
       method: "PUT",
       body: JSON.stringify(body),
     }),
   setup: (data: { accessToken: string; wabaId?: string }) =>
-    request<{ success: boolean; message: string }>("/whatsapp/setup", {
+    request<{
+      success: boolean;
+      message: string;
+      data?: { warning?: string; added?: number };
+    }>("/whatsapp/setup", {
       method: "POST",
       body: JSON.stringify(data),
     }),
@@ -1512,7 +1620,7 @@ export const whatsappAPI = {
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
-    }).then(async (res) => (await readUploadResponse(res, "Upload failed")));
+    }).then(async (res) => await readUploadResponse(res, "Upload failed"));
   },
 };
 
@@ -1533,7 +1641,8 @@ export const documentFileUrl = (d: VaultDocument) =>
   String(API_BASE).replace(/\/api\/?$/, "") + d.url;
 
 export const documentsAPI = {
-  getAll: () => request<{ success: boolean; data: VaultDocument[] }>("/documents"),
+  getAll: () =>
+    request<{ success: boolean; data: VaultDocument[] }>("/documents"),
   upload: (file: File, name: string, category: string) => {
     const formData = new FormData();
     formData.append("name", name);
@@ -1548,7 +1657,13 @@ export const documentsAPI = {
         ...(csrf ? { "X-CSRF-Token": csrf } : {}),
       },
       body: formData,
-    }).then(async (res) => (await readUploadResponse(res, "Upload failed")) as { success: boolean; data: VaultDocument });
+    }).then(
+      async (res) =>
+        (await readUploadResponse(res, "Upload failed")) as {
+          success: boolean;
+          data: VaultDocument;
+        },
+    );
   },
   update: (id: string, data: { name?: string; category?: string }) =>
     request<{ success: boolean; data: VaultDocument }>(`/documents/${id}`, {
@@ -1675,7 +1790,7 @@ export const campaignAPI = {
     }),
   getStats: () => request<{ success: boolean; data: any }>("/campaigns/stats"),
   resolveAudience: (filters: any) =>
-    request<{ success: boolean; data: { count: number; contacts: any[] } }>(
+    request<{ success: boolean; data: { count: number; preview: any[] } }>(
       "/campaigns/resolve-audience",
       { method: "POST", body: JSON.stringify(filters) },
     ),
@@ -1701,7 +1816,10 @@ export const apiKeysAPI = {
   generate: (
     name: string,
     fields?: any[],
-    assign: { assigneeIds: string[]; assignBatchSize: number } = { assigneeIds: [], assignBatchSize: 1 },
+    assign: { assigneeIds: string[]; assignBatchSize: number } = {
+      assigneeIds: [],
+      assignBatchSize: 1,
+    },
   ) =>
     request<{ success: boolean; data: any }>("/api-keys", {
       method: "POST",
@@ -1727,7 +1845,10 @@ export const supportAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  update: (id: string, data: { subject?: string; description?: string; priority?: string }) =>
+  update: (
+    id: string,
+    data: { subject?: string; description?: string; priority?: string },
+  ) =>
     request<{ success: boolean; data: any }>(`/support/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),

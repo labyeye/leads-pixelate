@@ -20,7 +20,8 @@ function splitPhone(value: string) {
   const digits = (value || "").replace(/\D/g, "");
   if (digits.length <= 10) return { country: DEFAULT_COUNTRY, local: digits };
   const match = COUNTRIES.find((c) => digits.startsWith(c.code));
-  if (match) return { country: match.code, local: digits.slice(match.code.length) };
+  if (match)
+    return { country: match.code, local: digits.slice(match.code.length) };
   return { country: DEFAULT_COUNTRY, local: digits };
 }
 
@@ -67,7 +68,9 @@ export function PhoneInput({
     const nextLocal = nextLocalRaw.replace(/\D/g, "").slice(0, maxLen);
     setCountry(nextCountry);
     setLocal(nextLocal);
-    onChange(nextCountry === DEFAULT_COUNTRY ? nextLocal : nextCountry + nextLocal);
+    onChange(
+      nextCountry === DEFAULT_COUNTRY ? nextLocal : nextCountry + nextLocal,
+    );
   };
 
   return (

@@ -4,7 +4,11 @@ const mongoose = require("mongoose");
 // next N to person 2, and so on. One row per (tenant, integration key) — see utils/leadAssignment.js.
 const assignmentCursorSchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", default: null },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      default: null,
+    },
     // e.g. "indiamart", "tradeindia", "justdial", "facebook:<pageId>", "googleAds:<customerId>".
     key: { type: String, required: true },
     // Snapshot of the assignee list and batch size the cursor was built for; a change to either

@@ -202,10 +202,7 @@ leadSchema.index(
   { tenantId: 1, facebookLeadgenId: 1 },
   { sparse: true, unique: true },
 );
-leadSchema.index(
-  { instagramDmMessageId: 1 },
-  { sparse: true, unique: true },
-);
+leadSchema.index({ instagramDmMessageId: 1 }, { sparse: true, unique: true });
 leadSchema.index(
   { tenantId: 1, googleAdsLeadId: 1 },
   { sparse: true, unique: true },
@@ -233,7 +230,12 @@ leadSchema.pre("save", function () {
 });
 leadSchema.post("save", function (lead) {
   if (!lead.$locals.wasNew || !lead.tenantId) return;
-  require("../controllers/whatsappController").notify(lead.tenantId, "lead_welcome", lead.phone, [lead.name]);
+  require("../controllers/whatsappController").notify(
+    lead.tenantId,
+    "lead_welcome",
+    lead.phone,
+    [lead.name],
+  );
 });
 
 module.exports = mongoose.model("Lead", leadSchema);

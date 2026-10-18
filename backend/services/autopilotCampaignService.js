@@ -13,7 +13,12 @@ const MAX_REFERENCES = 8;
 const LEGACY_NAME = "Main";
 
 const privateDir = (tenantId, campaignId) =>
-  path.join(__dirname, "../private/autopilot", String(tenantId), ...(campaignId ? [String(campaignId)] : []));
+  path.join(
+    __dirname,
+    "../private/autopilot",
+    String(tenantId),
+    ...(campaignId ? [String(campaignId)] : []),
+  );
 
 // Before campaigns a tenant had one setup on Tenant.autopilot (accounts empty = "all connected").
 // On first look, turn that into a campaign called "Main": copy the settings, move its logo files and
@@ -21,7 +26,8 @@ const privateDir = (tenantId, campaignId) =>
 // the tenant already has campaigns or never configured Autopilot. Safe to call on every request.
 async function ensureDefaultCampaign(tenant) {
   if (await AutopilotCampaign.exists({ tenantId: tenant._id })) return null;
-  const raw = (tenant.toObject ? tenant.toObject().autopilot : tenant.autopilot) || {};
+  const raw =
+    (tenant.toObject ? tenant.toObject().autopilot : tenant.autopilot) || {};
   const configured =
     raw.enabled ||
     raw.onboardedAt ||
@@ -34,7 +40,11 @@ async function ensureDefaultCampaign(tenant) {
 
   const accountIds = raw.accountIds?.length
     ? raw.accountIds
-    : (await SocialAccount.find({ tenantId: tenant._id, isActive: true }).select("_id").lean()).map((x) => String(x._id));
+    : (
+        await SocialAccount.find({ tenantId: tenant._id, isActive: true })
+          .select("_id")
+          .lean()
+      ).map((x) => String(x._id));
 
   const { competitive, ...profile } = raw.brandProfile || {};
   const campaign = await AutopilotCampaign.create({
@@ -70,26 +80,43 @@ async function ensureDefaultCampaign(tenant) {
     if (logos.length) fs.mkdirSync(to, { recursive: true });
     for (const l of logos) {
       const name = path.basename(l.file);
-      if (fs.existsSync(path.join(from, name))) fs.renameSync(path.join(from, name), path.join(to, name));
+      if (fs.existsSync(path.join(from, name)))
+        fs.renameSync(path.join(from, name), path.join(to, name));
       l.url = `${svc.publicBase()}/uploads/autopilot/${tenant._id}/brand/${campaign._id}/${name}`;
     }
-    if (logos.length) await AutopilotCampaign.updateOne({ _id: campaign._id }, { $set: { "brandKit.logos": logos } });
+    if (logos.length)
+      await AutopilotCampaign.updateOne(
+        { _id: campaign._id },
+        { $set: { "brandKit.logos": logos } },
+      );
     // Brand PDF (private): <tenant>/intro.pdf -> <tenant>/<campaign>/intro.pdf
     const pdf = path.join(privateDir(tenant._id), "intro.pdf");
     if (raw.brandIntro?.hasPdf && fs.existsSync(pdf)) {
       fs.mkdirSync(privateDir(tenant._id, campaign._id), { recursive: true });
-      fs.renameSync(pdf, path.join(privateDir(tenant._id, campaign._id), "intro.pdf"));
+      fs.renameSync(
+        pdf,
+        path.join(privateDir(tenant._id, campaign._id), "intro.pdf"),
+      );
     }
   } catch (err) {
-    log.warn("Moving legacy Autopilot files failed", { tenantId: String(tenant._id), message: err.message });
+    log.warn("Moving legacy Autopilot files failed", {
+      tenantId: String(tenant._id),
+      message: err.message,
+    });
   }
 
-  await SocialPost.updateMany({ tenantId: tenant._id, source: "autopilot", campaignId: null }, { $set: { campaignId: campaign._id } });
+  await SocialPost.updateMany(
+    { tenantId: tenant._id, source: "autopilot", campaignId: null },
+    { $set: { campaignId: campaign._id } },
+  );
   return campaign;
 }
 
 // One row of the campaign list.
-function campaignSummary(c, { monthPosts = 0, next = null, now = new Date() } = {}) {
+function campaignSummary(
+  c,
+  { monthPosts = 0, next = null, now = new Date() } = {},
+) {
   return {
     id: String(c._id),
     name: c.name,

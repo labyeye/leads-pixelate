@@ -22,15 +22,51 @@ function generateWebhookToken() {
 }
 
 function mapJDLeadToModel(body, defaultAssignedTo) {
-  const name = pickField(body, ["name", "cust_name", "customer_name", "caller_name", "lead_name"]) || "Justdial Caller";
-  const phone = pickField(body, ["mobile", "phone", "cust_mobile", "contact_no", "caller_number"]) || "0000000000";
-  const leadId = pickField(body, ["lead_id", "leadid", "id", "call_id", "enquiry_id"]);
-  const email = pickField(body, ["email", "cust_email"]) || `${leadId || Date.now()}@justdial.noreply`;
-  const company = pickField(body, ["company", "company_name", "business_name"]) || "Not Provided";
-  const requirement = pickField(body, ["message", "requirement", "product", "category", "enquiry"]) || "Justdial enquiry";
+  const name =
+    pickField(body, [
+      "name",
+      "cust_name",
+      "customer_name",
+      "caller_name",
+      "lead_name",
+    ]) || "Justdial Caller";
+  const phone =
+    pickField(body, [
+      "mobile",
+      "phone",
+      "cust_mobile",
+      "contact_no",
+      "caller_number",
+    ]) || "0000000000";
+  const leadId = pickField(body, [
+    "lead_id",
+    "leadid",
+    "id",
+    "call_id",
+    "enquiry_id",
+  ]);
+  const email =
+    pickField(body, ["email", "cust_email"]) ||
+    `${leadId || Date.now()}@justdial.noreply`;
+  const company =
+    pickField(body, ["company", "company_name", "business_name"]) ||
+    "Not Provided";
+  const requirement =
+    pickField(body, [
+      "message",
+      "requirement",
+      "product",
+      "category",
+      "enquiry",
+    ]) || "Justdial enquiry";
   const city = pickField(body, ["city", "cust_city"]);
   const state = pickField(body, ["state", "cust_state"]);
-  const dateStr = pickField(body, ["date", "call_date", "created_at", "timestamp"]);
+  const dateStr = pickField(body, [
+    "date",
+    "call_date",
+    "created_at",
+    "timestamp",
+  ]);
   const leadTime = dateStr ? new Date(dateStr) : new Date();
   const validTime = isNaN(leadTime.getTime()) ? new Date() : leadTime;
 

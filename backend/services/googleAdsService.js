@@ -3,9 +3,7 @@ const GOOGLE_ADS_API = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSIO
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
-const GOOGLE_ADS_SCOPES = ["https://www.googleapis.com/auth/adwords"].join(
-  " ",
-);
+const GOOGLE_ADS_SCOPES = ["https://www.googleapis.com/auth/adwords"].join(" ");
 
 function buildAuthUrl(redirectUri, state) {
   const params = new URLSearchParams({
@@ -66,9 +64,12 @@ function authHeaders(accessToken, loginCustomerId) {
 }
 
 async function listAccessibleCustomers(accessToken) {
-  const res = await fetch(`${GOOGLE_ADS_API}/customers:listAccessibleCustomers`, {
-    headers: authHeaders(accessToken),
-  });
+  const res = await fetch(
+    `${GOOGLE_ADS_API}/customers:listAccessibleCustomers`,
+    {
+      headers: authHeaders(accessToken),
+    },
+  );
   const data = await res.json();
   if (data.error)
     throw new Error(data.error.message || "Failed to list Google Ads accounts");
@@ -89,7 +90,9 @@ async function gaqlSearch(customerId, accessToken, loginCustomerId, query) {
   const data = await res.json();
   if (!res.ok) {
     const msg =
-      data?.error?.message || data?.[0]?.error?.message || "Google Ads API error";
+      data?.error?.message ||
+      data?.[0]?.error?.message ||
+      "Google Ads API error";
     throw new Error(msg);
   }
   return data.results || [];
@@ -105,7 +108,11 @@ async function getCustomerName(customerId, accessToken, loginCustomerId) {
   return results[0]?.customer?.descriptiveName || `Account ${customerId}`;
 }
 
-async function listCampaignsWithLeadForms(customerId, accessToken, loginCustomerId) {
+async function listCampaignsWithLeadForms(
+  customerId,
+  accessToken,
+  loginCustomerId,
+) {
   const results = await gaqlSearch(
     customerId,
     accessToken,

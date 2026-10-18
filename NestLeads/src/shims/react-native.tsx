@@ -17,22 +17,27 @@ const FONT_BY_WEIGHT: Record<string, string> = {
 };
 
 function resolveFontFamily(flatStyle: any): string {
-  const weight = flatStyle?.fontWeight != null ? String(flatStyle.fontWeight) : 'normal';
+  const weight =
+    flatStyle?.fontWeight != null ? String(flatStyle.fontWeight) : 'normal';
   return FONT_BY_WEIGHT[weight] || 'DMSans-Regular';
 }
 
-function withDMSans<P extends {style?: any}>(Component: React.ComponentType<P>) {
+function withDMSans<P extends { style?: any }>(
+  Component: React.ComponentType<P>,
+) {
   return React.forwardRef<any, P>((props: any, ref) => {
     const flatStyle = RN.StyleSheet.flatten(props.style) || {};
     const fontFamily = flatStyle.fontFamily || resolveFontFamily(flatStyle);
-    const {fontWeight, ...rest} = flatStyle;
-    return <Component {...props} ref={ref} style={[rest, {fontFamily}]} />;
+    const { fontWeight, ...rest } = flatStyle;
+    return <Component {...props} ref={ref} style={[rest, { fontFamily }]} />;
   });
 }
 
 export * from 'react-native';
 export const Text = withDMSans(RN.Text) as unknown as typeof RN.Text;
-export const TextInput = withDMSans(RN.TextInput) as unknown as typeof RN.TextInput;
+export const TextInput = withDMSans(
+  RN.TextInput,
+) as unknown as typeof RN.TextInput;
 // react-native's `PushNotificationIOS` getter eagerly constructs a
 // NativeEventEmitter around a native module this app doesn't link, which
 // throws the moment anything reads it (e.g. Fast Refresh's export scan).

@@ -1,62 +1,63 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import DashboardPage from "./pages/DashboardPage";
-import LeadsPage from "./pages/LeadsPage";
-import VisitCalendarPage from "./pages/VisitCalendarPage";
-import FollowupCalendarPage from "./pages/FollowupCalendarPage";
-import UsersPage from "./pages/UsersPage";
-import ActivityLogPage from "./pages/ActivityLogPage";
-import TrashPage from "./pages/TrashPage";
-import SettingsPage from "./pages/SettingsPage";
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const LeadsPage = lazy(() => import("./pages/LeadsPage"));
+const VisitCalendarPage = lazy(() => import("./pages/VisitCalendarPage"));
+const FollowupCalendarPage = lazy(() => import("./pages/FollowupCalendarPage"));
+const UsersPage = lazy(() => import("./pages/UsersPage"));
+const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
+const TrashPage = lazy(() => import("./pages/TrashPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import OnboardingPage from "./pages/OnboardingPage";
-import BillingPage from "./pages/BillingPage";
-import IntegrationsPage from "./pages/IntegrationsPage";
-import ReportsPage from "./pages/ReportsPage";
-import ClientsPage from "./pages/ClientsPage";
-import QuotationsPage from "./pages/QuotationsPage";
-import ProductsPage from "./pages/ProductsPage";
-import PriceBooksPage from "./pages/PriceBooksPage";
-import TradeDocumentsPage from "./pages/TradeDocumentsPage";
-import ServicesPage from "./pages/ServicesPage";
-import ConsolePage from "./pages/ConsolePage";
-import WhatsAppInboxPage from "./pages/WhatsAppInboxPage";
-import WhatsAppLogsPage from "./pages/WhatsAppLogsPage";
-import WhatsAppSetupPage from "./pages/WhatsAppSetupPage";
-import WhatsappMessagingPage from "./pages/WhatsappMessagingPage";
-import DocumentVaultPage from "./pages/DocumentVaultPage";
-import PaymentSuccessPage from "./pages/PaymentSuccessPage";
-import SocialMediaPlannerPage from "./pages/SocialMediaPlannerPage";
-import SocialAutopilotPage from "./pages/SocialAutopilotPage";
-import SocialAutopilotSetupPage from "./pages/SocialAutopilotSetupPage";
-import SocialAutopilotReportPage from "./pages/SocialAutopilotReportPage";
-import AIUsagePage from "./pages/AIUsagePage";
-import LinkedInCampaignsPage from "./pages/LinkedInCampaignsPage";
-import GoogleAdsCampaignsPage from "./pages/GoogleAdsCampaignsPage";
-import GoogleAdsPlaceholderPage from "./pages/GoogleAdsPlaceholderPage";
-import FacebookDashboardPage from "./pages/FacebookDashboardPage";
-import FacebookAdCampaignsPage from "./pages/FacebookAdCampaignsPage";
-import FacebookAdSetsPage from "./pages/FacebookAdSetsPage";
-import FacebookAdsPage from "./pages/FacebookAdsPage";
-import LinkedInAdsPlaceholderPage from "./pages/LinkedInAdsPlaceholderPage";
-import CampaignReportsPage from "./pages/CampaignReportsPage";
-import FacebookCampaignManagementPage from "./pages/FacebookCampaignManagementPage";
-import LinkedInCampaignManagementPage from "./pages/LinkedInCampaignManagementPage";
-import CampaignManagementOverviewPage from "./pages/CampaignManagementOverviewPage";
-import AccountSecurityPage from "./pages/AccountSecurityPage";
-import CampaignBuilderPage from "./pages/CampaignBuilderPage";
-import ApiKeysPage from "./pages/ApiKeysPage";
-import SupportPage from "./pages/SupportPage";
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const BillingPage = lazy(() => import("./pages/BillingPage"));
+const IntegrationsPage = lazy(() => import("./pages/IntegrationsPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const ClientsPage = lazy(() => import("./pages/ClientsPage"));
+const QuotationsPage = lazy(() => import("./pages/QuotationsPage"));
+const ProductsPage = lazy(() => import("./pages/ProductsPage"));
+const PriceBooksPage = lazy(() => import("./pages/PriceBooksPage"));
+const TradeDocumentsPage = lazy(() => import("./pages/TradeDocumentsPage"));
+const ServicesPage = lazy(() => import("./pages/ServicesPage"));
+const ConsolePage = lazy(() => import("./pages/ConsolePage"));
+const WhatsAppInboxPage = lazy(() => import("./pages/WhatsAppInboxPage"));
+const WhatsAppLogsPage = lazy(() => import("./pages/WhatsAppLogsPage"));
+const WhatsAppSetupPage = lazy(() => import("./pages/WhatsAppSetupPage"));
+const WhatsappMessagingPage = lazy(() => import("./pages/WhatsappMessagingPage"));
+const DocumentVaultPage = lazy(() => import("./pages/DocumentVaultPage"));
+const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
+const SocialMediaPlannerPage = lazy(() => import("./pages/SocialMediaPlannerPage"));
+const SocialAutopilotPage = lazy(() => import("./pages/SocialAutopilotPage"));
+const SocialAutopilotSetupPage = lazy(() => import("./pages/SocialAutopilotSetupPage"));
+const SocialAutopilotReportPage = lazy(() => import("./pages/SocialAutopilotReportPage"));
+const AIUsagePage = lazy(() => import("./pages/AIUsagePage"));
+const LinkedInCampaignsPage = lazy(() => import("./pages/LinkedInCampaignsPage"));
+const GoogleAdsCampaignsPage = lazy(() => import("./pages/GoogleAdsCampaignsPage"));
+const GoogleAdsPlaceholderPage = lazy(() => import("./pages/GoogleAdsPlaceholderPage"));
+const FacebookDashboardPage = lazy(() => import("./pages/FacebookDashboardPage"));
+const FacebookAdCampaignsPage = lazy(() => import("./pages/FacebookAdCampaignsPage"));
+const FacebookAdSetsPage = lazy(() => import("./pages/FacebookAdSetsPage"));
+const FacebookAdsPage = lazy(() => import("./pages/FacebookAdsPage"));
+const LinkedInAdsPlaceholderPage = lazy(() => import("./pages/LinkedInAdsPlaceholderPage"));
+const CampaignReportsPage = lazy(() => import("./pages/CampaignReportsPage"));
+const FacebookCampaignManagementPage = lazy(() => import("./pages/FacebookCampaignManagementPage"));
+const LinkedInCampaignManagementPage = lazy(() => import("./pages/LinkedInCampaignManagementPage"));
+const CampaignManagementOverviewPage = lazy(() => import("./pages/CampaignManagementOverviewPage"));
+const AccountSecurityPage = lazy(() => import("./pages/AccountSecurityPage"));
+const CampaignBuilderPage = lazy(() => import("./pages/CampaignBuilderPage"));
+const ApiKeysPage = lazy(() => import("./pages/ApiKeysPage"));
+const SupportPage = lazy(() => import("./pages/SupportPage"));
 import NotFound from "./pages/NotFound";
 import { NotificationProvider } from "@/components/ui/Notification";
-import logonest from "@/assets/images/Logo.png";    
+import logonest from "@/assets/images/Logo.png";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -71,7 +72,11 @@ function LoadingScreen() {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-2 border-black flex items-center justify-center nb-shadow animate-bounce">
-          <img src={logonest} alt="Logo" className="w-full h-full object-contain"  />
+          <img
+            src={logonest}
+            alt="Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
         <p className="text-sm font-medium text-muted-foreground">Loading...</p>
       </div>
@@ -99,6 +104,7 @@ function AppRoutes() {
   const isPaid = isAuthenticated && tenant && tenant.plan !== "trial";
 
   return (
+    <Suspense fallback={<LoadingScreen />}>
     <Routes>
       <Route
         path="/login"
@@ -137,11 +143,7 @@ function AppRoutes() {
       <Route
         path="/reset-password/:token"
         element={
-          !isAuthenticated ? (
-            <ResetPasswordPage />
-          ) : (
-            <Navigate to="/" replace />
-          )
+          !isAuthenticated ? <ResetPasswordPage /> : <Navigate to="/" replace />
         }
       />
       <Route
@@ -591,6 +593,7 @@ function AppRoutes() {
       <Route path="/payment-success" element={<PaymentSuccessPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }
 

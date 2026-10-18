@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, ArrowDownRight, LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface KpiCardProps {
   title: string;
   value: string | number;
   sub?: string;
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
   /** Tailwind bg class carrying the accent hex, e.g. "bg-[#024BAB]". */
   bg: string;
   trend?: "up" | "down";
@@ -50,9 +51,7 @@ export function KpiCard({
         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">
           {title}
         </p>
-        {sub && (
-          <p className="text-xs text-muted-foreground truncate">{sub}</p>
-        )}
+        {sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}
       </div>
       {trend && (
         <span

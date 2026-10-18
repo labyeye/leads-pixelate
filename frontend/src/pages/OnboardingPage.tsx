@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { billingAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Check,
-  Zap,
-  Crown,
-  Rocket,
-  LogOut,
-  RefreshCw,
-} from "lucide-react";
+import { Check, Zap, Crown, Rocket, LogOut, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -106,7 +99,9 @@ export default function OnboardingPage() {
   const { toast } = useToast();
 
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
-  const [selectedPlan, setSelectedPlan] = useState<"starter" | "growth" | "professional">("growth");
+  const [selectedPlan, setSelectedPlan] = useState<
+    "starter" | "growth" | "professional"
+  >("growth");
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
@@ -165,8 +160,6 @@ export default function OnboardingPage() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              plan: selectedPlan,
-              billingCycle: billing,
             });
             await refreshTenant();
             navigate(

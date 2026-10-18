@@ -1,5 +1,13 @@
-import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, FlatList, Modal, ActivityIndicator, StyleSheet} from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Modal,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import Icon from './Icon';
 
 export interface AssignableCampaignRow {
@@ -7,7 +15,7 @@ export interface AssignableCampaignRow {
   platform: 'facebook' | 'linkedin';
   name: string;
   subLabel: string;
-  status: {label: string; bg: string; text: string};
+  status: { label: string; bg: string; text: string };
   spend?: number;
   results?: number;
 }
@@ -40,7 +48,9 @@ export default function CampaignAssignmentList({
   emptyDesc,
   showPlatformColumn,
 }: Props) {
-  const [pickerRow, setPickerRow] = useState<AssignableCampaignRow | null>(null);
+  const [pickerRow, setPickerRow] = useState<AssignableCampaignRow | null>(
+    null,
+  );
 
   const sorted = [...rows].sort((a, b) => {
     const aAssigned = assignments[a.key] ? 0 : 1;
@@ -71,46 +81,77 @@ export default function CampaignAssignmentList({
       <FlatList
         data={sorted}
         keyExtractor={r => r.key}
-        contentContainerStyle={{padding: 12, gap: 10}}
-        renderItem={({item: row}) => {
+        contentContainerStyle={{ padding: 12, gap: 10 }}
+        renderItem={({ item: row }) => {
           const assignedTo = assignments[row.key]?.assignedTo;
           return (
             <View style={styles.card}>
               <View style={styles.cardTop}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.name} numberOfLines={1}>{row.name}</Text>
-                  <Text style={styles.subLabel} numberOfLines={1}>{row.subLabel}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {row.name}
+                  </Text>
+                  <Text style={styles.subLabel} numberOfLines={1}>
+                    {row.subLabel}
+                  </Text>
                 </View>
-                <View style={[styles.badge, {backgroundColor: row.status.bg}]}>
-                  <Text style={[styles.badgeText, {color: row.status.text}]}>{row.status.label}</Text>
+                <View
+                  style={[styles.badge, { backgroundColor: row.status.bg }]}
+                >
+                  <Text style={[styles.badgeText, { color: row.status.text }]}>
+                    {row.status.label}
+                  </Text>
                 </View>
               </View>
 
               {showPlatformColumn && (
                 <View style={styles.platformBadge}>
-                  <Text style={styles.platformBadgeText}>{row.platform.toUpperCase()}</Text>
+                  <Text style={styles.platformBadgeText}>
+                    {row.platform.toUpperCase()}
+                  </Text>
                 </View>
               )}
 
               <View style={styles.metricsRow}>
                 <View style={styles.metricBox}>
                   <Text style={styles.metricLabel}>SPEND</Text>
-                  <Text style={[styles.metricValue, {color: '#024BAB'}]}>
-                    {row.spend === undefined ? '—' : `₹${Math.round(row.spend).toLocaleString('en-IN')}`}
+                  <Text style={[styles.metricValue, { color: '#024BAB' }]}>
+                    {row.spend === undefined
+                      ? '—'
+                      : `₹${Math.round(row.spend).toLocaleString('en-IN')}`}
                   </Text>
                 </View>
                 <View style={styles.metricBox}>
                   <Text style={styles.metricLabel}>RESULTS</Text>
-                  <Text style={[styles.metricValue, {color: '#00C48C'}]}>
-                    {row.results === undefined ? '—' : row.results.toLocaleString('en-IN')}
+                  <Text style={[styles.metricValue, { color: '#00C48C' }]}>
+                    {row.results === undefined
+                      ? '—'
+                      : row.results.toLocaleString('en-IN')}
                   </Text>
                 </View>
                 <View style={styles.metricBox}>
                   <Text style={styles.metricLabel}>OWNER</Text>
                   {assignedTo ? (
-                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 3}}>
-                      <Icon name="person-add-outline" size={11} color="#00C48C" />
-                      <Text style={[styles.metricValue, {color: '#00C48C', fontSize: 10}]}>Owned</Text>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 3,
+                      }}
+                    >
+                      <Icon
+                        name="person-add-outline"
+                        size={11}
+                        color="#00C48C"
+                      />
+                      <Text
+                        style={[
+                          styles.metricValue,
+                          { color: '#00C48C', fontSize: 10 },
+                        ]}
+                      >
+                        Owned
+                      </Text>
                     </View>
                   ) : (
                     <Text style={styles.metricValue}>—</Text>
@@ -121,7 +162,8 @@ export default function CampaignAssignmentList({
               <TouchableOpacity
                 style={styles.assignBtn}
                 disabled={savingKey === row.key}
-                onPress={() => setPickerRow(row)}>
+                onPress={() => setPickerRow(row)}
+              >
                 {savingKey === row.key ? (
                   <ActivityIndicator size="small" color="#024BAB" />
                 ) : (
@@ -139,21 +181,31 @@ export default function CampaignAssignmentList({
         }}
       />
 
-      <Modal visible={!!pickerRow} transparent animationType="slide" onRequestClose={() => setPickerRow(null)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPickerRow(null)}>
+      <Modal
+        visible={!!pickerRow}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerRow(null)}
+      >
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setPickerRow(null)}
+        >
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Assign to</Text>
             <FlatList
-              data={[{_id: '', name: '— Unassigned —'}, ...users]}
+              data={[{ _id: '', name: '— Unassigned —' }, ...users]}
               keyExtractor={u => u._id || 'none'}
-              style={{maxHeight: 360}}
-              renderItem={({item}) => (
+              style={{ maxHeight: 360 }}
+              renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.userRow}
                   onPress={() => {
                     if (pickerRow) onAssign(pickerRow, item._id);
                     setPickerRow(null);
-                  }}>
+                  }}
+                >
                   <Text style={styles.userRowText}>{item.name}</Text>
                 </TouchableOpacity>
               )}
@@ -166,27 +218,100 @@ export default function CampaignAssignmentList({
 }
 
 const styles = StyleSheet.create({
-  centerBox: {paddingVertical: 60, alignItems: 'center'},
-  emptyBox: {alignItems: 'center', paddingVertical: 50, gap: 8, paddingHorizontal: 24},
-  emptyTitle: {fontSize: 14, fontWeight: '800', color: '#334155'},
-  emptyDesc: {fontSize: 12, color: '#94a3b8', textAlign: 'center'},
-  card: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', backgroundColor: '#fff', padding: 12, gap: 10},
-  cardTop: {flexDirection: 'row', alignItems: 'flex-start', gap: 8},
-  name: {fontSize: 14, fontWeight: '600', color: '#000'},
-  subLabel: {fontSize: 11, color: '#64748b', marginTop: 2},
-  badge: {paddingHorizontal: 7, paddingVertical: 3, borderWidth: 2, borderRadius: 8, borderColor: '#000'},
-  badgeText: {fontSize: 9, fontWeight: '600'},
-  platformBadge: {alignSelf: 'flex-start', borderWidth: 2, borderRadius: 8, borderColor: '#000', backgroundColor: '#f1f5f9', paddingHorizontal: 6, paddingVertical: 2},
-  platformBadgeText: {fontSize: 9, fontWeight: '600', color: '#334155'},
-  metricsRow: {flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#e2e8f0', paddingTop: 8},
-  metricBox: {flex: 1, alignItems: 'center', gap: 2},
-  metricLabel: {fontSize: 8, fontWeight: '600', color: '#94a3b8', letterSpacing: 0.5},
-  metricValue: {fontSize: 13, fontWeight: '600', color: '#000'},
-  assignBtn: {flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderRadius: 8, borderColor: '#024BAB', paddingVertical: 9},
-  assignBtnText: {fontSize: 12, fontWeight: '800', color: '#024BAB', flexShrink: 1},
-  overlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end'},
-  sheet: {backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', maxHeight: '60%', padding: 16},
-  sheetTitle: {fontSize: 14, fontWeight: '600', marginBottom: 10, color: '#000'},
-  userRow: {paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  userRowText: {fontSize: 14, color: '#000', fontWeight: '600'},
+  centerBox: { paddingVertical: 60, alignItems: 'center' },
+  emptyBox: {
+    alignItems: 'center',
+    paddingVertical: 50,
+    gap: 8,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: { fontSize: 14, fontWeight: '800', color: '#334155' },
+  emptyDesc: { fontSize: 12, color: '#94a3b8', textAlign: 'center' },
+  card: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    padding: 12,
+    gap: 10,
+  },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  name: { fontSize: 14, fontWeight: '600', color: '#000' },
+  subLabel: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  badge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+  },
+  badgeText: { fontSize: 9, fontWeight: '600' },
+  platformBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  platformBadgeText: { fontSize: 9, fontWeight: '600', color: '#334155' },
+  metricsRow: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 8,
+  },
+  metricBox: { flex: 1, alignItems: 'center', gap: 2 },
+  metricLabel: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
+  },
+  metricValue: { fontSize: 13, fontWeight: '600', color: '#000' },
+  assignBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#024BAB',
+    paddingVertical: 9,
+  },
+  assignBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#024BAB',
+    flexShrink: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopWidth: 2,
+    borderColor: '#000',
+    maxHeight: '60%',
+    padding: 16,
+  },
+  sheetTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#000',
+  },
+  userRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  userRowText: { fontSize: 14, color: '#000', fontWeight: '600' },
 });

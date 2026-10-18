@@ -93,7 +93,8 @@ async function listLeadForms(adAccountId, accessToken) {
     { headers: authHeaders(accessToken) },
   );
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || "Failed to list LinkedIn lead forms");
+  if (!res.ok)
+    throw new Error(data?.message || "Failed to list LinkedIn lead forms");
   return (data.elements || []).map((f) => ({
     id: String(f.id),
     name: f.name || `Form ${f.id}`,
@@ -106,7 +107,8 @@ async function listCampaigns(adAccountId, accessToken) {
     { headers: authHeaders(accessToken) },
   );
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || "Failed to list LinkedIn campaigns");
+  if (!res.ok)
+    throw new Error(data?.message || "Failed to list LinkedIn campaigns");
   return (data.elements || []).map((c) => ({
     id: String(c.id),
     name: c.name || `Campaign ${c.id}`,
@@ -122,16 +124,17 @@ async function fetchLeadFormResponses(adAccountId, accessToken, sinceMs) {
     owner: `(sponsoredAccount:urn:li:sponsoredAccount:${adAccountId})`,
   });
   if (sinceMs) {
-    params.set(
-      "submittedAtTimeRange",
-      `(start:${sinceMs})`,
-    );
+    params.set("submittedAtTimeRange", `(start:${sinceMs})`);
   }
-  const res = await fetch(`${LINKEDIN_API}/leadFormResponses?${params.toString()}`, {
-    headers: authHeaders(accessToken),
-  });
+  const res = await fetch(
+    `${LINKEDIN_API}/leadFormResponses?${params.toString()}`,
+    {
+      headers: authHeaders(accessToken),
+    },
+  );
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message || "Failed to fetch LinkedIn lead responses");
+  if (!res.ok)
+    throw new Error(data?.message || "Failed to fetch LinkedIn lead responses");
   return data.elements || [];
 }
 

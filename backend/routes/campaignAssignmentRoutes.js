@@ -32,8 +32,14 @@ router.put(
   "/",
   protect,
   asyncHandler(async (req, res) => {
-    const { platform, campaignId, campaignName, adAccountId, assignedTo, notes } =
-      req.body;
+    const {
+      platform,
+      campaignId,
+      campaignName,
+      adAccountId,
+      assignedTo,
+      notes,
+    } = req.body;
 
     if (!platform || !campaignId) {
       res.status(400);

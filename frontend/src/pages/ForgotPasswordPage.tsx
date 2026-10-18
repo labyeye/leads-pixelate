@@ -248,7 +248,9 @@ export default function ForgotPasswordPage() {
         {(step === "otp" || step === "totp") && (
           <>
             <h2 className="font-display font-bold text-2xl text-black mb-1">
-              {step === "otp" ? "Enter WhatsApp code" : "Enter authenticator code"}
+              {step === "otp"
+                ? "Enter WhatsApp code"
+                : "Enter authenticator code"}
             </h2>
             <p className="text-muted-foreground text-sm mb-6">
               {step === "otp"
@@ -266,9 +268,7 @@ export default function ForgotPasswordPage() {
                   inputMode="numeric"
                   maxLength={6}
                   value={code}
-                  onChange={(e) =>
-                    setCode(e.target.value.replace(/\D/g, ""))
-                  }
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   placeholder="123456"
                   className="w-full px-3 py-2.5 text-sm border-2 border-black tracking-widest text-center font-bold"
                   required

@@ -57,7 +57,11 @@ export default function CampaignManagementOverviewPage() {
           fbInsights[i].status === "fulfilled"
             ? parseInsight((fbInsights[i] as any).value.data)
             : undefined;
-        nextMeta[key] = { id: c.id, name: c.name, adAccountId: (c as any).adAccountId };
+        nextMeta[key] = {
+          id: c.id,
+          name: c.name,
+          adAccountId: (c as any).adAccountId,
+        };
         nextRows.push({
           key,
           platform: "facebook",
@@ -78,7 +82,11 @@ export default function CampaignManagementOverviewPage() {
         const account = liAccounts[i];
         for (const c of r.value.data || []) {
           const key = `linkedin:${c.id}`;
-          nextMeta[key] = { id: c.id, name: c.name, adAccountId: account.adAccountId };
+          nextMeta[key] = {
+            id: c.id,
+            name: c.name,
+            adAccountId: account.adAccountId,
+          };
           nextRows.push({
             key,
             platform: "linkedin",

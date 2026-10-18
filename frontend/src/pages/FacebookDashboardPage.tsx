@@ -15,7 +15,14 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { RefreshCw, DollarSign, Target, Eye, MousePointerClick, Info } from "lucide-react";
+import {
+  RefreshCw,
+  DollarSign,
+  Target,
+  Eye,
+  MousePointerClick,
+  Info,
+} from "lucide-react";
 import {
   MetaCampaign,
   Insight,
@@ -53,7 +60,8 @@ export default function FacebookDashboardPage() {
       setInsights((prev) => {
         const next = { ...prev };
         results.forEach((r, i) => {
-          if (r.status === "fulfilled") next[ids[i]] = parseInsight(r.value.data);
+          if (r.status === "fulfilled")
+            next[ids[i]] = parseInsight(r.value.data);
         });
         return next;
       });
@@ -256,7 +264,10 @@ export default function FacebookDashboardPage() {
                   <span>No campaign data yet</span>
                   <span className="text-xs font-normal">
                     Connect your Facebook Ad Account in{" "}
-                    <Link to="/integrations" className="text-[#024BAB] underline">
+                    <Link
+                      to="/integrations"
+                      className="text-[#024BAB] underline"
+                    >
                       Integrations
                     </Link>{" "}
                     or try a different date range.
@@ -288,8 +299,16 @@ export default function FacebookDashboardPage() {
               </div>
               {spendChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={210}>
-                  <BarChart data={spendChartData} barGap={4} barCategoryGap="30%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                  <BarChart
+                    data={spendChartData}
+                    barGap={4}
+                    barCategoryGap="30%"
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#E5E7EB"
+                      vertical={false}
+                    />
                     <XAxis
                       dataKey="name"
                       tick={{ fontSize: 10, fontWeight: 700 }}
@@ -302,9 +321,24 @@ export default function FacebookDashboardPage() {
                       axisLine={false}
                       width={28}
                     />
-                    <Tooltip content={<NbTooltip />} cursor={{ fill: "#024BAB22" }} />
-                    <Bar dataKey="spend" name="Spend" fill="#024BAB" stroke="#0A0A0A" strokeWidth={2} />
-                    <Bar dataKey="results" name="Results" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2} />
+                    <Tooltip
+                      content={<NbTooltip />}
+                      cursor={{ fill: "#024BAB22" }}
+                    />
+                    <Bar
+                      dataKey="spend"
+                      name="Spend"
+                      fill="#024BAB"
+                      stroke="#0A0A0A"
+                      strokeWidth={2}
+                    />
+                    <Bar
+                      dataKey="results"
+                      name="Results"
+                      fill="#00C48C"
+                      stroke="#0A0A0A"
+                      strokeWidth={2}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -312,7 +346,10 @@ export default function FacebookDashboardPage() {
                   <span>No campaign data yet</span>
                   <span className="text-xs font-normal">
                     Connect your Facebook Ad Account in{" "}
-                    <Link to="/integrations" className="text-[#024BAB] underline">
+                    <Link
+                      to="/integrations"
+                      className="text-[#024BAB] underline"
+                    >
                       Integrations
                     </Link>{" "}
                     or try a different date range.

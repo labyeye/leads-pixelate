@@ -91,7 +91,8 @@ async function getProfile(accessToken) {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "Failed to fetch Gmail profile");
+  if (data.error)
+    throw new Error(data.error.message || "Failed to fetch Gmail profile");
   return data; // { emailAddress, historyId, ... }
 }
 
@@ -103,7 +104,15 @@ function base64UrlEncode(buffer) {
     .replace(/=+$/, "");
 }
 
-function buildRawMessage({ from, to, subject, bodyHtml, bodyText, inReplyTo, references }) {
+function buildRawMessage({
+  from,
+  to,
+  subject,
+  bodyHtml,
+  bodyText,
+  inReplyTo,
+  references,
+}) {
   return new Promise((resolve, reject) => {
     const headers = {};
     if (inReplyTo) headers["In-Reply-To"] = inReplyTo;
@@ -182,7 +191,8 @@ async function getMessage(accessToken, messageId) {
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || "Failed to fetch Gmail message");
+  if (data.error)
+    throw new Error(data.error.message || "Failed to fetch Gmail message");
 
   const { text, html } = extractBody(data.payload);
   return {
@@ -223,7 +233,9 @@ async function listHistory(accessToken, startHistoryId) {
     });
     const data = await res.json();
     if (data.error) {
-      const err = new Error(data.error.message || "Failed to list Gmail history");
+      const err = new Error(
+        data.error.message || "Failed to list Gmail history",
+      );
       err.status = res.status;
       throw err;
     }
@@ -305,7 +317,8 @@ async function syncGmailForUser(user) {
         // Lead.email is stored lowercase (see Lead.js schema), and
         // fromAddress/toAddresses above are already lowercased bare
         // addresses, so a direct match is enough.
-        const otherParty = direction === "outbound" ? toAddresses : [fromAddress];
+        const otherParty =
+          direction === "outbound" ? toAddresses : [fromAddress];
         const leadQuery = {
           email: { $in: otherParty.filter(Boolean) },
         };
@@ -338,7 +351,10 @@ async function syncGmailForUser(user) {
       result.saved++;
     } catch (err) {
       if (err.code !== 11000) {
-        log.error("Failed to sync message", { messageId, message: err.message });
+        log.error("Failed to sync message", {
+          messageId,
+          message: err.message,
+        });
       }
     }
   }

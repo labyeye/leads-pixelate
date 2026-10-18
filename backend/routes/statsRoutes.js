@@ -1,4 +1,5 @@
 const express = require("express");
+const { safeEqual } = require("../utils/safeEqual");
 const router = express.Router();
 const Tenant = require("../models/Tenant");
 const Subscription = require("../models/Subscription");
@@ -9,7 +10,7 @@ const Campaign = require("../models/Campaign");
 const Quotation = require("../models/Quotation");
 
 // Same guard pattern as the HRMS backend: static secret, no JWT.
-// Pass as ?key=<secret> or X-Stats-Key header.
+// Pass as X-Stats-Key header.
 function statsGuard(req, res, next) {
   const secret = process.env.NESTLEADS_SECRET;
   if (!secret) {
@@ -18,8 +19,8 @@ function statsGuard(req, res, next) {
       message: "Stats endpoint not configured (NESTLEADS_SECRET missing)",
     });
   }
-  const provided = req.query.key || req.headers["x-stats-key"];
-  if (provided !== secret) {
+  const provided = req.headers["x-stats-key"]; // header only: query strings end up in logs/history
+  if (!safeEqual(provided, secret)) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
   next();
@@ -34,33 +35,62 @@ router.get("/", statsGuard, async (req, res) => {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
 
     // ── 1. Tenant counts ───────────────────────────────────────────────────
-    const [totalTenants, activeTenants, trialTenants, suspendedTenants, cancelledTenants, newLast7Days, newLast30Days] =
-      await Promise.all([
-        Tenant.countDocuments(),
-        Tenant.countDocuments({ status: "active" }),
-        Tenant.countDocuments({ plan: "trial" }),
-        Tenant.countDocuments({ status: "suspended" }),
-        Tenant.countDocuments({ status: "cancelled" }),
-        Tenant.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
-        Tenant.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
-      ]);
+    const [
+      totalTenants,
+      activeTenants,
+      trialTenants,
+      suspendedTenants,
+      cancelledTenants,
+      newLast7Days,
+      newLast30Days,
+    ] = await Promise.all([
+      Tenant.countDocuments(),
+      Tenant.countDocuments({ status: "active" }),
+      Tenant.countDocuments({ plan: "trial" }),
+      Tenant.countDocuments({ status: "suspended" }),
+      Tenant.countDocuments({ status: "cancelled" }),
+      Tenant.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+      Tenant.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+    ]);
 
     // ── 2. Subscription stats ────────────────────────────────────────────────
-    const [totalSubs, activeSubs, trialSubs, cancelledSubs, pastDueSubs, expiringIn7DaysCount, expiringIn30DaysCount, expiredSubsCount] =
-      await Promise.all([
-        Subscription.countDocuments(),
-        Subscription.countDocuments({ status: "active" }),
-        Subscription.countDocuments({ status: "trialing" }),
-        Subscription.countDocuments({ status: "cancelled" }),
-        Subscription.countDocuments({ status: "past_due" }),
-        Subscription.countDocuments({ status: { $ne: "cancelled" }, currentPeriodEnd: { $gte: now, $lte: in7Days } }),
-        Subscription.countDocuments({ status: { $ne: "cancelled" }, currentPeriodEnd: { $gte: now, $lte: in30Days } }),
-        Subscription.countDocuments({ status: { $ne: "cancelled" }, currentPeriodEnd: { $lt: now } }),
-      ]);
+    const [
+      totalSubs,
+      activeSubs,
+      trialSubs,
+      cancelledSubs,
+      pastDueSubs,
+      expiringIn7DaysCount,
+      expiringIn30DaysCount,
+      expiredSubsCount,
+    ] = await Promise.all([
+      Subscription.countDocuments(),
+      Subscription.countDocuments({ status: "active" }),
+      Subscription.countDocuments({ status: "trialing" }),
+      Subscription.countDocuments({ status: "cancelled" }),
+      Subscription.countDocuments({ status: "past_due" }),
+      Subscription.countDocuments({
+        status: { $ne: "cancelled" },
+        currentPeriodEnd: { $gte: now, $lte: in7Days },
+      }),
+      Subscription.countDocuments({
+        status: { $ne: "cancelled" },
+        currentPeriodEnd: { $gte: now, $lte: in30Days },
+      }),
+      Subscription.countDocuments({
+        status: { $ne: "cancelled" },
+        currentPeriodEnd: { $lt: now },
+      }),
+    ]);
 
     const planBreakdown = await Subscription.aggregate([
       { $match: { status: { $ne: "cancelled" } } },
-      { $group: { _id: { plan: "$plan", billingCycle: "$billingCycle" }, count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: { plan: "$plan", billingCycle: "$billingCycle" },
+          count: { $sum: 1 },
+        },
+      },
       { $sort: { "_id.plan": 1 } },
     ]);
 
@@ -68,17 +98,33 @@ router.get("/", statsGuard, async (req, res) => {
     const revenueAgg = await Subscription.aggregate([
       { $unwind: "$invoices" },
       { $match: { "invoices.status": "paid" } },
-      { $group: { _id: "$invoices.billingCycle", total: { $sum: "$invoices.amount" }, count: { $sum: 1 } } },
+      {
+        $group: {
+          _id: "$invoices.billingCycle",
+          total: { $sum: "$invoices.amount" },
+          count: { $sum: 1 },
+        },
+      },
     ]);
     const revenueByBilling = {};
     for (const r of revenueAgg) {
-      revenueByBilling[r._id || "monthly"] = { total: Math.round((r.total || 0) / 100), count: r.count };
+      revenueByBilling[r._id || "monthly"] = {
+        total: Math.round((r.total || 0) / 100),
+        count: r.count,
+      };
     }
-    const totalRevenue = (revenueByBilling.monthly?.total || 0) + (revenueByBilling.yearly?.total || 0);
+    const totalRevenue =
+      (revenueByBilling.monthly?.total || 0) +
+      (revenueByBilling.yearly?.total || 0);
 
     const recentRevenueAgg = await Subscription.aggregate([
       { $unwind: "$invoices" },
-      { $match: { "invoices.status": "paid", "invoices.paidAt": { $gte: thirtyDaysAgo } } },
+      {
+        $match: {
+          "invoices.status": "paid",
+          "invoices.paidAt": { $gte: thirtyDaysAgo },
+        },
+      },
       { $group: { _id: null, total: { $sum: "$invoices.amount" } } },
     ]);
 
@@ -104,11 +150,17 @@ router.get("/", statsGuard, async (req, res) => {
     const teamPerTenantAgg = await User.aggregate([
       { $match: { tenantId: { $ne: null } } },
       { $group: { _id: "$tenantId", count: { $sum: 1 } } },
-      { $group: { _id: null, avg: { $avg: "$count" }, max: { $max: "$count" } } },
+      {
+        $group: { _id: null, avg: { $avg: "$count" }, max: { $max: "$count" } },
+      },
     ]);
 
     // ── 5. Activity last 30 days ────────────────────────────────────────────
-    const [leadsCapturedLast30Days, campaignsLaunchedLast30Days, quotationsCreatedLast30Days] = await Promise.all([
+    const [
+      leadsCapturedLast30Days,
+      campaignsLaunchedLast30Days,
+      quotationsCreatedLast30Days,
+    ] = await Promise.all([
       Lead.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       Campaign.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
       Quotation.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
@@ -130,30 +182,36 @@ router.get("/", statsGuard, async (req, res) => {
       { $match: { tenantId: { $ne: null } } },
       { $group: { _id: "$tenantId", count: { $sum: 1 } } },
     ]);
-    for (const t of teamCounts) if (t._id) teamCountMap[t._id.toString()] = t.count;
+    for (const t of teamCounts)
+      if (t._id) teamCountMap[t._id.toString()] = t.count;
 
     const activeTeamCountMap = {};
     const activeTeamCounts = await User.aggregate([
       { $match: { tenantId: { $ne: null }, status: "active" } },
       { $group: { _id: "$tenantId", count: { $sum: 1 } } },
     ]);
-    for (const t of activeTeamCounts) if (t._id) activeTeamCountMap[t._id.toString()] = t.count;
+    for (const t of activeTeamCounts)
+      if (t._id) activeTeamCountMap[t._id.toString()] = t.count;
 
     const lastLoginMap = {};
     const lastLogins = await User.aggregate([
       { $match: { tenantId: { $ne: null }, lastLogin: { $ne: null } } },
       { $group: { _id: "$tenantId", lastLogin: { $max: "$lastLogin" } } },
     ]);
-    for (const l of lastLogins) if (l._id) lastLoginMap[l._id.toString()] = l.lastLogin;
+    for (const l of lastLogins)
+      if (l._id) lastLoginMap[l._id.toString()] = l.lastLogin;
 
     const tenants = tenantDocs.map((t) => {
       const tenantId = t._id.toString();
       const sub = subByTenant[tenantId];
       const plan = sub?.plan || t.plan;
       const renewalDate = t.planExpiresAt || null;
-      const isExpired = !!renewalDate && renewalDate < now && t.status !== "cancelled";
-      const expiringIn7Days = !!renewalDate && renewalDate >= now && renewalDate <= in7Days;
-      const expiringIn30Days = !!renewalDate && renewalDate >= now && renewalDate <= in30Days;
+      const isExpired =
+        !!renewalDate && renewalDate < now && t.status !== "cancelled";
+      const expiringIn7Days =
+        !!renewalDate && renewalDate >= now && renewalDate <= in7Days;
+      const expiringIn30Days =
+        !!renewalDate && renewalDate >= now && renewalDate <= in30Days;
       const isTrial = t.plan === "trial" || sub?.status === "trialing";
 
       return {
@@ -164,7 +222,11 @@ router.get("/", statsGuard, async (req, res) => {
         industry: null,
         city: t.ownerUser?.address?.city || null,
         state: t.ownerUser?.address?.state || null,
-        status: isTrial ? "trial" : t.status === "active" ? "active" : "inactive",
+        status: isTrial
+          ? "trial"
+          : t.status === "active"
+            ? "active"
+            : "inactive",
         lastLogin: lastLoginMap[tenantId] || null,
         joinedAt: t.createdAt,
         activeTeamMembers: activeTeamCountMap[tenantId] || 0,
@@ -189,7 +251,9 @@ router.get("/", statsGuard, async (req, res) => {
     });
 
     // ── 7. Expiring / alert buckets ──────────────────────────────────────────
-    const expiringTenants = tenants.filter((t) => t.subscription.expiringIn30Days);
+    const expiringTenants = tenants.filter(
+      (t) => t.subscription.expiringIn30Days,
+    );
     const expiredTenants = tenants.filter((t) => t.subscription.isExpired);
     const trialTenantsList = tenants.filter((t) => t.subscription.isTrial);
 
@@ -245,7 +309,12 @@ router.get("/", statsGuard, async (req, res) => {
       alerts: {
         expiringIn7Days: expiringTenants
           .filter((t) => t.subscription.expiringIn7Days)
-          .map((t) => ({ name: t.name, email: t.email, plan: t.subscription.plan, renewalDate: t.subscription.renewalDate })),
+          .map((t) => ({
+            name: t.name,
+            email: t.email,
+            plan: t.subscription.plan,
+            renewalDate: t.subscription.renewalDate,
+          })),
         expiringIn30Days: expiringTenants.map((t) => ({
           name: t.name,
           email: t.email,

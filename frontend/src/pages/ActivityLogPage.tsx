@@ -92,7 +92,7 @@ export default function ActivityLogPage() {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   return (
-    <AppLayout>
+    <AppLayout title="Activity Log">
       <div className="p-4 md:p-6 max-w-6xl mx-auto">
         <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
           {/* Title bar */}
@@ -110,7 +110,9 @@ export default function ActivityLogPage() {
               onClick={load}
               className="ml-auto flex items-center gap-1.5 text-xs font-mono text-slate-500 hover:text-slate-900 transition-colors"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              />
               refresh
             </button>
           </div>
@@ -161,7 +163,10 @@ export default function ActivityLogPage() {
               <p className="text-slate-400">no matching activity.</p>
             )}
             {logs.map((log) => (
-              <div key={log._id} className="flex gap-2 py-0.5 hover:bg-slate-50">
+              <div
+                key={log._id}
+                className="flex gap-2 py-0.5 hover:bg-slate-50"
+              >
                 <span className="text-slate-400 shrink-0">
                   [{formatTimestamp(log.timestamp)}]
                 </span>
@@ -170,9 +175,7 @@ export default function ActivityLogPage() {
                 >
                   {log.action}
                 </span>
-                <span className="text-slate-400 shrink-0">
-                  ({log.module})
-                </span>
+                <span className="text-slate-400 shrink-0">({log.module})</span>
                 <span className="text-slate-700 truncate">
                   {log.description || `${log.userName} — ${log.userEmail}`}
                 </span>

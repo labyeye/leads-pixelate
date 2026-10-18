@@ -216,243 +216,243 @@ export default function AccountSecurityPage() {
             Account Security
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
-            Set these up so you have more ways to reset your password than
-            just email.
+            Set these up so you have more ways to reset your password than just
+            email.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
-        {}
-        {(
-          <div className="border-2 bg-white p-5 flex flex-col">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-12 h-12 border-2 border-black bg-[#FA731C]/10 flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5 text-[#FA731C]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-display font-bold text-base text-black">
-                  Reset Password
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Change your account password
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleChangePassword} className="space-y-3">
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Current password"
-                className="w-full border-2 border-black px-3 py-2 text-sm"
-                required
-                autoComplete="current-password"
-              />
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password (min 8 characters)"
-                className="w-full border-2 border-black px-3 py-2 text-sm"
-                required
-                autoComplete="new-password"
-              />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className="w-full border-2 border-black px-3 py-2 text-sm"
-                required
-                autoComplete="new-password"
-              />
-              <button
-                type="submit"
-                disabled={pwLoading}
-                className="border-2 border-black px-4 py-2 bg-[#FA731C] text-white text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
-              >
-                {pwLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Update Password
-              </button>
-            </form>
-          </div>
-        )}
-
-        {}
-        {(
-          <div className="border-2 bg-white p-5 flex flex-col">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-12 h-12 border-2 border-black bg-[#25D366]/10 flex items-center justify-center shrink-0">
-                <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-display font-bold text-base text-black">
-                  WhatsApp Verification
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Your own WhatsApp number, used to receive reset codes
-                </p>
-              </div>
-              {phoneVerified && (
-                <span className="nb-badge nb-tag-lime flex items-center gap-0.5 text-[10px] shrink-0">
-                  <CheckCircle2 className="w-2.5 h-2.5" /> Verified
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
-                  <PhoneInput
-                    label="Phone number"
-                    value={phone}
-                    onChange={(v) => {
-                      setPhone(v);
-                      setPhoneOtpSent(false);
-                    }}
-                  />
+          {}
+          {
+            <div className="border-2 bg-white p-5 flex flex-col">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-12 h-12 border-2 border-black bg-[#FA731C]/10 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-[#FA731C]" />
                 </div>
-                <button
-                  onClick={handleSavePhone}
-                  disabled={phoneSaving || !phone || phone === savedPhone}
-                  className="border-2 border-black px-3 py-2 bg-white text-black text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 h-[38px]"
-                >
-                  {phoneSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save
-                </button>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display font-bold text-base text-black">
+                    Reset Password
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Change your account password
+                  </p>
+                </div>
               </div>
 
-              {!phoneVerified && savedPhone && (
-                <>
-                  {!phoneOtpSent ? (
-                    <button
-                      onClick={handleSendPhoneOtp}
-                      disabled={phoneLoading}
-                      className="border-2 border-black px-4 py-2 bg-[#25D366]/10 text-black text-sm font-bold flex items-center gap-1.5"
-                    >
-                      {phoneLoading && (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      )}
-                      Send verification code
-                    </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        value={phoneOtp}
-                        onChange={(e) =>
-                          setPhoneOtp(e.target.value.replace(/\D/g, ""))
-                        }
-                        placeholder="6-digit code"
-                        className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
-                      />
-                      <button
-                        onClick={handleVerifyPhoneOtp}
-                        disabled={phoneLoading || phoneOtp.length !== 6}
-                        className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold disabled:opacity-50"
-                      >
-                        Verify
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {}
-        {(
-          <div className="border-2 bg-white p-5 flex flex-col">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-12 h-12 border-2 border-black bg-[#024BAB]/10 flex items-center justify-center shrink-0">
-                <KeyRound className="w-5 h-5 text-[#024BAB]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-display font-bold text-base text-black">
-                  Authenticator App
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Google Authenticator, Authy, or similar
-                </p>
-              </div>
-              {totpEnabled && (
-                <span className="nb-badge nb-tag-lime flex items-center gap-0.5 text-[10px] shrink-0">
-                  <ShieldCheck className="w-2.5 h-2.5" /> Enabled
-                </span>
-              )}
-            </div>
-
-            {totpEnabled ? (
-              <button
-                onClick={handleDisableTotp}
-                disabled={totpLoading}
-                className="border-2 border-black px-4 py-2 bg-white text-red-600 text-sm font-bold flex items-center gap-1.5"
-              >
-                {totpLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ShieldOff className="w-4 h-4" />
-                )}
-                Disable
-              </button>
-            ) : !totpSetupData ? (
-              <button
-                onClick={handleStartTotpSetup}
-                disabled={totpLoading}
-                className="border-2 border-black px-4 py-2 bg-[#024BAB]/10 text-black text-sm font-bold flex items-center gap-1.5"
-              >
-                {totpLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Set up authenticator app
-              </button>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Scan this QR code with your authenticator app, then enter
-                  the 6-digit code it shows.
-                </p>
-                <img
-                  src={totpSetupData.qrCode}
-                  alt="TOTP QR code"
-                  className="w-40 h-40 border-2 border-black"
+              <form onSubmit={handleChangePassword} className="space-y-3">
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Current password"
+                  className="w-full border-2 border-black px-3 py-2 text-sm"
+                  required
+                  autoComplete="current-password"
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Can't scan? Enter this key manually:{" "}
-                  <code className="bg-[#F3F4F6] border border-black px-1.5 py-0.5">
-                    {totpSetupData.secret}
-                  </code>
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    value={totpToken}
-                    onChange={(e) =>
-                      setTotpToken(e.target.value.replace(/\D/g, ""))
-                    }
-                    placeholder="6-digit code"
-                    className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
-                  />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password (min 8 characters)"
+                  className="w-full border-2 border-black px-3 py-2 text-sm"
+                  required
+                  autoComplete="new-password"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="w-full border-2 border-black px-3 py-2 text-sm"
+                  required
+                  autoComplete="new-password"
+                />
+                <button
+                  type="submit"
+                  disabled={pwLoading}
+                  className="border-2 border-black px-4 py-2 bg-[#FA731C] text-white text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {pwLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Update Password
+                </button>
+              </form>
+            </div>
+          }
+
+          {}
+          {
+            <div className="border-2 bg-white p-5 flex flex-col">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-12 h-12 border-2 border-black bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                  <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display font-bold text-base text-black">
+                    WhatsApp Verification
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Your own WhatsApp number, used to receive reset codes
+                  </p>
+                </div>
+                {phoneVerified && (
+                  <span className="nb-badge nb-tag-lime flex items-center gap-0.5 text-[10px] shrink-0">
+                    <CheckCircle2 className="w-2.5 h-2.5" /> Verified
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <PhoneInput
+                      label="Phone number"
+                      value={phone}
+                      onChange={(v) => {
+                        setPhone(v);
+                        setPhoneOtpSent(false);
+                      }}
+                    />
+                  </div>
                   <button
-                    onClick={handleVerifyTotp}
-                    disabled={totpLoading || totpToken.length !== 6}
-                    className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold disabled:opacity-50"
+                    onClick={handleSavePhone}
+                    disabled={phoneSaving || !phone || phone === savedPhone}
+                    className="border-2 border-black px-3 py-2 bg-white text-black text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 h-[38px]"
                   >
-                    Verify & Enable
+                    {phoneSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Save
                   </button>
                 </div>
+
+                {!phoneVerified && savedPhone && (
+                  <>
+                    {!phoneOtpSent ? (
+                      <button
+                        onClick={handleSendPhoneOtp}
+                        disabled={phoneLoading}
+                        className="border-2 border-black px-4 py-2 bg-[#25D366]/10 text-black text-sm font-bold flex items-center gap-1.5"
+                      >
+                        {phoneLoading && (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        )}
+                        Send verification code
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={phoneOtp}
+                          onChange={(e) =>
+                            setPhoneOtp(e.target.value.replace(/\D/g, ""))
+                          }
+                          placeholder="6-digit code"
+                          className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
+                        />
+                        <button
+                          onClick={handleVerifyPhoneOtp}
+                          disabled={phoneLoading || phoneOtp.length !== 6}
+                          className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold disabled:opacity-50"
+                        >
+                          Verify
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          }
+
+          {}
+          {
+            <div className="border-2 bg-white p-5 flex flex-col">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-12 h-12 border-2 border-black bg-[#024BAB]/10 flex items-center justify-center shrink-0">
+                  <KeyRound className="w-5 h-5 text-[#024BAB]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display font-bold text-base text-black">
+                    Authenticator App
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Google Authenticator, Authy, or similar
+                  </p>
+                </div>
+                {totpEnabled && (
+                  <span className="nb-badge nb-tag-lime flex items-center gap-0.5 text-[10px] shrink-0">
+                    <ShieldCheck className="w-2.5 h-2.5" /> Enabled
+                  </span>
+                )}
+              </div>
+
+              {totpEnabled ? (
+                <button
+                  onClick={handleDisableTotp}
+                  disabled={totpLoading}
+                  className="border-2 border-black px-4 py-2 bg-white text-red-600 text-sm font-bold flex items-center gap-1.5"
+                >
+                  {totpLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShieldOff className="w-4 h-4" />
+                  )}
+                  Disable
+                </button>
+              ) : !totpSetupData ? (
+                <button
+                  onClick={handleStartTotpSetup}
+                  disabled={totpLoading}
+                  className="border-2 border-black px-4 py-2 bg-[#024BAB]/10 text-black text-sm font-bold flex items-center gap-1.5"
+                >
+                  {totpLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Set up authenticator app
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Scan this QR code with your authenticator app, then enter
+                    the 6-digit code it shows.
+                  </p>
+                  <img
+                    src={totpSetupData.qrCode}
+                    alt="TOTP QR code"
+                    className="w-40 h-40 border-2 border-black"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Can't scan? Enter this key manually:{" "}
+                    <code className="bg-[#F3F4F6] border border-black px-1.5 py-0.5">
+                      {totpSetupData.secret}
+                    </code>
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={totpToken}
+                      onChange={(e) =>
+                        setTotpToken(e.target.value.replace(/\D/g, ""))
+                      }
+                      placeholder="6-digit code"
+                      className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
+                    />
+                    <button
+                      onClick={handleVerifyTotp}
+                      disabled={totpLoading || totpToken.length !== 6}
+                      className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold disabled:opacity-50"
+                    >
+                      Verify & Enable
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          }
         </div>
       </div>
     </AppLayout>

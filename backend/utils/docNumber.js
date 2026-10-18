@@ -26,11 +26,18 @@ function formatNumber(format, seq, date = new Date()) {
 // Throws a 400-style error when the format can't produce unique, printable numbers.
 function checkFormat(format) {
   const bad = (m) => Object.assign(new Error(m), { statusCode: 400 });
-  if (typeof format !== "string" || !format.trim() || format.length > 40) throw bad("Format must be 1-40 characters.");
-  if (!/\{seq(:\d{1,2})?\}/.test(format)) throw bad("Format must include {seq} (the running number), e.g. INV-{seq:4}.");
-  if (/\{seq/.test(format.replace(/\{seq(:\d{1,2})?\}/, ""))) throw bad("Use {seq} only once.");
-  if (/[{}]/.test(formatNumber(format, 1))) throw bad("Unknown {token}. Use {YYYY} {YY} {MM} {DD} {seq:4}.");
-  if (!/^[\w\s./\-#{}:]+$/.test(format)) throw bad("Use letters, numbers and - / . # _ only.");
+  if (typeof format !== "string" || !format.trim() || format.length > 40)
+    throw bad("Format must be 1-40 characters.");
+  if (!/\{seq(:\d{1,2})?\}/.test(format))
+    throw bad(
+      "Format must include {seq} (the running number), e.g. INV-{seq:4}.",
+    );
+  if (/\{seq/.test(format.replace(/\{seq(:\d{1,2})?\}/, "")))
+    throw bad("Use {seq} only once.");
+  if (/[{}]/.test(formatNumber(format, 1)))
+    throw bad("Unknown {token}. Use {YYYY} {YY} {MM} {DD} {seq:4}.");
+  if (!/^[\w\s./\-#{}:]+$/.test(format))
+    throw bad("Use letters, numbers and - / . # _ only.");
   return format.trim();
 }
 

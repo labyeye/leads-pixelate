@@ -84,7 +84,8 @@ export function BrandProfileEditor({
   onSave: (p: BrandProfile) => void;
 }) {
   const [p, setP] = useState<BrandProfile>(profile);
-  const set = <K extends keyof BrandProfile>(k: K, v: BrandProfile[K]) => setP({ ...p, [k]: v });
+  const set = <K extends keyof BrandProfile>(k: K, v: BrandProfile[K]) =>
+    setP({ ...p, [k]: v });
 
   return (
     <div className="space-y-4">
@@ -103,19 +104,39 @@ export function BrandProfileEditor({
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="bp-industry">Industry</Label>
-          <Input id="bp-industry" maxLength={100} value={p.industry} onChange={(e) => set("industry", e.target.value)} />
+          <Input
+            id="bp-industry"
+            maxLength={100}
+            value={p.industry}
+            onChange={(e) => set("industry", e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bp-audience">Audience</Label>
-          <Input id="bp-audience" maxLength={300} value={p.audience} onChange={(e) => set("audience", e.target.value)} />
+          <Input
+            id="bp-audience"
+            maxLength={300}
+            value={p.audience}
+            onChange={(e) => set("audience", e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bp-tone">Tone of voice</Label>
-          <Input id="bp-tone" maxLength={200} value={p.tone} onChange={(e) => set("tone", e.target.value)} />
+          <Input
+            id="bp-tone"
+            maxLength={200}
+            value={p.tone}
+            onChange={(e) => set("tone", e.target.value)}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bp-hash">Hashtag style</Label>
-          <Input id="bp-hash" maxLength={200} value={p.hashtagStyle} onChange={(e) => set("hashtagStyle", e.target.value)} />
+          <Input
+            id="bp-hash"
+            maxLength={200}
+            value={p.hashtagStyle}
+            onChange={(e) => set("hashtagStyle", e.target.value)}
+          />
         </div>
       </div>
 
@@ -141,7 +162,12 @@ export function BrandProfileEditor({
                 type="button"
                 title={`${c} — click to remove`}
                 aria-label={`Remove colour ${c}`}
-                onClick={() => set("palette", p.palette.filter((x) => x !== c))}
+                onClick={() =>
+                  set(
+                    "palette",
+                    p.palette.filter((x) => x !== c),
+                  )
+                }
                 className="w-8 h-8 rounded border-2 border-black"
                 style={{ background: c }}
               />
@@ -154,7 +180,8 @@ export function BrandProfileEditor({
         <div>
           <p className="text-sm font-semibold">Against your competitors</p>
           <p className="text-xs text-muted-foreground">
-            Filled in by the scan when you add competitors. Autopilot uses it to stand apart, never to copy them.
+            Filled in by the scan when you add competitors. Autopilot uses it to
+            stand apart, never to copy them.
           </p>
         </div>
         <div className="space-y-1.5">
@@ -164,26 +191,48 @@ export function BrandProfileEditor({
             rows={2}
             maxLength={400}
             value={p.competitive?.positioning ?? ""}
-            onChange={(e) => set("competitive", { ...emptyCompetitive(p), positioning: e.target.value })}
+            onChange={(e) =>
+              set("competitive", {
+                ...emptyCompetitive(p),
+                positioning: e.target.value,
+              })
+            }
           />
         </div>
         <ChipList
           label="What they do well"
           items={p.competitive?.whatTheyDoWell ?? []}
-          onChange={(v) => set("competitive", { ...emptyCompetitive(p), whatTheyDoWell: v })}
+          onChange={(v) =>
+            set("competitive", { ...emptyCompetitive(p), whatTheyDoWell: v })
+          }
           max={5}
         />
         <ChipList
           label="Gaps you can use"
           items={p.competitive?.gapsToExploit ?? []}
-          onChange={(v) => set("competitive", { ...emptyCompetitive(p), gapsToExploit: v })}
+          onChange={(v) =>
+            set("competitive", { ...emptyCompetitive(p), gapsToExploit: v })
+          }
           max={5}
         />
       </div>
 
-      <ChipList label="Content pillars" hint="The themes your posts keep coming back to." items={p.contentPillars} onChange={(v) => set("contentPillars", v)} />
-      <ChipList label="Do" items={p.doList} onChange={(v) => set("doList", v)} />
-      <ChipList label="Avoid" items={p.avoidList} onChange={(v) => set("avoidList", v)} />
+      <ChipList
+        label="Content pillars"
+        hint="The themes your posts keep coming back to."
+        items={p.contentPillars}
+        onChange={(v) => set("contentPillars", v)}
+      />
+      <ChipList
+        label="Do"
+        items={p.doList}
+        onChange={(v) => set("doList", v)}
+      />
+      <ChipList
+        label="Avoid"
+        items={p.avoidList}
+        onChange={(v) => set("avoidList", v)}
+      />
 
       <Button onClick={() => onSave(p)} disabled={saving}>
         {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}

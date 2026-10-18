@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { BrandKit, HeadlinePosition, LogoPosition, TextSize } from "./useAutopilot";
+import type {
+  BrandKit,
+  HeadlinePosition,
+  LogoPosition,
+  TextSize,
+} from "./useAutopilot";
 
 const MAX_LOGOS = 5;
 const MAX_COLORS = 4;
@@ -15,7 +20,11 @@ const POSITIONS: { id: LogoPosition; label: string; cls: string }[] = [
   { id: "bottom-left", label: "Bottom left", cls: "bottom-2 left-2" },
   { id: "bottom-right", label: "Bottom right", cls: "bottom-2 right-2" },
 ];
-const HEADLINE_POSITIONS: { id: HeadlinePosition; label: string; cls: string }[] = [
+const HEADLINE_POSITIONS: {
+  id: HeadlinePosition;
+  label: string;
+  cls: string;
+}[] = [
   { id: "top", label: "Top", cls: "top-2" },
   { id: "center", label: "Middle", cls: "top-1/2 -translate-y-1/2" },
   { id: "bottom", label: "Bottom", cls: "bottom-8" },
@@ -25,7 +34,11 @@ const SIZES: { id: TextSize; label: string }[] = [
   { id: "medium", label: "Medium" },
   { id: "large", label: "Large" },
 ];
-const SIZE_TEXT_CLS: Record<TextSize, string> = { small: "text-[7px]", medium: "text-[9px]", large: "text-[11px]" };
+const SIZE_TEXT_CLS: Record<TextSize, string> = {
+  small: "text-[7px]",
+  medium: "text-[9px]",
+  large: "text-[11px]",
+};
 
 interface Props {
   kit: BrandKit;
@@ -42,7 +55,12 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
   const [picked, setPicked] = useState<Record<number, string>>({});
   const input = useRef<HTMLInputElement>(null);
 
-  const fail = (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" });
+  const fail = (err: any) =>
+    toast({
+      title: "Failed",
+      description: err.message,
+      variant: "destructive",
+    });
   const save = async (patch: Record<string, unknown>) => {
     try {
       await api.saveBrand(patch);
@@ -79,7 +97,12 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
     const name = (names[id] ?? "").trim();
     const current = kit.logos.find((l) => l.id === id);
     if (name && current && name !== current.name) {
-      save({ logos: kit.logos.map((l) => ({ id: l.id, name: l.id === id ? name : l.name })) });
+      save({
+        logos: kit.logos.map((l) => ({
+          id: l.id,
+          name: l.id === id ? name : l.name,
+        })),
+      });
     }
   };
 
@@ -92,8 +115,9 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
       <div className="space-y-2">
         <Label>Your logos</Label>
         <p className="text-xs text-muted-foreground">
-          PNG with a transparent background works best. Up to {MAX_LOGOS}. Give each a name so you can tell them apart
-          (e.g. “Main logo”, “White version”).
+          PNG with a transparent background works best. Up to {MAX_LOGOS}. Give
+          each a name so you can tell them apart (e.g. “Main logo”, “White
+          version”).
         </p>
         {kit.logos.length < MAX_LOGOS && (
           <button
@@ -110,12 +134,22 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
               upload(e.dataTransfer.files);
             }}
             className={`w-full rounded-lg border-2 border-dashed p-6 flex flex-col items-center gap-2 text-sm transition-colors ${
-              over ? "border-primary bg-primary/5" : "border-black/40 hover:border-black"
+              over
+                ? "border-primary bg-primary/5"
+                : "border-black/40 hover:border-black"
             }`}
           >
-            {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImagePlus className="w-6 h-6" />}
-            <span className="font-medium">{uploading ? "Uploading…" : "Drop logos here or click to upload"}</span>
-            <span className="text-xs text-muted-foreground">PNG, JPG or WebP · up to 5 MB each</span>
+            {uploading ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <ImagePlus className="w-6 h-6" />
+            )}
+            <span className="font-medium">
+              {uploading ? "Uploading…" : "Drop logos here or click to upload"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              PNG, JPG or WebP · up to 5 MB each
+            </span>
           </button>
         )}
         <input
@@ -137,7 +171,9 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
             <li
               key={l.id}
               className={`flex items-center gap-3 rounded-lg border-2 p-2.5 bg-background ${
-                active?.id === l.id ? "border-black nb-shadow-sm" : "border-black/20"
+                active?.id === l.id
+                  ? "border-black nb-shadow-sm"
+                  : "border-black/20"
               }`}
             >
               <button
@@ -146,14 +182,20 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
                 onClick={() => save({ logoId: l.id })}
                 className="w-14 h-14 shrink-0 rounded border bg-[conic-gradient(#e5e7eb_25%,#fff_0_50%,#e5e7eb_0_75%,#fff_0)] bg-[length:12px_12px] flex items-center justify-center"
               >
-                <img src={l.url} alt={l.name} className="max-w-full max-h-full object-contain" />
+                <img
+                  src={l.url}
+                  alt={l.name}
+                  className="max-w-full max-h-full object-contain"
+                />
               </button>
               <div className="min-w-0 flex-1 space-y-1">
                 <Input
                   aria-label="Logo name"
                   maxLength={60}
                   value={names[l.id] ?? l.name}
-                  onChange={(e) => setNames({ ...names, [l.id]: e.target.value })}
+                  onChange={(e) =>
+                    setNames({ ...names, [l.id]: e.target.value })
+                  }
                   onBlur={() => rename(l.id)}
                   className="h-8"
                 />
@@ -165,7 +207,12 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
                       : "Click image to use"}
                 </p>
               </div>
-              <Button size="icon" variant="ghost" aria-label={`Delete ${l.name}`} onClick={() => remove(l.id)}>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label={`Delete ${l.name}`}
+                onClick={() => remove(l.id)}
+              >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </li>
@@ -193,7 +240,9 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">Put my logo on every image</p>
-              <p className="text-xs text-muted-foreground">Added after the image is created, so it always looks sharp.</p>
+              <p className="text-xs text-muted-foreground">
+                Added after the image is created, so it always looks sharp.
+              </p>
             </div>
             <Switch
               checked={kit.logoEnabled}
@@ -204,15 +253,20 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
           {kit.logos.length > 1 && (
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium">Pick the best logo for each image</p>
+                <p className="text-sm font-medium">
+                  Pick the best logo for each image
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Uses your dark logo on light images and your light logo on dark ones. Off = always the logo you selected.
+                  Uses your dark logo on light images and your light logo on
+                  dark ones. Off = always the logo you selected.
                 </p>
               </div>
               <Switch
                 checked={kit.logoMode === "auto"}
                 disabled={!kit.logoEnabled}
-                onCheckedChange={(v) => save({ logoMode: v ? "auto" : "fixed" })}
+                onCheckedChange={(v) =>
+                  save({ logoMode: v ? "auto" : "fixed" })
+                }
               />
             </div>
           )}
@@ -263,7 +317,9 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
                   key={p.id}
                   type="button"
                   size="sm"
-                  variant={kit.headlinePosition === p.id ? "default" : "outline"}
+                  variant={
+                    kit.headlinePosition === p.id ? "default" : "outline"
+                  }
                   onClick={() => save({ headlinePosition: p.id })}
                 >
                   {p.label}
@@ -309,7 +365,9 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
       {/* Colours */}
       <div className="space-y-2">
         <Label>Brand colours</Label>
-        <p className="text-xs text-muted-foreground">Autopilot uses these in the images it creates. Up to {MAX_COLORS}.</p>
+        <p className="text-xs text-muted-foreground">
+          Autopilot uses these in the images it creates. Up to {MAX_COLORS}.
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           {kit.colors.map((c, i) => (
             <span key={`${c}-${i}`} className="relative">
@@ -320,7 +378,10 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
                 onChange={(e) => setPicked({ ...picked, [i]: e.target.value })}
                 onBlur={() => {
                   const v = picked[i];
-                  if (v && v !== c) save({ colors: kit.colors.map((x, j) => (j === i ? v : x)) });
+                  if (v && v !== c)
+                    save({
+                      colors: kit.colors.map((x, j) => (j === i ? v : x)),
+                    });
                   setPicked({});
                 }}
                 className="w-10 h-10 rounded border-2 border-black bg-transparent cursor-pointer p-0.5"
@@ -328,7 +389,9 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
               <button
                 type="button"
                 aria-label={`Remove colour ${c}`}
-                onClick={() => save({ colors: kit.colors.filter((_, j) => j !== i) })}
+                onClick={() =>
+                  save({ colors: kit.colors.filter((_, j) => j !== i) })
+                }
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-black text-white flex items-center justify-center"
               >
                 <X className="w-3 h-3" />
@@ -336,7 +399,12 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
             </span>
           ))}
           {kit.colors.length < MAX_COLORS && (
-            <Button type="button" size="sm" variant="outline" onClick={() => save({ colors: [...kit.colors, "#024BAB"] })}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => save({ colors: [...kit.colors, "#024BAB"] })}
+            >
               <Plus className="w-4 h-4 mr-1" /> Add colour
             </Button>
           )}

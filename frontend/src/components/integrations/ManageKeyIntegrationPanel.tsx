@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Copy, Eye, EyeOff, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { indiamartAPI, justdialSyncAPI, tradeindiaSyncAPI } from "@/services/api";
+import {
+  indiamartAPI,
+  justdialSyncAPI,
+  tradeindiaSyncAPI,
+} from "@/services/api";
 
 type Kind = "indiamart" | "tradeindia" | "justdial";
 
@@ -15,14 +19,30 @@ interface Props {
 }
 
 const API = {
-  indiamart: { getStatus: indiamartAPI.getStatus, disconnect: indiamartAPI.disconnect },
-  tradeindia: { getStatus: tradeindiaSyncAPI.getStatus, disconnect: tradeindiaSyncAPI.disconnect },
-  justdial: { getStatus: justdialSyncAPI.getStatus, disconnect: justdialSyncAPI.disconnect },
+  indiamart: {
+    getStatus: indiamartAPI.getStatus,
+    disconnect: indiamartAPI.disconnect,
+  },
+  tradeindia: {
+    getStatus: tradeindiaSyncAPI.getStatus,
+    disconnect: tradeindiaSyncAPI.disconnect,
+  },
+  justdial: {
+    getStatus: justdialSyncAPI.getStatus,
+    disconnect: justdialSyncAPI.disconnect,
+  },
 } as const;
 
 // A saved connection's key never comes back from the server in full — only masked (••••1234) — so
 // "renew" always means typing the replacement key fresh, never editing the old one in place.
-export function ManageKeyIntegrationPanel({ kind, name, color, logo, onClose, onDisconnected }: Props) {
+export function ManageKeyIntegrationPanel({
+  kind,
+  name,
+  color,
+  logo,
+  onClose,
+  onDisconnected,
+}: Props) {
   const { toast } = useToast();
   const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,19 +53,33 @@ export function ManageKeyIntegrationPanel({ kind, name, color, logo, onClose, on
     API[kind]
       .getStatus()
       .then((res) => setStatus(res.data))
-      .catch(() => toast({ title: "Couldn't load connection details", variant: "destructive" }))
+      .catch(() =>
+        toast({
+          title: "Couldn't load connection details",
+          variant: "destructive",
+        }),
+      )
       .finally(() => setLoading(false));
   }, [kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const disconnect = async () => {
-    if (!confirm(`Disconnect ${name}? Leads will stop coming in until you reconnect.`)) return;
+    if (
+      !confirm(
+        `Disconnect ${name}? Leads will stop coming in until you reconnect.`,
+      )
+    )
+      return;
     setDisconnecting(true);
     try {
       await API[kind].disconnect();
       toast({ title: `${name} disconnected` });
       onDisconnected();
     } catch (err: any) {
-      toast({ title: "Couldn't disconnect", description: err.message, variant: "destructive" });
+      toast({
+        title: "Couldn't disconnect",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setDisconnecting(false);
     }
@@ -53,7 +87,10 @@ export function ManageKeyIntegrationPanel({ kind, name, color, logo, onClose, on
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b-2 border-black p-4 sm:p-5 flex items-center gap-4" style={{ backgroundColor: "#FFF7ED" }}>
+      <div
+        className="border-b-2 border-black p-4 sm:p-5 flex items-center gap-4"
+        style={{ backgroundColor: "#FFF7ED" }}
+      >
         <div className="w-12 h-12 border-2 border-black flex items-center justify-center bg-white shrink-0 overflow-hidden">
           <img src={logo} alt={name} className="w-8 h-8 object-contain" />
         </div>
@@ -77,13 +114,25 @@ export function ManageKeyIntegrationPanel({ kind, name, color, logo, onClose, on
         ) : (
           <>
             <div className="border-2 border-black p-4 space-y-3 bg-[#F9FAFB]">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Saved credentials</p>
-              {kind === "tradeindia" && status?.userId && <MaskedRow label="User ID" value={status.userId} plain />}
-              {kind === "tradeindia" && status?.profileId && <MaskedRow label="Profile ID" value={status.profileId} plain />}
-              {kind === "tradeindia" && status?.apiUrlMasked && <MaskedRow label="API Link" value={status.apiUrlMasked} />}
-              <MaskedRow label={kind === "justdial" ? "API Key" : "CRM API Key"} value={status?.apiKeyMasked || "Not set"} />
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Saved credentials
+              </p>
+              {kind === "tradeindia" && status?.userId && (
+                <MaskedRow label="User ID" value={status.userId} plain />
+              )}
+              {kind === "tradeindia" && status?.profileId && (
+                <MaskedRow label="Profile ID" value={status.profileId} plain />
+              )}
+              {kind === "tradeindia" && status?.apiUrlMasked && (
+                <MaskedRow label="API Link" value={status.apiUrlMasked} />
+              )}
+              <MaskedRow
+                label={kind === "justdial" ? "API Key" : "CRM API Key"}
+                value={status?.apiKeyMasked || "Not set"}
+              />
               <p className="text-[11px] text-muted-foreground">
-                For your security the full key is never shown again after it's saved. Use Renew below to replace it.
+                For your security the full key is never shown again after it's
+                saved. Use Renew below to replace it.
               </p>
             </div>
 
@@ -101,12 +150,20 @@ export function ManageKeyIntegrationPanel({ kind, name, color, logo, onClose, on
                   disabled={disconnecting}
                   className="nb-btn flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-2 bg-white text-red-600 border-red-600"
                 >
-                  {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  {disconnecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                   Disconnect
                 </button>
               </div>
             ) : (
-              <RenewForm kind={kind} onDone={() => setRenewing(false)} color={color} />
+              <RenewForm
+                kind={kind}
+                onDone={() => setRenewing(false)}
+                color={color}
+              />
             )}
           </>
         )}
@@ -115,16 +172,37 @@ export function ManageKeyIntegrationPanel({ kind, name, color, logo, onClose, on
   );
 }
 
-function MaskedRow({ label, value, plain }: { label: string; value: string; plain?: boolean }) {
+function MaskedRow({
+  label,
+  value,
+  plain,
+}: {
+  label: string;
+  value: string;
+  plain?: boolean;
+}) {
   const { toast } = useToast();
   const [show, setShow] = useState(!!plain);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-bold text-black w-24 shrink-0">{label}</span>
-      <span className="flex-1 font-mono text-sm text-gray-700 truncate">{show ? value : "•".repeat(Math.min(value.length, 12))}</span>
+      <span className="text-xs font-bold text-black w-24 shrink-0">
+        {label}
+      </span>
+      <span className="flex-1 font-mono text-sm text-gray-700 truncate">
+        {show ? value : "•".repeat(Math.min(value.length, 12))}
+      </span>
       {!plain && (
-        <button type="button" onClick={() => setShow((s) => !s)} className="p-1 hover:bg-black/5" title={show ? "Hide" : "Reveal"}>
-          {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          className="p-1 hover:bg-black/5"
+          title={show ? "Hide" : "Reveal"}
+        >
+          {show ? (
+            <EyeOff className="w-3.5 h-3.5" />
+          ) : (
+            <Eye className="w-3.5 h-3.5" />
+          )}
         </button>
       )}
       <button
@@ -142,7 +220,15 @@ function MaskedRow({ label, value, plain }: { label: string; value: string; plai
   );
 }
 
-function RenewForm({ kind, onDone, color }: { kind: Kind; onDone: () => void; color: string }) {
+function RenewForm({
+  kind,
+  onDone,
+  color,
+}: {
+  kind: Kind;
+  onDone: () => void;
+  color: string;
+}) {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState("");
   const [userId, setUserId] = useState("");
@@ -151,25 +237,41 @@ function RenewForm({ kind, onDone, color }: { kind: Kind; onDone: () => void; co
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (kind === "tradeindia" ? !userId || !apiKey || !apiUrl : kind === "indiamart" ? !apiKey : false) {
+    if (
+      kind === "tradeindia"
+        ? !userId || !apiKey || !apiUrl
+        : kind === "indiamart"
+          ? !apiKey
+          : false
+    ) {
       toast({ title: "Fill in the required fields", variant: "destructive" });
       return;
     }
     setSaving(true);
     try {
       if (kind === "indiamart") await indiamartAPI.connect(apiKey);
-      else if (kind === "tradeindia") await tradeindiaSyncAPI.connect(userId, profileId, apiKey, apiUrl);
+      else if (kind === "tradeindia")
+        await tradeindiaSyncAPI.connect(userId, profileId, apiKey, apiUrl);
       else await justdialSyncAPI.connect(apiKey);
       toast({ title: "Key updated" });
       onDone();
     } catch (err: any) {
-      toast({ title: "Couldn't save the new key", description: err.message, variant: "destructive" });
+      toast({
+        title: "Couldn't save the new key",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  const field = (label: string, value: string, onChange: (v: string) => void, placeholder = "") => (
+  const field = (
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    placeholder = "",
+  ) => (
     <div>
       <label className="block text-sm font-bold text-black mb-1">{label}</label>
       <input
@@ -190,9 +292,16 @@ function RenewForm({ kind, onDone, color }: { kind: Kind; onDone: () => void; co
           {field("New API Link", apiUrl, setApiUrl, "https://...")}
         </>
       )}
-      {field(kind === "justdial" ? "New API Key (optional)" : "New API Key", apiKey, setApiKey)}
+      {field(
+        kind === "justdial" ? "New API Key (optional)" : "New API Key",
+        apiKey,
+        setApiKey,
+      )}
       <div className="flex gap-3">
-        <button onClick={onDone} className="nb-btn flex-1 py-2 text-sm font-bold bg-white text-black">
+        <button
+          onClick={onDone}
+          className="nb-btn flex-1 py-2 text-sm font-bold bg-white text-black"
+        >
           Cancel
         </button>
         <button

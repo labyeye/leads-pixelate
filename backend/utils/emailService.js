@@ -638,4 +638,8 @@ async function sendBulkLeadEmail({ to, subject, message, fromName }) {
   return { skipped: false };
 }
 
-module.exports = { sendWelcomeEmail, sendPasswordResetEmail, sendBulkLeadEmail };
+module.exports = {
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendBulkLeadEmail,
+};

@@ -35,6 +35,9 @@ const socialAccountSchema = new mongoose.Schema(
 );
 
 // Per tenant: the same page can be connected by more than one tenant.
-socialAccountSchema.index({ tenantId: 1, platform: 1, accountId: 1 }, { unique: true });
+socialAccountSchema.index(
+  { tenantId: 1, platform: 1, accountId: 1 },
+  { unique: true },
+);
 
 module.exports = mongoose.model("SocialAccount", socialAccountSchema);

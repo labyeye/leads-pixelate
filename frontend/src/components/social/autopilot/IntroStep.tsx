@@ -31,7 +31,10 @@ export function IntroStep({
 
   const pick = (f?: File) => {
     if (!f) return;
-    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) {
+    if (
+      f.type !== "application/pdf" &&
+      !f.name.toLowerCase().endsWith(".pdf")
+    ) {
       toast({ title: "Please choose a PDF", variant: "destructive" });
     } else if (f.size > MAX_PDF) {
       toast({ title: "That PDF is over 10 MB", variant: "destructive" });
@@ -45,7 +48,11 @@ export function IntroStep({
       await api.deleteIntroPdf();
       await reload();
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -57,7 +64,11 @@ export function IntroStep({
         await api.saveIntro(text, file);
         await reload();
       } catch (err: any) {
-        toast({ title: "Couldn't save", description: err.message, variant: "destructive" });
+        toast({
+          title: "Couldn't save",
+          description: err.message,
+          variant: "destructive",
+        });
         setBusy(false);
         return;
       }
@@ -73,7 +84,8 @@ export function IntroStep({
       <div className="space-y-1.5">
         <Label htmlFor="intro-text">Tell us about your brand</Label>
         <p className="text-xs text-muted-foreground">
-          What you do, who your customers are, what makes you different, how you like to sound. A few lines is enough.
+          What you do, who your customers are, what makes you different, how you
+          like to sound. A few lines is enough.
         </p>
         <Textarea
           id="intro-text"
@@ -83,18 +95,23 @@ export function IntroStep({
           placeholder="e.g. We are a family-run bakery in Ahmedabad making slow-fermented sourdough. Our customers are health-conscious families. We sound warm and simple, never salesy."
           onChange={(e) => setText(e.target.value)}
         />
-        <p className="text-right text-[11px] text-muted-foreground">{text.length}/4000</p>
+        <p className="text-right text-[11px] text-muted-foreground">
+          {text.length}/4000
+        </p>
       </div>
 
       <div className="space-y-2">
         <Label>Or import a document (PDF)</Label>
         <p className="text-xs text-muted-foreground">
-          Brand guidelines, company profile or brochure. Up to 10 MB. We read the text and images.
+          Brand guidelines, company profile or brochure. Up to 10 MB. We read
+          the text and images.
         </p>
         {file || savedPdf ? (
           <div className="flex items-center gap-3 rounded-lg border-2 border-black p-3 bg-background">
             <FileText className="w-5 h-5 text-primary shrink-0" />
-            <span className="min-w-0 flex-1 truncate text-sm">{file ? file.name : savedPdf}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {file ? file.name : savedPdf}
+            </span>
             <Button
               type="button"
               size="icon"
@@ -120,11 +137,15 @@ export function IntroStep({
               pick(e.dataTransfer.files[0]);
             }}
             className={`w-full rounded-lg border-2 border-dashed p-6 flex flex-col items-center gap-2 text-sm transition-colors ${
-              over ? "border-primary bg-primary/5" : "border-black/40 hover:border-black"
+              over
+                ? "border-primary bg-primary/5"
+                : "border-black/40 hover:border-black"
             }`}
           >
             <Upload className="w-6 h-6" />
-            <span className="font-medium">Drop a PDF here or click to choose</span>
+            <span className="font-medium">
+              Drop a PDF here or click to choose
+            </span>
           </button>
         )}
         <input

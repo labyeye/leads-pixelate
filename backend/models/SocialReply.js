@@ -3,7 +3,12 @@ const mongoose = require("mongoose");
 // One row per incoming comment or DM that autopilot drafted (or sent) a reply to.
 const socialReplySchema = new mongoose.Schema(
   {
-    tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", required: true, index: true },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      index: true,
+    },
     platform: { type: String, enum: ["facebook", "instagram"], required: true },
     pageId: { type: String, required: true },
     kind: { type: String, enum: ["comment", "dm"], required: true },
@@ -23,6 +28,9 @@ const socialReplySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-socialReplySchema.index({ tenantId: 1, pageId: 1, kind: 1, externalId: 1 }, { unique: true });
+socialReplySchema.index(
+  { tenantId: 1, pageId: 1, kind: 1, externalId: 1 },
+  { unique: true },
+);
 
 module.exports = mongoose.model("SocialReply", socialReplySchema);

@@ -1,4 +1,6 @@
 const asyncHandler = require("express-async-handler");
+const escapeRegex = require("../utils/escapeRegex");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const User = require("../models/User");
 const Role = require("../models/Role");
 const logActivity = require("../utils/activityLogger");
@@ -29,8 +31,8 @@ const getUsers = asyncHandler(async (req, res) => {
   if (role) query.role = role;
   if (search) {
     query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { email: { $regex: search, $options: "i" } },
+      { name: { $regex: escapeRegex(search), $options: "i" } },
+      { email: { $regex: escapeRegex(search), $options: "i" } },
     ];
   }
 
@@ -46,7 +48,7 @@ const getUsers = asyncHandler(async (req, res) => {
 });
 
 const getUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id)
+  const user = await User.findOne({ _id: req.params.id, ...tenantScope(req) })
     .select("+bankDetails")
     .populate("roleId", "name tier");
 
@@ -162,7 +164,7 @@ const createUser = asyncHandler(async (req, res) => {
 });
 
 const updateUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id).select("+bankDetails");
+  const user = await User.findOne({ _id: req.params.id, ...tenantScope(req) }).select("+bankDetails");
 
   if (!user) {
     res.status(404);
@@ -198,7 +200,10 @@ const updateUser = asyncHandler(async (req, res) => {
 
   if (name) user.name = name;
   if (email) user.email = email;
-  if (password) user.password = password;
+  if (password) {
+    user.password = password;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+  }
   if (roleId) {
     const found = await resolveRole(roleId, req, res);
     user.role = found.tier;
@@ -242,7 +247,7 @@ const updateUser = asyncHandler(async (req, res) => {
 });
 
 const deleteUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!user) {
     res.status(404);
@@ -284,7 +289,7 @@ const addUserDocument = asyncHandler(async (req, res) => {
     throw new Error("Document name and url are required");
   }
 
-  const user = await User.findById(req.params.id);
+  const user = await User.findOne({ _id: req.params.id, ...tenantScope(req) });
   if (!user) {
     res.status(404);
     throw new Error("User not found");
@@ -306,7 +311,7 @@ const addUserDocument = asyncHandler(async (req, res) => {
 });
 
 const removeUserDocument = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const user = await User.findOne({ _id: req.params.id, ...tenantScope(req) });
   if (!user) {
     res.status(404);
     throw new Error("User not found");

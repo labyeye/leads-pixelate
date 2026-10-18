@@ -1,6 +1,6 @@
-import React, {useEffect, useRef} from 'react';
-import {Animated, Image, StyleSheet, Text, View} from 'react-native';
-import {Users, PhoneCall, TrendingUp} from 'lucide-react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { Users, PhoneCall, TrendingUp } from 'lucide-react-native';
 
 const logo = require('../assets/images/Logo.png');
 
@@ -18,7 +18,7 @@ interface Props {
   onDone: () => void;
 }
 
-export default function AnimatedSplashScreen({onDone}: Props) {
+export default function AnimatedSplashScreen({ onDone }: Props) {
   // Each icon: opacity + translateY
   const icon1Opacity = useRef(new Animated.Value(0)).current;
   const icon1Y = useRef(new Animated.Value(ICON_SLIDE)).current;
@@ -90,11 +90,11 @@ export default function AnimatedSplashScreen({onDone}: Props) {
   return (
     <View style={styles.container}>
       {/* Three icons */}
-      <Animated.View style={[styles.iconsRow, {opacity: iconsGroupOpacity}]}>
+      <Animated.View style={[styles.iconsRow, { opacity: iconsGroupOpacity }]}>
         <Animated.View
           style={[
             styles.iconWrap,
-            {opacity: icon1Opacity, transform: [{translateY: icon1Y}]},
+            { opacity: icon1Opacity, transform: [{ translateY: icon1Y }] },
           ]}
         >
           <View style={styles.iconCircle}>
@@ -106,7 +106,7 @@ export default function AnimatedSplashScreen({onDone}: Props) {
         <Animated.View
           style={[
             styles.iconWrap,
-            {opacity: icon2Opacity, transform: [{translateY: icon2Y}]},
+            { opacity: icon2Opacity, transform: [{ translateY: icon2Y }] },
           ]}
         >
           <View style={styles.iconCircle}>
@@ -118,7 +118,7 @@ export default function AnimatedSplashScreen({onDone}: Props) {
         <Animated.View
           style={[
             styles.iconWrap,
-            {opacity: icon3Opacity, transform: [{translateY: icon3Y}]},
+            { opacity: icon3Opacity, transform: [{ translateY: icon3Y }] },
           ]}
         >
           <View style={styles.iconCircle}>
@@ -132,7 +132,7 @@ export default function AnimatedSplashScreen({onDone}: Props) {
       <Animated.View
         style={[
           styles.logoWrap,
-          {opacity: logoOpacity, transform: [{translateY: logoY}]},
+          { opacity: logoOpacity, transform: [{ translateY: logoY }] },
         ]}
       >
         <View style={styles.logoCard}>

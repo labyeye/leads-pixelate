@@ -5,7 +5,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { GoogleAdsIcon } from "@/components/icons/GoogleAdsIcon";
-import { AssigneePicker, describeAssignment } from "@/components/integrations/AssigneePicker";
+import {
+  AssigneePicker,
+  describeAssignment,
+} from "@/components/integrations/AssigneePicker";
 import {
   RefreshCw,
   Check,
@@ -57,9 +60,9 @@ export default function GoogleAdsCampaignsPage() {
   );
   const [allowedStates, setAllowedStates] = useState<string[]>([]);
   const [stateInput, setStateInput] = useState("");
-  const [users, setUsers] = useState<{ _id: string; name: string; role: string }[]>(
-    [],
-  );
+  const [users, setUsers] = useState<
+    { _id: string; name: string; role: string }[]
+  >([]);
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [assignBatchSize, setAssignBatchSize] = useState(1);
   const [connecting, setConnecting] = useState(false);
@@ -70,7 +73,7 @@ export default function GoogleAdsCampaignsPage() {
     setLoading(true);
     try {
       const res = await googleAdsAPI.getConnectedAccounts();
-      setConnectedAccounts(res.data || []);
+      setConnectedAccounts((res.data || []) as unknown as typeof connectedAccounts);
       setHasToken(res.hasToken);
     } catch {
       // not connected yet

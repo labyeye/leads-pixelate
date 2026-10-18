@@ -60,7 +60,12 @@ interface ResourcePermissions {
   permissions: Record<string, Record<CrudOp, boolean>>;
 }
 
-const NO_ACCESS: Record<CrudOp, boolean> = { create: false, read: false, update: false, delete: false };
+const NO_ACCESS: Record<CrudOp, boolean> = {
+  create: false,
+  read: false,
+  update: false,
+  delete: false,
+};
 
 const CRM_ROLES: { id: CrmRole; label: string }[] = [
   { id: "super_admin", label: "Super Admin" },
@@ -341,14 +346,42 @@ const INITIAL_PERMISSIONS: ResourcePermissions[] = [
 ];
 
 const INDIA_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
-  "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim",
-  "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
-  "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir",
-  "Ladakh", "Lakshadweep", "Puducherry",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
 ];
 
 function StateField({
@@ -372,7 +405,9 @@ function StateField({
         disabled={readOnly}
         className={cn(
           "w-full px-3 py-2 border-2 border-black nb-shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-[#024BAB] focus:ring-offset-0",
-          readOnly ? "bg-gray-50 cursor-default text-muted-foreground" : "bg-white",
+          readOnly
+            ? "bg-gray-50 cursor-default text-muted-foreground"
+            : "bg-white",
         )}
       >
         <option value="">Select state</option>
@@ -483,7 +518,10 @@ export default function SettingsPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [designersOpened, setDesignersOpened] = useState<string[]>([]); // each stays mounted after its first visit so edits survive tab switches
   useEffect(() => {
-    if (activeTab.endsWith("-design")) setDesignersOpened((d) => (d.includes(activeTab) ? d : [...d, activeTab]));
+    if (activeTab.endsWith("-design"))
+      setDesignersOpened((d) =>
+        d.includes(activeTab) ? d : [...d, activeTab],
+      );
   }, [activeTab]);
   const [permissions, setPermissions] =
     useState<ResourcePermissions[]>(INITIAL_PERMISSIONS);
@@ -497,7 +535,10 @@ export default function SettingsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
-  const [roleForm, setRoleForm] = useState({ name: "", tier: "sales_executive" });
+  const [roleForm, setRoleForm] = useState({
+    name: "",
+    tier: "sales_executive",
+  });
   const [savingRole, setSavingRole] = useState(false);
 
   const TIER_LABELS: Record<string, string> = {
@@ -643,7 +684,9 @@ export default function SettingsPage() {
       > = {};
       const live = new Set(permColumns.map((c) => c.id)); // drops columns of deleted roles
       permissions.forEach((r) => {
-        permissionsMap[r.resource] = Object.fromEntries(Object.entries(r.permissions).filter(([k]) => live.has(k)));
+        permissionsMap[r.resource] = Object.fromEntries(
+          Object.entries(r.permissions).filter(([k]) => live.has(k)),
+        );
       });
       await settingsAPI.update({ permissions: permissionsMap });
       await refreshPermissions();
@@ -663,7 +706,9 @@ export default function SettingsPage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name } = e.target;
     let value = e.target.value;
@@ -787,19 +832,43 @@ export default function SettingsPage() {
 
   // One column per default tier plus one per custom role. A custom role with no saved column
   // yet shows (and starts from) its tier's values.
-  const permColumns: { id: string; label: string; tier: string; custom: boolean }[] = [
+  const permColumns: {
+    id: string;
+    label: string;
+    tier: string;
+    custom: boolean;
+  }[] = [
     ...CRM_ROLES.map((r) => ({ ...r, tier: r.id as string, custom: false })),
-    ...roles.filter((r) => !r.isDefault).map((r) => ({ id: r._id, label: r.name, tier: r.tier as string, custom: true })),
+    ...roles
+      .filter((r) => !r.isDefault)
+      .map((r) => ({
+        id: r._id,
+        label: r.name,
+        tier: r.tier as string,
+        custom: true,
+      })),
   ];
-  const cellPerms = (res: ResourcePermissions, col: { id: string; tier: string }) =>
-    res.permissions[col.id] ?? res.permissions[col.tier] ?? NO_ACCESS;
+  const cellPerms = (
+    res: ResourcePermissions,
+    col: { id: string; tier: string },
+  ) => res.permissions[col.id] ?? res.permissions[col.tier] ?? NO_ACCESS;
 
-  const togglePermission = (resourceIdx: number, col: { id: string; tier: string }, op: CrudOp) => {
+  const togglePermission = (
+    resourceIdx: number,
+    col: { id: string; tier: string },
+    op: CrudOp,
+  ) => {
     setPermissions((prev) =>
       prev.map((r, i) => {
         if (i !== resourceIdx) return r;
         const cur = cellPerms(r, col);
-        return { ...r, permissions: { ...r.permissions, [col.id]: { ...cur, [op]: !cur[op] } } };
+        return {
+          ...r,
+          permissions: {
+            ...r.permissions,
+            [col.id]: { ...cur, [op]: !cur[op] },
+          },
+        };
       }),
     );
   };
@@ -873,7 +942,11 @@ export default function SettingsPage() {
     }
     try {
       setSaving(true);
-      const { invoiceTemplate: _i, quotationTemplate: _q, ...generalSettings } = settings; // the designers save their own
+      const {
+        invoiceTemplate: _i,
+        quotationTemplate: _q,
+        ...generalSettings
+      } = settings; // the designers save their own
       const res = await settingsAPI.update(generalSettings);
       setStatusOverrides(res.data?.leadStatusLabels);
       setCustomLeadStatuses(res.data?.customLeadStatuses);
@@ -943,7 +1016,13 @@ export default function SettingsPage() {
       icon: Palette,
       adminOnly: true,
     },
-    { id: "numbering", label: "Numbering", icon: Hash, adminOnly: true, ownerOnly: true },
+    {
+      id: "numbering",
+      label: "Numbering",
+      icon: Hash,
+      adminOnly: true,
+      ownerOnly: true,
+    },
     {
       id: "statuses",
       label: "Lead Statuses",
@@ -969,7 +1048,9 @@ export default function SettingsPage() {
       adminOnly: true,
     },
   ];
-  const tabs = allTabs.filter((t: any) => (!t.adminOnly || isAdminOrAbove) && (!t.ownerOnly || isOwner));
+  const tabs = allTabs.filter(
+    (t: any) => (!t.adminOnly || isAdminOrAbove) && (!t.ownerOnly || isOwner),
+  );
 
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1033,9 +1114,14 @@ export default function SettingsPage() {
             </p>
             {tabs
               .filter((t) =>
-                ["general", "bank", "terms", "invoice-design", "quotation-design", "statuses"].includes(
-                  t.id,
-                ),
+                [
+                  "general",
+                  "bank",
+                  "terms",
+                  "invoice-design",
+                  "quotation-design",
+                  "statuses",
+                ].includes(t.id),
               )
               .map((tab) => {
                 const Icon = tab.icon;
@@ -1142,18 +1228,31 @@ export default function SettingsPage() {
           {isAdminOrAbove &&
             (["invoice", "quotation"] as const).map((kind) =>
               designersOpened.includes(`${kind}-design`) ? (
-                <div key={kind} className={activeTab === `${kind}-design` ? "" : "hidden"}>
+                <div
+                  key={kind}
+                  className={activeTab === `${kind}-design` ? "" : "hidden"}
+                >
                   <InvoiceDesigner
                     kind={kind}
                     settings={settings}
                     active={activeTab === `${kind}-design`}
-                    onSaved={(t) => setSettings((prev: any) => ({ ...prev, [`${kind}Template`]: t }))}
+                    onSaved={(t) =>
+                      setSettings((prev: any) => ({
+                        ...prev,
+                        [`${kind}Template`]: t,
+                      }))
+                    }
                   />
                 </div>
               ) : null,
             )}
 
-          <div className={cn("p-4 sm:p-6 max-w-3xl", activeTab.endsWith("-design") && "hidden")}>
+          <div
+            className={cn(
+              "p-4 sm:p-6 max-w-3xl",
+              activeTab.endsWith("-design") && "hidden",
+            )}
+          >
             {}
             {activeTab === "general" && (
               <div className="space-y-4">
@@ -1400,7 +1499,12 @@ export default function SettingsPage() {
 
             {}
             {activeTab === "numbering" && isOwner && (
-              <NumberingTab saved={settings?.numbering} onSaved={(n) => setSettings((p: any) => ({ ...p, numbering: n }))} />
+              <NumberingTab
+                saved={settings?.numbering}
+                onSaved={(n) =>
+                  setSettings((p: any) => ({ ...p, numbering: n }))
+                }
+              />
             )}
             {activeTab === "statuses" && (
               <div className="space-y-6">
@@ -1408,10 +1512,10 @@ export default function SettingsPage() {
                   <Tag className="w-4 h-4 text-[#024BAB] shrink-0 mt-0.5" />
                   <p className="text-xs text-black">
                     Rename and recolor the fixed pipeline stages, or add
-                    brand-new stages of your own within New Lead, Discussion,
-                    or Quotation. New stages inherit that category's
-                    transition rules (drop, jump to Discussion/Quotation,
-                    etc.) automatically.
+                    brand-new stages of your own within New Lead, Discussion, or
+                    Quotation. New stages inherit that category's transition
+                    rules (drop, jump to Discussion/Quotation, etc.)
+                    automatically.
                   </p>
                 </div>
 
@@ -1422,8 +1526,7 @@ export default function SettingsPage() {
                     </p>
                     <div className="border-2 border-black divide-y-2 divide-black">
                       {values.map((status) => {
-                        const isProtected =
-                          PROTECTED_STATUSES.includes(status);
+                        const isProtected = PROTECTED_STATUSES.includes(status);
                         const isCustom = isCustomLeadStatus(status);
                         const override =
                           settings?.leadStatusLabels?.[status] || {};
@@ -1498,9 +1601,7 @@ export default function SettingsPage() {
                                   type="button"
                                   title="Move up"
                                   disabled={siblingIdx <= 0}
-                                  onClick={() =>
-                                    moveCustomStatus(status, "up")
-                                  }
+                                  onClick={() => moveCustomStatus(status, "up")}
                                   className="p-1 border-2 border-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
                                 >
                                   <ChevronUp className="w-3 h-3" />
@@ -1632,9 +1733,9 @@ export default function SettingsPage() {
                       Team Roles
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Create roles for how your company is structured — each
-                      one behaves like one of the base permission tiers.
-                      These show up when assigning a role on the Team page.
+                      Create roles for how your company is structured — each one
+                      behaves like one of the base permission tiers. These show
+                      up when assigning a role on the Team page.
                     </p>
                   </div>
                 </div>
@@ -1652,9 +1753,7 @@ export default function SettingsPage() {
                         <th className="px-4 py-3 text-center border-r-2 border-black">
                           Members
                         </th>
-                        <th className="px-4 py-3 text-center w-28">
-                          Actions
-                        </th>
+                        <th className="px-4 py-3 text-center w-28">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1747,8 +1846,7 @@ export default function SettingsPage() {
                         }
                         disabled={
                           !!editingRoleId &&
-                          roles.find((r) => r._id === editingRoleId)
-                            ?.isDefault
+                          roles.find((r) => r._id === editingRoleId)?.isDefault
                         }
                         className="border-2 border-black w-full px-3 py-2 text-sm bg-white disabled:opacity-50"
                       >
@@ -1913,8 +2011,9 @@ export default function SettingsPage() {
                   <p className="text-xs text-black">
                     C = Create, R = Read, U = Update, D = Delete. Super Admin
                     always has full access to all resources. Roles you create on
-                    the Roles tab get their own column here; until you change it,
-                    a custom role has the same access as its permission tier.
+                    the Roles tab get their own column here; until you change
+                    it, a custom role has the same access as its permission
+                    tier.
                   </p>
                 </div>
 

@@ -1,27 +1,34 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, StatusBar, Alert, ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  StatusBar,
+  Alert,
+  ScrollView,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import NewCampaignModal from '../components/autopilot/NewCampaignModal';
-import {Chip} from '../components/autopilot/ui';
-import {autopilotAPI} from '../services/api';
-import {Selection, pickCampaign} from '../lib/autopilot';
+import { Chip } from '../components/autopilot/ui';
+import { autopilotAPI } from '../services/api';
+import { Selection, pickCampaign } from '../lib/autopilot';
 import AutopilotDashboardTab from './autopilot/AutopilotDashboardTab';
 import AutopilotSetupTab from './autopilot/AutopilotSetupTab';
 import AutopilotReportTab from './autopilot/AutopilotReportTab';
 
 const PRIMARY = '#024BAB';
 type Tab = 'dashboard' | 'setup' | 'report';
-const TABS: {id: Tab; label: string; icon: string}[] = [
-  {id: 'dashboard', label: 'Dashboard', icon: 'grid-outline'},
-  {id: 'setup', label: 'Setup', icon: 'settings-outline'},
-  {id: 'report', label: 'Report', icon: 'stats-chart-outline'},
+const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'grid-outline' },
+  { id: 'setup', label: 'Setup', icon: 'settings-outline' },
+  { id: 'report', label: 'Report', icon: 'stats-chart-outline' },
 ];
 
 // Social Autopilot on mobile: the same three pages as the web app, for one campaign or all of them.
-export default function AutopilotScreen({navigation}: any) {
+export default function AutopilotScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const [overview, setOverview] = useState<any>(null);
   const [status, setStatus] = useState<any>(null); // the selected campaign's full state
@@ -31,7 +38,9 @@ export default function AutopilotScreen({navigation}: any) {
   const [error, setError] = useState('');
   const started = useRef(false);
 
-  const selection: Selection = overview ? pickCampaign(overview.campaigns, wanted, tab !== 'setup') : null;
+  const selection: Selection = overview
+    ? pickCampaign(overview.campaigns, wanted, tab !== 'setup')
+    : null;
   const campaignId = selection && selection !== 'all' ? selection : null;
 
   const reloadOverview = useCallback(async () => {
@@ -99,10 +108,14 @@ export default function AutopilotScreen({navigation}: any) {
   };
 
   return (
-    <View style={[s.container, {paddingTop: insets.top}]}>
+    <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn} accessibilityLabel="Back">
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={s.backBtn}
+          accessibilityLabel="Back"
+        >
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
         <Text style={s.title}>Social Autopilot</Text>
@@ -112,20 +125,38 @@ export default function AutopilotScreen({navigation}: any) {
           <TouchableOpacity
             key={t.id}
             accessibilityRole="tab"
-            accessibilityState={{selected: tab === t.id}}
+            accessibilityState={{ selected: tab === t.id }}
             onPress={() => setTab(t.id)}
-            style={[s.tab, tab === t.id && s.tabActive]}>
-            <Icon name={t.icon} size={15} color={tab === t.id ? '#fff' : '#000'} />
-            <Text style={[s.tabText, tab === t.id && {color: '#fff'}]}>{t.label}</Text>
+            style={[s.tab, tab === t.id && s.tabActive]}
+          >
+            <Icon
+              name={t.icon}
+              size={15}
+              color={tab === t.id ? '#fff' : '#000'}
+            />
+            <Text style={[s.tabText, tab === t.id && { color: '#fff' }]}>
+              {t.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {overview ? (
         <View style={s.campaignBar}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal: 12, paddingVertical: 8}}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+            }}
+          >
             {tab !== 'setup' && campaigns.length > 1 ? (
-              <Chip label="All campaigns" active={selection === 'all'} onPress={() => setWanted('all')} />
+              <Chip
+                label="All campaigns"
+                active={selection === 'all'}
+                onPress={() => setWanted('all')}
+              />
             ) : null}
             {campaigns.map(c => (
               <Chip
@@ -135,14 +166,24 @@ export default function AutopilotScreen({navigation}: any) {
                 onPress={() => setWanted(c.id)}
               />
             ))}
-            {canAdd ? <Chip label="+ New campaign" active={false} onPress={() => setNewOpen(true)} /> : null}
+            {canAdd ? (
+              <Chip
+                label="+ New campaign"
+                active={false}
+                onPress={() => setNewOpen(true)}
+              />
+            ) : null}
           </ScrollView>
         </View>
       ) : null}
 
       {!overview || !tab ? (
         <View style={s.center}>
-          {error ? <Text style={s.error}>{error}</Text> : <ActivityIndicator size="large" color={PRIMARY} />}
+          {error ? (
+            <Text style={s.error}>{error}</Text>
+          ) : (
+            <ActivityIndicator size="large" color={PRIMARY} />
+          )}
         </View>
       ) : tab === 'dashboard' ? (
         <AutopilotDashboardTab
@@ -172,9 +213,13 @@ export default function AutopilotScreen({navigation}: any) {
           <View style={s.center}>
             <Text style={s.emptyTitle}>Create your first campaign</Text>
             <Text style={s.emptyText}>
-              Each campaign has its own accounts, brand, logos, schedule, references and competitors.
+              Each campaign has its own accounts, brand, logos, schedule,
+              references and competitors.
             </Text>
-            <TouchableOpacity style={s.createBtn} onPress={() => setNewOpen(true)}>
+            <TouchableOpacity
+              style={s.createBtn}
+              onPress={() => setNewOpen(true)}
+            >
               <Text style={s.createText}>New campaign</Text>
             </TouchableOpacity>
           </View>
@@ -198,19 +243,84 @@ export default function AutopilotScreen({navigation}: any) {
 }
 
 const s = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f1f5f9'},
-  header: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 2, borderBottomColor: '#000'},
-  backBtn: {width: 34, height: 34, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center', marginRight: 12, backgroundColor: '#fff'},
-  title: {fontSize: 18, fontWeight: '600', color: '#000'},
-  tabs: {flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, gap: 8},
-  tab: {flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 2, borderRadius: 8, borderColor: '#000', paddingVertical: 8, backgroundColor: '#fff'},
-  tabActive: {backgroundColor: PRIMARY},
-  tabText: {fontSize: 12, fontWeight: '800', color: '#000'},
-  campaignBar: {backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0'},
-  center: {flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20},
-  error: {color: '#b91c1c', fontSize: 14, textAlign: 'center'},
-  emptyTitle: {fontSize: 18, fontWeight: '600', color: '#000', marginBottom: 6},
-  emptyText: {fontSize: 13, color: '#475569', textAlign: 'center', marginBottom: 14},
-  createBtn: {backgroundColor: PRIMARY, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', paddingVertical: 11, paddingHorizontal: 18},
-  createText: {color: '#fff', fontWeight: '800', fontSize: 13},
+  container: { flex: 1, backgroundColor: '#f1f5f9' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 2,
+    borderBottomColor: '#000',
+  },
+  backBtn: {
+    width: 34,
+    height: 34,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    backgroundColor: '#fff',
+  },
+  title: { fontSize: 18, fontWeight: '600', color: '#000' },
+  tabs: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  tabActive: { backgroundColor: PRIMARY },
+  tabText: { fontSize: 12, fontWeight: '800', color: '#000' },
+  campaignBar: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  error: { color: '#b91c1c', fontSize: 14, textAlign: 'center' },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 6,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#475569',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  createBtn: {
+    backgroundColor: PRIMARY,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+  },
+  createText: { color: '#fff', fontWeight: '800', fontSize: 13 },
 });

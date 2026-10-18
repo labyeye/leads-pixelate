@@ -139,20 +139,37 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
     label: "Assigned To",
     get: (l) => l.assignedTo?.name || "Unassigned",
   },
-  { key: "location", label: "Location", default: false, get: (l) => l.location || "" },
-  { key: "budget", label: "Budget", default: false, get: (l) => l.budget || "" },
+  {
+    key: "location",
+    label: "Location",
+    default: false,
+    get: (l) => l.location || "",
+  },
+  {
+    key: "budget",
+    label: "Budget",
+    default: false,
+    get: (l) => l.budget || "",
+  },
   {
     key: "requirement",
     label: "Requirement",
     default: false,
     get: (l) => l.requirement || "",
   },
-  { key: "website", label: "Website", default: false, get: (l) => l.website || "" },
+  {
+    key: "website",
+    label: "Website",
+    default: false,
+    get: (l) => l.website || "",
+  },
   {
     key: "followUpDate",
     label: "Follow-up Date",
     get: (l) =>
-      l.followUpDate ? new Date(l.followUpDate).toLocaleDateString("en-IN") : "",
+      l.followUpDate
+        ? new Date(l.followUpDate).toLocaleDateString("en-IN")
+        : "",
   },
   {
     key: "createdAt",
@@ -263,7 +280,8 @@ function quotationTotal(q: any): number {
 
 interface ReportDef {
   id: string;
-  category: "Leads" | "Activity" | "Team" | "Clients" | "Quotations" | "Campaigns";
+  category:
+    "Leads" | "Activity" | "Team" | "Clients" | "Quotations" | "Campaigns";
   title: string;
   description: string;
   icon: any;
@@ -276,7 +294,8 @@ const REPORT_CATALOG: ReportDef[] = [
     id: "all-leads",
     category: "Leads",
     title: "All Leads Report",
-    description: "Full export of every lead in the pipeline with source, status, and assignment.",
+    description:
+      "Full export of every lead in the pipeline with source, status, and assignment.",
     icon: FileText,
     filenamePrefix: "all-leads",
     fetch: async () => buildLeadsTable(await fetchAllLeads()),
@@ -306,13 +325,15 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Fresh leads that haven't been contacted yet.",
     icon: Clock,
     filenamePrefix: "pending-contact",
-    fetch: async () => buildLeadsTable(await fetchAllLeads({ status: "PENDING CONTACT" })),
+    fetch: async () =>
+      buildLeadsTable(await fetchAllLeads({ status: "PENDING CONTACT" })),
   },
   {
     id: "leads-by-source",
     category: "Leads",
     title: "Leads by Source Report",
-    description: "All leads sorted by source (IndiaMART, Facebook, Website, etc).",
+    description:
+      "All leads sorted by source (IndiaMART, Facebook, Website, etc).",
     icon: MapPinned,
     filenamePrefix: "leads-by-source",
     fetch: async () =>
@@ -376,7 +397,16 @@ const REPORT_CATALOG: ReportDef[] = [
       const res = await reportsAPI.getStatusHistory({ period: "month" });
       const rows = res.data || [];
       return {
-        headers: ["Lead Name", "Company", "Phone", "Changed To", "Changed By", "Assigned To", "Remarks", "Time"],
+        headers: [
+          "Lead Name",
+          "Company",
+          "Phone",
+          "Changed To",
+          "Changed By",
+          "Assigned To",
+          "Remarks",
+          "Time",
+        ],
         rows: rows.map((r: any) => [
           r.leadName || "",
           r.leadCompany || "",
@@ -401,7 +431,16 @@ const REPORT_CATALOG: ReportDef[] = [
       const res = await reportsAPI.getStatusHistory({ period: "year" });
       const rows = res.data || [];
       return {
-        headers: ["Lead Name", "Company", "Phone", "Changed To", "Changed By", "Assigned To", "Remarks", "Time"],
+        headers: [
+          "Lead Name",
+          "Company",
+          "Phone",
+          "Changed To",
+          "Changed By",
+          "Assigned To",
+          "Remarks",
+          "Time",
+        ],
         rows: rows.map((r: any) => [
           r.leadName || "",
           r.leadCompany || "",
@@ -431,7 +470,16 @@ const REPORT_CATALOG: ReportDef[] = [
       const leads = await fetchAllLeads({ startDate, endDate });
       const stats = computeTeamStats(leads);
       return {
-        headers: ["Team Member", "Total", "Won", "Drop", "Pending", "Discussion", "Quotation", "Visit"],
+        headers: [
+          "Team Member",
+          "Total",
+          "Won",
+          "Drop",
+          "Pending",
+          "Discussion",
+          "Quotation",
+          "Visit",
+        ],
         rows: stats.map((m) => [
           m.name,
           m.total,
@@ -456,7 +504,15 @@ const REPORT_CATALOG: ReportDef[] = [
       const res = await clientsAPI.getAll();
       const rows = res.data || [];
       return {
-        headers: ["Name", "Company", "Email", "Phone", "Business Type", "Project Status", "Payment Status"],
+        headers: [
+          "Name",
+          "Company",
+          "Email",
+          "Phone",
+          "Business Type",
+          "Project Status",
+          "Payment Status",
+        ],
         rows: rows.map((c: any) => [
           c.name || "",
           c.company || "",
@@ -478,7 +534,9 @@ const REPORT_CATALOG: ReportDef[] = [
     filenamePrefix: "active-clients",
     fetch: async () => {
       const res = await clientsAPI.getAll();
-      const rows = (res.data || []).filter((c: any) => c.projectStatus === "Active");
+      const rows = (res.data || []).filter(
+        (c: any) => c.projectStatus === "Active",
+      );
       return {
         headers: ["Name", "Company", "Email", "Phone", "Payment Status"],
         rows: rows.map((c: any) => [
@@ -500,28 +558,53 @@ const REPORT_CATALOG: ReportDef[] = [
     filenamePrefix: "payment-pending",
     fetch: async () => {
       const res = await clientsAPI.getAll();
-      const rows = (res.data || []).filter((c: any) => c.paymentStatus === "Pending");
+      const rows = (res.data || []).filter(
+        (c: any) => c.paymentStatus === "Pending",
+      );
       return {
         headers: ["Name", "Company", "Email", "Phone"],
-        rows: rows.map((c: any) => [c.name || "", c.company || "", c.email || "", c.phone || ""]),
+        rows: rows.map((c: any) => [
+          c.name || "",
+          c.company || "",
+          c.email || "",
+          c.phone || "",
+        ]),
       };
     },
   },
   ...(["All", "Approved", "Draft", "Rejected"] as const).map((status) => ({
     id: `quotations-${status.toLowerCase()}`,
     category: "Quotations" as const,
-    title: status === "All" ? "All Quotations Report" : `${status} Quotations Report`,
+    title:
+      status === "All"
+        ? "All Quotations Report"
+        : `${status} Quotations Report`,
     description:
       status === "All"
         ? "Every quotation raised, with computed totals."
         : `Quotations currently in ${status} status.`,
-    icon: status === "Approved" ? CheckCircle2 : status === "Rejected" ? XCircle : FileText,
+    icon:
+      status === "Approved"
+        ? CheckCircle2
+        : status === "Rejected"
+          ? XCircle
+          : FileText,
     filenamePrefix: `quotations-${status.toLowerCase()}`,
     fetch: async () => {
       const res = await quotationsAPI.getAll();
-      const rows = (res.data || []).filter((q: any) => status === "All" || q.status === status);
+      const rows = (res.data || []).filter(
+        (q: any) => status === "All" || q.status === status,
+      );
       return {
-        headers: ["Number", "Client Name", "Company", "Project Title", "Status", "Total (incl. tax)", "Date"],
+        headers: [
+          "Number",
+          "Client Name",
+          "Company",
+          "Project Title",
+          "Status",
+          "Total (incl. tax)",
+          "Date",
+        ],
         rows: rows.map((q: any) => [
           q.number || "",
           q.clientName || "",
@@ -534,17 +617,24 @@ const REPORT_CATALOG: ReportDef[] = [
       };
     },
   })),
-  ...(["Facebook", "Google Ads", "LinkedIn", "IndiaMART", "TradeIndia", "Justdial"] as const).map(
-    (source) => ({
-      id: `campaign-${source.toLowerCase().replace(/\s+/g, "-")}`,
-      category: "Campaigns" as const,
-      title: `${source} Leads Report`,
-      description: `All leads captured through ${source}.`,
-      icon: source === "Facebook" ? Facebook : Megaphone,
-      filenamePrefix: `${source.toLowerCase().replace(/\s+/g, "-")}-leads`,
-      fetch: async () => buildLeadsTable(await fetchAllLeads({ source })),
-    }),
-  ),
+  ...(
+    [
+      "Facebook",
+      "Google Ads",
+      "LinkedIn",
+      "IndiaMART",
+      "TradeIndia",
+      "Justdial",
+    ] as const
+  ).map((source) => ({
+    id: `campaign-${source.toLowerCase().replace(/\s+/g, "-")}`,
+    category: "Campaigns" as const,
+    title: `${source} Leads Report`,
+    description: `All leads captured through ${source}.`,
+    icon: source === "Facebook" ? Facebook : Megaphone,
+    filenamePrefix: `${source.toLowerCase().replace(/\s+/g, "-")}-leads`,
+    fetch: async () => buildLeadsTable(await fetchAllLeads({ source })),
+  })),
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -590,7 +680,11 @@ export default function ReportsPage() {
 
   const exportPreviewAsPDF = () => {
     if (!previewReport || !previewTable) return;
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
     doc.setFontSize(12);
     doc.text(previewReport.title, 8, 10);
     autoTable(doc, {
@@ -598,7 +692,11 @@ export default function ReportsPage() {
       head: [previewTable.headers],
       body: previewTable.rows,
       styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [2, 75, 171], textColor: 255, fontStyle: "bold" },
+      headStyles: {
+        fillColor: [2, 75, 171],
+        textColor: 255,
+        fontStyle: "bold",
+      },
       margin: { left: 5, right: 5 },
     });
     doc.save(`${previewReport.filenamePrefix}-${dateStamp()}.pdf`);
@@ -615,7 +713,10 @@ export default function ReportsPage() {
 
   const exportPreviewAsExcel = () => {
     if (!previewReport || !previewTable) return;
-    const ws = XLSX.utils.aoa_to_sheet([previewTable.headers, ...previewTable.rows]);
+    const ws = XLSX.utils.aoa_to_sheet([
+      previewTable.headers,
+      ...previewTable.rows,
+    ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Report");
     XLSX.writeFile(wb, `${previewReport.filenamePrefix}-${dateStamp()}.xlsx`);
@@ -993,21 +1094,38 @@ export default function ReportsPage() {
     },
   ];
 
-  const catalogCategories = ["All", "Leads", "Activity", "Team", "Clients", "Quotations", "Campaigns"];
-  const categoryCounts = REPORT_CATALOG.reduce<Record<string, number>>((acc, r) => {
-    acc[r.category] = (acc[r.category] || 0) + 1;
-    return acc;
-  }, {});
+  const catalogCategories = [
+    "All",
+    "Leads",
+    "Activity",
+    "Team",
+    "Clients",
+    "Quotations",
+    "Campaigns",
+  ];
+  const categoryCounts = REPORT_CATALOG.reduce<Record<string, number>>(
+    (acc, r) => {
+      acc[r.category] = (acc[r.category] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
   const filteredCatalog = REPORT_CATALOG.filter((r) => {
-    const matchesCategory = catalogCategory === "All" || r.category === catalogCategory;
+    const matchesCategory =
+      catalogCategory === "All" || r.category === catalogCategory;
     const q = catalogSearch.trim().toLowerCase();
     const matchesSearch =
-      !q || r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q);
+      !q ||
+      r.title.toLowerCase().includes(q) ||
+      r.description.toLowerCase().includes(q);
     return matchesCategory && matchesSearch;
   });
   const groupedCatalog = catalogCategories
     .filter((c) => c !== "All")
-    .map((cat) => ({ cat, reports: filteredCatalog.filter((r) => r.category === cat) }))
+    .map((cat) => ({
+      cat,
+      reports: filteredCatalog.filter((r) => r.category === cat),
+    }))
     .filter((g) => g.reports.length > 0);
 
   return (
@@ -1016,7 +1134,9 @@ export default function ReportsPage() {
         {}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-display font-black text-2xl text-black">Reports</h1>
+            <h1 className="font-display font-black text-2xl text-black">
+              Reports
+            </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Generate, filter, and export CRM reports
             </p>
@@ -1026,7 +1146,9 @@ export default function ReportsPage() {
               onClick={() => setView("catalog")}
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors",
-                view === "catalog" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-50",
+                view === "catalog"
+                  ? "bg-black text-white"
+                  : "bg-white text-black hover:bg-gray-50",
               )}
             >
               <LayoutGrid className="w-3.5 h-3.5" /> All Reports
@@ -1035,7 +1157,9 @@ export default function ReportsPage() {
               onClick={() => setView("analytics")}
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest border-l-2 border-black transition-colors",
-                view === "analytics" ? "bg-black text-white" : "bg-white text-black hover:bg-gray-50",
+                view === "analytics"
+                  ? "bg-black text-white"
+                  : "bg-white text-black hover:bg-gray-50",
               )}
             >
               <BarChart3 className="w-3.5 h-3.5" /> Analytics
@@ -1125,8 +1249,12 @@ export default function ReportsPage() {
                             </span>
                           </div>
                           <div className="flex-1">
-                            <p className="font-black text-sm text-black">{r.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{r.description}</p>
+                            <p className="font-black text-sm text-black">
+                              {r.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {r.description}
+                            </p>
                           </div>
                           <button
                             onClick={() => handleGenerate(r)}
@@ -1135,7 +1263,8 @@ export default function ReportsPage() {
                           >
                             {isGenerating ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                                Generating...
                               </>
                             ) : (
                               <>
@@ -1154,989 +1283,1012 @@ export default function ReportsPage() {
         )}
 
         {view === "analytics" && (
-        <>
-        {}
-        <div className="flex border-2 border-black overflow-hidden">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-black uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
-                activeTab === t.key
-                  ? "bg-primary text-white"
-                  : "bg-white text-black hover:bg-gray-50",
-              )}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {}
-        {activeTab === "leads" && (
           <>
             {}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <KpiCard
-                title="Total Leads"
-                value={loading ? "—" : counts.total}
-                icon={Target}
-                bg="bg-[#024BAB]"
-              />
-              <KpiCard
-                title="Won"
-                value={loading ? "—" : counts.won}
-                icon={TrendingUp}
-                bg="bg-[#00C48C]"
-              />
-              <KpiCard
-                title="Dropped"
-                value={loading ? "—" : counts.drop}
-                icon={TrendingDown}
-                bg="bg-[#EF4444]"
-              />
-              <KpiCard
-                title="Pending Contact"
-                value={loading ? "—" : counts.pending}
-                icon={Clock}
-                bg="bg-[#FFDE00]"
-              />
-            </div>
-
-            {}
-            <div className="border-2 border-black bg-white">
-              <button
-                onClick={() => setFiltersOpen((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 border-b-2 border-black bg-primary text-white font-white uppercase tracking-widest text-xs hover:bg-primary transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  Filters
-                  {activeFilterCount > 0 && (
-                    <span className="bg-yellow-300 text-black text-[10px] font-black px-1.5 py-0.5 border border-black">
-                      {activeFilterCount} active
-                    </span>
-                  )}
-                </span>
-                <span>{filtersOpen ? "▲" : "▼"}</span>
-              </button>
-
-              {filtersOpen && (
-                <div className="p-4 space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-                    <div className="xl:col-span-2 space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        Search
-                      </label>
-                      <div className="flex items-center gap-2 border-2 border-black px-2 py-1.5 bg-white focus-within:ring-2 focus-within:ring-black">
-                        <Search className="w-3.5 h-3.5 text-black shrink-0" />
-                        <input
-                          type="text"
-                          placeholder="Name, phone, email..."
-                          value={filters.search}
-                          onChange={(e) => setFilter("search", e.target.value)}
-                          className="text-sm bg-transparent outline-none w-full text-black placeholder:text-gray-400 font-medium"
-                        />
-                        {filters.search && (
-                          <button
-                            onClick={() => setFilter("search", "")}
-                            className="shrink-0"
-                          >
-                            <X className="w-3 h-3 text-black" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        Status
-                      </label>
-                      <Select
-                        value={filters.status}
-                        onValueChange={(v) => setFilter("status", v)}
-                      >
-                        <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
-                          <SelectValue placeholder="All Statuses" />
-                        </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-lg">
-                          <SelectItem value="all" className="font-bold">
-                            All Statuses
-                          </SelectItem>
-                          {STATUSES.map((s) => (
-                            <SelectItem
-                              key={s}
-                              value={s}
-                              className="font-medium"
-                            >
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        Source
-                      </label>
-                      <Select
-                        value={filters.source}
-                        onValueChange={(v) => setFilter("source", v)}
-                      >
-                        <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
-                          <SelectValue placeholder="All Sources" />
-                        </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-lg">
-                          <SelectItem value="all" className="font-bold">
-                            All Sources
-                          </SelectItem>
-                          {SOURCES.map((s) => (
-                            <SelectItem
-                              key={s}
-                              value={s}
-                              className="font-medium"
-                            >
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        Assigned To
-                      </label>
-                      <Select
-                        value={filters.assignedTo}
-                        onValueChange={(v) => setFilter("assignedTo", v)}
-                      >
-                        <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
-                          <SelectValue placeholder="All Members" />
-                        </SelectTrigger>
-                        <SelectContent className="border-2 border-black rounded-lg">
-                          <SelectItem value="all" className="font-bold">
-                            All Members
-                          </SelectItem>
-                          {users.map((u) => (
-                            <SelectItem
-                              key={u._id}
-                              value={u._id}
-                              className="font-medium"
-                            >
-                              {u.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        From — To
-                      </label>
-                      <div className="flex gap-1">
-                        <input
-                          type="date"
-                          value={filters.startDate}
-                          onChange={(e) =>
-                            setFilter("startDate", e.target.value)
-                          }
-                          className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
-                        />
-                        <input
-                          type="date"
-                          value={filters.endDate}
-                          onChange={(e) => setFilter("endDate", e.target.value)}
-                          className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-1 border-t-2 border-black mt-3">
-                    <button
-                      onClick={() => fetchLeads()}
-                      disabled={loading}
-                      className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50"
-                    >
-                      {loading && (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      )}
-                      Apply Filters
-                    </button>
-                    {activeFilterCount > 0 && (
-                      <button
-                        onClick={handleReset}
-                        className="flex items-center gap-1 px-4 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
-                      >
-                        <X className="w-3 h-3" /> Reset
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {}
-            <div className="flex items-center gap-2 px-1 py-2 flex-wrap">
-              {[
-                { key: "today", label: "Today" },
-                { key: "yesterday", label: "Yesterday" },
-                { key: "last3", label: "Last 3 Days" },
-                { key: "last7", label: "Last 7 Days" },
-                { key: "last30", label: "Last 30 Days" },
-                { key: "thisMonth", label: "This Month" },
-              ].map(({ key, label }) => (
+            <div className="flex border-2 border-black overflow-hidden">
+              {TABS.map((t) => (
                 <button
-                  key={key}
-                  onClick={() =>
-                    activeDatePreset === key
-                      ? (setActiveDatePreset(""),
-                        fetchLeads({ ...filters, startDate: "", endDate: "" }),
-                        setFilters((f) => ({
-                          ...f,
-                          startDate: "",
-                          endDate: "",
-                        })))
-                      : applyDatePreset(key)
-                  }
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
                   className={cn(
-                    "px-3 py-1.5 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
-                    activeDatePreset === key
-                      ? "bg-[#FA731C] text-white shadow-none translate-x-[2px] translate-y-[2px]"
-                      : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
+                    "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-black uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
+                    activeTab === t.key
+                      ? "bg-primary text-white"
+                      : "bg-white text-black hover:bg-gray-50",
                   )}
                 >
-                  {label}
+                  {t.icon}
+                  {t.label}
                 </button>
               ))}
             </div>
 
             {}
-            <div className="border-2 border-black bg-white overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
-                <p className="text-xs font-black uppercase tracking-widest text-black">
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
-                      Loading...
-                    </span>
-                  ) : (
-                    `${leads.length} lead${leads.length !== 1 ? "s" : ""} found`
-                  )}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowExportDialog(true)}
-                    disabled={loading || leads.length === 0}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Download className="w-3.5 h-3.5" /> CSV
-                  </button>
-                  <button
-                    onClick={exportPDF}
-                    disabled={loading || leads.length === 0 || exporting}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {exporting ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <FileText className="w-3.5 h-3.5" />
-                    )}{" "}
-                    PDF
-                  </button>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-primary text-white">
-                      {[
-                        "#",
-                        "Name / Email",
-                        "Company",
-                        "Source",
-                        "Status",
-                        "Tag",
-                        "Assigned To",
-                        "Follow-up",
-                        "Created",
-                        "Remarks",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={10} className="text-center py-16">
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
-                          <p className="text-sm font-bold text-black mt-2 uppercase tracking-widest">
-                            Loading leads...
-                          </p>
-                        </td>
-                      </tr>
-                    ) : leads.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} className="text-center py-16">
-                          <p className="text-sm font-black uppercase tracking-widest text-black">
-                            No leads found.
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Try adjusting your filters.
-                          </p>
-                        </td>
-                      </tr>
-                    ) : (
-                      leads.map((lead, i) => (
-                        <tr
-                          key={lead._id || i}
-                          className={cn(
-                            "border-b-2 border-black last:border-b-0 transition-colors",
-                            i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
-                          )}
-                        >
-                          <td className="px-4 py-3 text-xs font-black text-gray-400 whitespace-nowrap">
-                            {i + 1}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="font-black text-black text-sm">
-                              {lead.name || "—"}
-                            </p>
-                            {lead.email && (
-                              <p className="text-[10px] text-gray-500 font-medium">
-                                {lead.email}
-                              </p>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {resolveCompany(lead)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">
-                              {lead.source || "—"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span
-                              className={cn(
-                                "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
-                                statusBadge(lead.status),
-                              )}
-                            >
-                              {lead.status || "—"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {lead.contactTag ? (
-                              <span
-                                className={cn(
-                                  "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
-                                  lead.contactTag === "HOT"
-                                    ? "bg-red-500 text-white border-red-700"
-                                    : lead.contactTag === "WARM"
-                                      ? "bg-orange-400 text-black border-orange-600"
-                                      : "bg-blue-300 text-black border-blue-500",
-                                )}
-                              >
-                                {lead.contactTag}
-                              </span>
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {lead.assignedTo?.name || (
-                              <span className="text-gray-400 italic font-medium text-xs">
-                                Unassigned
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
-                            {lead.followUpDate ? (
-                              new Date(lead.followUpDate).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
-                            {lead.createdAt ? (
-                              new Date(lead.createdAt).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-black max-w-[160px]">
-                            {lead.remarks ? (
-                              <span className="line-clamp-2">
-                                {lead.remarks}
-                              </span>
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {leads.length > 0 && (
-                <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
-                  <span>Total: {leads.length} leads</span>
-                  <span>
-                    Won: {counts.won} · Drop: {counts.drop} · Pending:{" "}
-                    {counts.pending}
-                  </span>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {}
-        {activeTab === "activity" && (
-          <>
-            {}
-            <div className="border-2 border-black bg-white">
-              <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5" /> Status Activity Filters
-              </div>
-              <div className="p-4 space-y-4">
+            {activeTab === "leads" && (
+              <>
                 {}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                    Period
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {PERIODS.map((p) => (
-                      <button
-                        key={p.key}
-                        onClick={() => setActivityPeriod(p.key)}
-                        className={cn(
-                          "px-4 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
-                          activityPeriod === p.key
-                            ? "bg-primary text-white shadow-none translate-x-[2px] translate-y-[2px]"
-                            : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
-                        )}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <KpiCard
+                    title="Total Leads"
+                    value={loading ? "—" : counts.total}
+                    icon={Target}
+                    bg="bg-[#024BAB]"
+                  />
+                  <KpiCard
+                    title="Won"
+                    value={loading ? "—" : counts.won}
+                    icon={TrendingUp}
+                    bg="bg-[#00C48C]"
+                  />
+                  <KpiCard
+                    title="Dropped"
+                    value={loading ? "—" : counts.drop}
+                    icon={TrendingDown}
+                    bg="bg-[#EF4444]"
+                  />
+                  <KpiCard
+                    title="Pending Contact"
+                    value={loading ? "—" : counts.pending}
+                    icon={Clock}
+                    bg="bg-[#FFDE00]"
+                  />
                 </div>
 
-                {activityPeriod === "custom" && (
-                  <div className="flex gap-3 items-end">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        From
-                      </label>
-                      <input
-                        type="date"
-                        value={activityCustomFrom}
-                        onChange={(e) => setActivityCustomFrom(e.target.value)}
-                        className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                        To
-                      </label>
-                      <input
-                        type="date"
-                        value={activityCustomTo}
-                        onChange={(e) => setActivityCustomTo(e.target.value)}
-                        className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
-                      />
-                    </div>
-                    <button
-                      onClick={fetchActivity}
-                      disabled={!activityCustomFrom || !activityCustomTo}
-                      className="px-4 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-4 items-end">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-black">
-                      Team Member
-                    </label>
-                    <Select
-                      value={activityUser}
-                      onValueChange={(v) => setActivityUser(v)}
-                    >
-                      <SelectTrigger className="w-48 h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
-                        <SelectValue placeholder="All Members" />
-                      </SelectTrigger>
-                      <SelectContent className="border-2 border-black rounded-lg">
-                        <SelectItem value="all" className="font-bold">
-                          All Members
-                        </SelectItem>
-                        {users.map((u) => (
-                          <SelectItem
-                            key={u._id}
-                            value={u._id}
-                            className="font-medium"
-                          >
-                            {u.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {}
+                <div className="border-2 border-black bg-white">
                   <button
-                    onClick={fetchActivity}
-                    disabled={activityLoading}
-                    className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 h-9"
+                    onClick={() => setFiltersOpen((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-3 border-b-2 border-black bg-primary text-white font-white uppercase tracking-widest text-xs hover:bg-primary transition-colors"
                   >
-                    {activityLoading && (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    )}
-                    Refresh
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {}
-            <div className="border-2 border-black bg-white overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
-                <p className="text-xs font-black uppercase tracking-widest text-black">
-                  {activityLoading ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
-                      Loading...
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <span className="bg-yellow-300 text-black text-[10px] font-black px-1.5 py-0.5 border border-black">
+                          {activeFilterCount} active
+                        </span>
+                      )}
                     </span>
-                  ) : (
-                    `${activityData.length} status change${activityData.length !== 1 ? "s" : ""}`
-                  )}
-                </p>
-                <button
-                  onClick={exportActivityCSV}
-                  disabled={activityLoading || activityData.length === 0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Download className="w-3.5 h-3.5" /> CSV
-                </button>
-              </div>
+                    <span>{filtersOpen ? "▲" : "▼"}</span>
+                  </button>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-primary text-white">
-                      {[
-                        "#",
-                        "Lead Name",
-                        "Company",
-                        "Phone",
-                        "Status Changed To",
-                        "Changed By",
-                        "Assigned To",
-                        "Remarks",
-                        "Date & Time",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                  {filtersOpen && (
+                    <div className="p-4 space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+                        <div className="xl:col-span-2 space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            Search
+                          </label>
+                          <div className="flex items-center gap-2 border-2 border-black px-2 py-1.5 bg-white focus-within:ring-2 focus-within:ring-black">
+                            <Search className="w-3.5 h-3.5 text-black shrink-0" />
+                            <input
+                              type="text"
+                              placeholder="Name, phone, email..."
+                              value={filters.search}
+                              onChange={(e) =>
+                                setFilter("search", e.target.value)
+                              }
+                              className="text-sm bg-transparent outline-none w-full text-black placeholder:text-gray-400 font-medium"
+                            />
+                            {filters.search && (
+                              <button
+                                onClick={() => setFilter("search", "")}
+                                className="shrink-0"
+                              >
+                                <X className="w-3 h-3 text-black" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            Status
+                          </label>
+                          <Select
+                            value={filters.status}
+                            onValueChange={(v) => setFilter("status", v)}
+                          >
+                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                              <SelectValue placeholder="All Statuses" />
+                            </SelectTrigger>
+                            <SelectContent className="border-2 border-black rounded-lg">
+                              <SelectItem value="all" className="font-bold">
+                                All Statuses
+                              </SelectItem>
+                              {STATUSES.map((s) => (
+                                <SelectItem
+                                  key={s}
+                                  value={s}
+                                  className="font-medium"
+                                >
+                                  {s}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            Source
+                          </label>
+                          <Select
+                            value={filters.source}
+                            onValueChange={(v) => setFilter("source", v)}
+                          >
+                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                              <SelectValue placeholder="All Sources" />
+                            </SelectTrigger>
+                            <SelectContent className="border-2 border-black rounded-lg">
+                              <SelectItem value="all" className="font-bold">
+                                All Sources
+                              </SelectItem>
+                              {SOURCES.map((s) => (
+                                <SelectItem
+                                  key={s}
+                                  value={s}
+                                  className="font-medium"
+                                >
+                                  {s}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            Assigned To
+                          </label>
+                          <Select
+                            value={filters.assignedTo}
+                            onValueChange={(v) => setFilter("assignedTo", v)}
+                          >
+                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                              <SelectValue placeholder="All Members" />
+                            </SelectTrigger>
+                            <SelectContent className="border-2 border-black rounded-lg">
+                              <SelectItem value="all" className="font-bold">
+                                All Members
+                              </SelectItem>
+                              {users.map((u) => (
+                                <SelectItem
+                                  key={u._id}
+                                  value={u._id}
+                                  className="font-medium"
+                                >
+                                  {u.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            From — To
+                          </label>
+                          <div className="flex gap-1">
+                            <input
+                              type="date"
+                              value={filters.startDate}
+                              onChange={(e) =>
+                                setFilter("startDate", e.target.value)
+                              }
+                              className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
+                            />
+                            <input
+                              type="date"
+                              value={filters.endDate}
+                              onChange={(e) =>
+                                setFilter("endDate", e.target.value)
+                              }
+                              className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-1 border-t-2 border-black mt-3">
+                        <button
+                          onClick={() => fetchLeads()}
+                          disabled={loading}
+                          className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50"
                         >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activityLoading ? (
-                      <tr>
-                        <td colSpan={9} className="text-center py-16">
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
-                        </td>
-                      </tr>
-                    ) : activityData.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="text-center py-16">
-                          <p className="text-sm font-black uppercase tracking-widest text-black">
-                            No activity found.
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Try a different period or team member.
-                          </p>
-                        </td>
-                      </tr>
-                    ) : (
-                      activityData.map((row, i) => (
-                        <tr
-                          key={i}
-                          className={cn(
-                            "border-b-2 border-black last:border-b-0",
-                            i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
+                          {loading && (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           )}
-                        >
-                          <td className="px-4 py-3 text-xs font-black text-gray-400">
-                            {i + 1}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="font-black text-black text-sm">
-                              {row.leadName || "—"}
-                            </p>
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {row.leadCompany || "—"}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {row.leadPhone || "—"}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span
+                          Apply Filters
+                        </button>
+                        {activeFilterCount > 0 && (
+                          <button
+                            onClick={handleReset}
+                            className="flex items-center gap-1 px-4 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                          >
+                            <X className="w-3 h-3" /> Reset
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {}
+                <div className="flex items-center gap-2 px-1 py-2 flex-wrap">
+                  {[
+                    { key: "today", label: "Today" },
+                    { key: "yesterday", label: "Yesterday" },
+                    { key: "last3", label: "Last 3 Days" },
+                    { key: "last7", label: "Last 7 Days" },
+                    { key: "last30", label: "Last 30 Days" },
+                    { key: "thisMonth", label: "This Month" },
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() =>
+                        activeDatePreset === key
+                          ? (setActiveDatePreset(""),
+                            fetchLeads({
+                              ...filters,
+                              startDate: "",
+                              endDate: "",
+                            }),
+                            setFilters((f) => ({
+                              ...f,
+                              startDate: "",
+                              endDate: "",
+                            })))
+                          : applyDatePreset(key)
+                      }
+                      className={cn(
+                        "px-3 py-1.5 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                        activeDatePreset === key
+                          ? "bg-[#FA731C] text-white shadow-none translate-x-[2px] translate-y-[2px]"
+                          : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {}
+                <div className="border-2 border-black bg-white overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
+                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                          Loading...
+                        </span>
+                      ) : (
+                        `${leads.length} lead${leads.length !== 1 ? "s" : ""} found`
+                      )}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowExportDialog(true)}
+                        disabled={loading || leads.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Download className="w-3.5 h-3.5" /> CSV
+                      </button>
+                      <button
+                        onClick={exportPDF}
+                        disabled={loading || leads.length === 0 || exporting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {exporting ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <FileText className="w-3.5 h-3.5" />
+                        )}{" "}
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          {[
+                            "#",
+                            "Name / Email",
+                            "Company",
+                            "Source",
+                            "Status",
+                            "Tag",
+                            "Assigned To",
+                            "Follow-up",
+                            "Created",
+                            "Remarks",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loading ? (
+                          <tr>
+                            <td colSpan={10} className="text-center py-16">
+                              <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
+                              <p className="text-sm font-bold text-black mt-2 uppercase tracking-widest">
+                                Loading leads...
+                              </p>
+                            </td>
+                          </tr>
+                        ) : leads.length === 0 ? (
+                          <tr>
+                            <td colSpan={10} className="text-center py-16">
+                              <p className="text-sm font-black uppercase tracking-widest text-black">
+                                No leads found.
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Try adjusting your filters.
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          leads.map((lead, i) => (
+                            <tr
+                              key={lead._id || i}
                               className={cn(
-                                "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
-                                statusBadge(row.changedToStatus),
+                                "border-b-2 border-black last:border-b-0 transition-colors",
+                                i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
                               )}
                             >
-                              {row.changedToStatus || "—"}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {row.changedBy || (
-                              <span className="text-gray-400 italic text-xs">
-                                System
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
-                            {row.assignedTo || (
-                              <span className="text-gray-400 italic text-xs">
-                                —
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-gray-600 max-w-[200px]">
-                            <span className="line-clamp-2">
-                              {row.remarks || (
-                                <span className="text-gray-400 italic">—</span>
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
-                            {row.timestamp ? (
-                              <>
-                                <p>
-                                  {new Date(row.timestamp).toLocaleDateString(
+                              <td className="px-4 py-3 text-xs font-black text-gray-400 whitespace-nowrap">
+                                {i + 1}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <p className="font-black text-black text-sm">
+                                  {lead.name || "—"}
+                                </p>
+                                {lead.email && (
+                                  <p className="text-[10px] text-gray-500 font-medium">
+                                    {lead.email}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                                {resolveCompany(lead)}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">
+                                  {lead.source || "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span
+                                  className={cn(
+                                    "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                    statusBadge(lead.status),
+                                  )}
+                                >
+                                  {lead.status || "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {lead.contactTag ? (
+                                  <span
+                                    className={cn(
+                                      "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                      lead.contactTag === "HOT"
+                                        ? "bg-red-500 text-white border-red-700"
+                                        : lead.contactTag === "WARM"
+                                          ? "bg-orange-400 text-black border-orange-600"
+                                          : "bg-blue-300 text-black border-blue-500",
+                                    )}
+                                  >
+                                    {lead.contactTag}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                                {lead.assignedTo?.name || (
+                                  <span className="text-gray-400 italic font-medium text-xs">
+                                    Unassigned
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
+                                {lead.followUpDate ? (
+                                  new Date(
+                                    lead.followUpDate,
+                                  ).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                ) : (
+                                  <span className="text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
+                                {lead.createdAt ? (
+                                  new Date(lead.createdAt).toLocaleDateString(
                                     "en-IN",
                                     {
                                       day: "numeric",
                                       month: "short",
                                       year: "numeric",
                                     },
-                                  )}
-                                </p>
-                                <p className="text-gray-500 font-medium">
-                                  {new Date(row.timestamp).toLocaleTimeString(
-                                    "en-IN",
-                                    { hour: "2-digit", minute: "2-digit" },
-                                  )}
-                                </p>
-                              </>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
+                                  )
+                                ) : (
+                                  <span className="text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-black max-w-[160px]">
+                                {lead.remarks ? (
+                                  <span className="line-clamp-2">
+                                    {lead.remarks}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-        {}
-        {activeTab === "team" && (
-          <>
-            {}
-            <div className="border-2 border-black bg-white">
-              <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                <BarChart3 className="w-3.5 h-3.5" /> Team Performance Period
-              </div>
-              <div className="p-4">
-                <div className="flex flex-wrap gap-2">
-                  {PERIODS.filter((p) => p.key !== "custom").map((p) => (
-                    <button
-                      key={p.key}
-                      onClick={() => setTeamPeriod(p.key)}
-                      className={cn(
-                        "px-4 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
-                        teamPeriod === p.key
-                          ? "bg-primary text-white shadow-none translate-x-[2px] translate-y-[2px]"
-                          : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
-                      )}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {}
-            <div className="border-2 border-black bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b-2 border-black bg-white flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-widest text-black">
-                  {teamLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
-                      Loading...
-                    </span>
-                  ) : (
-                    `${teamStats.length} team member${teamStats.length !== 1 ? "s" : ""} · ${teamLeads.length} leads`
-                  )}
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-primary text-white">
-                      {[
-                        "#",
-                        "Team Member",
-                        "Total Leads",
-                        "Won",
-                        "Drop",
-                        "Pending",
-                        "Discussion",
-                        "Quotation",
-                        "Visit",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teamLoading ? (
-                      <tr>
-                        <td colSpan={9} className="text-center py-16">
-                          <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
-                        </td>
-                      </tr>
-                    ) : teamStats.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="text-center py-16">
-                          <p className="text-sm font-black uppercase tracking-widest text-black">
-                            No data found.
-                          </p>
-                        </td>
-                      </tr>
-                    ) : (
-                      teamStats.map((member, i) => (
-                        <tr
-                          key={i}
-                          className={cn(
-                            "border-b-2 border-black last:border-b-0",
-                            i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
-                          )}
-                        >
-                          <td className="px-4 py-3 text-xs font-black text-gray-400">
-                            {i + 1}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <p className="font-black text-black text-sm">
-                              {member.name}
-                            </p>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-lg font-black text-primary tabular-nums">
-                              {member.total}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-green-600 tabular-nums">
-                              {member.won}
-                            </span>
-                            {member.total > 0 && (
-                              <span className="text-[10px] text-gray-400 ml-1">
-                                ({Math.round((member.won / member.total) * 100)}
-                                %)
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-red-500 tabular-nums">
-                              {member.drop}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-yellow-600 tabular-nums">
-                              {member.pending}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-purple-600 tabular-nums">
-                              {member.discussion}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-orange-500 tabular-nums">
-                              {member.quotation}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-black text-blue-600 tabular-nums">
-                              {member.visited}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {teamStats.length > 0 && (
-                <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
-                  <span>Team: {teamStats.length} members</span>
-                  <span>
-                    Total: {teamLeads.length} · Won:{" "}
-                    {teamStats.reduce((s, m) => s + m.won, 0)} · Drop:{" "}
-                    {teamStats.reduce((s, m) => s + m.drop, 0)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {}
-            {!teamLoading && teamStats.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {teamStats.map((member, i) => (
-                  <div
-                    key={i}
-                    className="border-2 border-black bg-white p-4 space-y-3 hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all shadow-[3px_3px_0px_#000]"
-                  >
-                    <div className="flex items-center justify-between border-b-2 border-black pb-2">
-                      <p className="font-black text-black uppercase tracking-wide">
-                        {member.name}
-                      </p>
-                      <span className="text-2xl font-black text-primary tabular-nums">
-                        {member.total}
+                  {leads.length > 0 && (
+                    <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+                      <span>Total: {leads.length} leads</span>
+                      <span>
+                        Won: {counts.won} · Drop: {counts.drop} · Pending:{" "}
+                        {counts.pending}
                       </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      {[
-                        {
-                          label: "Won",
-                          value: member.won,
-                          color: "text-green-600",
-                        },
-                        {
-                          label: "Drop",
-                          value: member.drop,
-                          color: "text-red-500",
-                        },
-                        {
-                          label: "Pending",
-                          value: member.pending,
-                          color: "text-yellow-600",
-                        },
-                        {
-                          label: "Discussion",
-                          value: member.discussion,
-                          color: "text-purple-600",
-                        },
-                        {
-                          label: "Quotation",
-                          value: member.quotation,
-                          color: "text-orange-500",
-                        },
-                        {
-                          label: "Visit",
-                          value: member.visited,
-                          color: "text-blue-600",
-                        },
-                      ].map(({ label, value, color }) => (
-                        <div key={label} className="border border-black p-1.5">
-                          <p
+                  )}
+                </div>
+              </>
+            )}
+
+            {}
+            {activeTab === "activity" && (
+              <>
+                {}
+                <div className="border-2 border-black bg-white">
+                  <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                    <Activity className="w-3.5 h-3.5" /> Status Activity Filters
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        Period
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {PERIODS.map((p) => (
+                          <button
+                            key={p.key}
+                            onClick={() => setActivityPeriod(p.key)}
                             className={cn(
-                              "text-lg font-black tabular-nums",
-                              color,
+                              "px-4 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                              activityPeriod === p.key
+                                ? "bg-primary text-white shadow-none translate-x-[2px] translate-y-[2px]"
+                                : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
                             )}
                           >
-                            {value}
-                          </p>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-                            {label}
-                          </p>
-                        </div>
-                      ))}
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    {member.total > 0 && (
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] font-black uppercase">
-                          <span className="text-green-600">
-                            WON {Math.round((member.won / member.total) * 100)}%
-                          </span>
-                          <span className="text-red-500">
-                            DROP{" "}
-                            {Math.round((member.drop / member.total) * 100)}%
-                          </span>
-                        </div>
-                        <div className="h-2 border border-black bg-gray-100 overflow-hidden flex">
-                          <div
-                            className="bg-green-400 h-full transition-all"
-                            style={{
-                              width: `${(member.won / member.total) * 100}%`,
-                            }}
-                          />
-                          <div
-                            className="bg-red-400 h-full transition-all"
-                            style={{
-                              width: `${(member.drop / member.total) * 100}%`,
-                            }}
+
+                    {activityPeriod === "custom" && (
+                      <div className="flex gap-3 items-end">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            From
+                          </label>
+                          <input
+                            type="date"
+                            value={activityCustomFrom}
+                            onChange={(e) =>
+                              setActivityCustomFrom(e.target.value)
+                            }
+                            className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
                           />
                         </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                            To
+                          </label>
+                          <input
+                            type="date"
+                            value={activityCustomTo}
+                            onChange={(e) =>
+                              setActivityCustomTo(e.target.value)
+                            }
+                            className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
+                          />
+                        </div>
+                        <button
+                          onClick={fetchActivity}
+                          disabled={!activityCustomFrom || !activityCustomTo}
+                          className="px-4 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40"
+                        >
+                          Apply
+                        </button>
                       </div>
                     )}
+
+                    <div className="flex flex-wrap gap-4 items-end">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          Team Member
+                        </label>
+                        <Select
+                          value={activityUser}
+                          onValueChange={(v) => setActivityUser(v)}
+                        >
+                          <SelectTrigger className="w-48 h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                            <SelectValue placeholder="All Members" />
+                          </SelectTrigger>
+                          <SelectContent className="border-2 border-black rounded-lg">
+                            <SelectItem value="all" className="font-bold">
+                              All Members
+                            </SelectItem>
+                            {users.map((u) => (
+                              <SelectItem
+                                key={u._id}
+                                value={u._id}
+                                className="font-medium"
+                              >
+                                {u.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <button
+                        onClick={fetchActivity}
+                        disabled={activityLoading}
+                        className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 h-9"
+                      >
+                        {activityLoading && (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        )}
+                        Refresh
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+
+                {}
+                <div className="border-2 border-black bg-white overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
+                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                      {activityLoading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                          Loading...
+                        </span>
+                      ) : (
+                        `${activityData.length} status change${activityData.length !== 1 ? "s" : ""}`
+                      )}
+                    </p>
+                    <button
+                      onClick={exportActivityCSV}
+                      disabled={activityLoading || activityData.length === 0}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Download className="w-3.5 h-3.5" /> CSV
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          {[
+                            "#",
+                            "Lead Name",
+                            "Company",
+                            "Phone",
+                            "Status Changed To",
+                            "Changed By",
+                            "Assigned To",
+                            "Remarks",
+                            "Date & Time",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activityLoading ? (
+                          <tr>
+                            <td colSpan={9} className="text-center py-16">
+                              <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
+                            </td>
+                          </tr>
+                        ) : activityData.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="text-center py-16">
+                              <p className="text-sm font-black uppercase tracking-widest text-black">
+                                No activity found.
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Try a different period or team member.
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          activityData.map((row, i) => (
+                            <tr
+                              key={i}
+                              className={cn(
+                                "border-b-2 border-black last:border-b-0",
+                                i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
+                              )}
+                            >
+                              <td className="px-4 py-3 text-xs font-black text-gray-400">
+                                {i + 1}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <p className="font-black text-black text-sm">
+                                  {row.leadName || "—"}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                                {row.leadCompany || "—"}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                                {row.leadPhone || "—"}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span
+                                  className={cn(
+                                    "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                    statusBadge(row.changedToStatus),
+                                  )}
+                                >
+                                  {row.changedToStatus || "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                                {row.changedBy || (
+                                  <span className="text-gray-400 italic text-xs">
+                                    System
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                                {row.assignedTo || (
+                                  <span className="text-gray-400 italic text-xs">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-gray-600 max-w-[200px]">
+                                <span className="line-clamp-2">
+                                  {row.remarks || (
+                                    <span className="text-gray-400 italic">
+                                      —
+                                    </span>
+                                  )}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
+                                {row.timestamp ? (
+                                  <>
+                                    <p>
+                                      {new Date(
+                                        row.timestamp,
+                                      ).toLocaleDateString("en-IN", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                      })}
+                                    </p>
+                                    <p className="text-gray-500 font-medium">
+                                      {new Date(
+                                        row.timestamp,
+                                      ).toLocaleTimeString("en-IN", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </p>
+                                  </>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {}
+            {activeTab === "team" && (
+              <>
+                {}
+                <div className="border-2 border-black bg-white">
+                  <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                    <BarChart3 className="w-3.5 h-3.5" /> Team Performance
+                    Period
+                  </div>
+                  <div className="p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {PERIODS.filter((p) => p.key !== "custom").map((p) => (
+                        <button
+                          key={p.key}
+                          onClick={() => setTeamPeriod(p.key)}
+                          className={cn(
+                            "px-4 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                            teamPeriod === p.key
+                              ? "bg-primary text-white shadow-none translate-x-[2px] translate-y-[2px]"
+                              : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
+                          )}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {}
+                <div className="border-2 border-black bg-white overflow-hidden">
+                  <div className="px-4 py-3 border-b-2 border-black bg-white flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                      {teamLoading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
+                          Loading...
+                        </span>
+                      ) : (
+                        `${teamStats.length} team member${teamStats.length !== 1 ? "s" : ""} · ${teamLeads.length} leads`
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-primary text-white">
+                          {[
+                            "#",
+                            "Team Member",
+                            "Total Leads",
+                            "Won",
+                            "Drop",
+                            "Pending",
+                            "Discussion",
+                            "Quotation",
+                            "Visit",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {teamLoading ? (
+                          <tr>
+                            <td colSpan={9} className="text-center py-16">
+                              <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
+                            </td>
+                          </tr>
+                        ) : teamStats.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="text-center py-16">
+                              <p className="text-sm font-black uppercase tracking-widest text-black">
+                                No data found.
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          teamStats.map((member, i) => (
+                            <tr
+                              key={i}
+                              className={cn(
+                                "border-b-2 border-black last:border-b-0",
+                                i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
+                              )}
+                            >
+                              <td className="px-4 py-3 text-xs font-black text-gray-400">
+                                {i + 1}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <p className="font-black text-black text-sm">
+                                  {member.name}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-lg font-black text-primary tabular-nums">
+                                  {member.total}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm font-black text-green-600 tabular-nums">
+                                  {member.won}
+                                </span>
+                                {member.total > 0 && (
+                                  <span className="text-[10px] text-gray-400 ml-1">
+                                    (
+                                    {Math.round(
+                                      (member.won / member.total) * 100,
+                                    )}
+                                    %)
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm font-black text-red-500 tabular-nums">
+                                  {member.drop}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm font-black text-yellow-600 tabular-nums">
+                                  {member.pending}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm font-black text-purple-600 tabular-nums">
+                                  {member.discussion}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm font-black text-orange-500 tabular-nums">
+                                  {member.quotation}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm font-black text-blue-600 tabular-nums">
+                                  {member.visited}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {teamStats.length > 0 && (
+                    <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+                      <span>Team: {teamStats.length} members</span>
+                      <span>
+                        Total: {teamLeads.length} · Won:{" "}
+                        {teamStats.reduce((s, m) => s + m.won, 0)} · Drop:{" "}
+                        {teamStats.reduce((s, m) => s + m.drop, 0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {}
+                {!teamLoading && teamStats.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teamStats.map((member, i) => (
+                      <div
+                        key={i}
+                        className="border-2 border-black bg-white p-4 space-y-3 hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all shadow-[3px_3px_0px_#000]"
+                      >
+                        <div className="flex items-center justify-between border-b-2 border-black pb-2">
+                          <p className="font-black text-black uppercase tracking-wide">
+                            {member.name}
+                          </p>
+                          <span className="text-2xl font-black text-primary tabular-nums">
+                            {member.total}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          {[
+                            {
+                              label: "Won",
+                              value: member.won,
+                              color: "text-green-600",
+                            },
+                            {
+                              label: "Drop",
+                              value: member.drop,
+                              color: "text-red-500",
+                            },
+                            {
+                              label: "Pending",
+                              value: member.pending,
+                              color: "text-yellow-600",
+                            },
+                            {
+                              label: "Discussion",
+                              value: member.discussion,
+                              color: "text-purple-600",
+                            },
+                            {
+                              label: "Quotation",
+                              value: member.quotation,
+                              color: "text-orange-500",
+                            },
+                            {
+                              label: "Visit",
+                              value: member.visited,
+                              color: "text-blue-600",
+                            },
+                          ].map(({ label, value, color }) => (
+                            <div
+                              key={label}
+                              className="border border-black p-1.5"
+                            >
+                              <p
+                                className={cn(
+                                  "text-lg font-black tabular-nums",
+                                  color,
+                                )}
+                              >
+                                {value}
+                              </p>
+                              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                                {label}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        {member.total > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] font-black uppercase">
+                              <span className="text-green-600">
+                                WON{" "}
+                                {Math.round((member.won / member.total) * 100)}%
+                              </span>
+                              <span className="text-red-500">
+                                DROP{" "}
+                                {Math.round((member.drop / member.total) * 100)}
+                                %
+                              </span>
+                            </div>
+                            <div className="h-2 border border-black bg-gray-100 overflow-hidden flex">
+                              <div
+                                className="bg-green-400 h-full transition-all"
+                                style={{
+                                  width: `${(member.won / member.total) * 100}%`,
+                                }}
+                              />
+                              <div
+                                className="bg-red-400 h-full transition-all"
+                                style={{
+                                  width: `${(member.drop / member.total) * 100}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </>
-        )}
-        </>
         )}
       </div>
 
@@ -2149,7 +2301,10 @@ export default function ReportsPage() {
         filenamePrefix="leads-report"
       />
 
-      <Dialog open={!!previewReport} onOpenChange={(open) => !open && closePreview()}>
+      <Dialog
+        open={!!previewReport}
+        onOpenChange={(open) => !open && closePreview()}
+      >
         <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{previewReport?.title}</DialogTitle>
@@ -2158,7 +2313,8 @@ export default function ReportsPage() {
           {previewTable && (
             <>
               <p className="text-xs text-muted-foreground">
-                {previewTable.rows.length} row{previewTable.rows.length !== 1 ? "s" : ""}
+                {previewTable.rows.length} row
+                {previewTable.rows.length !== 1 ? "s" : ""}
               </p>
               <div className="flex-1 overflow-auto border-2 border-black">
                 <table className="w-full text-xs border-collapse">
@@ -2194,7 +2350,10 @@ export default function ReportsPage() {
                           )}
                         >
                           {row.map((cell, j) => (
-                            <td key={j} className="px-3 py-1.5 whitespace-nowrap">
+                            <td
+                              key={j}
+                              className="px-3 py-1.5 whitespace-nowrap"
+                            >
                               {cell}
                             </td>
                           ))}

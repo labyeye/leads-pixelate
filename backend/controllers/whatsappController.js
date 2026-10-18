@@ -1,4 +1,6 @@
 const asyncHandler = require("express-async-handler");
+const { safeEqual, validSignature } = require("../utils/safeEqual");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const crypto = require("crypto");
 const WhatsappTemplate = require("../models/WhatsappTemplate");
 const WhatsappCampaign = require("../models/WhatsappCampaign");
@@ -72,7 +74,10 @@ function buildTemplateComponents(template, variableMapping, lead, headerMedia) {
       parameters: [
         {
           type,
-          [type]: type === "document" ? { id: headerMedia.id, filename: headerMedia.filename } : { id: headerMedia.id },
+          [type]:
+            type === "document"
+              ? { id: headerMedia.id, filename: headerMedia.filename }
+              : { id: headerMedia.id },
         },
       ],
     });
@@ -133,18 +138,23 @@ const WA_ERROR_REASONS = {
   100: "Invalid parameter (wrong Phone Number ID / WABA ID, or bad payload)",
   130429: "Rate limit hit — sending too fast",
   131000: "Something went wrong on Meta's side",
-  131026: "Message undeliverable — recipient is not on WhatsApp or hasn't accepted the new Terms",
-  131030: "Recipient not in the allowed list (app/number in sandbox or Development mode)",
-  131042: "Payment issue — add a payment method to the WhatsApp Business account",
+  131026:
+    "Message undeliverable — recipient is not on WhatsApp or hasn't accepted the new Terms",
+  131030:
+    "Recipient not in the allowed list (app/number in sandbox or Development mode)",
+  131042:
+    "Payment issue — add a payment method to the WhatsApp Business account",
   131045: "Sending number is not registered / needs registration",
   131047: "More than 24h since the lead last replied — a template is required",
   131048: "Spam rate limit hit for this number",
-  131049: "Meta limited this marketing message to this user (frequency cap / low engagement)",
+  131049:
+    "Meta limited this marketing message to this user (frequency cap / low engagement)",
   131051: "Unsupported message type",
   131053: "Media upload / format problem",
   131056: "Too many messages to the same recipient too fast",
   132000: "Template variable count doesn't match the template",
-  132001: "Template or language not found / not approved in this WABA — press Sync Templates",
+  132001:
+    "Template or language not found / not approved in this WABA — press Sync Templates",
   132005: "Translated template text is too long",
   132012: "Template variable format mismatch",
   132015: "Template is paused (poor quality)",
@@ -166,9 +176,13 @@ function metaError(step, data, ctx = {}) {
     fbtrace_id: e.fbtrace_id,
     ...ctx,
   });
-  const tag = e.code ? ` [Meta ${e.code}${e.error_subcode ? "/" + e.error_subcode : ""}]` : "";
+  const tag = e.code
+    ? ` [Meta ${e.code}${e.error_subcode ? "/" + e.error_subcode : ""}]`
+    : "";
   const hint = WA_ERROR_REASONS[e.code] ? ` — ${WA_ERROR_REASONS[e.code]}` : "";
-  return new Error((e.error_user_msg || e.message || "WhatsApp API error") + tag + hint);
+  return new Error(
+    (e.error_user_msg || e.message || "WhatsApp API error") + tag + hint,
+  );
 }
 
 async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
@@ -208,7 +222,8 @@ async function postWa(phoneNumberId, accessToken, body) {
     body: JSON.stringify({ messaging_product: "whatsapp", ...body }),
   });
   const data = await r.json();
-  if (!r.ok) throw metaError("send message", data, { phoneNumberId, type: body.type });
+  if (!r.ok)
+    throw metaError("send message", data, { phoneNumberId, type: body.type });
   log.info("Message ACCEPTED by Meta (waiting for sent/delivered/read)", {
     wamid: data?.messages?.[0]?.id,
     to: body.to,
@@ -244,14 +259,21 @@ async function sendWaMessage(
   });
   const data = await res.json();
   if (!res.ok)
-    throw metaError("send template", data, { phoneNumberId, template: templateName, language });
-  log.info("Template message ACCEPTED by Meta (waiting for sent/delivered/read)", {
-    wamid: data?.messages?.[0]?.id,
-    to,
-    template: templateName,
-    language,
-    phoneNumberId,
-  });
+    throw metaError("send template", data, {
+      phoneNumberId,
+      template: templateName,
+      language,
+    });
+  log.info(
+    "Template message ACCEPTED by Meta (waiting for sent/delivered/read)",
+    {
+      wamid: data?.messages?.[0]?.id,
+      to,
+      template: templateName,
+      language,
+      phoneNumberId,
+    },
+  );
   return data;
 }
 
@@ -269,22 +291,26 @@ const AUTOMATIONS = {
   sales_order: {
     label: "Sales order created",
     vars: ["Client name", "Order no.", "Total"],
-    text: ([name, no, total]) => `Hi ${name}, your order ${no} of ₹${total} has been confirmed. Thank you!`,
+    text: ([name, no, total]) =>
+      `Hi ${name}, your order ${no} of ₹${total} has been confirmed. Thank you!`,
   },
   purchase_order: {
     label: "Purchase order issued",
     vars: ["Vendor name", "PO no.", "Total"],
-    text: ([name, no, total]) => `Hi ${name}, we have issued purchase order ${no} of ₹${total}. Please confirm receipt.`,
+    text: ([name, no, total]) =>
+      `Hi ${name}, we have issued purchase order ${no} of ₹${total}. Please confirm receipt.`,
   },
   invoice: {
     label: "Invoice created",
     vars: ["Client name", "Invoice no.", "Total"],
-    text: ([name, no, total]) => `Hi ${name}, your invoice ${no} of ₹${total} is ready. Thank you for your business!`,
+    text: ([name, no, total]) =>
+      `Hi ${name}, your invoice ${no} of ₹${total} is ready. Thank you for your business!`,
   },
   lead_welcome: {
     label: "New lead welcome",
     vars: ["Lead name"],
-    text: ([name]) => `Hi ${name}, thanks for getting in touch! We have received your enquiry and will contact you shortly.`,
+    text: ([name]) =>
+      `Hi ${name}, thanks for getting in touch! We have received your enquiry and will contact you shortly.`,
   },
 };
 exports.AUTOMATIONS = AUTOMATIONS;
@@ -308,27 +334,53 @@ exports.notify = async function notify(tenantId, event, rawPhone, vars = []) {
     const phoneNumberId =
       wa.phoneNumbers?.length === 1
         ? wa.phoneNumbers[0].phoneNumberId
-        : cfg.phoneNumberId ||
-          wa.phoneNumbers?.[0]?.phoneNumberId;
+        : cfg.phoneNumberId || wa.phoneNumbers?.[0]?.phoneNumberId;
     if (!phoneNumberId) return;
     const accessToken = decrypt(wa.accessToken);
 
     if (cfg.templateId) {
-      const t = await WhatsappTemplate.findOne({ _id: cfg.templateId, tenantId, status: "APPROVED" });
-      if (!t) return log.error("Automation template missing or not approved", { event });
-      const params = vars.slice(0, t.variableCount || 0).map((v) => ({ type: "text", text: String(v ?? "-") }));
-      await sendWaMessage(phoneNumberId, accessToken, phone, t.metaTemplateName || t.name, t.language,
-        params.length ? [{ type: "body", parameters: params }] : []);
+      const t = await WhatsappTemplate.findOne({
+        _id: cfg.templateId,
+        tenantId,
+        status: "APPROVED",
+      });
+      if (!t)
+        return log.error("Automation template missing or not approved", {
+          event,
+        });
+      const params = vars
+        .slice(0, t.variableCount || 0)
+        .map((v) => ({ type: "text", text: String(v ?? "-") }));
+      await sendWaMessage(
+        phoneNumberId,
+        accessToken,
+        phone,
+        t.metaTemplateName || t.name,
+        t.language,
+        params.length ? [{ type: "body", parameters: params }] : [],
+      );
       return;
     }
 
     const res = await fetch(`${WA_API}/${phoneNumberId}/messages`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify({ messaging_product: "whatsapp", to: phone, type: "text", text: { body: def.text(vars) } }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: phone,
+        type: "text",
+        text: { body: def.text(vars) },
+      }),
     });
     const data = await res.json();
-    if (!res.ok) log.error("Automation send failed", { event, message: data?.error?.message || "unknown error" });
+    if (!res.ok)
+      log.error("Automation send failed", {
+        event,
+        message: data?.error?.message || "unknown error",
+      });
   } catch (err) {
     log.error("Automation send failed", { event, message: err.message });
   }
@@ -355,7 +407,9 @@ exports.saveAutomations = asyncHandler(async (req, res) => {
     if (!AUTOMATIONS[id]) continue;
     set[`integrations.whatsapp.automations.${id}`] = {
       enabled: !!cfg.enabled,
-      templateId: /^[0-9a-f]{24}$/i.test(cfg.templateId || "") ? cfg.templateId : "",
+      templateId: /^[0-9a-f]{24}$/i.test(cfg.templateId || "")
+        ? cfg.templateId
+        : "",
     };
   }
   await Tenant.findOneAndUpdate(getTenantQuery(req.user), { $set: set });
@@ -443,7 +497,8 @@ exports.setup = asyncHandler(async (req, res) => {
     try {
       added = await importWabaNumbers(req.user, wabaId, accessToken);
     } catch (err) {
-      warning = "Saved, but could not read numbers for this WABA ID: " + err.message;
+      warning =
+        "Saved, but could not read numbers for this WABA ID: " + err.message;
     }
   }
 
@@ -630,7 +685,7 @@ exports.updateTemplate = asyncHandler(async (req, res) => {
     const varMatches = (req.body.bodyText || "").match(/\{\{\d+\}\}/g) || [];
     req.body.variableCount = new Set(varMatches).size;
   }
-  template = await WhatsappTemplate.findByIdAndUpdate(req.params.id, req.body, {
+  template = await WhatsappTemplate.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, safeBody(req.body), {
     new: true,
     runValidators: true,
   });
@@ -745,13 +800,17 @@ function buildMetaComponents(t) {
   const body = { type: "BODY", text: t.bodyText.trim() };
   const nums = [
     ...new Set(
-      (t.bodyText.match(/\{\{(\d+)\}\}/g) || []).map((m) => parseInt(m.slice(2))),
+      (t.bodyText.match(/\{\{(\d+)\}\}/g) || []).map((m) =>
+        parseInt(m.slice(2)),
+      ),
     ),
   ].sort((a, b) => a - b);
   if (nums.length) {
     body.example = {
       body_text: [
-        nums.map((n) => (t.exampleValues?.[n - 1] || "").trim() || `sample_${n}`),
+        nums.map(
+          (n) => (t.exampleValues?.[n - 1] || "").trim() || `sample_${n}`,
+        ),
       ],
     };
   }
@@ -765,7 +824,11 @@ function buildMetaComponents(t) {
       buttons: t.buttons.map((b) => {
         if (b.type === "URL") return { type: "URL", text: b.text, url: b.url };
         if (b.type === "PHONE_NUMBER")
-          return { type: "PHONE_NUMBER", text: b.text, phone_number: b.phoneNumber };
+          return {
+            type: "PHONE_NUMBER",
+            text: b.text,
+            phone_number: b.phoneNumber,
+          };
         return { type: "QUICK_REPLY", text: b.text };
       }),
     });
@@ -840,7 +903,10 @@ exports.submitTemplate = asyncHandler(async (req, res) => {
 });
 
 // Meta resumable upload -> header_handle (needed only for template submission).
-async function uploadHeaderHandle(accessToken, { buffer, mimetype, originalname }) {
+async function uploadHeaderHandle(
+  accessToken,
+  { buffer, mimetype, originalname },
+) {
   let appId = process.env.WHATSAPP_APP_ID;
   if (!appId) {
     const dbg = await (
@@ -907,8 +973,14 @@ exports.getCampaign = asyncHandler(async (req, res) => {
 });
 
 exports.createCampaign = asyncHandler(async (req, res) => {
-  const { name, templateId, leadIds, variableMapping, phoneNumberId, documentId } =
-    req.body;
+  const {
+    name,
+    templateId,
+    leadIds,
+    variableMapping,
+    phoneNumberId,
+    documentId,
+  } = req.body;
   if (!name || !templateId || !leadIds?.length) {
     res.status(400);
     throw new Error("name, templateId, and leadIds are required");
@@ -949,7 +1021,11 @@ exports.createCampaign = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error(misfit);
     }
-    headerMedia = await uploadVaultDoc(resolvedPhoneNumberId, wa.accessToken, doc);
+    headerMedia = await uploadVaultDoc(
+      resolvedPhoneNumberId,
+      wa.accessToken,
+      doc,
+    );
   }
 
   const leads = await Lead.find({ _id: { $in: leadIds }, ...tenantFilter });
@@ -1039,7 +1115,12 @@ exports.createCampaign = asyncHandler(async (req, res) => {
           ? "COMPLETED"
           : "PARTIAL";
     await campaign.save();
-  })().catch((err) => log.error("Campaign send failed", { campaignId: campaign._id, message: err.message }));
+  })().catch((err) =>
+    log.error("Campaign send failed", {
+      campaignId: campaign._id,
+      message: err.message,
+    }),
+  );
 });
 
 // Re-sends only to people who did NOT receive the message (failed / never sent /
@@ -1056,7 +1137,9 @@ exports.resendCampaign = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Campaign not found");
   }
-  const targets = campaign.messages.filter((m) => RESENDABLE.includes(m.status));
+  const targets = campaign.messages.filter((m) =>
+    RESENDABLE.includes(m.status),
+  );
   if (!targets.length) {
     res.status(400);
     throw new Error("Everyone has already received this message");
@@ -1067,7 +1150,8 @@ exports.resendCampaign = asyncHandler(async (req, res) => {
     ...tenantFilter,
   });
   const wa = await getWaBase(req.user);
-  const phoneNumberId = wa && resolvePhoneNumberId(wa, campaign.fromPhoneNumberId);
+  const phoneNumberId =
+    wa && resolvePhoneNumberId(wa, campaign.fromPhoneNumberId);
   if (!template || !phoneNumberId) {
     res.status(400);
     throw new Error(
@@ -1123,7 +1207,12 @@ exports.resendCampaign = asyncHandler(async (req, res) => {
           phone,
           template.metaTemplateName || template.name,
           template.language,
-          buildTemplateComponents(template, campaign.variableMapping, lead, headerMedia),
+          buildTemplateComponents(
+            template,
+            campaign.variableMapping,
+            lead,
+            headerMedia,
+          ),
         );
         set = {
           status: "SENT",
@@ -1148,12 +1237,16 @@ exports.resendCampaign = asyncHandler(async (req, res) => {
     }
   })()
     .catch((err) =>
-      log.error("Campaign resend failed", { campaignId: campaign._id, message: err.message }),
+      log.error("Campaign resend failed", {
+        campaignId: campaign._id,
+        message: err.message,
+      }),
     )
     .finally(async () => {
       const fresh = await WhatsappCampaign.findById(campaign._id);
       if (!fresh) return;
-      const n = (...s) => fresh.messages.filter((x) => s.includes(x.status)).length;
+      const n = (...s) =>
+        fresh.messages.filter((x) => s.includes(x.status)).length;
       const sent = n("SENT", "DELIVERED", "READ");
       const failed = n("FAILED");
       await WhatsappCampaign.updateOne(
@@ -1223,7 +1316,11 @@ exports.sendMessage = asyncHandler(async (req, res) => {
   let waResult;
   if (messageType === "document" && doc) {
     // Free-form: only delivered inside the 24h window after the lead's last message.
-    const media = await uploadVaultDoc(resolvedPhoneNumberId, wa.accessToken, doc);
+    const media = await uploadVaultDoc(
+      resolvedPhoneNumberId,
+      wa.accessToken,
+      doc,
+    );
     const caption = (messageText || "").trim();
     const kind = doc.mimeType.startsWith("image/") ? "image" : "document";
     waResult = await postWa(resolvedPhoneNumberId, wa.accessToken, {
@@ -1257,7 +1354,11 @@ exports.sendMessage = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error(misfit);
       }
-      headerMedia = await uploadVaultDoc(resolvedPhoneNumberId, wa.accessToken, doc);
+      headerMedia = await uploadVaultDoc(
+        resolvedPhoneNumberId,
+        wa.accessToken,
+        doc,
+      );
     }
     const components = buildTemplateComponents(
       template,
@@ -1290,7 +1391,9 @@ exports.verifyWebhook = asyncHandler(async (req, res) => {
   const challenge = req.query["hub.challenge"];
   if (mode !== "subscribe") return res.sendStatus(403);
 
-  if (token === process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN)
+  if (typeof token !== "string" || !token) return res.sendStatus(403);
+  const envToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+  if (envToken && safeEqual(token, envToken))
     return res.status(200).send(challenge);
   const tenant = await Tenant.findOne({
     "integrations.whatsapp.webhookVerifyToken": token,
@@ -1300,6 +1403,10 @@ exports.verifyWebhook = asyncHandler(async (req, res) => {
 });
 
 exports.handleWebhook = asyncHandler(async (req, res) => {
+  // Enforced as soon as WHATSAPP_APP_SECRET is configured (set it to the Meta app's secret).
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  if (appSecret && !validSignature(req.rawBody, req.headers["x-hub-signature-256"], appSecret))
+    return res.sendStatus(403);
   res.status(200).json({ success: true });
   const body = req.body;
   log.debug("WhatsApp webhook received", { object: body?.object });
@@ -1341,10 +1448,16 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
             details: wErr?.error_data?.details,
           });
         } else {
-          const label = { SENT: "SENT to WhatsApp servers", DELIVERED: "DELIVERED to phone", READ: "READ by recipient" }[newStatus];
+          const label = {
+            SENT: "SENT to WhatsApp servers",
+            DELIVERED: "DELIVERED to phone",
+            READ: "READ by recipient",
+          }[newStatus];
           log.info(`Message ${label || newStatus}`, {
             ...base,
-            category: statusObj.pricing?.category || statusObj.conversation?.origin?.type,
+            category:
+              statusObj.pricing?.category ||
+              statusObj.conversation?.origin?.type,
           });
         }
         const statusMap = {

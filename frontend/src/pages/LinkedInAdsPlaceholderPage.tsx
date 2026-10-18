@@ -36,10 +36,10 @@ export default function LinkedInAdsPlaceholderPage({
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
             LinkedIn campaign management ({title.toLowerCase()}) requires
-            LinkedIn's Marketing Developer Platform / Advertising API
-            approval. Right now only Lead Sync is connected, so leads from
-            your LinkedIn Lead Gen Forms flow in — spend, campaign, ad set
-            and ad data will show up here once that access is approved.
+            LinkedIn's Marketing Developer Platform / Advertising API approval.
+            Right now only Lead Sync is connected, so leads from your LinkedIn
+            Lead Gen Forms flow in — spend, campaign, ad set and ad data will
+            show up here once that access is approved.
           </p>
         </div>
         <button

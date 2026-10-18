@@ -1,5 +1,13 @@
 import { useRef, useState } from "react";
-import { AlertCircle, ImagePlus, Instagram, Loader2, Plus, Trash2, Users } from "lucide-react";
+import {
+  AlertCircle,
+  ImagePlus,
+  Instagram,
+  Loader2,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,7 +38,12 @@ export function ReferencesCompetitors({
   const refs = status.references ?? [];
   const rivals = status.competitors ?? [];
 
-  const fail = (err: any) => toast({ title: "Failed", description: err.message, variant: "destructive" });
+  const fail = (err: any) =>
+    toast({
+      title: "Failed",
+      description: err.message,
+      variant: "destructive",
+    });
 
   const upload = async (files: FileList | File[]) => {
     const list = Array.from(files).slice(0, MAX_REFERENCES - refs.length);
@@ -59,7 +72,10 @@ export function ReferencesCompetitors({
     if (!username.trim() && !notes.trim()) return;
     setAdding(true);
     try {
-      await api.addCompetitor({ username: username.trim(), notes: notes.trim() });
+      await api.addCompetitor({
+        username: username.trim(),
+        notes: notes.trim(),
+      });
       setUsername("");
       setNotes("");
       await onChanged();
@@ -85,14 +101,22 @@ export function ReferencesCompetitors({
       <div className="space-y-2">
         <Label>Reference images</Label>
         <p className="text-xs text-muted-foreground">
-          Posts or photos with the look you want (a moodboard). Up to {MAX_REFERENCES}. Autopilot studies them and matches the
-          style in your images.
+          Posts or photos with the look you want (a moodboard). Up to{" "}
+          {MAX_REFERENCES}. Autopilot studies them and matches the style in your
+          images.
         </p>
         {refs.length > 0 && (
           <ul className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {refs.map((r) => (
-              <li key={r.id} className="relative border-2 border-black bg-muted aspect-square">
-                <img src={r.url} alt={r.note || "Reference"} className="w-full h-full object-cover" />
+              <li
+                key={r.id}
+                className="relative border-2 border-black bg-muted aspect-square"
+              >
+                <img
+                  src={r.url}
+                  alt={r.note || "Reference"}
+                  className="w-full h-full object-cover"
+                />
                 <button
                   type="button"
                   aria-label="Remove reference image"
@@ -120,12 +144,22 @@ export function ReferencesCompetitors({
               upload(e.dataTransfer.files);
             }}
             className={`w-full rounded-lg border-2 border-dashed p-5 flex flex-col items-center gap-2 text-sm transition-colors ${
-              over ? "border-primary bg-primary/5" : "border-black/40 hover:border-black"
+              over
+                ? "border-primary bg-primary/5"
+                : "border-black/40 hover:border-black"
             }`}
           >
-            {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImagePlus className="w-6 h-6" />}
-            <span className="font-medium">{uploading ? "Uploading…" : "Drop images here or click to upload"}</span>
-            <span className="text-xs text-muted-foreground">PNG, JPG or WebP · up to 5 MB each</span>
+            {uploading ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <ImagePlus className="w-6 h-6" />
+            )}
+            <span className="font-medium">
+              {uploading ? "Uploading…" : "Drop images here or click to upload"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              PNG, JPG or WebP · up to 5 MB each
+            </span>
           </button>
         )}
         <input
@@ -146,18 +180,31 @@ export function ReferencesCompetitors({
       <div className="space-y-2">
         <Label>Competitors</Label>
         <p className="text-xs text-muted-foreground">
-          Add up to {MAX_COMPETITORS}. With an Instagram username Autopilot reads their public posts (public Business or Creator
-          accounts only) to see what works and where you can stand apart. Notes are your own words about them.
+          Add up to {MAX_COMPETITORS}. With an Instagram username Autopilot
+          reads their public posts (public Business or Creator accounts only) to
+          see what works and where you can stand apart. Notes are your own words
+          about them.
         </p>
         {rivals.length > 0 && (
           <ul className="space-y-2">
             {rivals.map((c) => (
-              <li key={c.id} className="rounded-lg border-2 border-black/20 p-3 space-y-1 bg-background">
+              <li
+                key={c.id}
+                className="rounded-lg border-2 border-black/20 p-3 space-y-1 bg-background"
+              >
                 <div className="flex items-center gap-2">
-                  {c.username ? <Instagram className="w-4 h-4 text-pink-600 shrink-0" /> : <Users className="w-4 h-4 shrink-0" />}
-                  <span className="font-medium text-sm truncate">{c.username ? `@${c.username}` : "Notes only"}</span>
+                  {c.username ? (
+                    <Instagram className="w-4 h-4 text-pink-600 shrink-0" />
+                  ) : (
+                    <Users className="w-4 h-4 shrink-0" />
+                  )}
+                  <span className="font-medium text-sm truncate">
+                    {c.username ? `@${c.username}` : "Notes only"}
+                  </span>
                   {c.followers != null && (
-                    <span className="text-xs text-muted-foreground">{c.followers.toLocaleString("en-IN")} followers</span>
+                    <span className="text-xs text-muted-foreground">
+                      {c.followers.toLocaleString("en-IN")} followers
+                    </span>
                   )}
                   <Button
                     type="button"
@@ -170,11 +217,14 @@ export function ReferencesCompetitors({
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                {c.notes && <p className="text-xs text-muted-foreground">{c.notes}</p>}
+                {c.notes && (
+                  <p className="text-xs text-muted-foreground">{c.notes}</p>
+                )}
                 {c.summary && <p className="text-xs">{c.summary}</p>}
                 {c.error && (
                   <p className="flex items-start gap-1 text-xs text-amber-800">
-                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {c.error}
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />{" "}
+                    {c.error}
                   </p>
                 )}
               </li>
@@ -198,8 +248,17 @@ export function ReferencesCompetitors({
               onChange={(e) => setNotes(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addRival()}
             />
-            <Button type="button" variant="outline" onClick={addRival} disabled={adding || (!username.trim() && !notes.trim())}>
-              {adding ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addRival}
+              disabled={adding || (!username.trim() && !notes.trim())}
+            >
+              {adding ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-1" />
+              )}
               Add
             </Button>
           </div>

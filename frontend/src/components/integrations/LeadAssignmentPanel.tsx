@@ -30,7 +30,9 @@ export function LeadAssignmentPanel({
         className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2"
       >
         Lead Assignment
-        <span className="text-[10px] font-black text-[#024BAB]">{open ? "Hide" : "Edit"}</span>
+        <span className="text-[10px] font-black text-[#024BAB]">
+          {open ? "Hide" : "Edit"}
+        </span>
       </button>
       {!open && (
         <p className="text-[11px] text-muted-foreground">
@@ -44,18 +46,29 @@ export function LeadAssignmentPanel({
       {open && (
         <>
           <p className="text-[11px] text-muted-foreground mb-3">
-            Select who receives these leads. None = auto round-robin among all sales team. One = all leads go there. Several = block
-            round-robin: the batch size below is how many leads each person gets before it moves to the next.
+            Select who receives these leads. None = auto round-robin among all
+            sales team. One = all leads go there. Several = block round-robin:
+            the batch size below is how many leads each person gets before it
+            moves to the next.
           </p>
           <div className="flex flex-col gap-1 mb-3 max-h-40 overflow-y-auto border-2 border-black p-2 bg-[#F9FAFB]">
             {users.map((u) => {
               const checked = assigneeIds.includes(u._id);
               return (
-                <label key={u._id} className="flex items-center gap-2 cursor-pointer text-sm font-medium text-black hover:bg-[#024BAB]/10 px-2 py-1">
+                <label
+                  key={u._id}
+                  className="flex items-center gap-2 cursor-pointer text-sm font-medium text-black hover:bg-[#024BAB]/10 px-2 py-1"
+                >
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => onAssigneeIdsChange(checked ? assigneeIds.filter((id) => id !== u._id) : [...assigneeIds, u._id])}
+                    onChange={() =>
+                      onAssigneeIdsChange(
+                        checked
+                          ? assigneeIds.filter((id) => id !== u._id)
+                          : [...assigneeIds, u._id],
+                      )
+                    }
                     className="accent-[#024BAB] w-4 h-4"
                   />
                   {u.name}
@@ -71,7 +84,14 @@ export function LeadAssignmentPanel({
                 min={1}
                 max={1000}
                 value={batchSize}
-                onChange={(e) => onBatchSizeChange(Math.max(1, Math.min(1000, parseInt(e.target.value, 10) || 1)))}
+                onChange={(e) =>
+                  onBatchSizeChange(
+                    Math.max(
+                      1,
+                      Math.min(1000, parseInt(e.target.value, 10) || 1),
+                    ),
+                  )
+                }
                 className="w-16 border-2 border-black px-2 py-1 text-sm font-bold"
               />
             </label>

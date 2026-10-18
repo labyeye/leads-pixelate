@@ -3,7 +3,13 @@ import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import { productsAPI } from "@/services/api";
 import { downloadXLSX } from "@/lib/tableExport";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Export writes these same columns, so an exported file can be re-imported. Image URL is always exported, optional on import.
 export const PRODUCT_HEADERS = [
@@ -19,7 +25,19 @@ export const PRODUCT_HEADERS = [
   "Description",
   "Image URL",
 ];
-const TEMPLATE_ROW = ["Offset Printing Machine", "Machines", 250000, "pcs", 5, 18, "8443", "OPM-01", "Active", "", ""];
+const TEMPLATE_ROW = [
+  "Offset Printing Machine",
+  "Machines",
+  250000,
+  "pcs",
+  5,
+  18,
+  "8443",
+  "OPM-01",
+  "Active",
+  "",
+  "",
+];
 
 const ALIASES: Record<string, string> = {
   name: "name",
@@ -50,8 +68,13 @@ type Failed = { row: number; name: string; reason: string };
 
 async function readRows(file: File): Promise<Row[]> {
   const XLSX = await import("xlsx");
-  const wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: "array" });
-  const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+  const wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), {
+    type: "array",
+  });
+  const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(
+    wb.Sheets[wb.SheetNames[0]],
+    { defval: "" },
+  );
   return raw
     .map((r) => {
       const out: Row = {};
@@ -64,7 +87,8 @@ async function readRows(file: File): Promise<Row[]> {
     .filter((r) => Object.values(r).some((v) => v !== ""));
 }
 
-const num = (v?: string) => (v === undefined || v === "" ? undefined : Number(v));
+const num = (v?: string) =>
+  v === undefined || v === "" ? undefined : Number(v);
 
 interface Props {
   open: boolean;
@@ -72,13 +96,20 @@ interface Props {
   onImported: () => void;
 }
 
-export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) {
+export function ImportProductsDialog({
+  open,
+  onOpenChange,
+  onImported,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState("");
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ imported: number; failed: Failed[] } | null>(null);
+  const [result, setResult] = useState<{
+    imported: number;
+    failed: Failed[];
+  } | null>(null);
 
   const reset = () => {
     setFileName("");
@@ -96,12 +127,19 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
     reset();
     if (!file) return;
     setFileName(file.name);
-    if (file.size > 5 * 1024 * 1024) return setError("File is too large. Max file size is 5MB.");
+    if (file.size > 5 * 1024 * 1024)
+      return setError("File is too large. Max file size is 5MB.");
     try {
       const parsed = await readRows(file);
-      if (parsed.length === 0) return setError("No rows found in the first sheet of this file.");
-      const missing = ["name", "category", "price"].filter((k) => !parsed.some((r) => k in r));
-      if (missing.length) return setError("Missing columns (Name, Category, Price are required). Download the template to see the format.");
+      if (parsed.length === 0)
+        return setError("No rows found in the first sheet of this file.");
+      const missing = ["name", "category", "price"].filter(
+        (k) => !parsed.some((r) => k in r),
+      );
+      if (missing.length)
+        return setError(
+          "Missing columns (Name, Category, Price are required). Download the template to see the format.",
+        );
       setRows(parsed);
     } catch {
       setError("Could not read this file. Use an .xlsx, .xls or .csv file.");
@@ -116,7 +154,11 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       try {
-        const photos = (r.image || "").split(/[,\n]/).map((u) => u.trim()).filter(Boolean).slice(0, 5);
+        const photos = (r.image || "")
+          .split(/[,\n]/)
+          .map((u) => u.trim())
+          .filter(Boolean)
+          .slice(0, 5);
         await productsAPI.create({
           name: r.name,
           category: r.category,
@@ -133,7 +175,11 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
         });
         imported++;
       } catch (err: any) {
-        failed.push({ row: i + 2, name: r.name, reason: err.message || "Failed" });
+        failed.push({
+          row: i + 2,
+          name: r.name,
+          reason: err.message || "Failed",
+        });
       }
     }
     setResult({ imported, failed });
@@ -151,7 +197,8 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
         {result ? (
           <div className="space-y-3">
             <p className="text-sm">
-              <strong>{result.imported}</strong> product{result.imported === 1 ? "" : "s"} imported
+              <strong>{result.imported}</strong> product
+              {result.imported === 1 ? "" : "s"} imported
               {result.failed.length > 0 && (
                 <>
                   , <strong>{result.failed.length}</strong> failed
@@ -176,23 +223,37 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Required: <strong>Name, Category, Price</strong>. Optional: Unit, Stock, Tax Rate, HSN/SAC, SKU, Status,
-              Description and <strong>Image URL</strong> (up to 5, comma-separated). Files exported from this page can be
-              imported back.
+              Required: <strong>Name, Category, Price</strong>. Optional: Unit,
+              Stock, Tax Rate, HSN/SAC, SKU, Status, Description and{" "}
+              <strong>Image URL</strong> (up to 5, comma-separated). Files
+              exported from this page can be imported back.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => downloadXLSX("products-import-template.xlsx", PRODUCT_HEADERS, [TEMPLATE_ROW], "Products")}
+                onClick={() =>
+                  downloadXLSX(
+                    "products-import-template.xlsx",
+                    PRODUCT_HEADERS,
+                    [TEMPLATE_ROW],
+                    "Products",
+                  )
+                }
               >
                 <Download className="w-4 h-4 mr-1" /> Download template
               </Button>
-              <Button type="button" size="sm" onClick={() => fileRef.current?.click()}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+              >
                 <Upload className="w-4 h-4 mr-1" /> Choose file
               </Button>
-              <span className="text-xs text-muted-foreground self-center">.xlsx, .xls or .csv · max 5MB</span>
+              <span className="text-xs text-muted-foreground self-center">
+                .xlsx, .xls or .csv · max 5MB
+              </span>
               <input
                 ref={fileRef}
                 type="file"
@@ -205,7 +266,8 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
             {fileName && !error && rows.length > 0 && (
               <p className="text-sm flex items-center gap-2 rounded border p-3">
                 <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                {fileName} — <strong>{rows.length}</strong> product{rows.length === 1 ? "" : "s"} found
+                {fileName} — <strong>{rows.length}</strong> product
+                {rows.length === 1 ? "" : "s"} found
               </p>
             )}
           </div>
@@ -221,9 +283,15 @@ export function ImportProductsDialog({ open, onOpenChange, onImported }: Props) 
               <Button variant="outline" onClick={() => close(false)}>
                 Cancel
               </Button>
-              <Button onClick={runImport} disabled={rows.length === 0 || importing}>
+              <Button
+                onClick={runImport}
+                disabled={rows.length === 0 || importing}
+              >
                 {importing && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                Import {rows.length > 0 ? `${rows.length} product${rows.length === 1 ? "" : "s"}` : ""}
+                Import{" "}
+                {rows.length > 0
+                  ? `${rows.length} product${rows.length === 1 ? "" : "s"}`
+                  : ""}
               </Button>
             </>
           )}

@@ -1,8 +1,13 @@
 const asyncHandler = require("express-async-handler");
+const crypto = require("crypto");
+const { safeEqual } = require("../utils/safeEqual");
+const { safeBody } = require("../utils/tenantScope");
 const AICallSettings = require("../models/AICallSettings");
 const CallLog = require("../models/CallLog");
 const Lead = require("../models/Lead");
-const { triggerElevenLabsOutboundCall } = require("../services/elevenLabsService");
+const {
+  triggerElevenLabsOutboundCall,
+} = require("../services/elevenLabsService");
 const { processCallWebhookData } = require("../services/aiSummarizerService");
 const log = require("../utils/logger").scope("AICallingController");
 
@@ -44,11 +49,14 @@ const getSettings = asyncHandler(async (req, res) => {
  */
 const updateSettings = asyncHandler(async (req, res) => {
   const tenantId = req.user.tenantId;
-  const updates = req.body;
-  if (typeof updates.agentId === "string") updates.agentId = updates.agentId.trim();
+  const updates = safeBody(req.body);
+  if (typeof updates.agentId === "string")
+    updates.agentId = updates.agentId.trim();
   if (updates.agentId && !updates.agentId.startsWith("agent_")) {
     res.status(400);
-    throw new Error('Invalid Agent ID. It should look like "agent_xxxxxxxx" (copy it from the ElevenLabs agent page).');
+    throw new Error(
+      'Invalid Agent ID. It should look like "agent_xxxxxxxx" (copy it from the ElevenLabs agent page).',
+    );
   }
 
   let settings = await AICallSettings.findOne({ tenantId });
@@ -86,7 +94,8 @@ const testConnection = asyncHandler(async (req, res) => {
   if (!keyToUse) {
     return res.status(400).json({
       success: false,
-      message: "ElevenLabs API Key is required. Please set ELEVENLABS_API_KEY in backend/.env or configure it in settings.",
+      message:
+        "ElevenLabs API Key is required. Please set ELEVENLABS_API_KEY in backend/.env or configure it in settings.",
     });
   }
 
@@ -97,7 +106,7 @@ const testConnection = asyncHandler(async (req, res) => {
         headers: {
           "xi-api-key": keyToUse,
         },
-      }
+      },
     );
 
     const data = await response.json().catch(() => ({}));
@@ -105,7 +114,10 @@ const testConnection = asyncHandler(async (req, res) => {
     if (!response.ok) {
       return res.status(400).json({
         success: false,
-        message: data.detail?.message || data.message || "ElevenLabs API authentication failed",
+        message:
+          data.detail?.message ||
+          data.message ||
+          "ElevenLabs API authentication failed",
       });
     }
 
@@ -137,7 +149,9 @@ const callLead = asyncHandler(async (req, res) => {
   }
 
   if (!lead.phone) {
-    return res.status(400).json({ success: false, message: "Lead has no phone number" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Lead has no phone number" });
   }
 
   let settings = await AICallSettings.findOne({ tenantId });
@@ -145,7 +159,11 @@ const callLead = asyncHandler(async (req, res) => {
     settings = await AICallSettings.create({ tenantId });
   }
 
-  const result = await triggerElevenLabsOutboundCall(lead, settings, req.user._id);
+  const result = await triggerElevenLabsOutboundCall(
+    lead,
+    settings,
+    req.user._id,
+  );
 
   res.json({
     success: true,
@@ -179,8 +197,25 @@ const getLeadCallLogs = asyncHandler(async (req, res) => {
  * @access  Public (Webhook)
  */
 const handleElevenLabsWebhook = asyncHandler(async (req, res) => {
+  // ElevenLabs signs "<timestamp>.<raw body>" (header: t=<ts>,v0=<hex>). Enforced once the secret is configured.
+  const secret = process.env.ELEVENLABS_WEBHOOK_SECRET;
+  if (secret) {
+    const parts = Object.fromEntries(
+      String(req.headers["elevenlabs-signature"] || "")
+        .split(",")
+        .map((kv) => kv.trim().split("=")),
+    );
+    const fresh = Math.abs(Date.now() / 1000 - Number(parts.t)) < 30 * 60;
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(`${parts.t}.${req.rawBody}`)
+      .digest("hex");
+    if (!fresh || !safeEqual(parts.v0, expected)) return res.sendStatus(401);
+  }
   const payload = req.body;
-  log.info("ElevenLabs Webhook received", { event: payload.event || payload.type });
+  log.info("ElevenLabs Webhook received", {
+    event: payload.event || payload.type,
+  });
 
   const result = await processCallWebhookData(payload);
 

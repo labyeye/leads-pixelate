@@ -1,6 +1,8 @@
 const express = require("express");
+const { signState, readState } = require("../utils/oauthState");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
+const { safeEqual, validSignature } = require("../utils/safeEqual");
 const crypto = require("crypto");
 const { protect } = require("../middleware/auth");
 const { resolvePincode, isPincode } = require("../utils/pincode");
@@ -8,7 +10,11 @@ const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const User = require("../models/User");
 const CampaignAssignment = require("../models/CampaignAssignment");
-const { nextBatchAssignee, assignmentFields, clampBatchSize } = require("../utils/leadAssignment");
+const {
+  nextBatchAssignee,
+  assignmentFields,
+  clampBatchSize,
+} = require("../utils/leadAssignment");
 const log = require("../utils/logger").scope("Facebook Ads");
 
 const FB_API = "https://graph.facebook.com/v20.0";
@@ -75,7 +81,10 @@ async function fbWrite(path, token, params = {}, method = "POST") {
     if (v === undefined || v === null) continue;
     encoded[k] = typeof v === "object" ? JSON.stringify(v) : String(v);
   }
-  const qs = new URLSearchParams({ access_token: token, ...encoded }).toString();
+  const qs = new URLSearchParams({
+    access_token: token,
+    ...encoded,
+  }).toString();
   const res = await fetch(`${FB_API}${path}?${qs}`, { method });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || "Facebook API error");
@@ -146,8 +155,7 @@ function normalizeAd(a) {
       call_to_action_type: a.creative.call_to_action_type,
       link_url:
         a.creative.object_story_spec?.link_data?.link ||
-        a.creative.object_story_spec?.video_data?.call_to_action?.value
-          ?.link ||
+        a.creative.object_story_spec?.video_data?.call_to_action?.value?.link ||
         undefined,
     },
   };
@@ -164,7 +172,10 @@ async function fbGetAllWithFallback(path, token, fields, label) {
       limit: "100",
     });
   } catch (err) {
-    log.error("Status-filtered fetch failed, falling back", { label, message: err.message });
+    log.error("Status-filtered fetch failed, falling back", {
+      label,
+      message: err.message,
+    });
     return await fbGetAll(path, token, { fields, limit: "100" });
   }
 }
@@ -309,9 +320,7 @@ router.get(
       process.env.FACEBOOK_REDIRECT_URI ||
       `${process.env.VITE_API_URL || "https://leads.pixelatenest.com/"}/api/facebook/callback`;
 
-    const state = Buffer.from(
-      `${req.user.tenantId || "global"}:${req.user._id}`,
-    ).toString("base64");
+    const state = signState(`${req.user.tenantId || "global"}:${req.user._id}`);
 
     const authUrl =
       `https://www.facebook.com/v20.0/dialog/oauth?` +
@@ -339,7 +348,7 @@ router.get(
 
     let tenantId, userId;
     try {
-      const decoded = Buffer.from(String(state), "base64").toString("utf8");
+      const decoded = readState(state);
       [tenantId, userId] = decoded.split(":");
       if (!userId) throw new Error("Invalid state");
     } catch {
@@ -387,8 +396,16 @@ router.get(
     // Same login also fills Social Media Planner → Connected Accounts, so nobody connects twice.
     // Background: a failed import must not break the leads connection.
     require("../controllers/socialController")
-      .savePagesAsSocialAccounts(longLivedToken, userId, tenantId && tenantId !== "global" ? tenantId : null)
-      .catch((err) => log.error("Social accounts auto-import failed", { message: err.message }));
+      .savePagesAsSocialAccounts(
+        longLivedToken,
+        userId,
+        tenantId && tenantId !== "global" ? tenantId : null,
+      )
+      .catch((err) =>
+        log.error("Social accounts auto-import failed", {
+          message: err.message,
+        }),
+      );
 
     res.redirect(`${frontendBase}/integrations?fb_step=select_page`);
   }),
@@ -414,7 +431,8 @@ router.get(
     const token = tenant.integrations.facebook.userAccessToken;
 
     const personalData = await fbGet("/me/accounts", token, {
-      fields: "id,name,picture,fan_count,category,instagram_business_account{username}",
+      fields:
+        "id,name,picture,fan_count,category,instagram_business_account{username}",
     });
     const personalPages = personalData.data || [];
 
@@ -426,7 +444,8 @@ router.get(
       for (const biz of businesses.data || []) {
         try {
           const bizPages = await fbGet(`/${biz.id}/owned_pages`, token, {
-            fields: "id,name,picture,fan_count,category,instagram_business_account{username}",
+            fields:
+              "id,name,picture,fan_count,category,instagram_business_account{username}",
           });
           businessPages = businessPages.concat(bizPages.data || []);
         } catch (_) {}
@@ -536,7 +555,10 @@ router.post(
       userToken,
     );
     const subscribed = await subscribePageToWebhook(pageId, pageToken);
-    const { instagramId, instagramUsername } = await getInstagramAccount(pageId, pageToken);
+    const { instagramId, instagramUsername } = await getInstagramAccount(
+      pageId,
+      pageToken,
+    );
 
     const pageEntry = {
       pageId,
@@ -643,11 +665,16 @@ router.post(
       query,
       {
         $set: {
-          "integrations.facebook.pages.$[elem].assigneeIds": Array.isArray(assigneeIds)
+          "integrations.facebook.pages.$[elem].assigneeIds": Array.isArray(
+            assigneeIds,
+          )
             ? assigneeIds
             : [],
           ...(batchSize !== undefined
-            ? { "integrations.facebook.pages.$[elem].assignBatchSize": clampBatchSize(batchSize) }
+            ? {
+                "integrations.facebook.pages.$[elem].assignBatchSize":
+                  clampBatchSize(batchSize),
+              }
             : {}),
         },
       },
@@ -777,7 +804,10 @@ router.post(
       } catch (err) {
         pageResult.error = `Could not fetch forms: ${err.message}`;
         pageResults.push(pageResult);
-        log.error("Failed to fetch forms for page", { pageName: page.pageName, message: err.message });
+        log.error("Failed to fetch forms for page", {
+          pageName: page.pageName,
+          message: err.message,
+        });
         continue;
       }
 
@@ -949,7 +979,10 @@ router.post(
                   pageResult.created++;
                 } catch (createErr) {
                   if (createErr.code === 11000) {
-                    log.warn("Duplicate lead skipped", { name: leadData.name, phone: leadData.phone });
+                    log.warn("Duplicate lead skipped", {
+                      name: leadData.name,
+                      phone: leadData.phone,
+                    });
                     totalUpdated++;
                     pageResult.updated++;
                   } else {
@@ -958,11 +991,18 @@ router.post(
                 }
               }
             } catch (err) {
-              log.error("Failed to save lead from form", { formId, message: err.message });
+              log.error("Failed to save lead from form", {
+                formId,
+                message: err.message,
+              });
             }
           }
         } catch (err) {
-          log.error("Failed to fetch leads for form", { formId, pageName: page.pageName, message: err.message });
+          log.error("Failed to fetch leads for form", {
+            formId,
+            pageName: page.pageName,
+            message: err.message,
+          });
         }
       }
 
@@ -986,26 +1026,13 @@ router.post(
   }),
 );
 
-router.get("/webhook-debug", (req, res) => {
-  const stored = process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN;
-  const incoming = req.query["hub.verify_token"];
-  res.json({
-    tokenSet: !!stored,
-    storedLength: stored ? stored.length : 0,
-    storedPreview: stored ? stored.substring(0, 4) + "..." : null,
-    incomingToken: incoming || null,
-    incomingLength: incoming ? incoming.length : 0,
-    match: incoming === stored,
-  });
-});
-
 router.get("/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
   const stored = (process.env.FACEBOOK_WEBHOOK_VERIFY_TOKEN || "").trim();
 
-  if (mode === "subscribe" && token === stored) {
+  if (mode === "subscribe" && stored && safeEqual(token, stored)) {
     return res.status(200).send(challenge);
   }
   res.sendStatus(403);
@@ -1018,16 +1045,8 @@ router.post(
     const signature = req.headers["x-hub-signature-256"];
     const appSecret = process.env.FACEBOOK_APP_SECRET;
 
-    if (signature && appSecret) {
-      const expected =
-        "sha256=" +
-        crypto.createHmac("sha256", appSecret).update(req.body).digest("hex");
-      if (
-        !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
-      ) {
-        return res.sendStatus(403);
-      }
-    }
+    // Fail closed: an unsigned or wrongly signed delivery is never processed.
+    if (!validSignature(req.body, signature, appSecret)) return res.sendStatus(403);
 
     let body;
     try {
@@ -1072,9 +1091,13 @@ router.post(
 
           let profileName = "Instagram User";
           try {
-            const profile = await fbGet(`/${senderId}`, pageConfig.accessToken, {
-              fields: "name,username",
-            });
+            const profile = await fbGet(
+              `/${senderId}`,
+              pageConfig.accessToken,
+              {
+                fields: "name,username",
+              },
+            );
             profileName = profile.name || profile.username || profileName;
           } catch {}
 
@@ -1129,7 +1152,9 @@ router.post(
             instagramDmMessageId: mid,
           });
         } catch (err) {
-          log.error("Failed to save Instagram DM lead", { message: err.message });
+          log.error("Failed to save Instagram DM lead", {
+            message: err.message,
+          });
         }
       }
 
@@ -1349,7 +1374,10 @@ router.get(
           "meta-campaigns",
         );
       } catch (err) {
-        log.error("Meta campaigns fetch failed", { adAccountId: account.id, message: err.message });
+        log.error("Meta campaigns fetch failed", {
+          adAccountId: account.id,
+          message: err.message,
+        });
         continue;
       }
       for (const c of campaigns) {
@@ -1428,7 +1456,10 @@ router.get(
     }
 
     try {
-      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      const campaignId = await resolveCampaignIdForNode(
+        req.params.id,
+        userToken,
+      );
       await assertCampaignAccess(req, campaignId);
       const ads = await fbGetAllWithFallback(
         `/${req.params.id}/ads`,
@@ -1482,7 +1513,8 @@ router.get(
         } catch {
           continue;
         }
-        if (assignedIds) campaigns = campaigns.filter((c) => assignedIds.has(c.id));
+        if (assignedIds)
+          campaigns = campaigns.filter((c) => assignedIds.has(c.id));
 
         const perCampaign = await Promise.all(
           campaigns.map(async (c) => {
@@ -1546,7 +1578,8 @@ router.get(
         } catch {
           continue;
         }
-        if (assignedIds) campaigns = campaigns.filter((c) => assignedIds.has(c.id));
+        if (assignedIds)
+          campaigns = campaigns.filter((c) => assignedIds.has(c.id));
 
         for (const c of campaigns) {
           let adSets;
@@ -1611,8 +1644,7 @@ router.get(
     try {
       const { since, until, datePreset } = req.query;
       const params = {
-        fields:
-          "impressions,clicks,spend,reach,cpm,cpc,ctr,frequency,actions",
+        fields: "impressions,clicks,spend,reach,cpm,cpc,ctr,frequency,actions",
       };
       if (since && until) {
         params.time_range = JSON.stringify({ since, until });
@@ -1639,7 +1671,8 @@ router.post(
     if (!["admin", "super_admin"].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: "Only an admin can create a new campaign — ask them to create it and assign it to you.",
+        message:
+          "Only an admin can create a new campaign — ask them to create it and assign it to you.",
       });
     }
     const userToken = await getFbUserToken(req);
@@ -1694,8 +1727,14 @@ router.put(
     }
     try {
       await assertCampaignAccess(req, req.params.id);
-      const { name, status, daily_budget, lifetime_budget, start_time, stop_time } =
-        req.body;
+      const {
+        name,
+        status,
+        daily_budget,
+        lifetime_budget,
+        start_time,
+        stop_time,
+      } = req.body;
       const data = await fbWrite(`/${req.params.id}`, userToken, {
         name,
         status,
@@ -1774,19 +1813,23 @@ router.post(
           message: "Could not resolve the ad account for this campaign",
         });
       }
-      const data = await fbWrite(`/act_${campaign.account_id}/adsets`, userToken, {
-        campaign_id,
-        name,
-        daily_budget,
-        lifetime_budget,
-        start_time,
-        end_time,
-        targeting: targeting || { geo_locations: { countries: ["IN"] } },
-        optimization_goal: optimization_goal || "LINK_CLICKS",
-        billing_event: billing_event || "IMPRESSIONS",
-        bid_amount,
-        status: status || "PAUSED",
-      });
+      const data = await fbWrite(
+        `/act_${campaign.account_id}/adsets`,
+        userToken,
+        {
+          campaign_id,
+          name,
+          daily_budget,
+          lifetime_budget,
+          start_time,
+          end_time,
+          targeting: targeting || { geo_locations: { countries: ["IN"] } },
+          optimization_goal: optimization_goal || "LINK_CLICKS",
+          billing_event: billing_event || "IMPRESSIONS",
+          bid_amount,
+          status: status || "PAUSED",
+        },
+      );
       res.status(201).json({ success: true, data });
     } catch (err) {
       res
@@ -1807,7 +1850,10 @@ router.put(
         .json({ success: false, message: "Facebook not connected" });
     }
     try {
-      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      const campaignId = await resolveCampaignIdForNode(
+        req.params.id,
+        userToken,
+      );
       await assertCampaignAccess(req, campaignId);
       const {
         name,
@@ -1853,7 +1899,10 @@ router.delete(
         .json({ success: false, message: "Facebook not connected" });
     }
     try {
-      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      const campaignId = await resolveCampaignIdForNode(
+        req.params.id,
+        userToken,
+      );
       await assertCampaignAccess(req, campaignId);
       await fbWrite(`/${req.params.id}`, userToken, {}, "DELETE");
       res.json({ success: true, message: "Ad set deleted" });
@@ -1956,11 +2005,22 @@ router.put(
         .json({ success: false, message: "Facebook not connected" });
     }
     try {
-      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      const campaignId = await resolveCampaignIdForNode(
+        req.params.id,
+        userToken,
+      );
       await assertCampaignAccess(req, campaignId);
 
-      const { name, status, page_id, title, body, link_url, image_url, call_to_action_type } =
-        req.body;
+      const {
+        name,
+        status,
+        page_id,
+        title,
+        body,
+        link_url,
+        image_url,
+        call_to_action_type,
+      } = req.body;
       const updateParams = { name, status };
 
       if (title || body || link_url || image_url || call_to_action_type) {
@@ -1972,7 +2032,9 @@ router.put(
           : { ownerUser: req.user._id };
         const tenant = await Tenant.findOne(tenantQuery);
         const pages = tenant?.integrations?.facebook?.pages || [];
-        const page = page_id ? pages.find((p) => p.pageId === page_id) : pages[0];
+        const page = page_id
+          ? pages.find((p) => p.pageId === page_id)
+          : pages[0];
         if (!page) {
           return res.status(400).json({
             success: false,
@@ -2019,7 +2081,10 @@ router.delete(
         .json({ success: false, message: "Facebook not connected" });
     }
     try {
-      const campaignId = await resolveCampaignIdForNode(req.params.id, userToken);
+      const campaignId = await resolveCampaignIdForNode(
+        req.params.id,
+        userToken,
+      );
       await assertCampaignAccess(req, campaignId);
       await fbWrite(`/${req.params.id}`, userToken, {}, "DELETE");
       res.json({ success: true, message: "Ad deleted" });

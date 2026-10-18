@@ -1,6 +1,11 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
-import { facebookAPI, leadsAPI, whatsappAPI, campaignAPI } from "@/services/api";
+import {
+  facebookAPI,
+  leadsAPI,
+  whatsappAPI,
+  campaignAPI,
+} from "@/services/api";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
@@ -42,7 +47,8 @@ export default function CampaignReportsPage() {
       setInsights((prev) => {
         const next = { ...prev };
         results.forEach((r, i) => {
-          if (r.status === "fulfilled") next[ids[i]] = parseInsight(r.value.data);
+          if (r.status === "fulfilled")
+            next[ids[i]] = parseInsight(r.value.data);
         });
         return next;
       });
@@ -70,7 +76,9 @@ export default function CampaignReportsPage() {
       }
       if (waRes.status === "fulfilled") {
         const list = waRes.value.data || [];
-        setWaSent(list.reduce((s: number, c: any) => s + (c.sentCount || 0), 0));
+        setWaSent(
+          list.reduce((s: number, c: any) => s + (c.sentCount || 0), 0),
+        );
         setWaDelivered(
           list.reduce((s: number, c: any) => s + (c.deliveredCount || 0), 0),
         );
@@ -193,7 +201,13 @@ export default function CampaignReportsPage() {
             <WhatsAppIcon className="w-4 h-4 text-[#25D366]" /> WhatsApp
           </h3>
           <div className="grid grid-cols-2 gap-3">
-            <KpiCard title="Sent" value={waSent} sub="All campaigns" icon={Send} bg="bg-green-600" />
+            <KpiCard
+              title="Sent"
+              value={waSent}
+              sub="All campaigns"
+              icon={Send}
+              bg="bg-green-600"
+            />
             <KpiCard
               title="Delivered"
               value={waDelivered}

@@ -21,7 +21,9 @@ let role = "admin";
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { name: "Asha", role }, logout: vi.fn() }),
 }));
-vi.mock("@/components/layout/AppLayout", () => ({ AppLayout: ({ children }: any) => <div>{children}</div> }));
+vi.mock("@/components/layout/AppLayout", () => ({
+  AppLayout: ({ children }: any) => <div>{children}</div>,
+}));
 
 const findItem = (r: any, title: string) =>
   getNavGroupsForRole(r)
@@ -31,7 +33,13 @@ const findItem = (r: any, title: string) =>
 describe("WhatsApp navigation", () => {
   it("is one dropdown with every page for admins, and no flat WhatsApp group", () => {
     const wa = findItem("admin", "WhatsApp")!;
-    expect(wa.children!.map((c) => c.title)).toEqual(["Inbox", "Campaigns", "Logs", "Document Vault", "Setup"]);
+    expect(wa.children!.map((c) => c.title)).toEqual([
+      "Inbox",
+      "Campaigns",
+      "Logs",
+      "Document Vault",
+      "Setup",
+    ]);
     expect(wa.children!.map((c) => c.href)).toEqual([
       "/whatsapp/inbox",
       "/whatsapp/campaigns",
@@ -39,23 +47,26 @@ describe("WhatsApp navigation", () => {
       "/documents",
       "/whatsapp/setup",
     ]);
-    expect(getNavGroupsForRole("admin").map((g) => g.label)).not.toContain("WhatsApp");
+    expect(getNavGroupsForRole("admin").map((g) => g.label)).not.toContain(
+      "WhatsApp",
+    );
   });
 
   it("hides admin-only Setup from sales executives and the whole dropdown from other roles", () => {
-    expect(findItem("sales_executive", "WhatsApp")!.children!.map((c) => c.title)).toEqual([
-      "Inbox",
-      "Campaigns",
-      "Logs",
-      "Document Vault",
-    ]);
+    expect(
+      findItem("sales_executive", "WhatsApp")!.children!.map((c) => c.title),
+    ).toEqual(["Inbox", "Campaigns", "Logs", "Document Vault"]);
     expect(findItem("accountant", "WhatsApp")).toBeUndefined();
     expect(findItem("service_manager", "WhatsApp")).toBeUndefined();
   });
 
   it("child roles apply everywhere, e.g. admin-only Campaign Management", () => {
     const titles = (r: any) =>
-      JSON.stringify(getNavGroupsForRole(r).flatMap((g) => g.items.filter((i) => i.title === "Campaigns")));
+      JSON.stringify(
+        getNavGroupsForRole(r).flatMap((g) =>
+          g.items.filter((i) => i.title === "Campaigns"),
+        ),
+      );
     expect(titles("admin")).toContain("Campaign Management");
     expect(titles("sales_executive")).not.toContain("Campaign Management");
   });
@@ -86,12 +97,26 @@ describe("AppSidebar WhatsApp dropdown", () => {
 
   it("stays collapsed elsewhere, opens on click and links to every page", () => {
     renderAt("/");
-    expect(screen.queryByRole("link", { name: "Inbox" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Inbox" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /WhatsApp/ }));
-    expect(screen.getByRole("link", { name: "Inbox" })).toHaveAttribute("href", "/whatsapp/inbox");
-    expect(screen.getByRole("link", { name: "Campaigns" })).toHaveAttribute("href", "/whatsapp/campaigns");
-    expect(screen.getByRole("link", { name: "Logs" })).toHaveAttribute("href", "/whatsapp/logs");
-    expect(screen.getByRole("link", { name: "Setup" })).toHaveAttribute("href", "/whatsapp/setup");
+    expect(screen.getByRole("link", { name: "Inbox" })).toHaveAttribute(
+      "href",
+      "/whatsapp/inbox",
+    );
+    expect(screen.getByRole("link", { name: "Campaigns" })).toHaveAttribute(
+      "href",
+      "/whatsapp/campaigns",
+    );
+    expect(screen.getByRole("link", { name: "Logs" })).toHaveAttribute(
+      "href",
+      "/whatsapp/logs",
+    );
+    expect(screen.getByRole("link", { name: "Setup" })).toHaveAttribute(
+      "href",
+      "/whatsapp/setup",
+    );
   });
 
   it("opens by itself when you are on one of its pages", () => {
@@ -104,7 +129,9 @@ describe("AppSidebar WhatsApp dropdown", () => {
     role = "sales_executive";
     renderAt("/whatsapp/inbox");
     expect(screen.getByRole("link", { name: "Logs" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Setup" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Setup" }),
+    ).not.toBeInTheDocument();
   });
 
   it("collapsed rail jumps to the first page instead of a dead dropdown", () => {
@@ -124,7 +151,11 @@ describe("WhatsApp campaign wizard", () => {
   });
 
   const setup = (numbers: any[]) => {
-    vi.mocked(whatsappAPI.getCampaigns).mockResolvedValue({ success: true, count: 0, data: [] });
+    vi.mocked(whatsappAPI.getCampaigns).mockResolvedValue({
+      success: true,
+      count: 0,
+      data: [],
+    });
     vi.mocked(whatsappAPI.getTemplates).mockResolvedValue({
       success: true,
       count: 1,
@@ -143,10 +174,25 @@ describe("WhatsApp campaign wizard", () => {
     });
     vi.mocked(leadsAPI.getAll).mockResolvedValue({
       success: true,
-      data: [{ _id: "l1", name: "Ravi Kumar", company: "Acme", phone: "9999999999", status: "DISCUSSION", source: "IndiaMART" }],
+      data: [
+        {
+          _id: "l1",
+          name: "Ravi Kumar",
+          company: "Acme",
+          phone: "9999999999",
+          status: "DISCUSSION",
+          source: "IndiaMART",
+        },
+      ],
     } as any);
-    vi.mocked(whatsappAPI.getStatus).mockResolvedValue({ success: true, data: { phoneNumbers: numbers } });
-    vi.mocked(whatsappAPI.createCampaign).mockResolvedValue({ success: true, data: {} });
+    vi.mocked(whatsappAPI.getStatus).mockResolvedValue({
+      success: true,
+      data: { phoneNumbers: numbers },
+    });
+    vi.mocked(whatsappAPI.createCampaign).mockResolvedValue({
+      success: true,
+      data: {},
+    });
   };
 
   // Walks the real 4-step wizard: name -> template -> leads -> review/send.
@@ -156,8 +202,12 @@ describe("WhatsApp campaign wizard", () => {
         <WhatsappMessagingPage />
       </MemoryRouter>,
     );
-    fireEvent.click(await screen.findByRole("button", { name: /New Campaign/ }));
-    fireEvent.change(await screen.findByPlaceholderText(/Diwali Offer/), { target: { value: "Diwali blast" } });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /New Campaign/ }),
+    );
+    fireEvent.change(await screen.findByPlaceholderText(/Diwali Offer/), {
+      target: { value: "Diwali blast" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
     fireEvent.click(await screen.findByText("Promo Offer"));
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
@@ -174,7 +224,12 @@ describe("WhatsApp campaign wizard", () => {
     fireEvent.click(screen.getByRole("button", { name: /Send Campaign/ }));
     await waitFor(() =>
       expect(whatsappAPI.createCampaign).toHaveBeenCalledWith(
-        expect.objectContaining({ name: "Diwali blast", templateId: "t1", leadIds: ["l1"], phoneNumberId: "pn1" }),
+        expect.objectContaining({
+          name: "Diwali blast",
+          templateId: "t1",
+          leadIds: ["l1"],
+          phoneNumberId: "pn1",
+        }),
       ),
     );
   });
@@ -182,12 +237,18 @@ describe("WhatsApp campaign wizard", () => {
   it("opens the wizard with leads handed over from the Leads page already ticked", async () => {
     setup([number("pn1", "Sales")]);
     render(
-      <MemoryRouter initialEntries={[{ pathname: "/whatsapp/campaigns", state: { leadIds: ["l1"] } }]}>
+      <MemoryRouter
+        initialEntries={[
+          { pathname: "/whatsapp/campaigns", state: { leadIds: ["l1"] } },
+        ]}
+      >
         <WhatsappMessagingPage />
       </MemoryRouter>,
     );
     expect(await screen.findByText("Step 1 of 4")).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText(/Diwali Offer/), { target: { value: "From leads" } });
+    fireEvent.change(screen.getByPlaceholderText(/Diwali Offer/), {
+      target: { value: "From leads" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
     fireEvent.click(await screen.findByText("Promo Offer"));
     fireEvent.click(screen.getByRole("button", { name: /Next/ }));
@@ -201,7 +262,9 @@ describe("WhatsApp campaign wizard", () => {
     expect(screen.queryByText("Send from")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Send Campaign/ }));
     await waitFor(() =>
-      expect(whatsappAPI.createCampaign).toHaveBeenCalledWith(expect.objectContaining({ phoneNumberId: "pn1" })),
+      expect(whatsappAPI.createCampaign).toHaveBeenCalledWith(
+        expect.objectContaining({ phoneNumberId: "pn1" }),
+      ),
     );
   });
 });

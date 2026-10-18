@@ -1,4 +1,4 @@
-﻿import React, {useState, useEffect, useCallback} from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,26 +9,37 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import {ALL_SOURCES, ALL_STATUSES, getStatusColor, getStatusLabel} from '../constants/statusConstants';
-import {FilterState} from './LeadsListScreen';
+import {
+  ALL_SOURCES,
+  ALL_STATUSES,
+  getStatusColor,
+  getStatusLabel,
+} from '../constants/statusConstants';
+import { FilterState } from './LeadsListScreen';
 import SourceBadge from '../components/SourceBadge';
-import {leadsAPI, SavedView} from '../services/api';
+import { leadsAPI, SavedView } from '../services/api';
 
 const NB_SHADOW = {
   shadowColor: '#000',
   shadowOpacity: 1,
   shadowRadius: 0,
-  shadowOffset: {width: 4, height: 4},
+  shadowOffset: { width: 4, height: 4 },
   elevation: 4,
 };
 
-export default function FiltersScreen({navigation, route}: any) {
+export default function FiltersScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
-  const filters: FilterState = route?.params?.filters || {sources: [], statuses: [], startDate: '', endDate: ''};
-  const onApply: (f: FilterState) => void = route?.params?.onApply || (() => {});
-  const [local, setLocal] = useState<FilterState>({...filters});
+  const filters: FilterState = route?.params?.filters || {
+    sources: [],
+    statuses: [],
+    startDate: '',
+    endDate: '',
+  };
+  const onApply: (f: FilterState) => void =
+    route?.params?.onApply || (() => {});
+  const [local, setLocal] = useState<FilterState>({ ...filters });
 
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [savingView, setSavingView] = useState(false);
@@ -75,7 +86,7 @@ export default function FiltersScreen({navigation, route}: any) {
 
   const handleDeleteView = (id: string) => {
     Alert.alert('Delete View', 'Remove this saved view for your team?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
@@ -108,18 +119,29 @@ export default function FiltersScreen({navigation, route}: any) {
     }));
 
   const handleReset = () =>
-    setLocal({sources: [], statuses: [], startDate: '', endDate: '', budgetMin: '', budgetMax: '', products: []});
+    setLocal({
+      sources: [],
+      statuses: [],
+      startDate: '',
+      endDate: '',
+      budgetMin: '',
+      budgetMax: '',
+      products: [],
+    });
 
   const activeCount =
     local.sources.length + local.statuses.length + (local.startDate ? 1 : 0);
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top}]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+        >
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
@@ -134,8 +156,11 @@ export default function FiltersScreen({navigation, route}: any) {
       <View style={styles.divider} />
 
       <ScrollView
-        contentContainerStyle={[styles.scroll, {paddingBottom: insets.bottom + 90}]}>
-
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: insets.bottom + 90 },
+        ]}
+      >
         {/* Saved Views */}
         <View style={styles.section}>
           <View style={styles.savedViewsHeader}>
@@ -149,7 +174,7 @@ export default function FiltersScreen({navigation, route}: any) {
 
           {savingView && (
             <View style={styles.saveViewRow}>
-              <View style={[styles.inputBorder, {flex: 1}]}>
+              <View style={[styles.inputBorder, { flex: 1 }]}>
                 <TextInput
                   style={styles.dateInput}
                   placeholder="View name"
@@ -161,7 +186,8 @@ export default function FiltersScreen({navigation, route}: any) {
               <TouchableOpacity
                 style={styles.saveViewBtn}
                 disabled={savingViewLoading || !newViewName.trim()}
-                onPress={handleSaveView}>
+                onPress={handleSaveView}
+              >
                 <Text style={styles.saveViewBtnText}>
                   {savingViewLoading ? '...' : 'Save'}
                 </Text>
@@ -180,7 +206,8 @@ export default function FiltersScreen({navigation, route}: any) {
                   key={v._id}
                   style={styles.viewChip}
                   onPress={() => applySavedView(v)}
-                  onLongPress={() => handleDeleteView(v._id)}>
+                  onLongPress={() => handleDeleteView(v._id)}
+                >
                   <Icon name="star" size={11} color="#000" />
                   <Text style={styles.viewChipText}>{v.name}</Text>
                 </TouchableOpacity>
@@ -201,7 +228,7 @@ export default function FiltersScreen({navigation, route}: any) {
                   placeholder="YYYY-MM-DD"
                   placeholderTextColor="#94a3b8"
                   value={local.startDate}
-                  onChangeText={v => setLocal(f => ({...f, startDate: v}))}
+                  onChangeText={v => setLocal(f => ({ ...f, startDate: v }))}
                 />
               </View>
             </View>
@@ -214,7 +241,7 @@ export default function FiltersScreen({navigation, route}: any) {
                   placeholder="YYYY-MM-DD"
                   placeholderTextColor="#94a3b8"
                   value={local.endDate}
-                  onChangeText={v => setLocal(f => ({...f, endDate: v}))}
+                  onChangeText={v => setLocal(f => ({ ...f, endDate: v }))}
                 />
               </View>
             </View>
@@ -231,9 +258,10 @@ export default function FiltersScreen({navigation, route}: any) {
                 <TouchableOpacity
                   key={s}
                   style={[styles.sourceChip, active && styles.sourceChipActive]}
-                  onPress={() => toggleSource(s)}>
-                  <SourceBadge source={s} size="sm"/>
-                  {active && <Icon name="checkmark" size={10} color="#000"/>}
+                  onPress={() => toggleSource(s)}
+                >
+                  <SourceBadge source={s} size="sm" />
+                  {active && <Icon name="checkmark" size={10} color="#000" />}
                 </TouchableOpacity>
               );
             })}
@@ -253,15 +281,23 @@ export default function FiltersScreen({navigation, route}: any) {
                   style={[
                     styles.chip,
                     active
-                      ? {backgroundColor: c.bg, borderColor: '#000'}
-                      : {backgroundColor: '#fff', borderColor: '#000'},
+                      ? { backgroundColor: c.bg, borderColor: '#000' }
+                      : { backgroundColor: '#fff', borderColor: '#000' },
                   ]}
-                  onPress={() => toggleStatus(s)}>
-                  <Text style={[styles.chipText, {color: active ? c.text : '#000'}]}>
+                  onPress={() => toggleStatus(s)}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      { color: active ? c.text : '#000' },
+                    ]}
+                  >
                     {getStatusLabel(s)}
                   </Text>
                   {active && (
-                    <Text style={[styles.chipCheck, {color: c.text}]}>âœ"</Text>
+                    <Text style={[styles.chipCheck, { color: c.text }]}>
+                      âœ"
+                    </Text>
                   )}
                 </TouchableOpacity>
               );
@@ -271,7 +307,7 @@ export default function FiltersScreen({navigation, route}: any) {
       </ScrollView>
 
       {/* Apply â€" orange like web CTA */}
-      <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         <View style={styles.divider} />
         <View style={styles.footerInner}>
           <TouchableOpacity
@@ -279,7 +315,8 @@ export default function FiltersScreen({navigation, route}: any) {
             onPress={() => {
               onApply(local);
               navigation.goBack();
-            }}>
+            }}
+          >
             <Text style={styles.applyBtnText}>
               Apply Filters{activeCount > 0 ? ` (${activeCount})` : ''}
             </Text>
@@ -291,7 +328,7 @@ export default function FiltersScreen({navigation, route}: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,
     backgroundColor: '#fff',
@@ -300,11 +337,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  backBtn: {width: 36, height: 36, borderWidth: 2, borderRadius: 8, borderColor: '#000', alignItems: 'center', justifyContent: 'center'},
-  headerTitle: {fontSize: 20, fontWeight: '600', color: '#000'},
-  resetText: {fontSize: 13, fontWeight: '700', color: '#EF4444'},
-  divider: {height: 2, backgroundColor: '#000'},
-  scroll: {padding: 16, gap: 12},
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  resetText: { fontSize: 13, fontWeight: '700', color: '#EF4444' },
+  divider: { height: 2, backgroundColor: '#000' },
+  scroll: { padding: 16, gap: 12 },
 
   section: {
     backgroundColor: '#fff',
@@ -325,11 +370,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 12,
   },
-  dateRow: {flexDirection: 'row', alignItems: 'flex-end', gap: 8},
-  dateField: {flex: 1},
-  dateSep: {fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 8},
-  label: {fontSize: 13, fontWeight: '700', color: '#000', marginBottom: 6},
-  inputBorder: {borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderRightColor: '#0A0A0A', borderBottomColor: '#0A0A0A', borderColor: '#000', backgroundColor: '#fff'},
+  dateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  dateField: { flex: 1 },
+  dateSep: { fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 8 },
+  label: { fontSize: 13, fontWeight: '700', color: '#000', marginBottom: 6 },
+  inputBorder: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    backgroundColor: '#fff',
+  },
   dateInput: {
     paddingHorizontal: 10,
     paddingVertical: 10,
@@ -344,8 +398,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  savedViewAddText: {fontSize: 11, fontWeight: '800', color: '#024BAB'},
-  saveViewRow: {flexDirection: 'row', gap: 8, marginBottom: 10},
+  savedViewAddText: { fontSize: 11, fontWeight: '800', color: '#024BAB' },
+  saveViewRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   saveViewBtn: {
     backgroundColor: '#FFDE00',
     borderWidth: 2,
@@ -359,8 +413,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveViewBtnText: {fontSize: 12, fontWeight: '600', color: '#000'},
-  noViewsText: {fontSize: 12, color: '#64748b', fontWeight: '500'},
+  saveViewBtnText: { fontSize: 12, fontWeight: '600', color: '#000' },
+  noViewsText: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   viewChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -372,8 +426,8 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#fff',
   },
-  viewChipText: {fontSize: 11, fontWeight: '700', color: '#000'},
-  chipWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  viewChipText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -383,13 +437,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 4,
   },
-  chipText: {fontSize: 11, fontWeight: '700', textTransform: 'uppercase'},
-  chipCheck: {fontSize: 10, fontWeight: '600'},
-  sourceChip: {flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:6,paddingVertical:5,borderWidth: 2, borderRadius: 8,borderColor:'#e2e8f0',backgroundColor:'#f8fafc'},
-  sourceChipActive: {borderColor:'#000',backgroundColor:'#FFDE00'},
+  chipText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  chipCheck: { fontSize: 10, fontWeight: '600' },
+  sourceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+  },
+  sourceChipActive: { borderColor: '#000', backgroundColor: '#FFDE00' },
 
-  footer: {backgroundColor: '#fff'},
-  footerInner: {paddingHorizontal: 16, paddingTop: 12},
+  footer: { backgroundColor: '#fff' },
+  footerInner: { paddingHorizontal: 16, paddingTop: 12 },
   applyBtn: {
     backgroundColor: '#FF751F',
     paddingVertical: 14,
@@ -402,6 +466,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  applyBtnText: {color: '#fff', fontSize: 15, fontWeight: '600'},
+  applyBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
-

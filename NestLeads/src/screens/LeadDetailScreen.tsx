@@ -1,4 +1,4 @@
-﻿import React, {useState, useEffect} from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import WhatsAppLogo from '../components/WhatsAppLogo';
-import {leadsAPI, settingsAPI} from '../services/api';
-import {useAuth} from '../contexts/AuthContext';
+import { leadsAPI, settingsAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import {
   getStatusColor,
   getStatusLabel,
@@ -27,33 +27,39 @@ import {
 } from '../constants/statusConstants';
 import SourceBadge from '../components/SourceBadge';
 
-const TAG_COLORS: Record<string, {bg: string; text: string}> = {
-  HOT: {bg: '#ef4444', text: '#fff'},
-  WARM: {bg: '#FFDE00', text: '#000'},
-  COLD: {bg: '#024BAB', text: '#fff'},
+const TAG_COLORS: Record<string, { bg: string; text: string }> = {
+  HOT: { bg: '#ef4444', text: '#fff' },
+  WARM: { bg: '#FFDE00', text: '#000' },
+  COLD: { bg: '#024BAB', text: '#fff' },
 };
 
 const NB_SHADOW = {
   shadowColor: '#000',
   shadowOpacity: 1,
   shadowRadius: 0,
-  shadowOffset: {width: 4, height: 4},
+  shadowOffset: { width: 4, height: 4 },
   elevation: 4,
 };
 
 const EDIT_FIELDS = [
-  ['name', 'Name'], ['company', 'Company'], ['phone', 'Phone'], ['email', 'Email'],
-  ['website', 'Website'], ['location', 'Location / Pincode'], ['budget', 'Budget'],
-  ['requirement', 'Requirement'], ['remarks', 'Remarks'],
+  ['name', 'Name'],
+  ['company', 'Company'],
+  ['phone', 'Phone'],
+  ['email', 'Email'],
+  ['website', 'Website'],
+  ['location', 'Location / Pincode'],
+  ['budget', 'Budget'],
+  ['requirement', 'Requirement'],
+  ['remarks', 'Remarks'],
 ] as const;
 
 // Same defaults as the backend's checkPermission.js for Leads (tenant overrides come from settings).
-const LEAD_DEFAULTS: Record<string, {update: boolean; delete: boolean}> = {
-  super_admin: {update: true, delete: true},
-  admin: {update: true, delete: true},
+const LEAD_DEFAULTS: Record<string, { update: boolean; delete: boolean }> = {
+  super_admin: { update: true, delete: true },
+  admin: { update: true, delete: true },
 };
 
-export default function LeadDetailScreen({navigation, route}: any) {
+export default function LeadDetailScreen({ navigation, route }: any) {
   const leadId = route?.params?.leadId;
   const insets = useSafeAreaInsets();
   const [lead, setLead] = useState<any>(null);
@@ -65,27 +71,39 @@ export default function LeadDetailScreen({navigation, route}: any) {
   const [pendingStatus, setPendingStatus] = useState('');
   const [remarksInput, setRemarksInput] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const {user} = useAuth();
-  const [perm, setPerm] = useState<{update?: boolean; delete?: boolean}>(LEAD_DEFAULTS[user?.role] || {});
+  const { user } = useAuth();
+  const [perm, setPerm] = useState<{ update?: boolean; delete?: boolean }>(
+    LEAD_DEFAULTS[user?.role] || {},
+  );
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
-    settingsAPI.get().then((s: any) => {
-      const l = s?.data?.permissions?.Leads;
-      const p = (user?.roleId && l?.[user.roleId]) || l?.[user?.role];
-      if (p) setPerm(prev => ({...prev, ...p}));
-    }).catch(() => {});
+    settingsAPI
+      .get()
+      .then((s: any) => {
+        const l = s?.data?.permissions?.Leads;
+        const p = (user?.roleId && l?.[user.roleId]) || l?.[user?.role];
+        if (p) setPerm(prev => ({ ...prev, ...p }));
+      })
+      .catch(() => {});
   }, [user?.role, user?.roleId]);
 
   const openEdit = () => {
-    setEditForm(Object.fromEntries(EDIT_FIELDS.map(([k]) => [k, lead?.[k] ? String(lead[k]) : ''])));
+    setEditForm(
+      Object.fromEntries(
+        EDIT_FIELDS.map(([k]) => [k, lead?.[k] ? String(lead[k]) : '']),
+      ),
+    );
     setEditOpen(true);
   };
 
   const saveEdit = async () => {
-    if (!editForm.name?.trim()) { Alert.alert('Name is required'); return; }
+    if (!editForm.name?.trim()) {
+      Alert.alert('Name is required');
+      return;
+    }
     try {
       setSavingEdit(true);
       await leadsAPI.update(leadId, editForm);
@@ -100,15 +118,19 @@ export default function LeadDetailScreen({navigation, route}: any) {
 
   const handleDelete = () =>
     Alert.alert('Move to trash', `Move "${lead.name}" to trash?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Move', style: 'destructive', onPress: async () => {
-        try {
-          await leadsAPI.delete(leadId);
-          navigation.goBack();
-        } catch (err: any) {
-          Alert.alert('Delete failed', err.message);
-        }
-      }},
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Move',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leadsAPI.delete(leadId);
+            navigation.goBack();
+          } catch (err: any) {
+            Alert.alert('Delete failed', err.message);
+          }
+        },
+      },
     ]);
 
   useEffect(() => {
@@ -167,7 +189,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
   const handleUpdateStatus = async () => {
     try {
       setUpdatingStatus(true);
-      const updateData: any = {status: pendingStatus};
+      const updateData: any = { status: pendingStatus };
       if (remarksInput.trim()) updateData.remarks = remarksInput.trim();
       await leadsAPI.update(leadId, updateData);
       setStatusModalOpen(false);
@@ -184,10 +206,13 @@ export default function LeadDetailScreen({navigation, route}: any) {
 
   if (loading) {
     return (
-      <View style={[styles.container, {paddingTop: insets.top}]}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+          >
             <Icon name="arrow-back" size={18} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Lead Details</Text>
@@ -214,23 +239,41 @@ export default function LeadDetailScreen({navigation, route}: any) {
   if (activeCategory === 'New Lead') {
     nextStatuses.push('DISCUSSION', ...categories['New Lead'].slice(1), 'DROP');
   } else if (activeCategory === 'Discussion/Requirement') {
-    nextStatuses.push(...categories['Discussion/Requirement'].slice(1), 'QUOTATION', 'VISIT SCHEDULED', 'DROP');
+    nextStatuses.push(
+      ...categories['Discussion/Requirement'].slice(1),
+      'QUOTATION',
+      'VISIT SCHEDULED',
+      'DROP',
+    );
   } else if (activeCategory === 'Quotation') {
-    nextStatuses.push(...categories['Quotation'].slice(1), 'VISIT SCHEDULED', 'WON', 'DROP');
-  } else if (activeCategory === 'Visit Scheduled' || activeCategory === 'Visited') {
+    nextStatuses.push(
+      ...categories['Quotation'].slice(1),
+      'VISIT SCHEDULED',
+      'WON',
+      'DROP',
+    );
+  } else if (
+    activeCategory === 'Visit Scheduled' ||
+    activeCategory === 'Visited'
+  ) {
     nextStatuses.push('VISITED', 'WON', 'DROP');
   }
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top}]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+        >
           <Icon name="arrow-back" size={18} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{lead.name}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {lead.name}
+        </Text>
         {perm.update && (
           <TouchableOpacity onPress={openEdit} hitSlop={8}>
             <Icon name="pencil-outline" size={18} color="#000" />
@@ -244,9 +287,12 @@ export default function LeadDetailScreen({navigation, route}: any) {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scroll, {paddingBottom: insets.bottom + 24}]}
-        showsVerticalScrollIndicator={false}>
-
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingBottom: insets.bottom + 24 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Identity section */}
         <View style={styles.section}>
           <View style={styles.nameRow}>
@@ -258,11 +304,13 @@ export default function LeadDetailScreen({navigation, route}: any) {
             </View>
             <View style={styles.nameInfo}>
               <Text style={styles.leadName}>{lead.name}</Text>
-              {lead.company ? <Text style={styles.leadCompany}>{lead.company}</Text> : null}
+              {lead.company ? (
+                <Text style={styles.leadCompany}>{lead.company}</Text>
+              ) : null}
             </View>
             {tag && (
-              <View style={[styles.tagPill, {backgroundColor: tag.bg}]}>
-                <Text style={[styles.tagPillText, {color: tag.text}]}>
+              <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
+                <Text style={[styles.tagPillText, { color: tag.text }]}>
                   {lead.contactTag}
                 </Text>
               </View>
@@ -271,16 +319,23 @@ export default function LeadDetailScreen({navigation, route}: any) {
 
           {/* Badges row */}
           <View style={styles.badgesRow}>
-            <View style={[styles.statusPill, {backgroundColor: sc.bg, borderColor: '#000'}]}>
-              <Text style={[styles.statusPillText, {color: sc.text}]}>
+            <View
+              style={[
+                styles.statusPill,
+                { backgroundColor: sc.bg, borderColor: '#000' },
+              ]}
+            >
+              <Text style={[styles.statusPillText, { color: sc.text }]}>
                 {getStatusLabel(lead.status) || 'PENDING CONTACT'}
               </Text>
             </View>
             <View>
-              <SourceBadge source={lead.source}/>
+              <SourceBadge source={lead.source} />
             </View>
             <View style={styles.catPill}>
-              <Text style={styles.catPillText}>{activeCategory.toUpperCase()}</Text>
+              <Text style={styles.catPillText}>
+                {activeCategory.toUpperCase()}
+              </Text>
             </View>
           </View>
         </View>
@@ -290,22 +345,25 @@ export default function LeadDetailScreen({navigation, route}: any) {
           <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity
-              style={[styles.actionBtn, {backgroundColor: '#22c55e'}]}
-              onPress={handleCall}>
+              style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
+              onPress={handleCall}
+            >
               <Icon name="call-outline" size={16} color="#fff" />
               <Text style={styles.actionBtnText}>Call</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, {backgroundColor: '#25D366'}]}
-              onPress={handleWhatsApp}>
+              style={[styles.actionBtn, { backgroundColor: '#25D366' }]}
+              onPress={handleWhatsApp}
+            >
               <View style={styles.whatsappLogoChip}>
                 <WhatsAppLogo size={12} />
               </View>
               <Text style={styles.actionBtnText}>WhatsApp</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, {backgroundColor: '#024BAB'}]}
-              onPress={handleEmail}>
+              style={[styles.actionBtn, { backgroundColor: '#024BAB' }]}
+              onPress={handleEmail}
+            >
               <Icon name="mail-outline" size={16} color="#fff" />
               <Text style={styles.actionBtnText}>Email</Text>
             </TouchableOpacity>
@@ -319,7 +377,9 @@ export default function LeadDetailScreen({navigation, route}: any) {
           <InfoRow label="Email" value={lead.email || 'â€"'} />
           <InfoRow
             label="Location"
-            value={[lead.location, lead.state].filter(Boolean).join(', ') || 'â€"'}
+            value={
+              [lead.location, lead.state].filter(Boolean).join(', ') || 'â€"'
+            }
           />
           {lead.facebookAdName && (
             <InfoRow label="Campaign" value={lead.facebookAdName} />
@@ -352,11 +412,14 @@ export default function LeadDetailScreen({navigation, route}: any) {
           {lead.visitScheduledDate && (
             <InfoRow
               label="Visit Scheduled"
-              value={new Date(lead.visitScheduledDate).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
+              value={new Date(lead.visitScheduledDate).toLocaleDateString(
+                'en-IN',
+                {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                },
+              )}
             />
           )}
           {lead.followUpDate && (
@@ -395,9 +458,15 @@ export default function LeadDetailScreen({navigation, route}: any) {
                 return (
                   <TouchableOpacity
                     key={s}
-                    style={[styles.statusOption, {backgroundColor: c.bg, borderColor: '#000'}]}
-                    onPress={() => handleStatusSelect(s)}>
-                    <Text style={[styles.statusOptionText, {color: c.text}]}>{getStatusLabel(s)}</Text>
+                    style={[
+                      styles.statusOption,
+                      { backgroundColor: c.bg, borderColor: '#000' },
+                    ]}
+                    onPress={() => handleStatusSelect(s)}
+                  >
+                    <Text style={[styles.statusOptionText, { color: c.text }]}>
+                      {getStatusLabel(s)}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
@@ -418,9 +487,10 @@ export default function LeadDetailScreen({navigation, route}: any) {
               multiline
             />
             <TouchableOpacity
-              style={[styles.noteSendBtn, !noteText.trim() && {opacity: 0.4}]}
+              style={[styles.noteSendBtn, !noteText.trim() && { opacity: 0.4 }]}
               onPress={handleAddNote}
-              disabled={!noteText.trim() || addingNote}>
+              disabled={!noteText.trim() || addingNote}
+            >
               {addingNote ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
@@ -433,7 +503,9 @@ export default function LeadDetailScreen({navigation, route}: any) {
               {[...lead.notes].reverse().map((n: any, i: number) => (
                 <View key={i} style={styles.noteItem}>
                   <View style={styles.noteItemHeader}>
-                    <Text style={styles.noteAuthor}>{n.createdBy?.name || 'System'}</Text>
+                    <Text style={styles.noteAuthor}>
+                      {n.createdBy?.name || 'System'}
+                    </Text>
                     <Text style={styles.noteDate}>
                       {new Date(n.createdAt).toLocaleDateString('en-IN', {
                         day: 'numeric',
@@ -460,23 +532,34 @@ export default function LeadDetailScreen({navigation, route}: any) {
               const hsc = getStatusColor(h.status);
               const STATUS_ICON: Record<string, string> = {
                 'PENDING CONTACT': 'time-outline',
-                'DISCUSSION': 'chatbubbles-outline',
+                DISCUSSION: 'chatbubbles-outline',
                 'QUOTATION SENT': 'document-text-outline',
                 'VISIT SCHEDULED': 'calendar-outline',
-                'VISITED': 'eye-outline',
-                'NEGOTIATION': 'swap-horizontal-outline',
-                'CLIENT': 'star-outline',
-                'DROPPED': 'close-circle-outline',
+                VISITED: 'eye-outline',
+                NEGOTIATION: 'swap-horizontal-outline',
+                CLIENT: 'star-outline',
+                DROPPED: 'close-circle-outline',
               };
               const iconName = STATUS_ICON[h.status] || 'ellipse-outline';
               return (
                 <View key={i} style={styles.historyRow}>
-                  <View style={[styles.historyDot, {backgroundColor: hsc.bg, borderColor: '#000'}]}>
-                    <Icon name={iconName} size={10} color={hsc.text || '#000'} />
+                  <View
+                    style={[
+                      styles.historyDot,
+                      { backgroundColor: hsc.bg, borderColor: '#000' },
+                    ]}
+                  >
+                    <Icon
+                      name={iconName}
+                      size={10}
+                      color={hsc.text || '#000'}
+                    />
                   </View>
                   <View style={styles.historyContent}>
                     <View style={styles.historyTop}>
-                      <Text style={styles.historyStatus}>{getStatusLabel(h.status)}</Text>
+                      <Text style={styles.historyStatus}>
+                        {getStatusLabel(h.status)}
+                      </Text>
                       <Text style={styles.historyDate}>
                         {new Date(h.changedAt).toLocaleDateString('en-IN', {
                           day: 'numeric',
@@ -484,9 +567,13 @@ export default function LeadDetailScreen({navigation, route}: any) {
                         })}
                       </Text>
                     </View>
-                    {h.remarks ? <Text style={styles.historyRemarks}>{h.remarks}</Text> : null}
+                    {h.remarks ? (
+                      <Text style={styles.historyRemarks}>{h.remarks}</Text>
+                    ) : null}
                     {h.changedBy?.name ? (
-                      <Text style={styles.historyBy}>by {h.changedBy.name}</Text>
+                      <Text style={styles.historyBy}>
+                        by {h.changedBy.name}
+                      </Text>
                     ) : null}
                   </View>
                 </View>
@@ -497,9 +584,17 @@ export default function LeadDetailScreen({navigation, route}: any) {
       </ScrollView>
 
       {/* Edit Lead Modal */}
-      <Modal visible={editOpen} transparent animationType="slide" onRequestClose={() => setEditOpen(false)}>
-        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={[styles.modalSheet, {maxHeight: '90%'}]}>
+      <Modal
+        visible={editOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditOpen(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={[styles.modalSheet, { maxHeight: '90%' }]}>
             <Text style={styles.modalTitle}>Edit Lead</Text>
             <ScrollView keyboardShouldPersistTaps="handled">
               {EDIT_FIELDS.map(([k, label]) => (
@@ -508,20 +603,43 @@ export default function LeadDetailScreen({navigation, route}: any) {
                   <TextInput
                     style={styles.modalInput}
                     value={editForm[k] || ''}
-                    onChangeText={v => setEditForm(f => ({...f, [k]: v}))}
+                    onChangeText={v => setEditForm(f => ({ ...f, [k]: v }))}
                     multiline={k === 'requirement' || k === 'remarks'}
-                    maxLength={k === 'name' ? 100 : k === 'company' ? 120 : k === 'budget' ? 15 : k === 'requirement' ? 1000 : k === 'remarks' ? 500 : undefined}
+                    maxLength={
+                      k === 'name'
+                        ? 100
+                        : k === 'company'
+                          ? 120
+                          : k === 'budget'
+                            ? 15
+                            : k === 'requirement'
+                              ? 1000
+                              : k === 'remarks'
+                                ? 500
+                                : undefined
+                    }
                     placeholderTextColor="#94a3b8"
                   />
                 </View>
               ))}
             </ScrollView>
             <View style={styles.modalBtns}>
-              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setEditOpen(false)}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setEditOpen(false)}
+              >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalConfirmBtn} onPress={saveEdit} disabled={savingEdit}>
-                {savingEdit ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.modalConfirmText}>Save</Text>}
+              <TouchableOpacity
+                style={styles.modalConfirmBtn}
+                onPress={saveEdit}
+                disabled={savingEdit}
+              >
+                {savingEdit ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Save</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -533,12 +651,14 @@ export default function LeadDetailScreen({navigation, route}: any) {
         visible={statusModalOpen}
         transparent
         animationType="slide"
-        onRequestClose={() => setStatusModalOpen(false)}>
+        onRequestClose={() => setStatusModalOpen(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Update Status</Text>
             <Text style={styles.modalSub}>
-              Changing to: <Text style={{fontWeight: '600'}}>{pendingStatus}</Text>
+              Changing to:{' '}
+              <Text style={{ fontWeight: '600' }}>{pendingStatus}</Text>
             </Text>
             <Text style={styles.modalLabel}>REMARKS (OPTIONAL)</Text>
             <TextInput
@@ -550,20 +670,26 @@ export default function LeadDetailScreen({navigation, route}: any) {
               multiline
               maxLength={500}
             />
-            <Text style={{fontSize: 10, color: '#64748b', textAlign: 'right'}}>{remarksInput.length}/500</Text>
+            <Text
+              style={{ fontSize: 10, color: '#64748b', textAlign: 'right' }}
+            >
+              {remarksInput.length}/500
+            </Text>
             <View style={styles.modalBtns}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}
                 onPress={() => {
                   setStatusModalOpen(false);
                   setRemarksInput('');
-                }}>
+                }}
+              >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalConfirmBtn}
                 onPress={handleUpdateStatus}
-                disabled={updatingStatus}>
+                disabled={updatingStatus}
+              >
                 {updatingStatus ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
@@ -580,7 +706,8 @@ export default function LeadDetailScreen({navigation, route}: any) {
         visible={tagModalOpen}
         transparent
         animationType="slide"
-        onRequestClose={() => setTagModalOpen(false)}>
+        onRequestClose={() => setTagModalOpen(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Select Contact Tag</Text>
@@ -590,15 +717,16 @@ export default function LeadDetailScreen({navigation, route}: any) {
               return (
                 <TouchableOpacity
                   key={t}
-                  style={[styles.tagOptionBtn, {backgroundColor: tc.bg}]}
+                  style={[styles.tagOptionBtn, { backgroundColor: tc.bg }]}
                   onPress={async () => {
                     setTagModalOpen(false);
                     try {
-                      await leadsAPI.update(leadId, {contactTag: t});
+                      await leadsAPI.update(leadId, { contactTag: t });
                     } catch {}
                     setStatusModalOpen(true);
-                  }}>
-                  <Text style={[styles.tagOptionText, {color: tc.text}]}>
+                  }}
+                >
+                  <Text style={[styles.tagOptionText, { color: tc.text }]}>
                     {t === 'HOT' ? 'ðŸ"¥' : t === 'WARM' ? 'ðŸŒ¡' : 'â„ï¸'} {t}
                   </Text>
                 </TouchableOpacity>
@@ -606,7 +734,8 @@ export default function LeadDetailScreen({navigation, route}: any) {
             })}
             <TouchableOpacity
               style={styles.modalCancelBtn}
-              onPress={() => setTagModalOpen(false)}>
+              onPress={() => setTagModalOpen(false)}
+            >
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -616,7 +745,7 @@ export default function LeadDetailScreen({navigation, route}: any) {
   );
 }
 
-function InfoRow({label, value}: {label: string; value: string}) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={infoStyles.row}>
       <Text style={infoStyles.label}>{label}</Text>
@@ -640,11 +769,11 @@ const infoStyles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
-  value: {flex: 1, fontSize: 13, color: '#000', fontWeight: '500'},
+  value: { flex: 1, fontSize: 13, color: '#000', fontWeight: '500' },
 });
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#fff'},
+  container: { flex: 1, backgroundColor: '#fff' },
 
   header: {
     height: 64,
@@ -656,12 +785,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  backBtn: {paddingVertical: 4, paddingRight: 4},
-  backBtnText: {fontSize: 14, fontWeight: '700', color: '#024BAB'},
-  headerTitle: {flex: 1, fontSize: 18, fontWeight: '600', color: '#000'},
-  centerBox: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  loadingText: {marginTop: 12, color: '#64748b', fontSize: 14},
-  scroll: {padding: 16, gap: 12},
+  backBtn: { paddingVertical: 4, paddingRight: 4 },
+  backBtnText: { fontSize: 14, fontWeight: '700', color: '#024BAB' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '600', color: '#000' },
+  centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { marginTop: 12, color: '#64748b', fontSize: 14 },
+  scroll: { padding: 16, gap: 12 },
 
   // Sections â€" white, border-2 border-black, nb shadow
   section: {
@@ -686,7 +815,12 @@ const styles = StyleSheet.create({
   },
 
   // Identity
-  nameRow: {flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10},
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
   avatar: {
     width: 44,
     height: 44,
@@ -697,10 +831,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {fontSize: 18, fontWeight: '600', color: '#fff'},
-  nameInfo: {flex: 1},
-  leadName: {fontSize: 17, fontWeight: '600', color: '#000'},
-  leadCompany: {fontSize: 12, color: '#64748b', fontWeight: '500'},
+  avatarText: { fontSize: 18, fontWeight: '600', color: '#fff' },
+  nameInfo: { flex: 1 },
+  leadName: { fontSize: 17, fontWeight: '600', color: '#000' },
+  leadCompany: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   tagPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -708,22 +842,26 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  tagPillText: {fontSize: 11, fontWeight: '600'},
-  badgesRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  tagPillText: { fontSize: 11, fontWeight: '600' },
+  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   statusPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 2,
     borderRadius: 8,
   },
-  statusPillText: {fontSize: 10, fontWeight: '600', textTransform: 'uppercase'},
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
   sourcePill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,
     borderColor: '#000',
   },
-  sourcePillText: {fontSize: 10, fontWeight: '700'},
+  sourcePillText: { fontSize: 10, fontWeight: '700' },
   catPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -731,10 +869,10 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#f8fafc',
   },
-  catPillText: {fontSize: 10, fontWeight: '700', color: '#64748b'},
+  catPillText: { fontSize: 10, fontWeight: '700', color: '#64748b' },
 
   // Actions
-  actionsRow: {flexDirection: 'row', gap: 8},
+  actionsRow: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     flex: 1,
     paddingVertical: 11,
@@ -755,10 +893,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 2,
   },
-  actionBtnText: {fontSize: 12, fontWeight: '600', color: '#fff'},
+  actionBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
 
   // Products
-  chipsWrap: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   productChip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -766,20 +904,24 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#eff6ff',
   },
-  productChipText: {fontSize: 12, color: '#024BAB', fontWeight: '700'},
+  productChipText: { fontSize: 12, color: '#024BAB', fontWeight: '700' },
 
   // Status update grid
-  statusGrid: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   statusOption: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 2,
     borderRadius: 8,
   },
-  statusOptionText: {fontSize: 11, fontWeight: '600', textTransform: 'uppercase'},
+  statusOptionText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
 
   // Notes
-  noteInputRow: {flexDirection: 'row', gap: 8, marginBottom: 12},
+  noteInputRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   noteInput: {
     flex: 1,
     borderWidth: 2,
@@ -808,8 +950,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  noteSendText: {color: '#fff', fontWeight: '600', fontSize: 13},
-  notesList: {gap: 8},
+  noteSendText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  notesList: { gap: 8 },
   noteItem: {
     borderWidth: 2,
     borderColor: '#000',
@@ -818,14 +960,28 @@ const styles = StyleSheet.create({
     borderLeftColor: '#024BAB',
     backgroundColor: '#f8fafc',
   },
-  noteItemHeader: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4},
-  noteAuthor: {fontSize: 11, fontWeight: '700', color: '#024BAB'},
-  noteDate: {fontSize: 10, color: '#94a3b8'},
-  noteText: {fontSize: 13, color: '#000', fontWeight: '500', lineHeight: 18},
-  emptyNotes: {color: '#94a3b8', fontSize: 13, textAlign: 'center', paddingVertical: 8},
+  noteItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  noteAuthor: { fontSize: 11, fontWeight: '700', color: '#024BAB' },
+  noteDate: { fontSize: 10, color: '#94a3b8' },
+  noteText: { fontSize: 13, color: '#000', fontWeight: '500', lineHeight: 18 },
+  emptyNotes: {
+    color: '#94a3b8',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
 
   // History
-  historyRow: {flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10, gap: 10},
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+    gap: 10,
+  },
   historyDot: {
     width: 22,
     height: 22,
@@ -834,12 +990,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  historyContent: {flex: 1},
-  historyTop: {flexDirection: 'row', justifyContent: 'space-between'},
-  historyStatus: {fontSize: 12, fontWeight: '600', color: '#000'},
-  historyDate: {fontSize: 11, color: '#94a3b8'},
-  historyRemarks: {fontSize: 12, color: '#475569', marginTop: 2},
-  historyBy: {fontSize: 11, color: '#94a3b8', marginTop: 1},
+  historyContent: { flex: 1 },
+  historyTop: { flexDirection: 'row', justifyContent: 'space-between' },
+  historyStatus: { fontSize: 12, fontWeight: '600', color: '#000' },
+  historyDate: { fontSize: 11, color: '#94a3b8' },
+  historyRemarks: { fontSize: 12, color: '#475569', marginTop: 2 },
+  historyBy: { fontSize: 11, color: '#94a3b8', marginTop: 1 },
 
   // Modals
   modalOverlay: {
@@ -855,8 +1011,18 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     padding: 24,
   },
-  modalTitle: {fontSize: 20, fontWeight: '600', color: '#000', marginBottom: 4},
-  modalSub: {fontSize: 13, color: '#64748b', marginBottom: 16, fontWeight: '500'},
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 16,
+    fontWeight: '500',
+  },
   modalLabel: {
     fontSize: 10,
     fontWeight: '600',
@@ -879,7 +1045,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 16,
   },
-  modalBtns: {flexDirection: 'row', gap: 10},
+  modalBtns: { flexDirection: 'row', gap: 10 },
   modalCancelBtn: {
     flex: 1,
     paddingVertical: 13,
@@ -894,7 +1060,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginTop: 8,
   },
-  modalCancelText: {fontWeight: '700', color: '#000', fontSize: 14},
+  modalCancelText: { fontWeight: '700', color: '#000', fontSize: 14 },
   modalConfirmBtn: {
     flex: 1,
     paddingVertical: 13,
@@ -908,7 +1074,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  modalConfirmText: {fontWeight: '600', color: '#fff', fontSize: 14},
+  modalConfirmText: { fontWeight: '600', color: '#fff', fontSize: 14 },
   tagOptionBtn: {
     paddingVertical: 14,
     alignItems: 'center',
@@ -917,6 +1083,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     marginBottom: 8,
   },
-  tagOptionText: {fontSize: 16, fontWeight: '600'},
+  tagOptionText: { fontSize: 16, fontWeight: '600' },
 });
-

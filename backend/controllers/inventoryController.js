@@ -9,17 +9,35 @@ const { notify } = require("./whatsappController");
 const { nextDocNumber } = require("../utils/docNumber");
 
 const isId = (v) => /^[0-9a-f]{24}$/i.test(String(v || ""));
-const scope = (req, extra = {}) => ({ ...extra, ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}) });
+const scope = (req, extra = {}) => ({
+  ...extra,
+  ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+});
 const escapeRe = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // A client never sets who owns the row, the type, the number or the computed totals.
 const body = (req) => {
-  const { tenantId, _id, createdAt, updatedAt, subtotal, tax, total, number, type, createdBy, ...rest } = req.body || {};
+  const {
+    tenantId,
+    _id,
+    createdAt,
+    updatedAt,
+    subtotal,
+    tax,
+    total,
+    number,
+    type,
+    createdBy,
+    ...rest
+  } = req.body || {};
   return rest;
 };
 
 // fixed = filter that always applies (e.g. { type: "invoice" }); label = module name for the log.
-function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, onChange }) {
+function crud(
+  Model,
+  { label, searchField = "name", fixed = {}, beforeCreate, onChange },
+) {
   const find = (req, id) => Model.findOne(scope(req, { ...fixed, _id: id }));
   const notFound = (res) => {
     res.status(404);
@@ -39,7 +57,8 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, on
     list: asyncHandler(async (req, res) => {
       const q = scope(req, fixed);
       if (req.query.status) q.status = String(req.query.status);
-      if (req.query.search) q[searchField] = { $regex: escapeRe(req.query.search), $options: "i" };
+      if (req.query.search)
+        q[searchField] = { $regex: escapeRe(req.query.search), $options: "i" };
       const data = await Model.find(q).sort("-createdAt").limit(500);
       res.json({ success: true, count: data.length, data });
     }),
@@ -49,7 +68,12 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, on
       res.json({ success: true, data: doc });
     }),
     create: asyncHandler(async (req, res) => {
-      const data = { ...body(req), ...fixed, tenantId: req.user.tenantId || null, createdBy: req.user._id };
+      const data = {
+        ...body(req),
+        ...fixed,
+        tenantId: req.user.tenantId || null,
+        createdBy: req.user._id,
+      };
       if (beforeCreate) await beforeCreate(data, req);
       const doc = await Model.create(data);
       if (onChange) await onChange(req, null, doc);
@@ -59,7 +83,9 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, on
     update: asyncHandler(async (req, res) => {
       const doc = isId(req.params.id) ? await find(req, req.params.id) : null;
       if (!doc) notFound(res);
-      const before = onChange ? { status: doc.status, items: doc.items.map((i) => i.toObject()) } : null;
+      const before = onChange
+        ? { status: doc.status, items: doc.items.map((i) => i.toObject()) }
+        : null;
       doc.set(body(req));
       await doc.save(); // save (not findOneAndUpdate) so validation and the totals run
       if (onChange) await onChange(req, before, doc);
@@ -70,7 +96,8 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, on
       const doc = isId(req.params.id) ? await find(req, req.params.id) : null;
       if (!doc) notFound(res);
       await doc.deleteOne();
-      if (onChange) await onChange(req, { status: doc.status, items: doc.items }, null);
+      if (onChange)
+        await onChange(req, { status: doc.status, items: doc.items }, null);
       log(req, "DELETE", doc);
       res.json({ success: true });
     }),
@@ -83,7 +110,10 @@ function crud(Model, { label, searchField = "name", fixed = {}, beforeCreate, on
 async function nextNumber(type, tenantId) {
   const custom = await nextDocNumber(tenantId, type);
   if (custom) return custom;
-  const last = await TradeDoc.findOne({ type, tenantId: tenantId || null }).sort({ createdAt: -1 }).select("number").lean();
+  const last = await TradeDoc.findOne({ type, tenantId: tenantId || null })
+    .sort({ createdAt: -1 })
+    .select("number")
+    .lean();
   const n = last ? parseInt(String(last.number).split("-").pop(), 10) || 0 : 0;
   return `${TYPES[type].prefix}-${String(n + 1).padStart(4, "0")}`;
 }
@@ -98,7 +128,12 @@ const tradeDocs = (type, label) =>
     },
     onChange: async (req, before, after) => {
       await syncStock(type, req.user.tenantId, before, after);
-      if (!before && after) notify(req.user.tenantId, type, after.partyPhone, [after.partyName, after.number, after.total.toLocaleString("en-IN")]);
+      if (!before && after)
+        notify(req.user.tenantId, type, after.partyPhone, [
+          after.partyName,
+          after.number,
+          after.total.toLocaleString("en-IN"),
+        ]);
     },
   });
 

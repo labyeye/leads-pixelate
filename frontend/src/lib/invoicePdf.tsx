@@ -1,5 +1,8 @@
 import { pdf } from "@react-pdf/renderer";
-import { InvoicePDFDocument, type InvoiceCompany } from "@/components/pdf/InvoicePDFDocument";
+import {
+  InvoicePDFDocument,
+  type InvoiceCompany,
+} from "@/components/pdf/InvoicePDFDocument";
 import defaultLogo from "@/assets/images/NestLeads_Logo_Name.png";
 
 // react-pdf only reads PNG/JPEG, so any logo (webp, svg, a URL...) goes through a canvas first.
@@ -28,7 +31,9 @@ async function logoToPng(src: string): Promise<string | null> {
 }
 
 // The tenant's own logo when they uploaded one, else the bundled NestLeads logo.
-export async function resolveLogo(custom?: string): Promise<string | undefined> {
+export async function resolveLogo(
+  custom?: string,
+): Promise<string | undefined> {
   const own = custom?.trim() ? await logoToPng(custom.trim()) : null;
   return own || (await pngDataUrl(defaultLogo));
 }
@@ -38,7 +43,10 @@ export function settingsToCompany(s: any): InvoiceCompany {
   const hasBank = !!(s?.bankAccountNumber || s?.bankName);
   return {
     name: s?.companyName || "Your Company",
-    addressLines: String(s?.companyAddress || "").split("\n").map((l) => l.trim()).filter(Boolean),
+    addressLines: String(s?.companyAddress || "")
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean),
     email: s?.companyEmail,
     phone: s?.companyPhone,
     website: s?.companyWebsite,
@@ -47,7 +55,14 @@ export function settingsToCompany(s: any): InvoiceCompany {
     state: s?.companyState,
     stateCode: s?.companyStateCode,
     bank: hasBank
-      ? { name: s.bankName, accountNo: s.bankAccountNumber, accountName: s.bankAccountName || s.companyName, ifsc: s.bankIFSC, branch: s.bankBranch, type: s.bankAccountType }
+      ? {
+          name: s.bankName,
+          accountNo: s.bankAccountNumber,
+          accountName: s.bankAccountName || s.companyName,
+          ifsc: s.bankIFSC,
+          branch: s.bankBranch,
+          type: s.bankAccountType,
+        }
       : undefined,
     terms: s?.quotationTerms,
   };
@@ -55,9 +70,14 @@ export function settingsToCompany(s: any): InvoiceCompany {
 
 // Intra-state (CGST + SGST) or inter-state (IGST) from the first two digits of the two GSTINs.
 export const isInterState = (sellerGst?: string, buyerGst?: string) =>
-  sellerGst && buyerGst && sellerGst.length >= 2 && buyerGst.length >= 2 ? sellerGst.slice(0, 2) !== buyerGst.slice(0, 2) : undefined;
+  sellerGst && buyerGst && sellerGst.length >= 2 && buyerGst.length >= 2
+    ? sellerGst.slice(0, 2) !== buyerGst.slice(0, 2)
+    : undefined;
 
-export async function saveInvoicePDF(fileName: string, props: React.ComponentProps<typeof InvoicePDFDocument>) {
+export async function saveInvoicePDF(
+  fileName: string,
+  props: React.ComponentProps<typeof InvoicePDFDocument>,
+) {
   const blob = await pdf(<InvoicePDFDocument {...props} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

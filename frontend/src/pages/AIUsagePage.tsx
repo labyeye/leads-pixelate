@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Loader2, Phone, Sparkles, Target, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Loader2,
+  Phone,
+  Sparkles,
+  Target,
+  Users,
+} from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { aiUsageAPI, type AIUsage } from "@/services/api";
 import { cn } from "@/lib/utils";
@@ -10,7 +18,13 @@ const UNLIMITED = 999_999;
 const TEAM_UNLIMITED = 999;
 const fmtNum = (n: number) => n.toLocaleString("en-IN");
 const fmtDate = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  d
+    ? new Date(d).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 const capitalise = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 function tone(pct: number) {
@@ -37,12 +51,20 @@ function Meter({
   children?: React.ReactNode;
 }) {
   const unlimited = limit >= unlimitedAt;
-  const pct = unlimited || limit <= 0 ? 0 : Math.min(100, Math.round((used / limit) * 100));
+  const pct =
+    unlimited || limit <= 0
+      ? 0
+      : Math.min(100, Math.round((used / limit) * 100));
   const t = tone(pct);
   return (
-    <div className="nb-card p-4 bg-white space-y-3" data-testid={`meter-${title}`}>
+    <div
+      className="nb-card p-4 bg-white space-y-3"
+      data-testid={`meter-${title}`}
+    >
       <div className="flex items-center gap-2">
-        <span className="w-8 h-8 border-2 border-black bg-[#044BAB] flex items-center justify-center shrink-0">{icon}</span>
+        <span className="w-8 h-8 border-2 border-black bg-[#044BAB] flex items-center justify-center shrink-0">
+          {icon}
+        </span>
         <h3 className="font-display font-bold text-base text-black">{title}</h3>
       </div>
       <div>
@@ -61,10 +83,15 @@ function Meter({
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className={cn("h-full transition-all", t.bar)} style={{ width: `${unlimited ? 0 : pct}%` }} />
+          <div
+            className={cn("h-full transition-all", t.bar)}
+            style={{ width: `${unlimited ? 0 : pct}%` }}
+          />
         </div>
         <p className={cn("text-xs font-bold mt-1.5", t.text)}>
-          {unlimited ? "No limit on your plan" : `${pct}% used · ${fmtNum(Math.max(0, limit - used))} left this month`}
+          {unlimited
+            ? "No limit on your plan"
+            : `${pct}% used · ${fmtNum(Math.max(0, limit - used))} left this month`}
         </p>
       </div>
       {children}
@@ -92,7 +119,9 @@ export default function AIUsagePage() {
           ["Team members", usage.team, TEAM_UNLIMITED],
         ] as const
       )
-        .filter(([, m, at]) => m.limit < at && m.limit > 0 && m.used >= 0.8 * m.limit)
+        .filter(
+          ([, m, at]) => m.limit < at && m.limit > 0 && m.used >= 0.8 * m.limit,
+        )
         .map(([name]) => name)
     : [];
 
@@ -110,16 +139,25 @@ export default function AIUsagePage() {
           <>
             <div className="nb-card p-4 sm:p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Your plan</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Your plan
+                </p>
                 <h2 className="font-display font-bold text-2xl text-black">
-                  {usage.plan.id === "trial" ? "Free trial" : `${capitalise(usage.plan.id)} plan`}
+                  {usage.plan.id === "trial"
+                    ? "Free trial"
+                    : `${capitalise(usage.plan.id)} plan`}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {usage.plan.expiresAt ? `${usage.plan.id === "trial" ? "Trial ends" : "Renews / expires"} ${fmtDate(usage.plan.expiresAt)}. ` : ""}
+                  {usage.plan.expiresAt
+                    ? `${usage.plan.id === "trial" ? "Trial ends" : "Renews / expires"} ${fmtDate(usage.plan.expiresAt)}. `
+                    : ""}
                   Usage resets on {fmtDate(usage.month.resetsAt)}.
                 </p>
               </div>
-              <Link to="/billing" className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5 self-start sm:self-auto">
+              <Link
+                to="/billing"
+                className="nb-btn bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5 self-start sm:self-auto"
+              >
                 Change plan <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -147,13 +185,15 @@ export default function AIUsagePage() {
               >
                 <ul className="text-xs text-black space-y-1 border-t-2 border-black/10 pt-2">
                   <li>
-                    Posting days: up to <b>{usage.autopilot.daysPerWeek}</b> a week per campaign
+                    Posting days: up to <b>{usage.autopilot.daysPerWeek}</b> a
+                    week per campaign
                   </li>
                   {usage.autopilot.campaigns && (
                     <li>
                       Campaigns:{" "}
                       <b>
-                        {usage.autopilot.campaigns.used} / {usage.autopilot.campaigns.limit}
+                        {usage.autopilot.campaigns.used} /{" "}
+                        {usage.autopilot.campaigns.limit}
                       </b>{" "}
                       (the posts above are shared by all campaigns)
                     </li>
@@ -172,13 +212,19 @@ export default function AIUsagePage() {
                     {!usage.autopilot.enabled && (
                       <>
                         {" · "}
-                        <Link to="/social-autopilot" className="underline font-bold text-[#024BAB]">
+                        <Link
+                          to="/social-autopilot"
+                          className="underline font-bold text-[#024BAB]"
+                        >
                           Set it up
                         </Link>
                       </>
                     )}
                   </li>
-                  <li className="text-muted-foreground">Counts every post Autopilot creates, including ones you ask it to redo.</li>
+                  <li className="text-muted-foreground">
+                    Counts every post Autopilot creates, including ones you ask
+                    it to redo.
+                  </li>
                 </ul>
               </Meter>
 

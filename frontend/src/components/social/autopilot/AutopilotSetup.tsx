@@ -20,7 +20,8 @@ function SetupBody({ campaignId, toast }: { campaignId: string; toast: any }) {
   // Fast polling only while a scan or a generation is in flight.
   const [fast, setFast] = useState(false);
   const { status, reload } = useAutopilot(campaignId, fast ? 1500 : 10_000);
-  const busyNow = !!status && (status.analysis.status === "running" || status.running);
+  const busyNow =
+    !!status && (status.analysis.status === "running" || status.running);
   if (busyNow !== fast) setFast(busyNow);
   if (status && wizard === null) setWizard(status.onboarded === false);
 
@@ -46,7 +47,12 @@ function SetupBody({ campaignId, toast }: { campaignId: string; toast: any }) {
   }
   return (
     <div className="space-y-6">
-      <CampaignSettings status={status} reload={reload} toast={toast} onDeleted={() => navigate("/social-autopilot")} />
+      <CampaignSettings
+        status={status}
+        reload={reload}
+        toast={toast}
+        onDeleted={() => navigate("/social-autopilot")}
+      />
       <BrandSection status={status} reload={reload} toast={toast} />
     </div>
   );
@@ -58,10 +64,12 @@ export function AutopilotSetup({ toast }: { toast: any }) {
   if (!overview?.campaigns.length) {
     return (
       <div className="nb-card p-8 bg-white text-center space-y-3">
-        <h2 className="font-display font-bold text-xl text-black">Create your first Autopilot campaign</h2>
+        <h2 className="font-display font-bold text-xl text-black">
+          Create your first Autopilot campaign
+        </h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Each campaign has its own accounts, brand, logos, schedule, references and competitors, so you can run several brands
-          or pages side by side.
+          Each campaign has its own accounts, brand, logos, schedule, references
+          and competitors, so you can run several brands or pages side by side.
         </p>
         <Button onClick={openNewCampaign}>
           <Plus className="w-4 h-4 mr-1" /> New campaign

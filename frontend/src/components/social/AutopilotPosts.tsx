@@ -19,7 +19,11 @@ interface Post {
   status: string;
   failureReason?: string;
   campaignId?: string | null;
-  autopilotMeta?: { revising?: boolean; revisions?: number; revisionError?: string };
+  autopilotMeta?: {
+    revising?: boolean;
+    revisions?: number;
+    revisionError?: string;
+  };
 }
 
 const UPCOMING = ["SCHEDULED", "APPROVED", "PENDING_APPROVAL", "POSTING"];
@@ -29,10 +33,16 @@ const REMOVABLE = ["SCHEDULED", "APPROVED", "PENDING_APPROVAL", "FAILED"];
 const STATUS: Record<string, { label: string; cls: string }> = {
   SCHEDULED: { label: "Scheduled", cls: "bg-blue-100 text-blue-700" },
   APPROVED: { label: "Approved", cls: "bg-blue-100 text-blue-700" },
-  PENDING_APPROVAL: { label: "Needs your approval", cls: "bg-orange-100 text-orange-700" },
+  PENDING_APPROVAL: {
+    label: "Needs your approval",
+    cls: "bg-orange-100 text-orange-700",
+  },
   POSTING: { label: "Posting…", cls: "bg-blue-100 text-blue-700" },
   POSTED: { label: "Posted", cls: "bg-green-100 text-green-700" },
-  PARTIALLY_POSTED: { label: "Partly posted", cls: "bg-amber-100 text-amber-700" },
+  PARTIALLY_POSTED: {
+    label: "Partly posted",
+    cls: "bg-amber-100 text-amber-700",
+  },
   FAILED: { label: "Failed", cls: "bg-red-100 text-red-700" },
 };
 
@@ -43,7 +53,12 @@ const PLATFORM_ICON: Record<string, JSX.Element> = {
 };
 
 const when = (d: string) =>
-  new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  new Date(d).toLocaleString("en-IN", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
 // campaignId: only that campaign's posts. campaigns: when given, each post shows its campaign's name.
 export function AutopilotPosts({
@@ -63,10 +78,17 @@ export function AutopilotPosts({
 
   const load = useCallback(async () => {
     try {
-      const res = await socialAPI.getPosts({ source: "autopilot", ...(campaignId ? { campaignId } : {}) });
+      const res = await socialAPI.getPosts({
+        source: "autopilot",
+        ...(campaignId ? { campaignId } : {}),
+      });
       setPosts(res.data);
     } catch (err: any) {
-      toast({ title: "Failed to load posts", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to load posts",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   }, [toast, campaignId]);
 
@@ -89,7 +111,11 @@ export function AutopilotPosts({
       await load();
       onChange?.();
     } catch (err: any) {
-      toast({ title: "Failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setBusy(null);
     }
@@ -108,7 +134,8 @@ export function AutopilotPosts({
     // Posts waiting for the owner first, then by publish time.
     .sort(
       (a, b) =>
-        Number(b.status === "PENDING_APPROVAL") - Number(a.status === "PENDING_APPROVAL") ||
+        Number(b.status === "PENDING_APPROVAL") -
+          Number(a.status === "PENDING_APPROVAL") ||
         +new Date(a.scheduledAt) - +new Date(b.scheduledAt),
     );
   const history = posts
@@ -119,7 +146,10 @@ export function AutopilotPosts({
   const row = (p: Post) => {
     const st = STATUS[p.status];
     return (
-      <li key={p._id} className="flex gap-3 rounded-lg border p-3 bg-background">
+      <li
+        key={p._id}
+        className="flex gap-3 rounded-lg border p-3 bg-background"
+      >
         {p.imageUrl && (
           <button
             type="button"
@@ -135,9 +165,15 @@ export function AutopilotPosts({
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
             {(p.mediaUrls?.length || 0) > 1 && (
-              <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 text-[10px] text-white">{p.mediaUrls!.length}</span>
+              <span className="absolute bottom-1 right-1 rounded-full bg-black/70 px-1.5 text-[10px] text-white">
+                {p.mediaUrls!.length}
+              </span>
             )}
-            {p.storyImageUrl && <span className="absolute top-1 left-1 rounded-full bg-black/70 px-1.5 text-[10px] text-white">+Story</span>}
+            {p.storyImageUrl && (
+              <span className="absolute top-1 left-1 rounded-full bg-black/70 px-1.5 text-[10px] text-white">
+                +Story
+              </span>
+            )}
           </button>
         )}
         <div className="min-w-0 flex-1 space-y-1.5">
@@ -146,41 +182,62 @@ export function AutopilotPosts({
               <span key={pl}>{PLATFORM_ICON[pl]}</span>
             ))}
             {campaigns && p.campaignId && (
-              <span className="font-semibold text-foreground">{campaigns.find((c) => c.id === p.campaignId)?.name}</span>
+              <span className="font-semibold text-foreground">
+                {campaigns.find((c) => c.id === p.campaignId)?.name}
+              </span>
             )}
             <span>{when(p.scheduledAt)}</span>
-            {st && <Badge className={`${st.cls} hover:${st.cls} border-0`}>{st.label}</Badge>}
+            {st && (
+              <Badge className={`${st.cls} hover:${st.cls} border-0`}>
+                {st.label}
+              </Badge>
+            )}
           </div>
           <p className="text-sm line-clamp-3">{p.caption}</p>
           {p.status === "FAILED" && p.failureReason && (
-            <p className="text-xs text-red-600 line-clamp-2" title={p.failureReason}>
+            <p
+              className="text-xs text-red-600 line-clamp-2"
+              title={p.failureReason}
+            >
               {p.failureReason}
             </p>
           )}
-          {p.status === "PENDING_APPROVAL" && <ReviewActions
+          {p.status === "PENDING_APPROVAL" && (
+            <ReviewActions
               post={p}
               toast={toast}
               onChanged={async () => {
                 await load();
                 onChange?.();
               }}
-            />}
-          {(p.status === "PENDING_APPROVAL" || REMOVABLE.includes(p.status)) && (
+            />
+          )}
+          {(p.status === "PENDING_APPROVAL" ||
+            REMOVABLE.includes(p.status)) && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {REMOVABLE.includes(p.status) && p.status !== "PENDING_APPROVAL" && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={busy === p._id}
-                  onClick={() => {
-                    if (confirm("Remove this post? Autopilot may plan a replacement.")) {
-                      act(p._id, () => socialAPI.deletePost(p._id), "Post removed");
-                    }
-                  }}
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove
-                </Button>
-              )}
+              {REMOVABLE.includes(p.status) &&
+                p.status !== "PENDING_APPROVAL" && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy === p._id}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          "Remove this post? Autopilot may plan a replacement.",
+                        )
+                      ) {
+                        act(
+                          p._id,
+                          () => socialAPI.deletePost(p._id),
+                          "Post removed",
+                        );
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Remove
+                  </Button>
+                )}
             </div>
           )}
         </div>
@@ -196,7 +253,8 @@ export function AutopilotPosts({
           <ul className="space-y-2">{upcoming.map(row)}</ul>
         ) : (
           <p className="text-sm text-muted-foreground rounded-lg border border-dashed p-4">
-            Nothing queued yet. Turn Autopilot on and your next post will appear here.
+            Nothing queued yet. Turn Autopilot on and your next post will appear
+            here.
           </p>
         )}
       </section>
@@ -210,7 +268,9 @@ export function AutopilotPosts({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>Post preview</DialogTitle>
           {open && <PostMedia post={open} />}
-          {open && <p className="text-sm whitespace-pre-line">{open.caption}</p>}
+          {open && (
+            <p className="text-sm whitespace-pre-line">{open.caption}</p>
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -235,14 +295,28 @@ function PostMedia({ post }: { post: Post }) {
     <div className="flex gap-3 overflow-x-auto pb-2 snap-x">
       {images.map((src, i) => (
         <figure key={src} className="snap-start shrink-0 space-y-1">
-          <img src={src} alt={images.length > 1 ? `Slide ${i + 1}` : "Poster"} className="h-[60vh] max-h-[520px] aspect-[4/5] object-cover rounded-lg border-2 border-black" />
-          {images.length > 1 && <figcaption className="text-xs text-muted-foreground">Slide {i + 1}</figcaption>}
+          <img
+            src={src}
+            alt={images.length > 1 ? `Slide ${i + 1}` : "Poster"}
+            className="h-[60vh] max-h-[520px] aspect-[4/5] object-cover rounded-lg border-2 border-black"
+          />
+          {images.length > 1 && (
+            <figcaption className="text-xs text-muted-foreground">
+              Slide {i + 1}
+            </figcaption>
+          )}
         </figure>
       ))}
       {post.storyImageUrl && (
         <figure className="snap-start shrink-0 space-y-1">
-          <img src={post.storyImageUrl} alt="Story version" className="h-[60vh] max-h-[520px] aspect-[9/16] object-cover rounded-lg border-2 border-black" />
-          <figcaption className="text-xs text-muted-foreground">Story</figcaption>
+          <img
+            src={post.storyImageUrl}
+            alt="Story version"
+            className="h-[60vh] max-h-[520px] aspect-[9/16] object-cover rounded-lg border-2 border-black"
+          />
+          <figcaption className="text-xs text-muted-foreground">
+            Story
+          </figcaption>
         </figure>
       )}
     </div>

@@ -18,9 +18,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, FileText, FolderOpen, ImageIcon, Loader2, Search, Trash2, Upload } from "lucide-react";
+import {
+  Download,
+  FileText,
+  FolderOpen,
+  ImageIcon,
+  Loader2,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { format } from "date-fns";
-import { documentsAPI, documentFileUrl, type VaultDocument } from "@/services/api";
+import {
+  documentsAPI,
+  documentFileUrl,
+  type VaultDocument,
+} from "@/services/api";
 
 const DOC_CATEGORIES: Record<string, string> = {
   brochure: "Brochure",
@@ -33,7 +46,9 @@ const DOC_CATEGORIES: Record<string, string> = {
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.ppt,.pptx";
 
 const formatSize = (b: number) =>
-  b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+  b > 1024 * 1024
+    ? `${(b / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(b / 1024))} KB`;
 
 export default function DocumentVaultPage() {
   const { user } = useAuth();
@@ -56,7 +71,13 @@ export default function DocumentVaultPage() {
     documentsAPI
       .getAll()
       .then((r) => setDocs(r.data))
-      .catch((e) => toast({ title: "Failed to load documents", description: e.message, variant: "destructive" }))
+      .catch((e) =>
+        toast({
+          title: "Failed to load documents",
+          description: e.message,
+          variant: "destructive",
+        }),
+      )
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -66,7 +87,9 @@ export default function DocumentVaultPage() {
     return docs.filter(
       (d) =>
         (category === "all" || d.category === category) &&
-        (!q || d.name.toLowerCase().includes(q) || d.fileName.toLowerCase().includes(q)),
+        (!q ||
+          d.name.toLowerCase().includes(q) ||
+          d.fileName.toLowerCase().includes(q)),
     );
   }, [docs, search, category]);
 
@@ -79,7 +102,11 @@ export default function DocumentVaultPage() {
       toast({ title: "Document added to vault" });
       setUploadOpen(false);
     } catch (e: any) {
-      toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+      toast({
+        title: "Upload failed",
+        description: e.message,
+        variant: "destructive",
+      });
     } finally {
       setUploading(false);
     }
@@ -91,7 +118,11 @@ export default function DocumentVaultPage() {
       await documentsAPI.remove(d._id);
       setDocs((prev) => prev.filter((x) => x._id !== d._id));
     } catch (e: any) {
-      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: e.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -109,7 +140,8 @@ export default function DocumentVaultPage() {
           <div>
             <h1 className="text-xl font-semibold">Document Vault</h1>
             <p className="text-xs text-muted-foreground">
-              Brochures, catalogues and price lists, ready to send to leads on WhatsApp.
+              Brochures, catalogues and price lists, ready to send to leads on
+              WhatsApp.
             </p>
           </div>
           {canManage && (
@@ -160,9 +192,14 @@ export default function DocumentVaultPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {shown.map((d) => {
-              const Icon = d.mimeType.startsWith("image/") ? ImageIcon : FileText;
+              const Icon = d.mimeType.startsWith("image/")
+                ? ImageIcon
+                : FileText;
               return (
-                <div key={d._id} className="border border-border rounded-lg p-4 flex gap-3 bg-card">
+                <div
+                  key={d._id}
+                  className="border border-border rounded-lg p-4 flex gap-3 bg-card"
+                >
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
@@ -170,8 +207,12 @@ export default function DocumentVaultPage() {
                     <p className="font-medium text-sm truncate" title={d.name}>
                       {d.name}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate" title={d.fileName}>
-                      {DOC_CATEGORIES[d.category] || d.category} · {formatSize(d.size)}
+                    <p
+                      className="text-xs text-muted-foreground truncate"
+                      title={d.fileName}
+                    >
+                      {DOC_CATEGORIES[d.category] || d.category} ·{" "}
+                      {formatSize(d.size)}
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {format(new Date(d.createdAt), "dd MMM yyyy")}
@@ -179,8 +220,18 @@ export default function DocumentVaultPage() {
                     </p>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Open / download">
-                      <a href={documentFileUrl(d)} target="_blank" rel="noreferrer">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      title="Open / download"
+                    >
+                      <a
+                        href={documentFileUrl(d)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         <Download className="w-4 h-4" />
                       </a>
                     </Button>
@@ -203,8 +254,8 @@ export default function DocumentVaultPage() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          To send a document: open a lead → WhatsApp → Document, or attach it to a WhatsApp campaign that uses a
-          Document-header template.
+          To send a document: open a lead → WhatsApp → Document, or attach it to
+          a WhatsApp campaign that uses a Document-header template.
         </p>
       </div>
 
@@ -215,7 +266,9 @@ export default function DocumentVaultPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label className="text-xs">File (PDF, image, Word, Excel, PowerPoint · max 25 MB)</Label>
+              <Label className="text-xs">
+                File (PDF, image, Word, Excel, PowerPoint · max 25 MB)
+              </Label>
               <input
                 ref={fileInput}
                 type="file"
@@ -230,7 +283,12 @@ export default function DocumentVaultPage() {
             </div>
             <div>
               <Label className="text-xs">Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1" maxLength={160} />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1"
+                maxLength={160}
+              />
             </div>
             <div>
               <Label className="text-xs">Category</Label>
@@ -247,8 +305,16 @@ export default function DocumentVaultPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full" disabled={!file || uploading} onClick={handleUpload}>
-              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
+            <Button
+              className="w-full"
+              disabled={!file || uploading}
+              onClick={handleUpload}
+            >
+              {uploading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <Upload className="w-4 h-4 mr-1" />
+              )}
               Upload
             </Button>
           </div>

@@ -50,7 +50,11 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { LeadDetailPanel } from "@/components/leads/LeadDetailPanel";
-import { statusColors, getStatusColorClasses, getStatusLabel } from "@/components/leads/statusConstants";
+import {
+  statusColors,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "@/components/leads/statusConstants";
 import { useToast } from "@/components/ui/use-toast";
 
 const categories = {

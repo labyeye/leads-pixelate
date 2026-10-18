@@ -1,4 +1,6 @@
 const asyncHandler = require("express-async-handler");
+const escapeRegex = require("../utils/escapeRegex");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const Product = require("../models/Product");
 const logActivity = require("../utils/activityLogger");
 
@@ -12,7 +14,7 @@ const getProducts = asyncHandler(async (req, res) => {
   if (category) query.category = category;
   if (status) query.status = status;
   if (search) {
-    query.name = { $regex: search, $options: "i" };
+    query.name = { $regex: escapeRegex(search), $options: "i" };
   }
 
   const products = await Product.find(query).sort("-createdAt");
@@ -25,7 +27,7 @@ const getProducts = asyncHandler(async (req, res) => {
 });
 
 const getProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id);
+  const product = await Product.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!product) {
     res.status(404);
@@ -60,14 +62,14 @@ const createProduct = asyncHandler(async (req, res) => {
 });
 
 const updateProduct = asyncHandler(async (req, res) => {
-  let product = await Product.findById(req.params.id);
+  let product = await Product.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!product) {
     res.status(404);
     throw new Error("Product not found");
   }
 
-  product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+  product = await Product.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, safeBody(req.body), {
     new: true,
     runValidators: true,
   });
@@ -88,14 +90,17 @@ const updateProduct = asyncHandler(async (req, res) => {
 });
 
 const deleteProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id);
+  const product = await Product.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!product) {
     res.status(404);
     throw new Error("Product not found");
   }
 
-  await Product.updateOne({ _id: product._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
+  await Product.updateOne(
+    { _id: product._id },
+    { $set: { deletedAt: new Date(), deletedBy: req.user._id } },
+  );
 
   logActivity({
     user: req.user,

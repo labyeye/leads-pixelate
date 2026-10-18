@@ -27,7 +27,12 @@ const fakeCursorModel = {
 
 // Redirect require("../models/AssignmentCursor") to the fake above.
 const modelPath = path.join(__dirname, "../models/AssignmentCursor.js");
-require.cache[require.resolve(modelPath)] = { id: modelPath, filename: modelPath, loaded: true, exports: fakeCursorModel };
+require.cache[require.resolve(modelPath)] = {
+  id: modelPath,
+  filename: modelPath,
+  loaded: true,
+  exports: fakeCursorModel,
+};
 
 const { nextBatchAssignee } = require("../utils/leadAssignment");
 
@@ -35,34 +40,91 @@ const { nextBatchAssignee } = require("../utils/leadAssignment");
   // 2 leads to A, then 2 to B, repeating.
   const ids = ["A", "B"];
   const got = [];
-  for (let i = 0; i < 8; i++) got.push(await nextBatchAssignee({ tenantId: "t1", key: "indiamart", assigneeIds: ids, batchSize: 2 }));
+  for (let i = 0; i < 8; i++)
+    got.push(
+      await nextBatchAssignee({
+        tenantId: "t1",
+        key: "indiamart",
+        assigneeIds: ids,
+        batchSize: 2,
+      }),
+    );
   assert.deepStrictEqual(got, ["A", "A", "B", "B", "A", "A", "B", "B"]);
 
   // batch size 1 = plain alternation.
   store.clear();
   const got1 = [];
-  for (let i = 0; i < 5; i++) got1.push(await nextBatchAssignee({ tenantId: "t1", key: "indiamart", assigneeIds: ["A", "B", "C"], batchSize: 1 }));
+  for (let i = 0; i < 5; i++)
+    got1.push(
+      await nextBatchAssignee({
+        tenantId: "t1",
+        key: "indiamart",
+        assigneeIds: ["A", "B", "C"],
+        batchSize: 1,
+      }),
+    );
   assert.deepStrictEqual(got1, ["A", "B", "C", "A", "B"]);
 
   // a single assignee never touches the cursor store.
   store.clear();
-  assert.strictEqual(await nextBatchAssignee({ tenantId: "t1", key: "justdial", assigneeIds: ["A"], batchSize: 5 }), "A");
+  assert.strictEqual(
+    await nextBatchAssignee({
+      tenantId: "t1",
+      key: "justdial",
+      assigneeIds: ["A"],
+      batchSize: 5,
+    }),
+    "A",
+  );
   assert.strictEqual(store.size, 0);
 
   // no assignees configured -> null (caller falls back to its own default).
-  assert.strictEqual(await nextBatchAssignee({ tenantId: "t1", key: "justdial", assigneeIds: [], batchSize: 2 }), null);
+  assert.strictEqual(
+    await nextBatchAssignee({
+      tenantId: "t1",
+      key: "justdial",
+      assigneeIds: [],
+      batchSize: 2,
+    }),
+    null,
+  );
 
   // changing the list (or the batch size) restarts from the first person.
   store.clear();
-  await nextBatchAssignee({ tenantId: "t1", key: "facebook:p1", assigneeIds: ["A", "B"], batchSize: 2 }); // A, count=1
-  await nextBatchAssignee({ tenantId: "t1", key: "facebook:p1", assigneeIds: ["A", "B"], batchSize: 2 }); // A, count->0, pos->1
-  const afterEdit = await nextBatchAssignee({ tenantId: "t1", key: "facebook:p1", assigneeIds: ["B", "C"], batchSize: 3 });
+  await nextBatchAssignee({
+    tenantId: "t1",
+    key: "facebook:p1",
+    assigneeIds: ["A", "B"],
+    batchSize: 2,
+  }); // A, count=1
+  await nextBatchAssignee({
+    tenantId: "t1",
+    key: "facebook:p1",
+    assigneeIds: ["A", "B"],
+    batchSize: 2,
+  }); // A, count->0, pos->1
+  const afterEdit = await nextBatchAssignee({
+    tenantId: "t1",
+    key: "facebook:p1",
+    assigneeIds: ["B", "C"],
+    batchSize: 3,
+  });
   assert.strictEqual(afterEdit, "B");
 
   // separate tenants and separate integration keys never share a cursor.
   store.clear();
-  await nextBatchAssignee({ tenantId: "t1", key: "indiamart", assigneeIds: ["A", "B"], batchSize: 1 });
-  const other = await nextBatchAssignee({ tenantId: "t2", key: "indiamart", assigneeIds: ["A", "B"], batchSize: 1 });
+  await nextBatchAssignee({
+    tenantId: "t1",
+    key: "indiamart",
+    assigneeIds: ["A", "B"],
+    batchSize: 1,
+  });
+  const other = await nextBatchAssignee({
+    tenantId: "t2",
+    key: "indiamart",
+    assigneeIds: ["A", "B"],
+    batchSize: 1,
+  });
   assert.strictEqual(other, "A"); // t2 starts fresh, unaffected by t1's position
 
   console.log("check-lead-assignment: all checks passed");

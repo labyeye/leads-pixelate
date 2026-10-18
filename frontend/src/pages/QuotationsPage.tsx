@@ -36,7 +36,12 @@ const QUOTATION_EXPORT_FIELDS: ExportField[] = [
   { key: "number", label: "Number", get: (q) => q.number || "" },
   { key: "clientName", label: "Client Name", get: (q) => q.clientName || "" },
   { key: "companyName", label: "Company", get: (q) => q.companyName || "" },
-  { key: "mobile", label: "Mobile", default: false, get: (q) => q.mobile || "" },
+  {
+    key: "mobile",
+    label: "Mobile",
+    default: false,
+    get: (q) => q.mobile || "",
+  },
   {
     key: "projectTitle",
     label: "Project Title",
@@ -54,11 +59,25 @@ const QUOTATION_EXPORT_FIELDS: ExportField[] = [
     get: (q) => (q.date ? new Date(q.date).toLocaleDateString("en-IN") : ""),
   },
   { key: "gst", label: "GST", default: false, get: (q) => q.gst || "" },
-  { key: "address", label: "Address", default: false, get: (q) => q.address || "" },
+  {
+    key: "address",
+    label: "Address",
+    default: false,
+    get: (q) => q.address || "",
+  },
 ];
 import { useState, useEffect } from "react";
-import { quotationsAPI, settingsAPI, clientsAPI, productsAPI } from "@/services/api";
-import { AddressFields, blankAddress, joinAddress } from "@/components/quotations/AddressFields";
+import {
+  quotationsAPI,
+  settingsAPI,
+  clientsAPI,
+  productsAPI,
+} from "@/services/api";
+import {
+  AddressFields,
+  blankAddress,
+  joinAddress,
+} from "@/components/quotations/AddressFields";
 import { ImportQuotationsDialog } from "@/components/quotations/ImportQuotationsDialog";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
@@ -183,7 +202,10 @@ export default function QuotationsPage() {
       .getAll()
       .then((res) => setClients(res.data || []))
       .catch(() => {});
-    productsAPI.getAll().then((r) => setProducts(r.data || [])).catch(() => {});
+    productsAPI
+      .getAll()
+      .then((r) => setProducts(r.data || []))
+      .catch(() => {});
   }, []);
 
   // Picking a saved client fills the buyer fields (still editable); "new" clears them.
@@ -228,7 +250,8 @@ export default function QuotationsPage() {
       clientName: q.clientName || "",
       companyName: q.companyName || "",
       address: q.address || "",
-      addressLine: q.addressLine ?? (q.city || q.state || q.zip ? "" : q.address || ""),
+      addressLine:
+        q.addressLine ?? (q.city || q.state || q.zip ? "" : q.address || ""),
       city: q.city || "",
       state: q.state || "",
       zip: q.zip || "",
@@ -278,7 +301,11 @@ export default function QuotationsPage() {
   const handleNameChange = (index: number, name: string) => {
     const p = products.find((x) => x.name === name);
     const s = [...formData.services];
-    s[index] = { ...s[index], name, ...(p ? { price: p.price, hsnCode: p.hsnCode || "" } : {}) };
+    s[index] = {
+      ...s[index],
+      name,
+      ...(p ? { price: p.price, hsnCode: p.hsnCode || "" } : {}),
+    };
     setField("services", s);
   };
 
@@ -359,7 +386,13 @@ export default function QuotationsPage() {
       );
       const tax = (subtotal - Number(formData.discount)) * 0.18;
       const total = subtotal - Number(formData.discount) + tax;
-      const payload = { ...formData, address: joinAddress(formData), subtotal, tax, total };
+      const payload = {
+        ...formData,
+        address: joinAddress(formData),
+        subtotal,
+        tax,
+        total,
+      };
       const res = editingQId
         ? await quotationsAPI.update(editingQId, payload)
         : await quotationsAPI.create(payload);

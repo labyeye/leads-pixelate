@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const { tenantScope, safeBody } = require("../utils/tenantScope");
 const Service = require("../models/Service");
 const logActivity = require("../utils/activityLogger");
 
@@ -25,7 +26,7 @@ const getServices = asyncHandler(async (req, res) => {
 });
 
 const getService = asyncHandler(async (req, res) => {
-  const service = await Service.findById(req.params.id)
+  const service = await Service.findOne({ _id: req.params.id, ...tenantScope(req) })
     .populate("assignedTo", "name email")
     .populate("allocatedClient", "name company")
     .populate("product", "name category price description");
@@ -65,14 +66,14 @@ const createService = asyncHandler(async (req, res) => {
 });
 
 const updateService = asyncHandler(async (req, res) => {
-  let service = await Service.findById(req.params.id);
+  let service = await Service.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!service) {
     res.status(404);
     throw new Error("Service allocation not found");
   }
 
-  service = await Service.findByIdAndUpdate(req.params.id, req.body, {
+  service = await Service.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, safeBody(req.body), {
     new: true,
     runValidators: true,
   })
@@ -96,14 +97,17 @@ const updateService = asyncHandler(async (req, res) => {
 });
 
 const deleteService = asyncHandler(async (req, res) => {
-  const service = await Service.findById(req.params.id);
+  const service = await Service.findOne({ _id: req.params.id, ...tenantScope(req) });
 
   if (!service) {
     res.status(404);
     throw new Error("Service allocation not found");
   }
 
-  await Service.updateOne({ _id: service._id }, { $set: { deletedAt: new Date(), deletedBy: req.user._id } });
+  await Service.updateOne(
+    { _id: service._id },
+    { $set: { deletedAt: new Date(), deletedBy: req.user._id } },
+  );
 
   logActivity({
     user: req.user,
