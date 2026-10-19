@@ -953,6 +953,11 @@ export const settingsAPI = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+  saveNumbering: (body: Record<string, { format: string; next?: number }>) =>
+    request<{ success: boolean; data: any }>('/settings/numbering', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
 };
 
 export const servicesAPI = {

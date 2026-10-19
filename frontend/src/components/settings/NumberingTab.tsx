@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 // Keep in step with backend/utils/docNumber.js.
 const TYPES = [
   { id: "invoice", label: "Invoice", format: "INV-{seq:4}" },
-  { id: "quotation", label: "Quotation", format: "SKF-{seq:4}" },
+  { id: "quotation", label: "Quotation", format: "QT-{seq:4}" },
   { id: "sales_order", label: "Sales order", format: "SO-{seq:4}" },
   { id: "purchase_order", label: "Purchase order", format: "PO-{seq:4}" },
 ];

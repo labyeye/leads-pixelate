@@ -79,9 +79,9 @@ quotationSchema.pre("validate", async function (next) {
     }
     const count = await mongoose
       .model("Quotation")
-      .countDocuments()
+      .countDocuments({ tenantId: this.tenantId || null })
       .setOptions({ withDeleted: true });
-    this.number = `SKF-${String(count + 1).padStart(4, "0")}`;
+    this.number = `QT-${String(count + 1).padStart(4, "0")}`;
   }
   next();
 });

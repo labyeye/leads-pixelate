@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import QuotationNumberingCard from '../components/QuotationNumberingCard';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -347,6 +348,12 @@ export default function SettingsScreen({ navigation }: any) {
               </Text>
               <Icon name="chevron-forward" size={16} color="#94a3b8" />
             </TouchableOpacity>
+          </View>
+        )}
+
+        {canManageStatuses && (
+          <View style={styles.logoutSection}>
+            <QuotationNumberingCard />
           </View>
         )}
 

@@ -5,7 +5,7 @@ const Setting = require("../models/Setting");
 
 const TYPES = {
   invoice: { label: "Invoice", format: "INV-{seq:4}" },
-  quotation: { label: "Quotation", format: "SKF-{seq:4}" },
+  quotation: { label: "Quotation", format: "QT-{seq:4}" },
   sales_order: { label: "Sales order", format: "SO-{seq:4}" },
   purchase_order: { label: "Purchase order", format: "PO-{seq:4}" },
 };
