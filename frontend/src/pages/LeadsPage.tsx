@@ -3197,7 +3197,7 @@ export default function LeadsPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter email address"
+                    placeholder="Enter Email address address"
                     value={newLead.email}
                     onChange={(e) =>
                       setNewLead({ ...newLead, email: e.target.value })

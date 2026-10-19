@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import logoimg from "@/assets/images/Logo.png";
 import { authAPI } from "@/services/api";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>();
@@ -44,8 +45,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ffffff] flex items-center justify-center p-8">
-      <div className="w-full max-w-sm">
+    <AuthShell>
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img src={logoimg} alt="NestLeads" className="w-10 h-10" />
           <span className="font-display font-bold text-xl text-black">
@@ -81,12 +81,12 @@ export default function ResetPasswordPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5 login-anim">
               <div>
-                <label className="block text-sm font-bold text-black mb-1.5">
+                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   New password
                 </label>
-                <div className="flex items-center border-2 border-black">
+                <div className="flex border-2 border-black">
                   <input
                     type={showPw ? "text" : "password"}
                     value={password}
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
                       setError("");
                     }}
                     placeholder="At least 8 characters"
-                    className="flex-1 px-3 py-2.5 bg-white text-sm outline-none font-medium"
+                    className="flex-1 px-4 py-3 bg-white text-sm font-medium outline-none"
                     required
                     autoComplete="new-password"
                     autoFocus
@@ -115,10 +115,10 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-black mb-1.5">
+                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   Confirm password
                 </label>
-                <div className="flex items-center border-2 border-black">
+                <div className="flex border-2 border-black">
                   <input
                     type={showPw ? "text" : "password"}
                     value={confirmPassword}
@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
                       setError("");
                     }}
                     placeholder="Re-enter your password"
-                    className="w-full px-3 py-2.5 text-sm outline-none font-medium"
+                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                     required
                     autoComplete="new-password"
                   />
@@ -137,11 +137,11 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full hover:bg-[#024BAB] hover:text-white border-2 bg-[#FF751F] text-white py-3 text-sm font-bold mt-2"
+                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Resetting...
                   </span>
                 ) : (
@@ -160,7 +160,6 @@ export default function ResetPasswordPage() {
             </p>
           </>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }

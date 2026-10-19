@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { quotationsAPI } from '../services/api';
+import SendQuotationModal from '../components/SendQuotationModal';
 import ExportFieldsDialog, {
   type ExportField,
 } from '../components/ExportFieldsDialog';
@@ -93,6 +94,7 @@ export default function QuotationsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [exportOpen, setExportOpen] = useState(false);
+  const [sendingQ, setSendingQ] = useState<any | null>(null);
 
   const fetchQuotations = useCallback(async (isRefresh = false) => {
     try {
@@ -216,6 +218,15 @@ export default function QuotationsScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
+            onPress={() => setSendingQ(q)}
+          >
+            <Icon name="logo-whatsapp" size={13} color="#00A070" />
+            <Text style={[styles.deleteBtnText, { color: '#00A070' }]}>
+              WhatsApp
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
             onPress={() => handleDelete(q._id)}
           >
             <Icon name="trash-outline" size={13} color="#EF4444" />
@@ -327,6 +338,10 @@ export default function QuotationsScreen({ navigation }: any) {
         />
       )}
 
+      <SendQuotationModal
+        quotation={sendingQ}
+        onClose={() => setSendingQ(null)}
+      />
       <ExportFieldsDialog
         visible={exportOpen}
         onClose={() => setExportOpen(false)}

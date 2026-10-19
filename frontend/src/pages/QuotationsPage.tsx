@@ -17,6 +17,7 @@ import {
   XCircle,
   Download,
   Upload,
+  Send,
 } from "lucide-react";
 import {
   ExportFieldsDialog,
@@ -72,12 +73,14 @@ import {
   settingsAPI,
   clientsAPI,
   productsAPI,
+  leadsAPI,
 } from "@/services/api";
 import {
   AddressFields,
   blankAddress,
   joinAddress,
 } from "@/components/quotations/AddressFields";
+import { SendQuotationDialog } from "@/components/quotations/SendQuotationDialog";
 import { ImportQuotationsDialog } from "@/components/quotations/ImportQuotationsDialog";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
@@ -194,6 +197,9 @@ export default function QuotationsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [leads, setLeads] = useState<any[]>([]);
+  const [buyerSource, setBuyerSource] = useState<"client" | "lead">("client");
+  const [sendingQ, setSendingQ] = useState<any | null>(null);
 
   useEffect(() => {
     fetchQuotations();
@@ -206,7 +212,31 @@ export default function QuotationsPage() {
       .getAll()
       .then((r) => setProducts(r.data || []))
       .catch(() => {});
+    leadsAPI
+      .getAll({ limit: "500" })
+      .then((r) => setLeads(r.data || []))
+      .catch(() => {});
   }, []);
+
+  // Picking a lead fills the buyer fields the same way picking a client does.
+  const handleLeadSelect = (id: string) => {
+    setSelectedClientId(id);
+    const l = leads.find((x) => x._id === id);
+    setFormData((prev) => ({
+      ...prev,
+      clientName: l?.name || "",
+      companyName: l?.company || "",
+      address: l?.location || "",
+      ...blankAddress,
+      addressLine: l?.location || "",
+      gst: "",
+      mobile: (l?.phone || "").replace(/\D/g, "").slice(-10),
+      aadhar: "",
+      pan: "",
+      leadTag: l?.source || prev.leadTag,
+      projectTitle: prev.projectTitle || l?.requirement || "",
+    }));
+  };
 
   // Picking a saved client fills the buyer fields (still editable); "new" clears them.
   const handleClientSelect = (id: string) => {
@@ -292,6 +322,7 @@ export default function QuotationsPage() {
     setIsModalOpen(false);
     setEditingQId(null);
     setSelectedClientId("");
+    setBuyerSource("client");
     setFormData(initialFormState);
   };
   const setField = (key: string, value: any) =>
@@ -531,27 +562,55 @@ export default function QuotationsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     {!editingQId && (
                       <div className="col-span-1 sm:col-span-4 space-y-1">
-                        <label
-                          htmlFor="existingClient"
-                          className="block text-[10px] font-black uppercase tracking-widest text-black"
-                        >
-                          Select Client
-                        </label>
+                        <div className="flex items-center justify-between">
+                          <label
+                            htmlFor="existingClient"
+                            className="block text-[10px] font-black uppercase tracking-widest text-black"
+                          >
+                            Select {buyerSource === "client" ? "Client" : "Lead"}
+                          </label>
+                          <div className="flex border-2 border-black">
+                            {(["client", "lead"] as const).map((src) => (
+                              <button
+                                key={src}
+                                type="button"
+                                onClick={() => {
+                                  setBuyerSource(src);
+                                  setSelectedClientId("");
+                                }}
+                                className={cn(
+                                  "px-3 py-0.5 text-[10px] font-black uppercase",
+                                  buyerSource === src
+                                    ? "bg-[#024BAB] text-white"
+                                    : "bg-white text-black",
+                                )}
+                              >
+                                From {src}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                         <select
                           id="existingClient"
                           value={selectedClientId}
-                          onChange={(e) => handleClientSelect(e.target.value)}
+                          onChange={(e) =>
+                            buyerSource === "client"
+                              ? handleClientSelect(e.target.value)
+                              : handleLeadSelect(e.target.value)
+                          }
                           className="w-full border-2 border-black px-3 py-2 text-sm font-medium bg-white outline-none"
                         >
                           <option value="">
-                            — New client (enter details below) —
+                            — New buyer (enter details below) —
                           </option>
-                          {clients.map((c) => (
-                            <option key={c._id} value={c._id}>
-                              {c.name}
-                              {c.company ? ` — ${c.company}` : ""}
-                            </option>
-                          ))}
+                          {(buyerSource === "client" ? clients : leads).map(
+                            (c) => (
+                              <option key={c._id} value={c._id}>
+                                {c.name}
+                                {c.company ? ` — ${c.company}` : ""}
+                              </option>
+                            ),
+                          )}
                         </select>
                       </div>
                     )}
@@ -1138,6 +1197,12 @@ export default function QuotationsPage() {
                             )}
                             Preview PDF
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setSendingQ(q)}
+                            className="font-bold text-black hover:bg-[#00C48C] hover:text-black focus:bg-[#00C48C] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                          >
+                            <Send className="w-4 h-4 mr-2" /> Send on WhatsApp
+                          </DropdownMenuItem>
                           {can("Quotations", "update") && (
                             <DropdownMenuItem
                               onClick={() => handleEditClick(q)}
@@ -1198,6 +1263,12 @@ export default function QuotationsPage() {
         </DialogContent>
       </Dialog>
 
+      <SendQuotationDialog
+        quotation={sendingQ}
+        settings={settings}
+        onOpenChange={(o) => !o && setSendingQ(null)}
+        onSent={fetchQuotations}
+      />
       <ImportQuotationsDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}

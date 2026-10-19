@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, Zap, Eye, EyeOff, Check } from "lucide-react";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -75,63 +76,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF5] flex">
-      <div className="hidden lg:flex w-1/2 bg-[#024BAB] border-r-2 border-black flex-col justify-between p-12">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-black border-2 border-black flex items-center justify-center nb-shadow-sm">
-            <Zap className="w-5 h-5 text-white fill-white" />
-          </div>
-          <span className="font-display font-bold text-white text-2xl">
-            NestLeads
-          </span>
-        </div>
-
-        <div>
-          <h1 className="font-display font-bold text-5xl text-white leading-tight mb-6">
-            Start capturing
-            <br />
-            leads in minutes.
-          </h1>
-          <div className="space-y-3">
-            {[
-              "Connect IndiaMART & Facebook Ads",
-              "Auto-assign leads to your team",
-              "Track every follow-up & visit",
-              "Know exactly what to do next",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <div className="w-5 h-5 bg-white border-2 border-white flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3 text-[#024BAB]" />
-                </div>
-                <span className="text-white font-medium text-base">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          {["Starter ₹999/mo", "Growth ₹2,499/mo", "Enterprise"].map((s) => (
-            <div
-              key={s}
-              className="border-2 border-black bg-black text-white px-3 py-1.5 text-xs font-bold nb-shadow-sm"
-            >
-              {s}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
-        <div className="w-full max-w-sm">
-          <div className="flex items-center gap-2 mb-6 lg:hidden">
-            <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center">
-              <Zap className="w-4 h-4 text-black fill-black" />
-            </div>
-            <span className="font-display font-bold text-xl text-black">
-              NestLeads
-            </span>
-          </div>
-
+    <AuthShell>
           <h2 className="font-display font-bold text-3xl text-black mb-1">
             Create your account
           </h2>
@@ -152,9 +97,9 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5 login-anim">
             <div>
-              <label className="block text-sm font-bold text-black mb-1.5">
+              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                 Company / Business Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -162,13 +107,13 @@ export default function RegisterPage() {
                 value={form.companyName}
                 onChange={set("companyName")}
                 placeholder="Acme Pvt Ltd"
-                className="nb-input w-full px-3 py-2.5 text-sm"
+                className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                 autoFocus
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-black mb-1.5">
+              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                 Your Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -176,13 +121,13 @@ export default function RegisterPage() {
                 value={form.name}
                 onChange={set("name")}
                 placeholder="Rahul Sharma"
-                className="nb-input w-full px-3 py-2.5 text-sm"
+                className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                 autoComplete="name"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-black mb-1.5">
+              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                 Work Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -190,22 +135,22 @@ export default function RegisterPage() {
                 value={form.email}
                 onChange={set("email")}
                 placeholder="rahul@company.com"
-                className="nb-input w-full px-3 py-2.5 text-sm"
+                className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                 autoComplete="email"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-black mb-1.5">
+              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                 Password <span className="text-red-500">*</span>
               </label>
-              <div className="flex items-center border-2 border-black nb-shadow-sm">
+              <div className="flex border-2 border-black">
                 <input
                   type={showPw ? "text" : "password"}
                   value={form.password}
                   onChange={set("password")}
                   placeholder="Min. 8 characters"
-                  className="flex-1 px-3 py-2.5 bg-white text-sm outline-none font-medium"
+                  className="flex-1 px-4 py-3 bg-white text-sm font-medium outline-none"
                   autoComplete="new-password"
                 />
                 <button
@@ -228,16 +173,16 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-black mb-1.5">
+              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                 Confirm Password <span className="text-red-500">*</span>
               </label>
-              <div className="flex items-center border-2 border-black nb-shadow-sm">
+              <div className="flex border-2 border-black">
                 <input
                   type={showConfirm ? "text" : "password"}
                   value={form.confirmPassword}
                   onChange={set("confirmPassword")}
                   placeholder="Re-enter password"
-                  className="flex-1 px-3 py-2.5 bg-white text-sm outline-none font-medium"
+                  className="flex-1 px-4 py-3 bg-white text-sm font-medium outline-none"
                   autoComplete="new-password"
                 />
                 <button
@@ -263,15 +208,15 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="nb-btn w-full bg-[#024BAB] text-white py-3 text-sm font-bold mt-2"
+              className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Creating account...
                 </span>
               ) : (
-                "Create Account & Choose Plan →"
+                <>Create Account & Choose Plan <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </form>
@@ -280,8 +225,6 @@ export default function RegisterPage() {
             By creating an account you agree to our Terms of Service and Privacy
             Policy.
           </p>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

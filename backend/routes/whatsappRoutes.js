@@ -20,6 +20,7 @@ const {
   resendCampaign,
   syncPhoneNumbers,
   sendMessage,
+  sendQuotation,
   verifyWebhook,
   handleWebhook,
   getReplies,
@@ -28,6 +29,7 @@ const {
   saveAutomations,
 } = require("../controllers/whatsappController");
 const { protect, ownerOnly } = require("../middleware/auth");
+const { checkPermission } = require("../middleware/checkPermission");
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -77,6 +79,12 @@ router.route("/campaigns/:id").get(getCampaign);
 router.post("/campaigns/:id/resend", resendCampaign);
 
 router.post("/send", sendMessage);
+router.post(
+  "/send-quotation",
+  checkPermission("Quotations", "read"),
+  upload.single("file"),
+  sendQuotation,
+);
 
 router.get("/replies", getReplies);
 

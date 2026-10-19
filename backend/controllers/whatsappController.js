@@ -7,6 +7,8 @@ const WhatsappCampaign = require("../models/WhatsappCampaign");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
 const Document = require("../models/Document");
+const Quotation = require("../models/Quotation");
+const Setting = require("../models/Setting");
 const path = require("path");
 const { encrypt, decrypt } = require("../utils/encryption");
 const log = require("../utils/logger").scope("WhatsApp");
@@ -58,6 +60,8 @@ function resolveVariable(fieldKey, customValue, lead) {
     location: lead.location,
     requirement: lead.requirement,
     budget: lead.budget,
+    quotationNumber: lead.quotationNumber,
+    total: lead.total,
     custom: customValue,
   };
   return map[fieldKey] || customValue || "";
@@ -189,10 +193,14 @@ async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
   const buffer = await require("fs").promises.readFile(
     path.join(__dirname, "../uploads", doc.filePath),
   );
+  return uploadMediaBuffer(phoneNumberId, accessToken, buffer, doc.mimeType, doc.fileName);
+}
+
+async function uploadMediaBuffer(phoneNumberId, accessToken, buffer, mimeType, fileName) {
   const form = new FormData();
   form.append("messaging_product", "whatsapp");
-  form.append("type", doc.mimeType);
-  form.append("file", new Blob([buffer], { type: doc.mimeType }), doc.fileName);
+  form.append("type", mimeType);
+  form.append("file", new Blob([buffer], { type: mimeType }), fileName);
   const r = await fetch(`${WA_API}/${phoneNumberId}/media`, {
     method: "POST",
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -200,7 +208,7 @@ async function uploadVaultDoc(phoneNumberId, accessToken, doc) {
   });
   const data = await r.json();
   if (!r.ok) throw metaError("media upload", data, { phoneNumberId });
-  return { id: data.id, filename: doc.fileName };
+  return { id: data.id, filename: fileName };
 }
 
 // A template can only carry a vault file if its header is a matching media slot.
@@ -1382,6 +1390,86 @@ exports.sendMessage = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: { messageId: waResult?.messages?.[0]?.id || "" },
+  });
+});
+
+// Quotation PDF as the header of a DOCUMENT-header template. The web app uploads its own PDF
+// (`file`); without one (mobile) the server renders a plain one.
+exports.sendQuotation = asyncHandler(async (req, res) => {
+  const { quotationId, templateId, phone: rawPhone, phoneNumberId } = req.body;
+  let variableMapping = [];
+  try {
+    variableMapping = JSON.parse(req.body.variableMapping || "[]");
+  } catch {}
+
+  const wa = await getWaBase(req.user);
+  if (!wa) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected");
+  }
+  const resolvedPhoneNumberId = resolvePhoneNumberId(wa, phoneNumberId);
+  if (!resolvedPhoneNumberId) {
+    res.status(400);
+    throw new Error("Choose which WhatsApp number to send from");
+  }
+  const phone = formatPhone(rawPhone);
+  if (!phone) {
+    res.status(400);
+    throw new Error("Enter a valid phone number");
+  }
+  const tenantFilter = tenantScope(req);
+  const [q, template] = await Promise.all([
+    Quotation.findOne({ _id: quotationId, ...tenantFilter }),
+    WhatsappTemplate.findOne({ _id: templateId, ...tenantFilter }),
+  ]);
+  if (!q || !template) {
+    res.status(404);
+    throw new Error(!q ? "Quotation not found" : "Template not found");
+  }
+  if (template.headerType !== "DOCUMENT") {
+    res.status(400);
+    throw new Error(
+      "This template has no Document header, so the PDF can't be attached. Update the template to use a Document header.",
+    );
+  }
+
+  const fileName = `${q.number || "quotation"}.pdf`;
+  const buffer =
+    req.file?.buffer ||
+    (await require("../utils/quotationPdf")(
+      q,
+      (await Setting.findOne(tenantFilter).lean()) || {},
+    ));
+  const media = await uploadMediaBuffer(
+    resolvedPhoneNumberId,
+    wa.accessToken,
+    buffer,
+    "application/pdf",
+    fileName,
+  );
+  const pseudoLead = {
+    name: q.clientName,
+    company: q.companyName,
+    phone: q.mobile,
+    location: q.address,
+    requirement: q.projectTitle,
+    budget: q.total,
+    quotationNumber: q.number,
+    total: Math.round(q.total),
+  };
+  const result = await sendWaMessage(
+    resolvedPhoneNumberId,
+    wa.accessToken,
+    phone,
+    template.metaTemplateName || template.name,
+    template.language,
+    buildTemplateComponents(template, variableMapping, pseudoLead, media),
+  );
+  if (q.status === "Draft")
+    await Quotation.updateOne({ _id: q._id }, { $set: { status: "Sent" } });
+  res.json({
+    success: true,
+    data: { messageId: result?.messages?.[0]?.id || "" },
   });
 });
 

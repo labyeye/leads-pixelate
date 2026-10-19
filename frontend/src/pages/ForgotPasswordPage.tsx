@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Mail, KeyRound } from "lucide-react";
 import logoimg from "@/assets/images/Logo.png";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { authAPI } from "@/services/api";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 type Step = "email" | "choose" | "email_sent" | "otp" | "totp" | "done";
 
@@ -110,8 +111,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ffffff] flex items-center justify-center p-8">
-      <div className="w-full max-w-sm">
+    <AuthShell>
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img src={logoimg} alt="NestLeads" className="w-10 h-10" />
           <span className="font-display font-bold text-xl text-black">
@@ -132,15 +132,15 @@ export default function ForgotPasswordPage() {
               Forgot password?
             </h2>
             <p className="text-muted-foreground text-sm mb-8">
-              Enter your email to see how you can reset your password.
+              Enter Email address to see how you can reset your password.
             </p>
 
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <form onSubmit={handleEmailSubmit} className="space-y-5 login-anim">
               <div>
-                <label className="block text-sm font-bold text-black mb-1.5">
+                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   Email
                 </label>
-                <div className="flex items-center border-2 border-black">
+                <div className="flex border-2 border-black">
                   <input
                     type="email"
                     value={email}
@@ -149,7 +149,7 @@ export default function ForgotPasswordPage() {
                       setError("");
                     }}
                     placeholder="you@company.com"
-                    className="w-full px-3 py-2.5 text-sm"
+                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                     required
                     autoComplete="email"
                     autoFocus
@@ -160,11 +160,11 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full hover:bg-[#024BAB] hover:text-white border-2 bg-[#FF751F] text-white py-3 text-sm font-bold mt-2"
+                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Checking...
                   </span>
                 ) : (
@@ -258,9 +258,9 @@ export default function ForgotPasswordPage() {
                 : "Open your authenticator app and enter the current 6-digit code."}
             </p>
 
-            <form onSubmit={handleCodeSubmit} className="space-y-4">
+            <form onSubmit={handleCodeSubmit} className="space-y-5 login-anim">
               <div>
-                <label className="block text-sm font-bold text-black mb-1.5">
+                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   {step === "otp" ? "WhatsApp code" : "Authenticator code"}
                 </label>
                 <input
@@ -270,13 +270,13 @@ export default function ForgotPasswordPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   placeholder="123456"
-                  className="w-full px-3 py-2.5 text-sm border-2 border-black tracking-widest text-center font-bold"
+                  className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors tracking-widest text-center font-bold"
                   required
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-black mb-1.5">
+                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   New password
                 </label>
                 <input
@@ -284,20 +284,20 @@ export default function ForgotPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="w-full px-3 py-2.5 text-sm border-2 border-black"
+                  className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                   required
                   autoComplete="new-password"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-black mb-1.5">
+                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   Confirm new password
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border-2 border-black"
+                  className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                   required
                   autoComplete="new-password"
                 />
@@ -306,11 +306,11 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full hover:bg-[#024BAB] hover:text-white border-2 bg-[#FF751F] text-white py-3 text-sm font-bold mt-2"
+                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Resetting...
                   </span>
                 ) : (
@@ -347,7 +347,6 @@ export default function ForgotPasswordPage() {
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }

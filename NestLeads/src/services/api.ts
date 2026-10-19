@@ -778,6 +778,17 @@ export const whatsappAPI = {
     }),
   getStatus: () => request<{ success: boolean; data: any }>('/whatsapp/status'),
   getConfig: () => request<{ success: boolean; data: any }>('/whatsapp/config'),
+  sendQuotation: (body: {
+    quotationId: string;
+    templateId: string;
+    phone: string;
+    phoneNumberId?: string;
+    variableMapping: string;
+  }) =>
+    request<{ success: boolean }>('/whatsapp/send-quotation', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   getTemplates: () =>
     request<{ success: boolean; data: any[] }>('/whatsapp/templates'),
   getCampaigns: (params?: Record<string, string>) => {

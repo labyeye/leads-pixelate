@@ -16,7 +16,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
-import { quotationsAPI, clientsAPI, productsAPI } from '../services/api';
+import {
+  quotationsAPI,
+  clientsAPI,
+  productsAPI,
+  leadsAPI,
+} from '../services/api';
 
 // Create / edit a quotation. Field set, validation and the total calculation
 // (18% tax on the discounted subtotal) mirror the web QuotationsPage.
@@ -87,8 +92,9 @@ export default function QuotationFormScreen({ navigation, route }: any) {
   const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   // null = closed, 'client' = picking a saved client, number = picking a catalogue product for that item
-  const [picker, setPicker] = useState<null | 'client' | number>(null);
+  const [picker, setPicker] = useState<null | 'client' | 'lead' | number>(null);
   const [pinNote, setPinNote] = useState('');
 
   useEffect(() => {
@@ -100,7 +106,32 @@ export default function QuotationFormScreen({ navigation, route }: any) {
       .getAll()
       .then(r => setProducts(r.data || []))
       .catch(() => {});
+    leadsAPI
+      .getAll({ limit: '500' })
+      .then((r: any) => setLeads(r.data || []))
+      .catch(() => {});
   }, []);
+
+  // Picking a lead fills the buyer fields the same way picking a client does.
+  const pickLead = (l: any) => {
+    setF(p => ({
+      ...p,
+      clientName: l.name || '',
+      companyName: l.company || '',
+      address: l.location || '',
+      addressLine: l.location || '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'India',
+      gst: '',
+      mobile: (l.phone || '').replace(/\D/g, '').slice(-10),
+      aadhar: '',
+      pan: '',
+      projectTitle: p.projectTitle || l.requirement || '',
+    }));
+    setPicker(null);
+  };
 
   // Picking a saved client fills the buyer fields (still editable).
   const pickClient = (c: any) => {
@@ -271,13 +302,22 @@ export default function QuotationFormScreen({ navigation, route }: any) {
       >
         <Text style={s.section}>Buyer</Text>
         {!editing && (
-          <TouchableOpacity
-            style={s.addItem}
-            onPress={() => setPicker('client')}
-          >
-            <Icon name="people-outline" size={14} color="#024BAB" />
-            <Text style={s.addItemText}>Select saved client</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[s.addItem, { flex: 1 }]}
+              onPress={() => setPicker('client')}
+            >
+              <Icon name="people-outline" size={14} color="#024BAB" />
+              <Text style={s.addItemText}>From client</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.addItem, { flex: 1 }]}
+              onPress={() => setPicker('lead')}
+            >
+              <Icon name="person-outline" size={14} color="#024BAB" />
+              <Text style={s.addItemText}>From lead</Text>
+            </TouchableOpacity>
+          </View>
         )}
         {field('clientName', 'Name *', { placeholder: 'e.g. Raj Kumar' })}
         {field('companyName', 'Company', {
@@ -467,7 +507,9 @@ export default function QuotationFormScreen({ navigation, route }: any) {
         >
           <View style={s.sheet}>
             <FlatList
-              data={picker === 'client' ? clients : products}
+              data={
+                picker === 'client' ? clients : picker === 'lead' ? leads : products
+              }
               keyExtractor={(x: any) => x._id}
               ListEmptyComponent={
                 <Text style={s.sheetEmpty}>Nothing to pick yet</Text>
@@ -478,16 +520,18 @@ export default function QuotationFormScreen({ navigation, route }: any) {
                   onPress={() =>
                     picker === 'client'
                       ? pickClient(item)
-                      : pickProduct(picker as number, item)
+                      : picker === 'lead'
+                        ? pickLead(item)
+                        : pickProduct(picker as number, item)
                   }
                 >
                   <Text style={s.sheetText}>
                     {item.name}
-                    {picker === 'client' && item.company
+                    {picker !== null && typeof picker === 'string' && item.company
                       ? ` - ${item.company}`
                       : ''}
                   </Text>
-                  {picker !== 'client' && (
+                  {typeof picker === 'number' && (
                     <Text style={s.sheetSub}>{inr(item.price || 0)}</Text>
                   )}
                 </TouchableOpacity>

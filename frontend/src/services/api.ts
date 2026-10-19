@@ -1608,6 +1608,13 @@ export const whatsappAPI = {
       "/whatsapp/replies",
     ),
 
+  sendQuotation: (fd: FormData) =>
+    postForm<{ success: boolean }>(
+      "/whatsapp/send-quotation",
+      fd,
+      "Could not send quotation",
+    ),
+
   uploadMedia: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);

@@ -369,7 +369,7 @@ const INTEGRATIONS: Integration[] = [
     steps: [
       {
         title: 'Configure SMTP Settings',
-        subtitle: 'Step 1 of 2 — Enter your email credentials',
+        subtitle: 'Step 1 of 2 — Enter Email address credentials',
         instructions: [
           'Use Gmail, Outlook, or any SMTP provider',
           'For Gmail: enable "App Passwords" in your Google account',

@@ -284,11 +284,11 @@ export default function LoginPage() {
 
         {/* Headline */}
         <div className="relative z-10">
-          <h1 className="text-4xl xl:text-5xl font-display font-bold text-white leading-tight mb-5">
+          <h1 className="text-3xl xl:text-4xl font-display font-bold text-white leading-tight mb-5">
             Every lead.
-            <br />
+            
             Every follow-up.
-            <br />
+            
             One place.
           </h1>
           <p className="text-white/70 text-base font-medium max-w-sm">
@@ -371,7 +371,7 @@ export default function LoginPage() {
                       setError("");
                     }}
                     placeholder="000000"
-                    className="w-full px-4 py-3 border-2 border-black text-lg font-bold tracking-[0.5em] text-center bg-white focus:outline-none focus:border-[#024BAB] transition-colors"
+                    className="w-full px-4 py-3 border-2 border-black text-lg font-bold tracking-[0.5em] text-center bg-white focus:outline-none transition-colors"
                     autoFocus
                     maxLength={8}
                   />
@@ -424,7 +424,7 @@ export default function LoginPage() {
                         setError("");
                       }}
                       placeholder="+91 98765 43210"
-                      className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none focus:border-[#024BAB] transition-colors"
+                      className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                       required
                       autoFocus
                     />
@@ -455,7 +455,7 @@ export default function LoginPage() {
                         setError("");
                       }}
                       placeholder="000000"
-                      className="w-full px-4 py-3 border-2 border-black text-lg font-bold tracking-[0.5em] text-center bg-white focus:outline-none focus:border-[#024BAB] transition-colors"
+                      className="w-full px-4 py-3 border-2 border-black text-lg font-bold tracking-[0.5em] text-center bg-white focus:outline-none transition-colors"
                       autoFocus
                       maxLength={6}
                     />
@@ -563,7 +563,7 @@ export default function LoginPage() {
                       setError("");
                     }}
                     placeholder="you@company.com"
-                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none focus:border-[#024BAB] transition-colors"
+                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                     required
                     autoComplete="email"
                     autoFocus
@@ -583,7 +583,7 @@ export default function LoginPage() {
                       Forgot password?
                     </Link>
                   </div>
-                  <div className="flex border-2 border-black focus-within:border-[#024BAB] transition-colors">
+                  <div className="flex border-2 border-black transition-colors">
                     <input
                       type={showPw ? "text" : "password"}
                       value={password}
