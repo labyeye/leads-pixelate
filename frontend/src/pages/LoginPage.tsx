@@ -358,7 +358,7 @@ export default function LoginPage() {
                 </p>
               </div>
               <ErrorBanner />
-              <form onSubmit={handle2FASubmit} className="space-y-5">
+              <form onSubmit={handle2FASubmit} className="space-y-5 login-anim">
                 <div>
                   <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                     Authenticator Code
@@ -411,7 +411,7 @@ export default function LoginPage() {
               <ErrorBanner />
 
               {!otpSent ? (
-                <form onSubmit={handleSendOtp} className="space-y-5">
+                <form onSubmit={handleSendOtp} className="space-y-5 login-anim">
                   <div>
                     <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                       Phone Number
@@ -442,7 +442,7 @@ export default function LoginPage() {
                   />
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOtp} className="space-y-5">
+                <form onSubmit={handleVerifyOtp} className="space-y-5 login-anim">
                   <div>
                     <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                       WhatsApp OTP
@@ -549,7 +549,7 @@ export default function LoginPage() {
               </div>
               <ErrorBanner />
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5 login-anim">
                 {/* Email */}
                 <div>
                   <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
@@ -668,8 +668,34 @@ export default function LoginPage() {
               </div>
             </>
           )}
+          <LegalFooter />
         </div>
       </div>
     </div>
+  );
+}
+
+function LegalFooter() {
+  return (
+    <p className="text-xs text-gray-500 mt-4 text-center">
+      © 2026 Pixelate Nest. All rights reserved.{" "}
+      <a
+        href="https://www.pixelatenest.com/legal/privacy-policy.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-bold text-[#024BAB] hover:underline"
+      >
+        Privacy Policy
+      </a>
+      {" · "}
+      <a
+        href="https://www.pixelatenest.com/legal/terms-of-service.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-bold text-[#024BAB] hover:underline"
+      >
+        Terms of Service
+      </a>
+    </p>
   );
 }

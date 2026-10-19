@@ -141,7 +141,7 @@ const userSchema = new mongoose.Schema(
     },
     // Bumped on every password change/reset; tokens carrying an older value are rejected by `protect`.
     tokenVersion: { type: Number, default: 0 },
-    // Brute-force protection: 10 wrong passwords lock the account for 15 minutes.
+    // Brute-force protection: the 4th wrong password locks the account for 30 minutes (WhatsApp OTP unlocks).
     failedLogins: { type: Number, default: 0 },
     lockUntil: { type: Date, default: null },
     refreshTokenHash: {

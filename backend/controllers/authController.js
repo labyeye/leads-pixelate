@@ -138,8 +138,11 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-const MAX_FAILED_LOGINS = 10;
-const LOCK_MS = 15 * 60 * 1000;
+// 3 wrong passwords are allowed; the 4th wrong one locks the account for 30 min.
+// A WhatsApp OTP login or reset lifts the lock.
+const MAX_FAILED_LOGINS = 4;
+const LOCK_MS = 30 * 60 * 1000;
+const LOCKED_MSG = "Account locked for 30 minutes after too many wrong passwords. Unlock it now with a WhatsApp OTP.";
 // Valid-looking bcrypt hash, compared against when the email is unknown so response time doesn't reveal it.
 const DUMMY_HASH = "$2a$10$CwTycUXWue0Thq9StjUM0uJ8.G1c/3d1Hn5X9lq0Yx1y6k8mQ5G1e";
 
@@ -172,7 +175,7 @@ const login = asyncHandler(async (req, res) => {
 
   if (user.lockUntil && user.lockUntil > new Date()) {
     res.status(429);
-    throw new Error("Too many failed attempts. Try again in a few minutes.");
+    throw new Error(LOCKED_MSG);
   }
 
   const isMatch = await user.matchPassword(password);
@@ -192,8 +195,8 @@ const login = asyncHandler(async (req, res) => {
       description: `Wrong password attempt by ${user.name}`,
       ip: req.ip,
     });
-    res.status(401);
-    throw new Error("Invalid email or password");
+    res.status(locked ? 429 : 401);
+    throw new Error(locked ? LOCKED_MSG : "Invalid email or password");
   }
 
   // Checked only after the password is right, so the status isn't disclosed to someone guessing emails.
@@ -624,6 +627,8 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
   user.tokenVersion = (user.tokenVersion || 0) + 1;
   user.resetOtpHash = undefined;
   user.resetOtpExpires = undefined;
+  user.failedLogins = 0;
+  user.lockUntil = null;
   user.refreshTokenHash = undefined;
   user.refreshTokenExpires = undefined;
   await user.save();
@@ -755,6 +760,8 @@ const loginVerifyOtp = asyncHandler(async (req, res) => {
 
   user.loginOtpHash = undefined;
   user.loginOtpExpires = undefined;
+  user.failedLogins = 0;
+  user.lockUntil = null;
   user.lastLogin = new Date();
   await user.save({ validateBeforeSave: false });
 
