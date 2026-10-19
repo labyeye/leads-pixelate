@@ -24,22 +24,33 @@ const MAP_KEYS = [
   'quotationNumber',
   'total',
 ];
-// Used when a template has no "MAP:" hint for a variable (or says "custom", which needs typing).
-const FALLBACK = ['name', 'quotationNumber', 'total', 'requirement', 'company'];
+const RULES: [RegExp, string][] = [
+  [/(quotation|quote|proforma|ref|no\.?|number|#)\W*$/, 'quotationNumber'],
+  [/(total|amount|worth|value|rs\.?|inr|₹)\W*$/, 'total'],
+  [/(project|regarding|requirement|for|about)\W*$/, 'requirement'],
+  [/(company|firm|organi[sz]ation)\W*$/, 'company'],
+  [/(dear|hi|hello|hey|mr\.?|ms\.?|mrs\.?)\W*$/, 'name'],
+];
 
+// Guess each {{n}} from the template's wording, then its MAP hint; the rest stay "custom" and are asked for.
 function mappingFor(t: any) {
+  const body: string = t?.bodyText || '';
   const hint = /MAP:\s*([A-Za-z,\s]+)/
     .exec(t?.notes || '')?.[1]
     .split(',')
     .map(x => x.trim());
-  return Array.from({ length: t?.variableCount || 0 }, (_, i) => ({
-    position: i + 1,
-    fieldKey:
-      hint?.[i] && MAP_KEYS.includes(hint[i])
-        ? hint[i]
-        : FALLBACK[Math.min(i, FALLBACK.length - 1)],
-    customValue: '',
-  }));
+  return Array.from({ length: t?.variableCount || 0 }, (_, i) => {
+    const before = body
+      .slice(0, body.indexOf(`{{${i + 1}}}`))
+      .slice(-30)
+      .toLowerCase();
+    const h = hint?.[i];
+    const fieldKey =
+      (h && MAP_KEYS.includes(h) && h) ||
+      RULES.find(([re]) => re.test(before))?.[1] ||
+      (i === 0 ? 'name' : 'custom');
+    return { position: i + 1, fieldKey, customValue: '' };
+  });
 }
 
 export default function SendQuotationModal({
@@ -55,10 +66,12 @@ export default function SendQuotationModal({
   const [senders, setSenders] = useState<any[]>([]);
   const [templateId, setTemplateId] = useState('');
   const [phone, setPhone] = useState('');
+  const [mapping, setMapping] = useState<any[]>([]);
 
   useEffect(() => {
     if (!quotation) return;
     setTemplateId('');
+    setMapping([]);
     setPhone(quotation.mobile || '');
     setLoading(true);
     Promise.all([whatsappAPI.getTemplates(), whatsappAPI.getStatus()])
@@ -75,7 +88,6 @@ export default function SendQuotationModal({
   }, [quotation?._id]);
 
   const send = async () => {
-    const t = templates.find(x => x._id === templateId);
     setSending(true);
     try {
       await whatsappAPI.sendQuotation({
@@ -83,7 +95,7 @@ export default function SendQuotationModal({
         templateId,
         phone,
         phoneNumberId: senders[0]?.phoneNumberId,
-        variableMapping: JSON.stringify(mappingFor(t)),
+        variableMapping: JSON.stringify(mapping),
       });
       Alert.alert('Sent', 'Quotation PDF sent on WhatsApp.');
       onClose();
@@ -94,7 +106,25 @@ export default function SendQuotationModal({
     }
   };
 
+  const t = templates.find(x => x._id === templateId);
+  const values: Record<string, any> = {
+    name: quotation?.clientName,
+    company: quotation?.companyName,
+    phone: quotation?.mobile,
+    location: quotation?.address,
+    requirement: quotation?.projectTitle,
+    quotationNumber: quotation?.number,
+    total: Math.round(quotation?.total ?? 0),
+  };
+  const valueOf = (m: any) =>
+    String((m.fieldKey === 'custom' ? m.customValue : values[m.fieldKey]) ?? '');
+  const preview = mapping.reduce(
+    (text, m) =>
+      text.replace(`{{${m.position}}}`, `*${valueOf(m) || `{{${m.position}}}`}*`),
+    t?.bodyText || '',
+  );
   const canSend =
+    !mapping.some(m => !valueOf(m).trim()) &&
     !!templateId && phone.replace(/\D/g, '').length >= 10 && !sending;
 
   return (
@@ -139,7 +169,10 @@ export default function SendQuotationModal({
                   <TouchableOpacity
                     key={t._id}
                     style={[s.row, templateId === t._id && s.rowOn]}
-                    onPress={() => setTemplateId(t._id)}
+                    onPress={() => {
+                      setTemplateId(t._id);
+                      setMapping(mappingFor(t));
+                    }}
                   >
                     <Text
                       style={[s.rowText, templateId === t._id && s.rowTextOn]}
@@ -149,6 +182,34 @@ export default function SendQuotationModal({
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+              {!!t && (
+                <View style={s.preview}>
+                  <Text style={s.previewText}>{preview}</Text>
+                  <Text style={s.previewFile}>📎 {quotation?.number}.pdf</Text>
+                </View>
+              )}
+              {mapping
+                .filter(m => m.fieldKey === 'custom')
+                .map(m => (
+                  <View key={m.position}>
+                    <Text style={s.label}>{`Fill {{${m.position}}}`}</Text>
+                    <TextInput
+                      style={s.input}
+                      value={m.customValue}
+                      placeholder="Type value"
+                      placeholderTextColor="#94a3b8"
+                      onChangeText={v =>
+                        setMapping(p =>
+                          p.map(x =>
+                            x.position === m.position
+                              ? { ...x, customValue: v }
+                              : x,
+                          ),
+                        )
+                      }
+                    />
+                  </View>
+                ))}
               <TouchableOpacity
                 style={[s.btn, !canSend && { opacity: 0.4 }]}
                 disabled={!canSend}
@@ -214,6 +275,15 @@ const s = StyleSheet.create({
   rowOn: { backgroundColor: '#024BAB' },
   rowText: { fontSize: 13, fontWeight: '600', color: '#000' },
   rowTextOn: { color: '#fff' },
+  preview: {
+    backgroundColor: '#DCF8C6',
+    borderWidth: 2,
+    borderColor: '#000',
+    padding: 10,
+    marginTop: 10,
+  },
+  previewText: { fontSize: 13, color: '#000' },
+  previewFile: { fontSize: 11, fontWeight: '700', marginTop: 6 },
   btn: {
     marginTop: 14,
     backgroundColor: '#024BAB',

@@ -1457,13 +1457,19 @@ exports.sendQuotation = asyncHandler(async (req, res) => {
     quotationNumber: q.number,
     total: Math.round(q.total),
   };
+  const components = buildTemplateComponents(template, variableMapping, pseudoLead, media);
+  const blank = components.find((c) => c.type === "body")?.parameters.findIndex((p) => !String(p.text).trim());
+  if (blank >= 0) {
+    res.status(400);
+    throw new Error(`Template variable {{${blank + 1}}} is empty`);
+  }
   const result = await sendWaMessage(
     resolvedPhoneNumberId,
     wa.accessToken,
     phone,
     template.metaTemplateName || template.name,
     template.language,
-    buildTemplateComponents(template, variableMapping, pseudoLead, media),
+    components,
   );
   if (q.status === "Draft")
     await Quotation.updateOne({ _id: q._id }, { $set: { status: "Sent" } });

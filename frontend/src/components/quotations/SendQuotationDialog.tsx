@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { whatsappAPI } from "@/services/api";
-import { mappingFromNotes } from "@/config/whatsappTemplateLibrary";
 import { quotationPdfBlob } from "@/lib/quotationPdf";
 
 type Mapping = { position: number; fieldKey: string; customValue: string };
@@ -34,6 +33,33 @@ const FIELDS = [
   { key: "total", label: "Total (incl. tax)" },
   { key: "custom", label: "Custom Value" },
 ];
+
+const RULES: [RegExp, string][] = [
+  [/(quotation|quote|proforma|ref|no\.?|number|#)\W*$/, "quotationNumber"],
+  [/(total|amount|worth|value|rs\.?|inr|₹)\W*$/, "total"],
+  [/(project|regarding|requirement|for|about)\W*$/, "requirement"],
+  [/(company|firm|organi[sz]ation)\W*$/, "company"],
+  [/(dear|hi|hello|hey|mr\.?|ms\.?|mrs\.?)\W*$/, "name"],
+];
+
+// Guess each {{n}} from the template's own wording ("Quotation {{3}}", "total {{4}}"), then its MAP hint.
+// Anything we can't place stays "custom" and is asked for.
+function autoMapping(t: any): Mapping[] {
+  const body: string = t?.bodyText || "";
+  const hint = /MAP:\s*([A-Za-z,\s]+)/
+    .exec(t?.notes || "")?.[1]
+    .split(",")
+    .map((x) => x.trim());
+  return Array.from({ length: t?.variableCount || 0 }, (_, i) => {
+    const before = body.slice(0, body.indexOf(`{{${i + 1}}}`)).slice(-30).toLowerCase();
+    const h = hint?.[i];
+    const fieldKey =
+      (h && h !== "custom" && FIELDS.some((f) => f.key === h) && h) ||
+      RULES.find(([re]) => re.test(before))?.[1] ||
+      (i === 0 ? "name" : "custom");
+    return { position: i + 1, fieldKey, customValue: "" };
+  });
+}
 
 /**
  * Quotation → WhatsApp: pick a template, the quotation PDF goes in as its Document header.
@@ -91,7 +117,7 @@ export function SendQuotationDialog({
   const pickTemplate = (id: string) => {
     setTemplateId(id);
     const t = templates.find((x) => x._id === id);
-    setMapping(mappingFromNotes(t?.notes, t?.variableCount || 0));
+    setMapping(autoMapping(t));
   };
 
   const send = async () => {
@@ -120,6 +146,24 @@ export function SendQuotationDialog({
     }
   };
 
+  const template = templates.find((x) => x._id === templateId);
+  const values: Record<string, string> = {
+    name: quotation?.clientName,
+    company: quotation?.companyName,
+    phone: quotation?.mobile,
+    location: quotation?.address,
+    requirement: quotation?.projectTitle,
+    quotationNumber: quotation?.number,
+    total: String(Math.round(quotation?.total ?? 0)),
+  };
+  const valueOf = (m: Mapping) =>
+    (m.fieldKey === "custom" ? m.customValue : values[m.fieldKey]) || "";
+  const preview = mapping.reduce(
+    (text, m) =>
+      text.replace(`{{${m.position}}}`, `*${valueOf(m) || `{{${m.position}}}`}*`),
+    template?.bodyText || "",
+  );
+  const missing = mapping.some((m) => !valueOf(m).trim());
   const validPhone = phone.replace(/\D/g, "").length >= 10;
 
   return (
@@ -208,59 +252,44 @@ export function SendQuotationDialog({
               </div>
             )}
 
-            {mapping.length > 0 && (
+            {template && (
+              <div className="p-3 bg-[#DCF8C6] border-2 border-black text-sm whitespace-pre-wrap">
+                {preview}
+                <p className="mt-2 text-xs font-bold">📎 {quotation?.number}.pdf</p>
+              </div>
+            )}
+
+            {mapping.some((m) => m.fieldKey === "custom") && (
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider">
-                  Fill template variables
+                  Fill the rest
                 </label>
-                {mapping.map((m, i) => (
-                  <div key={m.position} className="flex items-center gap-2">
-                    <span className="text-xs font-bold w-10">{`{{${m.position}}}`}</span>
-                    <Select
-                      value={m.fieldKey}
-                      onValueChange={(v) =>
-                        setMapping((p) =>
-                          p.map((x, j) =>
-                            j === i ? { ...x, fieldKey: v } : x,
-                          ),
-                        )
-                      }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FIELDS.map((f) => (
-                          <SelectItem key={f.key} value={f.key}>
-                            {f.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {m.fieldKey === "custom" && (
+                {mapping
+                  .filter((m) => m.fieldKey === "custom")
+                  .map((m) => (
+                    <div key={m.position} className="flex items-center gap-2">
+                      <span className="text-xs font-bold w-10">{`{{${m.position}}}`}</span>
                       <Input
-                        className="flex-1"
                         placeholder="Type value"
                         value={m.customValue}
                         onChange={(e) =>
                           setMapping((p) =>
-                            p.map((x, j) =>
-                              j === i
+                            p.map((x) =>
+                              x.position === m.position
                                 ? { ...x, customValue: e.target.value }
                                 : x,
                             ),
                           )
                         }
                       />
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
               </div>
             )}
 
             <Button
               onClick={send}
-              disabled={!templateId || !validPhone || !senderId || sending}
+              disabled={!templateId || !validPhone || !senderId || missing || sending}
               className="w-full"
             >
               {sending ? (
