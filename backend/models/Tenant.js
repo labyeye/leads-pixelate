@@ -317,6 +317,9 @@ const tenantSchema = new mongoose.Schema(
         assignBatchSize: { type: Number, default: 1 },
       },
     ],
+    // Set from the CRM dashboard for custom deals; shown on the customer's billing page instead of the defaults.
+    customPlanName: { type: String, trim: true },
+    customFeatures: { type: [String], default: undefined },
   },
   { timestamps: true },
 );
