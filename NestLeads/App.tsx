@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { setUsageIdentity } from './src/utils/usageTracker';
 import {
   View,
   StyleSheet,
@@ -27,6 +28,7 @@ const LogoWithName = require('./src/assets/images/NestLeads_Logo_Name.png');
 
 function NotificationInit() {
   const { user } = useAuth();
+  setUsageIdentity(user);
 
   useEffect(() => {
     (async () => {

@@ -1,4 +1,6 @@
 import React from 'react';
+import { API_BASE as TRACK_BASE } from '../services/api';
+import { initUsageTracker, setUsageIdentity, trackNavState } from '../utils/usageTracker';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
@@ -51,6 +53,8 @@ import CampaignReportsScreen from '../screens/CampaignReportsScreen';
 import ActivityLogScreen from '../screens/ActivityLogScreen';
 import TrashScreen from '../screens/TrashScreen';
 import AccountSecurityScreen from '../screens/AccountSecurityScreen';
+
+initUsageTracker(TRACK_BASE);
 
 export type LeadsStackParamList = {
   LeadsList: undefined;
@@ -242,7 +246,7 @@ function MoreNavigator() {
 export default function AppNavigator() {
   const insets = useSafeAreaInsets();
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} onStateChange={trackNavState}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
