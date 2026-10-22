@@ -1,7 +1,13 @@
 import React from 'react';
 import { API_BASE as TRACK_BASE } from '../services/api';
 import { initUsageTracker, setUsageIdentity, trackNavState } from '../utils/usageTracker';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  createBottomTabNavigator,
+  BottomTabBarProps,
+} from '@react-navigation/bottom-tabs';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { TabBounce } from '../components/motion';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { navigationRef } from './navigationRef';
@@ -243,57 +249,161 @@ function MoreNavigator() {
   );
 }
 
-export default function AppNavigator() {
+const BAR_ROW = 60;
+const FAB = 64;
+const NOTCH_W = 60;
+const NOTCH_DEPTH = 40;
+const PRIMARY = '#024BAB';
+
+const TAB_ICONS: Record<string, [string, string]> = {
+  Dashboard: ['home', 'home'],
+  Schedule: ['calendar-outline', 'calendar'],
+  LeadsStack: ['people-outline', 'people'],
+  SocialStack: ['megaphone-outline', 'megaphone'],
+  More: ['grid-outline', 'grid'],
+};
+
+// Same curved-notch bar as NestHR; Leads sits raised in the centre.
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const [width, setWidth] = React.useState(0);
+  const height = BAR_ROW + insets.bottom;
+  const cx = width / 2;
+  const path = `M-2,0 L${cx - NOTCH_W},0 C${cx - NOTCH_W + 22},0 ${
+    cx - 36
+  },${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH} C${cx + 36},${NOTCH_DEPTH} ${
+    cx + NOTCH_W - 22
+  },0 ${cx + NOTCH_W},0 L${width + 2},0 L${width + 2},${height + 2} L-2,${
+    height + 2
+  } Z`;
+
+  return (
+    <View
+      style={[tb.barWrap, { height }]}
+      onLayout={e => setWidth(Math.floor(e.nativeEvent.layout.width))}
+    >
+      {width > 0 && (
+        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+          <Path
+            d={path}
+            fill="#fff"
+            stroke="#000"
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+        </Svg>
+      )}
+      <View style={[tb.barRow, { paddingBottom: insets.bottom }]}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const focused = state.index === index;
+          const raised = route.name === 'LeadsStack';
+          const color = focused ? PRIMARY : '#9CA3AF';
+          const [off, on] = TAB_ICONS[route.name] || ['ellipse-outline', 'ellipse-outline'];
+          const label =
+            typeof options.tabBarLabel === 'string'
+              ? options.tabBarLabel
+              : route.name;
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name as never);
+            }
+          };
+          return (
+            <TouchableOpacity
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={focused ? { selected: true } : {}}
+              onPress={onPress}
+              activeOpacity={0.8}
+              style={tb.tabItem}
+            >
+              {raised ? (
+                <>
+                  <View style={tb.fab}>
+                    <Icon name={on} size={28} color="#fff" />
+                  </View>
+                  <View style={tb.iconWrap} />
+                </>
+              ) : (
+                <TabBounce focused={focused}>
+                  <View style={tb.iconWrap}>
+                    <Icon name={focused ? on : off} size={20} color={color} />
+                  </View>
+                </TabBounce>
+              )}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={[tb.tabLabel, raised && { marginTop: 5 }, { color }]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const tb = StyleSheet.create({
+  barWrap: { backgroundColor: 'transparent' },
+  barRow: { flexDirection: 'row', flex: 1, paddingTop: 4 },
+  tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  fab: {
+    position: 'absolute',
+    top: -(FAB / 2) - 2,
+    width: FAB,
+    height: FAB,
+    borderRadius: FAB / 2,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: PRIMARY,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    maxWidth: '100%',
+  },
+  iconWrap: {
+    width: 32,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+export default function AppNavigator() {
   return (
     <NavigationContainer ref={navigationRef} onStateChange={trackNavState}>
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarStyle: {
-            height: 60 + insets.bottom,
-            borderTopWidth: 2,
-            borderTopColor: '#000',
-            backgroundColor: '#fff',
-            paddingBottom: 6 + insets.bottom,
-            paddingTop: 6,
-          },
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '700',
-            textTransform: 'uppercase',
-            letterSpacing: 0.3,
-          },
-          tabBarActiveTintColor: '#024BAB',
-          tabBarInactiveTintColor: '#94a3b8',
-          tabBarIcon: ({ color, size, focused }) => {
-            const icons: Record<string, string> = {
-              Dashboard: focused ? 'grid' : 'grid-outline',
-              LeadsStack: focused ? 'people' : 'people-outline',
-              Schedule: focused ? 'calendar' : 'calendar-outline',
-              SocialStack: focused ? 'megaphone' : 'megaphone-outline',
-              More: focused ? 'apps' : 'apps-outline',
-            };
-            return (
-              <Icon
-                name={icons[route.name] || 'ellipse-outline'}
-                size={size}
-                color={color}
-              />
-            );
-          },
-        })}
+        tabBar={props => <CustomTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
       >
-        <Tab.Screen name="Dashboard" component={DashboardScreen} />
         <Tab.Screen
-          name="LeadsStack"
-          component={LeadsNavigator}
-          options={{ tabBarLabel: 'Leads' }}
+          name="Dashboard"
+          component={DashboardScreen}
+          options={{ tabBarLabel: 'Home' }}
         />
         <Tab.Screen
           name="Schedule"
           component={ScheduleScreen}
           options={{ tabBarLabel: 'Schedule' }}
+        />
+        <Tab.Screen
+          name="LeadsStack"
+          component={LeadsNavigator}
+          options={{ tabBarLabel: 'Leads' }}
         />
         <Tab.Screen
           name="SocialStack"

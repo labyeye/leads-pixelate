@@ -82,3 +82,42 @@ const styles = StyleSheet.create({
   textSm: { fontSize: 8 },
   textMd: { fontSize: 9 },
 });
+
+/** Round source logo (or icon) for charts/legends. */
+export function SourceLogo({
+  source,
+  size = 22,
+}: {
+  source?: string;
+  size?: number;
+}) {
+  const cfg = SOURCE_CONFIG[source || ''] || FALLBACK;
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: 1.5,
+        borderColor: '#000',
+        backgroundColor: cfg.bg,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {cfg.logo ? (
+        <Image
+          source={cfg.logo}
+          style={{ width: size * 0.6, height: size * 0.6 }}
+          resizeMode="contain"
+        />
+      ) : (
+        <Icon
+          name={cfg.iconName || 'person-outline'}
+          size={size * 0.55}
+          color="#fff"
+        />
+      )}
+    </View>
+  );
+}

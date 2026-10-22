@@ -16,7 +16,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
-import SourceBadge from '../components/SourceBadge';
+import SourceBadge, { SourceLogo } from '../components/SourceBadge';
+import AppHeader from '../components/AppHeader';
+import LeadsLineChart from '../components/LeadsLineChart';
+import { SlideIn, CountUp } from '../components/motion';
 import UserAvatar from '../components/UserAvatar';
 import { PieChart } from 'react-native-gifted-charts';
 
@@ -61,17 +64,15 @@ const NB_SHADOW = {
   elevation: 4,
 };
 
-type Period = 'all' | 'today' | 'week' | 'month';
-
 export default function DashboardScreen({ navigation }: any) {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [period, setPeriod] = useState<Period>('all');
   const [notifOpen, setNotifOpen] = useState(false);
   const [recentLeads, setRecentLeads] = useState<any[]>([]);
+  const [allLeads, setAllLeads] = useState<any[]>([]);
   const [sourceFocusedIdx, setSourceFocusedIdx] = useState(0);
   const [activities, setActivities] = useState<
     { type: string; label: string; time: Date }[]
@@ -93,6 +94,7 @@ export default function DashboardScreen({ navigation }: any) {
             new Date(a.createdAt || 0).getTime(),
         );
         setRecentLeads(sorted.slice(0, 10));
+        setAllLeads(all);
       } catch {
         /* ignore */
       }
@@ -115,58 +117,37 @@ export default function DashboardScreen({ navigation }: any) {
     ]);
   }, []);
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? 'Good Morning,'
-      : hour < 17
-        ? 'Good Afternoon,'
-        : 'Good Evening,';
-
-  const newLeadsValue = data?.stats
-    ? period === 'today'
-      ? data.stats.newLeadsToday
-      : period === 'week'
-        ? data.stats.newLeadsThisWeek
-        : period === 'month'
-          ? data.stats.leadsThisMonth
-          : (data.stats.totalLeads ?? 0)
-    : 0;
+  // Leads created per day, last 7 days
+  const dailyLeads = Array.from({ length: 7 }, (_, k) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - k));
+    const next = d.getTime() + 86400000;
+    return {
+      label: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+      value: allLeads.filter((l: any) => {
+        const t = new Date(l.createdAt || 0).getTime();
+        return t >= d.getTime() && t < next;
+      }).length,
+    };
+  });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Header — NestHR structure, neubrutalism style */}
-      <View style={styles.header}>
-        <UserAvatar
-          name={user?.name}
-          avatar={user?.avatar}
-          size={50}
-          index={0}
-        />
-        <View style={styles.headerInfo}>
-          <Text style={styles.headerGreeting}>{greeting}</Text>
-          <Text style={styles.headerName}>
-            {(user?.name || 'User').toUpperCase()}
-          </Text>
-          <Text style={styles.headerCompany}>NestLeads CRM</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.bellBtn}
-          onPress={() => setNotifOpen(true)}
-        >
-          <Icon name="notifications" size={28} color="#000" />
-          {recentLeads.length > 0 && (
-            <View style={styles.bellBadge}>
-              <Text style={styles.bellBadgeText}>
-                {recentLeads.length > 9 ? '9+' : recentLeads.length}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-      <View style={styles.divider} />
+      <AppHeader
+        name={user?.name}
+        avatar={user?.avatar}
+        title="Dashboard"
+        badge={recentLeads.length > 0}
+        onMenu={() => navigation?.navigate('More')}
+        onSearch={() =>
+          navigation?.navigate('LeadsStack', { screen: 'LeadsList' })
+        }
+        onBell={() => setNotifOpen(true)}
+        onAvatar={() => navigation?.navigate('More')}
+      />
 
       {loading ? (
         <View style={styles.centerBox}>
@@ -186,239 +167,94 @@ export default function DashboardScreen({ navigation }: any) {
             />
           }
         >
-          {/* Period selector */}
-          <View style={styles.periodWrap}>
-            <View style={styles.periodRow}>
-              {(['all', 'today', 'week', 'month'] as Period[]).map((p, i) => (
-                <TouchableOpacity
-                  key={p}
-                  style={[
-                    styles.periodBtn,
-                    i === 3 && styles.periodBtnLast,
-                    period === p && styles.periodBtnActive,
-                  ]}
-                  onPress={() => setPeriod(p)}
-                >
-                  <Text
-                    style={[
-                      styles.periodBtnText,
-                      period === p && styles.periodBtnTextActive,
-                    ]}
-                  >
-                    {p === 'all'
-                      ? 'All'
-                      : p === 'today'
-                        ? 'Today'
-                        : p === 'week'
-                          ? 'Week'
-                          : 'Month'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Alert strip */}
-          {data?.stats &&
-            (data.stats.overdueFollowUps > 0 || data.stats.hotLeads > 0) && (
-              <View style={styles.alertStrip}>
-                <Icon name="warning-outline" size={14} color={SECONDARY} />
-                <Text style={styles.alertText}>Action needed: </Text>
-                {data.stats.hotLeads > 0 && (
-                  <View style={styles.alertPill}>
-                    <Icon name="flame" size={11} color="#fff" />
-                    <Text style={styles.alertPillText}>
-                      {data.stats.hotLeads} hot
-                    </Text>
-                  </View>
-                )}
-                {data.stats.overdueFollowUps > 0 && (
-                  <View style={[styles.alertPill, { backgroundColor: '#000' }]}>
-                    <Icon name="time-outline" size={11} color="#fff" />
-                    <Text style={styles.alertPillText}>
-                      {data.stats.overdueFollowUps} overdue
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-          {/* OVERVIEW — 2×3 stat cards */}
-          <Text style={styles.sectionLabel}>OVERVIEW</Text>
           <View style={styles.kpiRow}>
-            <KpiCard
-              title="NEW LEADS"
-              value={newLeadsValue}
-              icon="flash-outline"
-              iconBg={PRIMARY}
-              iconColor="#fff"
-            />
-            <KpiCard
-              title="FOLLOW-UPS"
-              value={data?.todayFollowUps?.length ?? 0}
-              icon="calendar-outline"
-              iconBg="#10b981"
-              iconColor="#fff"
-            />
-          </View>
-          <View style={[styles.kpiRow, { marginTop: 10 }]}>
-            <KpiCard
-              title="HOT LEADS"
-              value={data?.stats?.hotLeads ?? 0}
-              icon="flame-outline"
-              iconBg={SECONDARY}
-              iconColor="#fff"
-              urgent
-            />
-            <KpiCard
-              title="OVERDUE"
-              value={data?.stats?.overdueFollowUps ?? 0}
-              icon="time-outline"
-              iconBg="#ef4444"
-              iconColor="#fff"
-            />
-          </View>
-          <View style={[styles.kpiRow, { marginTop: 10 }]}>
-            <KpiCard
-              title="CONVERTED"
-              value={data?.stats?.convertedClients ?? 0}
-              icon="checkmark-circle-outline"
-              iconBg="#10b981"
-              iconColor="#fff"
-            />
             <KpiCard
               title="TOTAL LEADS"
               value={data?.stats?.totalLeads ?? 0}
               icon="people-outline"
               iconBg={PRIMARY}
-              iconColor="#fff"
+              delay={0}
             />
-          </View>
-
-          {/* THIS MONTH / PERIOD list */}
-          <Text style={[styles.sectionLabel, { marginTop: 16 }]}>
-            {period === 'all' ? 'OVERALL' : `THIS ${period.toUpperCase()}`}
-          </Text>
-          <View style={[styles.section, { padding: 0 }]}>
-            <MonthRow
+            <KpiCard
+              title="NEW TODAY"
+              value={data?.stats?.newLeadsToday ?? 0}
               icon="flash-outline"
-              iconBg={PRIMARY}
-              label="New Leads"
-              value={newLeadsValue}
+              iconBg="#044bab"
+              delay={80}
             />
-            <View style={styles.rowDivider} />
-            <MonthRow
-              icon="calendar-outline"
-              iconBg="#10b981"
-              label="Follow-ups"
-              value={data?.todayFollowUps?.length ?? 0}
-            />
-            <View style={styles.rowDivider} />
-            <MonthRow
+            <KpiCard
+              title="HOT LEADS"
+              value={data?.stats?.hotLeads ?? 0}
               icon="flame-outline"
               iconBg={SECONDARY}
-              label="Hot Leads"
-              value={data?.stats?.hotLeads ?? 0}
+              urgent
+              delay={160}
             />
-            <View style={styles.rowDivider} />
-            <MonthRow
+            <KpiCard
+              title="CONVERTED"
+              value={data?.stats?.convertedClients ?? 0}
               icon="checkmark-circle-outline"
               iconBg="#10b981"
-              label="Clients Won"
-              value={data?.stats?.convertedClients ?? 0}
+              delay={240}
             />
           </View>
 
-          {/* Sales Funnel */}
-          {data?.funnelStages?.length > 0 && (
-            <View style={[styles.section, { marginTop: 12 }]}>
-              <Text style={styles.sectionLabel}>SALES FUNNEL</Text>
-              {data.funnelStages.map((stage: any, idx: number) => {
-                const max = Math.max(
-                  ...data.funnelStages.map((s: any) => s.count),
-                  1,
-                );
-                const pct = Math.max((stage.count / max) * 100, 4);
-                const fillColor = idx % 2 === 0 ? PRIMARY : SECONDARY;
-                return (
-                  <View key={stage.label} style={styles.funnelRow}>
-                    <View
-                      style={[
-                        styles.funnelIconBox,
-                        { backgroundColor: fillColor },
-                      ]}
-                    >
-                      <Icon
-                        name={getFunnelIcon(stage.label)}
-                        size={11}
-                        color="#fff"
-                      />
-                    </View>
-                    <Text style={styles.funnelLabel} numberOfLines={1}>
-                      {stage.label}
-                    </Text>
-                    <View style={styles.funnelBar}>
-                      <View
-                        style={[
-                          styles.funnelFill,
-                          {
-                            width: `${pct}%` as any,
-                            backgroundColor: fillColor + '44',
-                          },
-                        ]}
-                      />
-                      <Text style={styles.funnelCount}>{stage.count}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
+          {/* Leads per day */}
+          <SlideIn delay={300} style={[styles.section, { marginTop: 12 }]}>
+            <Text style={styles.sectionLabel}>LEADS COMING IN · LAST 7 DAYS</Text>
+            <LeadsLineChart data={dailyLeads} width={SCREEN_WIDTH - 62} />
+          </SlideIn>
 
-          {/* Today's Follow-ups */}
-          <View style={[styles.section, { marginTop: 12 }]}>
-            <Text style={styles.sectionLabel}>TODAY'S FOLLOW-UPS</Text>
-            {data?.todayFollowUps?.length > 0 ? (
-              data.todayFollowUps.slice(0, 6).map((lead: any, idx: number) => (
+          {/* Recent leads table */}
+          <SlideIn delay={380} style={[styles.section, { marginTop: 12 }]}>
+            <Text style={styles.sectionLabel}>RECENT LEADS ADDED</Text>
+            <View style={styles.tHead}>
+              <Text style={[styles.tHeadText, { flex: 2 }]}>NAME</Text>
+              <Text style={[styles.tHeadText, { flex: 1.3 }]}>SOURCE</Text>
+              <Text style={[styles.tHeadText, { flex: 1.2 }]}>STATUS</Text>
+              <Text style={[styles.tHeadText, { flex: 0.9, textAlign: 'right' }]}>
+                ADDED
+              </Text>
+            </View>
+            {recentLeads.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptySub}>No leads yet</Text>
+              </View>
+            ) : (
+              recentLeads.slice(0, 6).map((l: any) => (
                 <TouchableOpacity
-                  key={lead._id}
-                  style={styles.leadItem}
+                  key={l._id}
+                  style={styles.tRow}
                   onPress={() =>
                     navigation?.navigate('LeadsStack', {
                       screen: 'LeadDetail',
-                      params: { leadId: lead._id },
+                      params: { leadId: l._id },
                     })
                   }
                 >
-                  <UserAvatar
-                    name={lead.assignedTo?.name || lead.name}
-                    avatar={lead.assignedTo?.avatar}
-                    size={34}
-                    index={idx}
-                  />
-                  <View style={styles.leadInfo}>
-                    <Text style={styles.leadName} numberOfLines={1}>
-                      {lead.name}
-                    </Text>
-                    <Text style={styles.leadSub} numberOfLines={1}>
-                      {lead.company || lead.phone}
-                    </Text>
+                  <Text style={[styles.tName, { flex: 2 }]} numberOfLines={1}>
+                    {l.name || '—'}
+                  </Text>
+                  <View style={{ flex: 1.3, alignItems: 'flex-start' }}>
+                    <SourceLogo source={l.source} size={22} />
                   </View>
-                  <Icon name="chevron-forward" size={16} color="#94a3b8" />
+                  <Text style={[styles.tCell, { flex: 1.2 }]} numberOfLines={1}>
+                    {l.status || 'NEW'}
+                  </Text>
+                  <Text
+                    style={[styles.tCell, { flex: 0.9, textAlign: 'right' }]}
+                  >
+                    {l.createdAt
+                      ? new Date(l.createdAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                        })
+                      : ''}
+                  </Text>
                 </TouchableOpacity>
               ))
-            ) : (
-              <View style={styles.emptyBox}>
-                <Icon
-                  name="checkmark-circle-outline"
-                  size={32}
-                  color="#22c55e"
-                />
-                <Text style={styles.emptyTitle}>All clear for today!</Text>
-                <Text style={styles.emptySub}>No follow-ups scheduled</Text>
-              </View>
             )}
-          </View>
+          </SlideIn>
 
           {/* Source Breakdown — Pie Chart */}
           {data?.sourceData?.length > 0 &&
@@ -437,7 +273,7 @@ export default function DashboardScreen({ navigation }: any) {
               const focused = pieData[safeIdx];
               const focusedPct = Math.round((focused.value / total) * 100);
               return (
-                <View style={[styles.section, { marginTop: 12 }]}>
+                <SlideIn delay={460} style={[styles.section, { marginTop: 12 }]}>
                   <Text style={styles.sectionLabel}>LEADS BY SOURCE</Text>
                   <View style={styles.pieWrapper}>
                     <View style={styles.pieChartBox}>
@@ -457,6 +293,7 @@ export default function DashboardScreen({ navigation }: any) {
                         }
                         centerLabelComponent={() => (
                           <View style={styles.pieCenterLabel}>
+                            <SourceLogo source={focused.label} size={22} />
                             <Text
                               style={[
                                 styles.pieCenterValue,
@@ -493,12 +330,7 @@ export default function DashboardScreen({ navigation }: any) {
                             onPress={() => setSourceFocusedIdx(idx)}
                             activeOpacity={0.7}
                           >
-                            <View
-                              style={[
-                                styles.pieLegendDot,
-                                { backgroundColor: item.color },
-                              ]}
-                            />
+                            <SourceLogo source={item.label} size={20} />
                             <Text
                               style={styles.pieLegendLabel}
                               numberOfLines={1}
@@ -519,13 +351,13 @@ export default function DashboardScreen({ navigation }: any) {
                       })}
                     </View>
                   </View>
-                </View>
+                </SlideIn>
               );
             })()}
 
           {/* Leaderboard */}
           {data?.userPerformance?.length > 0 && (
-            <View style={[styles.section, { marginTop: 12 }]}>
+            <SlideIn delay={540} style={[styles.section, { marginTop: 12 }]}>
               <Text style={styles.sectionLabel}>TEAM LEADERBOARD</Text>
               {data.userPerformance.map((p: any, i: number) => {
                 const rate =
@@ -562,7 +394,7 @@ export default function DashboardScreen({ navigation }: any) {
                   </View>
                 );
               })}
-            </View>
+            </SlideIn>
           )}
         </ScrollView>
       )}
@@ -720,26 +552,26 @@ export default function DashboardScreen({ navigation }: any) {
   );
 }
 
-function KpiCard({ title, value, icon, iconBg, iconColor, urgent }: any) {
+function KpiCard({ title, value, icon, iconBg, urgent, delay = 0 }: any) {
   return (
-    <View style={[styles.kpiCard, urgent && styles.kpiCardUrgent]}>
-      <View
-        style={[
-          styles.kpiIcon,
-          { backgroundColor: iconBg + '1A', borderColor: iconBg },
-        ]}
-      >
-        <Icon name={icon} size={22} color={iconBg} />
+    <SlideIn delay={delay} style={{ flex: 1 }}>
+      <View style={[styles.kpiCard, urgent && styles.kpiCardUrgent]}>
+        <View
+          style={[
+            styles.kpiIcon,
+            { backgroundColor: iconBg + '1A', borderColor: iconBg },
+          ]}
+        >
+          <Icon name={icon} size={18} color={iconBg} />
+        </View>
+        <View style={styles.kpiBody}>
+          <Text style={styles.kpiTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          <CountUp value={value} delay={delay} style={styles.kpiValue} />
+        </View>
       </View>
-      <View style={styles.kpiBody}>
-        <Text style={styles.kpiTitle} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.kpiValue} numberOfLines={1}>
-          {value}
-        </Text>
-      </View>
-    </View>
+    </SlideIn>
   );
 }
 
@@ -1064,27 +896,29 @@ const styles = StyleSheet.create({
     borderBottomColor: '#0A0A0A',
     borderColor: '#000',
     padding: 12,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
+    textAlign:'center',
     gap: 10,
   },
   kpiCardUrgent: { backgroundColor: '#fff7ed' },
-  kpiBody: { flex: 1, minWidth: 0 },
+  kpiBody: { flex: 1, minWidth: 0 ,alignItems:'center'},
   kpiIcon: {
-    width: 42,
-    height: 42,
+    width: 28,
+    height: 28,
     borderWidth: 2,
-    borderRadius: 8,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  kpiValue: { fontSize: 24, fontWeight: '700', color: '#000' },
+  kpiValue: { fontSize: 19, fontWeight: '700', color: '#000' },
   kpiTitle: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '700',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+    textAlign:'center'
   },
 
   // Section box
@@ -1308,6 +1142,24 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sourceBarFill: { height: '100%' },
+
+  // Recent leads table
+  tHead: {
+    flexDirection: 'row',
+    paddingBottom: 6,
+    borderBottomWidth: 2,
+    borderBottomColor: '#000',
+  },
+  tHeadText: { fontSize: 9, fontWeight: '700', color: '#64748b', letterSpacing: 0.6 },
+  tRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  tName: { fontSize: 12, fontWeight: '700', color: '#000', paddingRight: 6 },
+  tCell: { fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase' },
 
   // Leaderboard
   lbRow: {
