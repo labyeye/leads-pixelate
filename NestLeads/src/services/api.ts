@@ -4,7 +4,7 @@ import storage from '../utils/storage';
 // Android emulator: 10.0.2.2 → Mac's localhost
 // iOS (simulator + real iPhone): Mac's LAN IP — real device can't reach localhost
 const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : '192.168.1.128';
-export const API_BASE = `http://${DEV_HOST}:4100/api`;
+export const API_BASE = `https://leads-backend.pixelatenest.com/api`;
 
 class ApiError extends Error {
   status: number;

@@ -3,8 +3,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import IntroOnboardingScreen from '../screens/IntroOnboardingScreen';
 
 export type AuthStackParamList = {
+  IntroOnboarding: undefined;
   Login: undefined;
   ForgotPassword: undefined;
 };
@@ -17,6 +19,7 @@ export default function AuthNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="IntroOnboarding" component={IntroOnboardingScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       </Stack.Navigator>
