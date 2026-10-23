@@ -501,6 +501,11 @@ export const leadsAPI = {
       method: "POST",
       body: JSON.stringify({ leadIds, status, remarks }),
     }),
+  bulkDelete: (leadIds: string[]) =>
+    request<{ success: boolean; deletedCount: number; message: string }>(
+      "/leads/bulk-delete",
+      { method: "POST", body: JSON.stringify({ leadIds }) },
+    ),
   bulkEmail: (leadIds: string[], subject: string, message: string) =>
     request<{
       success: boolean;

@@ -600,6 +600,37 @@ const deleteLead = asyncHandler(async (req, res) => {
   });
 });
 
+const bulkDeleteLeads = asyncHandler(async (req, res) => {
+  const { leadIds } = req.body;
+  if (!Array.isArray(leadIds) || leadIds.length === 0) {
+    res.status(400);
+    throw new Error("leadIds must be a non-empty array");
+  }
+
+  const filter = {
+    _id: { $in: leadIds },
+    deletedAt: null,
+    ...tenantScope(req),
+  };
+  const result = await Lead.updateMany(filter, {
+    $set: { deletedAt: new Date(), deletedBy: req.user._id },
+  });
+
+  logActivity({
+    user: req.user,
+    action: "DELETE",
+    module: "Lead",
+    description: `Moved ${result.modifiedCount} lead(s) to trash (bulk)`,
+    ip: req.ip,
+  });
+
+  res.json({
+    success: true,
+    deletedCount: result.modifiedCount,
+    message: `${result.modifiedCount} lead(s) moved to trash`,
+  });
+});
+
 const addNote = asyncHandler(async (req, res) => {
   const lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) });
 
@@ -1517,6 +1548,7 @@ const deleteSavedView = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  bulkDeleteLeads,
   getLeads,
   getLead,
   createLead,

@@ -1,5 +1,15 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -277,6 +287,8 @@ export default function LeadsPage() {
   const [bulkStatusModalOpen, setBulkStatusModalOpen] = useState(false);
   const [bulkStatusSaving, setBulkStatusSaving] = useState(false);
   const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkEmailSubject, setBulkEmailSubject] = useState("");
   const [bulkEmailMessage, setBulkEmailMessage] = useState("");
   const [bulkEmailSending, setBulkEmailSending] = useState(false);
@@ -861,6 +873,23 @@ export default function LeadsPage() {
       notify.error("Bulk Status Update Failed", error.message);
     } finally {
       setBulkStatusSaving(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedLeadIds.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const res = await leadsAPI.bulkDelete(selectedLeadIds);
+      const gone = new Set(selectedLeadIds);
+      setLeads((prev) => prev.filter((l) => !gone.has(l._id || l.id)));
+      notify.success("Moved to Trash", res.message);
+      setSelectedLeadIds([]);
+      setBulkDeleteOpen(false);
+    } catch (error: any) {
+      notify.error("Bulk Delete Failed", error.message);
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -1670,6 +1699,17 @@ export default function LeadsPage() {
                 : filtered.length}
               )
             </button>
+
+            {selectedLeadIds.length > 0 && (
+              <button
+                onClick={() => setBulkDeleteOpen(true)}
+                title="Move the selected leads to Trash"
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete ({selectedLeadIds.length})
+              </button>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -3103,6 +3143,32 @@ export default function LeadsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent className="border-2 border-black">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedLeadIds.length} lead(s)?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be moved to Trash and can be restored from there.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleting}
+              className="bg-red-600 hover:bg-red-700"
+              onClick={(e) => {
+                e.preventDefault();
+                handleBulkDelete();
+              }}
+            >
+              {bulkDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {}
       <SendWhatsAppDialog

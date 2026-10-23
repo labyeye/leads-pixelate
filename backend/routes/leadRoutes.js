@@ -7,6 +7,7 @@ const {
   importLeads,
   updateLead,
   deleteLead,
+  bulkDeleteLeads,
   bulkAssignLeads,
   bulkUpdateStatus,
   bulkEmailLeads,
@@ -136,6 +137,11 @@ router.post(
   "/bulk-status",
   checkPermission("Leads", "update"),
   bulkUpdateStatus,
+);
+router.post(
+  "/bulk-delete",
+  checkPermission("Leads", "delete"),
+  bulkDeleteLeads,
 );
 router.post("/bulk-email", checkPermission("Leads", "update"), bulkEmailLeads);
 router.route("/").get(getLeads).post(createLead);
