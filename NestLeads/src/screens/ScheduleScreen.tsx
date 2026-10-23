@@ -19,6 +19,12 @@ import UserAvatar from '../components/UserAvatar';
 
 const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
+const toLocalKey = (v: any): string | undefined => {
+  if (!v) return undefined;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return String(v).slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
   'January',
@@ -93,6 +99,8 @@ export default function ScheduleScreen({ navigation }: any) {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
   while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
   const dateKey = (d: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -100,7 +108,7 @@ export default function ScheduleScreen({ navigation }: any) {
   const dayMap = useMemo(() => {
     const map: Record<string, any[]> = {};
     leads.forEach(l => {
-      const d = l[field]?.slice(0, 10);
+      const d = toLocalKey(l[field]);
       if (d) {
         if (!map[d]) map[d] = [];
         map[d].push(l);
@@ -109,7 +117,7 @@ export default function ScheduleScreen({ navigation }: any) {
     return map;
   }, [leads]);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = toLocalKey(new Date()) as string;
   const selectedLeads = selectedDate ? dayMap[selectedDate] || [] : [];
   const totalThisMonth = Object.keys(dayMap)
     .filter(d => d.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`))
@@ -222,8 +230,11 @@ export default function ScheduleScreen({ navigation }: any) {
 
             {/* Grid */}
             <View style={styles.grid}>
-              {cells.map((day, i) => {
-                if (!day) return <View key={i} style={styles.dayCell} />;
+              {weeks.map((week, w) => (
+                <View key={w} style={styles.weekGridRow}>
+              {week.map((day, c) => {
+                const i = c;
+                if (!day) return <View key={c} style={styles.dayCell} />;
                 const key = dateKey(day);
                 const count = dayMap[key]?.length || 0;
                 const isToday = key === todayStr;
@@ -232,7 +243,7 @@ export default function ScheduleScreen({ navigation }: any) {
                 const isWeekend = i % 7 === 0 || i % 7 === 6;
                 return (
                   <TouchableOpacity
-                    key={i}
+                    key={c}
                     style={[
                       styles.dayCell,
                       isWeekend && !isSelected && styles.dayCellWeekend,
@@ -270,6 +281,8 @@ export default function ScheduleScreen({ navigation }: any) {
                   </TouchableOpacity>
                 );
               })}
+                </View>
+              ))}
             </View>
           </View>
 
@@ -545,15 +558,16 @@ const styles = StyleSheet.create({
   },
   dayHeaderWeekend: { color: SECONDARY },
   calDivider: { height: 2, backgroundColor: '#000' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  grid: {},
   dayCell: {
-    width: `${100 / 7}%` as any,
+    flex: 1,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
     borderColor: '#e2e8f0',
   },
+  weekGridRow: { flexDirection: 'row' },
   dayCellWeekend: { backgroundColor: '#fafafa' },
   dayCellToday: {
     borderWidth: 2,
