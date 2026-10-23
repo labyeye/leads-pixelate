@@ -39,6 +39,8 @@
 	<string>NestLeads uses your location to tag leads and check-ins accurately.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>NestLeads needs access to your photo library to attach images to social posts and profile pictures.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>NestLeads saves images you capture to your photo library.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

@@ -11,14 +11,14 @@ import {
 import Icon from './Icon';
 
 const COUNTRIES = [
-  { code: '91', flag: '🇮🇳', name: 'India' },
-  { code: '1', flag: '🇺🇸', name: 'USA/Canada' },
-  { code: '44', flag: '🇬🇧', name: 'UK' },
-  { code: '971', flag: '🇦🇪', name: 'UAE' },
-  { code: '61', flag: '🇦🇺', name: 'Australia' },
-  { code: '65', flag: '🇸🇬', name: 'Singapore' },
-  { code: '60', flag: '🇲🇾', name: 'Malaysia' },
-  { code: '966', flag: '🇸🇦', name: 'Saudi Arabia' },
+  { code: '91', flag: 'IN', name: 'India' },
+  { code: '1', flag: 'US', name: 'USA/Canada' },
+  { code: '44', flag: 'GB', name: 'UK' },
+  { code: '971', flag: 'AE', name: 'UAE' },
+  { code: '61', flag: 'AU', name: 'Australia' },
+  { code: '65', flag: 'SG', name: 'Singapore' },
+  { code: '60', flag: 'MY', name: 'Malaysia' },
+  { code: '966', flag: 'SA', name: 'Saudi Arabia' },
 ];
 
 const DEFAULT_COUNTRY = '91';

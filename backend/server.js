@@ -189,6 +189,11 @@ app.use("/api/telemetry", tele.ingest);
 app.use("/api/crm/metrics", tele.metrics);
 app.use("/api/crm/accounts", require("./utils/crmAccounts")("NESTLEADS_SECRET", require("./utils/crmAdapter")));
 
+// Lets iOS trust this domain for passkeys (webcredentials) — see PASSKEY_RP_ID.
+app.get("/.well-known/apple-app-site-association", (req, res) =>
+  res.json({ webcredentials: { apps: ["5UNNVWBHTU.com.nestleads"] } }),
+);
+
 app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));

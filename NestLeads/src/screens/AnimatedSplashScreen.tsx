@@ -68,23 +68,6 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
         duration: FADE_OUT_DURATION,
         useNativeDriver: true,
       }),
-
-      // Logo slides in
-      Animated.parallel([
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: LOGO_DURATION,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoY, {
-          toValue: 0,
-          duration: LOGO_DURATION,
-          useNativeDriver: true,
-        }),
-      ]),
-
-      // Hold logo
-      Animated.delay(HOLD_BEFORE_EXIT),
     ]).start(() => onDone());
   }, []);
 
@@ -130,19 +113,6 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
           </View>
           <Text style={styles.iconLabel}>Convert</Text>
         </Animated.View>
-      </Animated.View>
-
-      {/* Logo */}
-      <Animated.View
-        style={[
-          styles.logoWrap,
-          { opacity: logoOpacity, transform: [{ translateY: logoY }] },
-        ]}
-      >
-        <View style={styles.logoCard}>
-          <Image source={logo} style={styles.logoImage} resizeMode="contain" />
-        </View>
-        <Text style={styles.logoTagline}>NestLeads</Text>
       </Animated.View>
     </View>
   );

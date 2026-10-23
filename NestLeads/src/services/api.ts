@@ -1,10 +1,10 @@
 import { Platform } from 'react-native';
 import storage from '../utils/storage';
 
-// Android emulator: 10.0.2.2 → Mac's localhost
-// iOS (simulator + real iPhone): Mac's LAN IP — real device can't reach localhost
 const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-export const API_BASE = `http://${DEV_HOST}:4100/api`;
+export const API_BASE = __DEV__
+  ? `http://${DEV_HOST}:4100/api`
+  : 'https://leads-backend.pixelatenest.com/api';
 
 class ApiError extends Error {
   status: number;
@@ -50,6 +50,8 @@ async function request<T>(
   const token = await getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Device-Platform': Platform.OS,
+    'X-Device-Name': `${Platform.OS === 'ios' ? 'iOS' : 'Android'} ${Platform.Version}`,
     ...(options.headers as Record<string, string>),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -59,6 +61,8 @@ async function request<T>(
     response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers,
+      // Mobile uses Bearer tokens; don't send the web session cookies iOS stores
+      credentials: 'omit',
     });
   } catch {
     throw new ApiError(NETWORK_MSG, 0);
@@ -134,6 +138,37 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
+  forgotMethods: (email: string) =>
+    request<{ success: boolean; data: { methods: string[] } }>(
+      `/auth/forgot-password/methods?email=${encodeURIComponent(email)}`,
+    ),
+  forgotSendWhatsapp: (email: string) =>
+    request<{ success: boolean }>('/auth/forgot-password/whatsapp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetWithWhatsapp: (email: string, otp: string, password: string) =>
+    request<{ success: boolean }>('/auth/reset-password/otp/whatsapp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp, password }),
+    }),
+  resetWithTotp: (email: string, token: string, password: string) =>
+    request<{ success: boolean }>('/auth/reset-password/otp/totp', {
+      method: 'POST',
+      body: JSON.stringify({ email, token, password }),
+    }),
+  resetWithBackupCode: (email: string, code: string, password: string) =>
+    request<{ success: boolean }>('/auth/reset/backup', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, password }),
+    }),
+  resetPasskeyOptions: () =>
+    request<{ success: boolean; data: any }>('/auth/reset/passkey-options'),
+  resetWithPasskey: (payload: any) =>
+    request<{ success: boolean }>('/auth/reset/passkey', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   loginSendOtp: (phone: string) =>
     request<{ success: boolean; message?: string }>('/auth/login/otp/send', {
       method: 'POST',
@@ -146,6 +181,16 @@ export const authAPI = {
         method: 'POST',
         body: JSON.stringify({ phone, otp }),
       },
+    ),
+  loginSendEmailOtp: (email: string) =>
+    request<{ success: boolean; message?: string }>(
+      '/auth/login/email-otp/send',
+      { method: 'POST', body: JSON.stringify({ email }) },
+    ),
+  loginVerifyEmailOtp: (email: string, otp: string) =>
+    request<{ success: boolean; token?: string; data: any }>(
+      '/auth/login/email-otp/verify',
+      { method: 'POST', body: JSON.stringify({ email, otp }) },
     ),
   verify2FA: (userId: string, token: string) =>
     request<{ success: boolean; token?: string; data: any }>(
@@ -165,6 +210,64 @@ export const authAPI = {
         body: JSON.stringify(payload),
       },
     ),
+  passkeyRegisterOptions: () =>
+    request<{ success: boolean; data: any }>('/auth/passkey/register-options', {
+      method: 'POST',
+    }),
+  passkeyRegister: (payload: any) =>
+    request<{ success: boolean; message: string }>('/auth/passkey/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  passkeyList: () =>
+    request<{
+      success: boolean;
+      data: {
+        _id: string;
+        name: string;
+        createdAt: string;
+        lastUsedAt: string | null;
+      }[];
+    }>('/auth/passkey'),
+  sessions: () =>
+    request<{
+      success: boolean;
+      data: {
+        _id: string;
+        deviceName: string;
+        platform: string;
+        ip: string;
+        createdAt: string;
+        lastActiveAt: string;
+        current: boolean;
+      }[];
+    }>('/auth/sessions'),
+  removeSession: (id: string) =>
+    request<{ success: boolean }>(`/auth/sessions/${id}`, {
+      method: 'DELETE',
+    }),
+  removeOtherSessions: () =>
+    request<{ success: boolean }>('/auth/sessions', { method: 'DELETE' }),
+  removeCurrentSession: async () => {
+    const list = await request<{
+      data: { _id: string; current: boolean }[];
+    }>('/auth/sessions');
+    const cur = list.data.find(s => s.current);
+    if (cur)
+      await request(`/auth/sessions/${cur._id}`, { method: 'DELETE' });
+  },
+  backupCodesStatus: () =>
+    request<{
+      success: boolean;
+      data: { remaining: number; generatedAt: string | null };
+    }>('/auth/backup-codes'),
+  generateBackupCodes: (password: string) =>
+    request<{ success: boolean; data: { codes: string[] } }>(
+      '/auth/backup-codes',
+      { method: 'POST', body: JSON.stringify({ password }) },
+    ),
+  passkeyDelete: (id: string) =>
+    request<{ success: boolean }>(`/auth/passkey/${id}`, { method: 'DELETE' }),
 };
 
 export const leadsAPI = {

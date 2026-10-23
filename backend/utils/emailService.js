@@ -599,6 +599,42 @@ async function sendPasswordResetEmail({ to, userName, resetUrl }) {
   });
 }
 
+// One-time code emails (sign-in / unlock, verifying a new email address).
+async function sendOtpEmail({ to, userName, otp, purpose }) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("Email is not configured on the server");
+  }
+  const esc = (v) =>
+    String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const subject =
+    purpose === "verify-email"
+      ? "Verify your new NESTLeads email"
+      : "Your NESTLeads sign-in code";
+  const intro =
+    purpose === "verify-email"
+      ? "Use this code to verify your new email address."
+      : "Use this code to sign in to your account. It also unlocks your account if it was temporarily locked.";
+  const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;"><tr><td align="center">
+<table width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:#fff;border:2px solid #000;border-radius:12px;">
+<tr><td style="padding:32px 36px;">
+<p style="margin:0 0 12px;font-size:15px;color:#111;">Hi ${esc(userName || "there")},</p>
+<p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.6;">${intro}</p>
+<p style="margin:0 0 20px;text-align:center;font-size:34px;font-weight:700;letter-spacing:8px;color:#024BAB;">${esc(otp)}</p>
+<p style="margin:0;font-size:12px;color:#6b7280;line-height:1.6;">This code expires in 10 minutes. If you didn't request it, you can ignore this email — nobody can sign in without it.</p>
+</td></tr></table></td></tr></table></body></html>`;
+
+  await createTransport().sendMail({
+    from: `"NESTLeads" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+    text: `Your NESTLeads code is ${otp}. It expires in 10 minutes.`,
+  });
+}
+
 async function sendBulkLeadEmail({ to, subject, message, fromName }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     log.warn("Email not configured — skipping bulk lead email");
@@ -642,4 +678,5 @@ module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendBulkLeadEmail,
+  sendOtpEmail,
 };

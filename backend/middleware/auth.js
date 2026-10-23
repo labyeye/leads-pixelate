@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const Tenant = require("../models/Tenant");
+const Session = require("../models/Session");
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -40,6 +41,25 @@ const protect = asyncHandler(async (req, res, next) => {
   if (user.status === "inactive") {
     res.status(403);
     throw new Error("Account is deactivated. Contact your administrator.");
+  }
+
+  // Tokens issued to a device carry its session id; a removed device is rejected here.
+  if (decoded.sid) {
+    const session = await Session.findOne({
+      _id: decoded.sid,
+      userId: user._id,
+    }).select("lastActiveAt");
+    if (!session) {
+      res.status(401);
+      throw new Error("This device was signed out. Please log in again.");
+    }
+    if (Date.now() - session.lastActiveAt.getTime() > 5 * 60 * 1000) {
+      Session.updateOne(
+        { _id: session._id },
+        { lastActiveAt: new Date(), ip: req.ip || "" },
+      ).catch(() => {});
+    }
+    req.sessionId = String(session._id);
   }
 
   const isBillingRoute = req.baseUrl === "/api/billing";

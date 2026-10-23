@@ -16,6 +16,7 @@ function send(events: any[]) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Client': 'app' },
       body: JSON.stringify({ events }),
+      credentials: 'omit',
     }).catch(() => {});
   } catch {
     /* ignore */

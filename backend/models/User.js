@@ -168,6 +168,9 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    // Set once the address is proven via a code emailed to it (after a change).
+    emailVerified: { type: Boolean, default: false },
+    loginOtpAttempts: { type: Number, default: 0, select: false },
     phoneVerified: {
       type: Boolean,
       default: false,
@@ -204,6 +207,29 @@ const userSchema = new mongoose.Schema(
     totpEnabled: {
       type: Boolean,
       default: false,
+    },
+    // One-time recovery codes: SHA-256 hashes only; the plain codes are shown once at generation.
+    backupCodes: {
+      type: [{ hash: String, usedAt: Date }],
+      default: [],
+      select: false,
+    },
+    backupCodesGeneratedAt: { type: Date },
+    // WebAuthn passkeys. publicKey is base64url of the COSE key.
+    passkeys: {
+      type: [
+        {
+          credentialId: { type: String, required: true },
+          publicKey: { type: String, required: true },
+          counter: { type: Number, default: 0 },
+          transports: [String],
+          name: { type: String, default: "Passkey" },
+          createdAt: { type: Date, default: Date.now },
+          lastUsedAt: { type: Date },
+        },
+      ],
+      default: [],
+      select: false,
     },
     // Per-rep Gmail connection for in-CRM email (send + two-way sync via
     // polling). Tokens are select:false like the other secrets on this

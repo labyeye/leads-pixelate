@@ -17,6 +17,8 @@ const {
   resetPasswordWithTotp,
   loginRequestOtp,
   loginVerifyOtp,
+  loginRequestEmailOtp,
+  loginVerifyEmailOtp,
   sendPhoneOtp,
   verifyPhoneOtp,
   sendContactOtp,
@@ -25,6 +27,25 @@ const {
   totpVerifySetup,
   totpDisable,
 } = require("../controllers/authController");
+const {
+  registerOptions,
+  registerVerify,
+  listPasskeys,
+  deletePasskey,
+  loginOptions,
+  loginVerify,
+  resetOptions,
+  resetVerify,
+} = require("../controllers/passkeyController");
+const {
+  listSessions,
+  removeSession,
+  removeOtherSessions,
+  backupCodesStatus,
+  generateBackupCodes,
+  loginWithBackupCode,
+  resetPasswordWithBackupCode,
+} = require("../controllers/securityController");
 const { protect } = require("../middleware/auth");
 
 // Tighter than the general /api/auth limiter — prevents using password
@@ -66,8 +87,17 @@ router.post(
   forgotPasswordLimiter,
   resetPasswordWithTotp,
 );
+router.post(
+  "/reset/backup",
+  forgotPasswordLimiter,
+  resetPasswordWithBackupCode,
+);
+router.get("/reset/passkey-options", forgotPasswordLimiter, resetOptions);
+router.post("/reset/passkey", forgotPasswordLimiter, resetVerify);
 router.post("/login/otp/send", forgotPasswordLimiter, loginRequestOtp);
 router.post("/login/otp/verify", forgotPasswordLimiter, loginVerifyOtp);
+router.post("/login/email-otp/send", forgotPasswordLimiter, loginRequestEmailOtp);
+router.post("/login/email-otp/verify", forgotPasswordLimiter, loginVerifyEmailOtp);
 router.get("/me", protect, getMe);
 router.put("/me", protect, updateProfile);
 router.put("/change-password", protect, changePassword);
@@ -78,5 +108,17 @@ router.post("/contact/verify-otp", protect, forgotPasswordLimiter, verifyContact
 router.post("/2fa/totp/setup", protect, totpSetup);
 router.post("/2fa/totp/verify", protect, totpVerifySetup);
 router.post("/2fa/totp/disable", protect, totpDisable);
+router.get("/sessions", protect, listSessions);
+router.delete("/sessions", protect, removeOtherSessions);
+router.delete("/sessions/:id", protect, removeSession);
+router.get("/backup-codes", protect, backupCodesStatus);
+router.post("/backup-codes", protect, forgotPasswordLimiter, generateBackupCodes);
+router.post("/login/backup", forgotPasswordLimiter, loginWithBackupCode);
+router.post("/passkey/register-options", protect, registerOptions);
+router.post("/passkey/register", protect, registerVerify);
+router.get("/passkey", protect, listPasskeys);
+router.delete("/passkey/:id", protect, deletePasskey);
+router.get("/passkey/login-options", loginOptions);
+router.post("/passkey/login", loginVerify);
 
 module.exports = router;

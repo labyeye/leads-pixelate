@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,15 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Platform,
+  Share,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import PhoneInput from '../components/PhoneInput';
+import { Passkey } from 'react-native-passkey';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -25,12 +28,87 @@ const NB_SHADOW = {
   elevation: 4,
 };
 
-type Tab = 'password' | 'whatsapp' | 'totp';
+type Section =
+  | 'password'
+  | 'passkey'
+  | 'whatsapp'
+  | 'totp'
+  | 'backup'
+  | 'devices';
 
 export default function AccountSecurityScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, refreshUser } = useAuth();
-  const [tab, setTab] = useState<Tab>('password');
+  const [open, setOpen] = useState<Section | null>(null);
+
+  const toggle = (k: Section) => setOpen(o => (o === k ? null : k));
+
+  const sections: {
+    key: Section;
+    icon: string;
+    color: string;
+    title: string;
+    status: string;
+    on: boolean;
+    body: React.ReactNode;
+  }[] = [
+    {
+      key: 'passkey',
+      icon: 'key-outline',
+      color: '#FF6B00',
+      title: 'Passkey',
+      status: 'Sign in with Face ID or fingerprint',
+      on: false,
+      body: <PasskeyTab />,
+    },
+    {
+      key: 'password',
+      icon: 'lock-closed-outline',
+      color: '#024BAB',
+      title: 'Password',
+      status: 'Change your account password',
+      on: false,
+      body: <PasswordTab />,
+    },
+    {
+      key: 'devices',
+      icon: 'phone-portrait-outline',
+      color: '#0EA5E9',
+      title: 'Signed-in Devices',
+      status: 'See where you are logged in',
+      on: false,
+      body: <DevicesTab />,
+    },
+    {
+      key: 'whatsapp',
+      icon: 'logo-whatsapp',
+      color: '#00C48C',
+      title: 'WhatsApp',
+      status: user?.phoneVerified
+        ? 'Number verified'
+        : 'Verify your number for OTP login',
+      on: !!user?.phoneVerified,
+      body: <WhatsAppTab user={user} refreshUser={refreshUser} />,
+    },
+    {
+      key: 'totp',
+      icon: 'shield-checkmark-outline',
+      color: '#7C3AED',
+      title: 'Authenticator App',
+      status: user?.totpEnabled ? 'Enabled' : 'Two-factor verification codes',
+      on: !!user?.totpEnabled,
+      body: <TotpTab user={user} refreshUser={refreshUser} />,
+    },
+    {
+      key: 'backup',
+      icon: 'document-text-outline',
+      color: '#E11D48',
+      title: 'Backup Codes',
+      status: 'One-time codes if you lose access',
+      on: false,
+      body: <BackupCodesTab />,
+    },
+  ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -46,36 +124,404 @@ export default function AccountSecurityScreen({ navigation }: any) {
       </View>
       <View style={styles.divider} />
 
-      <View style={styles.tabRow}>
-        {(['password', 'whatsapp', 'totp'] as Tab[]).map(t => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tab, tab === t && styles.tabActive]}
-            onPress={() => setTab(t)}
-          >
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
-              {t === 'password'
-                ? 'Password'
-                : t === 'whatsapp'
-                  ? 'WhatsApp'
-                  : 'Authenticator'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <ScrollView
         contentContainerStyle={[
           styles.body,
           { paddingBottom: insets.bottom + 32 },
         ]}
+        keyboardShouldPersistTaps="handled"
       >
-        {tab === 'password' && <PasswordTab />}
-        {tab === 'whatsapp' && (
-          <WhatsAppTab user={user} refreshUser={refreshUser} />
-        )}
-        {tab === 'totp' && <TotpTab user={user} refreshUser={refreshUser} />}
+        <Text style={styles.intro}>
+          Choose how you sign in and keep your account protected.
+        </Text>
+        {sections.map(sec => {
+          const isOpen = open === sec.key;
+          return (
+            <View key={sec.key} style={styles.section}>
+              <TouchableOpacity
+                style={styles.sectionHead}
+                activeOpacity={0.8}
+                onPress={() => toggle(sec.key)}
+              >
+                <View style={[styles.iconBox, { backgroundColor: sec.color }]}>
+                  <Icon name={sec.icon} size={18} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sectionTitle}>{sec.title}</Text>
+                  <Text
+                    style={[
+                      styles.sectionStatus,
+                      sec.on && { color: '#00A676' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {sec.status}
+                  </Text>
+                </View>
+                <Icon
+                  name={isOpen ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color="#000"
+                />
+              </TouchableOpacity>
+              {isOpen && <View style={styles.sectionBody}>{sec.body}</View>}
+            </View>
+          );
+        })}
       </ScrollView>
+    </View>
+  );
+}
+
+function PasskeyTab() {
+  const [list, setList] = useState<
+    { _id: string; name: string; createdAt: string; lastUsedAt: string | null }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await authAPI.passkeyList();
+      setList(res.data || []);
+    } catch {
+      /* keep empty list */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const add = async () => {
+    if (!Passkey.isSupported()) {
+      return Alert.alert(
+        'Not supported',
+        'Passkeys are not supported on this device.',
+      );
+    }
+    setAdding(true);
+    try {
+      const { data: o } = await authAPI.passkeyRegisterOptions();
+      const result = await Passkey.create({
+        rp: o.rp,
+        user: o.user,
+        challenge: o.challenge,
+        pubKeyCredParams: o.pubKeyCredParams,
+        timeout: o.timeout,
+        excludeCredentials: o.excludeCredentials,
+        authenticatorSelection: o.authenticatorSelection,
+        attestation: o.attestation,
+      } as any);
+      await authAPI.passkeyRegister({
+        challengeToken: o.challengeToken,
+        name: Platform.OS === 'ios' ? 'iPhone' : 'Android phone',
+        id: result.id,
+        rawId: result.rawId,
+        type: 'public-key',
+        response: {
+          clientDataJSON: result.response.clientDataJSON,
+          attestationObject: result.response.attestationObject,
+        },
+        clientExtensionResults: {},
+      });
+      Alert.alert('Passkey added', 'You can now sign in with your passkey.');
+      await load();
+    } catch (e: any) {
+      const cancelled =
+        e?.error === 'UserCancelled' || e?.name === 'NotAllowedError';
+      if (!cancelled)
+        Alert.alert('Error', e?.message || 'Could not add passkey');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const remove = (id: string) =>
+    Alert.alert('Remove passkey', 'You will no longer be able to use it.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await authAPI.passkeyDelete(id);
+            await load();
+          } catch (e: any) {
+            Alert.alert('Error', e?.message || 'Failed to remove passkey');
+          }
+        },
+      },
+    ]);
+
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.desc}>
+        A passkey lets you sign in to NestLeads with Face ID, Touch ID or your
+        screen lock — no password to type or remember.
+      </Text>
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 12 }} color="#024BAB" />
+      ) : (
+        list.map(p => (
+          <View key={p._id} style={styles.passkeyRow}>
+            <Icon name="key-outline" size={16} color="#FF6B00" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.passkeyName}>{p.name}</Text>
+              <Text style={styles.passkeyMeta}>
+                Added {new Date(p.createdAt).toLocaleDateString()}
+                {p.lastUsedAt
+                  ? ` · Used ${new Date(p.lastUsedAt).toLocaleDateString()}`
+                  : ''}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => remove(p._id)} hitSlop={8}>
+              <Icon name="trash-outline" size={18} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
+      <TouchableOpacity
+        style={[styles.primaryBtn, { opacity: adding ? 0.6 : 1 }]}
+        disabled={adding}
+        onPress={add}
+      >
+        {adding ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.primaryBtnText}>Add a Passkey</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function timeAgo(iso: string) {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 2) return 'Active now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'Yesterday' : `${d} days ago`;
+}
+
+function DevicesTab() {
+  const [list, setList] = useState<
+    {
+      _id: string;
+      deviceName: string;
+      platform: string;
+      ip: string;
+      lastActiveAt: string;
+      current: boolean;
+    }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await authAPI.sessions();
+      setList(res.data || []);
+    } catch {
+      /* keep list */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const remove = (d: { _id: string; deviceName: string }) =>
+    Alert.alert(
+      'Sign out device',
+      `${d.deviceName} will be logged out and must sign in again.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await authAPI.removeSession(d._id);
+              await load();
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Failed to remove device');
+            }
+          },
+        },
+      ],
+    );
+
+  const removeOthers = () =>
+    Alert.alert('Sign out other devices', 'Log out everywhere except here?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign out all',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await authAPI.removeOtherSessions();
+            await load();
+          } catch (e: any) {
+            Alert.alert('Error', e?.message || 'Failed');
+          }
+        },
+      },
+    ]);
+
+  if (loading)
+    return <ActivityIndicator style={{ margin: 8 }} color="#024BAB" />;
+
+  return (
+    <View style={styles.panel}>
+      {list.length === 0 && (
+        <Text style={styles.desc}>
+          No devices to show yet. Devices appear here the next time you sign in.
+        </Text>
+      )}
+      {list.map(d => (
+        <View key={d._id} style={styles.passkeyRow}>
+          <Icon
+            name={d.platform === 'web' ? 'globe-outline' : 'phone-portrait-outline'}
+            size={18}
+            color="#0EA5E9"
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.passkeyName}>
+              {d.deviceName}
+              {d.current ? '  · This device' : ''}
+            </Text>
+            <Text style={styles.passkeyMeta}>
+              {timeAgo(d.lastActiveAt)}
+              {d.ip ? ` · ${d.ip}` : ''}
+            </Text>
+          </View>
+          {!d.current && (
+            <TouchableOpacity onPress={() => remove(d)} hitSlop={8}>
+              <Icon name="trash-outline" size={18} color="#ef4444" />
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+      {list.some(d => !d.current) && (
+        <TouchableOpacity style={styles.dangerBtn} onPress={removeOthers}>
+          <Text style={styles.dangerBtnText}>Sign out all other devices</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+function BackupCodesTab() {
+  const [status, setStatus] = useState<{
+    remaining: number;
+    generatedAt: string | null;
+  } | null>(null);
+  const [password, setPassword] = useState('');
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await authAPI.backupCodesStatus();
+      setStatus(res.data);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const generate = async () => {
+    if (!password) return Alert.alert('Password needed', 'Enter your password');
+    setBusy(true);
+    try {
+      const res = await authAPI.generateBackupCodes(password);
+      setCodes(res.data.codes);
+      setPassword('');
+      await load();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Could not generate codes');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const share = () =>
+    Share.share({
+      message: `NestLeads backup codes (each works once):\n\n${codes?.join('\n')}`,
+    }).catch(() => {});
+
+  return (
+    <View style={styles.panel}>
+      <Text style={styles.desc}>
+        Backup codes let you sign in if you lose your phone or can't use your
+        other methods. Each code works once. Generating new codes replaces any
+        old ones.
+      </Text>
+      {status && !codes && (
+        <Text style={styles.passkeyMeta}>
+          {status.generatedAt
+            ? `${status.remaining} of 10 codes left · created ${new Date(
+                status.generatedAt,
+              ).toLocaleDateString()}`
+            : 'No backup codes yet'}
+        </Text>
+      )}
+      {codes ? (
+        <>
+          <View style={styles.codesBox}>
+            {codes.map(c => (
+              <Text key={c} style={styles.codeText} selectable>
+                {c}
+              </Text>
+            ))}
+          </View>
+          <Text style={styles.desc}>
+            Save these now — they won't be shown again.
+          </Text>
+          <TouchableOpacity style={styles.primaryBtn} onPress={share}>
+            <Text style={styles.primaryBtnText}>Copy / Save Codes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => setCodes(null)}
+          >
+            <Text style={styles.secondaryBtnText}>Done</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <Text style={styles.formLabel}>Confirm Password</Text>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholder="Your account password"
+          />
+          <TouchableOpacity
+            style={[styles.primaryBtn, { opacity: busy ? 0.6 : 1 }]}
+            disabled={busy}
+            onPress={generate}
+          >
+            {busy ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.primaryBtnText}>
+                {status?.generatedAt ? 'Generate New Codes' : 'Generate Codes'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }
@@ -112,7 +558,7 @@ function PasswordTab() {
   };
 
   return (
-    <View style={styles.card}>
+    <View style={styles.panel}>
       <Text style={styles.formLabel}>Current Password</Text>
       <TextInput
         style={styles.input}
@@ -215,7 +661,7 @@ function WhatsAppTab({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={styles.panel}>
       <PhoneInput label="WhatsApp Number" value={phone} onChange={setPhone} />
       {verified && (
         <View style={styles.verifiedPill}>
@@ -344,7 +790,7 @@ function TotpTab({
 
   if (enabled) {
     return (
-      <View style={styles.card}>
+      <View style={styles.panel}>
         <View style={styles.verifiedPill}>
           <Icon name="checkmark-circle" size={13} color="#00C48C" />
           <Text style={styles.verifiedText}>Authenticator app enabled</Text>
@@ -357,7 +803,7 @@ function TotpTab({
   }
 
   return (
-    <View style={styles.card}>
+    <View style={styles.panel}>
       {!setup ? (
         <>
           <Text style={styles.desc}>
@@ -433,20 +879,72 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
-  tabRow: {
+  intro: { fontSize: 12, color: '#64748b', marginBottom: 4 },
+  section: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+  },
+  sectionHead: {
     flexDirection: 'row',
-    borderBottomWidth: 2,
-    borderBottomColor: '#000',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
   },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabActive: {
-    borderBottomWidth: 3,
-    borderBottomColor: '#024BAB',
-    marginBottom: -2,
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  tabText: { fontSize: 11, fontWeight: '800', color: '#94a3b8' },
-  tabTextActive: { color: '#024BAB' },
-  body: { padding: 16 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#000' },
+  sectionStatus: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  sectionBody: {
+    borderTopWidth: 2,
+    borderTopColor: '#000',
+    padding: 14,
+  },
+  panel: { gap: 8 },
+  passkeyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 6,
+  },
+  codesBox: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 8,
+    padding: 10,
+    rowGap: 8,
+    backgroundColor: '#FFF8E7',
+  },
+  codeText: {
+    width: '50%',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: '#000',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  passkeyName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  passkeyMeta: { fontSize: 10, color: '#64748b', marginTop: 2 },
+  body: { padding: 16, gap: 14 },
   card: {
     borderWidth: 2,
     borderRadius: 8,

@@ -13,10 +13,12 @@ const {
 } = require("../utils/generateToken");
 const { setAuthCookies, clearAuthCookies } = require("../utils/authCookies");
 const logActivity = require("../utils/activityLogger");
-const { sendPasswordResetEmail } = require("../utils/emailService");
+const { sendPasswordResetEmail, sendOtpEmail } = require("../utils/emailService");
 const { sendWhatsAppOtp } = require("../utils/whatsappOtp");
 const { formatPhone } = require("./whatsappController");
 const totp = require("../utils/totp");
+const Session = require("../models/Session");
+const { startSession } = require("../utils/sessions");
 const log = require("../utils/logger").scope("Auth");
 
 function generateOtp() {
@@ -29,10 +31,10 @@ function hashOtp(otp) {
 
 // Issues the web-app cookie session (access + refresh + csrf) alongside the
 // existing bearer token in the JSON body used by the mobile app.
-async function issueWebSession(res, user) {
-  const accessToken = generateAccessToken(user._id, user.tokenVersion);
+async function issueWebSession(res, user, sid) {
+  const accessToken = generateAccessToken(user._id, user.tokenVersion, sid);
   const { raw: refreshToken, hash: refreshTokenHash } =
-    await generateRefreshToken(user._id);
+    await generateRefreshToken(user._id, sid);
 
   user.refreshTokenHash = refreshTokenHash;
   user.refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -113,7 +115,8 @@ const register = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
-  await issueWebSession(res, user);
+  const sid = await startSession(req, user);
+  await issueWebSession(res, user, sid);
 
   res.status(201).json({
     success: true,
@@ -127,7 +130,7 @@ const register = asyncHandler(async (req, res) => {
       department: user.department,
       status: user.status,
       tenantId: tenant._id,
-      token: generateToken(user._id, user.tokenVersion),
+      token: generateToken(user._id, user.tokenVersion, sid),
       tenant: {
         _id: tenant._id,
         name: tenant.name,
@@ -138,11 +141,11 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-// 3 wrong passwords are allowed; the 4th wrong one locks the account for 30 min.
-// A WhatsApp OTP login or reset lifts the lock.
+// 3 wrong passwords are allowed; the 4th wrong one locks the account for 10 min.
+// Signing in with a WhatsApp or email OTP (or resetting the password) lifts the lock.
 const MAX_FAILED_LOGINS = 4;
-const LOCK_MS = 30 * 60 * 1000;
-const LOCKED_MSG = "Account locked for 30 minutes after too many wrong passwords. Unlock it now with a WhatsApp OTP.";
+const LOCK_MS = 10 * 60 * 1000;
+const LOCKED_MSG = "Too many wrong passwords. Your account is blocked for 10 minutes. Recover access now with an OTP on your phone (WhatsApp) or email.";
 // Valid-looking bcrypt hash, compared against when the email is unknown so response time doesn't reveal it.
 const DUMMY_HASH = "$2a$10$CwTycUXWue0Thq9StjUM0uJ8.G1c/3d1Hn5X9lq0Yx1y6k8mQ5G1e";
 
@@ -224,7 +227,8 @@ const login = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
-  await issueWebSession(res, user);
+  const sid = await startSession(req, user);
+  await issueWebSession(res, user, sid);
 
   res.json({
     success: true,
@@ -240,7 +244,7 @@ const login = asyncHandler(async (req, res) => {
       status: user.status,
       tenantId: user.tenantId,
       lastLogin: user.lastLogin,
-      token: generateToken(user._id, user.tokenVersion),
+      token: generateToken(user._id, user.tokenVersion, sid),
       tenant: tenant
         ? {
             _id: tenant._id,
@@ -337,7 +341,12 @@ const changePassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   user.tokenVersion = (user.tokenVersion || 0) + 1; // revokes every older bearer/cookie token
   await user.save();
-  await issueWebSession(res, user);
+  await Session.deleteMany(
+    req.sessionId
+      ? { userId: user._id, _id: { $ne: req.sessionId } }
+      : { userId: user._id },
+  );
+  await issueWebSession(res, user, req.sessionId);
 
   logActivity({
     user: req.user,
@@ -351,7 +360,7 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Password updated successfully",
-    data: { token: generateToken(user._id, user.tokenVersion) },
+    data: { token: generateToken(user._id, user.tokenVersion, req.sessionId) },
   });
 });
 
@@ -412,7 +421,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new Error("Account is deactivated. Contact your administrator.");
   }
 
-  await issueWebSession(res, user);
+  if (decoded.sid && !(await Session.exists({ _id: decoded.sid, userId: user._id }))) {
+    clearAuthCookies(res);
+    res.status(401);
+    throw new Error("This device was signed out. Please log in again.");
+  }
+
+  await issueWebSession(res, user, decoded.sid);
 
   res.json({ success: true, message: "Session refreshed" });
 });
@@ -423,6 +438,7 @@ const logout = asyncHandler(async (req, res) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded.sid) await Session.deleteOne({ _id: decoded.sid, userId: decoded.id });
       const user = await User.findByIdAndUpdate(decoded.id, {
         $unset: { refreshTokenHash: 1, refreshTokenExpires: 1 },
       });
@@ -528,6 +544,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   user.password = password;
   user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await Session.deleteMany({ userId: user._id });
   user.resetPasswordTokenHash = undefined;
   user.resetPasswordExpires = undefined;
   // Force re-login everywhere else — a password reset should invalidate any
@@ -565,10 +582,14 @@ const forgotPasswordMethods = asyncHandler(async (req, res) => {
     throw new Error("Please provide a valid email address");
   }
 
-  const user = await User.findOne({ email: email.toLowerCase().trim() });
+  const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
+    "+backupCodes +passkeys",
+  );
   const methods = ["email"];
   if (user?.phoneVerified) methods.push("whatsapp");
   if (user?.totpEnabled) methods.push("totp");
+  if (user?.backupCodes?.some((c) => !c.usedAt)) methods.push("backup");
+  if (user?.passkeys?.length) methods.push("passkey");
 
   res.json({ success: true, data: { methods } });
 });
@@ -625,6 +646,7 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
 
   user.password = password;
   user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await Session.deleteMany({ userId: user._id });
   user.resetOtpHash = undefined;
   user.resetOtpExpires = undefined;
   user.failedLogins = 0;
@@ -672,6 +694,7 @@ const resetPasswordWithTotp = asyncHandler(async (req, res) => {
 
   user.password = password;
   user.tokenVersion = (user.tokenVersion || 0) + 1;
+  await Session.deleteMany({ userId: user._id });
   user.refreshTokenHash = undefined;
   user.refreshTokenExpires = undefined;
   await user.save();
@@ -735,6 +758,101 @@ const loginRequestOtp = asyncHandler(async (req, res) => {
   });
 });
 
+const loginRequestEmailOtp = asyncHandler(async (req, res) => {
+  const email = String(req.body.email || "").toLowerCase().trim();
+  if (!validator.isEmail(email)) {
+    res.status(400);
+    throw new Error("Please provide a valid email address");
+  }
+  const user = await User.findOne({ email });
+  if (user && user.status !== "inactive") {
+    const otp = generateOtp();
+    user.loginOtpHash = hashOtp(otp);
+    user.loginOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    user.loginOtpAttempts = 0;
+    await user.save({ validateBeforeSave: false });
+    try {
+      await sendOtpEmail({ to: user.email, userName: user.name, otp, purpose: "login" });
+    } catch (err) {
+      log.error("Login email OTP send failed", { message: err.message });
+    }
+  }
+  res.json({
+    success: true,
+    message: "If that email is registered, a code has been sent to it.",
+  });
+});
+
+const loginVerifyEmailOtp = asyncHandler(async (req, res) => {
+  const email = String(req.body.email || "").toLowerCase().trim();
+  const otp = String(req.body.otp || "");
+  const fail = () => {
+    res.status(401);
+    throw new Error("Invalid or expired code");
+  };
+  if (!email || !otp) return fail();
+
+  const user = await User.findOne({ email }).select(
+    "+loginOtpHash +loginOtpExpires +loginOtpAttempts",
+  );
+  if (!user || !user.loginOtpHash || !user.loginOtpExpires || user.loginOtpExpires < new Date())
+    return fail();
+  if ((user.loginOtpAttempts || 0) >= 5) {
+    res.status(429);
+    throw new Error("Too many attempts — request a new code");
+  }
+  if (hashOtp(otp) !== user.loginOtpHash) {
+    user.loginOtpAttempts = (user.loginOtpAttempts || 0) + 1;
+    await user.save({ validateBeforeSave: false });
+    return fail();
+  }
+  if (user.status === "inactive") {
+    res.status(403);
+    throw new Error("Account is deactivated. Contact your administrator.");
+  }
+
+  user.loginOtpHash = undefined;
+  user.loginOtpExpires = undefined;
+  user.loginOtpAttempts = 0;
+  user.failedLogins = 0;
+  user.lockUntil = null;
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
+
+  const tenant = user.tenantId
+    ? await Tenant.findById(user.tenantId).select("name plan status")
+    : null;
+  logActivity({
+    user,
+    action: "LOGIN",
+    module: "Auth",
+    description: `${user.name} logged in via email OTP`,
+    ip: req.ip,
+  });
+  const sid = await startSession(req, user);
+  await issueWebSession(res, user, sid);
+  res.json({
+    success: true,
+    data: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      roleId: user.roleId,
+      phone: user.phone,
+      department: user.department,
+      avatar: user.avatar,
+      status: user.status,
+      tenantId: user.tenantId,
+      lastLogin: user.lastLogin,
+      token: generateToken(user._id, user.tokenVersion, sid),
+      tenant: tenant
+        ? { _id: tenant._id, name: tenant.name, plan: tenant.plan, status: tenant.status }
+        : null,
+    },
+  });
+});
+
 const loginVerifyOtp = asyncHandler(async (req, res) => {
   const { phone, otp } = req.body;
   if (!phone || !otp) {
@@ -779,7 +897,8 @@ const loginVerifyOtp = asyncHandler(async (req, res) => {
     ip: req.ip,
   });
 
-  await issueWebSession(res, user);
+  const sid = await startSession(req, user);
+  await issueWebSession(res, user, sid);
 
   res.json({
     success: true,
@@ -795,7 +914,7 @@ const loginVerifyOtp = asyncHandler(async (req, res) => {
       status: user.status,
       tenantId: user.tenantId,
       lastLogin: user.lastLogin,
-      token: generateToken(user._id, user.tokenVersion),
+      token: generateToken(user._id, user.tokenVersion, sid),
       tenant: tenant
         ? {
             _id: tenant._id,
@@ -844,21 +963,18 @@ const sendContactOtp = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("Enter a valid email address");
     }
-    if (email === user.email) {
+    if (email === user.email && user.emailVerified) {
       res.status(400);
-      throw new Error("This is already your email");
+      throw new Error("This email is already verified");
     }
-    if (await User.findOne({ email, _id: { $ne: user._id } })) {
+    if (
+      email !== user.email &&
+      (await User.findOne({ email, _id: { $ne: user._id } }))
+    ) {
       res.status(400);
       throw new Error("This email is already in use");
     }
-    if (!user.phone || !user.phoneVerified) {
-      res.status(400);
-      throw new Error(
-        "Verify your phone number first — the email change code is sent to it on WhatsApp",
-      );
-    }
-    target = user.phone;
+    target = email;
   }
 
   const otp = generateOtp();
@@ -869,6 +985,15 @@ const sendContactOtp = asyncHandler(async (req, res) => {
   user.contactOtpAttempts = 0;
   await user.save({ validateBeforeSave: false });
 
+  if (type === "email") {
+    await sendOtpEmail({
+      to: target,
+      userName: user.name,
+      otp,
+      purpose: "verify-email",
+    });
+    return res.json({ success: true, message: "Code sent to the new email" });
+  }
   await sendWhatsAppOtp(formatPhone(target), otp);
 
   res.json({ success: true, message: "Code sent via WhatsApp" });
@@ -907,6 +1032,7 @@ const verifyContactOtp = asyncHandler(async (req, res) => {
       throw new Error("This email is already in use");
     }
     user.email = value;
+    user.emailVerified = true;
   } else {
     user.phone = value;
     user.phoneVerified = true;
@@ -922,7 +1048,7 @@ const verifyContactOtp = asyncHandler(async (req, res) => {
     user: req.user,
     action: "PROFILE_UPDATED",
     module: "Auth",
-    description: `${req.user.name} changed their ${type} (verified via WhatsApp)`,
+    description: `${req.user.name} changed their ${type} (verified by code)`,
     targetId: req.user._id,
     ip: req.ip,
   });
@@ -1021,6 +1147,8 @@ module.exports = {
   resetPasswordWithTotp,
   loginRequestOtp,
   loginVerifyOtp,
+  loginRequestEmailOtp,
+  loginVerifyEmailOtp,
   sendPhoneOtp,
   verifyPhoneOtp,
   sendContactOtp,
@@ -1028,4 +1156,5 @@ module.exports = {
   totpSetup,
   totpVerifySetup,
   totpDisable,
+  issueWebSession,
 };

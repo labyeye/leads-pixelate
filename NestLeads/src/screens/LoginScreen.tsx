@@ -43,6 +43,7 @@ export default function LoginScreen({ navigation }: any) {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
+  const [otpVia, setOtpVia] = useState<'whatsapp' | 'email'>('whatsapp');
 
   const [passkeyLoading, setPasskeyLoading] = useState(false);
 
@@ -128,6 +129,7 @@ export default function LoginScreen({ navigation }: any) {
         timeout: opts.timeout,
       });
       const res = await authAPI.biometricLogin({
+        challengeToken: opts.challengeToken,
         id: result.id,
         rawId: result.rawId,
         type: 'public-key',
@@ -155,13 +157,18 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleSendOtp = async () => {
-    if (!phone.trim()) {
-      Alert.alert('Validation', 'Phone number is required');
+    const viaEmail = otpVia === 'email';
+    if (viaEmail ? !email.trim() : !phone.trim()) {
+      Alert.alert(
+        'Validation',
+        viaEmail ? 'Email is required' : 'Phone number is required',
+      );
       return;
     }
     setOtpLoading(true);
     try {
-      await authAPI.loginSendOtp(phone.trim());
+      if (viaEmail) await authAPI.loginSendEmailOtp(email.trim().toLowerCase());
+      else await authAPI.loginSendOtp(phone.trim());
       setOtpSent(true);
     } catch (err: any) {
       Alert.alert(
@@ -175,12 +182,18 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleVerifyOtp = async () => {
     if (otp.trim().length !== 6) {
-      Alert.alert('Validation', 'Enter the 6-digit OTP from WhatsApp');
+      Alert.alert('Validation', 'Enter the 6-digit OTP');
       return;
     }
     setOtpLoading(true);
     try {
-      const res = await authAPI.loginVerifyOtp(phone.trim(), otp.trim());
+      const res =
+        otpVia === 'email'
+          ? await authAPI.loginVerifyEmailOtp(
+              email.trim().toLowerCase(),
+              otp.trim(),
+            )
+          : await authAPI.loginVerifyOtp(phone.trim(), otp.trim());
       const token = res.token ?? res.data?.token;
       if (!token)
         throw new Error('Login failed: no token received from server');
@@ -195,6 +208,7 @@ export default function LoginScreen({ navigation }: any) {
   const resetPhoneMode = () => {
     setMode('email');
     setOtpSent(false);
+    setOtpVia('whatsapp');
     setPhone('');
     setOtp('');
   };
@@ -286,22 +300,37 @@ export default function LoginScreen({ navigation }: any) {
               {!otpSent ? (
                 <>
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Phone Number</Text>
+                    <Text style={styles.label}>
+                      {otpVia === 'email' ? 'Email Address' : 'Phone Number'}
+                    </Text>
                     <View style={styles.inputBorder}>
                       <Icon
-                        name="call-outline"
+                        name={otpVia === 'email' ? 'mail-outline' : 'call-outline'}
                         size={16}
                         color="#64748b"
                         style={styles.inputIcon}
                       />
-                      <TextInput
-                        style={styles.input}
-                        value={phone}
-                        onChangeText={setPhone}
-                        placeholder="+91 98765 43210"
-                        placeholderTextColor="#94a3b8"
-                        keyboardType="phone-pad"
-                      />
+                      {otpVia === 'email' ? (
+                        <TextInput
+                          style={styles.input}
+                          value={email}
+                          onChangeText={setEmail}
+                          placeholder="you@company.com"
+                          placeholderTextColor="#94a3b8"
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                      ) : (
+                        <TextInput
+                          style={styles.input}
+                          value={phone}
+                          onChangeText={setPhone}
+                          placeholder="+91 98765 43210"
+                          placeholderTextColor="#94a3b8"
+                          keyboardType="phone-pad"
+                        />
+                      )}
                     </View>
                   </View>
 
@@ -317,16 +346,34 @@ export default function LoginScreen({ navigation }: any) {
                       <View style={styles.row}>
                         <Icon name="arrow-forward" size={16} color="#fff" />
                         <Text style={styles.submitText}>
-                          Send OTP on WhatsApp
+                          {otpVia === 'email'
+                            ? 'Send OTP to Email'
+                            : 'Send OTP on WhatsApp'}
                         </Text>
                       </View>
                     )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.linkBtn}
+                    onPress={() =>
+                      setOtpVia(v => (v === 'email' ? 'whatsapp' : 'email'))
+                    }
+                  >
+                    <Text style={styles.linkText}>
+                      {otpVia === 'email'
+                        ? 'Use WhatsApp OTP instead'
+                        : 'Use email OTP instead'}
+                    </Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Enter OTP (from WhatsApp)</Text>
+                    <Text style={styles.label}>
+                      {otpVia === 'email'
+                        ? 'Enter OTP (from email)'
+                        : 'Enter OTP (from WhatsApp)'}
+                    </Text>
                     <TextInput
                       style={styles.otpInput}
                       value={otp}
@@ -368,7 +415,7 @@ export default function LoginScreen({ navigation }: any) {
                     }}
                   >
                     <Text style={styles.linkText}>
-                      ← Change number / Resend
+                      ← Change {otpVia === 'email' ? 'email' : 'number'} / Resend
                     </Text>
                   </TouchableOpacity>
                 </>
@@ -381,6 +428,17 @@ export default function LoginScreen({ navigation }: any) {
                   <Icon name="alert-circle-outline" size={16} color="#EF4444" />
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
+              )}
+              {/blocked/i.test(error) && (
+                <TouchableOpacity
+                  style={styles.linkBtn}
+                  onPress={() => {
+                    setError('');
+                    setMode('phone');
+                  }}
+                >
+                  <Text style={styles.linkText}>Recover with an OTP →</Text>
+                </TouchableOpacity>
               )}
 
               <Animated.View style={slideUp(30)}>

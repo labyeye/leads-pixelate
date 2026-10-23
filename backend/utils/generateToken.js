@@ -5,15 +5,15 @@ const bcrypt = require("bcryptjs");
 // Long-lived bearer token, returned in the JSON response body. Used by the
 // mobile app (NestLeads), which has no meaningful CSRF/XSS surface to
 // protect against by moving to cookies.
-const generateToken = (id, tv = 0) => {
-  return jwt.sign({ id, tv }, process.env.JWT_SECRET, {
+const generateToken = (id, tv = 0, sid) => {
+  return jwt.sign({ id, tv, sid }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "30d",
   });
 };
 
 // Short-lived access token set as an httpOnly cookie for the web app.
-const generateAccessToken = (id, tv = 0) => {
-  return jwt.sign({ id, tv, scope: "access" }, process.env.JWT_SECRET, {
+const generateAccessToken = (id, tv = 0, sid) => {
+  return jwt.sign({ id, tv, sid, scope: "access" }, process.env.JWT_SECRET, {
     expiresIn: "15m",
   });
 };
@@ -22,9 +22,9 @@ const generateAccessToken = (id, tv = 0) => {
 // DB lookup-by-token-value, plus a random jti. Only the SHA-256 hash of the
 // full token is persisted, so a leaked DB doesn't expose usable tokens, and
 // rotating/clearing the stored hash revokes it (used on logout/reset).
-async function generateRefreshToken(id) {
+async function generateRefreshToken(id, sid) {
   const jti = crypto.randomBytes(16).toString("hex");
-  const raw = jwt.sign({ id, jti, scope: "refresh" }, process.env.JWT_SECRET, {
+  const raw = jwt.sign({ id, jti, sid, scope: "refresh" }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
   return { raw, hash: hashRefreshToken(raw) };

@@ -91,6 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // Drop this device from the signed-in devices list (best effort)
+    try {
+      await authAPI.removeCurrentSession();
+    } catch {}
     await removeToken();
     setUser(null);
   };

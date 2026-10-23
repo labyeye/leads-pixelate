@@ -53,6 +53,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [savedEmail, setSavedEmail] = useState(user?.email || '');
   const [savedPhone, setSavedPhone] = useState(user?.phone || '');
   const [phoneVerified, setPhoneVerified] = useState(!!user?.phoneVerified);
+  const [emailVerified, setEmailVerified] = useState(!!user?.emailVerified);
   // WhatsApp OTP flow for changing email / phone
   const [otpFor, setOtpFor] = useState<null | 'email' | 'phone'>(null);
   const [otpSentTo, setOtpSentTo] = useState('');
@@ -89,6 +90,7 @@ export default function SettingsScreen({ navigation }: any) {
   const phoneChanged = digits(phone) !== digits(savedPhone);
   const emailChanged = email.trim().toLowerCase() !== savedEmail.toLowerCase();
   const phoneNeedsVerify = phoneChanged || !phoneVerified;
+  const emailNeedsVerify = emailChanged || !emailVerified;
 
   const startOtp = async (type: 'email' | 'phone') => {
     const value = type === 'email' ? email.trim().toLowerCase() : phone.trim();
@@ -106,7 +108,7 @@ export default function SettingsScreen({ navigation }: any) {
       setOtpSentTo(
         type === 'phone'
           ? 'your new WhatsApp number'
-          : 'your registered WhatsApp number',
+          : 'your email inbox',
       );
       setOtpCode('');
       setOtpFor(type);
@@ -122,7 +124,10 @@ export default function SettingsScreen({ navigation }: any) {
     setOtpBusy(true);
     try {
       const res = await authAPI.verifyContactOtp(otpCode.trim());
-      if (otpFor === 'email') setSavedEmail(res.data?.email || email.trim().toLowerCase());
+      if (otpFor === 'email') {
+        setSavedEmail(res.data?.email || email.trim().toLowerCase());
+        setEmailVerified(true);
+      }
       else {
         setSavedPhone(res.data?.phone || phone.trim());
         setPhoneVerified(true);
@@ -299,7 +304,29 @@ export default function SettingsScreen({ navigation }: any) {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            {emailChanged && (
+            <View style={styles.phoneStatusRow}>
+              <View
+                style={[
+                  styles.statusChip,
+                  emailNeedsVerify ? styles.chipWarn : styles.chipOk,
+                ]}
+              >
+                <Icon
+                  name={emailNeedsVerify ? 'alert-circle-outline' : 'checkmark-circle-outline'}
+                  size={13}
+                  color={emailNeedsVerify ? '#92400e' : '#166534'}
+                />
+                <Text
+                  style={[
+                    styles.statusChipText,
+                    { color: emailNeedsVerify ? '#92400e' : '#166534' },
+                  ]}
+                >
+                  {emailChanged ? 'Unsaved change' : emailVerified ? 'Verified' : 'Not verified'}
+                </Text>
+              </View>
+            </View>
+            {emailNeedsVerify && (
               <TouchableOpacity
                 style={styles.verifyBtn}
                 onPress={() => startOtp('email')}
@@ -310,7 +337,7 @@ export default function SettingsScreen({ navigation }: any) {
                 ) : (
                   <>
                     <Icon name="shield-checkmark-outline" size={15} color="#fff" />
-                    <Text style={styles.verifyBtnText}>Verify email with WhatsApp OTP</Text>
+                    <Text style={styles.verifyBtnText}>Verify email with OTP</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -527,7 +554,7 @@ export default function SettingsScreen({ navigation }: any) {
               </Text>
             </View>
             <Text style={styles.otpSub}>
-              Enter the 6-digit code we sent on WhatsApp to {otpSentTo}.
+              Enter the 6-digit code we sent to {otpSentTo}.
             </Text>
             <TextInput
               style={styles.otpInput}
