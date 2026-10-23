@@ -296,6 +296,96 @@ export const authAPI = {
       method: "POST",
       body: JSON.stringify(credential),
     }),
+
+  passkeyList: () =>
+    request<{
+      success: boolean;
+      data: {
+        _id: string;
+        name: string;
+        createdAt: string;
+        lastUsedAt: string | null;
+      }[];
+    }>("/auth/passkey"),
+
+  passkeyDelete: (id: string) =>
+    request<{ success: boolean }>(`/auth/passkey/${id}`, { method: "DELETE" }),
+
+  // Signed-in devices
+  sessions: () =>
+    request<{
+      success: boolean;
+      data: {
+        _id: string;
+        deviceName: string;
+        platform: string;
+        ip: string;
+        createdAt: string;
+        lastActiveAt: string;
+        current: boolean;
+      }[];
+    }>("/auth/sessions"),
+
+  removeSession: (id: string) =>
+    request<{ success: boolean }>(`/auth/sessions/${id}`, { method: "DELETE" }),
+
+  removeOtherSessions: () =>
+    request<{ success: boolean }>("/auth/sessions", { method: "DELETE" }),
+
+  // Backup codes
+  backupCodesStatus: () =>
+    request<{
+      success: boolean;
+      data: { remaining: number; generatedAt: string | null };
+    }>("/auth/backup-codes"),
+
+  generateBackupCodes: (password: string) =>
+    request<{ success: boolean; data: { codes: string[] } }>(
+      "/auth/backup-codes",
+      { method: "POST", body: JSON.stringify({ password }) },
+    ),
+
+  // Email OTP login
+  loginSendEmailOtp: (email: string) =>
+    request<{ success: boolean; message: string }>(
+      "/auth/login/email-otp/send",
+      { method: "POST", body: JSON.stringify({ email }) },
+    ),
+
+  loginVerifyEmailOtp: (email: string, otp: string) =>
+    request<{ success: boolean; data: any }>("/auth/login/email-otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
+    }),
+
+  // Verify a new / current email with a code sent to it
+  sendContactOtp: (type: "email" | "phone", value: string) =>
+    request<{ success: boolean; message: string }>("/auth/contact/send-otp", {
+      method: "POST",
+      body: JSON.stringify({ type, value }),
+    }),
+
+  verifyContactOtp: (otp: string) =>
+    request<{ success: boolean; message: string; data: any }>(
+      "/auth/contact/verify-otp",
+      { method: "POST", body: JSON.stringify({ otp }) },
+    ),
+
+  // Password reset via backup code / passkey
+  resetPasswordWithBackupCode: (email: string, code: string, password: string) =>
+    request<{ success: boolean }>("/auth/reset/backup", {
+      method: "POST",
+      body: JSON.stringify({ email, code, password }),
+    }),
+
+  resetPasskeyOptions: () =>
+    request<{ success: boolean; data: any }>("/auth/reset/passkey-options"),
+
+  resetPasswordWithPasskey: (payload: object) =>
+    request<{ success: boolean }>("/auth/reset/passkey", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
 
 export const aiCallingAPI = {

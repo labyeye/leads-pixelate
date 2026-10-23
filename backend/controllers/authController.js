@@ -750,6 +750,8 @@ const loginRequestOtp = asyncHandler(async (req, res) => {
     }
   }
 
+  if (!user || user.status === "inactive")
+    log.warn("Login OTP requested but no active user with that verified phone — nothing sent");
   // Generic response regardless of match, to avoid phone-number enumeration.
   res.json({
     success: true,
@@ -777,6 +779,8 @@ const loginRequestEmailOtp = asyncHandler(async (req, res) => {
       log.error("Login email OTP send failed", { message: err.message });
     }
   }
+  if (!user || user.status === "inactive")
+    log.warn("Login email OTP requested but no active user with that email — nothing sent");
   res.json({
     success: true,
     message: "If that email is registered, a code has been sent to it.",

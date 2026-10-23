@@ -602,6 +602,10 @@ async function sendPasswordResetEmail({ to, userName, resetUrl }) {
 // One-time code emails (sign-in / unlock, verifying a new email address).
 async function sendOtpEmail({ to, userName, otp, purpose }) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    log.error("SMTP not configured — cannot send OTP email", {
+      hasUser: !!process.env.SMTP_USER,
+      hasPass: !!process.env.SMTP_PASS,
+    });
     throw new Error("Email is not configured on the server");
   }
   const esc = (v) =>
@@ -626,13 +630,30 @@ async function sendOtpEmail({ to, userName, otp, purpose }) {
 <p style="margin:0;font-size:12px;color:#6b7280;line-height:1.6;">This code expires in 10 minutes. If you didn't request it, you can ignore this email — nobody can sign in without it.</p>
 </td></tr></table></td></tr></table></body></html>`;
 
-  await createTransport().sendMail({
-    from: `"NESTLeads" <${process.env.SMTP_USER}>`,
-    to,
-    subject,
-    html,
-    text: `Your NESTLeads code is ${otp}. It expires in 10 minutes.`,
-  });
+  const masked = String(to).replace(/^(.).*(@.*)$/, "$1***$2");
+  log.info("Sending OTP email", { to: masked, purpose, host: process.env.SMTP_HOST || "smtp.gmail.com" });
+  try {
+    const info = await createTransport().sendMail({
+      from: `"NESTLeads" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html,
+      text: `Your NESTLeads code is ${otp}. It expires in 10 minutes.`,
+    });
+    log.info("OTP email accepted by SMTP", { to: masked, messageId: info.messageId });
+  } catch (err) {
+    log.error("OTP email failed", {
+      to: masked,
+      code: err.code,
+      responseCode: err.responseCode,
+      message: err.message,
+      hint:
+        err.code === "EAUTH"
+          ? "SMTP login rejected — check SMTP_USER / SMTP_PASS (use a Google app password)"
+          : undefined,
+    });
+    throw err;
+  }
 }
 
 async function sendBulkLeadEmail({ to, subject, message, fromName }) {

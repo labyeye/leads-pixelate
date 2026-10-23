@@ -1,12 +1,32 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Mail, KeyRound } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Mail,
+  KeyRound,
+  FileText,
+  Fingerprint,
+} from "lucide-react";
 import logoimg from "@/assets/images/Logo.png";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { authAPI } from "@/services/api";
 import { AuthShell } from "@/components/auth/AuthShell";
+import {
+  passkeysSupported,
+  serializeAssertion,
+  toRequestOptions,
+} from "@/lib/webauthn";
 
-type Step = "email" | "choose" | "email_sent" | "otp" | "totp" | "done";
+type Step =
+  | "email"
+  | "choose"
+  | "email_sent"
+  | "otp"
+  | "totp"
+  | "backup"
+  | "passkey"
+  | "done";
 
 const METHOD_INFO: Record<
   string,
@@ -27,6 +47,16 @@ const METHOD_INFO: Record<
     desc: "Enter the code from your authenticator app",
     icon: <KeyRound className="w-5 h-5" />,
   },
+  backup: {
+    label: "Backup code",
+    desc: "Use one of your saved one-time backup codes",
+    icon: <FileText className="w-5 h-5" />,
+  },
+  passkey: {
+    label: "Passkey",
+    desc: "Verify with Face ID, fingerprint or your screen lock",
+    icon: <Fingerprint className="w-5 h-5" />,
+  },
 };
 
 export default function ForgotPasswordPage() {
@@ -40,9 +70,9 @@ export default function ForgotPasswordPage() {
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [activeMethod, setActiveMethod] = useState<"whatsapp" | "totp" | null>(
-    null,
-  );
+  const [activeMethod, setActiveMethod] = useState<
+    "whatsapp" | "totp" | "backup" | "passkey" | null
+  >(null);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +106,12 @@ export default function ForgotPasswordPage() {
       } else if (method === "totp") {
         setActiveMethod("totp");
         setStep("totp");
+      } else if (method === "backup") {
+        setActiveMethod("backup");
+        setStep("backup");
+      } else if (method === "passkey") {
+        setActiveMethod("passkey");
+        setStep("passkey");
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -87,8 +123,12 @@ export default function ForgotPasswordPage() {
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    if (
+      password.length < 8 ||
+      !/[A-Za-z]/.test(password) ||
+      !/\d/.test(password)
+    ) {
+      setError("Password must be 8+ characters with a letter and a number");
       return;
     }
     if (password !== confirmPassword) {
@@ -97,14 +137,33 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
-      if (activeMethod === "whatsapp") {
+      if (activeMethod === "passkey") {
+        if (!passkeysSupported())
+          throw new Error("Passkeys are not supported by your browser.");
+        const { data: o } = await authAPI.resetPasskeyOptions();
+        const credential = (await navigator.credentials.get({
+          publicKey: toRequestOptions(o),
+        })) as PublicKeyCredential | null;
+        if (!credential) throw new Error("Passkey prompt was cancelled.");
+        await authAPI.resetPasswordWithPasskey({
+          challengeToken: o.challengeToken,
+          password,
+          ...serializeAssertion(credential),
+        });
+      } else if (activeMethod === "backup") {
+        await authAPI.resetPasswordWithBackupCode(email, code.trim(), password);
+      } else if (activeMethod === "whatsapp") {
         await authAPI.resetPasswordWithOtp(email, code, password);
       } else {
         await authAPI.resetPasswordWithTotp(email, code, password);
       }
       setStep("done");
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(
+        err.name === "NotAllowedError"
+          ? "Passkey verification was cancelled."
+          : err.message || "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -245,36 +304,56 @@ export default function ForgotPasswordPage() {
           </div>
         )}
 
-        {(step === "otp" || step === "totp") && (
+        {(step === "otp" || step === "totp" || step === "backup" || step === "passkey") && (
           <>
             <h2 className="font-display font-bold text-2xl text-black mb-1">
               {step === "otp"
                 ? "Enter WhatsApp code"
-                : "Enter authenticator code"}
+                : step === "backup"
+                  ? "Enter a backup code"
+                  : step === "passkey"
+                    ? "Choose a new password"
+                    : "Enter authenticator code"}
             </h2>
             <p className="text-muted-foreground text-sm mb-6">
               {step === "otp"
                 ? "We sent a 6-digit code to your verified WhatsApp number."
-                : "Open your authenticator app and enter the current 6-digit code."}
+                : step === "backup"
+                  ? "Enter one of your saved backup codes. It stops working after this."
+                  : step === "passkey"
+                    ? "Pick a new password, then confirm it with your passkey."
+                    : "Open your authenticator app and enter the current 6-digit code."}
             </p>
 
             <form onSubmit={handleCodeSubmit} className="space-y-5 login-anim">
-              <div>
-                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
-                  {step === "otp" ? "WhatsApp code" : "Authenticator code"}
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="123456"
-                  className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors tracking-widest text-center font-bold"
-                  required
-                  autoFocus
-                />
-              </div>
+              {step !== "passkey" && (
+                <div>
+                  <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                    {step === "otp"
+                      ? "WhatsApp code"
+                      : step === "backup"
+                        ? "Backup code"
+                        : "Authenticator code"}
+                  </label>
+                  <input
+                    type="text"
+                    inputMode={step === "backup" ? "text" : "numeric"}
+                    maxLength={step === "backup" ? 11 : 6}
+                    value={code}
+                    onChange={(e) =>
+                      setCode(
+                        step === "backup"
+                          ? e.target.value.toUpperCase()
+                          : e.target.value.replace(/\D/g, ""),
+                      )
+                    }
+                    placeholder={step === "backup" ? "XXXXX-XXXXX" : "123456"}
+                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors tracking-widest text-center font-bold"
+                    required
+                    autoFocus
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
                   New password
@@ -314,7 +393,7 @@ export default function ForgotPasswordPage() {
                     Resetting...
                   </span>
                 ) : (
-                  "Reset Password"
+                  step === "passkey" ? "Verify & Reset" : "Reset Password"
                 )}
               </button>
             </form>

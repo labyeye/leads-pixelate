@@ -6,6 +6,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
+  EmailVerificationCard,
+  PasskeyCard,
+  DevicesCard,
+  BackupCodesCard,
+} from "@/components/security/SecurityCards";
+import {
   KeyRound,
   Loader2,
   CheckCircle2,
@@ -28,6 +34,10 @@ export default function AccountSecurityPage() {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [phoneLoading, setPhoneLoading] = useState(false);
 
+  // Email
+  const [accountEmail, setAccountEmail] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+
   // TOTP
   const [totpEnabled, setTotpEnabled] = useState(false);
   const [totpSetupData, setTotpSetupData] = useState<{
@@ -48,6 +58,8 @@ export default function AccountSecurityPage() {
       .getMe()
       .then((res) => {
         setPhoneVerified(!!res.data.phoneVerified);
+        setAccountEmail(res.data.email || "");
+        setEmailVerified(!!res.data.emailVerified);
         setTotpEnabled(!!res.data.totpEnabled);
         if (res.data.phone) {
           setPhone(res.data.phone);
@@ -222,6 +234,16 @@ export default function AccountSecurityPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+          <PasskeyCard />
+          <DevicesCard />
+          <EmailVerificationCard
+            email={accountEmail}
+            verified={emailVerified}
+            onVerified={(e) => {
+              setAccountEmail(e);
+              setEmailVerified(true);
+            }}
+          />
           {}
           {
             <div className="border-2 bg-white p-5 flex flex-col">
@@ -453,6 +475,7 @@ export default function AccountSecurityPage() {
               )}
             </div>
           }
+          <BackupCodesCard />
         </div>
       </div>
     </AppLayout>

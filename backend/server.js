@@ -189,6 +189,21 @@ app.use("/api/telemetry", tele.ingest);
 app.use("/api/crm/metrics", tele.metrics);
 app.use("/api/crm/accounts", require("./utils/crmAccounts")("NESTLEADS_SECRET", require("./utils/crmAdapter")));
 
+{
+  const l = require("./utils/logger").scope("Startup");
+  l.info("WhatsApp OTP config", {
+    token: !!(process.env.WHATSAPP_PLATFORM_ACCESS_TOKEN || process.env.META_WA_TOKEN),
+    phoneNumberId: !!(process.env.WHATSAPP_PLATFORM_PHONE_NUMBER_ID || process.env.META_WA_PHONE_ID),
+    template: process.env.WHATSAPP_OTP_TEMPLATE_NAME || "nest_otp",
+    lang: process.env.WHATSAPP_OTP_TEMPLATE_LANG || "en_US",
+  });
+  l.info("Email OTP config", {
+    smtpUser: !!process.env.SMTP_USER,
+    smtpPass: !!process.env.SMTP_PASS,
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+  });
+}
+
 // Lets iOS trust this domain for passkeys (webcredentials) — see PASSKEY_RP_ID.
 app.get("/.well-known/apple-app-site-association", (req, res) =>
   res.json({ webcredentials: { apps: ["5UNNVWBHTU.com.nestleads"] } }),
