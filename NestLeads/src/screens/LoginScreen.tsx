@@ -461,7 +461,7 @@ export default function LoginScreen({ navigation }: any) {
                   ) : (
                     <View style={styles.row}>
                       <Text style={styles.submitText}>Sign In</Text>
-                      <ArrowRight size={20} color={'#ffffff'} />
+                      <ArrowRight size={20} color={'#FBFBFB'} />
                     </View>
                   )}
                 </TouchableOpacity>

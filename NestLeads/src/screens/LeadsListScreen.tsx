@@ -1321,7 +1321,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 24, fontWeight: '900', color: '#ffffff' },
+  avatarText: { fontSize: 24, fontWeight: '900', color: '#FBFBFB' },
   cardTopMid: { flex: 1 },
   leadName: { fontSize: 17, fontWeight: '800', color: '#000' },
   leadSubtitle: { fontSize: 13, color: '#374151', fontWeight: '500', marginTop: 2 },

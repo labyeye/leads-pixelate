@@ -6,7 +6,7 @@ const SECONDARY = "#111827";
 const MUTED = "#6b7280";
 const LINE = "#e5e7eb";
 const BG_HEADER = "#f3f4f6";
-const WHITE = "#ffffff";
+const WHITE = "#FBFBFB";
 
 const PW = 595.28;
 const PH = 841.89;
@@ -440,7 +440,7 @@ export async function getInvoicePDF(q: any, settings: any): Promise<jsPDF> {
 
   headers.forEach(([key, label, align]) => {
     setB(7);
-    setTextClr(doc, "#ffffff");
+    setTextClr(doc, "#FBFBFB");
     const cx =
       align === "center"
         ? colXs[key] + cols[key] / 2

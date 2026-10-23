@@ -2319,7 +2319,7 @@ async function main() {
   // logo overlay: composited onto the corner; a missing logo file never fails the run
   const sharp = require("sharp");
   const base = await sharp({
-    create: { width: 400, height: 500, channels: 3, background: "#ffffff" },
+    create: { width: 400, height: 500, channels: 3, background: "#FBFBFB" },
   })
     .jpeg()
     .toBuffer();
@@ -2384,7 +2384,7 @@ async function main() {
   );
   fs.writeFileSync(
     path.join(svc.brandDir(tid, cid), "light.png"),
-    await solid("#ffffff", 200, 200).png().toBuffer(),
+    await solid("#FBFBFB", 200, 200).png().toBuffer(),
   );
   const two = {
     logoMode: "auto",

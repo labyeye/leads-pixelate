@@ -129,7 +129,7 @@ export default function IntroOnboardingScreen({ navigation }: any) {
           <Text style={styles.buttonText}>
             {current === slides.length - 1 ? 'Get started' : 'Next'}
           </Text>
-          <ArrowRight color={"#ffffff"} />
+          <ArrowRight color={"#FBFBFB"} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>

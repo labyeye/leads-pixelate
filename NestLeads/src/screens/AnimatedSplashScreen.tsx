@@ -102,7 +102,7 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
           ]}
         >
           <View style={styles.iconCircle}>
-            <Users size={32} color="#ffffff" strokeWidth={2} />
+            <Users size={32} color="#FBFBFB" strokeWidth={2} />
           </View>
           <Text style={styles.iconLabel}>Leads</Text>
         </Animated.View>
@@ -114,7 +114,7 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
           ]}
         >
           <View style={styles.iconCircle}>
-            <PhoneCall size={32} color="#ffffff" strokeWidth={2} />
+            <PhoneCall size={32} color="#FBFBFB" strokeWidth={2} />
           </View>
           <Text style={styles.iconLabel}>Follow-Up</Text>
         </Animated.View>
@@ -126,7 +126,7 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
           ]}
         >
           <View style={styles.iconCircle}>
-            <TrendingUp size={32} color="#ffffff" strokeWidth={2} />
+            <TrendingUp size={32} color="#FBFBFB" strokeWidth={2} />
           </View>
           <Text style={styles.iconLabel}>Convert</Text>
         </Animated.View>
@@ -151,7 +151,7 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FBFBFB',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   logoCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FBFBFB',
     padding: 20,
   },
   logoImage: {

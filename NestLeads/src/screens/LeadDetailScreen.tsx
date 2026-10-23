@@ -488,7 +488,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                { backgroundColor: '#ffffff' },
+                { backgroundColor: '#FBFBFB' },
                 !lead.phone && { opacity: 0.4 },
               ]}
               onPress={handleCall}
@@ -500,7 +500,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                { backgroundColor: '#ffffff' },
+                { backgroundColor: '#FBFBFB' },
                 !lead.phone && { opacity: 0.4 },
               ]}
               onPress={handleWhatsApp}
