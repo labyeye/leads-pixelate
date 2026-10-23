@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { Check, CheckCheck, ClockPlus } from 'lucide-react-native';
 import { linkedinAdsAPI, googleAdsAPI } from '../services/api';
+import { CountText } from '../components/motion';
 
 // ─── Logo assets ─────────────────────────────────────────────────────────────
 const LOGOS: Record<string, any> = {
@@ -866,7 +867,7 @@ export default function IntegrationsScreen({ navigation }: any) {
               <Check size={25} color="#22c55e" />
             </View>
             <View>
-              <Text style={styles.summaryNum}>{connectedCount}</Text>
+              <CountText style={styles.summaryNum}>{connectedCount}</CountText>
               <Text style={styles.summaryLabel}>Connected</Text>
             </View>
           </View>
@@ -883,9 +884,9 @@ export default function IntegrationsScreen({ navigation }: any) {
               <ClockPlus size={25} color="#044bab" />
             </View>
             <View>
-              <Text style={styles.summaryNum}>
+              <CountText style={styles.summaryNum}>
                 {INTEGRATIONS.length - connectedCount}
-              </Text>
+              </CountText>
               <Text style={styles.summaryLabel}>Available</Text>
             </View>
           </View>
@@ -902,7 +903,7 @@ export default function IntegrationsScreen({ navigation }: any) {
               <CheckCheck size={25} color="#e77b00" />
             </View>
             <View>
-              <Text style={styles.summaryNum}>{INTEGRATIONS.length}</Text>
+              <CountText style={styles.summaryNum}>{INTEGRATIONS.length}</CountText>
               <Text style={styles.summaryLabel}>Total</Text>
             </View>
           </View>

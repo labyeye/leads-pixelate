@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { socialAPI, usersAPI } from "@/services/api";
+import { MediaUpload } from "@/components/social/MediaUpload";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -1577,110 +1578,66 @@ function PostWizard({
 
                   {postType === "image" && (
                     <div>
-                      <Label className="flex items-center gap-1.5">
-                        <ImageIcon className="w-3.5 h-3.5" /> Image URL{" "}
+                      <Label className="flex items-center gap-1.5 mb-1">
+                        <ImageIcon className="w-3.5 h-3.5" /> Image{" "}
                         <span className="text-red-500">*</span>
                       </Label>
-                      <Input
-                        placeholder="https://example.com/image.jpg"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        className="mt-1"
+                      <MediaUpload
+                        kind="image"
+                        rule="feed"
+                        strict={platforms.includes("instagram")}
+                        value={imageUrl ? [imageUrl] : []}
+                        onChange={(u) => setImageUrl(u[0] || "")}
                       />
-                      {imageUrl && (
-                        <img
-                          src={imageUrl}
-                          alt="preview"
-                          className="mt-2 rounded-lg border border-border max-h-40 object-cover w-full"
-                          onError={(e) =>
-                            ((e.target as HTMLImageElement).style.display =
-                              "none")
-                          }
-                        />
-                      )}
                     </div>
                   )}
 
                   {postType === "carousel" && (
                     <div>
-                      <Label className="flex items-center gap-1.5">
-                        <ImageIcon className="w-3.5 h-3.5" /> Image URLs{" "}
+                      <Label className="flex items-center gap-1.5 mb-1">
+                        <ImageIcon className="w-3.5 h-3.5" /> Images{" "}
                         <span className="text-red-500">*</span>
                         <span className="text-muted-foreground text-xs font-normal">
                           (at least 2)
                         </span>
                       </Label>
-                      <div className="space-y-2 mt-1">
-                        {mediaUrlInputs.map((m, i) => (
-                          <div key={i} className="flex gap-2">
-                            <Input
-                              placeholder={`https://example.com/image-${i + 1}.jpg`}
-                              value={m}
-                              onChange={(e) =>
-                                updateMediaUrl(i, e.target.value)
-                              }
-                            />
-                            {mediaUrlInputs.length > 2 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-500"
-                                onClick={() => removeMediaUrlField(i)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={addMediaUrlField}
-                      >
-                        <Plus className="w-3.5 h-3.5 mr-1" /> Add image
-                      </Button>
+                      <MediaUpload
+                        kind="image"
+                        rule="feed"
+                        strict={platforms.includes("instagram")}
+                        multiple
+                        value={mediaUrlInputs}
+                        onChange={setMediaUrlInputs}
+                      />
                     </div>
                   )}
 
                   {postType === "reel" && (
                     <>
                       <div>
-                        <Label>
-                          Video URL <span className="text-red-500">*</span>
+                        <Label className="mb-1 block">
+                          Video <span className="text-red-500">*</span>
                         </Label>
-                        <Input
-                          placeholder="https://example.com/video.mp4"
-                          value={videoUrl}
-                          onChange={(e) => setVideoUrl(e.target.value)}
-                          className="mt-1"
+                        <MediaUpload
+                          kind="video"
+                          rule="reel"
+                          value={videoUrl ? [videoUrl] : []}
+                          onChange={(u) => setVideoUrl(u[0] || "")}
                         />
                       </div>
                       <div>
-                        <Label className="flex items-center gap-1.5">
-                          <ImageIcon className="w-3.5 h-3.5" /> Cover Image URL
+                        <Label className="flex items-center gap-1.5 mb-1">
+                          <ImageIcon className="w-3.5 h-3.5" /> Cover Image
                           <span className="text-muted-foreground text-xs font-normal">
                             (optional)
                           </span>
                         </Label>
-                        <Input
-                          placeholder="https://example.com/cover.jpg"
-                          value={coverImageUrl}
-                          onChange={(e) => setCoverImageUrl(e.target.value)}
-                          className="mt-1"
+                        <MediaUpload
+                          kind="image"
+                          value={coverImageUrl ? [coverImageUrl] : []}
+                          onChange={(u) => setCoverImageUrl(u[0] || "")}
+                          label="Upload cover"
                         />
-                        {coverImageUrl && (
-                          <img
-                            src={coverImageUrl}
-                            alt="preview"
-                            className="mt-2 rounded-lg border border-border max-h-40 object-cover w-full"
-                            onError={(e) =>
-                              ((e.target as HTMLImageElement).style.display =
-                                "none")
-                            }
-                          />
-                        )}
                       </div>
                     </>
                   )}
@@ -2537,12 +2494,19 @@ function AnalyticsTab() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const [engagement, setEngagement] = useState<any>(null);
+
   useEffect(() => {
     socialAPI
       .getAnalytics()
       .then((res) => setData(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
+    // Pulled live from Meta; loads separately so the rest of the tab isn't blocked.
+    socialAPI
+      .getEngagement()
+      .then((res) => setEngagement(res.data))
+      .catch(() => {});
   }, []);
 
   if (loading) {
@@ -2592,6 +2556,25 @@ function AnalyticsTab() {
       </div>
 
       {}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Total Published", value: engagement?.totals?.published },
+          { label: "Views", value: engagement?.totals?.views },
+          { label: "Likes", value: engagement?.totals?.likes },
+          { label: "Comments", value: engagement?.totals?.comments },
+        ].map((c) => (
+          <div key={c.label} className="border-2 border-primary/40 p-4 space-y-1">
+            <p className="text-2xl font-bold">
+              {engagement ? (c.value ?? 0).toLocaleString("en-IN") : "—"}
+            </p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {c.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {}
       <div className="grid md:grid-cols-2 gap-6">
         {}
         <div className="border-2 p-4">
@@ -2625,35 +2608,36 @@ function AnalyticsTab() {
 
         {}
         <div className="border-2 p-4">
-          <p className="text-sm font-bold mb-4">Platform Breakdown</p>
+          <p className="text-sm font-bold mb-4">Published by Post Type</p>
           <div className="space-y-3">
-            {Object.entries(platforms).map(([platform, count]) => (
-              <div key={platform} className="flex items-center gap-3">
-                {platform === "facebook" ? (
-                  <Facebook className="w-4 h-4 text-blue-600 shrink-0" />
-                ) : platform === "linkedin" ? (
-                  <LinkedInIcon className="w-4 h-4 shrink-0" />
-                ) : (
-                  <Instagram className="w-4 h-4 text-purple-600 shrink-0" />
-                )}
-                <div className="flex-1">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="font-medium capitalize">{platform}</span>
-                    <span className="text-muted-foreground">{count} posts</span>
+            {Object.entries(engagement?.byType || {}).map(
+              ([type, v]: [string, any]) => (
+                <div key={type} className="border border-border p-3">
+                  <div className="flex justify-between text-xs mb-2">
+                    <span className="font-bold capitalize">{type}</span>
+                    <span className="text-muted-foreground">
+                      {v.count} published
+                    </span>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${platform === "facebook" ? "bg-blue-500" : platform === "linkedin" ? "bg-sky-500" : "bg-purple-500"}`}
-                      style={{
-                        width: `${Math.round((count / (Object.values(platforms).reduce((a, b) => a + b, 0) || 1)) * 100)}%`,
-                      }}
-                    />
+                  <div className="grid grid-cols-3 text-center text-xs">
+                    <div>
+                      <p className="font-bold text-sm">{v.views}</p>
+                      <p className="text-muted-foreground">Views</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">{v.likes}</p>
+                      <p className="text-muted-foreground">Likes</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">{v.comments}</p>
+                      <p className="text-muted-foreground">Comments</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {Object.keys(platforms).length === 0 && (
-              <p className="text-sm text-muted-foreground">No data yet.</p>
+              ),
+            )}
+            {!engagement && (
+              <p className="text-sm text-muted-foreground">Loading…</p>
             )}
           </div>
         </div>

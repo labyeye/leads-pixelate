@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { billingAPI } from '../services/api';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -161,16 +162,16 @@ export default function BillingScreen({ navigation }: any) {
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Icon name="flag-outline" size={18} color="#024BAB" />
-            <Text style={styles.statValue}>
+            <CountText style={styles.statValue}>
               {maxLeads >= 999999 ? '∞' : maxLeads.toLocaleString()}
-            </Text>
+            </CountText>
             <Text style={styles.statLabel}>Leads / month</Text>
           </View>
           <View style={styles.statCard}>
             <Icon name="people-outline" size={18} color="#FF751F" />
-            <Text style={styles.statValue}>
+            <CountText style={styles.statValue}>
               {maxMembers >= 999 ? '∞' : maxMembers}
-            </Text>
+            </CountText>
             <Text style={styles.statLabel}>Team members</Text>
           </View>
         </View>
@@ -236,9 +237,9 @@ export default function BillingScreen({ navigation }: any) {
                   {formatDate(inv.paidAt)} · {capitalise(inv.plan || '')} Plan
                 </Text>
               </View>
-              <Text style={styles.invoiceAmount}>
+              <CountText style={styles.invoiceAmount}>
                 {formatAmount(inv.amount)}
-              </Text>
+              </CountText>
             </View>
           ))
         )}

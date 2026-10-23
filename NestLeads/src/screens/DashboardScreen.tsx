@@ -18,8 +18,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
 import SourceBadge, { SourceLogo } from '../components/SourceBadge';
 import AppHeader from '../components/AppHeader';
-import LeadsLineChart from '../components/LeadsLineChart';
-import { SlideIn, CountUp } from '../components/motion';
+import LeadsBarChart from '../components/LeadsBarChart';
+import { SlideIn, CountUp, CountText } from '../components/motion';
 import UserAvatar from '../components/UserAvatar';
 import { PieChart } from 'react-native-gifted-charts';
 
@@ -107,7 +107,6 @@ export default function DashboardScreen({ navigation }: any) {
 
   useEffect(() => {
     fetchAll();
-    // Record this login session
     setActivities([
       {
         type: 'login',
@@ -116,6 +115,19 @@ export default function DashboardScreen({ navigation }: any) {
       },
     ]);
   }, []);
+
+  const topSources: { name: string; value: number }[] = (() => {
+    let list: { name: string; value: number }[] = data?.sourceData || [];
+    if (!list.length) {
+      const m: Record<string, number> = {};
+      allLeads.forEach((l: any) => {
+        const k = l.source || 'Other';
+        m[k] = (m[k] || 0) + 1;
+      });
+      list = Object.entries(m).map(([name, value]) => ({ name, value }));
+    }
+    return [...list].sort((a, b) => b.value - a.value).slice(0, 4);
+  })();
 
   // Leads created per day, last 7 days
   const dailyLeads = Array.from({ length: 7 }, (_, k) => {
@@ -187,7 +199,6 @@ export default function DashboardScreen({ navigation }: any) {
               value={data?.stats?.hotLeads ?? 0}
               icon="flame-outline"
               iconBg={SECONDARY}
-              urgent
               delay={160}
             />
             <KpiCard
@@ -198,21 +209,33 @@ export default function DashboardScreen({ navigation }: any) {
               delay={240}
             />
           </View>
-
-          {/* Leads per day */}
-          <SlideIn delay={300} style={[styles.section, { marginTop: 12 }]}>
-            <Text style={styles.sectionLabel}>LEADS COMING IN · LAST 7 DAYS</Text>
-            <LeadsLineChart data={dailyLeads} width={SCREEN_WIDTH - 62} />
+          <SlideIn delay={400} style={[styles.section, { marginTop: 12 }]}>
+            <Text style={styles.sectionLabel}>DAILY LEADS · LAST 7 DAYS</Text>
+            <LeadsBarChart data={dailyLeads} width={SCREEN_WIDTH - 62} />
           </SlideIn>
-
-          {/* Recent leads table */}
+          <View style={[styles.kpiRow, { marginTop: 10 }]}>
+            {topSources.map((src, i) => (
+              <KpiCard
+                key={src.name}
+                title={src.name.toUpperCase()}
+                value={src.value}
+                iconNode={<SourceLogo source={src.name} size={30} />}
+                delay={320 + i * 80}
+              />
+            ))}
+            {Array.from({ length: 4 - topSources.length }).map((_, i) => (
+              <View key={`pad${i}`} style={{ flex: 1 }} />
+            ))}
+          </View>
           <SlideIn delay={380} style={[styles.section, { marginTop: 12 }]}>
             <Text style={styles.sectionLabel}>RECENT LEADS ADDED</Text>
             <View style={styles.tHead}>
               <Text style={[styles.tHeadText, { flex: 2 }]}>NAME</Text>
               <Text style={[styles.tHeadText, { flex: 1.3 }]}>SOURCE</Text>
               <Text style={[styles.tHeadText, { flex: 1.2 }]}>STATUS</Text>
-              <Text style={[styles.tHeadText, { flex: 0.9, textAlign: 'right' }]}>
+              <Text
+                style={[styles.tHeadText, { flex: 0.9, textAlign: 'right' }]}
+              >
                 ADDED
               </Text>
             </View>
@@ -273,7 +296,10 @@ export default function DashboardScreen({ navigation }: any) {
               const focused = pieData[safeIdx];
               const focusedPct = Math.round((focused.value / total) * 100);
               return (
-                <SlideIn delay={460} style={[styles.section, { marginTop: 12 }]}>
+                <SlideIn
+                  delay={460}
+                  style={[styles.section, { marginTop: 12 }]}
+                >
                   <Text style={styles.sectionLabel}>LEADS BY SOURCE</Text>
                   <View style={styles.pieWrapper}>
                     <View style={styles.pieChartBox}>
@@ -552,18 +578,30 @@ export default function DashboardScreen({ navigation }: any) {
   );
 }
 
-function KpiCard({ title, value, icon, iconBg, urgent, delay = 0 }: any) {
+function KpiCard({
+  title,
+  value,
+  icon,
+  iconBg,
+  iconNode,
+  urgent,
+  delay = 0,
+}: any) {
   return (
     <SlideIn delay={delay} style={{ flex: 1 }}>
       <View style={[styles.kpiCard, urgent && styles.kpiCardUrgent]}>
-        <View
-          style={[
-            styles.kpiIcon,
-            { backgroundColor: iconBg + '1A', borderColor: iconBg },
-          ]}
-        >
-          <Icon name={icon} size={18} color={iconBg} />
-        </View>
+        {iconNode ? (
+          <View style={styles.kpiIconNode}>{iconNode}</View>
+        ) : (
+          <View
+            style={[
+              styles.kpiIcon,
+              { backgroundColor: iconBg + '1A', borderColor: iconBg },
+            ]}
+          >
+            <Icon name={icon} size={18} color={iconBg} />
+          </View>
+        )}
         <View style={styles.kpiBody}>
           <Text style={styles.kpiTitle} numberOfLines={1}>
             {title}
@@ -592,7 +630,7 @@ function MonthRow({
         <Icon name={icon} size={16} color={iconBg} />
       </View>
       <Text style={styles.monthRowLabel}>{label}</Text>
-      <Text style={styles.monthRowValue}>{value}</Text>
+      <CountText style={styles.monthRowValue}>{value}</CountText>
     </View>
   );
 }
@@ -885,6 +923,7 @@ const styles = StyleSheet.create({
 
   // KPI cards — 2 per row
   kpiRow: { flexDirection: 'row', gap: 10 },
+  kpiIconNode: { alignItems: 'center', justifyContent: 'center' },
   kpiCard: {
     flex: 1,
     backgroundColor: '#fff',
@@ -898,11 +937,11 @@ const styles = StyleSheet.create({
     padding: 12,
     flexDirection: 'column',
     alignItems: 'center',
-    textAlign:'center',
+    textAlign: 'center',
     gap: 10,
   },
   kpiCardUrgent: { backgroundColor: '#fff7ed' },
-  kpiBody: { flex: 1, minWidth: 0 ,alignItems:'center'},
+  kpiBody: { flex: 1, minWidth: 0, alignItems: 'center' },
   kpiIcon: {
     width: 28,
     height: 28,
@@ -918,7 +957,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    textAlign:'center'
+    textAlign: 'center',
   },
 
   // Section box
@@ -1150,7 +1189,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#000',
   },
-  tHeadText: { fontSize: 9, fontWeight: '700', color: '#64748b', letterSpacing: 0.6 },
+  tHeadText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748b',
+    letterSpacing: 0.6,
+  },
   tRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1159,7 +1203,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e2e8f0',
   },
   tName: { fontSize: 12, fontWeight: '700', color: '#000', paddingRight: 6 },
-  tCell: { fontSize: 10, fontWeight: '600', color: '#64748b', textTransform: 'uppercase' },
+  tCell: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748b',
+    textTransform: 'uppercase',
+  },
 
   // Leaderboard
   lbRow: {

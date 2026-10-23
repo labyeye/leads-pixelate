@@ -172,6 +172,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Pending email/phone change, confirmed with a WhatsApp code.
+    pendingContactType: { type: String, enum: ["email", "phone", null], default: null, select: false },
+    pendingContactValue: { type: String, select: false },
+    contactOtpHash: { type: String, select: false },
+    contactOtpExpires: { type: Date, select: false },
+    contactOtpAttempts: { type: Number, default: 0, select: false },
     phoneOtpHash: {
       type: String,
       select: false,

@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { campaignsAPI } from '../services/api';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -140,26 +141,26 @@ export default function CampaignsScreen({ navigation }: any) {
         {/* Stats row */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{c.totalCount || 0}</Text>
+            <CountText style={styles.statValue}>{c.totalCount || 0}</CountText>
             <Text style={styles.statLabel}>TOTAL</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{c.sentCount || 0}</Text>
+            <CountText style={styles.statValue}>{c.sentCount || 0}</CountText>
             <Text style={styles.statLabel}>SENT</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: '#024BAB' }]}>
+            <CountText style={[styles.statValue, { color: '#024BAB' }]}>
               {deliveredRate}%
-            </Text>
+            </CountText>
             <Text style={styles.statLabel}>DELIVERED</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={[styles.statValue, { color: '#22c55e' }]}>
+            <CountText style={[styles.statValue, { color: '#22c55e' }]}>
               {readRate}%
-            </Text>
+            </CountText>
             <Text style={styles.statLabel}>READ</Text>
           </View>
         </View>
@@ -299,9 +300,9 @@ export default function CampaignsScreen({ navigation }: any) {
               style={[styles.summaryChip, { backgroundColor: cfg.bg }]}
             >
               <Icon name={cfg.icon} size={12} color={cfg.text} />
-              <Text style={[styles.summaryChipCount, { color: cfg.text }]}>
+              <CountText style={[styles.summaryChipCount, { color: cfg.text }]}>
                 {counts[s] || 0}
-              </Text>
+              </CountText>
               <Text style={[styles.summaryChipLabel, { color: cfg.text }]}>
                 {s.toUpperCase()}
               </Text>

@@ -31,6 +31,7 @@ import {
   type Insight,
   type DeliveryFilter,
 } from '../lib/metaAdsShared';
+import { CountText } from '../components/motion';
 
 const FB_COLOR = '#1877F2';
 const NB_SHADOW = {
@@ -598,7 +599,7 @@ function Metric({
   return (
     <View style={styles.metricBox}>
       <Text style={styles.metricLabel}>{label.toUpperCase()}</Text>
-      <Text style={[styles.metricValue, color && { color }]}>{value}</Text>
+      <CountText style={[styles.metricValue, color && { color }]}>{value}</CountText>
     </View>
   );
 }

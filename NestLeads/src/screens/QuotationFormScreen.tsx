@@ -22,6 +22,7 @@ import {
   productsAPI,
   leadsAPI,
 } from '../services/api';
+import { CountText } from '../components/motion';
 
 // Create / edit a quotation. Field set, validation and the total calculation
 // (18% tax on the discounted subtotal) mirror the web QuotationsPage.
@@ -463,19 +464,19 @@ export default function QuotationFormScreen({ navigation, route }: any) {
         <View style={s.totals}>
           <View style={s.totalRow}>
             <Text style={s.totalLabel}>Subtotal</Text>
-            <Text style={s.totalValue}>{inr(subtotal)}</Text>
+            <CountText style={s.totalValue}>{inr(subtotal)}</CountText>
           </View>
           <View style={s.totalRow}>
             <Text style={s.totalLabel}>Discount</Text>
-            <Text style={s.totalValue}>-{inr(discount)}</Text>
+            <CountText style={s.totalValue}>-{inr(discount)}</CountText>
           </View>
           <View style={s.totalRow}>
             <Text style={s.totalLabel}>Tax (18%)</Text>
-            <Text style={s.totalValue}>{inr(tax)}</Text>
+            <CountText style={s.totalValue}>{inr(tax)}</CountText>
           </View>
           <View style={[s.totalRow, s.grand]}>
             <Text style={s.grandLabel}>Total</Text>
-            <Text style={s.grandValue}>{inr(total)}</Text>
+            <CountText style={s.grandValue}>{inr(total)}</CountText>
           </View>
         </View>
 

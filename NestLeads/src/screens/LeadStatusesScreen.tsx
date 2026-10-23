@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
   },
   categoryFixed: { fontSize: 10, color: '#94a3b8', marginBottom: 4 },
   stageCard: {
+    backgroundColor: '#fff',
     borderWidth: 2,
     borderRadius: 8,
     borderColor: '#000',

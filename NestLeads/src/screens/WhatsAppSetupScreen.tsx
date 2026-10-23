@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 16 },
   statusCard: {
+    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,

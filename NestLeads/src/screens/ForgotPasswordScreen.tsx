@@ -15,15 +15,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { authAPI } from '../services/api';
-
+import LottieView from 'lottie-react-native';
+import forgot from '../assets/lottie/forgot.json';
 const Logo = require('../assets/images/Logo.png');
-const NB = {
-  shadowColor: '#000',
-  shadowOpacity: 1,
-  shadowRadius: 0,
-  shadowOffset: { width: 4, height: 4 },
-  elevation: 4,
-};
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -59,16 +53,18 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       <ScrollView
         contentContainerStyle={[
           styles.container,
-          { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 },
+          { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.logoWrap}>
-          <Image source={Logo} style={styles.logoImg} resizeMode="contain" />
-          <Text style={styles.brandName}>NestLeads</Text>
-        </View>
-
+        <LottieView
+          source={forgot}
+          autoPlay
+          loop
+          style={styles.lottieError}
+        />
+        <Text style={styles.cardTitle}>Forgot password?</Text>
         <View style={styles.card}>
           {sent ? (
             <View style={styles.successBlock}>
@@ -91,12 +87,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
             </View>
           ) : (
             <>
-              <Text style={styles.cardTitle}>Forgot password?</Text>
-              <Text style={styles.cardSub}>
-                Enter the email address you registered with and we'll send you a
-                reset link.
-              </Text>
-
               {!!error && (
                 <View style={styles.errorBox}>
                   <Icon name="alert-circle-outline" size={16} color="#EF4444" />
@@ -120,7 +110,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                       setEmail(v);
                       setError('');
                     }}
-                    placeholder="you@company.com"
+                    placeholder="Enter your email"
                     placeholderTextColor="#94a3b8"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -165,27 +155,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     backgroundColor: '#fff',
-    justifyContent: 'center',
   },
-  logoWrap: { alignItems: 'center', marginBottom: 28 },
-  logoImg: { width: 64, height: 64, marginBottom: 8 },
-  brandName: { fontSize: 18, fontWeight: '600', color: '#000' },
+  lottieError: { width: '100%', height: 240, alignSelf: 'center' },
   card: {
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
-    padding: 24,
-    ...NB,
+    marginTop: 24,
   },
   cardTitle: {
-    fontSize: 22,
+    fontSize: 36,
     fontWeight: '600',
     color: '#000',
-    marginBottom: 8,
+    marginBottom: 4,
+    marginTop: 26,
   },
   cardSub: {
     fontSize: 13,
@@ -239,7 +219,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   submitBtn: {
-    backgroundColor: '#024BAB',
+    backgroundColor: '#ff751f',
     borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,

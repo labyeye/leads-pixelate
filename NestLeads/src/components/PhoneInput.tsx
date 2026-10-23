@@ -34,6 +34,7 @@ function splitPhone(value: string) {
 
 interface PhoneInputProps {
   label?: string;
+  labelIcon?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -44,6 +45,7 @@ interface PhoneInputProps {
 // Same emit convention as web: bare 10-digit for India, "<dialcode><local>" otherwise.
 export default function PhoneInput({
   label,
+  labelIcon,
   value,
   onChange,
   placeholder = '10-digit number',
@@ -79,10 +81,13 @@ export default function PhoneInput({
   return (
     <View style={{ gap: 6 }}>
       {label ? (
-        <Text style={styles.label}>
-          {label}
-          {required ? <Text style={{ color: '#ef4444' }}> *</Text> : null}
-        </Text>
+        <View style={styles.labelRow}>
+          {labelIcon ? <Icon name={labelIcon} size={13} color="#000" /> : null}
+          <Text style={styles.label}>
+            {label}
+            {required ? <Text style={{ color: '#ef4444' }}> *</Text> : null}
+          </Text>
+        </View>
       ) : null}
       <View style={styles.row}>
         <TouchableOpacity
@@ -144,6 +149,7 @@ export default function PhoneInput({
 }
 
 const styles = StyleSheet.create({
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   label: {
     fontSize: 11,
     fontWeight: '600',

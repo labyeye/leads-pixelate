@@ -24,7 +24,7 @@ import { navigateToLead } from './src/navigation/navigationRef';
 import { useLeadPolling } from './src/hooks/useLeadPolling';
 import storage from './src/utils/storage';
 
-const LogoWithName = require('./src/assets/images/NestLeads_Logo_Name.png');
+const LogoWithName = require('./src/assets/images/NestLeadLogo.png');
 
 function NotificationInit() {
   const { user } = useAuth();

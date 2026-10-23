@@ -9,12 +9,14 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Modal,
   Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
+import PhoneInput from '../components/PhoneInput';
 import { authAPI } from '../services/api';
 import QuotationNumberingCard from '../components/QuotationNumberingCard';
 
@@ -26,9 +28,20 @@ const NB_SHADOW = {
   elevation: 4,
 };
 
+const PRIMARY_BLUE = '#024BAB';
+
+function FieldLabel({ icon, text }: { icon: string; text: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, marginBottom: 4 }}>
+      <Icon name={icon} size={13} color="#000" />
+      <Text style={[styles.fieldLabel, { marginTop: 0, marginBottom: 0 }]}>{text}</Text>
+    </View>
+  );
+}
+
 export default function SettingsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
 
@@ -37,6 +50,14 @@ export default function SettingsScreen({ navigation }: any) {
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [savedEmail, setSavedEmail] = useState(user?.email || '');
+  const [savedPhone, setSavedPhone] = useState(user?.phone || '');
+  const [phoneVerified, setPhoneVerified] = useState(!!user?.phoneVerified);
+  // WhatsApp OTP flow for changing email / phone
+  const [otpFor, setOtpFor] = useState<null | 'email' | 'phone'>(null);
+  const [otpSentTo, setOtpSentTo] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpBusy, setOtpBusy] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | null>(
     user?.avatar || null,
   );
@@ -64,6 +85,58 @@ export default function SettingsScreen({ navigation }: any) {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const digits = (v: string) => (v || '').replace(/\D/g, '');
+  const phoneChanged = digits(phone) !== digits(savedPhone);
+  const emailChanged = email.trim().toLowerCase() !== savedEmail.toLowerCase();
+  const phoneNeedsVerify = phoneChanged || !phoneVerified;
+
+  const startOtp = async (type: 'email' | 'phone') => {
+    const value = type === 'email' ? email.trim().toLowerCase() : phone.trim();
+    if (type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      Alert.alert('Invalid email', 'Enter a valid email address');
+      return;
+    }
+    if (type === 'phone' && digits(value).length < 10) {
+      Alert.alert('Invalid number', 'Enter a valid phone number');
+      return;
+    }
+    setOtpBusy(true);
+    try {
+      await authAPI.sendContactOtp(type, value);
+      setOtpSentTo(
+        type === 'phone'
+          ? 'your new WhatsApp number'
+          : 'your registered WhatsApp number',
+      );
+      setOtpCode('');
+      setOtpFor(type);
+    } catch (e: any) {
+      Alert.alert('Could not send code', e.message);
+    } finally {
+      setOtpBusy(false);
+    }
+  };
+
+  const confirmOtp = async () => {
+    if (otpCode.trim().length < 4 || !otpFor) return;
+    setOtpBusy(true);
+    try {
+      const res = await authAPI.verifyContactOtp(otpCode.trim());
+      if (otpFor === 'email') setSavedEmail(res.data?.email || email.trim().toLowerCase());
+      else {
+        setSavedPhone(res.data?.phone || phone.trim());
+        setPhoneVerified(true);
+      }
+      await refreshUser();
+      setOtpFor(null);
+      Alert.alert('Verified', res.message || 'Updated successfully');
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setOtpBusy(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Name is required');
@@ -71,7 +144,8 @@ export default function SettingsScreen({ navigation }: any) {
     }
     setSavingProfile(true);
     try {
-      await authAPI.updateProfile({ name: name.trim(), phone: phone.trim() });
+      await authAPI.updateProfile({ name: name.trim() });
+      await refreshUser();
       Alert.alert('Success', 'Profile updated successfully');
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -130,7 +204,7 @@ export default function SettingsScreen({ navigation }: any) {
       </View>
       <View style={styles.divider} />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}>
         {/* Profile card */}
         <View style={styles.profileCard}>
           <TouchableOpacity
@@ -205,7 +279,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {activeTab === 'profile' && (
           <View style={styles.formSection}>
-            <Text style={styles.fieldLabel}>FULL NAME</Text>
+            <FieldLabel icon="person-outline" text="FULL NAME" />
             <TextInput
               style={styles.input}
               value={name}
@@ -213,19 +287,76 @@ export default function SettingsScreen({ navigation }: any) {
               placeholder="Enter your name"
               placeholderTextColor="#94a3b8"
             />
-            <Text style={styles.fieldLabel}>EMAIL</Text>
-            <View style={styles.inputDisabled}>
-              <Text style={styles.inputDisabledText}>{email}</Text>
-            </View>
-            <Text style={styles.fieldLabel}>PHONE</Text>
+
+            <FieldLabel icon="mail-outline" text="EMAIL" />
             <TextInput
               style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Enter phone number"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@company.com"
               placeholderTextColor="#94a3b8"
-              keyboardType="phone-pad"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
+            {emailChanged && (
+              <TouchableOpacity
+                style={styles.verifyBtn}
+                onPress={() => startOtp('email')}
+                disabled={otpBusy}
+              >
+                {otpBusy && otpFor === null ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Icon name="shield-checkmark-outline" size={15} color="#fff" />
+                    <Text style={styles.verifyBtnText}>Verify email with WhatsApp OTP</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+
+            <View style={{ marginTop: 12 }}>
+              <PhoneInput
+                label="PHONE (WHATSAPP)"
+                labelIcon="call-outline"
+                value={phone}
+                onChange={setPhone}
+              />
+            </View>
+            <View style={styles.phoneStatusRow}>
+              <View
+                style={[
+                  styles.statusChip,
+                  phoneNeedsVerify ? styles.chipWarn : styles.chipOk,
+                ]}
+              >
+                <Icon
+                  name={phoneNeedsVerify ? 'alert-circle-outline' : 'checkmark-circle-outline'}
+                  size={13}
+                  color={phoneNeedsVerify ? '#92400e' : '#166534'}
+                />
+                <Text
+                  style={[
+                    styles.statusChipText,
+                    { color: phoneNeedsVerify ? '#92400e' : '#166534' },
+                  ]}
+                >
+                  {phoneChanged ? 'Unsaved change' : phoneVerified ? 'Verified' : 'Not verified'}
+                </Text>
+              </View>
+            </View>
+            {phoneNeedsVerify && (
+              <TouchableOpacity
+                style={styles.verifyBtn}
+                onPress={() => startOtp('phone')}
+                disabled={otpBusy}
+              >
+                <Icon name="shield-checkmark-outline" size={15} color="#fff" />
+                <Text style={styles.verifyBtnText}>Verify number with WhatsApp OTP</Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               style={styles.saveBtn}
               onPress={handleSaveProfile}
@@ -245,7 +376,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {activeTab === 'password' && (
           <View style={styles.formSection}>
-            <Text style={styles.fieldLabel}>CURRENT PASSWORD</Text>
+            <FieldLabel icon="lock-closed-outline" text="CURRENT PASSWORD" />
             <View style={styles.pwdRow}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
@@ -266,7 +397,7 @@ export default function SettingsScreen({ navigation }: any) {
                 />
               </TouchableOpacity>
             </View>
-            <Text style={styles.fieldLabel}>NEW PASSWORD</Text>
+            <FieldLabel icon="lock-closed-outline" text="NEW PASSWORD" />
             <View style={styles.pwdRow}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
@@ -287,7 +418,7 @@ export default function SettingsScreen({ navigation }: any) {
                 />
               </TouchableOpacity>
             </View>
-            <Text style={styles.fieldLabel}>CONFIRM NEW PASSWORD</Text>
+            <FieldLabel icon="lock-closed-outline" text="CONFIRM NEW PASSWORD" />
             <View style={styles.pwdRow}>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
@@ -380,11 +511,89 @@ export default function SettingsScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={otpFor !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOtpFor(null)}
+      >
+        <View style={styles.otpOverlay}>
+          <View style={styles.otpBox}>
+            <View style={styles.otpHead}>
+              <Icon name="shield-checkmark-outline" size={20} color={PRIMARY_BLUE} />
+              <Text style={styles.otpTitle}>
+                Verify {otpFor === 'email' ? 'email change' : 'phone number'}
+              </Text>
+            </View>
+            <Text style={styles.otpSub}>
+              Enter the 6-digit code we sent on WhatsApp to {otpSentTo}.
+            </Text>
+            <TextInput
+              style={styles.otpInput}
+              value={otpCode}
+              onChangeText={t => setOtpCode(t.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              placeholderTextColor="#94a3b8"
+              keyboardType="number-pad"
+              maxLength={6}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[styles.verifyBtn, (otpBusy || otpCode.length < 4) && { opacity: 0.5 }]}
+              onPress={confirmOtp}
+              disabled={otpBusy || otpCode.length < 4}
+            >
+              {otpBusy ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.verifyBtnText}>Verify & Update</Text>
+              )}
+            </TouchableOpacity>
+            <View style={styles.otpLinks}>
+              <TouchableOpacity onPress={() => otpFor && startOtp(otpFor)} disabled={otpBusy}>
+                <Text style={styles.otpLink}>Resend code</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setOtpFor(null)}>
+                <Text style={[styles.otpLink, { color: '#64748b' }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  verifyBtn: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    backgroundColor: '#25D366',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  verifyBtnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  phoneStatusRow: { flexDirection: 'row', marginTop: 8 },
+  statusChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 6 },
+  chipOk: { backgroundColor: '#dcfce7', borderColor: '#86efac' },
+  chipWarn: { backgroundColor: '#fef9c3', borderColor: '#fde047' },
+  statusChipText: { fontSize: 11, fontWeight: '800' },
+  otpOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
+  otpBox: { backgroundColor: '#fff', padding: 18, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderColor: '#000' },
+  otpHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  otpTitle: { fontSize: 17, fontWeight: '800', color: '#000' },
+  otpSub: { fontSize: 13, color: '#64748b', fontWeight: '600', marginVertical: 12 },
+  otpInput: { borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderColor: '#000', paddingVertical: 12, fontSize: 24, fontWeight: '800', letterSpacing: 10, textAlign: 'center', color: '#000' },
+  otpLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+  otpLink: { fontSize: 13, fontWeight: '800', color: PRIMARY_BLUE },
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,
@@ -583,9 +792,13 @@ const styles = StyleSheet.create({
     gap: 10,
     borderWidth: 2,
     borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
     borderColor: '#000',
+    backgroundColor: '#fff',
     padding: 14,
-    ...NB_SHADOW,
   },
   leadStatusesBtnText: {
     flex: 1,

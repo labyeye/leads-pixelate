@@ -59,6 +59,52 @@ import CampaignReportsScreen from '../screens/CampaignReportsScreen';
 import ActivityLogScreen from '../screens/ActivityLogScreen';
 import TrashScreen from '../screens/TrashScreen';
 import AccountSecurityScreen from '../screens/AccountSecurityScreen';
+import { withSlideUp } from '../components/motion';
+
+const AccountSecurityScreenAnim = withSlideUp(AccountSecurityScreen);
+const ActivityLogScreenAnim = withSlideUp(ActivityLogScreen);
+const AdCampaignsHubScreenAnim = withSlideUp(AdCampaignsHubScreen);
+const AdPlatformLockedScreenAnim = withSlideUp(AdPlatformLockedScreen);
+const AddLeadScreenAnim = withSlideUp(AddLeadScreen);
+const ApiKeysScreenAnim = withSlideUp(ApiKeysScreen);
+const AutopilotScreenAnim = withSlideUp(AutopilotScreen);
+const BillingScreenAnim = withSlideUp(BillingScreen);
+const CampaignManagementOverviewScreenAnim = withSlideUp(CampaignManagementOverviewScreen);
+const CampaignReportsScreenAnim = withSlideUp(CampaignReportsScreen);
+const CampaignsScreenAnim = withSlideUp(CampaignsScreen);
+const ClientsScreenAnim = withSlideUp(ClientsScreen);
+const CreatePostScreenAnim = withSlideUp(CreatePostScreen);
+const FacebookAdCampaignsScreenAnim = withSlideUp(FacebookAdCampaignsScreen);
+const FacebookAdSetsScreenAnim = withSlideUp(FacebookAdSetsScreen);
+const FacebookAdsDashboardScreenAnim = withSlideUp(FacebookAdsDashboardScreen);
+const FacebookAdsListScreenAnim = withSlideUp(FacebookAdsListScreen);
+const FacebookCampaignManagementScreenAnim = withSlideUp(FacebookCampaignManagementScreen);
+const FiltersScreenAnim = withSlideUp(FiltersScreen);
+const GoogleAdsSetupScreenAnim = withSlideUp(GoogleAdsSetupScreen);
+const IntegrationsScreenAnim = withSlideUp(IntegrationsScreen);
+const LeadDetailScreenAnim = withSlideUp(LeadDetailScreen);
+const LeadStatusesScreenAnim = withSlideUp(LeadStatusesScreen);
+const LeadsListScreenAnim = withSlideUp(LeadsListScreen);
+const LinkedInCampaignManagementScreenAnim = withSlideUp(LinkedInCampaignManagementScreen);
+const LinkedInSetupScreenAnim = withSlideUp(LinkedInSetupScreen);
+const MoreScreenAnim = withSlideUp(MoreScreen);
+const PriceBooksScreenAnim = withSlideUp(PriceBooksScreen);
+const ProductsScreenAnim = withSlideUp(ProductsScreen);
+const QuotationFormScreenAnim = withSlideUp(QuotationFormScreen);
+const QuotationsScreenAnim = withSlideUp(QuotationsScreen);
+const ReportsScreenAnim = withSlideUp(ReportsScreen);
+const RolesPermissionsScreenAnim = withSlideUp(RolesPermissionsScreen);
+const ScheduleScreenAnim = withSlideUp(ScheduleScreen);
+const ServicesScreenAnim = withSlideUp(ServicesScreen);
+const SettingsScreenAnim = withSlideUp(SettingsScreen);
+const SocialPlannerScreenAnim = withSlideUp(SocialPlannerScreen);
+const SupportScreenAnim = withSlideUp(SupportScreen);
+const TradeDocumentsScreenAnim = withSlideUp(TradeDocumentsScreen);
+const TrashScreenAnim = withSlideUp(TrashScreen);
+const UsersScreenAnim = withSlideUp(UsersScreen);
+const WhatsAppInboxScreenAnim = withSlideUp(WhatsAppInboxScreen);
+const WhatsAppLogsScreenAnim = withSlideUp(WhatsAppLogsScreen);
+const WhatsAppSetupScreenAnim = withSlideUp(WhatsAppSetupScreen);
 
 initUsageTracker(TRACK_BASE);
 
@@ -132,10 +178,10 @@ const MoreStack = createNativeStackNavigator<MoreStackParamList>();
 function LeadsNavigator() {
   return (
     <LeadsStack.Navigator screenOptions={{ headerShown: false }}>
-      <LeadsStack.Screen name="LeadsList" component={LeadsListScreen} />
-      <LeadsStack.Screen name="LeadDetail" component={LeadDetailScreen} />
-      <LeadsStack.Screen name="AddLead" component={AddLeadScreen} />
-      <LeadsStack.Screen name="Filters" component={FiltersScreen} />
+      <LeadsStack.Screen name="LeadsList" component={LeadsListScreenAnim} />
+      <LeadsStack.Screen name="LeadDetail" component={LeadDetailScreenAnim} />
+      <LeadsStack.Screen name="AddLead" component={AddLeadScreenAnim} />
+      <LeadsStack.Screen name="Filters" component={FiltersScreenAnim} />
     </LeadsStack.Navigator>
   );
 }
@@ -145,9 +191,9 @@ function SocialNavigator() {
     <SocialStack.Navigator screenOptions={{ headerShown: false }}>
       <SocialStack.Screen
         name="SocialPlanner"
-        component={SocialPlannerScreen}
+        component={SocialPlannerScreenAnim}
       />
-      <SocialStack.Screen name="CreatePost" component={CreatePostScreen} />
+      <SocialStack.Screen name="CreatePost" component={CreatePostScreenAnim} />
     </SocialStack.Navigator>
   );
 }
@@ -155,95 +201,95 @@ function SocialNavigator() {
 function MoreNavigator() {
   return (
     <MoreStack.Navigator screenOptions={{ headerShown: false }}>
-      <MoreStack.Screen name="MoreHome" component={MoreScreen} />
-      <MoreStack.Screen name="Reports" component={ReportsScreen} />
-      <MoreStack.Screen name="WhatsAppInbox" component={WhatsAppInboxScreen} />
-      <MoreStack.Screen name="Products" component={ProductsScreen} />
-      <MoreStack.Screen name="PriceBooks" component={PriceBooksScreen} />
+      <MoreStack.Screen name="MoreHome" component={MoreScreenAnim} />
+      <MoreStack.Screen name="Reports" component={ReportsScreenAnim} />
+      <MoreStack.Screen name="WhatsAppInbox" component={WhatsAppInboxScreenAnim} />
+      <MoreStack.Screen name="Products" component={ProductsScreenAnim} />
+      <MoreStack.Screen name="PriceBooks" component={PriceBooksScreenAnim} />
       <MoreStack.Screen
         name="SalesOrders"
-        component={TradeDocumentsScreen}
+        component={TradeDocumentsScreenAnim}
         initialParams={{ kind: 'sales_order' }}
       />
       <MoreStack.Screen
         name="PurchaseOrders"
-        component={TradeDocumentsScreen}
+        component={TradeDocumentsScreenAnim}
         initialParams={{ kind: 'purchase_order' }}
       />
       <MoreStack.Screen
         name="Invoices"
-        component={TradeDocumentsScreen}
+        component={TradeDocumentsScreenAnim}
         initialParams={{ kind: 'invoice' }}
       />
-      <MoreStack.Screen name="Settings" component={SettingsScreen} />
-      <MoreStack.Screen name="Campaigns" component={CampaignsScreen} />
-      <MoreStack.Screen name="Users" component={UsersScreen} />
-      <MoreStack.Screen name="Integrations" component={IntegrationsScreen} />
-      <MoreStack.Screen name="Clients" component={ClientsScreen} />
-      <MoreStack.Screen name="Quotations" component={QuotationsScreen} />
-      <MoreStack.Screen name="QuotationForm" component={QuotationFormScreen} />
+      <MoreStack.Screen name="Settings" component={SettingsScreenAnim} />
+      <MoreStack.Screen name="Campaigns" component={CampaignsScreenAnim} />
+      <MoreStack.Screen name="Users" component={UsersScreenAnim} />
+      <MoreStack.Screen name="Integrations" component={IntegrationsScreenAnim} />
+      <MoreStack.Screen name="Clients" component={ClientsScreenAnim} />
+      <MoreStack.Screen name="Quotations" component={QuotationsScreenAnim} />
+      <MoreStack.Screen name="QuotationForm" component={QuotationFormScreenAnim} />
       <MoreStack.Screen
         name="RolesPermissions"
-        component={RolesPermissionsScreen}
+        component={RolesPermissionsScreenAnim}
       />
-      <MoreStack.Screen name="Autopilot" component={AutopilotScreen} />
-      <MoreStack.Screen name="Services" component={ServicesScreen} />
-      <MoreStack.Screen name="ApiKeys" component={ApiKeysScreen} />
-      <MoreStack.Screen name="Support" component={SupportScreen} />
-      <MoreStack.Screen name="Billing" component={BillingScreen} />
-      <MoreStack.Screen name="WhatsAppLogs" component={WhatsAppLogsScreen} />
-      <MoreStack.Screen name="WhatsAppSetup" component={WhatsAppSetupScreen} />
-      <MoreStack.Screen name="LeadStatuses" component={LeadStatusesScreen} />
+      <MoreStack.Screen name="Autopilot" component={AutopilotScreenAnim} />
+      <MoreStack.Screen name="Services" component={ServicesScreenAnim} />
+      <MoreStack.Screen name="ApiKeys" component={ApiKeysScreenAnim} />
+      <MoreStack.Screen name="Support" component={SupportScreenAnim} />
+      <MoreStack.Screen name="Billing" component={BillingScreenAnim} />
+      <MoreStack.Screen name="WhatsAppLogs" component={WhatsAppLogsScreenAnim} />
+      <MoreStack.Screen name="WhatsAppSetup" component={WhatsAppSetupScreenAnim} />
+      <MoreStack.Screen name="LeadStatuses" component={LeadStatusesScreenAnim} />
       <MoreStack.Screen
         name="AdCampaignsHub"
-        component={AdCampaignsHubScreen}
+        component={AdCampaignsHubScreenAnim}
       />
-      <MoreStack.Screen name="LinkedInSetup" component={LinkedInSetupScreen} />
+      <MoreStack.Screen name="LinkedInSetup" component={LinkedInSetupScreenAnim} />
       <MoreStack.Screen
         name="GoogleAdsSetup"
-        component={GoogleAdsSetupScreen}
+        component={GoogleAdsSetupScreenAnim}
       />
       <MoreStack.Screen
         name="AdPlatformLocked"
-        component={AdPlatformLockedScreen}
+        component={AdPlatformLockedScreenAnim}
       />
       <MoreStack.Screen
         name="FacebookAdsDashboard"
-        component={FacebookAdsDashboardScreen}
+        component={FacebookAdsDashboardScreenAnim}
       />
       <MoreStack.Screen
         name="FacebookAdCampaigns"
-        component={FacebookAdCampaignsScreen}
+        component={FacebookAdCampaignsScreenAnim}
       />
       <MoreStack.Screen
         name="FacebookAdSets"
-        component={FacebookAdSetsScreen}
+        component={FacebookAdSetsScreenAnim}
       />
       <MoreStack.Screen
         name="FacebookAdsList"
-        component={FacebookAdsListScreen}
+        component={FacebookAdsListScreenAnim}
       />
       <MoreStack.Screen
         name="FacebookCampaignManagement"
-        component={FacebookCampaignManagementScreen}
+        component={FacebookCampaignManagementScreenAnim}
       />
       <MoreStack.Screen
         name="LinkedInCampaignManagement"
-        component={LinkedInCampaignManagementScreen}
+        component={LinkedInCampaignManagementScreenAnim}
       />
       <MoreStack.Screen
         name="CampaignManagementOverview"
-        component={CampaignManagementOverviewScreen}
+        component={CampaignManagementOverviewScreenAnim}
       />
       <MoreStack.Screen
         name="CampaignReports"
-        component={CampaignReportsScreen}
+        component={CampaignReportsScreenAnim}
       />
-      <MoreStack.Screen name="ActivityLog" component={ActivityLogScreen} />
-      <MoreStack.Screen name="Trash" component={TrashScreen} />
+      <MoreStack.Screen name="ActivityLog" component={ActivityLogScreenAnim} />
+      <MoreStack.Screen name="Trash" component={TrashScreenAnim} />
       <MoreStack.Screen
         name="AccountSecurity"
-        component={AccountSecurityScreen}
+        component={AccountSecurityScreenAnim}
       />
     </MoreStack.Navigator>
   );
@@ -310,7 +356,13 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               target: route.key,
               canPreventDefault: true,
             });
-            if (!focused && !event.defaultPrevented) {
+            if (event.defaultPrevented) return;
+            if (route.name === 'LeadsStack') {
+              // Leads tab always lands on the Leads List
+              (navigation as any).navigate('LeadsStack', {
+                screen: 'LeadsList',
+              });
+            } else if (!focused) {
               navigation.navigate(route.name as never);
             }
           };
@@ -397,7 +449,7 @@ export default function AppNavigator() {
         />
         <Tab.Screen
           name="Schedule"
-          component={ScheduleScreen}
+          component={ScheduleScreenAnim}
           options={{ tabBarLabel: 'Schedule' }}
         />
         <Tab.Screen

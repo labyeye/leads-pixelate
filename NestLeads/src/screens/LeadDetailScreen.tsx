@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,9 +23,9 @@ import {
   getStatusColor,
   getStatusLabel,
   getCategoryByStatus,
-  categories,
 } from '../constants/statusConstants';
 import SourceBadge from '../components/SourceBadge';
+import StatusFlow from '../components/StatusFlow';
 
 const TAG_COLORS: Record<string, { bg: string; text: string }> = {
   HOT: { bg: '#ef4444', text: '#fff' },
@@ -59,6 +59,25 @@ const LEAD_DEFAULTS: Record<string, { update: boolean; delete: boolean }> = {
   admin: { update: true, delete: true },
 };
 
+const fmtDate = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '—';
+const fmtDateTime = (d?: string) =>
+  d
+    ? new Date(d).toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—';
+
 export default function LeadDetailScreen({ navigation, route }: any) {
   const leadId = route?.params?.leadId;
   const insets = useSafeAreaInsets();
@@ -67,10 +86,6 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   const [noteText, setNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
-  const [tagModalOpen, setTagModalOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState('');
-  const [remarksInput, setRemarksInput] = useState('');
-  const [updatingStatus, setUpdatingStatus] = useState(false);
   const { user } = useAuth();
   const [perm, setPerm] = useState<{ update?: boolean; delete?: boolean }>(
     LEAD_DEFAULTS[user?.role] || {},
@@ -125,7 +140,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         onPress: async () => {
           try {
             await leadsAPI.delete(leadId);
-            navigation.goBack();
+            navigation.navigate('LeadsList');
           } catch (err: any) {
             Alert.alert('Delete failed', err.message);
           }
@@ -177,40 +192,13 @@ export default function LeadDetailScreen({ navigation, route }: any) {
     }
   };
 
-  const handleStatusSelect = (status: string) => {
-    setPendingStatus(status);
-    if (status === 'DISCUSSION') {
-      setTagModalOpen(true);
-    } else {
-      setStatusModalOpen(true);
-    }
-  };
-
-  const handleUpdateStatus = async () => {
-    try {
-      setUpdatingStatus(true);
-      const updateData: any = { status: pendingStatus };
-      if (remarksInput.trim()) updateData.remarks = remarksInput.trim();
-      await leadsAPI.update(leadId, updateData);
-      setStatusModalOpen(false);
-      setTagModalOpen(false);
-      setRemarksInput('');
-      await fetchLead();
-      // refresh handled by navigation focus
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
-
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('LeadsList')}
             style={styles.backBtn}
           >
             <Icon name="arrow-back" size={18} color="#000" />
@@ -230,34 +218,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   const sc = getStatusColor(lead.status);
   const tag = lead.contactTag ? TAG_COLORS[lead.contactTag] : null;
   const activeCategory = getCategoryByStatus(lead.status || 'PENDING CONTACT');
-
-  // Next status options per category. Pulls from `categories` (which
-  // includes tenant custom stages) rather than a hardcoded list, so newly
-  // added stages show up here automatically — the backend is still the
-  // source of truth on which transitions are actually allowed.
-  const nextStatuses: string[] = [];
-  if (activeCategory === 'New Lead') {
-    nextStatuses.push('DISCUSSION', ...categories['New Lead'].slice(1), 'DROP');
-  } else if (activeCategory === 'Discussion/Requirement') {
-    nextStatuses.push(
-      ...categories['Discussion/Requirement'].slice(1),
-      'QUOTATION',
-      'VISIT SCHEDULED',
-      'DROP',
-    );
-  } else if (activeCategory === 'Quotation') {
-    nextStatuses.push(
-      ...categories['Quotation'].slice(1),
-      'VISIT SCHEDULED',
-      'WON',
-      'DROP',
-    );
-  } else if (
-    activeCategory === 'Visit Scheduled' ||
-    activeCategory === 'Visited'
-  ) {
-    nextStatuses.push('VISITED', 'WON', 'DROP');
-  }
+  const location = [lead.location, lead.state].filter(Boolean).join(', ');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -266,7 +227,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('LeadsList')}
           style={styles.backBtn}
         >
           <Icon name="arrow-back" size={18} color="#000" />
@@ -274,6 +235,15 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {lead.name}
         </Text>
+        {perm.update && (
+          <TouchableOpacity
+            onPress={() => setStatusModalOpen(true)}
+            hitSlop={8}
+            accessibilityLabel="Change status"
+          >
+            <Icon name="swap-horizontal" size={18} color="#024BAB" />
+          </TouchableOpacity>
+        )}
         {perm.update && (
           <TouchableOpacity onPress={openEdit} hitSlop={8}>
             <Icon name="pencil-outline" size={18} color="#000" />
@@ -293,10 +263,9 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Identity section */}
+        {/* Identity */}
         <View style={styles.section}>
           <View style={styles.nameRow}>
-            {/* Avatar â€" same as sidebar: square, blue, white initial */}
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
                 {(lead.name || '?')[0].toUpperCase()}
@@ -316,8 +285,6 @@ export default function LeadDetailScreen({ navigation, route }: any) {
               </View>
             )}
           </View>
-
-          {/* Badges row */}
           <View style={styles.badgesRow}>
             <View
               style={[
@@ -329,9 +296,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                 {getStatusLabel(lead.status) || 'PENDING CONTACT'}
               </Text>
             </View>
-            <View>
-              <SourceBadge source={lead.source} />
-            </View>
+            <SourceBadge source={lead.source} />
             <View style={styles.catPill}>
               <Text style={styles.catPillText}>
                 {activeCategory.toUpperCase()}
@@ -340,101 +305,83 @@ export default function LeadDetailScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {/* Quick Actions â€" 3 buttons like web (Call / WhatsApp / Email) */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
-              onPress={handleCall}
-            >
-              <Icon name="call-outline" size={16} color="#fff" />
-              <Text style={styles.actionBtnText}>Call</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#25D366' }]}
-              onPress={handleWhatsApp}
-            >
-              <View style={styles.whatsappLogoChip}>
-                <WhatsAppLogo size={12} />
-              </View>
-              <Text style={styles.actionBtnText}>WhatsApp</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#024BAB' }]}
-              onPress={handleEmail}
-            >
-              <Icon name="mail-outline" size={16} color="#fff" />
-              <Text style={styles.actionBtnText}>Email</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Contact Info */}
+        {/* Contact information */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>CONTACT INFORMATION</Text>
-          <InfoRow label="Phone" value={lead.phone || 'â€"'} />
-          <InfoRow label="Email" value={lead.email || 'â€"'} />
+          <InfoRow icon="mail-outline" label="Email" value={lead.email} />
+          <InfoRow icon="call-outline" label="Phone" value={lead.phone} />
+          <InfoRow icon="business-outline" label="Company" value={lead.company} />
+          <InfoRow icon="globe-outline" label="Website" value={lead.website} />
           <InfoRow
+            icon="location-outline"
             label="Location"
-            value={
-              [lead.location, lead.state].filter(Boolean).join(', ') || 'â€"'
-            }
+            value={location}
+            last={!lead.facebookAdName}
           />
-          {lead.facebookAdName && (
-            <InfoRow label="Campaign" value={lead.facebookAdName} />
-          )}
+          {lead.facebookAdName ? (
+            <InfoRow
+              icon="megaphone-outline"
+              label="Campaign"
+              value={lead.facebookAdName}
+              last
+            />
+          ) : null}
         </View>
 
-        {/* Lead Details */}
+        {/* Lead details */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>LEAD DETAILS</Text>
           <InfoRow
+            icon="calendar-outline"
             label="Inquiry Date"
-            value={
-              lead.indiamartQueryTime || lead.createdAt
-                ? new Date(
-                    lead.indiamartQueryTime || lead.createdAt,
-                  ).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })
-                : 'â€"'
-            }
+            value={fmtDate(lead.indiamartQueryTime || lead.createdAt)}
           />
-          <InfoRow label="Budget" value={lead.budget || 'Not Specified'} />
-          <InfoRow label="Requirement" value={lead.requirement || 'â€"'} />
-          <InfoRow label="Remarks" value={lead.remarks || 'â€"'} />
-          {lead.assignedTo?.name && (
-            <InfoRow label="Assigned To" value={lead.assignedTo.name} />
-          )}
-          {lead.visitScheduledDate && (
+          <InfoRow
+            icon="wallet-outline"
+            label="Budget"
+            value={lead.budget || 'Not Specified'}
+            strong
+          />
+          <InfoRow
+            icon="person-outline"
+            label="Assigned To"
+            value={lead.assignedTo?.name}
+          />
+          {lead.followUpDate ? (
             <InfoRow
+              icon="time-outline"
+              label="Follow-up"
+              value={fmtDateTime(lead.followUpDate)}
+            />
+          ) : null}
+          {lead.visitScheduledDate ? (
+            <InfoRow
+              icon="location-outline"
               label="Visit Scheduled"
-              value={new Date(lead.visitScheduledDate).toLocaleDateString(
-                'en-IN',
-                {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                },
-              )}
+              value={fmtDateTime(lead.visitScheduledDate)}
             />
-          )}
-          {lead.followUpDate && (
+          ) : null}
+          {lead.visitActualDate ? (
             <InfoRow
-              label="Follow-up Date"
-              value={new Date(lead.followUpDate).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
+              icon="checkmark-circle-outline"
+              label="Visited On"
+              value={fmtDate(lead.visitActualDate)}
             />
-          )}
+          ) : null}
+          <InfoRow
+            icon="document-text-outline"
+            label="Requirement"
+            value={lead.requirement}
+          />
+          <InfoRow
+            icon="chatbubbles-outline"
+            label="Remarks"
+            value={lead.remarks}
+            last
+          />
         </View>
 
-        {/* Interested Products */}
+        {/* Interested products */}
         {lead.interestedProducts?.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>INTERESTED IN</Text>
@@ -444,32 +391,6 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                   <Text style={styles.productChipText}>{p}</Text>
                 </View>
               ))}
-            </View>
-          </View>
-        )}
-
-        {/* Update Status */}
-        {nextStatuses.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>UPDATE STATUS</Text>
-            <View style={styles.statusGrid}>
-              {nextStatuses.map(s => {
-                const c = getStatusColor(s);
-                return (
-                  <TouchableOpacity
-                    key={s}
-                    style={[
-                      styles.statusOption,
-                      { backgroundColor: c.bg, borderColor: '#000' },
-                    ]}
-                    onPress={() => handleStatusSelect(s)}
-                  >
-                    <Text style={[styles.statusOptionText, { color: c.text }]}>
-                      {getStatusLabel(s)}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
             </View>
           </View>
         )}
@@ -524,23 +445,12 @@ export default function LeadDetailScreen({ navigation, route }: any) {
           )}
         </View>
 
-        {/* Status History */}
+        {/* Status history */}
         {lead.statusHistory?.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>STATUS HISTORY</Text>
             {[...lead.statusHistory].reverse().map((h: any, i: number) => {
               const hsc = getStatusColor(h.status);
-              const STATUS_ICON: Record<string, string> = {
-                'PENDING CONTACT': 'time-outline',
-                DISCUSSION: 'chatbubbles-outline',
-                'QUOTATION SENT': 'document-text-outline',
-                'VISIT SCHEDULED': 'calendar-outline',
-                VISITED: 'eye-outline',
-                NEGOTIATION: 'swap-horizontal-outline',
-                CLIENT: 'star-outline',
-                DROPPED: 'close-circle-outline',
-              };
-              const iconName = STATUS_ICON[h.status] || 'ellipse-outline';
               return (
                 <View key={i} style={styles.historyRow}>
                   <View
@@ -548,32 +458,21 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                       styles.historyDot,
                       { backgroundColor: hsc.bg, borderColor: '#000' },
                     ]}
-                  >
-                    <Icon
-                      name={iconName}
-                      size={10}
-                      color={hsc.text || '#000'}
-                    />
-                  </View>
+                  />
                   <View style={styles.historyContent}>
                     <View style={styles.historyTop}>
                       <Text style={styles.historyStatus}>
                         {getStatusLabel(h.status)}
                       </Text>
                       <Text style={styles.historyDate}>
-                        {new Date(h.changedAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                        })}
+                        {fmtDate(h.changedAt)}
                       </Text>
                     </View>
                     {h.remarks ? (
                       <Text style={styles.historyRemarks}>{h.remarks}</Text>
                     ) : null}
                     {h.changedBy?.name ? (
-                      <Text style={styles.historyBy}>
-                        by {h.changedBy.name}
-                      </Text>
+                      <Text style={styles.historyBy}>by {h.changedBy.name}</Text>
                     ) : null}
                   </View>
                 </View>
@@ -581,6 +480,51 @@ export default function LeadDetailScreen({ navigation, route }: any) {
             })}
           </View>
         )}
+
+        {/* Quick actions — last */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#ffffff' },
+                !lead.phone && { opacity: 0.4 },
+              ]}
+              onPress={handleCall}
+              disabled={!lead.phone}
+            >
+              <Icon name="call-outline" size={16} color="#044bab" />
+              <Text style={styles.actionBtnText}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#ffffff' },
+                !lead.phone && { opacity: 0.4 },
+              ]}
+              onPress={handleWhatsApp}
+              disabled={!lead.phone}
+            >
+              <View style={styles.whatsappLogoChip}>
+                <WhatsAppLogo size={12} />
+              </View>
+              <Text style={styles.actionBtnText}>WhatsApp</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#024BAB' },
+                !lead.email && { opacity: 0.4 },
+              ]}
+              onPress={handleEmail}
+              disabled={!lead.email}
+            >
+              <Icon name="mail-outline" size={16} color="#fff" />
+              <Text style={styles.actionBtnText}>Email</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Edit Lead Modal */}
@@ -646,110 +590,39 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Status Update Modal */}
-      <Modal
+      <StatusFlow
         visible={statusModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setStatusModalOpen(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Update Status</Text>
-            <Text style={styles.modalSub}>
-              Changing to:{' '}
-              <Text style={{ fontWeight: '600' }}>{pendingStatus}</Text>
-            </Text>
-            <Text style={styles.modalLabel}>REMARKS (OPTIONAL)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Add remarks..."
-              placeholderTextColor="#94a3b8"
-              value={remarksInput}
-              onChangeText={setRemarksInput}
-              multiline
-              maxLength={500}
-            />
-            <Text
-              style={{ fontSize: 10, color: '#64748b', textAlign: 'right' }}
-            >
-              {remarksInput.length}/500
-            </Text>
-            <View style={styles.modalBtns}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => {
-                  setStatusModalOpen(false);
-                  setRemarksInput('');
-                }}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmBtn}
-                onPress={handleUpdateStatus}
-                disabled={updatingStatus}
-              >
-                {updatingStatus ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.modalConfirmText}>Confirm</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Contact Tag Modal */}
-      <Modal
-        visible={tagModalOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setTagModalOpen(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Select Contact Tag</Text>
-            <Text style={styles.modalSub}>How warm is this lead?</Text>
-            {(['HOT', 'WARM', 'COLD'] as const).map(t => {
-              const tc = TAG_COLORS[t];
-              return (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.tagOptionBtn, { backgroundColor: tc.bg }]}
-                  onPress={async () => {
-                    setTagModalOpen(false);
-                    try {
-                      await leadsAPI.update(leadId, { contactTag: t });
-                    } catch {}
-                    setStatusModalOpen(true);
-                  }}
-                >
-                  <Text style={[styles.tagOptionText, { color: tc.text }]}>
-                    {t === 'HOT' ? 'ðŸ"¥' : t === 'WARM' ? 'ðŸŒ¡' : 'â„ï¸'} {t}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-            <TouchableOpacity
-              style={styles.modalCancelBtn}
-              onPress={() => setTagModalOpen(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        lead={lead}
+        onClose={() => setStatusModalOpen(false)}
+        onDone={fetchLead}
+      />
     </View>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  icon,
+  label,
+  value,
+  strong,
+  last,
+}: {
+  icon: string;
+  label: string;
+  value?: string;
+  strong?: boolean;
+  last?: boolean;
+}) {
   return (
-    <View style={infoStyles.row}>
+    <View style={[infoStyles.row, last && { borderBottomWidth: 0 }]}>
+      <Icon name={icon} size={16} color="#64748b" />
       <Text style={infoStyles.label}>{label}</Text>
-      <Text style={infoStyles.value}>{value}</Text>
+      <Text
+        style={[infoStyles.value, strong && { color: '#024BAB' }]}
+        selectable
+      >
+        {value || '—'}
+      </Text>
     </View>
   );
 }
@@ -757,19 +630,14 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 const infoStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingVertical: 11,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    paddingVertical: 8,
   },
-  label: {
-    width: 110,
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  value: { flex: 1, fontSize: 13, color: '#000', fontWeight: '500' },
+  label: { width: 96, fontSize: 13, color: '#64748b', fontWeight: '600' },
+  value: { flex: 1, fontSize: 14, color: '#000', fontWeight: '700' },
 });
 
 const styles = StyleSheet.create({
@@ -893,7 +761,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 2,
   },
-  actionBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  actionBtnText: { fontSize: 12, fontWeight: '600', color: '#044bab' },
 
   // Products
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

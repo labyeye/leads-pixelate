@@ -3,8 +3,8 @@ import storage from '../utils/storage';
 
 // Android emulator: 10.0.2.2 → Mac's localhost
 // iOS (simulator + real iPhone): Mac's LAN IP — real device can't reach localhost
-const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : '192.168.1.128';
-export const API_BASE = `http://${DEV_HOST}:3500/api`;
+const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+export const API_BASE = `http://${DEV_HOST}:4100/api`;
 
 class ApiError extends Error {
   status: number;
@@ -105,6 +105,16 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ otp }),
     }),
+  sendContactOtp: (type: 'email' | 'phone', value: string) =>
+    request<{ success: boolean; message?: string }>('/auth/contact/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ type, value }),
+    }),
+  verifyContactOtp: (otp: string) =>
+    request<{ success: boolean; message?: string; data: any }>(
+      '/auth/contact/verify-otp',
+      { method: 'POST', body: JSON.stringify({ otp }) },
+    ),
   totpSetup: () =>
     request<{
       success: boolean;
@@ -145,6 +155,8 @@ export const authAPI = {
         body: JSON.stringify({ userId, token }),
       },
     ),
+  passkeyLoginOptions: () =>
+    request<{ success: boolean; data: any }>('/auth/passkey/login-options'),
   biometricLogin: (payload: any) =>
     request<{ success: boolean; token?: string; data: any }>(
       '/auth/passkey/login',
@@ -715,6 +727,10 @@ export const deviceAPI = {
 
 export const socialAPI = {
   getStats: () => request<{ success: boolean; data: any }>('/social/stats'),
+  getEngagement: () =>
+    request<{ success: boolean; data: any }>('/social/engagement'),
+  getFollowers: (days: number) =>
+    request<{ success: boolean; data: any }>(`/social/followers?days=${days}`),
   getPosts: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<{ success: boolean; data: any[] }>(`/social/posts${qs}`);
@@ -725,6 +741,15 @@ export const socialAPI = {
     request<{ success: boolean; data: any }>('/social/posts', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+  updatePost: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deletePost: (id: string) =>
+    request<{ success: boolean; message: string }>(`/social/posts/${id}`, {
+      method: 'DELETE',
     }),
   approvePost: (id: string, note?: string) =>
     request<{ success: boolean; data: any }>(`/social/posts/${id}/approve`, {

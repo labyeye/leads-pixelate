@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { CountText } from '../motion';
 
 export const PRIMARY = '#024BAB';
 export const NB_SHADOW = {
@@ -90,7 +91,7 @@ export function Kpi({
         <View style={[s.kpiDot, { backgroundColor: color }]} />
         <Text style={s.kpiLabel}>{label}</Text>
       </View>
-      <Text style={s.kpiValue}>{value}</Text>
+      <CountText style={s.kpiValue}>{value}</CountText>
       {hint ? <Text style={s.kpiHint}>{hint}</Text> : null}
     </View>
   );

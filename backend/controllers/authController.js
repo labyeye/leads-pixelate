@@ -810,6 +810,126 @@ const loginVerifyOtp = asyncHandler(async (req, res) => {
 
 // --- Phone verification (required once before WhatsApp reset can be offered) ---
 
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/;
+
+// Step 1 of changing email/phone: a WhatsApp code proves the person holds the phone.
+//  - phone: code goes to the NEW number
+//  - email: code goes to the current verified number
+const sendContactOtp = asyncHandler(async (req, res) => {
+  const type = req.body.type;
+  const value = String(req.body.value || "").trim();
+  if (!["email", "phone"].includes(type) || !value) {
+    res.status(400);
+    throw new Error("Type and value are required");
+  }
+
+  const user = await User.findById(req.user._id).select("+phone");
+  let target;
+
+  if (type === "phone") {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 15) {
+      res.status(400);
+      throw new Error("Enter a valid phone number");
+    }
+    const taken = await User.findOne({ phone: value, _id: { $ne: user._id } });
+    if (taken) {
+      res.status(400);
+      throw new Error("This phone number is already in use");
+    }
+    target = value;
+  } else {
+    const email = value.toLowerCase();
+    if (!EMAIL_RE.test(email)) {
+      res.status(400);
+      throw new Error("Enter a valid email address");
+    }
+    if (email === user.email) {
+      res.status(400);
+      throw new Error("This is already your email");
+    }
+    if (await User.findOne({ email, _id: { $ne: user._id } })) {
+      res.status(400);
+      throw new Error("This email is already in use");
+    }
+    if (!user.phone || !user.phoneVerified) {
+      res.status(400);
+      throw new Error(
+        "Verify your phone number first — the email change code is sent to it on WhatsApp",
+      );
+    }
+    target = user.phone;
+  }
+
+  const otp = generateOtp();
+  user.pendingContactType = type;
+  user.pendingContactValue = type === "email" ? value.toLowerCase() : value;
+  user.contactOtpHash = hashOtp(otp);
+  user.contactOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+  user.contactOtpAttempts = 0;
+  await user.save({ validateBeforeSave: false });
+
+  await sendWhatsAppOtp(formatPhone(target), otp);
+
+  res.json({ success: true, message: "Code sent via WhatsApp" });
+});
+
+// Step 2: apply the pending change once the code matches.
+const verifyContactOtp = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    "+pendingContactType +pendingContactValue +contactOtpHash +contactOtpExpires +contactOtpAttempts",
+  );
+  if (
+    !user?.pendingContactType ||
+    !user.contactOtpHash ||
+    !user.contactOtpExpires ||
+    user.contactOtpExpires < new Date()
+  ) {
+    res.status(400);
+    throw new Error("This code is invalid or has expired");
+  }
+  if ((user.contactOtpAttempts || 0) >= 5) {
+    res.status(429);
+    throw new Error("Too many attempts — request a new code");
+  }
+  if (hashOtp(String(req.body.otp || "")) !== user.contactOtpHash) {
+    user.contactOtpAttempts = (user.contactOtpAttempts || 0) + 1;
+    await user.save({ validateBeforeSave: false });
+    res.status(400);
+    throw new Error("This code is invalid or has expired");
+  }
+
+  const type = user.pendingContactType;
+  const value = user.pendingContactValue;
+  if (type === "email") {
+    if (await User.findOne({ email: value, _id: { $ne: user._id } })) {
+      res.status(400);
+      throw new Error("This email is already in use");
+    }
+    user.email = value;
+  } else {
+    user.phone = value;
+    user.phoneVerified = true;
+  }
+  user.pendingContactType = null;
+  user.pendingContactValue = undefined;
+  user.contactOtpHash = undefined;
+  user.contactOtpExpires = undefined;
+  user.contactOtpAttempts = 0;
+  const updated = await user.save();
+
+  logActivity({
+    user: req.user,
+    action: "PROFILE_UPDATED",
+    module: "Auth",
+    description: `${req.user.name} changed their ${type} (verified via WhatsApp)`,
+    targetId: req.user._id,
+    ip: req.ip,
+  });
+
+  res.json({ success: true, message: `${type === "email" ? "Email" : "Phone number"} updated`, data: updated });
+});
+
 const sendPhoneOtp = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select("+phone");
   if (!user.phone) {
@@ -903,6 +1023,8 @@ module.exports = {
   loginVerifyOtp,
   sendPhoneOtp,
   verifyPhoneOtp,
+  sendContactOtp,
+  verifyContactOtp,
   totpSetup,
   totpVerifySetup,
   totpDisable,

@@ -26,6 +26,7 @@ import {
   ProgressBar,
   SectionTitle,
 } from '../../components/autopilot/ui';
+import { CountText } from '../../components/motion';
 
 const CHART_WIDTH = Dimensions.get('window').width - 32 - 28 - 40;
 const PLATFORM: Record<string, string> = {
@@ -46,7 +47,7 @@ function Tile({
   return (
     <View style={s.tile}>
       <Text style={s.tileLabel}>{label}</Text>
-      <Text style={s.tileValue}>{value}</Text>
+      <CountText style={s.tileValue}>{value}</CountText>
       {hint ? <Text style={s.tileHint}>{hint}</Text> : null}
     </View>
   );
@@ -219,7 +220,7 @@ export default function AutopilotReportTab({
                     <View key={x.label} style={s.legendRow}>
                       <View style={[s.dot, { backgroundColor: x.color }]} />
                       <Text style={s.legendText}>{x.label}</Text>
-                      <Text style={s.legendValue}>{x.value}</Text>
+                      <CountText style={s.legendValue}>{x.value}</CountText>
                     </View>
                   ))}
                 </View>
@@ -266,7 +267,7 @@ export default function AutopilotReportTab({
                     <Text style={[s.legendText, { flex: 1 }]}>
                       {PLATFORM[p.platform] ?? p.platform}
                     </Text>
-                    <Text style={s.legendValue}>{p.count}</Text>
+                    <CountText style={s.legendValue}>{p.count}</CountText>
                   </View>
                   <ProgressBar
                     pct={(p.count / maxPlatform) * 100}

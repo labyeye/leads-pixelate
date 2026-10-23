@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { whatsappAPI } from '../services/api';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -185,19 +186,19 @@ export default function WhatsAppLogsScreen({ navigation }: any) {
 
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{totalSent}</Text>
+          <CountText style={styles.summaryValue}>{totalSent}</CountText>
           <Text style={styles.summaryLabel}>Sent</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{totalDelivered}</Text>
+          <CountText style={styles.summaryValue}>{totalDelivered}</CountText>
           <Text style={styles.summaryLabel}>Delivered</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{totalRead}</Text>
+          <CountText style={styles.summaryValue}>{totalRead}</CountText>
           <Text style={styles.summaryLabel}>Read</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{totalReplied}</Text>
+          <CountText style={styles.summaryValue}>{totalReplied}</CountText>
           <Text style={styles.summaryLabel}>Replied</Text>
         </View>
       </View>

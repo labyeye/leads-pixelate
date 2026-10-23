@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import Icon from './Icon';
-
+import { Globe } from 'lucide-react-native';
 const fbLogo = require('../assets/images/logos/facebook.png');
 const imLogo = require('../assets/images/logos/indiamart.png');
 const tiLogo = require('../assets/images/logos/tradeindia.webp');
@@ -16,10 +16,10 @@ const SOURCE_CONFIG: Record<string, SourceCfg> = {
   Instagram: { bg: '#E1306C', border: '#E1306C', logo: igLogo },
   Meta: { bg: '#0668E1', border: '#0557c2', logo: metaLogo },
   'Google Ads': { bg: '#4285F4', border: '#3367d6', iconName: 'logo-google' },
-  IndiaMART: { bg: '#FB923C', border: '#ea7d22', logo: imLogo },
+  IndiaMART: { bg: '#ffffff', border: '#ea7d22', logo: imLogo },
   TradeIndia: { bg: '#22C55E', border: '#16a34a', logo: tiLogo },
   Justdial: { bg: '#EF4444', border: '#dc2626', logo: jdLogo },
-  Website: { bg: '#A855F7', border: '#9333ea', iconName: 'globe-outline' },
+  Website: { bg: '#FB923C', border: '#000000', iconName: 'globe-outline' },
   Manual: { bg: '#6B7280', border: '#4b5563', iconName: 'person-outline' },
 };
 
@@ -52,6 +52,8 @@ export default function SourceBadge({ source, size = 'md' }: Props) {
           style={isSmall ? styles.logoSm : styles.logoMd}
           resizeMode="contain"
         />
+      ) : source === 'Website' ? (
+        <Globe size={isSmall ? 9 : 11} color="#fff" strokeWidth={2} />
       ) : cfg.iconName ? (
         <Icon name={cfg.iconName} size={isSmall ? 9 : 11} color="#fff" />
       ) : null}

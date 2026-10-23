@@ -21,6 +21,7 @@ import {
   purchaseOrdersAPI,
   salesOrdersAPI,
 } from '../services/api';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -324,7 +325,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
       </View>
       <View style={styles.totalRow}>
         <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalValue}>{money(d.total)}</Text>
+        <CountText style={styles.totalValue}>{money(d.total)}</CountText>
       </View>
       <View style={styles.cardActions}>
         <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(d)}>
@@ -592,17 +593,17 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
               <View style={styles.totalsBox}>
                 <View style={styles.totalsRow}>
                   <Text style={styles.totalsLabel}>Subtotal</Text>
-                  <Text style={styles.totalsValue}>{money(totals.sub)}</Text>
+                  <CountText style={styles.totalsValue}>{money(totals.sub)}</CountText>
                 </View>
                 <View style={styles.totalsRow}>
                   <Text style={styles.totalsLabel}>GST</Text>
-                  <Text style={styles.totalsValue}>{money(totals.tax)}</Text>
+                  <CountText style={styles.totalsValue}>{money(totals.tax)}</CountText>
                 </View>
                 <View style={[styles.totalsRow, styles.totalsRowBold]}>
                   <Text style={styles.totalsLabelBold}>Total</Text>
-                  <Text style={styles.totalsValueBold}>
+                  <CountText style={styles.totalsValueBold}>
                     {money(totals.total)}
-                  </Text>
+                  </CountText>
                 </View>
               </View>
 

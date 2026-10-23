@@ -21,6 +21,8 @@ const {
   linkedinCallback,
   getStats,
   getAnalytics,
+  getEngagement,
+  getFollowers,
 } = require("../controllers/socialController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -31,6 +33,8 @@ router.use(protect);
 
 router.get("/stats", getStats);
 router.get("/analytics", getAnalytics);
+router.get("/engagement", getEngagement);
+router.get("/followers", getFollowers);
 
 router.route("/posts").get(getPosts).post(createPost);
 router.route("/posts/:id").get(getPost).put(updatePost).delete(deletePost);

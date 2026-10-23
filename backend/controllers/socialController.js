@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const SocialPost = require("../models/SocialPost");
 const SocialAccount = require("../models/SocialAccount");
+const { getFollowerSeries } = require("../services/followerService");
 const Tenant = require("../models/Tenant");
 const log = require("../utils/logger").scope("Social");
 
@@ -1299,6 +1300,153 @@ exports.getAnalytics = asyncHandler(async (req, res) => {
       recentPosts,
     },
   });
+});
+
+// ── Engagement (views / likes / comments) ───────────────────────────────────
+const ENGAGEMENT_TTL_MS = 30 * 60 * 1000;
+const ENGAGEMENT_REFRESH_CAP = 30;
+
+async function graphGet(path, accessToken) {
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(
+    `https://graph.facebook.com/v18.0/${path}${sep}access_token=${encodeURIComponent(accessToken)}`,
+  );
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data?.error?.message || `Request to ${path} failed`);
+  }
+  return data;
+}
+
+async function firstInsight(id, metrics, accessToken) {
+  for (const metric of metrics) {
+    try {
+      const d = await graphGet(`${id}/insights?metric=${metric}`, accessToken);
+      const v = d?.data?.[0]?.values?.[0]?.value;
+      if (typeof v === "number") return v;
+    } catch {
+      /* metric not available for this media — try the next one */
+    }
+  }
+  return 0;
+}
+
+async function fetchFacebookEngagement(postId, token) {
+  const d = await graphGet(
+    `${postId}?fields=likes.summary(true).limit(0),comments.summary(true).limit(0)`,
+    token,
+  );
+  return {
+    likes: d?.likes?.summary?.total_count || 0,
+    comments: d?.comments?.summary?.total_count || 0,
+    views: await firstInsight(postId, ["post_impressions"], token),
+  };
+}
+
+async function fetchInstagramEngagement(mediaId, token) {
+  const d = await graphGet(`${mediaId}?fields=like_count,comments_count`, token);
+  return {
+    likes: d?.like_count || 0,
+    comments: d?.comments_count || 0,
+    views: await firstInsight(mediaId, ["impressions", "plays", "reach"], token),
+  };
+}
+
+exports.getEngagement = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const posts = await SocialPost.find({
+    ...tenantFilter,
+    status: { $in: ["POSTED", "PARTIALLY_POSTED"] },
+  })
+    .sort({ postedAt: -1 })
+    .limit(100);
+
+  const accounts = await SocialAccount.find({
+    ...tenantFilter,
+    isActive: true,
+    platform: { $in: ["facebook", "instagram"] },
+  });
+  const accountFor = (post, platform) => {
+    const ids = (post.accountIds || []).map(String);
+    return (
+      accounts.find(
+        (a) => a.platform === platform && ids.includes(String(a._id)),
+      ) || accounts.find((a) => a.platform === platform)
+    );
+  };
+
+  const stale = posts
+    .filter(
+      (p) =>
+        !p.engagement?.fetchedAt ||
+        Date.now() - new Date(p.engagement.fetchedAt).getTime() >
+          ENGAGEMENT_TTL_MS,
+    )
+    .slice(0, ENGAGEMENT_REFRESH_CAP);
+
+  await Promise.allSettled(
+    stale.map(async (post) => {
+      const total = { views: 0, likes: 0, comments: 0 };
+      const add = (r) => {
+        total.views += r.views;
+        total.likes += r.likes;
+        total.comments += r.comments;
+      };
+      const jobs = [];
+      if (post.facebookPostId) {
+        const acc = accountFor(post, "facebook");
+        if (acc) jobs.push(fetchFacebookEngagement(post.facebookPostId, acc.accessToken).then(add));
+      }
+      if (post.instagramPostId) {
+        const acc = accountFor(post, "instagram");
+        if (acc) jobs.push(fetchInstagramEngagement(post.instagramPostId, acc.accessToken).then(add));
+      }
+      const results = await Promise.allSettled(jobs);
+      // Keep the last good numbers if every call failed (expired token, deleted post…).
+      if (jobs.length && results.every((r) => r.status === "rejected")) return;
+      post.engagement = { ...total, fetchedAt: new Date() };
+      await post.save();
+    }),
+  );
+
+  const empty = () => ({ count: 0, views: 0, likes: 0, comments: 0 });
+  const totals = { published: posts.length, views: 0, likes: 0, comments: 0 };
+  const byType = { image: empty(), carousel: empty(), reel: empty() };
+  for (const p of posts) {
+    const e = p.engagement || {};
+    totals.views += e.views || 0;
+    totals.likes += e.likes || 0;
+    totals.comments += e.comments || 0;
+    const bucket = byType[p.postType || "image"] || (byType[p.postType] = empty());
+    bucket.count += 1;
+    bucket.views += e.views || 0;
+    bucket.likes += e.likes || 0;
+    bucket.comments += e.comments || 0;
+  }
+  const topPosts = [...posts]
+    .sort(
+      (a, b) =>
+        (b.engagement?.likes || 0) + (b.engagement?.comments || 0) + (b.engagement?.views || 0) -
+        ((a.engagement?.likes || 0) + (a.engagement?.comments || 0) + (a.engagement?.views || 0)),
+    )
+    .slice(0, 5)
+    .map((p) => ({
+      _id: p._id,
+      caption: p.caption,
+      postType: p.postType,
+      imageUrl: p.imageUrl,
+      postedAt: p.postedAt,
+      engagement: p.engagement,
+    }));
+
+  res.json({ success: true, data: { totals, byType, topPosts } });
+});
+
+exports.getFollowers = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const days = { 30: 30, 90: 90, 180: 180 }[req.query.days] || 30;
+  const data = await getFollowerSeries(tenantFilter, days);
+  res.json({ success: true, data });
 });
 
 exports.getStats = asyncHandler(async (req, res) => {

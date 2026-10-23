@@ -20,6 +20,7 @@ import {
   usePeriodFilter,
   type Insight,
 } from '../lib/metaAdsShared';
+import { CountText } from '../components/motion';
 
 const FB_COLOR = '#1877F2';
 const NB_SHADOW = {
@@ -173,29 +174,29 @@ export default function FacebookAdsDashboardScreen({ navigation }: any) {
 
           <View style={styles.kpiGrid}>
             <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>
+              <CountText style={styles.kpiValue}>
                 ₹{Math.round(totals.spend).toLocaleString('en-IN')}
-              </Text>
+              </CountText>
               <Text style={styles.kpiLabel}>Spend</Text>
             </View>
             <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>
+              <CountText style={styles.kpiValue}>
                 {totals.results.toLocaleString('en-IN')}
-              </Text>
+              </CountText>
               <Text style={styles.kpiLabel}>Results</Text>
             </View>
             <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>
+              <CountText style={styles.kpiValue}>
                 {totals.clicks.toLocaleString('en-IN')}
-              </Text>
+              </CountText>
               <Text style={styles.kpiLabel}>
                 Clicks · {ctr.toFixed(1)}% CTR
               </Text>
             </View>
             <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>
+              <CountText style={styles.kpiValue}>
                 {totals.impressions.toLocaleString('en-IN')}
-              </Text>
+              </CountText>
               <Text style={styles.kpiLabel}>Impressions</Text>
             </View>
           </View>
@@ -222,7 +223,7 @@ export default function FacebookAdsDashboardScreen({ navigation }: any) {
                         style={[styles.legendDot, { backgroundColor: d.color }]}
                       />
                       <Text style={styles.legendLabel}>{d.label}</Text>
-                      <Text style={styles.legendValue}>{d.value}</Text>
+                      <CountText style={styles.legendValue}>{d.value}</CountText>
                     </View>
                   ))}
                 </View>

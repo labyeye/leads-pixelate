@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Icon from './Icon';
+import { CountText } from './motion';
 
 export interface AssignableCampaignRow {
   key: string; // `${platform}:${id}` — unique across platforms
@@ -115,19 +116,19 @@ export default function CampaignAssignmentList({
               <View style={styles.metricsRow}>
                 <View style={styles.metricBox}>
                   <Text style={styles.metricLabel}>SPEND</Text>
-                  <Text style={[styles.metricValue, { color: '#024BAB' }]}>
+                  <CountText style={[styles.metricValue, { color: '#024BAB' }]}>
                     {row.spend === undefined
                       ? '—'
                       : `₹${Math.round(row.spend).toLocaleString('en-IN')}`}
-                  </Text>
+                  </CountText>
                 </View>
                 <View style={styles.metricBox}>
                   <Text style={styles.metricLabel}>RESULTS</Text>
-                  <Text style={[styles.metricValue, { color: '#00C48C' }]}>
+                  <CountText style={[styles.metricValue, { color: '#00C48C' }]}>
                     {row.results === undefined
                       ? '—'
                       : row.results.toLocaleString('en-IN')}
-                  </Text>
+                  </CountText>
                 </View>
                 <View style={styles.metricBox}>
                   <Text style={styles.metricLabel}>OWNER</Text>
@@ -154,7 +155,7 @@ export default function CampaignAssignmentList({
                       </Text>
                     </View>
                   ) : (
-                    <Text style={styles.metricValue}>—</Text>
+                    <CountText style={styles.metricValue}>—</CountText>
                   )}
                 </View>
               </View>

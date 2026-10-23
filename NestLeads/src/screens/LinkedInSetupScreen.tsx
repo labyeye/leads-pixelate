@@ -21,6 +21,7 @@ import { linkedinAdsAPI, leadsAPI, usersAPI } from '../services/api';
 import AssigneePicker, {
   describeAssignment,
 } from '../components/AssigneePicker';
+import { CountText } from '../components/motion';
 
 const LI_COLOR = '#0A66C2';
 const NB_SHADOW = {
@@ -296,13 +297,13 @@ export default function LinkedInSetupScreen({ navigation }: any) {
             <>
               <View style={styles.kpiRow}>
                 <View style={styles.kpiCard}>
-                  <Text style={styles.kpiValue}>{leadCount}</Text>
+                  <CountText style={styles.kpiValue}>{leadCount}</CountText>
                   <Text style={styles.kpiLabel}>LinkedIn Leads</Text>
                 </View>
                 <View style={styles.kpiCard}>
-                  <Text style={styles.kpiValue}>
+                  <CountText style={styles.kpiValue}>
                     {connectedAccounts.length}
-                  </Text>
+                  </CountText>
                   <Text style={styles.kpiLabel}>Connected Accounts</Text>
                 </View>
               </View>
@@ -703,6 +704,7 @@ const styles = StyleSheet.create({
   },
   emptyText: { fontSize: 12, color: '#94a3b8' },
   accountCard: {
+    backgroundColor: '#fff',
     flexDirection: 'row',
     borderWidth: 2,
     borderRadius: 8,

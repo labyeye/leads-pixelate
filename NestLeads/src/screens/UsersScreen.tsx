@@ -20,6 +20,7 @@ import Icon from '../components/Icon';
 import { usersAPI, rolesAPI, uploadFile } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import PhoneInput from '../components/PhoneInput';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -484,9 +485,9 @@ export default function UsersScreen({ navigation }: any) {
                 key={r}
                 style={[styles.roleChip, { backgroundColor: cfg.bg }]}
               >
-                <Text style={[styles.roleChipCount, { color: cfg.text }]}>
+                <CountText style={[styles.roleChipCount, { color: cfg.text }]}>
                   {roleCounts[r] || 0}
-                </Text>
+                </CountText>
                 <Text
                   style={[styles.roleChipLabel, { color: cfg.text }]}
                   numberOfLines={1}

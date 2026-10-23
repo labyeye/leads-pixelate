@@ -18,6 +18,7 @@ import SendQuotationModal from '../components/SendQuotationModal';
 import ExportFieldsDialog, {
   type ExportField,
 } from '../components/ExportFieldsDialog';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -297,9 +298,9 @@ export default function QuotationsScreen({ navigation }: any) {
               <Text style={[styles.summaryChipText, { color: colors.text }]}>
                 {status}
               </Text>
-              <Text style={[styles.summaryChipCount, { color: colors.text }]}>
+              <CountText style={[styles.summaryChipCount, { color: colors.text }]}>
                 {count}
-              </Text>
+              </CountText>
             </View>
           );
         })}

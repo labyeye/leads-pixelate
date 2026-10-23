@@ -13,11 +13,23 @@ import {
   ScrollView,
   Linking,
   Image,
+  Dimensions,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { socialAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { SourceLogo } from '../components/SourceBadge';
+import { CountText } from '../components/motion';
+import LeadsBarChart from '../components/LeadsBarChart';
+import DateTimeField from '../components/DateTimeField';
+import MediaUploadField from '../components/MediaUploadField';
+import FollowersChart from '../components/FollowersChart';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const PRIMARY = '#024BAB';
 const NB_SHADOW = {
@@ -88,22 +100,7 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const FILTERS = [
-  'ALL',
-  'DRAFT',
-  'PENDING_APPROVAL',
-  'SCHEDULED',
-  'POSTED',
-  'FAILED',
-];
-const FILTER_LABELS: Record<string, string> = {
-  ALL: 'All',
-  DRAFT: 'Draft',
-  PENDING_APPROVAL: 'Pending',
-  SCHEDULED: 'Scheduled',
-  POSTED: 'Posted',
-  FAILED: 'Failed',
-};
+const EDITABLE = ['DRAFT', 'REJECTED', 'FAILED', 'PARTIALLY_POSTED'];
 
 function fmt(dateStr: string) {
   const d = new Date(dateStr);
@@ -131,6 +128,304 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+const CAPTION_MAX = 2200;
+const HASHTAG_MAX = 300;
+
+function EditPostModal({
+  post,
+  visible,
+  onClose,
+  onSaved,
+}: {
+  post: any;
+  visible: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [caption, setCaption] = useState('');
+  const [hashtags, setHashtags] = useState('');
+  const [scheduledAt, setScheduledAt] = useState(new Date());
+  const [imageUrl, setImageUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (visible && post) {
+      setCaption(post.caption || '');
+      setHashtags((post.hashtags || []).join(' '));
+      setScheduledAt(
+        post.scheduledAt ? new Date(post.scheduledAt) : new Date(),
+      );
+      setImageUrl(post.imageUrl || '');
+      setVideoUrl(post.videoUrl || '');
+      setCoverUrl(post.coverImageUrl || '');
+      setMediaUrls(post.mediaUrls || []);
+    }
+  }, [visible, post]);
+
+  if (!post) return null;
+  const type = post.postType || 'image';
+  const sc = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
+  const busy = saving || deleting;
+  const igPost = !!post.platforms?.includes('instagram');
+
+  const save = async () => {
+    if (!caption.trim()) {
+      Alert.alert('Caption required');
+      return;
+    }
+    const tags = hashtags
+      .split(/[\s,]+/)
+      .map(h => h.trim())
+      .filter(Boolean)
+      .map(h => (h.startsWith('#') ? h : `#${h}`));
+    const payload: any = {
+      caption: caption.trim(),
+      hashtags: tags,
+      scheduledAt: scheduledAt.toISOString(),
+    };
+    if (type === 'image') {
+      if (!imageUrl) {
+        Alert.alert('Image required', 'Upload an image for this post');
+        return;
+      }
+      payload.imageUrl = imageUrl;
+    }
+    if (type === 'carousel') {
+      if (mediaUrls.length < 2) {
+        Alert.alert('At least 2 images', 'A carousel needs 2 or more images');
+        return;
+      }
+      payload.mediaUrls = mediaUrls;
+    }
+    if (type === 'reel') {
+      if (!videoUrl) {
+        Alert.alert('Video required', 'Upload a video for this reel');
+        return;
+      }
+      payload.videoUrl = videoUrl;
+      payload.coverImageUrl = coverUrl;
+    }
+    try {
+      setSaving(true);
+      await socialAPI.updatePost(post._id, payload);
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      Alert.alert('Failed to save post', e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = () =>
+    Alert.alert('Delete post?', 'This permanently deletes the post.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setDeleting(true);
+            await socialAPI.deletePost(post._id);
+            onSaved();
+            onClose();
+          } catch (e: any) {
+            Alert.alert('Failed to delete post', e.message);
+          } finally {
+            setDeleting(false);
+          }
+        },
+      },
+    ]);
+
+  const Counter = ({ n, max }: { n: number; max: number }) => (
+    <Text style={[styles.counter, n >= max && { color: '#dc2626' }]}>
+      {n}/{max}
+    </Text>
+  );
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={[styles.modalContainer, { paddingTop: insets.top }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={onClose} style={styles.backBtn}>
+            <Icon name="close" size={18} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>Edit Post</Text>
+          <View style={[styles.editStatus, { backgroundColor: sc.bg }]}>
+            <Text style={[styles.editStatusText, { color: sc.text }]}>
+              {sc.label.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.divider} />
+
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.editBody}
+        >
+          {/* Media first */}
+          <View style={styles.editCard}>
+            <View style={styles.editCardHead}>
+              <Icon
+                name={type === 'reel' ? 'videocam-outline' : 'image-outline'}
+                size={15}
+                color="#000"
+              />
+              <Text style={styles.editCardTitle}>
+                {type === 'carousel'
+                  ? 'IMAGES (AT LEAST 2)'
+                  : type === 'reel'
+                  ? 'VIDEO & COVER'
+                  : 'IMAGE'}
+              </Text>
+            </View>
+            {type === 'image' && (
+              <MediaUploadField
+                kind="image"
+                rule="feed"
+                strict={igPost}
+                value={imageUrl ? [imageUrl] : []}
+                onChange={u => setImageUrl(u[0] || '')}
+              />
+            )}
+            {type === 'carousel' && (
+              <MediaUploadField
+                kind="image"
+                rule="feed"
+                strict={igPost}
+                multiple
+                value={mediaUrls}
+                onChange={setMediaUrls}
+                label="Add image"
+              />
+            )}
+            {type === 'reel' && (
+              <View style={{ gap: 10 }}>
+                <MediaUploadField
+                  kind="video"
+                  rule="reel"
+                  value={videoUrl ? [videoUrl] : []}
+                  onChange={u => setVideoUrl(u[0] || '')}
+                />
+                <MediaUploadField
+                  kind="image"
+                  value={coverUrl ? [coverUrl] : []}
+                  onChange={u => setCoverUrl(u[0] || '')}
+                  label="Upload cover (optional)"
+                />
+              </View>
+            )}
+          </View>
+
+          {/* Caption */}
+          <View style={styles.editCard}>
+            <View style={styles.editCardHead}>
+              <Icon name="document-text-outline" size={15} color="#000" />
+              <Text style={styles.editCardTitle}>CAPTION *</Text>
+            </View>
+            <TextInput
+              style={[
+                styles.editInput,
+                { height: 150, textAlignVertical: 'top' },
+              ]}
+              value={caption}
+              onChangeText={setCaption}
+              multiline
+              maxLength={CAPTION_MAX}
+              placeholder="Write a caption..."
+              placeholderTextColor="#94a3b8"
+            />
+            <Counter n={caption.length} max={CAPTION_MAX} />
+          </View>
+
+          {/* Hashtags */}
+          <View style={styles.editCard}>
+            <View style={styles.editCardHead}>
+              <Icon name="pricetag-outline" size={15} color="#000" />
+              <Text style={styles.editCardTitle}>HASHTAGS</Text>
+            </View>
+            <TextInput
+              style={[
+                styles.editInput,
+                { minHeight: 70, textAlignVertical: 'top' },
+              ]}
+              value={hashtags}
+              onChangeText={setHashtags}
+              multiline
+              autoCapitalize="none"
+              maxLength={HASHTAG_MAX}
+              placeholder="#sale #newlaunch"
+              placeholderTextColor="#94a3b8"
+            />
+            <Counter n={hashtags.length} max={HASHTAG_MAX} />
+          </View>
+
+          {/* Schedule */}
+          <View style={styles.editCard}>
+            <View style={styles.editCardHead}>
+              <Icon name="calendar-outline" size={15} color="#000" />
+              <Text style={styles.editCardTitle}>SCHEDULE *</Text>
+            </View>
+            <DateTimeField value={scheduledAt} onChange={setScheduledAt} />
+          </View>
+
+          {post.status !== 'DRAFT' && (
+            <View style={styles.editNote}>
+              <Icon
+                name="information-circle-outline"
+                size={15}
+                color="#1e40af"
+              />
+              <Text style={styles.editNoteText}>
+                Saving moves this post back to Draft so it can be submitted
+                again.
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={[styles.editBar, { paddingBottom: insets.bottom + 12 }]}>
+          <TouchableOpacity
+            style={[styles.deleteBtn, busy && { opacity: 0.5 }]}
+            onPress={remove}
+            disabled={busy}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color="#dc2626" />
+            ) : (
+              <Icon name="trash-outline" size={18} color="#dc2626" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.saveBtn2,
+              (busy || !caption.trim()) && { opacity: 0.5 },
+            ]}
+            onPress={save}
+            disabled={busy || !caption.trim()}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.saveBtnText}>UPDATE POST</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 // ─── Detail Modal ─────────────────────────────────────────────────────────────
 function PostDetailModal({
   post,
@@ -140,17 +435,29 @@ function PostDetailModal({
   onApprove,
   onReject,
   onPublishNow,
+  onEdit,
 }: {
   post: any;
   visible: boolean;
   isAdmin: boolean;
+  onEdit: () => void;
   onClose: () => void;
   onApprove: () => void;
   onReject: () => void;
   onPublishNow: () => void;
 }) {
   const insets = useSafeAreaInsets();
+  const [captionOpen, setCaptionOpen] = useState(false);
+  const [failOpen, setFailOpen] = useState(false);
+  useEffect(() => {
+    setCaptionOpen(false);
+    setFailOpen(false);
+  }, [post?._id]);
   if (!post) return null;
+  const canEdit = EDITABLE.includes(post.status);
+  const longCaption =
+    (post.caption || '').length > 140 ||
+    (post.caption || '').split('\n').length > 3;
   const sc = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
 
   const fbLink = post.facebookPostId
@@ -175,6 +482,12 @@ function PostDetailModal({
             <Icon name="arrow-back" size={18} color="#000" />
           </TouchableOpacity>
           <Text style={styles.modalTitle}>Post Details</Text>
+          {canEdit && (
+            <TouchableOpacity style={styles.editBtn} onPress={onEdit}>
+              <Icon name="pencil-outline" size={14} color="#fff" />
+              <Text style={styles.editBtnText}>EDIT</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.divider} />
 
@@ -215,38 +528,68 @@ function PostDetailModal({
             </ScrollView>
           )}
 
-          {/* Status + platforms */}
-          <View style={styles.badgeRow}>
-            <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-              <Icon name={sc.icon} size={11} color={sc.text} />
-              <Text style={[styles.statusText, { color: sc.text }]}>
-                {sc.label.toUpperCase()}
-              </Text>
-            </View>
-            {post.platforms?.includes('facebook') && (
-              <View
-                style={[styles.platformBadge, { backgroundColor: '#dbeafe' }]}
+          {/* Status + platforms + type — full-width badges */}
+          <View style={styles.badgesFull}>
+            <TouchableOpacity
+              activeOpacity={post.failureReason ? 0.8 : 1}
+              disabled={!post.failureReason}
+              onPress={() => setFailOpen(true)}
+              style={[styles.fullBadge, { backgroundColor: sc.bg }]}
+            >
+              <Icon name={sc.icon} size={14} color={sc.text} />
+              <Text
+                style={[styles.fullBadgeText, { color: sc.text }]}
+                numberOfLines={1}
               >
-                <Icon name="logo-facebook" size={11} color="#1d4ed8" />
-                <Text style={[styles.platformText, { color: '#1d4ed8' }]}>
+                {sc.label}
+              </Text>
+              {!!post.failureReason && (
+                <Icon
+                  name="information-circle-outline"
+                  size={13}
+                  color={sc.text}
+                />
+              )}
+            </TouchableOpacity>
+            {post.platforms?.includes('facebook') && (
+              <View style={[styles.fullBadge, { backgroundColor: '#dbeafe' }]}>
+                <SourceLogo source="Facebook" size={20} />
+                <Text
+                  style={[styles.fullBadgeText, { color: '#1d4ed8' }]}
+                  numberOfLines={1}
+                >
                   Facebook
                 </Text>
               </View>
             )}
             {post.platforms?.includes('instagram') && (
-              <View
-                style={[styles.platformBadge, { backgroundColor: '#ede9fe' }]}
-              >
-                <Icon name="logo-instagram" size={11} color="#7c3aed" />
-                <Text style={[styles.platformText, { color: '#7c3aed' }]}>
+              <View style={[styles.fullBadge, { backgroundColor: '#ede9fe' }]}>
+                <SourceLogo source="Instagram" size={20} />
+                <Text
+                  style={[styles.fullBadgeText, { color: '#7c3aed' }]}
+                  numberOfLines={1}
+                >
                   Instagram
                 </Text>
               </View>
             )}
             {post.postType && (
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeBadgeText}>
-                  {post.postType.toUpperCase()}
+              <View style={[styles.fullBadge, { backgroundColor: '#f1f5f9' }]}>
+                <Icon
+                  name={
+                    post.postType === 'image'
+                      ? 'image-outline'
+                      : 'videocam-outline'
+                  }
+                  size={14}
+                  color="#475569"
+                />
+                <Text
+                  style={[styles.fullBadgeText, { color: '#475569' }]}
+                  numberOfLines={1}
+                >
+                  {post.postType.charAt(0).toUpperCase() +
+                    post.postType.slice(1)}
                 </Text>
               </View>
             )}
@@ -255,7 +598,27 @@ function PostDetailModal({
           {/* Caption */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>CAPTION</Text>
-            <Text style={styles.captionText}>{post.caption}</Text>
+            <Text
+              style={styles.captionText}
+              numberOfLines={captionOpen || !longCaption ? undefined : 4}
+            >
+              {post.caption}
+            </Text>
+            {longCaption && (
+              <TouchableOpacity
+                style={styles.moreBtn}
+                onPress={() => setCaptionOpen(v => !v)}
+              >
+                <Text style={styles.moreBtnText}>
+                  {captionOpen ? 'View less' : 'View more'}
+                </Text>
+                <Icon
+                  name={captionOpen ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={PRIMARY}
+                />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Hashtags */}
@@ -329,20 +692,6 @@ function PostDetailModal({
               </Text>
             </View>
           ) : null}
-          {post.failureReason ? (
-            <View
-              style={[
-                styles.alertBox,
-                { backgroundColor: '#fee2e2', borderColor: '#fca5a5' },
-              ]}
-            >
-              <Icon name="alert-circle-outline" size={14} color="#dc2626" />
-              <Text style={[styles.alertText, { color: '#991b1b' }]}>
-                <Text style={{ fontWeight: '800' }}>Failed: </Text>
-                {post.failureReason}
-              </Text>
-            </View>
-          ) : null}
 
           {/* Published links */}
           {(fbLink || igLink) && (
@@ -356,7 +705,7 @@ function PostDetailModal({
                   ]}
                   onPress={() => Linking.openURL(fbLink)}
                 >
-                  <Icon name="logo-facebook" size={16} color="#1d4ed8" />
+                  <SourceLogo source="Facebook" size={16 + 6} />
                   <Text style={[styles.linkBtnText, { color: '#1d4ed8' }]}>
                     View on Facebook
                   </Text>
@@ -371,7 +720,7 @@ function PostDetailModal({
                   ]}
                   onPress={() => Linking.openURL(igLink)}
                 >
-                  <Icon name="logo-instagram" size={16} color="#7c3aed" />
+                  <SourceLogo source="Instagram" size={16 + 6} />
                   <Text style={[styles.linkBtnText, { color: '#7c3aed' }]}>
                     View on Instagram
                   </Text>
@@ -445,6 +794,37 @@ function PostDetailModal({
               </TouchableOpacity>
             )}
         </ScrollView>
+
+        <Modal
+          visible={failOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setFailOpen(false)}
+        >
+          <View style={styles.failOverlay}>
+            <View style={styles.failBox}>
+              <View style={styles.failHead}>
+                <Icon name="alert-circle-outline" size={20} color="#dc2626" />
+                <Text style={styles.failTitle}>Post {sc.label}</Text>
+                <TouchableOpacity
+                  onPress={() => setFailOpen(false)}
+                  hitSlop={10}
+                >
+                  <Icon name="close" size={20} color="#000" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.failMsg} selectable>
+                {post.failureReason}
+              </Text>
+              <TouchableOpacity
+                style={styles.failBtn}
+                onPress={() => setFailOpen(false)}
+              >
+                <Text style={styles.failBtnText}>CLOSE</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -458,37 +838,130 @@ export default function SocialPlannerScreen({ navigation }: any) {
 
   const [posts, setPosts] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [engagement, setEngagement] = useState<any>(null);
+  const [followerDays, setFollowerDays] = useState<30 | 90 | 180>(30);
+  const [followers, setFollowers] = useState<any>(null);
+  const [followersLoading, setFollowersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('ALL');
   const [actionLoading, setActionLoading] = useState(false);
   const [viewingPost, setViewingPost] = useState<any>(null);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const justSaved = React.useRef(false);
 
-  const fetchData = useCallback(
-    async (isRefresh = false) => {
-      try {
-        if (isRefresh) setRefreshing(true);
-        else setLoading(true);
-        const params = filter !== 'ALL' ? { status: filter } : {};
-        const [postsRes, statsRes] = await Promise.all([
-          socialAPI.getPosts(params),
-          socialAPI.getStats(),
-        ]);
-        setPosts(postsRes.data || []);
-        setStats(statsRes.data);
-      } catch (e: any) {
-        Alert.alert('Error', e.message || 'Failed to load');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [filter],
-  );
+  const fetchData = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      const [postsRes, statsRes] = await Promise.all([
+        socialAPI.getPosts(),
+        socialAPI.getStats(),
+      ]);
+      setPosts(postsRes.data || []);
+      setStats(statsRes.data);
+      // Live from Meta — don't block the screen on it.
+      socialAPI
+        .getEngagement()
+        .then(r => setEngagement(r.data))
+        .catch(() => {});
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to load');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    let live = true;
+    setFollowersLoading(true);
+    socialAPI
+      .getFollowers(followerDays)
+      .then(r => live && setFollowers(r.data))
+      .catch(() => live && setFollowers(null))
+      .finally(() => live && setFollowersLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [followerDays]);
+
+  const count = (st: string) => posts.filter(p => p.status === st).length;
+  const summary = [
+    {
+      key: 'POSTED',
+      label: 'POSTED',
+      icon: 'checkmark-done-outline',
+      color: '#16a34a',
+      value: count('POSTED'),
+    },
+    {
+      key: 'PENDING_APPROVAL',
+      label: 'PENDING',
+      icon: 'time-outline',
+      color: '#f59e0b',
+      value: count('PENDING_APPROVAL'),
+    },
+    {
+      key: 'DRAFT',
+      label: 'DRAFT',
+      icon: 'create-outline',
+      color: '#64748b',
+      value: count('DRAFT'),
+    },
+    {
+      key: 'REJECTED',
+      label: 'REJECTED',
+      icon: 'close-circle-outline',
+      color: '#dc2626',
+      value: count('REJECTED'),
+    },
+  ];
+
+  const statusBreakdown = Object.keys(STATUS_CONFIG)
+    .map(k => ({
+      key: k,
+      value: count(k),
+      color: STATUS_CONFIG[k].text,
+      label: STATUS_CONFIG[k].label,
+    }))
+    .filter(x => x.value > 0);
+  const fbCount = posts.filter(p => p.platforms?.includes('facebook')).length;
+  const igCount = posts.filter(p => p.platforms?.includes('instagram')).length;
+  const typeCounts = ['image', 'carousel', 'reel'].map(t => ({
+    label: t.toUpperCase(),
+    value: posts.filter(p => (p.postType || 'image') === t).length,
+  }));
+  const publishedRate = posts.length
+    ? Math.round((count('POSTED') / posts.length) * 100)
+    : 0;
+  const perDay = Array.from({ length: 7 }, (_, k) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - k));
+    const next = d.getTime() + 86400000;
+    return {
+      label: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+      value: posts.filter(p => {
+        const t = new Date(p.createdAt || p.scheduledAt || 0).getTime();
+        return t >= d.getTime() && t < next;
+      }).length,
+    };
+  });
+  const upcoming = posts
+    .filter(
+      p =>
+        ['SCHEDULED', 'APPROVED'].includes(p.status) &&
+        new Date(p.scheduledAt).getTime() >= Date.now(),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    )
+    .slice(0, 6);
 
   const handleApprove = (post: any) => {
     Alert.alert('Approve Post?', `Schedule for ${fmt(post.scheduledAt)}`, [
@@ -606,10 +1079,10 @@ export default function SocialPlannerScreen({ navigation }: any) {
                 </Text>
               </View>
               {p.platforms?.includes('facebook') && (
-                <Icon name="logo-facebook" size={14} color="#1d4ed8" />
+                <SourceLogo source="Facebook" size={14 + 6} />
               )}
               {p.platforms?.includes('instagram') && (
-                <Icon name="logo-instagram" size={14} color="#7c3aed" />
+                <SourceLogo source="Instagram" size={14 + 6} />
               )}
             </View>
 
@@ -691,6 +1164,199 @@ export default function SocialPlannerScreen({ navigation }: any) {
     );
   };
 
+  const listHeader = (
+    <View style={{ gap: 12 }}>
+      {/* Followers graph */}
+      <View style={styles.sumRow}>
+        {summary.map(c => (
+          <View key={c.key} style={styles.sumCard}>
+            <View
+              style={[
+                styles.sumIcon,
+                { backgroundColor: c.color + '1A', borderColor: c.color },
+              ]}
+            >
+              <Icon name={c.icon} size={16} color={c.color} />
+            </View>
+            <CountText style={styles.sumValue}>{c.value}</CountText>
+            <Text style={styles.sumLabel} numberOfLines={1}>
+              {c.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+      
+      {/* Engagement cards */}
+      <View style={styles.sumRow}>
+        {[
+          {
+            key: 'pub',
+            label: 'PUBLISHED',
+            icon: 'checkmark-done-outline',
+            color: '#16a34a',
+            v: engagement?.totals?.published ?? count('POSTED'),
+          },
+          {
+            key: 'views',
+            label: 'VIEWS',
+            icon: 'eye-outline',
+            color: PRIMARY,
+            v: engagement?.totals?.views,
+          },
+          {
+            key: 'likes',
+            label: 'LIKES',
+            icon: 'heart-outline',
+            color: '#e11d48',
+            v: engagement?.totals?.likes,
+          },
+          {
+            key: 'comments',
+            label: 'COMMENTS',
+            icon: 'chatbubble-outline',
+            color: '#7c3aed',
+            v: engagement?.totals?.comments,
+          },
+        ].map(c => (
+          <View key={c.key} style={styles.sumCard}>
+            <View
+              style={[
+                styles.sumIcon,
+                { backgroundColor: c.color + '1A', borderColor: c.color },
+              ]}
+            >
+              <Icon name={c.icon} size={16} color={c.color} />
+            </View>
+            {c.v === undefined ? (
+              <Text style={styles.sumValue}>—</Text>
+            ) : (
+              <CountText style={styles.sumValue}>
+                {c.v.toLocaleString('en-IN')}
+              </CountText>
+            )}
+            <Text style={styles.sumLabel} numberOfLines={1}>
+              {c.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <View style={styles.panel}>
+        <View style={styles.folHead}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.panelLabel}>FOLLOWERS GAINED PER DAY</Text>
+            <View style={styles.folTotals}>
+              <CountText style={styles.folBig}>
+                {(followers?.current ?? 0).toLocaleString('en-IN')}
+              </CountText>
+              <Text
+                style={[
+                  styles.folDelta,
+                  {
+                    color:
+                      (followers?.gainedInRange ?? 0) < 0
+                        ? '#dc2626'
+                        : '#16a34a',
+                  },
+                ]}
+              >
+                {(followers?.gainedInRange ?? 0) >= 0 ? '+' : ''}
+                {followers?.gainedInRange ?? 0} in range
+              </Text>
+            </View>
+          </View>
+          <View style={styles.rangeRow}>
+            {(
+              [
+                [30, '1M'],
+                [90, '3M'],
+                [180, '6M'],
+              ] as const
+            ).map(([d, l]) => (
+              <TouchableOpacity
+                key={l}
+                style={[
+                  styles.rangeBtn,
+                  followerDays === d && styles.rangeBtnOn,
+                ]}
+                onPress={() => setFollowerDays(d)}
+              >
+                <Text
+                  style={[
+                    styles.rangeText,
+                    followerDays === d && { color: '#fff' },
+                  ]}
+                >
+                  {l}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+        {followersLoading ? (
+          <ActivityIndicator style={{ marginVertical: 40 }} color={PRIMARY} />
+        ) : followers?.points?.length ? (
+          <FollowersChart
+            data={followers.points}
+            width={SCREEN_WIDTH - 24 - 28 - 4}
+          />
+        ) : (
+          <Text style={[styles.muted, { paddingVertical: 24 }]}>
+            Connect a Facebook or Instagram account to track followers.
+          </Text>
+        )}
+      </View>
+      <View style={styles.panel}>
+        <Text style={styles.subLabel}>POSTS CREATED · LAST 7 DAYS</Text>
+        <LeadsBarChart data={perDay} width={SCREEN_WIDTH - 24 - 28 - 4} />
+      </View>
+
+      {/* Upcoming scheduled posts */}
+      <View style={styles.panel}>
+        <Text style={styles.panelLabel}>UPCOMING SCHEDULED POSTS</Text>
+        <View style={styles.tHead}>
+          <Text style={[styles.tHeadText, { flex: 2.2 }]}>POST</Text>
+          <Text style={[styles.tHeadText, { flex: 0.9 }]}>ON</Text>
+          <Text style={[styles.tHeadText, { flex: 1.5, textAlign: 'right' }]}>
+            WHEN
+          </Text>
+        </View>
+        {upcoming.length === 0 ? (
+          <Text style={[styles.muted, { paddingVertical: 12 }]}>
+            No upcoming scheduled posts
+          </Text>
+        ) : (
+          upcoming.map(p => (
+            <TouchableOpacity
+              key={p._id}
+              style={styles.tRow}
+              onPress={() => setViewingPost(p)}
+            >
+              <Text style={[styles.tCaption, { flex: 2.2 }]} numberOfLines={1}>
+                {p.caption || '—'}
+              </Text>
+              <View style={[styles.tPlat, { flex: 0.9 }]}>
+                {p.platforms?.includes('facebook') && (
+                  <SourceLogo source="Facebook" size={14 + 6} />
+                )}
+                {p.platforms?.includes('instagram') && (
+                  <SourceLogo source="Instagram" size={14 + 6} />
+                )}
+              </View>
+              <Text
+                style={[styles.tCell, { flex: 1.5, textAlign: 'right' }]}
+                numberOfLines={2}
+              >
+                {fmt(p.scheduledAt)}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+
+      <Text style={styles.panelLabelPlain}>ALL POSTS</Text>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -698,60 +1364,26 @@ export default function SocialPlannerScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
+          onPress={() => navigation.navigate('More')}
+          hitSlop={10}
         >
-          <Icon name="arrow-back" size={18} color="#000" />
+          <Icon name="menu" size={26} color="#000" />
         </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Social Planner</Text>
-          <Text style={styles.headerSub}>
-            {posts.length} post{posts.length !== 1 ? 's' : ''}
-          </Text>
-        </View>
+        <Text style={styles.headerTitleCenter}>Social Planner</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={() => fetchData(true)}
-            style={styles.refreshBtn}
-          >
-            <Icon name="refresh-outline" size={20} color="#000" />
+          <TouchableOpacity onPress={() => fetchData(true)} hitSlop={10}>
+            <Icon name="refresh-outline" size={22} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.newPostBtn}
+            style={styles.plusBtn}
             onPress={() => navigation.navigate('CreatePost')}
+            accessibilityLabel="New post"
+            activeOpacity={0.85}
           >
-            <Icon name="add" size={18} color="#fff" />
-            <Text style={styles.newPostBtnText}>NEW</Text>
+            <Icon name="add" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.thinDivider} />
-
-      {/* Filter tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filterRow}
-      >
-        {FILTERS.map(f => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterChip, filter === f && styles.filterChipActive]}
-            onPress={() => setFilter(f)}
-          >
-            <Text
-              style={[
-                styles.filterChipText,
-                filter === f && styles.filterChipTextActive,
-              ]}
-            >
-              {FILTER_LABELS[f]}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      <View style={styles.thinDivider} />
 
       {loading ? (
         <View style={styles.centerBox}>
@@ -762,6 +1394,7 @@ export default function SocialPlannerScreen({ navigation }: any) {
           data={posts}
           keyExtractor={p => p._id}
           renderItem={renderPost}
+          ListHeaderComponent={listHeader}
           contentContainerStyle={[
             styles.list,
             { paddingBottom: insets.bottom + 24 },
@@ -792,12 +1425,436 @@ export default function SocialPlannerScreen({ navigation }: any) {
         onApprove={() => viewingPost && handleApprove(viewingPost)}
         onReject={() => viewingPost && handleReject(viewingPost)}
         onPublishNow={() => viewingPost && handlePublishNow(viewingPost)}
+        onEdit={() => {
+          setEditingPost(viewingPost);
+          setViewingPost(null);
+        }}
+      />
+      <EditPostModal
+        post={editingPost}
+        visible={!!editingPost}
+        onClose={() => {
+          // cancel returns to the post details
+          if (!justSaved.current) setViewingPost(editingPost);
+          justSaved.current = false;
+          setEditingPost(null);
+        }}
+        onSaved={() => {
+          justSaved.current = true;
+          fetchData();
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  folHead: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 14,
+  },
+  folTotals: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  folBig: { fontSize: 24, fontWeight: '800', color: '#000' },
+  folDelta: { fontSize: 11, fontWeight: '800' },
+  rangeRow: { flexDirection: 'row', gap: 6 },
+  rangeBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 2,
+    borderRadius: 6,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+  },
+  rangeBtnOn: { backgroundColor: PRIMARY },
+  rangeText: { fontSize: 11, fontWeight: '800', color: '#000' },
+  engCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 6,
+    backgroundColor: '#f8fafc',
+  },
+  typeRow: {
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 8,
+  },
+  typeHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  typeName: { fontSize: 12, fontWeight: '800', color: '#000' },
+  typeCount: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+  typeStats: { flexDirection: 'row', justifyContent: 'space-between' },
+  typeStat: { fontSize: 13, fontWeight: '800', color: '#000' },
+  editStatus: {
+    marginLeft: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 6,
+  },
+  editStatusText: { fontSize: 10, fontWeight: '800' },
+  editBody: {
+    padding: 16,
+    gap: 14,
+    paddingBottom: 24,
+    backgroundColor: '#f8fafc',
+  },
+  editCard: {
+    backgroundColor: '#fff',
+    padding: 14,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+  },
+  editCardHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  editCardTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: 1,
+  },
+  counter: {
+    alignSelf: 'flex-end',
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  editNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#dbeafe',
+    borderWidth: 2,
+    borderColor: '#93c5fd',
+    borderRadius: 8,
+  },
+  editNoteText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#1e40af' },
+  editBar: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 2,
+    borderTopColor: '#000',
+  },
+  deleteBtn: {
+    width: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fee2e2',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  saveBtn2: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#FF751F',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  failOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  failBox: {
+    backgroundColor: '#fff',
+    padding: 18,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderColor: '#000',
+  },
+  failHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  failTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#991b1b' },
+  failMsg: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#991b1b',
+    backgroundColor: '#fee2e2',
+    borderWidth: 2,
+    borderColor: '#fca5a5',
+    borderRadius: 8,
+    padding: 12,
+  },
+  failBtn: {
+    marginTop: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  failBtnText: { fontSize: 13, fontWeight: '800', color: '#000' },
+  badgesFull: { flexDirection: 'row', gap: 8 },
+  fullBadge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  fullBadgeText: { fontSize: 12, fontWeight: '800', flexShrink: 1 },
+  moreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  moreBtnText: { fontSize: 13, fontWeight: '800', color: PRIMARY },
+  editBtn: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: PRIMARY,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  editBtnText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  editLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 1,
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  editInput: {
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    padding: 12,
+    fontSize: 14,
+    color: '#000',
+    backgroundColor: '#fff',
+  },
+  editHint: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 12,
+    fontWeight: '600',
+  },
+  saveBtn: {
+    marginTop: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#FF751F',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderColor: '#000',
+  },
+  saveBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  headerTitleCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#000',
+  },
+  plusBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: PRIMARY,
+    borderWidth: 2,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sumRow: { flexDirection: 'row', gap: 8 },
+  sumCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+  },
+  sumIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sumValue: { fontSize: 19, fontWeight: '800', color: '#000' },
+  sumLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 0.5,
+  },
+  panel: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    padding: 14,
+  },
+  panelLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  panelLabelPlain: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  subLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 1,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  anRow: { flexDirection: 'row', gap: 8 },
+  anBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 6,
+    backgroundColor: '#f8fafc',
+  },
+  anBig: { fontSize: 22, fontWeight: '800', color: PRIMARY },
+  anMid: { fontSize: 18, fontWeight: '800', color: '#000' },
+  anSmall: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#64748b',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  stack: {
+    flexDirection: 'row',
+    height: 14,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  legendDot: { width: 10, height: 10, borderWidth: 1.5, borderColor: '#000' },
+  legendText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  platBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 10,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 6,
+  },
+  platText: { flex: 1, fontSize: 12, fontWeight: '700', color: '#000' },
+  platCount: { fontSize: 16, fontWeight: '800', color: '#000' },
+  muted: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  tHead: {
+    flexDirection: 'row',
+    paddingBottom: 6,
+    borderBottomWidth: 2,
+    borderBottomColor: '#000',
+  },
+  tHeadText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#64748b',
+    letterSpacing: 0.5,
+  },
+  tRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    gap: 4,
+  },
+  tCaption: { fontSize: 12, fontWeight: '700', color: '#000' },
+  tPlat: { flexDirection: 'row', gap: 6 },
+  tCell: { fontSize: 11, fontWeight: '600', color: '#334155' },
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,

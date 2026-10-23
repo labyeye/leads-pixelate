@@ -250,6 +250,14 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
+// Daily follower snapshots for the Social Planner graph (also taken lazily on request).
+{
+  const { snapshotAll } = require("./services/followerService");
+  const run = () => snapshotAll().catch(() => {});
+  setTimeout(run, 30 * 1000);
+  setInterval(run, 6 * 60 * 60 * 1000);
+}
+
 app.listen(PORT, () => {
   if (process.env.NODE_ENV === "development") {
     console.log(`NestLeads API running on port ${PORT}`);

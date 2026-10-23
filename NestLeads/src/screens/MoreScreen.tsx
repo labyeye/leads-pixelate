@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   StyleSheet,
   StatusBar,
   ScrollView,
+  TextInput,
+  Alert,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
@@ -32,6 +35,15 @@ type MenuItem = {
   color: string;
   adminOnly?: boolean;
 };
+
+const GROUPS: { title: string; icon: string; screens: string[] }[] = [
+  { title: 'Sales & Billing', icon: 'wallet-outline', screens: ['Clients', 'Quotations', 'SalesOrders', 'PurchaseOrders', 'Invoices', 'PriceBooks', 'Products', 'Services'] },
+  { title: 'WhatsApp', icon: 'chatbubbles-outline', screens: ['WhatsAppInbox', 'WhatsAppLogs', 'WhatsAppSetup', 'Campaigns'] },
+  { title: 'Marketing & Insights', icon: 'megaphone-outline', screens: ['AdCampaignsHub', 'Autopilot', 'Reports'] },
+  { title: 'Workspace', icon: 'people-outline', screens: ['Users', 'Integrations', 'ApiKeys'] },
+  { title: 'Account', icon: 'person-outline', screens: ['Billing', 'AccountSecurity', 'Support', 'Settings'] },
+  { title: 'Admin', icon: 'shield-checkmark-outline', screens: ['ActivityLog', 'Trash'] },
+];
 
 const MENU_ITEMS: MenuItem[] = [
   {
@@ -207,222 +219,219 @@ const MENU_ITEMS: MenuItem[] = [
   },
 ];
 
+const TILE_W = (Dimensions.get('window').width - 32 - 12) / 2;
+
 export default function MoreScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
-  const initial = (user?.name || user?.email || 'U')[0].toUpperCase();
+  const [query, setQuery] = useState('');
   const isAdmin = ['admin', 'super_admin'].includes(user?.role);
-  const menuItems = MENU_ITEMS.filter(item => !item.adminOnly || isAdmin);
+  const items = MENU_ITEMS.filter(item => !item.adminOnly || isAdmin);
+  const q = query.trim().toLowerCase();
+  const matches = (i: MenuItem) =>
+    !q || i.label.toLowerCase().includes(q) || i.sub.toLowerCase().includes(q);
 
-  const handleLogout = () => {
-    const { Alert } = require('react-native');
+  const sections = GROUPS.map(g => ({
+    ...g,
+    items: g.screens
+      .map(sc => items.find(i => i.screen === sc))
+      .filter((i): i is MenuItem => !!i && matches(i)),
+  })).filter(g => g.items.length > 0);
+
+  const handleLogout = () =>
     Alert.alert('Logout', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Logout', style: 'destructive', onPress: () => logout() },
     ]);
-  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Icon name="grid-outline" size={22} color="#000" />
-          <Text style={styles.headerTitle}>More</Text>
-        </View>
-        <TouchableOpacity style={styles.bellBtn}>
-          <Icon name="notifications-outline" size={22} color="#000" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>More</Text>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scroll,
-          { paddingBottom: insets.bottom + 32 },
-        ]}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
       >
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <UserAvatar
-            name={user?.name}
-            avatar={user?.avatar}
-            size={64}
-            index={0}
-          />
-
-          <View style={styles.profileActions}>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                {(user?.name || 'User').toUpperCase()}
+        {/* Profile hero */}
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <UserAvatar name={user?.name} avatar={user?.avatar} size={64} index={0} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.profileName} numberOfLines={1}>
+                {user?.name || 'User'}
               </Text>
-              <Text style={styles.profileRole}>
-                {(user?.role || 'AGENT').toUpperCase()}
-              </Text>
+              {!!user?.email && (
+                <Text style={styles.profileEmail} numberOfLines={1}>
+                  {user.email}
+                </Text>
+              )}
+              <View style={styles.rolePill}>
+                <Text style={styles.roleText}>
+                  {(user?.role || 'agent').replace('_', ' ').toUpperCase()}
+                </Text>
+              </View>
             </View>
+          </View>
+          <View style={styles.heroBtns}>
             <TouchableOpacity
-              style={styles.editBtn}
+              style={[styles.heroBtn, { backgroundColor: '#eff6ff' }]}
               onPress={() => navigation.navigate('Settings')}
             >
-              <Icon name="person-outline" size={14} color={PRIMARY} />
+              <Icon name="person-outline" size={15} color={PRIMARY} />
+              <Text style={[styles.heroBtnText, { color: PRIMARY }]}>Profile</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.logoutBtnSmall}
+              style={[styles.heroBtn, { backgroundColor: '#fef2f2' }]}
               onPress={handleLogout}
             >
-              <Icon name="log-out-outline" size={14} color="#EF4444" />
+              <Icon name="log-out-outline" size={15} color="#EF4444" />
+              <Text style={[styles.heroBtnText, { color: '#EF4444' }]}>Logout</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Menu list card */}
-        <View style={styles.menuCard}>
-          {menuItems.map((item, idx) => (
-            <View key={item.screen}>
-              {idx > 0 && <View style={styles.menuDivider} />}
-              <TouchableOpacity
-                style={styles.menuRow}
-                onPress={() => navigation.navigate(item.screen)}
-              >
-                <View style={[styles.menuIconBox, { borderColor: item.color }]}>
-                  {item.icon === 'logo-whatsapp' ? (
-                    <WhatsAppLogo size={22} />
-                  ) : (
-                    <Icon name={item.icon} size={22} color={item.color} />
-                  )}
-                </View>
-                <View style={styles.menuText}>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Text style={styles.menuSub}>{item.sub}</Text>
-                </View>
-                <Icon name="chevron-forward" size={16} color="#94a3b8" />
-              </TouchableOpacity>
-            </View>
-          ))}
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <Icon name="search-outline" size={16} color="#000" />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search features..."
+            placeholderTextColor="#64748b"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {!!query && (
+            <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
+              <Icon name="close" size={16} color="#000" />
+            </TouchableOpacity>
+          )}
         </View>
+
+        {/* Grouped tiles */}
+        {sections.map(g => (
+          <View key={g.title}>
+            <View style={styles.sectionHead}>
+              <Icon name={g.icon} size={14} color="#000" />
+              <Text style={styles.sectionTitle}>{g.title.toUpperCase()}</Text>
+              <View style={styles.sectionLine} />
+            </View>
+            <View style={styles.grid}>
+              {g.items.map(item => (
+                <TouchableOpacity
+                  key={item.screen}
+                  style={styles.tile}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate(item.screen)}
+                >
+                  <View style={[styles.tileIcon, { backgroundColor: item.color + '1A', borderColor: item.color }]}>
+                    {item.icon === 'logo-whatsapp' ? (
+                      <WhatsAppLogo size={22} />
+                    ) : (
+                      <Icon name={item.icon} size={22} color={item.color} />
+                    )}
+                  </View>
+                  <Text style={styles.tileLabel} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                  <Text style={styles.tileSub} numberOfLines={2}>
+                    {item.sub}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
+
+        {sections.length === 0 && (
+          <View style={styles.empty}>
+            <Icon name="search-outline" size={36} color="#cbd5e1" />
+            <Text style={styles.emptyText}>No features match "{query}"</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
 }
 
+const box = {
+  borderWidth: 2,
+  borderRadius: 8,
+  borderRightWidth: 5,
+  borderBottomWidth: 5,
+  borderRightColor: '#0A0A0A',
+  borderBottomColor: '#0A0A0A',
+  borderColor: '#000',
+} as const;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  header: { height: 56, justifyContent: 'center', paddingHorizontal: 16 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#000' },
+  scroll: { padding: 16, gap: 18 },
 
-  // Header
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-  },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
-  bellBtn: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scroll: { padding: 16, gap: 16 },
-
-  // Profile
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-  },
-  profileAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: PRIMARY,
+  hero: { ...box, backgroundColor: '#fff', padding: 14, gap: 14 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  profileName: { fontSize: 18, fontWeight: '800', color: '#000' },
+  profileEmail: { fontSize: 12, color: '#64748b', fontWeight: '600', marginTop: 2 },
+  rolePill: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    backgroundColor: '#FFDE00',
     borderWidth: 2,
     borderColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  profileAvatarText: { fontSize: 22, fontWeight: '600', color: '#fff' },
-  profileInfo: { flex: 1 },
-  profileName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-    letterSpacing: 0.3,
-    maxWidth: 200,
-  },
-  profileRole: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748b',
-    marginTop: 2,
-  },
-  profileActions: {
+  roleText: { fontSize: 10, fontWeight: '800', color: '#000' },
+  heroBtns: { flexDirection: 'row', gap: 10 },
+  heroBtn: {
     flex: 1,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 8,
+  },
+  heroBtnText: { fontSize: 13, fontWeight: '800' },
+
+  searchBox: {
+    ...box,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    alignItems: 'center',
-  },
-  editBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderColor: PRIMARY,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  editBtnText: { fontSize: 11, fontWeight: '600', color: PRIMARY },
-  logoutBtnSmall: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderColor: '#EF4444',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  logoutBtnSmallText: { fontSize: 11, fontWeight: '600', color: '#EF4444' },
-
-  // Menu list
-  menuCard: {
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    paddingHorizontal: 12,
     backgroundColor: '#fff',
   },
-  menuDivider: { height: 1, backgroundColor: '#e2e8f0' },
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 14,
-  },
-  menuIconBox: {
-    width: 46,
-    height: 46,
+  searchInput: { flex: 1, paddingVertical: 11, fontSize: 14, color: '#000', fontWeight: '600' },
+
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  sectionTitle: { fontSize: 11, fontWeight: '800', color: '#000', letterSpacing: 1 },
+  sectionLine: { flex: 1, height: 2, backgroundColor: '#000', marginLeft: 4 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  tile: { ...box, width: TILE_W, backgroundColor: '#fff', padding: 12, gap: 6, minHeight: 124 },
+  tileIcon: {
+    width: 44,
+    height: 44,
     borderWidth: 2,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
-  menuText: { flex: 1 },
-  menuLabel: { fontSize: 15, fontWeight: '800', color: '#000' },
-  menuSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  tileLabel: { fontSize: 14, fontWeight: '800', color: '#000' },
+  tileSub: { fontSize: 11, color: '#64748b', fontWeight: '500', lineHeight: 15 },
+
+  empty: { alignItems: 'center', paddingVertical: 40, gap: 8 },
+  emptyText: { fontSize: 14, fontWeight: '700', color: '#64748b' },
 });

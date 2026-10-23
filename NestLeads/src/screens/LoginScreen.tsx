@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   View,
   Text,
   TextInput,
@@ -13,10 +14,12 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Passkey } from 'react-native-passkey';
 import LottieView from 'lottie-react-native';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import { ArrowRight } from 'lucide-react-native';
 
 const loginAnim = require('../assets/lottie/login.json');
 const otpAnim = require('../assets/lottie/otp.json');
@@ -41,9 +44,34 @@ export default function LoginScreen({ navigation }: any) {
   const [otp, setOtp] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
 
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+
   // 2FA state
   const [pending2FA, setPending2FA] = useState<string | null>(null);
   const [tfaCode, setTfaCode] = useState('');
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    entrance.setValue(0);
+
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 650,
+      useNativeDriver: true,
+    }).start();
+  }, [mode, pending2FA, entrance]);
+
+  const slideUp = (distance = 24) => ({
+    opacity: entrance,
+    transform: [
+      {
+        translateY: entrance.interpolate({
+          inputRange: [0, 1],
+          outputRange: [distance, 0],
+        }),
+      },
+    ],
+  });
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -79,6 +107,50 @@ export default function LoginScreen({ navigation }: any) {
       Alert.alert('Error', err.message || 'Invalid authentication code');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasskeyLogin = async () => {
+    if (!Passkey.isSupported()) {
+      setError('Passkeys are not supported on this device.');
+      return;
+    }
+    setError('');
+    setPasskeyLoading(true);
+    try {
+      const optRes = await authAPI.passkeyLoginOptions();
+      const opts = optRes.data;
+      const result = await Passkey.get({
+        rpId: opts.rpId,
+        challenge: opts.challenge,
+        allowCredentials: opts.allowCredentials,
+        userVerification: opts.userVerification,
+        timeout: opts.timeout,
+      });
+      const res = await authAPI.biometricLogin({
+        id: result.id,
+        rawId: result.rawId,
+        type: 'public-key',
+        response: {
+          clientDataJSON: result.response.clientDataJSON,
+          authenticatorData: result.response.authenticatorData,
+          signature: result.response.signature,
+          userHandle: result.response.userHandle ?? null,
+        },
+      });
+      const token = res.token ?? res.data?.token;
+      if (!token) throw new Error('Login failed: no token received');
+      await loginWithToken(res.data, token);
+    } catch (err: any) {
+      const cancelled =
+        err?.error === 'UserCancelled' || err?.name === 'NotAllowedError';
+      setError(
+        cancelled
+          ? 'Passkey authentication was cancelled.'
+          : err.message || 'Passkey login failed. Try another method.',
+      );
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -142,18 +214,20 @@ export default function LoginScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         {pending2FA === null && (
-          <LottieView
-            key={mode}
-            source={mode === 'phone' ? otpAnim : loginAnim}
-            autoPlay
-            loop
-            style={mode === 'phone' ? styles.lottieOtp : styles.lottieLogin}
-          />
+          <Animated.View style={slideUp(50)}>
+            <LottieView
+              key={mode}
+              source={mode === 'phone' ? otpAnim : loginAnim}
+              autoPlay
+              loop
+              style={mode === 'phone' ? styles.lottieOtp : styles.lottieLogin}
+            />
+          </Animated.View>
         )}
 
         <>
           <Text style={styles.heading}>
-            {pending2FA !== null ? 'Two-Factor Authentication' : 'Welcome back'}
+            {pending2FA !== null ? 'Two-Factor Authentication' : 'Login'}
           </Text>
 
           {pending2FA !== null ? (
@@ -309,83 +383,89 @@ export default function LoginScreen({ navigation }: any) {
                 </View>
               )}
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Email Address</Text>
-                <View style={styles.inputBorder}>
-                  <Icon
-                    name="mail-outline"
-                    size={16}
-                    color="#64748b"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="you@company.com"
-                    placeholderTextColor="#94a3b8"
-                    value={email}
-                    onChangeText={v => {
-                      setEmail(v);
-                      setError('');
-                    }}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Password</Text>
-                <View style={styles.inputBorder}>
-                  <Icon
-                    name="lock-closed-outline"
-                    size={16}
-                    color="#64748b"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={[styles.input, { flex: 1 }]}
-                    placeholder="••••••••"
-                    placeholderTextColor="#94a3b8"
-                    value={password}
-                    onChangeText={v => {
-                      setPassword(v);
-                      setError('');
-                    }}
-                    secureTextEntry={!showPw}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeBtn}
-                    onPress={() => setShowPw(v => !v)}
-                  >
+              <Animated.View style={slideUp(30)}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Email Address</Text>
+                  <View style={styles.inputBorder}>
                     <Icon
-                      name={showPw ? 'eye-off-outline' : 'eye-outline'}
-                      size={18}
+                      name="mail-outline"
+                      size={16}
                       color="#64748b"
+                      style={styles.inputIcon}
                     />
-                  </TouchableOpacity>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter Email Address"
+                      placeholderTextColor="#94a3b8"
+                      value={email}
+                      onChangeText={v => {
+                        setEmail(v);
+                        setError('');
+                      }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
                 </View>
-              </View>
+              </Animated.View>
 
-              <TouchableOpacity
-                style={[styles.submitBtn, loading && { opacity: 0.7 }]}
-                onPress={handleSubmit}
-                disabled={loading}
-                activeOpacity={0.85}
-              >
-                {loading ? (
-                  <View style={styles.row}>
-                    <ActivityIndicator size="small" color="#fff" />
-                    <Text style={styles.submitText}>Signing in...</Text>
+              <Animated.View style={slideUp(30)}>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Password</Text>
+                  <View style={styles.inputBorder}>
+                    <Icon
+                      name="lock-closed-outline"
+                      size={16}
+                      color="#64748b"
+                      style={styles.inputIcon}
+                    />
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder="Enter Password"
+                      placeholderTextColor="#94a3b8"
+                      value={password}
+                      onChangeText={v => {
+                        setPassword(v);
+                        setError('');
+                      }}
+                      secureTextEntry={!showPw}
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeBtn}
+                      onPress={() => setShowPw(v => !v)}
+                    >
+                      <Icon
+                        name={showPw ? 'eye-off-outline' : 'eye-outline'}
+                        size={18}
+                        color="#64748b"
+                      />
+                    </TouchableOpacity>
                   </View>
-                ) : (
-                  <View style={styles.row}>
-                    <Icon name="log-in-outline" size={16} color="#fff" />
-                    <Text style={styles.submitText}>Sign In</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+                </View>
+              </Animated.View>
+
+              <Animated.View style={slideUp(20)}>
+                <TouchableOpacity
+                  style={[styles.submitBtn, loading && { opacity: 0.7 }]}
+                  onPress={handleSubmit}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  {loading ? (
+                    <View style={styles.row}>
+                      <ActivityIndicator size="small" color="#fff" />
+                      <Text style={styles.submitText}>Signing in...</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.row}>
+                      <Text style={styles.submitText}>Sign In</Text>
+                      <ArrowRight size={20} color={'#ffffff'} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
 
               <TouchableOpacity
                 style={styles.linkBtn}
@@ -401,26 +481,55 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.orText}>Or login with</Text>
             <View style={styles.orLine} />
           </View>
-          <TouchableOpacity
-            style={styles.altBtn}
-            onPress={() =>
-              mode === 'phone' ? resetPhoneMode() : setMode('phone')
-            }
-            accessibilityRole="button"
-            accessibilityLabel={
-              mode === 'phone' ? 'Sign in with email' : 'Sign in with phone OTP'
-            }
-            activeOpacity={0.85}
+          <View
+            style={{ flexDirection: 'row', justifyContent: 'center', gap: 16 }}
           >
-            <Icon
-              name={mode === 'phone' ? 'mail-outline' : 'call-outline'}
-              size={24}
-              color="#fff"
-            />
-          </TouchableOpacity>
-          <Text style={styles.altLabel}>
-            {mode === 'phone' ? 'Email' : 'Phone'}
-          </Text>
+            <Animated.View style={slideUp(20)}>
+              <TouchableOpacity
+                style={styles.altBtn}
+                onPress={() =>
+                  mode === 'phone' ? resetPhoneMode() : setMode('phone')
+                }
+                accessibilityRole="button"
+                accessibilityLabel={
+                  mode === 'phone'
+                    ? 'Sign in with email'
+                    : 'Sign in with phone OTP'
+                }
+                activeOpacity={0.85}
+              >
+                <Icon
+                  name={mode === 'phone' ? 'mail-outline' : 'call-outline'}
+                  size={24}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+            </Animated.View>
+            <Animated.View style={slideUp(20)}>
+              <TouchableOpacity
+                style={[styles.altBtn, passkeyLoading && { opacity: 0.7 }]}
+                onPress={handlePasskeyLogin}
+                disabled={passkeyLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in with passkey"
+                activeOpacity={0.85}
+              >
+                {passkeyLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Icon name="key-outline" size={24} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+          <View
+            style={{ flexDirection: 'row', justifyContent: 'center', gap: 16 }}
+          >
+            <Text style={[styles.altLabel, { width: 50 }]}>
+              {mode === 'phone' ? 'Email' : 'Phone'}
+            </Text>
+            <Text style={[styles.altLabel, { width: 50 }]}>Passkey</Text>
+          </View>
         </>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -437,14 +546,14 @@ const styles = StyleSheet.create({
   },
   // Same box + negative top margin as NestSports' login/OTP screens: both animations have
   // generous transparent padding in their canvas, so the art floats above the centred form.
-  lottieLogin: { width: '100%', height: 250, marginTop: -74, marginBottom: 24 },
+  lottieLogin: { width: '100%', height: 220, marginTop: 5, marginBottom: 6 },
   lottieOtp: { width: '100%', height: 300, marginTop: -204, marginBottom: 24 },
   heading: {
-    fontSize: 26,
+    fontSize: 36,
     fontWeight: '600',
     color: '#000',
     marginBottom: 18,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   errorBox: {
     flexDirection: 'row',
@@ -496,7 +605,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   submitBtn: {
-    backgroundColor: '#024BAB',
+    backgroundColor: '#ff751f',
     borderWidth: 2,
     borderRadius: 8,
     borderRightWidth: 5,
@@ -518,7 +627,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   linkBtn: { alignItems: 'center', paddingVertical: 10, marginTop: 4 },
-  linkText: { fontSize: 13, fontWeight: '700', color: '#024BAB' },
+  linkText: { fontSize: 13, fontWeight: '700', color: '#00000' },
   otpInput: {
     borderWidth: 2,
     borderRadius: 8,

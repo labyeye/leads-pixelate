@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from './Icon';
 import UserAvatar from './UserAvatar';
+import { Hand, User } from 'lucide-react-native';
 
 interface Props {
   name?: string;
@@ -59,7 +60,7 @@ export default function AppHeader({
         </View>
       </View>
       <Text style={s.greet}>
-        {greeting}, {first} 👋
+        {greeting}, {first} <Hand size={14} color="#475569" style={{ marginLeft: 4 }} />
       </Text>
       <Text style={s.title}>{title}</Text>
     </View>

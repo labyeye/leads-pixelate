@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import BootSplash from 'react-native-bootsplash';
 import { Users, PhoneCall, TrendingUp } from 'lucide-react-native';
 
 const logo = require('../assets/images/Logo.png');
@@ -88,7 +89,10 @@ export default function AnimatedSplashScreen({ onDone }: Props) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={() => BootSplash.hide({ fade: true })}
+    >
       {/* Three icons */}
       <Animated.View style={[styles.iconsRow, { opacity: iconsGroupOpacity }]}>
         <Animated.View

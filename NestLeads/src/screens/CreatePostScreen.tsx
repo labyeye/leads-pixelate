@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Icon from '../components/Icon';
 import { socialAPI, uploadFile } from '../services/api';
+import { checkMedia, MediaRule } from '../utils/mediaCheck';
 
 const PRIMARY = '#024BAB';
 const ORANGE = '#FF751F';

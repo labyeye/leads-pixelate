@@ -22,6 +22,7 @@ import {
   PeriodFilterBar,
   usePeriodFilter,
 } from '../lib/metaAdsShared';
+import { CountText } from '../components/motion';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -228,7 +229,7 @@ function Kpi({
 }) {
   return (
     <View style={[styles.kpiBox, full && { width: '100%' }]}>
-      <Text style={styles.kpiValue}>{value}</Text>
+      <CountText style={styles.kpiValue}>{value}</CountText>
       <Text style={styles.kpiLabel}>{label.toUpperCase()}</Text>
     </View>
   );

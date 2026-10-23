@@ -31,6 +31,7 @@ import {
   getCategoryByStatus,
 } from '../constants/statusConstants';
 import { shareCSV } from '../lib/csvExport';
+import { CountText } from '../components/motion';
 
 const PRIMARY = '#024BAB';
 const SECONDARY = '#FF751F';
@@ -196,9 +197,9 @@ function KpiCard({
         <Text style={styles.kpiTitle} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={styles.kpiValue} numberOfLines={1}>
+        <CountText style={styles.kpiValue} numberOfLines={1}>
           {value}
-        </Text>
+        </CountText>
         {sub ? (
           <Text style={styles.kpiSub} numberOfLines={1}>
             {sub}
@@ -572,7 +573,7 @@ export default function ReportsScreen({ navigation }: any) {
                         ]}
                       />
                     </View>
-                    <Text style={styles.tempCount}>{t.value}</Text>
+                    <CountText style={styles.tempCount}>{t.value}</CountText>
                     <Text style={styles.tempPct}>({Math.round(pct)}%)</Text>
                   </View>
                 );
@@ -637,7 +638,7 @@ export default function ReportsScreen({ navigation }: any) {
                           },
                         ]}
                       />
-                      <Text style={styles.funnelCount}>{count}</Text>
+                      <CountText style={styles.funnelCount}>{count}</CountText>
                     </View>
                   </View>
                 );
@@ -695,9 +696,9 @@ export default function ReportsScreen({ navigation }: any) {
                       </View>
                     </View>
                     <View style={styles.sourceDetailRight}>
-                      <Text style={styles.sourceDetailCount}>
+                      <CountText style={styles.sourceDetailCount}>
                         {String(count)}
-                      </Text>
+                      </CountText>
                       <Text style={styles.sourceDetailPct}>{pctTotal}%</Text>
                     </View>
                   </View>
@@ -732,7 +733,7 @@ export default function ReportsScreen({ navigation }: any) {
                         height={22}
                       />
                     </View>
-                    <Text style={styles.statusCount}>{String(count)}</Text>
+                    <CountText style={styles.statusCount}>{String(count)}</CountText>
                   </View>
                 );
               })}
@@ -845,10 +846,10 @@ export default function ReportsScreen({ navigation }: any) {
                           />
                         </View>
                         <View style={styles.agentStats}>
-                          <Text style={styles.agentLeadsCount}>{ag.count}</Text>
-                          <Text style={styles.agentClientsCount}>
+                          <CountText style={styles.agentLeadsCount}>{ag.count}</CountText>
+                          <CountText style={styles.agentClientsCount}>
                             {ag.clients} won
-                          </Text>
+                          </CountText>
                         </View>
                         <View
                           style={[
@@ -1024,7 +1025,7 @@ export default function ReportsScreen({ navigation }: any) {
                         ]}
                       />
                     </View>
-                    <Text style={styles.distCount}>{count}</Text>
+                    <CountText style={styles.distCount}>{count}</CountText>
                     <Text style={styles.distPct}>{Math.round(pct)}%</Text>
                   </View>
                 );
@@ -1051,23 +1052,23 @@ export default function ReportsScreen({ navigation }: any) {
             <View style={styles.fuKpiRow}>
               <View style={[styles.fuKpi, { borderColor: '#ef4444' }]}>
                 <Icon name="time-outline" size={20} color="#ef4444" />
-                <Text style={[styles.fuKpiValue, { color: '#ef4444' }]}>
+                <CountText style={[styles.fuKpiValue, { color: '#ef4444' }]}>
                   {stats.overdue}
-                </Text>
+                </CountText>
                 <Text style={styles.fuKpiLabel}>OVERDUE</Text>
               </View>
               <View style={[styles.fuKpi, { borderColor: SECONDARY }]}>
                 <Icon name="calendar-outline" size={20} color={SECONDARY} />
-                <Text style={[styles.fuKpiValue, { color: SECONDARY }]}>
+                <CountText style={[styles.fuKpiValue, { color: SECONDARY }]}>
                   {stats.upcoming}
-                </Text>
+                </CountText>
                 <Text style={styles.fuKpiLabel}>NEXT 7 DAYS</Text>
               </View>
               <View style={[styles.fuKpi, { borderColor: '#94a3b8' }]}>
                 <Icon name="close-circle-outline" size={20} color="#94a3b8" />
-                <Text style={[styles.fuKpiValue, { color: '#94a3b8' }]}>
+                <CountText style={[styles.fuKpiValue, { color: '#94a3b8' }]}>
                   {stats.noFollowUp}
-                </Text>
+                </CountText>
                 <Text style={styles.fuKpiLabel}>NO DATE SET</Text>
               </View>
             </View>

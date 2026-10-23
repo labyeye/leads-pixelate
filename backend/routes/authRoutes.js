@@ -19,6 +19,8 @@ const {
   loginVerifyOtp,
   sendPhoneOtp,
   verifyPhoneOtp,
+  sendContactOtp,
+  verifyContactOtp,
   totpSetup,
   totpVerifySetup,
   totpDisable,
@@ -71,6 +73,8 @@ router.put("/me", protect, updateProfile);
 router.put("/change-password", protect, changePassword);
 router.post("/phone/send-otp", protect, sendPhoneOtp);
 router.post("/phone/verify-otp", protect, verifyPhoneOtp);
+router.post("/contact/send-otp", protect, forgotPasswordLimiter, sendContactOtp);
+router.post("/contact/verify-otp", protect, forgotPasswordLimiter, verifyContactOtp);
 router.post("/2fa/totp/setup", protect, totpSetup);
 router.post("/2fa/totp/verify", protect, totpVerifySetup);
 router.post("/2fa/totp/disable", protect, totpDisable);

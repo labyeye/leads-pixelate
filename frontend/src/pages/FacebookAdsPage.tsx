@@ -1,4 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
+import { MediaUpload } from "@/components/social/MediaUpload";
 import { facebookAPI, campaignAssignmentAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -632,13 +633,12 @@ function AdFormDialog({
               </div>
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wide mb-1">
-                  Image URL
+                  Image
                 </label>
-                <input
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full border-2 border-black px-3 py-2 text-sm"
+                <MediaUpload
+                  kind="image"
+                  value={imageUrl ? [imageUrl] : []}
+                  onChange={(u) => setImageUrl(u[0] || "")}
                 />
               </div>
               <div>

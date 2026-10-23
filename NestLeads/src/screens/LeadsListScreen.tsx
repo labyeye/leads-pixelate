@@ -35,16 +35,11 @@ import {
   ALL_SOURCES,
   ALL_STATUSES,
 } from '../constants/statusConstants';
-import SourceBadge from '../components/SourceBadge';
+import SourceBadge, { SourceLogo } from '../components/SourceBadge';
 import {
-  Building2,
-  Calendar,
-  CalendarCheck,
-  IdCard,
+  ArrowRight,
   Mail,
   PhoneCall,
-  UserCheck,
-  UserIcon,
 } from 'lucide-react-native';
 
 const PRIMARY = '#024BAB';
@@ -82,11 +77,23 @@ const CATEGORY_SHORT: Record<string, string> = {
   Dropped: 'Dropped',
 };
 
-const TAG_COLORS: Record<string, { bg: string; text: string }> = {
-  HOT: { bg: '#ef4444', text: '#fff' },
-  WARM: { bg: '#FFDE00', text: '#000' },
-  COLD: { bg: PRIMARY, text: '#fff' },
+const PRIORITY: Record<string, { label: string; bg: string; text: string }> = {
+  HOT: { label: 'High Priority', bg: '#ef4444', text: '#fff' },
+  WARM: { label: 'Medium Priority', bg: '#FFDE00', text: '#000' },
+  COLD: { label: 'Low Priority', bg: '#024BAB', text: '#fff' },
 };
+
+function timeAgo(d?: string) {
+  if (!d) return '—';
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 60000));
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h}h ago`;
+  const days = Math.floor(h / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+}
 
 const BLANK_FILTER: FilterState = {
   sources: [],
@@ -112,7 +119,9 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('New Lead');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
   const [filters, setFilters] = useState<FilterState>(BLANK_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<FilterState>(BLANK_FILTER);
@@ -161,9 +170,9 @@ export default function LeadsListScreen({ navigation }: Props) {
   }, [fetchLeads]);
 
   const filtered = useMemo(() => {
-    return leads.filter(l => {
+    const list = leads.filter(l => {
       const cat = getCategoryByStatus(l.status || 'PENDING CONTACT');
-      if (cat !== activeCategory) return false;
+      if (activeCategory !== 'All' && cat !== activeCategory) return false;
       if (search) {
         const q = search.toLowerCase();
         const match =
@@ -178,7 +187,15 @@ export default function LeadsListScreen({ navigation }: Props) {
         return false;
       return true;
     });
-  }, [leads, activeCategory, search, filters]);
+    const time = (l: any) => new Date(l.createdAt || 0).getTime();
+    return [...list].sort((a, b) =>
+      sortBy === 'name'
+        ? (a.name || '').localeCompare(b.name || '')
+        : sortBy === 'oldest'
+          ? time(a) - time(b)
+          : time(b) - time(a),
+    );
+  }, [leads, activeCategory, search, filters, sortBy]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -201,6 +218,14 @@ export default function LeadsListScreen({ navigation }: Props) {
     (filters.startDate ? 1 : 0) +
     (filters.budgetMin ? 1 : 0) +
     filters.products.length;
+
+  const openSort = () =>
+    Alert.alert('Sort leads', undefined, [
+      { text: 'Newest first', onPress: () => setSortBy('newest') },
+      { text: 'Oldest first', onPress: () => setSortBy('oldest') },
+      { text: 'Name (A–Z)', onPress: () => setSortBy('name') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
 
   const openFilterModal = () => {
     setDraftFilters({ ...filters });
@@ -311,133 +336,98 @@ export default function LeadsListScreen({ navigation }: Props) {
   };
 
   const renderLeadCard = ({ item: l }: { item: any }) => {
+    const tag = l.contactTag ? PRIORITY[l.contactTag] : null;
     const sc = getStatusColor(l.status);
-    const tag = l.contactTag ? TAG_COLORS[l.contactTag] : null;
+    const subtitle =
+      l.interestedProduct || l.product?.name || l.company || l.requirement;
+    const budget = /^[\d,.]+$/.test(String(l.budget || '').trim())
+      ? `₹${l.budget}`
+      : l.budget;
+    const score = Number(l.aiScore);
+    const open = () =>
+      navigation.navigate('LeadDetail', { leadId: l._id || l.id });
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() =>
-          navigation.navigate('LeadDetail', { leadId: l._id || l.id })
-        }
-        activeOpacity={0.75}
-      >
+      <TouchableOpacity style={styles.card} onPress={open} activeOpacity={0.85}>
         <View style={styles.cardTop}>
-          <View style={styles.cardTopLeft}>
-            <View style={styles.leadDetailRow}>
-              <View
-                style={{
-                  backgroundColor: '#044bab',
-                  padding: 4,
-                  borderRadius: 50,
-                }}
-              >
-                <UserIcon size={18} color="#fff" />
-              </View>
-              <View>
-                <Text style={styles.leadName} numberOfLines={1}>
-                  {l.name || '—'}
-                </Text>
-                <View style={{ flexDirection: 'row', flex: 1, gap: 5 }}>
-                  {l.company ? (
-                    <View style={styles.leadDetailRow}>
-                      <Text style={styles.leadCompany} numberOfLines={1}>
-                        {l.company}
-                      </Text>
-                    </View>
-                  ) : null}
-                  {l.phone ? (
-                    <View style={styles.leadDetailRow}>
-                      <Text style={styles.leadPhone}>| {l.phone}</Text>
-                    </View>
-                  ) : null}
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {(l.name || '?').trim().charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.cardTopMid}>
+            <Text style={styles.leadName} numberOfLines={1}>
+              {l.name || '—'}
+            </Text>
+            {!!subtitle && (
+              <Text style={styles.leadSubtitle} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            )}
+            <View style={styles.pillRow}>
+              {tag ? (
+                <View style={[styles.pill, { backgroundColor: tag.bg }]}>
+                  <Text style={[styles.pillText, { color: tag.text }]}>
+                    {tag.label}
+                  </Text>
                 </View>
-              </View>
+              ) : (
+                <View style={[styles.pill, { backgroundColor: sc.bg }]}>
+                  <Text style={[styles.pillText, { color: sc.text }]}>
+                    {getStatusLabel(l.status) || 'Pending'}
+                  </Text>
+                </View>
+              )}
             </View>
-
-            {l.createdAt ? (
-              <View style={styles.leadDetailRow}>
-                <CalendarCheck size={12} color="#000" />
-                <Text style={styles.inquiryDate}>
-                  {new Date(l.createdAt).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-            ) : null}
           </View>
-          <SourceBadge source={l.source} size="md" />
+          
         </View>
 
-        <View style={styles.cardFooter}>
-          <View style={styles.cardFooterLeft}>
-            {l.interestedProduct || l.product?.name ? (
-              <View style={styles.productRow}>
-                <Icon name="cube-outline" size={11} color="#7c3aed" />
-                <Text style={styles.productText} numberOfLines={1}>
-                  {l.interestedProduct || l.product?.name}
-                </Text>
-              </View>
-            ) : null}
-            {l.assignedTo?.name ? (
-              <View style={styles.assignedRow}>
-                <UserCheck size={14} color="#000" />
-                <Text style={styles.assignedText}>
-                  Assigned: {l.assignedTo.name}
-                </Text>
-              </View>
-            ) : null}
+        <View style={styles.statsRow}>
+          <View style={styles.statCol}>
+            <Text style={styles.statLabel}>Budget</Text>
+            <Text style={styles.statValue} numberOfLines={1}>
+              {budget || '—'}
+            </Text>
           </View>
-        </View>
-
-        <View style={styles.sourceStatusRow}>
-          {tag && (
-            <View style={[styles.tagPill, { backgroundColor: tag.bg }]}>
-              <Text style={[styles.tagPillText, { color: tag.text }]}>
-                {l.contactTag}
+          <View style={styles.statDivider} />
+          <View style={styles.statCol}>
+            <Text style={styles.statLabel}>Source</Text>
+            <View style={styles.sourceRow}>
+              {!!l.source && <SourceLogo source={l.source} size={20} />}
+              <Text style={[styles.statValue, { flexShrink: 1 }]} numberOfLines={1}>
+                {l.source || '—'}
               </Text>
             </View>
-          )}
-          <View
-            style={[
-              styles.statusPill,
-              { backgroundColor: sc.bg, borderColor: '#000' },
-            ]}
-          >
-            <Text style={[styles.statusPillText, { color: sc.text }]}>
-              {getStatusLabel(l.status) || 'PENDING CONTACT'}
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statCol}>
+            <Text style={styles.statLabel}>Added</Text>
+            <Text style={styles.statValue} numberOfLines={1}>
+              {timeAgo(l.createdAt)}
             </Text>
           </View>
         </View>
 
-        <View style={styles.cardActionsRow}>
-          {l.phone ? (
-            <TouchableOpacity
-              style={styles.cardActionBtn}
-              onPress={() => Linking.openURL(`tel:${l.phone}`)}
-            >
-              <PhoneCall size={13} color={PRIMARY} />
-              <Text style={styles.cardActionText}>Call</Text>
-            </TouchableOpacity>
-          ) : null}
-          {l.email ? (
-            <TouchableOpacity
-              style={styles.cardActionBtn}
-              onPress={() => Linking.openURL(`mailto:${l.email}`)}
-            >
-              <Mail size={13} color={PRIMARY} />
-              <Text style={styles.cardActionText}>Email</Text>
-            </TouchableOpacity>
-          ) : null}
+        <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={styles.cardActionBtn}
-            onPress={() =>
-              navigation.navigate('LeadDetail', { leadId: l._id || l.id })
-            }
+            style={[styles.actionBtn, !l.email && styles.actionDisabled]}
+            disabled={!l.email}
+            onPress={() => Linking.openURL(`mailto:${l.email}`)}
           >
-            <IdCard size={13} color={PRIMARY} />
-            <Text style={styles.cardActionText}>Details</Text>
+            <Mail size={16} color="#000" />
+            <Text style={styles.actionText}>Email</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, !l.phone && styles.actionDisabled]}
+            disabled={!l.phone}
+            onPress={() => Linking.openURL(`tel:${l.phone}`)}
+          >
+            <PhoneCall size={16} color="#000" />
+            <Text style={styles.actionText}>Call</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.detailsBtn} onPress={open}>
+            <Text style={styles.detailsText}>Details</Text>
+            <ArrowRight size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -450,16 +440,68 @@ export default function LeadsListScreen({ navigation }: Props) {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Leads</Text>
-          <Text style={styles.headerSub}>{leads.length} total</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.addBtnInline}
-          onPress={() => navigation.navigate('AddLead')}
-        >
-          <Text style={styles.addBtnInlineText}>+ Add Lead</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('More')} hitSlop={10}>
+          <Icon name="menu" size={26} color="#000" />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Leads</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => {
+              if (searchOpen) setSearch('');
+              setSearchOpen(v => !v);
+            }}
+            hitSlop={10}
+          >
+            <Icon name={searchOpen ? 'close' : 'search-outline'} size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} hitSlop={10}>
+            <Icon name="notifications-outline" size={24} color="#000" />
+            {leads.length > 0 && <View style={styles.bellDot} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.plusBtn}
+            onPress={() => navigation.navigate('AddLead')}
+            accessibilityLabel="Add lead"
+            activeOpacity={0.85}
+          >
+            <Icon name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {searchOpen && (
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Icon name="search-outline" size={14} color="#000" style={{ marginRight: 6 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search leads..."
+              placeholderTextColor="#64748b"
+              value={search}
+              onChangeText={setSearch}
+              autoFocus
+            />
+          </View>
+        </View>
+      )}
+
+      <View style={styles.pipelineRow}>
+        <Text style={styles.pipelineTitle}>Lead Pipeline</Text>
+        <View style={styles.pipelineBtns}>
+          <TouchableOpacity
+            style={[styles.pillBtn, hasFilters && styles.pillBtnActive]}
+            onPress={openFilterModal}
+          >
+            <Icon name="funnel-outline" size={15} color={hasFilters ? '#fff' : '#000'} />
+            <Text style={[styles.pillBtnText, hasFilters && { color: '#fff' }]}>
+              Filter{hasFilters ? ` (${filterCount})` : ''}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillBtn} onPress={openSort}>
+            <Icon name="swap-vertical" size={15} color="#000" />
+            <Text style={styles.pillBtnText}>Sort</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Active filter chips row */}
@@ -508,45 +550,6 @@ export default function LeadsListScreen({ navigation }: Props) {
         </View>
       )}
 
-      {/* Search + Filter */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Icon
-            name="search-outline"
-            size={14}
-            color="#000"
-            style={{ marginRight: 6 }}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search leads..."
-            placeholderTextColor="#000"
-            value={search}
-            onChangeText={setSearch}
-          />
-          {!!search && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Icon name="close" size={14} color="#000" />
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity
-          style={[styles.filterBtn, hasFilters && styles.filterBtnActive]}
-          onPress={openFilterModal}
-        >
-          <Icon
-            name="funnel-outline"
-            size={18}
-            color={hasFilters ? '#fff' : '#000'}
-          />
-          {hasFilters && (
-            <View style={styles.filterDot}>
-              <Text style={styles.filterDotText}>{filterCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
       {/* Sync row — equal width chips, no scroll */}
 
       <View style={styles.syncRowDivider} />
@@ -555,13 +558,13 @@ export default function LeadsListScreen({ navigation }: Props) {
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={categoryOrder}
+        data={['All', ...categoryOrder]}
         keyExtractor={i => i}
         style={styles.tabsFlatList}
         contentContainerStyle={styles.tabsRow}
         renderItem={({ item: cat }) => {
           const active = cat === activeCategory;
-          const count = categoryCounts[cat] || 0;
+          const count = cat === 'All' ? leads.length : categoryCounts[cat] || 0;
           return (
             <TouchableOpacity
               style={[styles.tab, active && styles.tabActive]}
@@ -1041,17 +1044,72 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    height: 64,
+    height: 56,
     backgroundColor: '#fff',
-    borderBottomWidth: 2,
-    borderBottomColor: '#000',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
-  headerSub: { fontSize: 11, color: '#64748b', fontWeight: '500' },
+  headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#000',
+  },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  bellDot: {
+    position: 'absolute',
+    top: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#3B6FF0',
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
+  plusBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: PRIMARY,
+    borderWidth: 2,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pipelineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    backgroundColor: '#fff',
+  },
+  pipelineTitle: { fontSize: 18, fontWeight: '800', color: '#000' },
+  pipelineBtns: { flexDirection: 'row', gap: 8 },
+  pillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  pillBtnActive: { backgroundColor: PRIMARY },
+  pillBtnText: { fontSize: 13, fontWeight: '700', color: '#000' },
   syncRow: {
     flexDirection: 'row',
     marginHorizontal: 12,
@@ -1250,107 +1308,87 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 2,
   },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#044bab',
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cardTopLeft: { flex: 1, marginRight: 8 },
-  inquiryDate: {
-    fontSize: 13,
-    color: '#059600',
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  leadDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  leadName: { fontSize: 15, fontWeight: '600', color: '#000' },
-  leadCompany: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  leadPhone: { fontSize: 12, color: '#000', fontWeight: '500', marginTop: 1 },
-  tagPill: {
+  avatarText: { fontSize: 24, fontWeight: '900', color: '#ffffff' },
+  cardTopMid: { flex: 1 },
+  leadName: { fontSize: 17, fontWeight: '800', color: '#000' },
+  leadSubtitle: { fontSize: 13, color: '#374151', fontWeight: '500', marginTop: 2 },
+  pillRow: { flexDirection: 'row', marginTop: 8 },
+  pill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
+    borderRadius: 4,
     borderWidth: 2,
-    borderRadius: 8,
     borderColor: '#000',
   },
-  tagPillText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  cardFooterLeft: { flex: 1, marginRight: 8 },
-  productRow: {
+  pillText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
+  scoreWrap: { alignItems: 'center', gap: 4 },
+  scoreLabel: { fontSize: 10, color: '#000', fontWeight: '800', textTransform: 'uppercase' },
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 3,
+    marginTop: 14,
+    paddingVertical: 10,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: '#000',
   },
-  productText: { fontSize: 11, color: '#7c3aed', fontWeight: '700', flex: 1 },
-  remarksText: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '500',
-    lineHeight: 15,
-  },
-  statusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderWidth: 2,
-    borderRadius: 8,
-  },
-  statusPillText: {
+  statCol: { flex: 1 },
+  statLabel: {
     fontSize: 10,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  assignedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 4,
-  },
-  assignedText: {
-    fontSize: 13,
     color: '#000',
-    fontWeight: '700',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  sourceStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
-  },
-  cardActionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  cardActionBtn: {
+  sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statValue: { fontSize: 15, fontWeight: '800', color: '#000' },
+  statDivider: { width: 2, alignSelf: 'stretch', backgroundColor: '#000', marginHorizontal: 10 },
+  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  actionBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 7,
-    borderWidth: 1.5,
-    borderColor: PRIMARY,
-    backgroundColor: '#eff6ff',
+    gap: 6,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
   },
-  cardActionText: { fontSize: 11, fontWeight: '800', color: PRIMARY },
+  actionDisabled: { opacity: 0.4 },
+  actionText: { fontSize: 13, fontWeight: '800', color: '#000', textTransform: 'uppercase' },
+  detailsBtn: {
+    flex: 1.3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: SECONDARY,
+    borderWidth: 2,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  detailsText: { fontSize: 13, fontWeight: '800', color: '#fff', textTransform: 'uppercase' },
   followUpRow: {
     flexDirection: 'row',
     alignItems: 'center',
