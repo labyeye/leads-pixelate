@@ -190,6 +190,9 @@ const loginWithBackupCode = asyncHandler(async (req, res) => {
       status: user.status,
       tenantId: user.tenantId,
       lastLogin: user.lastLogin,
+      emailVerified: !!user.emailVerified,
+      phoneVerified: !!user.phoneVerified,
+      totpEnabled: !!user.totpEnabled,
       token: generateToken(user._id, user.tokenVersion, sid),
       tenant: tenant
         ? { _id: tenant._id, name: tenant.name, plan: tenant.plan, status: tenant.status }
