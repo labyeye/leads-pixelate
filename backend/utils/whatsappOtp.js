@@ -15,7 +15,7 @@ async function sendWhatsAppOtp(phone, code) {
   const accessToken = process.env.WHATSAPP_PLATFORM_ACCESS_TOKEN || process.env.META_WA_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PLATFORM_PHONE_NUMBER_ID || process.env.META_WA_PHONE_ID;
   const templateName = process.env.WHATSAPP_OTP_TEMPLATE_NAME || "nest_otp";
-  const languageCode = process.env.WHATSAPP_OTP_TEMPLATE_LANG || "en_US";
+  const languageCode = process.env.WHATSAPP_OTP_TEMPLATE_LANG || "en";
   const hasCopyCodeButton = process.env.WHATSAPP_OTP_HAS_BUTTON !== "false";
 
   if (!accessToken || !phoneNumberId) {

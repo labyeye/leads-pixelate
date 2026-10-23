@@ -195,7 +195,7 @@ app.use("/api/crm/accounts", require("./utils/crmAccounts")("NESTLEADS_SECRET", 
     token: !!(process.env.WHATSAPP_PLATFORM_ACCESS_TOKEN || process.env.META_WA_TOKEN),
     phoneNumberId: !!(process.env.WHATSAPP_PLATFORM_PHONE_NUMBER_ID || process.env.META_WA_PHONE_ID),
     template: process.env.WHATSAPP_OTP_TEMPLATE_NAME || "nest_otp",
-    lang: process.env.WHATSAPP_OTP_TEMPLATE_LANG || "en_US",
+    lang: process.env.WHATSAPP_OTP_TEMPLATE_LANG || "en",
   });
   l.info("Email OTP config", {
     smtpUser: !!process.env.SMTP_USER,
