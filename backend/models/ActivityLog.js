@@ -30,6 +30,7 @@ const activityLogSchema = new mongoose.Schema(
         "PASSWORD_RESET_REQUESTED",
         "PASSWORD_RESET",
         "PROFILE_UPDATED",
+        "BACKUP_CODES_GENERATED",
         "INDIAMART_SYNC",
         "PRINT_LOGGED",
       ],
