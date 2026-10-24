@@ -139,6 +139,36 @@ export async function showVisitNotification(lead: {
   });
 }
 
+// Several leads at once: one summary instead of a notification per lead.
+export async function showNewLeadsSummary(count: number) {
+  await notifee.displayNotification({
+    id: 'new_leads_summary',
+    title: '🎯 New Leads Arrived!',
+    body: `You have ${count} new leads`,
+    data: { type: 'new_leads' },
+    android: {
+      channelId: CHANNEL_ID,
+      importance: AndroidImportance.HIGH,
+      smallIcon: 'ic_notification',
+      color: '#024BAB',
+      pressAction: { id: 'open_app', launchActivity: 'default' },
+    },
+  });
+}
+
+// Called on logout: no notification of the old account may linger, and the next
+// account must start from its own baseline (not be compared with the old lead list).
+export async function resetNotificationState() {
+  try {
+    await notifee.cancelAllNotifications();
+    await notifee.setBadgeCount(0);
+  } catch {}
+  await storage.removeItem('last_lead_ids');
+  await storage.removeItem('last_lead_count');
+  await storage.removeItem('last_lead_user');
+  await storage.removeItem('pending_lead_action');
+}
+
 export async function setBadgeCount(count: number) {
   await notifee.setBadgeCount(count);
 }
@@ -149,6 +179,14 @@ export async function clearAllNotifications() {
 }
 
 // Store last seen lead count for polling comparison
+export async function getLastLeadUser(): Promise<string | null> {
+  return storage.getItem('last_lead_user');
+}
+
+export async function setLastLeadUser(id: string) {
+  await storage.setItem('last_lead_user', id);
+}
+
 export async function getLastLeadCount(): Promise<number> {
   const val = await storage.getItem('last_lead_count');
   return val ? parseInt(val, 10) : -1;

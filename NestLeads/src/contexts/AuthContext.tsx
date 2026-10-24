@@ -5,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
+import { resetNotificationState } from '../services/notificationService';
 import { authAPI, settingsAPI, setToken, removeToken } from '../services/api';
 import storage from '../utils/storage';
 import {
@@ -96,6 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authAPI.removeCurrentSession();
     } catch {}
     await removeToken();
+    // Nothing from this account may notify or linger after logout
+    try {
+      await resetNotificationState();
+    } catch {}
     setUser(null);
   };
 

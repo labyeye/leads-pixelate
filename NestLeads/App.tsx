@@ -75,7 +75,7 @@ function RootNavigator() {
   const { user, isLoading } = useAuth();
 
   // Poll for new leads only when logged in
-  useLeadPolling(!!user);
+  useLeadPolling(!!user, user?._id);
 
   if (isLoading) {
     return (
