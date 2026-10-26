@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { addPasswordPolicy } = require("../utils/passwordPolicy");
 
 const userSchema = new mongoose.Schema(
   {
@@ -263,5 +264,16 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Terms & Privacy acceptance (see utils/terms.js)
+userSchema.add({
+  termsVersion: { type: String },
+  termsAcceptedAt: { type: Date },
+  termsAcceptedIp: { type: String },
+  termsAcceptedAgent: { type: String },
+});
+
+// 8+ chars with upper/lower/number/special, no simple series, not among the last 5 passwords
+addPasswordPolicy(userSchema);
 
 module.exports = mongoose.model("User", userSchema);

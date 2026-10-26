@@ -17,6 +17,7 @@ import {
   serializeAssertion,
   toRequestOptions,
 } from "@/lib/webauthn";
+import PasswordChecklist from "@/components/PasswordChecklist";
 
 type Step =
   | "email"
@@ -362,11 +363,12 @@ export default function ForgotPasswordPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder="Create a strong password"
                   className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors"
                   required
                   autoComplete="new-password"
                 />
+              {password && <PasswordChecklist password={password} />}
               </div>
               <div>
                 <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">

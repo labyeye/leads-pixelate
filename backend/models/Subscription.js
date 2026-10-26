@@ -3,9 +3,6 @@ const mongoose = require("mongoose");
 const invoiceSchema = new mongoose.Schema(
   {
     invoiceNumber: { type: String },
-    hdfcPaymentId: { type: String },
-    hdfcOrderId: { type: String },
-    hdfcTrackingId: { type: String },
 
     razorpayPaymentId: { type: String },
     razorpayOrderId: { type: String },
@@ -60,7 +57,6 @@ const subscriptionSchema = new mongoose.Schema(
     amount: { type: Number },
     paymentMethod: {
       type: String,
-      enum: ["hdfc", "razorpay"],
       default: null,
     },
     paymentDetails: {

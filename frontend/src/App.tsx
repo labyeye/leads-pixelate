@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useUsageTracker } from "@/hooks/useUsageTracker";
+import TermsGate from "@/components/TermsGate";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import IntroOnboarding from "@/components/IntroOnboarding";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const LeadsPage = lazy(() => import("./pages/LeadsPage"));
@@ -59,6 +61,7 @@ const SupportPage = lazy(() => import("./pages/SupportPage"));
 import NotFound from "./pages/NotFound";
 import { NotificationProvider } from "@/components/ui/Notification";
 import logonest from "@/assets/images/Logo.png";
+import RefundNotice from "@/components/RefundNotice";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -608,6 +611,9 @@ const App = () => (
         <BrowserRouter>
           <NotificationProvider>
             <AppRoutes />
+            <TermsGate />
+            <IntroOnboarding />
+            <RefundNotice />
           </NotificationProvider>
         </BrowserRouter>
       </AuthProvider>

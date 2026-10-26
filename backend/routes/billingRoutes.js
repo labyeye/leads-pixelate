@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const Tenant = require("../models/Tenant");
 const Subscription = require("../models/Subscription");
+const { Saga, refundAfterFailure } = require("../utils/paymentSaga");
 
 const { PLAN_LIMITS, PLAN_PRICES_MONTHLY, PLAN_PRICES_YEARLY } = Subscription;
 const { sendWelcomeEmail } = require("../utils/emailService");
@@ -19,34 +20,6 @@ async function nextInvoiceNumber() {
     { $count: "total" },
   ]);
   return `INV-LEADS-${String((r?.total || 0) + 1).padStart(4, "0")}`;
-}
-
-function hdfcEncrypt(plainText, workingKey) {
-  const keyBytes = crypto.createHash("md5").update(workingKey).digest();
-  const iv = Buffer.alloc(16, 0);
-  const cipher = crypto.createCipheriv("aes-128-cbc", keyBytes, iv);
-  return cipher.update(plainText, "utf8", "hex") + cipher.final("hex");
-}
-
-function hdfcDecrypt(encText, workingKey) {
-  const keyBytes = crypto.createHash("md5").update(workingKey).digest();
-  const iv = Buffer.alloc(16, 0);
-  const decipher = crypto.createDecipheriv("aes-128-cbc", keyBytes, iv);
-  return decipher.update(encText, "hex", "utf8") + decipher.final("utf8");
-}
-
-function getHdfcConfig() {
-  const merchantId = process.env.HDFC_MERCHANT_ID;
-  const workingKey = process.env.HDFC_WORKING_KEY;
-  const accessCode = process.env.HDFC_ACCESS_CODE;
-  if (!merchantId || !workingKey || !accessCode) {
-    throw new Error("HDFC Payment Gateway not configured");
-  }
-  const isProduction = process.env.NODE_ENV === "production";
-  const gatewayUrl = isProduction
-    ? "https://secure.ccavenue.com/transaction/transaction.do?command=initiateTransaction"
-    : "https://test.ccavenue.com/transaction/transaction.do?command=initiateTransaction";
-  return { merchantId, workingKey, accessCode, gatewayUrl };
 }
 
 function getRazorpayInstance() {
@@ -170,188 +143,9 @@ router.get(
         currency: inv.currency || "INR",
         status: inv.status,
         paidAt: inv.paidAt,
-        hdfcPaymentId: inv.hdfcPaymentId,
-        hdfcTrackingId: inv.hdfcTrackingId,
       }));
 
     res.json({ success: true, data: invoices });
-  }),
-);
-
-router.post(
-  "/hdfc/create-order",
-  protect,
-  asyncHandler(async (req, res) => {
-    const { plan, billingCycle = "monthly" } = req.body;
-
-    if (!SOLD_PLANS.includes(plan)) {
-      return res.status(400).json({ success: false, message: "Invalid plan" });
-    }
-
-    const { merchantId, workingKey, accessCode, gatewayUrl } = getHdfcConfig();
-
-    const basePrice = PLAN_PRICES_MONTHLY[plan];
-    const amountPaise =
-      billingCycle === "yearly" ? PLAN_PRICES_YEARLY[plan] : basePrice;
-    const amountRupees = (amountPaise / 100).toFixed(2);
-
-    const orderId = `ORD_${req.user.tenantId}_${Date.now()}`;
-    const backendUrl =
-      process.env.BACKEND_URL || `https://leads-backend.pixelatenest.com`;
-    const frontendUrl =
-      process.env.CLIENT_URL || `https://leads.pixelatenest.com`;
-
-    const tenant = await Tenant.findById(req.user.tenantId);
-    const billingName = tenant?.name || req.user.name || "Customer";
-    const billingEmail = tenant?.email || req.user.email || "";
-    const billingPhone = tenant?.phone || "";
-
-    const params = [
-      `merchant_id=${merchantId}`,
-      `order_id=${orderId}`,
-      `amount=${amountRupees}`,
-      `currency=INR`,
-      `language=EN`,
-      `billing_name=${billingName}`,
-      `billing_tel=${billingPhone}`,
-      `billing_email=${billingEmail}`,
-      `billing_address=NA`,
-      `billing_city=NA`,
-      `billing_state=NA`,
-      `billing_zip=000000`,
-      `billing_country=India`,
-      `delivery_name=${billingName}`,
-      `delivery_address=NA`,
-      `delivery_city=NA`,
-      `delivery_state=NA`,
-      `delivery_zip=000000`,
-      `delivery_country=India`,
-      `merchant_param1=${plan}`,
-      `merchant_param2=${billingCycle}`,
-      `merchant_param3=${req.user.tenantId}`,
-      `redirect_url=${backendUrl}/api/billing/hdfc/response`,
-      `cancel_url=${frontendUrl}/billing?payment=cancelled`,
-    ].join("&");
-
-    const encRequest = hdfcEncrypt(params, workingKey);
-
-    res.json({
-      success: true,
-      data: { encRequest, accessCode, gatewayUrl, orderId },
-    });
-  }),
-);
-
-router.post(
-  "/hdfc/response",
-  asyncHandler(async (req, res) => {
-    const { encResp } = req.body;
-    const frontendUrl =
-      process.env.CLIENT_URL || "https://leads.pixelatenest.com";
-
-    if (!encResp) {
-      return res.redirect(
-        `${frontendUrl}/billing?payment=failed&reason=no_response`,
-      );
-    }
-
-    let workingKey;
-    try {
-      workingKey = process.env.HDFC_WORKING_KEY;
-      if (!workingKey) throw new Error("no key");
-    } catch {
-      return res.redirect(
-        `${frontendUrl}/billing?payment=failed&reason=config_error`,
-      );
-    }
-
-    let orderStatus, plan, billingCycle, tenantId, trackingId, orderId, amount;
-    try {
-      const decrypted = hdfcDecrypt(encResp, workingKey);
-      const params = Object.fromEntries(
-        decrypted.split("&").map((pair) => {
-          const [k, ...v] = pair.split("=");
-          return [k, v.join("=")];
-        }),
-      );
-      orderStatus = params.order_status;
-      plan = params.merchant_param1;
-      billingCycle = params.merchant_param2;
-      tenantId = params.merchant_param3;
-      trackingId = params.tracking_id;
-      orderId = params.order_id;
-      amount = parseFloat(params.amount) * 100;
-    } catch {
-      return res.redirect(
-        `${frontendUrl}/billing?payment=failed&reason=decrypt_error`,
-      );
-    }
-
-    if (orderStatus !== "Success") {
-      return res.redirect(
-        `${frontendUrl}/billing?payment=failed&reason=${encodeURIComponent(orderStatus || "unknown")}`,
-      );
-    }
-
-    if (
-      !["starter", "growth", "professional", "business", "pro"].includes(plan)
-    ) {
-      return res.redirect(
-        `${frontendUrl}/billing?payment=failed&reason=invalid_plan`,
-      );
-    }
-
-    try {
-      const periodEnd = new Date();
-      if (billingCycle === "yearly")
-        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-      else periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-      const tenant = await Tenant.findByIdAndUpdate(
-        tenantId,
-        {
-          plan,
-          planExpiresAt: periodEnd,
-          status: "active",
-          limits: PLAN_LIMITS[plan],
-        },
-        { new: true },
-      );
-
-      const invoiceNumber = await nextInvoiceNumber();
-      await Subscription.findOneAndUpdate(
-        { tenant: tenant._id },
-        {
-          plan,
-          billingCycle,
-          status: "active",
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: periodEnd,
-          $push: {
-            invoices: {
-              invoiceNumber,
-              hdfcPaymentId: orderId,
-              hdfcTrackingId: trackingId,
-              amount: Math.round(amount),
-              plan,
-              billingCycle,
-              status: "paid",
-              paidAt: new Date(),
-            },
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } catch (err) {
-      log.error("HDFC response DB update failed", { message: err.message });
-      return res.redirect(
-        `${frontendUrl}/billing?payment=failed&reason=db_error`,
-      );
-    }
-
-    return res.redirect(
-      `${frontendUrl}/billing?payment=success&plan=${plan}&billingCycle=${billingCycle}`,
-    );
   }),
 );
 
@@ -459,18 +253,22 @@ router.post(
       const payment = await razorpay.payments.fetch(razorpayPaymentId);
 
       if (payment.status === "captured") {
+        // money is taken: from here on, any failure undoes our writes and refunds the customer
+        const saga = new Saga();
+        saga.amount = payment.amount / 100;
+        try {
         const subscription = await Subscription.findOne({
           tenant: req.user.tenantId,
         });
 
         if (!subscription?.pendingOrder) {
-          return res.status(400).json({
-            success: false,
-            message: "Order not found",
-          });
+          throw new Error("Order not found for this payment");
         }
 
         const { plan, billingCycle, amount } = subscription.pendingOrder;
+        saga.amount = amount;
+        const beforeSub = subscription.toObject();
+        saga.onRollback("restore subscription", () => Subscription.replaceOne({ _id: subscription._id }, beforeSub));
         const amountPaise = Math.round(amount * 100);
 
         const periodEnd =
@@ -514,6 +312,8 @@ router.post(
           { new: true },
         );
 
+        const beforeTenant = await Tenant.findById(req.user.tenantId).lean();
+        saga.onRollback("restore tenant", () => Tenant.replaceOne({ _id: req.user.tenantId }, beforeTenant));
         const updatedTenant = await Tenant.findByIdAndUpdate(
           req.user.tenantId,
           {
@@ -548,6 +348,27 @@ router.post(
             status: updatedSubscription.status,
           },
         });
+        } catch (err) {
+          const undone = await saga.rollback();
+          try {
+            await refundAfterFailure(
+              {
+                gateway: "razorpay",
+                paymentId: razorpayPaymentId,
+                orderId: razorpayOrderId,
+                amount: saga.amount,
+                product: "NestLeads subscription",
+                ownerId: req.user.tenantId,
+                userId: req.user._id,
+              },
+              err,
+              undone,
+            );
+          } catch (e) {
+            if (e.refund) return res.status(409).json({ success: false, refund: true, message: e.message });
+            throw e;
+          }
+        }
       } else {
         res.status(400).json({
           success: false,
@@ -576,4 +397,62 @@ router.post(
   }),
 );
 
+// Activates a paid Razorpay order without a signed-in browser (used when only the webhook told us about the payment).
+// Same steps and the same refund protection as the browser's verify call above.
+async function provisionRazorpay({ orderId, paymentId }) {
+  const subscription = await Subscription.findOne({ "pendingOrder.razorpayOrderId": orderId });
+  if (!subscription) throw new Error(`No pending order for ${orderId}`);
+  const tenantId = subscription.tenant;
+  const { plan, billingCycle, amount } = subscription.pendingOrder;
+  const amountPaise = Math.round(amount * 100);
+  const saga = new Saga();
+  saga.amount = amount;
+  try {
+    const beforeSub = subscription.toObject();
+    saga.onRollback("restore subscription", () => Subscription.replaceOne({ _id: subscription._id }, beforeSub));
+    const periodEnd = new Date(Date.now() + (billingCycle === "yearly" ? 365 : 30) * 24 * 60 * 60 * 1000);
+    const invoiceNumber = await nextInvoiceNumber();
+    await Subscription.findOneAndUpdate(
+      { tenant: tenantId },
+      {
+        plan,
+        billingCycle,
+        status: "active",
+        startDate: new Date(),
+        nextBillingDate: periodEnd,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: periodEnd,
+        amount,
+        paymentMethod: "razorpay",
+        paymentDetails: { razorpayOrderId: orderId, razorpayPaymentId: paymentId, status: "captured" },
+        $unset: { pendingOrder: 1 },
+        $push: { invoices: { invoiceNumber, razorpayPaymentId: paymentId, razorpayOrderId: orderId, amount: amountPaise, plan, billingCycle, status: "paid", paidAt: new Date() } },
+      },
+      { new: true },
+    );
+    const beforeTenant = await Tenant.findById(tenantId).lean();
+    saga.onRollback("restore tenant", () => Tenant.replaceOne({ _id: tenantId }, beforeTenant));
+    const tenant = await Tenant.findByIdAndUpdate(
+      tenantId,
+      { plan, planStartDate: new Date(), planExpiresAt: periodEnd, status: "active", limits: PLAN_LIMITS[plan] },
+      { new: true },
+    );
+    sendWelcomeEmail({
+      to: tenant?.email,
+      companyName: tenant?.name || "Team",
+      userName: tenant?.name || "there",
+      plan,
+      billingCycle,
+      amountRupees: amount,
+      paymentId,
+      invoiceNumber,
+    }).catch((err) => log.error("Welcome email failed", { message: err.message }));
+  } catch (err) {
+    const undone = await saga.rollback();
+    await refundAfterFailure({ gateway: "razorpay", paymentId, orderId, amount, product: "NestLeads subscription", ownerId: tenantId }, err, undone);
+  }
+}
+
 module.exports = router;
+module.exports.provisionRazorpay = provisionRazorpay;
+

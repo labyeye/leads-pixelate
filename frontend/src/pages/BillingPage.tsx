@@ -193,8 +193,8 @@ async function downloadInvoicePDF(invoice: any, settings: any) {
           price: paid / (1 + gstPct / 100), // the amount paid already includes GST
         },
       ],
-      notes: invoice.hdfcTrackingId
-        ? `Paid in full. Payment reference: ${invoice.hdfcTrackingId}.`
+      notes: invoice.razorpayPaymentId
+        ? `Paid in full. Payment reference: ${invoice.razorpayPaymentId}.`
         : "Paid in full. Thank you for choosing Pixelate Nest.",
     },
     client: {

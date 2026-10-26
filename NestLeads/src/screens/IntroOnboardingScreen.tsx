@@ -12,14 +12,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import nestlogo from '../assets/images/NestLeadLogo.png';
-import conversation from '../assets/onboarding/1.png';
-import pipeline from '../assets/onboarding/2.png';
-import growth from '../assets/onboarding/3.png';
+
 import { ArrowBigRight, ArrowRight } from 'lucide-react-native';
 const { width } = Dimensions.get('window');
 const ONBOARDING_KEY = '@nestleads/onboarding-complete';
-
+const nestlogo = require('../assets/images/NestLeadLogo.png');
+const conversation = require('../assets/onboarding/1.png');
+const pipeline = require('../assets/onboarding/2.png');
+const growth = require('../assets/onboarding/3.png');
 const slides = [
   {
     number: '01',

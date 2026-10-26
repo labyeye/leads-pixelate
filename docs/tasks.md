@@ -8,7 +8,7 @@
 - [ ] Move browser auth away from long-lived localStorage JWTs or document an accepted threat model and compensating controls.
 - [ ] Add CSRF protection if cookie-based auth is adopted.
 - [ ] Audit every backend route for tenant filtering and role enforcement.
-- [ ] Verify Razorpay/HDFC callbacks and webhook signatures server-side before entitlement changes.
+- [ ] Verify Razorpay callbacks and webhook signatures server-side before entitlement changes.
 - [ ] Add rate limits to login, registration, reset, imports, and sensitive integrations.
 - [ ] Add input/file sanitization and unsafe HTML audit.
 

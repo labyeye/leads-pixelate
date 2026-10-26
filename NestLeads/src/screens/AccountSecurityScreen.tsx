@@ -19,6 +19,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import PhoneInput from '../components/PhoneInput';
 import { Passkey } from 'react-native-passkey';
+import PasswordChecklist from '../components/PasswordChecklist';
+import { passwordOk } from '../utils/passwordRules';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -533,7 +535,7 @@ function PasswordTab() {
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (next.length < 8)
+    if (!passwordOk(next))
       return Alert.alert(
         'Too short',
         'New password must be at least 8 characters',
@@ -573,8 +575,9 @@ function PasswordTab() {
         value={next}
         onChangeText={setNext}
         secureTextEntry
-        placeholder="At least 8 characters"
+        placeholder="Create a strong password"
       />
+      {!!next && <PasswordChecklist password={next} />}
       <Text style={styles.formLabel}>Confirm New Password</Text>
       <TextInput
         style={styles.input}

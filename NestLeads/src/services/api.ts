@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import storage from '../utils/storage';
+import { announceRefund, isRefundMessage } from '../utils/refundNotice';
 
 const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 export const API_BASE = __DEV__
@@ -75,6 +76,7 @@ async function request<T>(
   } catch {}
 
   if (!response.ok) {
+    if (isRefundMessage(data.message)) announceRefund(data.message);
     throw new ApiError(
       data.message || statusMsg(response.status),
       response.status,

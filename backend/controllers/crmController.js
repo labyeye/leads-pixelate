@@ -56,7 +56,6 @@ const getCrmInvoices = async (req, res) => {
           invoiceNumber:
             inv.invoiceNumber ||
             inv.razorpayOrderId ||
-            inv.hdfcOrderId ||
             `NL-${String(inv._id).slice(-8).toUpperCase()}`,
           clientName: sub.tenant?.name || "Unknown",
           clientEmail: sub.tenant?.ownerUser?.email || "",

@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import logoimg from "@/assets/images/Logo.png";
 import { authAPI } from "@/services/api";
 import { AuthShell } from "@/components/auth/AuthShell";
+import PasswordChecklist from "@/components/PasswordChecklist";
 
 export default function ResetPasswordPage() {
   const { token } = useParams<{ token: string }>();
@@ -94,7 +95,7 @@ export default function ResetPasswordPage() {
                       setPassword(e.target.value);
                       setError("");
                     }}
-                    placeholder="At least 8 characters"
+                    placeholder="Create a strong password"
                     className="flex-1 px-4 py-3 bg-white text-sm font-medium outline-none"
                     required
                     autoComplete="new-password"
@@ -112,6 +113,7 @@ export default function ResetPasswordPage() {
                     )}
                   </button>
                 </div>
+                {password && <PasswordChecklist password={password} />}
               </div>
 
               <div>

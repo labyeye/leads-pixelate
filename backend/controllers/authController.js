@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const { checkPasswordRules } = require("../utils/passwordPolicy");
 const asyncHandler = require("express-async-handler");
 const validator = require("validator");
 const crypto = require("crypto");
@@ -59,9 +60,10 @@ const register = asyncHandler(async (req, res) => {
     throw new Error("Please provide a valid email address");
   }
 
-  if (password.length < 8 || password.length > 72 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+  const weak = checkPasswordRules(password);
+  if (weak) {
     res.status(400);
-    throw new Error("Password must be 8-72 characters and include a letter and a number");
+    throw new Error(weak);
   }
 
   if (name.trim().length < 2 || name.trim().length > 80) {
@@ -323,9 +325,10 @@ const changePassword = asyncHandler(async (req, res) => {
     throw new Error("Current and new password are required");
   }
 
-  if (newPassword.length < 8) {
+  const weakNew = checkPasswordRules(newPassword);
+  if (weakNew) {
     res.status(400);
-    throw new Error("New password must be at least 8 characters");
+    throw new Error(weakNew);
   }
 
   if (currentPassword === newPassword) {
@@ -528,9 +531,10 @@ const resetPassword = asyncHandler(async (req, res) => {
     throw new Error("Reset token is required");
   }
 
-  if (!password || password.length < 8) {
+  const weakReset = checkPasswordRules(password);
+  if (weakReset) {
     res.status(400);
-    throw new Error("Password must be at least 8 characters");
+    throw new Error(weakReset);
   }
 
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");

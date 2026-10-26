@@ -20,6 +20,7 @@ import {
   Lock,
   Save,
 } from "lucide-react";
+import PasswordChecklist from "@/components/PasswordChecklist";
 
 export default function AccountSecurityPage() {
   const { user } = useAuth();
@@ -275,7 +276,7 @@ export default function AccountSecurityPage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="New password (min 8 characters)"
+                  placeholder="New password"
                   className="w-full border-2 border-black px-3 py-2 text-sm"
                   required
                   autoComplete="new-password"
@@ -297,6 +298,7 @@ export default function AccountSecurityPage() {
                   {pwLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Update Password
                 </button>
+              {newPassword && <PasswordChecklist password={newPassword} />}
               </form>
             </div>
           }

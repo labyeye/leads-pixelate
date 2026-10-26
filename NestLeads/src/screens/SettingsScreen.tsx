@@ -19,6 +19,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PhoneInput from '../components/PhoneInput';
 import { authAPI } from '../services/api';
 import QuotationNumberingCard from '../components/QuotationNumberingCard';
+import PasswordChecklist from '../components/PasswordChecklist';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -445,6 +446,7 @@ export default function SettingsScreen({ navigation }: any) {
                 />
               </TouchableOpacity>
             </View>
+            {!!newPwd && <PasswordChecklist password={newPwd} />}
             <FieldLabel icon="lock-closed-outline" text="CONFIRM NEW PASSWORD" />
             <View style={styles.pwdRow}>
               <TextInput

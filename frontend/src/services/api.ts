@@ -1,3 +1,4 @@
+import { announceRefund, isRefundMessage } from "@/lib/refundNotice";
 const API_BASE = import.meta.env.VITE_API_URL;
 
 class ApiError extends Error {
@@ -134,6 +135,7 @@ async function request<T>(
     ) {
       window.dispatchEvent(new Event("subscription-expired"));
     }
+    if (isRefundMessage(data.message)) announceRefund(data.message);
     throw new ApiError(
       data.message || statusMsg(response.status),
       response.status,
@@ -800,19 +802,6 @@ export const billingAPI = {
         }),
       },
     ),
-  createHdfcOrder: (plan: string, billingCycle: "monthly" | "yearly") =>
-    request<{
-      success: boolean;
-      data: {
-        encRequest: string;
-        accessCode: string;
-        gatewayUrl: string;
-        orderId: string;
-      };
-    }>("/billing/hdfc/create-order", {
-      method: "POST",
-      body: JSON.stringify({ plan, billingCycle }),
-    }),
   cancelSubscription: () =>
     request<{ success: boolean; message: string }>("/billing/cancel", {
       method: "POST",
@@ -1977,4 +1966,16 @@ export const trashAPI = {
     request<{ success: boolean; message: string }>(`/trash/${type}/${id}`, {
       method: "DELETE",
     }),
+};
+
+// Terms & Privacy acceptance (backend /api/legal). Used by components/TermsGate.
+export const legalAPI = {
+  status: async () => {
+    const r: any = await request("/legal/status");
+    return r.data ?? r;
+  },
+  accept: async () => {
+    const r: any = await request("/legal/accept", { method: "POST", body: JSON.stringify({}) });
+    return r.data ?? r;
+  },
 };

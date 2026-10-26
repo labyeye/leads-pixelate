@@ -1,4 +1,5 @@
 const asyncHandler = require("express-async-handler");
+const { checkPasswordRules } = require("../utils/passwordPolicy");
 const crypto = require("crypto");
 const User = require("../models/User");
 const Tenant = require("../models/Tenant");
@@ -52,14 +53,12 @@ const removeOtherSessions = asyncHandler(async (req, res) => {
 
 // ── Password reset helpers ───────────────────────────────────────────────
 
-const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,72}$/;
+const PASSWORD_RULE = { test: (p) => !checkPasswordRules(p) };
 
 const assertNewPassword = (res, password) => {
   if (typeof password !== "string" || !PASSWORD_RULE.test(password)) {
     res.status(400);
-    throw new Error(
-      "Password must be 8-72 characters and include a letter and a number",
-    );
+    throw new Error(checkPasswordRules(password));
   }
 };
 

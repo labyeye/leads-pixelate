@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
+import PasswordChecklist from "@/components/PasswordChecklist";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -149,7 +150,7 @@ export default function RegisterPage() {
                   type={showPw ? "text" : "password"}
                   value={form.password}
                   onChange={set("password")}
-                  placeholder="Min. 8 characters"
+                  placeholder="Create a strong password"
                   className="flex-1 px-4 py-3 bg-white text-sm font-medium outline-none"
                   autoComplete="new-password"
                 />
@@ -165,6 +166,7 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              {form.password && <PasswordChecklist password={form.password} />}
               {form.password && form.password.length < 8 && (
                 <p className="text-[11px] text-red-500 mt-1">
                   Must be at least 8 characters

@@ -12,7 +12,7 @@ flowchart LR
   API --> Mongo[(MongoDB/Mongoose)]
   API --> WA[Meta WhatsApp Cloud API]
   API --> Sources[Lead source integrations]
-  API --> Pay[Razorpay/HDFC]
+  API --> Pay[Razorpay]
   API --> Mail[Email/notifications]
   Dashboard[Final Pixelate dashboard] -. internal secret .-> API
 ```

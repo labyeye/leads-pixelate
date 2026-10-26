@@ -15,6 +15,7 @@ const log = require("./utils/logger").scope("Server");
 dotenv.config();
 
 connectDB().then(async () => {
+  require("./utils/paymentSaga").startRefundSweep(); // keeps retrying refunds for paid-but-unprovisioned subscriptions
   const cron = require("node-cron");
   const { runScheduledSync } = require("./services/indiamartService");
   const { runScheduledPosts } = require("./controllers/socialController");
@@ -210,6 +211,7 @@ app.get("/.well-known/apple-app-site-association", (req, res) =>
 );
 
 app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
+app.use("/api/legal", require("./routes/legalRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
@@ -247,6 +249,8 @@ app.use("/api/hrms", require("./routes/hrmsRoutes"));
 app.use("/api/support", require("./routes/supportRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/api/ai-calling", require("./routes/aiCallingRoutes"));
+// Razorpay "payment captured" notices for plan purchases (see utils/paymentReconcile.js)
+app.post("/api/webhooks/razorpay-billing", require("./utils/paymentReconcile").webhook);
 app.use("/api/webhooks", require("./routes/webhookRoutes"));
 app.use("/api/calls", require("./routes/callRoutes"));
 // /internal/stats must be registered before the broader /internal mount below —

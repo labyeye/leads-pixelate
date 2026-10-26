@@ -17,6 +17,8 @@ import Icon from '../components/Icon';
 import { authAPI } from '../services/api';
 import LottieView from 'lottie-react-native';
 import forgot from '../assets/lottie/forgot.json';
+import PasswordChecklist from '../components/PasswordChecklist';
+import { passwordOk } from '../utils/passwordRules';
 
 type Method = 'email' | 'whatsapp' | 'totp' | 'backup' | 'passkey';
 type Step = 'email' | 'methods' | 'emailSent' | 'form' | 'done';
@@ -120,9 +122,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   const submit = async () => {
     if (
-      password.length < 8 ||
-      !/[A-Za-z]/.test(password) ||
-      !/\d/.test(password)
+      !passwordOk(password)
     ) {
       setError('New password needs 8+ characters with a letter and a number');
       return;
@@ -366,12 +366,13 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                           setPassword(v);
                           setError('');
                         }}
-                        placeholder="8+ characters, letter and number"
+                        placeholder="Create a strong password"
                         placeholderTextColor="#94a3b8"
                         secureTextEntry
                         autoCapitalize="none"
                       />
                     </View>
+                    {!!password && <PasswordChecklist password={password} />}
                   </View>
                   <TouchableOpacity
                     style={[styles.submitBtn, loading && { opacity: 0.7 }]}
