@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, Search, Menu } from "lucide-react";
 import { useState } from "react";
+import { PaceBadge } from "./PaceBadge";
 
 interface AppHeaderProps {
   title: string;
@@ -29,6 +30,7 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        {user.role !== "super_admin" && user.role !== "admin" && <PaceBadge />}
         <div className="hidden md:flex items-center gap-2 border-2 border-black bg-white px-3 py-1.5 w-48 lg:w-52">
           <Search className="w-4 h-4 text-black shrink-0" />
           <input

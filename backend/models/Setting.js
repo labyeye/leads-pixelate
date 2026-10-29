@@ -120,6 +120,13 @@ const settingSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Who must approve quotations before they are sent (any users the admin picks).
+    quotationApproval: {
+      enabled: { type: Boolean, default: false },
+      minTotal: { type: Number, default: 0, min: 0 },
+      approvers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    },
+
     // Live Performance page: each agent should make `calls` calls per `perMinutes` minutes.
     // Below `amberPct` of that pace is red, up to 100% is amber, at/above is green.
     callTargets: {

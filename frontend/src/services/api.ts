@@ -720,6 +720,7 @@ export const justdialSyncAPI = {
 
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/dashboard/stats"),
+  getMyPace: () => request<{ success: boolean; data: any }>("/dashboard/my-pace"),
   getLive: (windowMin: number) =>
     request<{ success: boolean; data: any }>(`/dashboard/live?window=${windowMin}`),
 };
@@ -1528,6 +1529,15 @@ export const quotationsAPI = {
     request<{ success: boolean; data: any }>(`/quotations/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
+    }),
+  decideApproval: (
+    id: string,
+    decision: "approve" | "reject",
+    remarks = "",
+  ) =>
+    request<{ success: boolean; data: any }>(`/quotations/${id}/approval`, {
+      method: "POST",
+      body: JSON.stringify({ decision, remarks }),
     }),
   delete: (id: string) =>
     request<{ success: boolean; message: string }>(`/quotations/${id}`, {

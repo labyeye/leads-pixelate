@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import AICallingSettingsTab from "@/components/settings/AICallingSettingsTab";
 import NumberingTab from "@/components/settings/NumberingTab";
+import QuotationApprovalTab from "@/components/settings/QuotationApprovalTab";
 import InvoiceDesigner from "@/components/settings/invoice-designer/InvoiceDesigner";
 import { cn } from "@/lib/utils";
 import {
@@ -1017,6 +1018,12 @@ export default function SettingsPage() {
       adminOnly: true,
     },
     {
+      id: "quotation-approval",
+      label: "Quotation Approval",
+      icon: ShieldCheck,
+      adminOnly: true,
+    },
+    {
       id: "numbering",
       label: "Numbering",
       icon: Hash,
@@ -1120,6 +1127,7 @@ export default function SettingsPage() {
                   "terms",
                   "invoice-design",
                   "quotation-design",
+                  "quotation-approval",
                   "statuses",
                 ].includes(t.id),
               )
@@ -1498,6 +1506,14 @@ export default function SettingsPage() {
             )}
 
             {}
+            {activeTab === "quotation-approval" && (
+              <QuotationApprovalTab
+                value={settings?.quotationApproval}
+                onChange={(v) =>
+                  setSettings((p: any) => ({ ...p, quotationApproval: v }))
+                }
+              />
+            )}
             {activeTab === "numbering" && isOwner && (
               <NumberingTab
                 saved={settings?.numbering}

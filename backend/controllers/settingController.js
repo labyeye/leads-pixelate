@@ -4,6 +4,7 @@ const Setting = require("../models/Setting");
 const { invalidatePermissionsCache } = require("../middleware/checkPermission");
 const { sanitizeInvoiceTemplate } = require("../utils/invoiceTemplate");
 const Tenant = require("../models/Tenant");
+const User = require("../models/User");
 const Quotation = require("../models/Quotation");
 const TradeDoc = require("../models/TradeDoc");
 const { TYPES, checkFormat } = require("../utils/docNumber");
@@ -42,6 +43,22 @@ const updateSettings = asyncHandler(async (req, res) => {
   delete body.numbering; // only PUT /numbering (owner) may change it
   if ("leadStatusLabels" in body) {
     body.leadStatusLabels = sanitizeLeadStatusLabels(body.leadStatusLabels);
+  }
+
+  if ("quotationApproval" in body) {
+    const qa = body.quotationApproval || {};
+    const ids = [...new Set((Array.isArray(qa.approvers) ? qa.approvers : []).map(String))].filter((v) =>
+      /^[0-9a-f]{24}$/i.test(v),
+    );
+    // Only active people of this account can be approvers.
+    const valid = ids.length
+      ? await User.find({ _id: { $in: ids }, status: "active", ...tenantFilter }).select("_id").lean()
+      : [];
+    body.quotationApproval = {
+      enabled: qa.enabled === true,
+      minTotal: Math.min(Math.max(Number(qa.minTotal) || 0, 0), 1e9),
+      approvers: valid.map((u) => u._id),
+    };
   }
 
   for (const field of ["invoiceTemplate", "quotationTemplate"]) {

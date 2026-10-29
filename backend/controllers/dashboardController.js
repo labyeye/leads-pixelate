@@ -433,4 +433,40 @@ const getLiveStats = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getDashboardStats, getLiveStats };
+// The signed-in person's own pace against the target, for the header badge. Window = the target's
+// own period (e.g. last 60 min for "20 per 60 min"), so done/target compares directly.
+const getMyPace = asyncHandler(async (req, res) => {
+  const setting = await Setting.findOne({ tenantId: req.user.tenantId || null })
+    .select("callTargets")
+    .lean();
+  const t = setting?.callTargets;
+  if (!t?.calls) return res.json({ success: true, data: { configured: false } });
+
+  const perMinutes = t.perMinutes || 60;
+  const since = new Date(Date.now() - perMinutes * 60000);
+  const countBy = t.countBy === "calls" ? "calls" : "updates";
+  const done =
+    countBy === "calls"
+      ? await CallLog.countDocuments({ initiatedBy: req.user._id, createdAt: { $gte: since } })
+      : await ActivityLog.countDocuments({
+          user: req.user._id,
+          module: "Lead",
+          action: "STATUS_UPDATED",
+          timestamp: { $gte: since },
+        });
+  const pct = (done / t.calls) * 100;
+  const amber = t.amberPct || 60;
+  res.json({
+    success: true,
+    data: {
+      configured: true,
+      done,
+      target: t.calls,
+      perMinutes,
+      pct: Math.round(pct),
+      tone: pct >= 100 ? "green" : pct >= amber ? "amber" : "red",
+    },
+  });
+});
+
+module.exports = { getDashboardStats, getLiveStats, getMyPace };

@@ -5,6 +5,7 @@ const {
   getQuotation,
   createQuotation,
   updateQuotation,
+  decideApproval,
   deleteQuotation,
 } = require("../controllers/quotationController");
 const { protect } = require("../middleware/auth");
@@ -16,6 +17,8 @@ router
   .route("/")
   .get(checkPermission("Quotations", "read"), getQuotations)
   .post(checkPermission("Quotations", "create"), createQuotation);
+
+router.post("/:id/approval", checkPermission("Quotations", "read"), decideApproval);
 
 router
   .route("/:id")

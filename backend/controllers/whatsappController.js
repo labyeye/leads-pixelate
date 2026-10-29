@@ -1438,6 +1438,11 @@ exports.sendQuotation = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error(!q ? "Quotation not found" : "Template not found");
   }
+  const blocked = require("../utils/quotationApproval").sendBlock(q);
+  if (blocked) {
+    res.status(403);
+    throw new Error(blocked);
+  }
   if (template.headerType !== "DOCUMENT") {
     res.status(400);
     throw new Error(

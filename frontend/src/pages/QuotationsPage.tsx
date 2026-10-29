@@ -84,6 +84,7 @@ import { SendQuotationDialog } from "@/components/quotations/SendQuotationDialog
 import { ImportQuotationsDialog } from "@/components/quotations/ImportQuotationsDialog";
 import { useNotify } from "@/components/ui/Notification";
 import { usePermission } from "@/hooks/usePermission";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -178,6 +179,10 @@ const NbInput = ({
 
 export default function QuotationsPage() {
   const { can } = usePermission();
+  const { user } = useAuth();
+  const [rejectingQ, setRejectingQ] = useState<any | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [deciding, setDeciding] = useState(false);
   const [search, setSearch] = useState("");
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -272,6 +277,28 @@ export default function QuotationsPage() {
       notify.error("Error fetching quotations", error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const canDecide = (q: any) =>
+    q.approval?.status === "pending" &&
+    (q.approval.approvers || []).map(String).includes(String(user?.id));
+
+  const decide = async (q: any, decision: "approve" | "reject", remarks = "") => {
+    try {
+      setDeciding(true);
+      await quotationsAPI.decideApproval(q._id || q.id, decision, remarks);
+      notify.success(
+        decision === "approve" ? "Quotation approved" : "Quotation rejected",
+        `${q.number} is now ${decision === "approve" ? "approved and can be sent" : "rejected"}.`,
+      );
+      setRejectingQ(null);
+      setRejectReason("");
+      fetchQuotations();
+    } catch (error: any) {
+      notify.error("Couldn't save decision", error.message);
+    } finally {
+      setDeciding(false);
     }
   };
 
@@ -1163,6 +1190,24 @@ export default function QuotationsPage() {
                       >
                         {q.status}
                       </span>
+                      {q.approval?.status &&
+                        q.approval.status !== "none" && (
+                          <span
+                            title={q.approval.remarks || undefined}
+                            className={cn(
+                              "block mt-1 text-[10px] font-medium uppercase tracking-wider",
+                              q.approval.status === "pending" && "text-amber-600",
+                              q.approval.status === "approved" && "text-green-700",
+                              q.approval.status === "rejected" && "text-red-600",
+                            )}
+                          >
+                            {q.approval.status === "pending"
+                              ? "Awaiting approval"
+                              : q.approval.status === "approved"
+                                ? `Approved${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ""}`
+                                : `Rejected${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ""}`}
+                          </span>
+                        )}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
@@ -1197,7 +1242,24 @@ export default function QuotationsPage() {
                             )}
                             Preview PDF
                           </DropdownMenuItem>
+                          {canDecide(q) && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => decide(q, "approve")}
+                                className="font-medium text-black hover:bg-[#00C48C] focus:bg-[#00C48C] rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                              >
+                                Approve
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setRejectingQ(q)}
+                                className="font-medium text-black hover:bg-[#EF4444] hover:text-white focus:bg-[#EF4444] focus:text-white rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                              >
+                                Reject
+                              </DropdownMenuItem>
+                            </>
+                          )}
                           <DropdownMenuItem
+                            disabled={["pending", "rejected"].includes(q.approval?.status)}
                             onClick={() => setSendingQ(q)}
                             className="font-medium text-black hover:bg-[#00C48C] hover:text-black focus:bg-[#00C48C] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
                           >
@@ -1260,6 +1322,38 @@ export default function QuotationsPage() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!rejectingQ}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRejectingQ(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <DialogContent className="border-2 border-black rounded-none">
+          <DialogHeader>
+            <DialogTitle>Reject {rejectingQ?.number}</DialogTitle>
+          </DialogHeader>
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+            placeholder="Why is it being rejected? The creator will see this."
+            className="w-full border-2 border-black px-3 py-2 text-sm focus:outline-none"
+          />
+          <DialogFooter>
+            <button
+              disabled={deciding || !rejectReason.trim()}
+              onClick={() => decide(rejectingQ, "reject", rejectReason)}
+              className="px-4 py-2 text-sm font-medium text-white bg-[#EF4444] border-2 border-black disabled:opacity-50"
+            >
+              Reject quotation
+            </button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

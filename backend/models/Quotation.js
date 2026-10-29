@@ -54,6 +54,20 @@ const quotationSchema = new mongoose.Schema(
       default: "Draft",
     },
     notes: { type: String },
+    // Set by the server only (utils/quotationApproval.js); "none" = approval not needed / not asked.
+    approval: {
+      status: {
+        type: String,
+        enum: ["none", "pending", "approved", "rejected"],
+        default: "none",
+      },
+      approvers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      requestedAt: { type: Date },
+      decidedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      decidedAt: { type: Date },
+      remarks: { type: String, default: "" },
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
