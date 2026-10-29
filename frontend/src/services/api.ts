@@ -720,6 +720,8 @@ export const justdialSyncAPI = {
 
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/dashboard/stats"),
+  getLive: (windowMin: number) =>
+    request<{ success: boolean; data: any }>(`/dashboard/live?window=${windowMin}`),
 };
 
 export const productsAPI = {

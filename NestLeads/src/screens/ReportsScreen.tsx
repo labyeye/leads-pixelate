@@ -50,6 +50,89 @@ interface ReportTable {
   headers: string[];
   rows: (string | number)[][];
 }
+// Empty string = open-ended on that side.
+interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+type RangePreset =
+  | 'all'
+  | 'today'
+  | '7d'
+  | 'month'
+  | 'lastMonth'
+  | 'year'
+  | 'custom';
+
+const RANGE_PRESETS: { key: RangePreset; label: string }[] = [
+  { key: 'all', label: 'All time' },
+  { key: 'today', label: 'Today' },
+  { key: '7d', label: 'Last 7 days' },
+  { key: 'month', label: 'This month' },
+  { key: 'lastMonth', label: 'Last month' },
+  { key: 'year', label: 'This year' },
+  { key: 'custom', label: 'Custom' },
+];
+
+const ymd = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate(),
+  ).padStart(2, '0')}`;
+
+function presetRange(p: RangePreset): DateRange {
+  const now = new Date();
+  switch (p) {
+    case 'today':
+      return { startDate: ymd(now), endDate: ymd(now) };
+    case '7d': {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 6);
+      return { startDate: ymd(d), endDate: ymd(now) };
+    }
+    case 'month':
+      return {
+        startDate: ymd(new Date(now.getFullYear(), now.getMonth(), 1)),
+        endDate: ymd(now),
+      };
+    case 'lastMonth':
+      return {
+        startDate: ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+        endDate: ymd(new Date(now.getFullYear(), now.getMonth(), 0)),
+      };
+    case 'year':
+      return { startDate: `${now.getFullYear()}-01-01`, endDate: ymd(now) };
+    default:
+      return { startDate: '', endDate: '' };
+  }
+}
+
+// True when `value` falls inside the range (a missing date never matches a set range).
+function inRange(value: any, r: DateRange): boolean {
+  if (!r.startDate && !r.endDate) return true;
+  if (!value) return false;
+  const t = new Date(value);
+  if (isNaN(t.getTime())) return false;
+  const d = ymd(t);
+  return (!r.startDate || d >= r.startDate) && (!r.endDate || d <= r.endDate);
+}
+
+const isYmd = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+function rangeLabel(r: DateRange): string {
+  if (!r.startDate && !r.endDate) return 'All time';
+  const f = (s: string) =>
+    new Date(`${s}T00:00:00`).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  if (r.startDate && r.endDate)
+    return r.startDate === r.endDate
+      ? f(r.startDate)
+      : `${f(r.startDate)} – ${f(r.endDate)}`;
+  return r.startDate ? `From ${f(r.startDate)}` : `Until ${f(r.endDate)}`;
+}
+
 interface ReportDef {
   id: string;
   category: string;
@@ -57,7 +140,11 @@ interface ReportDef {
   description: string;
   icon: string;
   filenamePrefix: string;
-  fetch: () => Promise<ReportTable>;
+  /** Which date the range filters on, shown in the date sheet. */
+  dateBasis: string;
+  /** Range preselected when the sheet opens. */
+  defaultPreset?: RangePreset;
+  fetch: (range: DateRange) => Promise<ReportTable>;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -238,7 +325,13 @@ export default function ReportsScreen({ navigation }: any) {
   const [preview, setPreview] = useState<{
     title: string;
     table: ReportTable;
+    period: string;
   } | null>(null);
+  // Date-range sheet shown before every report is generated.
+  const [rangeFor, setRangeFor] = useState<ReportDef | null>(null);
+  const [preset, setPreset] = useState<RangePreset>('all');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
 
   const fetchAll = useCallback(async (isRefresh = false) => {
     try {
@@ -1175,6 +1268,9 @@ export default function ReportsScreen({ navigation }: any) {
   };
 
   /* ─── Report Catalog (declarative, CSV export via native Share) ─── */
+  const byCreated = (r: DateRange) =>
+    leads.filter(l => inRange(l.createdAt, r));
+
   const REPORT_CATALOG: ReportDef[] = [
     {
       id: 'leads-all',
@@ -1183,7 +1279,8 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Every lead in the system',
       icon: 'people-outline',
       filenamePrefix: 'leads-all',
-      fetch: async () => buildLeadsTable(leads),
+      dateBasis: 'Lead created date',
+      fetch: async r => buildLeadsTable(byCreated(r)),
     },
     {
       id: 'leads-won',
@@ -1192,9 +1289,10 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Leads converted to clients',
       icon: 'checkmark-circle-outline',
       filenamePrefix: 'leads-won',
-      fetch: async () =>
+      dateBasis: 'Lead created date',
+      fetch: async r =>
         buildLeadsTable(
-          leads.filter(l => getCategoryByStatus(l.status) === 'Client'),
+          byCreated(r).filter(l => getCategoryByStatus(l.status) === 'Client'),
         ),
     },
     {
@@ -1204,9 +1302,12 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Leads marked as dropped/lost',
       icon: 'close-circle-outline',
       filenamePrefix: 'leads-dropped',
-      fetch: async () =>
+      dateBasis: 'Lead created date',
+      fetch: async r =>
         buildLeadsTable(
-          leads.filter(l => getCategoryByStatus(l.status) === 'Dropped'),
+          byCreated(r).filter(
+            l => getCategoryByStatus(l.status) === 'Dropped',
+          ),
         ),
     },
     {
@@ -1216,9 +1317,10 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Leads not yet contacted',
       icon: 'time-outline',
       filenamePrefix: 'leads-pending',
-      fetch: async () =>
+      dateBasis: 'Lead created date',
+      fetch: async r =>
         buildLeadsTable(
-          leads.filter(
+          byCreated(r).filter(
             l => (l.status || '').toUpperCase() === 'PENDING CONTACT',
           ),
         ),
@@ -1230,7 +1332,11 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Leads with a follow-up date set',
       icon: 'calendar-outline',
       filenamePrefix: 'leads-followup',
-      fetch: async () => buildLeadsTable(leads.filter(l => !!l.followUpDate)),
+      dateBasis: 'Follow-up date',
+      fetch: async r =>
+        buildLeadsTable(
+          leads.filter(l => !!l.followUpDate && inRange(l.followUpDate, r)),
+        ),
     },
     {
       id: 'leads-visit',
@@ -1239,23 +1345,50 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Leads with a site visit scheduled',
       icon: 'business-outline',
       filenamePrefix: 'leads-visit',
-      fetch: async () =>
-        buildLeadsTable(leads.filter(l => !!l.visitScheduledDate)),
+      dateBasis: 'Visit date',
+      fetch: async r =>
+        buildLeadsTable(
+          leads.filter(
+            l => !!l.visitScheduledDate && inRange(l.visitScheduledDate, r),
+          ),
+        ),
     },
     {
       id: 'activity-status',
       category: 'Activity',
       title: 'Status Activity',
-      description: 'Lead status changes by month',
+      description: 'Every lead status change in the selected period',
       icon: 'flash-outline',
       filenamePrefix: 'status-activity',
-      fetch: async () => {
-        const res = await reportsAPI.getStatusHistory({ period: 'month' });
-        const rows = Object.entries(res.data || {}).map(([k, v]) => [
-          k,
-          String(v),
-        ]);
-        return { headers: ['Period', 'Count'], rows };
+      dateBasis: 'Time of the status change',
+      defaultPreset: 'month',
+      fetch: async r => {
+        // The endpoint needs both ends; "All time" = the whole history up to today.
+        const res = await reportsAPI.getStatusHistory({
+          fromDate: r.startDate || '2000-01-01',
+          toDate: r.endDate || ymd(new Date()),
+        });
+        const list: any[] = Array.isArray(res.data) ? res.data : [];
+        return {
+          headers: [
+            'Lead',
+            'Company',
+            'Phone',
+            'Changed To',
+            'Changed By',
+            'Assigned To',
+            'Time',
+          ],
+          rows: list.map((x: any) => [
+            x.leadName || '',
+            x.leadCompany || '',
+            x.leadPhone || '',
+            x.changedToStatus || '',
+            x.changedBy || '',
+            x.assignedTo || '',
+            x.timestamp ? new Date(x.timestamp).toLocaleString('en-IN') : '',
+          ]),
+        };
       },
     },
     {
@@ -1265,16 +1398,38 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Leads handled & conversion by team member',
       icon: 'people-outline',
       filenamePrefix: 'team-performance',
-      fetch: async () => ({
-        headers: ['Name', 'Leads', 'Clients', 'Hot Leads', 'Conversion %'],
-        rows: stats.agentList.map((p: any) => [
-          p.name,
-          p.count,
-          p.clients,
-          p.hot,
-          p.rate,
-        ]),
-      }),
+      dateBasis: 'Lead created date',
+      defaultPreset: 'month',
+      fetch: async r => {
+        const by: Record<
+          string,
+          { name: string; count: number; clients: number; hot: number }
+        > = {};
+        byCreated(r).forEach(l => {
+          const ag = l.assignedTo;
+          if (!ag?._id) return;
+          const row = (by[ag._id] ||= {
+            name: ag.name || 'Unknown',
+            count: 0,
+            clients: 0,
+            hot: 0,
+          });
+          row.count++;
+          if (getCategoryByStatus(l.status) === 'Client') row.clients++;
+          if (l.contactTag === 'HOT') row.hot++;
+        });
+        const list = Object.values(by).sort((a, b) => b.count - a.count);
+        return {
+          headers: ['Name', 'Leads', 'Clients', 'Hot Leads', 'Conversion %'],
+          rows: list.map(p => [
+            p.name,
+            p.count,
+            p.clients,
+            p.hot,
+            p.count ? Math.round((p.clients / p.count) * 100) : 0,
+          ]),
+        };
+      },
     },
     {
       id: 'clients-all',
@@ -1283,9 +1438,12 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Every converted client',
       icon: 'briefcase-outline',
       filenamePrefix: 'clients-all',
-      fetch: async () => {
-        const r = await clientsAPI.getAll();
-        return buildClientsTable(r.data || []);
+      dateBasis: 'Client added date',
+      fetch: async r => {
+        const res = await clientsAPI.getAll();
+        return buildClientsTable(
+          (res.data || []).filter((c: any) => inRange(c.createdAt, r)),
+        );
       },
     },
     {
@@ -1295,10 +1453,14 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Clients with active projects',
       icon: 'checkmark-circle-outline',
       filenamePrefix: 'clients-active',
-      fetch: async () => {
-        const r = await clientsAPI.getAll();
+      dateBasis: 'Client added date',
+      fetch: async r => {
+        const res = await clientsAPI.getAll();
         return buildClientsTable(
-          (r.data || []).filter((c: any) => c.projectStatus === 'Active'),
+          (res.data || []).filter(
+            (c: any) =>
+              c.projectStatus === 'Active' && inRange(c.createdAt, r),
+          ),
         );
       },
     },
@@ -1309,10 +1471,13 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Clients with pending/overdue payments',
       icon: 'card-outline',
       filenamePrefix: 'clients-payment-pending',
-      fetch: async () => {
-        const r = await clientsAPI.getAll();
+      dateBasis: 'Client added date',
+      fetch: async r => {
+        const res = await clientsAPI.getAll();
         return buildClientsTable(
-          (r.data || []).filter((c: any) => c.paymentStatus !== 'Paid'),
+          (res.data || []).filter(
+            (c: any) => c.paymentStatus !== 'Paid' && inRange(c.createdAt, r),
+          ),
         );
       },
     },
@@ -1323,9 +1488,14 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Every quotation raised',
       icon: 'document-text-outline',
       filenamePrefix: 'quotations-all',
-      fetch: async () => {
-        const r = await quotationsAPI.getAll();
-        return buildQuotationsTable(r.data || []);
+      dateBasis: 'Quotation date',
+      fetch: async r => {
+        const res = await quotationsAPI.getAll();
+        return buildQuotationsTable(
+          (res.data || []).filter((q: any) =>
+            inRange(q.date || q.createdAt, r),
+          ),
+        );
       },
     },
     {
@@ -1335,10 +1505,14 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Quotations approved by client',
       icon: 'checkmark-circle-outline',
       filenamePrefix: 'quotations-approved',
-      fetch: async () => {
-        const r = await quotationsAPI.getAll();
+      dateBasis: 'Quotation date',
+      fetch: async r => {
+        const res = await quotationsAPI.getAll();
         return buildQuotationsTable(
-          (r.data || []).filter((q: any) => q.status === 'Approved'),
+          (res.data || []).filter(
+            (q: any) =>
+              q.status === 'Approved' && inRange(q.date || q.createdAt, r),
+          ),
         );
       },
     },
@@ -1349,10 +1523,14 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Quotations not yet sent',
       icon: 'create-outline',
       filenamePrefix: 'quotations-draft',
-      fetch: async () => {
-        const r = await quotationsAPI.getAll();
+      dateBasis: 'Quotation date',
+      fetch: async r => {
+        const res = await quotationsAPI.getAll();
         return buildQuotationsTable(
-          (r.data || []).filter((q: any) => q.status === 'Draft'),
+          (res.data || []).filter(
+            (q: any) =>
+              q.status === 'Draft' && inRange(q.date || q.createdAt, r),
+          ),
         );
       },
     },
@@ -1363,10 +1541,14 @@ export default function ReportsScreen({ navigation }: any) {
       description: 'Quotations rejected by client',
       icon: 'close-circle-outline',
       filenamePrefix: 'quotations-rejected',
-      fetch: async () => {
-        const r = await quotationsAPI.getAll();
+      dateBasis: 'Quotation date',
+      fetch: async r => {
+        const res = await quotationsAPI.getAll();
         return buildQuotationsTable(
-          (r.data || []).filter((q: any) => q.status === 'Rejected'),
+          (res.data || []).filter(
+            (q: any) =>
+              q.status === 'Rejected' && inRange(q.date || q.createdAt, r),
+          ),
         );
       },
     },
@@ -1384,8 +1566,9 @@ export default function ReportsScreen({ navigation }: any) {
       description: `Leads captured via ${source}`,
       icon: 'megaphone-outline',
       filenamePrefix: `leads-${source.toLowerCase().replace(/\s/g, '-')}`,
-      fetch: async () =>
-        buildLeadsTable(leads.filter(l => l.source === source)),
+      dateBasis: 'Lead created date',
+      fetch: async (r: DateRange) =>
+        buildLeadsTable(byCreated(r).filter(l => l.source === source)),
     })),
   ];
 
@@ -1399,11 +1582,39 @@ export default function ReportsScreen({ navigation }: any) {
       (!catSearch || r.title.toLowerCase().includes(catSearch.toLowerCase())),
   );
 
-  const handleGenerate = async (report: ReportDef) => {
+  const dialogRange: DateRange =
+    preset === 'custom'
+      ? { startDate: customFrom.trim(), endDate: customTo.trim() }
+      : presetRange(preset);
+
+  const openRangeSheet = (report: ReportDef) => {
+    setPreset(report.defaultPreset || 'all');
+    setCustomFrom('');
+    setCustomTo('');
+    setRangeFor(report);
+  };
+
+  const handleGenerate = async (report: ReportDef, range: DateRange) => {
+    if (
+      (range.startDate && !isYmd(range.startDate)) ||
+      (range.endDate && !isYmd(range.endDate))
+    ) {
+      Alert.alert('Invalid date', 'Use the format YYYY-MM-DD, e.g. 2026-10-01.');
+      return;
+    }
+    if (range.startDate && range.endDate && range.startDate > range.endDate) {
+      Alert.alert('Invalid range', 'The start date must be before the end date.');
+      return;
+    }
+    setRangeFor(null);
     setGeneratingId(report.id);
     try {
-      const table = await report.fetch();
-      setPreview({ title: report.title, table });
+      const table = await report.fetch(range);
+      setPreview({
+        title: report.title,
+        table,
+        period: rangeLabel(range),
+      });
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to generate report');
     } finally {
@@ -1497,7 +1708,7 @@ export default function ReportsScreen({ navigation }: any) {
             <TouchableOpacity
               style={styles.generateBtn}
               disabled={generatingId === r.id}
-              onPress={() => handleGenerate(r)}
+              onPress={() => openRangeSheet(r)}
             >
               {generatingId === r.id ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -1508,6 +1719,94 @@ export default function ReportsScreen({ navigation }: any) {
           </View>
         )}
       />
+
+      <Modal
+        visible={!!rangeFor}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setRangeFor(null)}
+      >
+        <View style={styles.previewOverlay}>
+          <View style={[styles.previewSheet, { paddingBottom: insets.bottom + 16 }]}>
+            <View style={styles.previewHeader}>
+              <Text style={styles.previewTitle}>Select date range</Text>
+              <TouchableOpacity onPress={() => setRangeFor(null)}>
+                <Icon name="close" size={20} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.rangeReport}>{rangeFor?.title}</Text>
+            <Text style={styles.previewSub}>
+              Filters by: {rangeFor?.dateBasis}
+            </Text>
+            <View style={styles.rangeChips}>
+              {RANGE_PRESETS.map(p => (
+                <TouchableOpacity
+                  key={p.key}
+                  style={[
+                    styles.rangeChip,
+                    preset === p.key && styles.rangeChipActive,
+                  ]}
+                  onPress={() => setPreset(p.key)}
+                >
+                  <Text
+                    style={[
+                      styles.rangeChipText,
+                      preset === p.key && { color: '#fff' },
+                    ]}
+                  >
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {preset === 'custom' && (
+              <View style={styles.rangeInputs}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rangeLabel}>FROM (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.rangeInput}
+                    value={customFrom}
+                    onChangeText={setCustomFrom}
+                    placeholder="2026-10-01"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={10}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rangeLabel}>TO (YYYY-MM-DD)</Text>
+                  <TextInput
+                    style={styles.rangeInput}
+                    value={customTo}
+                    onChangeText={setCustomTo}
+                    placeholder="2026-10-31"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="numbers-and-punctuation"
+                    maxLength={10}
+                  />
+                </View>
+              </View>
+            )}
+            <Text style={styles.rangePeriod}>
+              Period: {rangeLabel(dialogRange)}
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.exportCsvBtn,
+                preset === 'custom' &&
+                  !customFrom.trim() &&
+                  !customTo.trim() && { opacity: 0.5 },
+              ]}
+              disabled={
+                preset === 'custom' && !customFrom.trim() && !customTo.trim()
+              }
+              onPress={() => rangeFor && handleGenerate(rangeFor, dialogRange)}
+            >
+              <Text style={styles.exportCsvBtnText}>Generate report</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={!!preview}
@@ -1524,7 +1823,7 @@ export default function ReportsScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
             <Text style={styles.previewSub}>
-              {preview?.table.rows.length || 0} rows
+              {preview?.table.rows.length || 0} rows · {preview?.period}
             </Text>
             <ScrollView horizontal style={{ marginVertical: 10 }}>
               <View>
@@ -1553,7 +1852,7 @@ export default function ReportsScreen({ navigation }: any) {
               onPress={() =>
                 preview &&
                 shareCSV(
-                  `${preview.title}.csv`,
+                  `${preview.title} (${preview.period}).csv`,
                   preview.table.headers,
                   preview.table.rows,
                 )
@@ -2296,6 +2595,30 @@ const styles = StyleSheet.create({
   },
   previewTitle: { fontSize: 16, fontWeight: '500', color: '#000', flex: 1 },
   previewSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  rangeReport: { fontSize: 13, fontWeight: '700', color: '#000', marginTop: 8 },
+  rangeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  rangeChip: {
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: '#fff',
+  },
+  rangeChipActive: { backgroundColor: '#000' },
+  rangeChipText: { fontSize: 12, fontWeight: '700', color: '#000' },
+  rangeInputs: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  rangeLabel: { fontSize: 10, fontWeight: '700', color: '#000', marginBottom: 4 },
+  rangeInput: {
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    fontSize: 13,
+    color: '#000',
+  },
+  rangePeriod: { fontSize: 12, fontWeight: '600', color: '#000', marginVertical: 14 },
   previewRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,

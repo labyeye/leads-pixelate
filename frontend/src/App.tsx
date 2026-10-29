@@ -14,6 +14,7 @@ const VisitCalendarPage = lazy(() => import("./pages/VisitCalendarPage"));
 const FollowupCalendarPage = lazy(() => import("./pages/FollowupCalendarPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
+const LivePerformancePage = lazy(() => import("./pages/LivePerformancePage"));
 const TrashPage = lazy(() => import("./pages/TrashPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 import LoginPage from "./pages/LoginPage";
@@ -216,6 +217,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <TrashPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/live-performance"
+        element={
+          <ProtectedRoute>
+            <LivePerformancePage />
           </ProtectedRoute>
         }
       />

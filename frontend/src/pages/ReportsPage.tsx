@@ -278,6 +278,90 @@ function quotationTotal(q: any): number {
   return subtotal - discount + (subtotal - discount) * 0.18;
 }
 
+// Empty string = open-ended on that side.
+interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+type RangePreset =
+  | "all"
+  | "today"
+  | "7d"
+  | "month"
+  | "lastMonth"
+  | "year"
+  | "custom";
+
+const RANGE_PRESETS: { key: RangePreset; label: string }[] = [
+  { key: "all", label: "All time" },
+  { key: "today", label: "Today" },
+  { key: "7d", label: "Last 7 days" },
+  { key: "month", label: "This month" },
+  { key: "lastMonth", label: "Last month" },
+  { key: "year", label: "This year" },
+  { key: "custom", label: "Custom" },
+];
+
+const ymd = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+function presetRange(p: RangePreset): DateRange {
+  const now = new Date();
+  switch (p) {
+    case "today":
+      return { startDate: ymd(now), endDate: ymd(now) };
+    case "7d": {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 6);
+      return { startDate: ymd(d), endDate: ymd(now) };
+    }
+    case "month":
+      return {
+        startDate: ymd(new Date(now.getFullYear(), now.getMonth(), 1)),
+        endDate: ymd(now),
+      };
+    case "lastMonth":
+      return {
+        startDate: ymd(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+        endDate: ymd(new Date(now.getFullYear(), now.getMonth(), 0)),
+      };
+    case "year":
+      return { startDate: `${now.getFullYear()}-01-01`, endDate: ymd(now) };
+    default:
+      return { startDate: "", endDate: "" };
+  }
+}
+
+// True when `value` falls inside the range (a missing date never matches a set range).
+function inRange(value: any, r: DateRange): boolean {
+  if (!r.startDate && !r.endDate) return true;
+  if (!value) return false;
+  const t = new Date(value);
+  if (isNaN(t.getTime())) return false;
+  const d = ymd(t);
+  return (!r.startDate || d >= r.startDate) && (!r.endDate || d <= r.endDate);
+}
+
+const rangeParams = (r: DateRange): Record<string, string> => ({
+  ...(r.startDate && { startDate: r.startDate }),
+  ...(r.endDate && { endDate: r.endDate }),
+});
+
+function rangeLabel(r: DateRange): string {
+  if (!r.startDate && !r.endDate) return "All time";
+  const f = (s: string) =>
+    new Date(`${s}T00:00:00`).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  if (r.startDate && r.endDate)
+    return r.startDate === r.endDate
+      ? f(r.startDate)
+      : `${f(r.startDate)} – ${f(r.endDate)}`;
+  return r.startDate ? `From ${f(r.startDate)}` : `Until ${f(r.endDate)}`;
+}
+
 interface ReportDef {
   id: string;
   category:
@@ -286,7 +370,11 @@ interface ReportDef {
   description: string;
   icon: any;
   filenamePrefix: string;
-  fetch: () => Promise<ReportTable>;
+  /** Which date the range filters on, shown in the date dialog. */
+  dateBasis: string;
+  /** Range preselected when the dialog opens. */
+  defaultPreset?: RangePreset;
+  fetch: (range: DateRange) => Promise<ReportTable>;
 }
 
 const REPORT_CATALOG: ReportDef[] = [
@@ -298,7 +386,8 @@ const REPORT_CATALOG: ReportDef[] = [
       "Full export of every lead in the pipeline with source, status, and assignment.",
     icon: FileText,
     filenamePrefix: "all-leads",
-    fetch: async () => buildLeadsTable(await fetchAllLeads()),
+    dateBasis: "Lead created date",
+    fetch: async (r) => buildLeadsTable(await fetchAllLeads(rangeParams(r))),
   },
   {
     id: "won-leads",
@@ -307,7 +396,9 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Leads that converted to clients.",
     icon: CheckCircle2,
     filenamePrefix: "won-leads",
-    fetch: async () => buildLeadsTable(await fetchAllLeads({ status: "WON" })),
+    dateBasis: "Lead created date",
+    fetch: async (r) =>
+      buildLeadsTable(await fetchAllLeads({ status: "WON", ...rangeParams(r) })),
   },
   {
     id: "dropped-leads",
@@ -316,7 +407,9 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Leads marked as dropped/lost, for loss analysis.",
     icon: XCircle,
     filenamePrefix: "dropped-leads",
-    fetch: async () => buildLeadsTable(await fetchAllLeads({ status: "DROP" })),
+    dateBasis: "Lead created date",
+    fetch: async (r) =>
+      buildLeadsTable(await fetchAllLeads({ status: "DROP", ...rangeParams(r) })),
   },
   {
     id: "pending-leads",
@@ -325,8 +418,11 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Fresh leads that haven't been contacted yet.",
     icon: Clock,
     filenamePrefix: "pending-contact",
-    fetch: async () =>
-      buildLeadsTable(await fetchAllLeads({ status: "PENDING CONTACT" })),
+    dateBasis: "Lead created date",
+    fetch: async (r) =>
+      buildLeadsTable(
+        await fetchAllLeads({ status: "PENDING CONTACT", ...rangeParams(r) }),
+      ),
   },
   {
     id: "leads-by-source",
@@ -336,9 +432,10 @@ const REPORT_CATALOG: ReportDef[] = [
       "All leads sorted by source (IndiaMART, Facebook, Website, etc).",
     icon: MapPinned,
     filenamePrefix: "leads-by-source",
-    fetch: async () =>
+    dateBasis: "Lead created date",
+    fetch: async (r) =>
       buildLeadsTable(
-        (await fetchAllLeads()).sort((a: any, b: any) =>
+        (await fetchAllLeads(rangeParams(r))).sort((a: any, b: any) =>
           (a.source || "").localeCompare(b.source || ""),
         ),
       ),
@@ -350,8 +447,11 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Leads tagged by contact temperature.",
     icon: Flame,
     filenamePrefix: "leads-by-tag",
-    fetch: async () =>
-      buildLeadsTable((await fetchAllLeads()).filter((l: any) => l.contactTag)),
+    dateBasis: "Lead created date",
+    fetch: async (r) =>
+      buildLeadsTable(
+        (await fetchAllLeads(rangeParams(r))).filter((l: any) => l.contactTag),
+      ),
   },
   {
     id: "followup-due",
@@ -360,12 +460,16 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Open leads with a follow-up date on or before today.",
     icon: CalendarClock,
     filenamePrefix: "followup-due",
-    fetch: async () => {
-      const today = dateStamp();
+    dateBasis: "Follow-up date (All time = on or before today)",
+    fetch: async (r) => {
+      const today = ymd(new Date());
+      const open = !r.startDate && !r.endDate;
       const rows = (await fetchAllLeads()).filter(
         (l: any) =>
           l.followUpDate &&
-          new Date(l.followUpDate).toISOString().slice(0, 10) <= today &&
+          (open
+            ? ymd(new Date(l.followUpDate)) <= today
+            : inRange(l.followUpDate, r)) &&
           l.status !== "WON" &&
           l.status !== "DROP",
       );
@@ -379,56 +483,33 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Leads with a site/office visit scheduled.",
     icon: Tags,
     filenamePrefix: "visit-scheduled",
-    fetch: async () =>
+    dateBasis: "Visit date (or created date if none)",
+    fetch: async (r) =>
       buildLeadsTable(
         (await fetchAllLeads()).filter(
-          (l: any) => l.status === "VISIT SCHEDULED" || l.visitScheduledDate,
+          (l: any) =>
+            (l.status === "VISIT SCHEDULED" || l.visitScheduledDate) &&
+            inRange(l.visitScheduledDate || l.createdAt, r),
         ),
       ),
   },
   {
     id: "activity-month",
     category: "Activity",
-    title: "Status Activity — This Month",
-    description: "Every status change made by the team in the current month.",
+    title: "Status Activity Report",
+    description: "Every status change made by the team in the selected period.",
     icon: Activity,
-    filenamePrefix: "status-activity-month",
-    fetch: async () => {
-      const res = await reportsAPI.getStatusHistory({ period: "month" });
-      const rows = res.data || [];
-      return {
-        headers: [
-          "Lead Name",
-          "Company",
-          "Phone",
-          "Changed To",
-          "Changed By",
-          "Assigned To",
-          "Remarks",
-          "Time",
-        ],
-        rows: rows.map((r: any) => [
-          r.leadName || "",
-          r.leadCompany || "",
-          r.leadPhone || "",
-          r.changedToStatus || "",
-          r.changedBy || "",
-          r.assignedTo || "",
-          r.remarks || "",
-          r.timestamp ? new Date(r.timestamp).toLocaleString("en-IN") : "",
-        ]),
-      };
-    },
-  },
-  {
-    id: "activity-year",
-    category: "Activity",
-    title: "Status Activity — This Year",
-    description: "Every status change made by the team so far this year.",
-    icon: Activity,
-    filenamePrefix: "status-activity-year",
-    fetch: async () => {
-      const res = await reportsAPI.getStatusHistory({ period: "year" });
+    filenamePrefix: "status-activity",
+    dateBasis: "Time of the status change",
+    defaultPreset: "month",
+    fetch: async (r) => {
+      const res = await reportsAPI.getStatusHistory(
+        // The endpoint needs both ends; "All time" = the whole history up to today.
+        {
+          fromDate: r.startDate || "2000-01-01",
+          toDate: r.endDate || ymd(new Date()),
+        },
+      );
       const rows = res.data || [];
       return {
         headers: [
@@ -458,16 +539,13 @@ const REPORT_CATALOG: ReportDef[] = [
     id: "team-performance",
     category: "Team",
     title: "Team Performance Report",
-    description: "Leads handled, won/drop rate per team member this month.",
+    description: "Leads handled, won/drop rate per team member in the selected period.",
     icon: Users,
     filenamePrefix: "team-performance",
-    fetch: async () => {
-      const now = new Date();
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .slice(0, 10);
-      const endDate = now.toISOString().slice(0, 10);
-      const leads = await fetchAllLeads({ startDate, endDate });
+    dateBasis: "Lead created date",
+    defaultPreset: "month",
+    fetch: async (r) => {
+      const leads = await fetchAllLeads(rangeParams(r));
       const stats = computeTeamStats(leads);
       return {
         headers: [
@@ -500,9 +578,10 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Full client list with contact and business details.",
     icon: Building2,
     filenamePrefix: "clients",
-    fetch: async () => {
+    dateBasis: "Client added date",
+    fetch: async (r) => {
       const res = await clientsAPI.getAll();
-      const rows = res.data || [];
+      const rows = (res.data || []).filter((c: any) => inRange(c.createdAt, r));
       return {
         headers: [
           "Name",
@@ -532,10 +611,11 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Clients with an active project.",
     icon: CheckCircle2,
     filenamePrefix: "active-clients",
-    fetch: async () => {
+    dateBasis: "Client added date",
+    fetch: async (r) => {
       const res = await clientsAPI.getAll();
       const rows = (res.data || []).filter(
-        (c: any) => c.projectStatus === "Active",
+        (c: any) => c.projectStatus === "Active" && inRange(c.createdAt, r),
       );
       return {
         headers: ["Name", "Company", "Email", "Phone", "Payment Status"],
@@ -556,10 +636,11 @@ const REPORT_CATALOG: ReportDef[] = [
     description: "Clients with payment status still pending.",
     icon: FileClock,
     filenamePrefix: "payment-pending",
-    fetch: async () => {
+    dateBasis: "Client added date",
+    fetch: async (r) => {
       const res = await clientsAPI.getAll();
       const rows = (res.data || []).filter(
-        (c: any) => c.paymentStatus === "Pending",
+        (c: any) => c.paymentStatus === "Pending" && inRange(c.createdAt, r),
       );
       return {
         headers: ["Name", "Company", "Email", "Phone"],
@@ -590,10 +671,13 @@ const REPORT_CATALOG: ReportDef[] = [
           ? XCircle
           : FileText,
     filenamePrefix: `quotations-${status.toLowerCase()}`,
-    fetch: async () => {
+    dateBasis: "Quotation date",
+    fetch: async (r: DateRange) => {
       const res = await quotationsAPI.getAll();
       const rows = (res.data || []).filter(
-        (q: any) => status === "All" || q.status === status,
+        (q: any) =>
+          (status === "All" || q.status === status) &&
+          inRange(q.date || q.createdAt, r),
       );
       return {
         headers: [
@@ -633,7 +717,9 @@ const REPORT_CATALOG: ReportDef[] = [
     description: `All leads captured through ${source}.`,
     icon: source === "Facebook" ? Facebook : Megaphone,
     filenamePrefix: `${source.toLowerCase().replace(/\s+/g, "-")}-leads`,
-    fetch: async () => buildLeadsTable(await fetchAllLeads({ source })),
+    dateBasis: "Lead created date",
+    fetch: async (r: DateRange) =>
+      buildLeadsTable(await fetchAllLeads({ source, ...rangeParams(r) })),
   })),
 ];
 
@@ -656,10 +742,42 @@ export default function ReportsPage() {
   const [previewReport, setPreviewReport] = useState<ReportDef | null>(null);
   const [previewTable, setPreviewTable] = useState<ReportTable | null>(null);
 
-  const handleGenerate = async (report: ReportDef) => {
+  // Date-range dialog shown before every report is generated.
+  const [rangeFor, setRangeFor] = useState<ReportDef | null>(null);
+  const [preset, setPreset] = useState<RangePreset>("all");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [previewRange, setPreviewRange] = useState<DateRange>({
+    startDate: "",
+    endDate: "",
+  });
+
+  const dialogRange: DateRange =
+    preset === "custom"
+      ? { startDate: customFrom, endDate: customTo }
+      : presetRange(preset);
+
+  const openRangeDialog = (report: ReportDef) => {
+    setPreset(report.defaultPreset || "all");
+    setCustomFrom("");
+    setCustomTo("");
+    setRangeFor(report);
+  };
+
+  const handleGenerate = async (report: ReportDef, range: DateRange) => {
+    if (range.startDate && range.endDate && range.startDate > range.endDate) {
+      toast({
+        title: "Invalid date range",
+        description: "The start date must be before the end date.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setRangeFor(null);
     setGeneratingId(report.id);
     try {
-      const table = await report.fetch();
+      const table = await report.fetch(range);
+      setPreviewRange(range);
       setPreviewReport(report);
       setPreviewTable(table);
     } catch (err: any) {
@@ -687,8 +805,10 @@ export default function ReportsPage() {
     });
     doc.setFontSize(12);
     doc.text(previewReport.title, 8, 10);
+    doc.setFontSize(8);
+    doc.text(`Period: ${rangeLabel(previewRange)}`, 8, 14.5);
     autoTable(doc, {
-      startY: 15,
+      startY: 18,
       head: [previewTable.headers],
       body: previewTable.rows,
       styles: { fontSize: 7, cellPadding: 2 },
@@ -1257,7 +1377,7 @@ export default function ReportsPage() {
                             </p>
                           </div>
                           <button
-                            onClick={() => handleGenerate(r)}
+                            onClick={() => openRangeDialog(r)}
                             disabled={isGenerating}
                             className="w-full border-2 border-black py-2 text-xs font-medium uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-50"
                           >
@@ -2301,6 +2421,87 @@ export default function ReportsPage() {
         filenamePrefix="leads-report"
       />
 
+      <Dialog open={!!rangeFor} onOpenChange={(o) => !o && setRangeFor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select date range</DialogTitle>
+          </DialogHeader>
+          {rangeFor && (
+            <div className="space-y-4">
+              <div>
+                <p className="font-medium text-sm text-black">{rangeFor.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Filters by: {rangeFor.dateBasis}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {RANGE_PRESETS.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => setPreset(p.key)}
+                    className={cn(
+                      "border-2 border-black px-3 py-1.5 text-xs font-bold transition-colors",
+                      preset === p.key
+                        ? "bg-black text-white"
+                        : "bg-white text-black hover:bg-gray-100",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              {preset === "custom" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs font-bold uppercase tracking-wider text-black">
+                    From
+                    <input
+                      type="date"
+                      value={customFrom}
+                      max={customTo || undefined}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                      className="mt-1 w-full border-2 border-black px-2 py-2 text-sm font-medium normal-case"
+                    />
+                  </label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-black">
+                    To
+                    <input
+                      type="date"
+                      value={customTo}
+                      min={customFrom || undefined}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                      className="mt-1 w-full border-2 border-black px-2 py-2 text-sm font-medium normal-case"
+                    />
+                  </label>
+                </div>
+              )}
+              <p className="text-xs font-medium text-black">
+                Period: {rangeLabel(dialogRange)}
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRangeFor(null)}
+                  className="border-2 border-black px-4 py-2 text-xs font-bold uppercase tracking-widest bg-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    preset === "custom" && !customFrom && !customTo
+                  }
+                  onClick={() => handleGenerate(rangeFor, dialogRange)}
+                  className="border-2 border-black px-4 py-2 text-xs font-bold uppercase tracking-widest bg-[#024BAB] text-white disabled:opacity-50"
+                >
+                  Generate
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={!!previewReport}
         onOpenChange={(open) => !open && closePreview()}
@@ -2309,6 +2510,9 @@ export default function ReportsPage() {
           <DialogHeader>
             <DialogTitle>{previewReport?.title}</DialogTitle>
           </DialogHeader>
+          <p className="text-xs font-medium text-black -mt-2">
+            Period: {rangeLabel(previewRange)}
+          </p>
 
           {previewTable && (
             <>

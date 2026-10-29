@@ -120,6 +120,14 @@ const settingSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Live Performance page: each agent should make `calls` calls per `perMinutes` minutes.
+    // Below `amberPct` of that pace is red, up to 100% is amber, at/above is green.
+    callTargets: {
+      calls: { type: Number, default: 20, min: 1, max: 10000 },
+      perMinutes: { type: Number, default: 60, min: 5, max: 10080 },
+      amberPct: { type: Number, default: 60, min: 1, max: 99 },
+    },
+
     // Tenant-customized lead status labels/colors. Keyed by the fixed status
     // value stored on Lead.status — see backend/utils/leadStatuses.js.
     leadStatusLabels: {

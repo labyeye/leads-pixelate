@@ -33,6 +33,7 @@ import {
   ShoppingCart,
   Receipt,
   FolderOpen,
+  Activity,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
@@ -82,6 +83,12 @@ const allGroups: NavGroup[] = [
         href: "/leads",
         icon: Target,
         roles: ["super_admin", "admin", "sales_executive"],
+      },
+      {
+        title: "Live Performance",
+        href: "/live-performance",
+        icon: Activity,
+        roles: ["super_admin", "admin"],
       },
       {
         title: "Visit Calendar",

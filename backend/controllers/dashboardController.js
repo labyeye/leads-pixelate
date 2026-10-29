@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
+const CallLog = require("../models/CallLog");
+const Setting = require("../models/Setting");
 
 const CLOSED_STATUSES = ["WON", "DROP"];
 
@@ -261,4 +263,126 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getDashboardStats };
+const LIVE_WINDOWS = [60, 240, 480, 1440, 10080]; // minutes
+const LIVE_BUCKETS = { 60: 12, 240: 16, 480: 16, 1440: 24, 10080: 14 };
+
+// Admin "Live Performance" feed: calls per agent in a rolling window, the trend, newest leads,
+// and the pipeline snapshot. Targets are returned raw; the page works out green/amber/red.
+const getLiveStats = asyncHandler(async (req, res) => {
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const asked = parseInt(req.query.window, 10);
+  const windowMin = LIVE_WINDOWS.includes(asked) ? asked : 60;
+  const now = new Date();
+  const since = new Date(now.getTime() - windowMin * 60000);
+  const buckets = LIVE_BUCKETS[windowMin];
+  const bucketMs = (windowMin * 60000) / buckets;
+  const bucketOf = (field) => ({
+    $floor: { $divide: [{ $subtract: [field, since] }, bucketMs] },
+  });
+  const humanCalls = { ...tf, initiatedBy: { $ne: null }, createdAt: { $gte: since } };
+
+  const [setting, agents, callsByAgent, callTrend, leadTrend, changesByAgent, recentLeads, aiCalls, statusRows] =
+    await Promise.all([
+      Setting.findOne({ tenantId: req.user.tenantId || null }).select("callTargets").lean(),
+      User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } })
+        .select("name role")
+        .lean(),
+      CallLog.aggregate([
+        { $match: humanCalls },
+        {
+          $group: {
+            _id: "$initiatedBy",
+            calls: { $sum: 1 },
+            connected: {
+              $sum: { $cond: [{ $and: [{ $eq: ["$status", "completed"] }, { $gt: ["$durationSeconds", 0] }] }, 1, 0] },
+            },
+            talkSeconds: { $sum: "$durationSeconds" },
+            lastCallAt: { $max: "$createdAt" },
+          },
+        },
+      ]),
+      CallLog.aggregate([
+        { $match: humanCalls },
+        { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
+      ]),
+      Lead.aggregate([
+        { $match: { ...tf, createdAt: { $gte: since } } },
+        { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
+      ]),
+      Lead.aggregate([
+        { $match: { ...tf, "statusHistory.timestamp": { $gte: since } } },
+        { $unwind: "$statusHistory" },
+        { $match: { "statusHistory.timestamp": { $gte: since }, "statusHistory.changedBy": { $ne: null } } },
+        { $group: { _id: "$statusHistory.changedBy", n: { $sum: 1 } } },
+      ]),
+      Lead.find({ ...tf })
+        .sort({ createdAt: -1 })
+        .limit(12)
+        .select("name company source status phone assignedTo createdAt")
+        .populate("assignedTo", "name")
+        .lean(),
+      CallLog.countDocuments({ ...tf, initiatedBy: null, createdAt: { $gte: since } }),
+      Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$status", n: { $sum: 1 } } }]),
+    ]);
+
+  const callMap = new Map(callsByAgent.map((r) => [String(r._id), r]));
+  const changeMap = new Map(changesByAgent.map((r) => [String(r._id), r.n]));
+  const knownIds = new Set(agents.map((a) => String(a._id)));
+  // Someone with calls in the window who is no longer in the list (role changed) still counts.
+  const extra = callsByAgent.filter((r) => !knownIds.has(String(r._id))).map((r) => r._id);
+  const extraUsers = extra.length ? await User.find({ _id: { $in: extra } }).select("name role").lean() : [];
+
+  const team = [...agents, ...extraUsers]
+    .map((u) => {
+      const c = callMap.get(String(u._id)) || {};
+      return {
+        _id: u._id,
+        name: u.name,
+        role: u.role,
+        calls: c.calls || 0,
+        connected: c.connected || 0,
+        talkSeconds: c.talkSeconds || 0,
+        lastCallAt: c.lastCallAt || null,
+        statusChanges: changeMap.get(String(u._id)) || 0,
+      };
+    })
+    .sort((a, b) => b.calls - a.calls);
+
+  const series = (rows) => {
+    const byIdx = new Map(rows.map((r) => [r._id, r.n]));
+    return Array.from({ length: buckets }, (_, i) => ({
+      t: new Date(since.getTime() + i * bucketMs).toISOString(),
+      n: byIdx.get(i) || 0,
+    }));
+  };
+  const callSeries = series(callTrend);
+  const leadSeries = series(leadTrend);
+
+  res.json({
+    success: true,
+    data: {
+      now,
+      since,
+      windowMin,
+      targets: {
+        calls: setting?.callTargets?.calls ?? 20,
+        perMinutes: setting?.callTargets?.perMinutes ?? 60,
+        amberPct: setting?.callTargets?.amberPct ?? 60,
+      },
+      totals: {
+        calls: team.reduce((a, t) => a + t.calls, 0),
+        connected: team.reduce((a, t) => a + t.connected, 0),
+        talkSeconds: team.reduce((a, t) => a + t.talkSeconds, 0),
+        newLeads: leadSeries.reduce((a, p) => a + p.n, 0),
+        statusChanges: team.reduce((a, t) => a + t.statusChanges, 0),
+        aiCalls,
+      },
+      team,
+      trend: callSeries.map((p, i) => ({ t: p.t, calls: p.n, leads: leadSeries[i].n })),
+      recentLeads,
+      statusCounts: Object.fromEntries(statusRows.map((r) => [r._id, r.n])),
+    },
+  });
+});
+
+module.exports = { getDashboardStats, getLiveStats };
