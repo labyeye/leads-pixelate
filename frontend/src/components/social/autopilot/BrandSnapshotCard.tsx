@@ -10,7 +10,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   if (!value || (Array.isArray(value) && value.length === 0)) return null;
   return (
     <div className="grid grid-cols-[auto_1fr] gap-x-3 py-1.5 border-t border-black/10 text-sm">
-      <span className="font-semibold text-muted-foreground">{label}</span>
+      <span className="font-medium text-muted-foreground">{label}</span>
       <span className="text-right">{value}</span>
     </div>
   );
@@ -78,7 +78,7 @@ export function BrandSnapshotCard({
         </div>
       )}
       <div className="p-4 space-y-0.5">
-        <p className="font-display font-bold text-base leading-tight">
+        <p className="font-display font-medium text-base leading-tight">
           {accountName || "Your brand"}
         </p>
         {stale && (
@@ -92,13 +92,13 @@ export function BrandSnapshotCard({
         <Row label="Hashtag style" value={profile.hashtagStyle} />
         {profile.visualStyle && (
           <div className="py-1.5 border-t border-black/10 text-sm">
-            <p className="font-semibold text-muted-foreground">Visual style</p>
+            <p className="font-medium text-muted-foreground">Visual style</p>
             <p className="mt-0.5">{profile.visualStyle}</p>
           </div>
         )}
         {profile.palette.length > 0 && (
           <div className="py-1.5 border-t border-black/10 text-sm">
-            <p className="font-semibold text-muted-foreground mb-1">Palette</p>
+            <p className="font-medium text-muted-foreground mb-1">Palette</p>
             <div className="flex flex-wrap gap-1.5 justify-end">
               {profile.palette.map((c) => (
                 <span
@@ -113,7 +113,7 @@ export function BrandSnapshotCard({
         )}
         {profile.contentPillars.length > 0 && (
           <div className="py-1.5 border-t border-black/10 text-sm">
-            <p className="font-semibold text-muted-foreground mb-1">
+            <p className="font-medium text-muted-foreground mb-1">
               Content pillars
             </p>
             <Chips items={profile.contentPillars} />

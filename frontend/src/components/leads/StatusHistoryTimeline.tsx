@@ -92,7 +92,7 @@ export function StatusHistoryTimeline({
                     <div className="flex items-center gap-2">
                       <span
                         className={cn(
-                          "px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                          "px-2.5 py-1 rounded-md border text-[10px] font-medium uppercase tracking-wider shadow-sm",
                           getStatusColorClasses(entry.status) ||
                             "bg-muted text-muted-foreground border-transparent",
                         )}
@@ -102,7 +102,7 @@ export function StatusHistoryTimeline({
                       {entry.contactTag && (
                         <span
                           className={cn(
-                            "px-2.5 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                            "px-2.5 py-1 rounded-md border text-[10px] font-medium uppercase tracking-wider shadow-sm",
                             getStatusColorClasses(entry.contactTag) ||
                               "bg-muted text-muted-foreground border-transparent",
                           )}
@@ -113,7 +113,7 @@ export function StatusHistoryTimeline({
                     </div>
 
                     <div className="flex flex-col items-end">
-                      <span className="text-[12px] font-bold text-black">
+                      <span className="text-[12px] font-medium text-black">
                         {safeFormat(entry.timestamp, "MMM dd, yyyy")}
                       </span>
                       <span className="text-[9px] text-muted-foreground font-medium">
@@ -142,40 +142,40 @@ export function StatusHistoryTimeline({
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       {entry.budget && (
                         <div className="flex items-center gap-2 bg-success/5 border border-success/10 rounded-md p-1.5 px-2">
-                          <span className="text-[9px] text-success/70 font-bold uppercase tracking-tighter">
+                          <span className="text-[9px] text-success/70 font-medium uppercase tracking-tighter">
                             Budget
                           </span>
-                          <span className="text-[10px] text-success font-bold ml-auto">
+                          <span className="text-[10px] text-success font-medium ml-auto">
                             {entry.budget}
                           </span>
                         </div>
                       )}
                       {entry.followUpDate && (
                         <div className="flex items-center gap-2 bg-blue-500/5 border border-blue-500/10 rounded-md p-1.5 px-2">
-                          <span className="text-[9px] text-blue-500/70 font-bold uppercase tracking-tighter">
+                          <span className="text-[9px] text-blue-500/70 font-medium uppercase tracking-tighter">
                             Follow-up
                           </span>
-                          <span className="text-[10px] text-blue-500 font-bold ml-auto">
+                          <span className="text-[10px] text-blue-500 font-medium ml-auto">
                             {safeFormat(entry.followUpDate, "dd MMM")}
                           </span>
                         </div>
                       )}
                       {entry.visitScheduledDate && (
                         <div className="flex items-center gap-2 bg-purple-500/5 border border-purple-500/10 rounded-md p-1.5 px-2">
-                          <span className="text-[9px] text-purple-500/70 font-bold uppercase tracking-tighter">
+                          <span className="text-[9px] text-purple-500/70 font-medium uppercase tracking-tighter">
                             Scheduled
                           </span>
-                          <span className="text-[10px] text-purple-500 font-bold ml-auto">
+                          <span className="text-[10px] text-purple-500 font-medium ml-auto">
                             {safeFormat(entry.visitScheduledDate, "dd MMM")}
                           </span>
                         </div>
                       )}
                       {entry.visitActualDate && (
                         <div className="flex items-center gap-2 bg-teal-500/5 border border-teal-500/10 rounded-md p-1.5 px-2">
-                          <span className="text-[9px] text-teal-500/70 font-bold uppercase tracking-tighter">
+                          <span className="text-[9px] text-teal-500/70 font-medium uppercase tracking-tighter">
                             Visited
                           </span>
-                          <span className="text-[10px] text-teal-500 font-bold ml-auto">
+                          <span className="text-[10px] text-teal-500 font-medium ml-auto">
                             {safeFormat(entry.visitActualDate, "dd MMM")}
                           </span>
                         </div>
@@ -205,7 +205,7 @@ export function StatusHistoryTimeline({
       {}
       {stagePath && stagePath.length > 0 && (
         <div className="mt-6 pt-4 border-t border-border/30">
-          <p className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">
+          <p className="text-[10px] font-medium text-muted-foreground mb-2 uppercase tracking-wider">
             Lead Progression
           </p>
           <div className="flex flex-wrap gap-1">
@@ -213,7 +213,7 @@ export function StatusHistoryTimeline({
               <div key={`stage-${idx}`} className="flex items-center gap-1">
                 <span
                   className={cn(
-                    "px-2 py-1 rounded-full border text-[9px] font-bold",
+                    "px-2 py-1 rounded-full border text-[9px] font-medium",
                     getStatusColorClasses(stage) ||
                       "bg-muted text-muted-foreground border-transparent",
                   )}
@@ -221,7 +221,7 @@ export function StatusHistoryTimeline({
                   {getStatusLabel(stage)}
                 </span>
                 {idx < stagePath.length - 1 && (
-                  <span className="text-muted-foreground/40 font-bold">→</span>
+                  <span className="text-muted-foreground/40 font-medium">→</span>
                 )}
               </div>
             ))}

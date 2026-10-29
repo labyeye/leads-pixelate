@@ -208,7 +208,7 @@ export default function FacebookAdSetsPage() {
       header: "Ad Set",
       render: (s) => (
         <div className="min-w-[220px]">
-          <span className="font-bold text-sm">{s.name}</span>
+          <span className="font-medium text-sm">{s.name}</span>
           <p className="text-[11px] text-muted-foreground">
             {s.campaignName} · {s.adAccountName}
           </p>
@@ -221,7 +221,7 @@ export default function FacebookAdSetsPage() {
         const st = statusBadge(s.effective_status || s.status);
         return (
           <span
-            className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}
+            className={`text-[10px] px-2 py-0.5 border-2 font-medium whitespace-nowrap ${st.cls}`}
           >
             {st.label}
           </span>
@@ -232,7 +232,7 @@ export default function FacebookAdSetsPage() {
       header: "Assigned To",
       render: (s) =>
         assignments[s.campaign_id] ? (
-          <span className="text-[10px] bg-[#00C48C]/10 text-[#00C48C] px-1.5 py-0.5 border border-[#00C48C] font-bold flex items-center gap-1 whitespace-nowrap w-fit">
+          <span className="text-[10px] bg-[#00C48C]/10 text-[#00C48C] px-1.5 py-0.5 border border-[#00C48C] font-medium flex items-center gap-1 whitespace-nowrap w-fit">
             <UserCheck className="w-3 h-3" />
             {assignments[s.campaign_id]}
           </span>
@@ -244,7 +244,7 @@ export default function FacebookAdSetsPage() {
       header: "Optimization",
       render: (s) =>
         s.optimization_goal ? (
-          <span className="text-[10px] bg-[#FA731C]/10 text-[#FA731C] px-2 py-0.5 border border-[#FA731C] font-bold whitespace-nowrap">
+          <span className="text-[10px] bg-[#FA731C]/10 text-[#FA731C] px-2 py-0.5 border border-[#FA731C] font-medium whitespace-nowrap">
             {s.optimization_goal.replace(/_/g, " ")}
           </span>
         ) : (
@@ -255,7 +255,7 @@ export default function FacebookAdSetsPage() {
       header: "Results",
       align: "right",
       render: (s) => (
-        <span className="flex items-center justify-end gap-1 font-semibold text-[#00C48C]">
+        <span className="flex items-center justify-end gap-1 font-medium text-[#00C48C]">
           <TrendingUp className="w-3 h-3" />
           {(insights[s.id]?.results ?? 0).toLocaleString()}
         </span>
@@ -348,7 +348,7 @@ export default function FacebookAdSetsPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Facebook Ad Sets
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -371,7 +371,7 @@ export default function FacebookAdSetsPage() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="border-2 border-black bg-[#FA731C] text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5"
+              className="border-2 border-black bg-[#FA731C] text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> New Ad Set
             </button>
@@ -386,7 +386,7 @@ export default function FacebookAdSetsPage() {
               <Info className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold mb-1">Couldn't load ad sets</p>
+              <p className="text-sm font-medium mb-1">Couldn't load ad sets</p>
               <p className="text-xs text-muted-foreground">{error}</p>
             </div>
           </div>
@@ -394,7 +394,7 @@ export default function FacebookAdSetsPage() {
       ) : (
         <div className="border-2 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <p className="text-xs text-muted-foreground font-bold">
+            <p className="text-xs text-muted-foreground font-medium">
               {filtered.length} ad set{filtered.length === 1 ? "" : "s"}
             </p>
             <DeliveryFilterBar
@@ -451,14 +451,14 @@ export default function FacebookAdSetsPage() {
           <DialogFooter className="gap-2">
             <button
               onClick={() => setDeleteTarget(null)}
-              className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-bold"
+              className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               onClick={handleDelete}
               disabled={!!actionId}
-              className="border-2 border-black bg-red-600 text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+              className="border-2 border-black bg-red-600 text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
             >
               {actionId && <Loader2 className="w-4 h-4 animate-spin" />}
               Delete
@@ -568,7 +568,7 @@ function AdSetFormDialog({
         <div className="space-y-3">
           {!adSet && (
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Campaign *
               </label>
               <Select value={campaignId} onValueChange={setCampaignId}>
@@ -586,7 +586,7 @@ function AdSetFormDialog({
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Ad Set Name *
             </label>
             <input
@@ -598,7 +598,7 @@ function AdSetFormDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Status
               </label>
               <Select value={status} onValueChange={setStatus}>
@@ -612,7 +612,7 @@ function AdSetFormDialog({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Budget Type
               </label>
               <Select
@@ -630,7 +630,7 @@ function AdSetFormDialog({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Budget (₹)
             </label>
             <input
@@ -642,7 +642,7 @@ function AdSetFormDialog({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Age Range
             </label>
             <div className="flex items-center gap-2">
@@ -654,7 +654,7 @@ function AdSetFormDialog({
                 max="65"
                 className="border-2 border-black px-3 py-2 text-sm text-center w-full"
               />
-              <span className="text-xs font-bold text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 to
               </span>
               <input
@@ -669,7 +669,7 @@ function AdSetFormDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Optimization Goal
               </label>
               <Select
@@ -689,7 +689,7 @@ function AdSetFormDialog({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Billing Event
               </label>
               <Select value={billingEvent} onValueChange={setBillingEvent}>
@@ -705,7 +705,7 @@ function AdSetFormDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Start Date
               </label>
               <input
@@ -716,7 +716,7 @@ function AdSetFormDialog({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 End Date
               </label>
               <input
@@ -731,14 +731,14 @@ function AdSetFormDialog({
         <DialogFooter className="gap-2">
           <button
             onClick={onClose}
-            className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-bold"
+            className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !name.trim() || (!adSet && !campaignId)}
-            className="border-2 border-black bg-[#FA731C] text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+            className="border-2 border-black bg-[#FA731C] text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {adSet ? "Update" : "Create"} Ad Set

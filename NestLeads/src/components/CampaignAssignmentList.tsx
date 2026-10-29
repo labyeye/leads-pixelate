@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 24,
   },
-  emptyTitle: { fontSize: 14, fontWeight: '800', color: '#334155' },
+  emptyTitle: { fontSize: 14, fontWeight: '500', color: '#334155' },
   emptyDesc: { fontSize: 12, color: '#94a3b8', textAlign: 'center' },
   card: {
     borderWidth: 2,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  name: { fontSize: 14, fontWeight: '600', color: '#000' },
+  name: { fontSize: 14, fontWeight: '500', color: '#000' },
   subLabel: { fontSize: 11, color: '#64748b', marginTop: 2 },
   badge: {
     paddingHorizontal: 7,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  badgeText: { fontSize: 9, fontWeight: '600' },
+  badgeText: { fontSize: 9, fontWeight: '500' },
   platformBadge: {
     alignSelf: 'flex-start',
     borderWidth: 2,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  platformBadgeText: { fontSize: 9, fontWeight: '600', color: '#334155' },
+  platformBadgeText: { fontSize: 9, fontWeight: '500', color: '#334155' },
   metricsRow: {
     flexDirection: 'row',
     borderTopWidth: 1,
@@ -270,11 +270,11 @@ const styles = StyleSheet.create({
   metricBox: { flex: 1, alignItems: 'center', gap: 2 },
   metricLabel: {
     fontSize: 8,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#94a3b8',
     letterSpacing: 0.5,
   },
-  metricValue: { fontSize: 13, fontWeight: '600', color: '#000' },
+  metricValue: { fontSize: 13, fontWeight: '500', color: '#000' },
   assignBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   assignBtnText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#024BAB',
     flexShrink: 1,
   },
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 10,
     color: '#000',
   },
@@ -314,5 +314,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  userRowText: { fontSize: 14, color: '#000', fontWeight: '600' },
+  userRowText: { fontSize: 14, color: '#000', fontWeight: '500' },
 });

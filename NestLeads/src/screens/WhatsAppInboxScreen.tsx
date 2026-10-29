@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   convoItem: {
@@ -189,14 +189,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 16, fontWeight: '600' },
+  avatarText: { fontSize: 16, fontWeight: '500' },
   convoInfo: { flex: 1 },
   convoTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 3,
   },
-  convoName: { fontSize: 14, fontWeight: '700', color: '#000', flex: 1 },
+  convoName: { fontSize: 14, fontWeight: '500', color: '#000', flex: 1 },
   convoTime: { fontSize: 11, color: '#94a3b8' },
   convoBottom: {
     flexDirection: 'row',
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   convoLast: { fontSize: 12, color: '#64748b', flex: 1 },
-  convoLastUnread: { color: '#000', fontWeight: '600' },
+  convoLastUnread: { color: '#000', fontWeight: '500' },
   unreadBadge: {
     backgroundColor: '#25D366',
     borderWidth: 2,
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  unreadText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  unreadText: { fontSize: 10, fontWeight: '500', color: '#fff' },
   emptyBox: {
     flex: 1,
     alignItems: 'center',
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 4,
   },

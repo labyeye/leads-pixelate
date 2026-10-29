@@ -149,14 +149,14 @@ export const NbTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border-2 border-black px-3 py-2 text-xs">
-      <p className="font-bold text-black mb-1">{label}</p>
+      <p className="font-medium text-black mb-1">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-2">
           <span
             className="w-2 h-2 border border-black shrink-0"
             style={{ background: p.color }}
           />
-          <span className="font-bold text-black capitalize">
+          <span className="font-medium text-black capitalize">
             {p.name}: {p.value}
           </span>
         </div>
@@ -169,12 +169,12 @@ export function InsightRow({ insight }: { insight?: Insight }) {
   if (!insight) return null;
   return (
     <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mt-1.5 pt-1.5 border-t border-dashed border-gray-300">
-      <span className="flex items-center gap-1 font-semibold text-[#024BAB]">
+      <span className="flex items-center gap-1 font-medium text-[#024BAB]">
         <DollarSign className="w-3 h-3" />₹
         {insight.spend.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
         spent
       </span>
-      <span className="flex items-center gap-1 font-semibold text-[#00C48C]">
+      <span className="flex items-center gap-1 font-medium text-[#00C48C]">
         <TrendingUp className="w-3 h-3" />
         {insight.results.toLocaleString()} results
       </span>
@@ -246,7 +246,7 @@ export function EmptyState({
       <div className="w-12 h-12 border-2 border-black bg-muted flex items-center justify-center">
         <Icon className="w-6 h-6 text-muted-foreground/50" />
       </div>
-      <p className="text-sm font-bold">{title}</p>
+      <p className="text-sm font-medium">{title}</p>
       <p className="text-xs text-muted-foreground max-w-xs">{desc}</p>
     </div>
   );
@@ -313,7 +313,7 @@ export function PeriodFilterBar({
             key={p}
             onClick={() => setPeriod(p)}
             className={cn(
-              "text-xs px-3 py-2 font-bold transition-colors capitalize",
+              "text-xs px-3 py-2 font-medium transition-colors capitalize",
               i > 0 && "border-l-2 border-black",
               period === p
                 ? "bg-[#024BAB] text-white"
@@ -336,14 +336,14 @@ export function PeriodFilterBar({
             type="date"
             value={customSince}
             onChange={(e) => setCustomSince(e.target.value)}
-            className="border-2 border-black px-2 py-[7px] text-xs font-semibold"
+            className="border-2 border-black px-2 py-[7px] text-xs font-medium"
           />
-          <span className="text-xs font-bold text-muted-foreground">to</span>
+          <span className="text-xs font-medium text-muted-foreground">to</span>
           <input
             type="date"
             value={customUntil}
             onChange={(e) => setCustomUntil(e.target.value)}
-            className="border-2 border-black px-2 py-[7px] text-xs font-semibold"
+            className="border-2 border-black px-2 py-[7px] text-xs font-medium"
           />
         </div>
       )}
@@ -422,7 +422,7 @@ export function MetaTable<T extends { id: string }>({
               <th
                 key={i}
                 className={cn(
-                  "px-3 py-2.5 font-bold uppercase tracking-wide text-[10px] text-muted-foreground whitespace-nowrap",
+                  "px-3 py-2.5 font-medium uppercase tracking-wide text-[10px] text-muted-foreground whitespace-nowrap",
                   col.align === "right"
                     ? "text-right"
                     : col.align === "center"
@@ -501,7 +501,7 @@ export function DeliveryFilterBar({
             key={f.id}
             onClick={() => onChange(f.id)}
             className={cn(
-              "text-xs px-2.5 py-1.5 font-bold transition-colors",
+              "text-xs px-2.5 py-1.5 font-medium transition-colors",
               i > 0 && "border-l-2 border-black",
               value === f.id
                 ? "bg-[#024BAB] text-white"

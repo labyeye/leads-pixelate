@@ -64,7 +64,7 @@ export function AutopilotSetup({ toast }: { toast: any }) {
   if (!overview?.campaigns.length) {
     return (
       <div className="nb-card p-8 bg-white text-center space-y-3">
-        <h2 className="font-display font-bold text-xl text-black">
+        <h2 className="font-display font-medium text-xl text-black">
           Create your first Autopilot campaign
         </h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">

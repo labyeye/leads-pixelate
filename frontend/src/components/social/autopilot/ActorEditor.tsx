@@ -68,7 +68,7 @@ export function ActorEditor({
           <UserRound className="w-4 h-4 text-white" />
         </span>
         <div>
-          <h3 className="font-semibold text-sm">AI presenter (optional)</h3>
+          <h3 className="font-medium text-sm">AI presenter (optional)</h3>
           <p className="text-xs text-muted-foreground">
             A presenter who speaks to camera in every reel: a ~15 second talking
             video with voice and lip sync. Without one, reels are short scenes

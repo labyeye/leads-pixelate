@@ -75,7 +75,7 @@ export function BrandSection({
     <div className="rounded-lg border-2 border-black p-4 space-y-4 bg-background">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-sm">Brand &amp; posting plan</h3>
+          <h3 className="font-medium text-sm">Brand &amp; posting plan</h3>
           <p className="text-xs text-muted-foreground">
             What Autopilot knows about “{status.campaign.name}”. Changes apply
             to the next post.

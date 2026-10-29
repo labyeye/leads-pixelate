@@ -171,7 +171,7 @@ export default function ActivityLogPage() {
                   [{formatTimestamp(log.timestamp)}]
                 </span>
                 <span
-                  className={`shrink-0 font-semibold ${ACTION_COLOR[log.action] || "text-slate-600"}`}
+                  className={`shrink-0 font-medium ${ACTION_COLOR[log.action] || "text-slate-600"}`}
                 >
                   {log.action}
                 </span>

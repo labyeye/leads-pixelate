@@ -124,7 +124,7 @@ export default function CampaignReportsPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Reports & Analytics
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -145,7 +145,7 @@ export default function CampaignReportsPage() {
       </div>
 
       <div className="border-2 bg-white p-5 mb-4">
-        <h3 className="font-display font-bold text-base text-black mb-3 flex items-center gap-2">
+        <h3 className="font-display font-medium text-base text-black mb-3 flex items-center gap-2">
           <Facebook className="w-4 h-4 text-[#024BAB]" /> Meta Ads
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -181,7 +181,7 @@ export default function CampaignReportsPage() {
       </div>
 
       <div className="border-2 bg-white p-5 mb-4">
-        <h3 className="font-display font-bold text-base text-black mb-3 flex items-center gap-2">
+        <h3 className="font-display font-medium text-base text-black mb-3 flex items-center gap-2">
           <LinkedInIcon className="w-4 h-4" /> LinkedIn
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -197,7 +197,7 @@ export default function CampaignReportsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="border-2 bg-white p-5">
-          <h3 className="font-display font-bold text-base text-black mb-3 flex items-center gap-2">
+          <h3 className="font-display font-medium text-base text-black mb-3 flex items-center gap-2">
             <WhatsAppIcon className="w-4 h-4 text-[#25D366]" /> WhatsApp
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -223,7 +223,7 @@ export default function CampaignReportsPage() {
         </div>
 
         <div className="border-2 bg-white p-5">
-          <h3 className="font-display font-bold text-base text-black mb-3 flex items-center gap-2">
+          <h3 className="font-display font-medium text-base text-black mb-3 flex items-center gap-2">
             <Megaphone className="w-4 h-4 text-[#FA731C]" /> CRM Campaigns
           </h3>
           <div className="grid grid-cols-1 gap-3">

@@ -97,30 +97,30 @@ export const getCategoryByStatus = (status: string) => {
 
 export const statusColors: Record<string, string> = {
   "PENDING CONTACT":
-    "bg-slate-200 text-slate-900 border-slate-400 font-semibold",
-  "1": "bg-orange-300 text-slate-900 border-orange-500 font-semibold",
-  "2": "bg-orange-300 text-slate-900 border-orange-500 font-semibold",
-  "3": "bg-red-300 text-slate-900 border-red-500 font-semibold",
-  COMPLETED: "bg-orange-400 text-slate-900 border-orange-600 font-semibold",
-  DISCUSSION: "bg-blue-400 text-white border-blue-600 font-semibold",
-  "DISCUSSION 1": "bg-blue-300 text-slate-900 border-blue-500 font-semibold",
-  "DISCUSSION 2": "bg-blue-200 text-slate-900 border-blue-400 font-semibold",
-  "DISCUSSION 3": "bg-blue-100 text-slate-900 border-blue-300 font-semibold",
+    "bg-slate-200 text-slate-900 border-slate-400 font-medium",
+  "1": "bg-orange-300 text-slate-900 border-orange-500 font-medium",
+  "2": "bg-orange-300 text-slate-900 border-orange-500 font-medium",
+  "3": "bg-red-300 text-slate-900 border-red-500 font-medium",
+  COMPLETED: "bg-orange-400 text-slate-900 border-orange-600 font-medium",
+  DISCUSSION: "bg-blue-400 text-white border-blue-600 font-medium",
+  "DISCUSSION 1": "bg-blue-300 text-slate-900 border-blue-500 font-medium",
+  "DISCUSSION 2": "bg-blue-200 text-slate-900 border-blue-400 font-medium",
+  "DISCUSSION 3": "bg-blue-100 text-slate-900 border-blue-300 font-medium",
   "DISCUSSION COMPLETED":
-    "bg-blue-500 text-white border-blue-700 font-semibold",
-  QUOTATION: "bg-purple-400 text-white border-purple-600 font-semibold",
-  "QUOTATION 1": "bg-purple-300 text-slate-900 border-purple-500 font-semibold",
-  "QUOTATION 2": "bg-purple-200 text-slate-900 border-purple-400 font-semibold",
-  "QUOTATION 3": "bg-purple-100 text-slate-900 border-purple-300 font-semibold",
+    "bg-blue-500 text-white border-blue-700 font-medium",
+  QUOTATION: "bg-purple-400 text-white border-purple-600 font-medium",
+  "QUOTATION 1": "bg-purple-300 text-slate-900 border-purple-500 font-medium",
+  "QUOTATION 2": "bg-purple-200 text-slate-900 border-purple-400 font-medium",
+  "QUOTATION 3": "bg-purple-100 text-slate-900 border-purple-300 font-medium",
   "QUOTATION COMPLETED":
-    "bg-purple-500 text-white border-purple-700 font-semibold",
-  "VISIT SCHEDULED": "bg-cyan-400 text-slate-900 border-cyan-600 font-semibold",
-  VISITED: "bg-teal-400 text-slate-900 border-teal-600 font-semibold",
-  WON: "bg-emerald-400 text-slate-900 border-emerald-600 font-semibold",
-  DROP: "bg-red-500 text-white border-red-700 font-semibold",
-  HOT: "bg-red-500 text-white border-red-700 font-semibold",
-  WARM: "bg-orange-400 text-slate-900 border-orange-600 font-semibold",
-  COLD: "bg-blue-300 text-slate-900 border-blue-500 font-semibold",
+    "bg-purple-500 text-white border-purple-700 font-medium",
+  "VISIT SCHEDULED": "bg-cyan-400 text-slate-900 border-cyan-600 font-medium",
+  VISITED: "bg-teal-400 text-slate-900 border-teal-600 font-medium",
+  WON: "bg-emerald-400 text-slate-900 border-emerald-600 font-medium",
+  DROP: "bg-red-500 text-white border-red-700 font-medium",
+  HOT: "bg-red-500 text-white border-red-700 font-medium",
+  WARM: "bg-orange-400 text-slate-900 border-orange-600 font-medium",
+  COLD: "bg-blue-300 text-slate-900 border-blue-500 font-medium",
 };
 
 // ─── Custom label/color overrides ──────────────────────────────────────────
@@ -147,43 +147,43 @@ export type StatusOverrideMap = Record<string, StatusOverride>;
 export const COLOR_PRESETS: { name: string; classes: string }[] = [
   {
     name: "Slate",
-    classes: "bg-slate-200 text-slate-900 border-slate-400 font-semibold",
+    classes: "bg-slate-200 text-slate-900 border-slate-400 font-medium",
   },
   {
     name: "Orange",
-    classes: "bg-orange-300 text-slate-900 border-orange-500 font-semibold",
+    classes: "bg-orange-300 text-slate-900 border-orange-500 font-medium",
   },
   {
     name: "Red",
-    classes: "bg-red-300 text-slate-900 border-red-500 font-semibold",
+    classes: "bg-red-300 text-slate-900 border-red-500 font-medium",
   },
   {
     name: "Blue",
-    classes: "bg-blue-300 text-slate-900 border-blue-500 font-semibold",
+    classes: "bg-blue-300 text-slate-900 border-blue-500 font-medium",
   },
   {
     name: "Purple",
-    classes: "bg-purple-300 text-slate-900 border-purple-500 font-semibold",
+    classes: "bg-purple-300 text-slate-900 border-purple-500 font-medium",
   },
   {
     name: "Cyan",
-    classes: "bg-cyan-300 text-slate-900 border-cyan-500 font-semibold",
+    classes: "bg-cyan-300 text-slate-900 border-cyan-500 font-medium",
   },
   {
     name: "Teal",
-    classes: "bg-teal-300 text-slate-900 border-teal-500 font-semibold",
+    classes: "bg-teal-300 text-slate-900 border-teal-500 font-medium",
   },
   {
     name: "Emerald",
-    classes: "bg-emerald-300 text-slate-900 border-emerald-500 font-semibold",
+    classes: "bg-emerald-300 text-slate-900 border-emerald-500 font-medium",
   },
   {
     name: "Pink",
-    classes: "bg-pink-300 text-slate-900 border-pink-500 font-semibold",
+    classes: "bg-pink-300 text-slate-900 border-pink-500 font-medium",
   },
   {
     name: "Zinc",
-    classes: "bg-zinc-300 text-slate-900 border-zinc-500 font-semibold",
+    classes: "bg-zinc-300 text-slate-900 border-zinc-500 font-medium",
   },
 ];
 
@@ -194,7 +194,7 @@ const COLOR_PRESET_BY_KEY: Record<string, string> = Object.fromEntries(
 export function colorKeyToClasses(colorKey: string): string {
   return (
     COLOR_PRESET_BY_KEY[colorKey] ||
-    "bg-muted text-foreground border-border font-semibold"
+    "bg-muted text-foreground border-border font-medium"
   );
 }
 
@@ -229,13 +229,13 @@ export function getStatusColorClasses(
 }
 
 export const sourceColors: Record<string, string> = {
-  IndiaMART: "bg-indigo-300 text-slate-900 font-semibold",
-  TradeIndia: "bg-green-400 text-slate-900 font-semibold",
-  Justdial: "bg-orange-400 text-slate-900 font-semibold",
-  Website: "bg-purple-400 text-white font-semibold",
-  Manual: "bg-slate-300 text-slate-900 font-semibold",
-  Facebook: "bg-blue-500 text-white font-semibold",
+  IndiaMART: "bg-indigo-300 text-slate-900 font-medium",
+  TradeIndia: "bg-green-400 text-slate-900 font-medium",
+  Justdial: "bg-orange-400 text-slate-900 font-medium",
+  Website: "bg-purple-400 text-white font-medium",
+  Manual: "bg-slate-300 text-slate-900 font-medium",
+  Facebook: "bg-blue-500 text-white font-medium",
   Instagram:
-    "bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold",
-  Meta: "bg-blue-700 text-white font-semibold",
+    "bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium",
+  Meta: "bg-blue-700 text-white font-medium",
 };

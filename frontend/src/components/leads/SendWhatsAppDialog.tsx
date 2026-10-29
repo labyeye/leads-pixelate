@@ -192,14 +192,14 @@ export function SendWhatsAppDialog({
         ) : senders.length === 0 ? (
           <p className="text-sm p-4 border-2 border-black">
             WhatsApp isn't connected yet.{" "}
-            <Link to="/whatsapp/setup" className="underline font-bold">
+            <Link to="/whatsapp/setup" className="underline font-medium">
               Connect WhatsApp
             </Link>
           </p>
         ) : templates.length === 0 ? (
           <p className="text-sm p-4 border-2 border-black">
             No approved templates yet. Create one and get it approved in{" "}
-            <Link to="/whatsapp/campaigns" className="underline font-bold">
+            <Link to="/whatsapp/campaigns" className="underline font-medium">
               WhatsApp → Campaigns
             </Link>
             , then click <b>Sync</b>.
@@ -207,7 +207,7 @@ export function SendWhatsAppDialog({
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider">
+              <label className="text-xs font-medium uppercase tracking-wider">
                 Template
               </label>
               <Select value={templateId} onValueChange={pickTemplate}>
@@ -227,7 +227,7 @@ export function SendWhatsAppDialog({
 
             {senders.length > 1 && (
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider">
+                <label className="text-xs font-medium uppercase tracking-wider">
                   Send from
                 </label>
                 <Select value={senderId} onValueChange={setSenderId}>
@@ -249,12 +249,12 @@ export function SendWhatsAppDialog({
 
             {template && mapping.length > 0 && (
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider">
+                <label className="text-xs font-medium uppercase tracking-wider">
                   Fill template variables
                 </label>
                 {mapping.map((m, i) => (
                   <div key={m.position} className="flex items-center gap-2">
-                    <span className="text-xs font-bold w-10">{`{{${m.position}}}`}</span>
+                    <span className="text-xs font-medium w-10">{`{{${m.position}}}`}</span>
                     <Select
                       value={m.fieldKey}
                       onValueChange={(v) =>
@@ -299,7 +299,7 @@ export function SendWhatsAppDialog({
 
             {needsDoc && (
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider">
+                <label className="text-xs font-medium uppercase tracking-wider">
                   Attach{" "}
                   {template?.headerType === "IMAGE" ? "image" : "document"} from
                   Document Vault

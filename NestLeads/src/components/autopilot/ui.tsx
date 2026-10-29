@@ -145,7 +145,7 @@ const s = StyleSheet.create({
     padding: 14,
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#000' },
+  sectionTitle: { fontSize: 16, fontWeight: '500', color: '#000' },
   sectionSub: { fontSize: 12, color: '#475569', marginTop: 2 },
   pill: {
     borderWidth: 2,
@@ -154,7 +154,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  pillText: { fontSize: 11, fontWeight: '800' },
+  pillText: { fontSize: 11, fontWeight: '500' },
   chip: {
     borderWidth: 2,
     borderRadius: 8,
@@ -166,7 +166,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   chipActive: { backgroundColor: PRIMARY },
-  chipText: { fontSize: 12, fontWeight: '800', color: '#000' },
+  chipText: { fontSize: 12, fontWeight: '500', color: '#000' },
   kpi: {
     flexBasis: '48%',
     flexGrow: 1,
@@ -190,11 +190,11 @@ const s = StyleSheet.create({
   },
   kpiLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#475569',
   },
-  kpiValue: { fontSize: 28, fontWeight: '600', color: '#000', marginTop: 4 },
+  kpiValue: { fontSize: 28, fontWeight: '500', color: '#000', marginTop: 4 },
   kpiHint: { fontSize: 11, color: '#64748b' },
   barTrack: {
     height: 12,
@@ -218,5 +218,5 @@ const s = StyleSheet.create({
   },
   btnSolid: { backgroundColor: PRIMARY },
   btnOutline: { backgroundColor: '#fff' },
-  btnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  btnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
 });

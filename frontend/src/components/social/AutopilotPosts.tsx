@@ -182,7 +182,7 @@ export function AutopilotPosts({
               <span key={pl}>{PLATFORM_ICON[pl]}</span>
             ))}
             {campaigns && p.campaignId && (
-              <span className="font-semibold text-foreground">
+              <span className="font-medium text-foreground">
                 {campaigns.find((c) => c.id === p.campaignId)?.name}
               </span>
             )}
@@ -248,7 +248,7 @@ export function AutopilotPosts({
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <h3 className="text-sm font-semibold">Coming up ({upcoming.length})</h3>
+        <h3 className="text-sm font-medium">Coming up ({upcoming.length})</h3>
         {upcoming.length ? (
           <ul className="space-y-2">{upcoming.map(row)}</ul>
         ) : (
@@ -260,7 +260,7 @@ export function AutopilotPosts({
       </section>
       {history.length > 0 && (
         <section className="space-y-3">
-          <h3 className="text-sm font-semibold">Recently published</h3>
+          <h3 className="text-sm font-medium">Recently published</h3>
           <ul className="space-y-2">{history.map(row)}</ul>
         </section>
       )}

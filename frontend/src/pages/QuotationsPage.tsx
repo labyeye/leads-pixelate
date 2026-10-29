@@ -147,7 +147,7 @@ const NbInput = ({
   <div className="space-y-1">
     <label
       htmlFor={id}
-      className="block text-[10px] font-black uppercase tracking-widest text-black"
+      className="block text-[10px] font-medium uppercase tracking-widest text-black"
     >
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
@@ -555,7 +555,7 @@ export default function QuotationsPage() {
                 <div>
                   <div className="flex items-center gap-3 mb-3 pb-2 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black">
                       Buyer Details
                     </p>
                   </div>
@@ -565,7 +565,7 @@ export default function QuotationsPage() {
                         <div className="flex items-center justify-between">
                           <label
                             htmlFor="existingClient"
-                            className="block text-[10px] font-black uppercase tracking-widest text-black"
+                            className="block text-[10px] font-medium uppercase tracking-widest text-black"
                           >
                             Select {buyerSource === "client" ? "Client" : "Lead"}
                           </label>
@@ -579,7 +579,7 @@ export default function QuotationsPage() {
                                   setSelectedClientId("");
                                 }}
                                 className={cn(
-                                  "px-3 py-0.5 text-[10px] font-black uppercase",
+                                  "px-3 py-0.5 text-[10px] font-medium uppercase",
                                   buyerSource === src
                                     ? "bg-[#024BAB] text-white"
                                     : "bg-white text-black",
@@ -700,7 +700,7 @@ export default function QuotationsPage() {
                 <div>
                   <div className="flex items-center gap-3 mb-3 pb-2 border-b-2 border-black">
                     <div className="w-1 h-5 bg-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black">
                       Quotation Details
                     </p>
                   </div>
@@ -739,7 +739,7 @@ export default function QuotationsPage() {
                   <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-black">
                     <div className="flex items-center gap-3">
                       <div className="w-1 h-5 bg-primary" />
-                      <p className="text-xs font-black uppercase tracking-widest text-black">
+                      <p className="text-xs font-medium uppercase tracking-widest text-black">
                         Line Items
                       </p>
                     </div>
@@ -751,23 +751,23 @@ export default function QuotationsPage() {
                           { name: "", hsnCode: "", price: 0, quantity: 1 },
                         ])
                       }
-                      className="border-2 bg-primary text-white px-3 py-1 text-xs font-black"
+                      className="border-2 bg-primary text-white px-3 py-1 text-xs font-medium"
                     >
                       + Add Item
                     </button>
                   </div>
                   <div className="border-2 border-black bg-white overflow-x-auto">
                     <div className="grid grid-cols-12 gap-0 border-b-2 border-black bg-primary min-w-[480px]">
-                      <div className="col-span-4 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
+                      <div className="col-span-4 px-3 py-2 text-[10px] font-medium text-white uppercase tracking-widest border-r-2 border-white/20">
                         Description
                       </div>
-                      <div className="col-span-2 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
+                      <div className="col-span-2 px-3 py-2 text-[10px] font-medium text-white uppercase tracking-widest border-r-2 border-white/20">
                         HSN/SAC
                       </div>
-                      <div className="col-span-3 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
+                      <div className="col-span-3 px-3 py-2 text-[10px] font-medium text-white uppercase tracking-widest border-r-2 border-white/20">
                         Price ₹
                       </div>
-                      <div className="col-span-2 px-3 py-2 text-[10px] font-black text-white uppercase tracking-widest border-r-2 border-white/20">
+                      <div className="col-span-2 px-3 py-2 text-[10px] font-medium text-white uppercase tracking-widest border-r-2 border-white/20">
                         Qty
                       </div>
                       <div className="col-span-1" />
@@ -827,7 +827,7 @@ export default function QuotationsPage() {
                             }
                             placeholder="0"
                             required
-                            className="w-full px-3 py-2.5 text-sm font-bold bg-white outline-none focus:bg-[#FFDE00]/20"
+                            className="w-full px-3 py-2.5 text-sm font-medium bg-white outline-none focus:bg-[#FFDE00]/20"
                           />
                         </div>
                         <div className="col-span-2 border-r-2 border-black">
@@ -844,7 +844,7 @@ export default function QuotationsPage() {
                             }
                             placeholder="1"
                             required
-                            className="w-full px-3 py-2.5 text-sm font-bold bg-white outline-none focus:bg-[#FFDE00]/20"
+                            className="w-full px-3 py-2.5 text-sm font-medium bg-white outline-none focus:bg-[#FFDE00]/20"
                           />
                         </div>
                         <div className="col-span-1 flex items-center justify-center">
@@ -857,7 +857,7 @@ export default function QuotationsPage() {
                                 setField("services", s);
                               }
                             }}
-                            className="w-6 h-6 border-2 border-black bg-[#F82B2B] text-white text-xs font-black hover:bg-red-600 transition-colors flex items-center justify-center"
+                            className="w-6 h-6 border-2 border-black bg-[#F82B2B] text-white text-xs font-medium hover:bg-red-600 transition-colors flex items-center justify-center"
                           >
                             ×
                           </button>
@@ -869,16 +869,16 @@ export default function QuotationsPage() {
                   {}
                   <div className="mt-3 border-2 border-black bg-white">
                     <div className="flex justify-between items-center px-4 py-2 border-b border-black/20">
-                      <span className="text-xs font-black uppercase tracking-widest text-black">
+                      <span className="text-xs font-medium uppercase tracking-widest text-black">
                         Subtotal
                       </span>
-                      <span className="text-sm font-black text-black">
+                      <span className="text-sm font-medium text-black">
                         ₹{subtotal.toLocaleString("en-IN")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center px-4 py-2 border-b border-black/20">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-black">
+                        <span className="text-xs font-medium uppercase tracking-widest text-black">
                           Discount
                         </span>
                         <input
@@ -888,18 +888,18 @@ export default function QuotationsPage() {
                           onChange={(e) =>
                             setField("discount", Number(e.target.value))
                           }
-                          className="w-24 border-2 border-black px-2 py-1 text-xs font-bold outline-none focus:ring-2 focus:ring-[#024BAB] bg-white"
+                          className="w-24 border-2 border-black px-2 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-[#024BAB] bg-white"
                         />
                       </div>
-                      <span className="text-sm font-black text-black">
+                      <span className="text-sm font-medium text-black">
                         −₹{discount.toLocaleString("en-IN")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center px-4 py-2 border-b border-black/20">
-                      <span className="text-xs font-black uppercase tracking-widest text-black">
+                      <span className="text-xs font-medium uppercase tracking-widest text-black">
                         GST 18%
                       </span>
-                      <span className="text-sm font-black text-black">
+                      <span className="text-sm font-medium text-black">
                         ₹
                         {tax.toLocaleString("en-IN", {
                           maximumFractionDigits: 2,
@@ -907,10 +907,10 @@ export default function QuotationsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center px-4 py-2.5 bg-[#024BAB]">
-                      <span className="text-xs font-black uppercase tracking-widest text-white">
+                      <span className="text-xs font-medium uppercase tracking-widest text-white">
                         Total
                       </span>
-                      <span className="text-lg font-black text-white">
+                      <span className="text-lg font-medium text-white">
                         ₹
                         {total.toLocaleString("en-IN", {
                           maximumFractionDigits: 2,
@@ -923,19 +923,19 @@ export default function QuotationsPage() {
                 {}
                 <div className="w-48">
                   <div className="space-y-1">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                    <label className="block text-[10px] font-medium uppercase tracking-widest text-black">
                       Status
                     </label>
                     <Select
                       value={formData.status}
                       onValueChange={(v) => setField("status", v)}
                     >
-                      <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 bg-white font-bold h-10">
+                      <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 bg-white font-medium h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="border-2 border-black rounded-lg">
                         {["Draft", "Sent", "Approved", "Rejected"].map((s) => (
-                          <SelectItem key={s} value={s} className="font-bold">
+                          <SelectItem key={s} value={s} className="font-medium">
                             {s}
                           </SelectItem>
                         ))}
@@ -952,7 +952,7 @@ export default function QuotationsPage() {
                   disabled={
                     !formData.clientName || !formData.projectTitle || saving
                   }
-                  className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm font-black flex items-center gap-1.5 disabled:opacity-50"
+                  className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {previewingId === "new" ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -965,14 +965,14 @@ export default function QuotationsPage() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="border-2 bg-white text-black px-4 py-2 text-sm font-bold"
+                    className="border-2 bg-white text-black px-4 py-2 text-sm font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                    className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                   >
                     {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                     {editingQId ? "Update Quotation" : "Save Quotation"}
@@ -1047,7 +1047,7 @@ export default function QuotationsPage() {
                   <th
                     key={i}
                     className={cn(
-                      "px-4 py-3 text-[10px] font-black text-white uppercase tracking-widest whitespace-nowrap",
+                      "px-4 py-3 text-[10px] font-medium text-white uppercase tracking-widest whitespace-nowrap",
                       i >= 6 ? "text-right" : "text-left",
                     )}
                   >
@@ -1061,7 +1061,7 @@ export default function QuotationsPage() {
                 <tr>
                   <td colSpan={12} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black/30 mt-2">
                       Loading...
                     </p>
                   </td>
@@ -1070,7 +1070,7 @@ export default function QuotationsPage() {
                 <tr>
                   <td
                     colSpan={12}
-                    className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
+                    className="text-center py-14 text-sm font-medium uppercase tracking-widest text-black/30"
                   >
                     No quotations found.
                   </td>
@@ -1085,7 +1085,7 @@ export default function QuotationsPage() {
                     )}
                   >
                     <td className="px-5 py-3.5">
-                      <p className="font-black text-black text-sm">
+                      <p className="font-medium text-black text-sm">
                         {q.number}
                       </p>
                       <p className="text-xs text-black/50 font-medium">
@@ -1093,7 +1093,7 @@ export default function QuotationsPage() {
                       </p>
                     </td>
                     <td className="px-4 py-3.5">
-                      <p className="font-black text-black text-sm">
+                      <p className="font-medium text-black text-sm">
                         {q.clientName}
                       </p>
                       <p className="text-xs text-black/50">{q.companyName}</p>
@@ -1107,7 +1107,7 @@ export default function QuotationsPage() {
                     <td className="px-4 py-3.5 text-xs font-mono whitespace-nowrap">
                       {q.gst || <span className="text-black/30">—</span>}
                     </td>
-                    <td className="px-4 py-3.5 text-xs font-bold max-w-[180px]">
+                    <td className="px-4 py-3.5 text-xs font-medium max-w-[180px]">
                       <p className="truncate">{q.projectTitle}</p>
                       {q.leadTag && (
                         <p className="text-black/50 font-medium">{q.leadTag}</p>
@@ -1119,7 +1119,7 @@ export default function QuotationsPage() {
                         .map((s: any) => `${s.name} x${s.quantity}`)
                         .join("\n")}
                     >
-                      <p className="font-black">
+                      <p className="font-medium">
                         {(q.services || []).length} item
                         {(q.services || []).length === 1 ? "" : "s"}
                       </p>
@@ -1138,16 +1138,16 @@ export default function QuotationsPage() {
                         `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
                       return (
                         <>
-                          <td className="px-4 py-3.5 text-right text-xs font-bold whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-right text-xs font-medium whitespace-nowrap">
                             {money(sub)}
                           </td>
-                          <td className="px-4 py-3.5 text-right text-xs font-bold whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-right text-xs font-medium whitespace-nowrap">
                             {money(disc)}
                           </td>
-                          <td className="px-4 py-3.5 text-right text-xs font-bold whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-right text-xs font-medium whitespace-nowrap">
                             {money((sub - disc) * 0.18)}
                           </td>
-                          <td className="px-4 py-3.5 text-right font-black text-black text-sm whitespace-nowrap">
+                          <td className="px-4 py-3.5 text-right font-medium text-black text-sm whitespace-nowrap">
                             {money(quotationTotal(q))}
                           </td>
                         </>
@@ -1156,7 +1156,7 @@ export default function QuotationsPage() {
                     <td className="px-5 py-3.5 text-right">
                       <span
                         className={cn(
-                          "text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider",
+                          "text-[10px] font-medium px-2 py-1 border-2 uppercase tracking-wider",
                           STATUS_NB[q.status] ||
                             "bg-white text-black border-black",
                         )}
@@ -1177,7 +1177,7 @@ export default function QuotationsPage() {
                         >
                           <DropdownMenuItem
                             onClick={() => handleDownloadPDF(q)}
-                            className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
+                            className="font-medium text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
                           >
                             {printingId === (q._id || q.id) ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1188,7 +1188,7 @@ export default function QuotationsPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handlePreviewPDF(q)}
-                            className="font-bold text-black hover:bg-[#FFDE00] hover:text-black focus:bg-[#FFDE00] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                            className="font-medium text-black hover:bg-[#FFDE00] hover:text-black focus:bg-[#FFDE00] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
                           >
                             {previewingId === (q._id || q.id) ? (
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1199,14 +1199,14 @@ export default function QuotationsPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setSendingQ(q)}
-                            className="font-bold text-black hover:bg-[#00C48C] hover:text-black focus:bg-[#00C48C] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                            className="font-medium text-black hover:bg-[#00C48C] hover:text-black focus:bg-[#00C48C] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
                           >
                             <Send className="w-4 h-4 mr-2" /> Send on WhatsApp
                           </DropdownMenuItem>
                           {can("Quotations", "update") && (
                             <DropdownMenuItem
                               onClick={() => handleEditClick(q)}
-                              className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
+                              className="font-medium text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
                             >
                               <Pencil className="w-4 h-4 mr-2" /> Edit
                             </DropdownMenuItem>
@@ -1214,7 +1214,7 @@ export default function QuotationsPage() {
                           {can("Quotations", "delete") && (
                             <DropdownMenuItem
                               onClick={() => handleDeleteClick(q._id || q.id)}
-                              className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
+                              className="font-medium text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
                             >
                               <Trash2 className="w-4 h-4 mr-2" /> Delete
                             </DropdownMenuItem>
@@ -1237,12 +1237,12 @@ export default function QuotationsPage() {
       >
         <DialogContent className="sm:max-w-[950px] w-[95vw] h-[92vh] p-0 flex flex-col gap-0 border-2 border-black rounded-lg shadow-[6px_6px_0px_#000] overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 border-b-2 border-black bg-[#024BAB]">
-            <span className="text-white font-black uppercase tracking-widest text-sm">
+            <span className="text-white font-medium uppercase tracking-widest text-sm">
               Quotation Preview
             </span>
             <button
               onClick={() => window.print()}
-              className="border-2 bg-[#FFDE00] text-black px-4 py-1.5 text-xs font-black"
+              className="border-2 bg-[#FFDE00] text-black px-4 py-1.5 text-xs font-medium"
             >
               Print
             </button>

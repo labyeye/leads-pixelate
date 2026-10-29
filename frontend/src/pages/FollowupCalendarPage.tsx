@@ -176,7 +176,7 @@ export default function FollowupCalendarPage() {
         {}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-medium text-foreground">
               Follow-up Calendar
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -229,7 +229,7 @@ export default function FollowupCalendarPage() {
           <div className="flex-1 flex flex-col bg-card rounded-xl border border-border p-6 overflow-hidden">
             {}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">
+              <h2 className="text-xl font-medium">
                 {format(currentDate, "MMMM yyyy")}
               </h2>
               <div className="flex gap-2">
@@ -284,7 +284,7 @@ export default function FollowupCalendarPage() {
                     (day) => (
                       <div
                         key={day}
-                        className="text-center font-bold text-sm text-muted-foreground py-2"
+                        className="text-center font-medium text-sm text-muted-foreground py-2"
                       >
                         {day}
                       </div>
@@ -321,7 +321,7 @@ export default function FollowupCalendarPage() {
                       >
                         <span
                           className={cn(
-                            "text-xs font-bold mb-1",
+                            "text-xs font-medium mb-1",
                             isCurrentDay
                               ? "text-primary"
                               : "text-muted-foreground",
@@ -334,9 +334,9 @@ export default function FollowupCalendarPage() {
                             <div
                               key={lead._id}
                               className={cn(
-                                "rounded px-1.5 py-1 text-[10px] font-bold truncate hover:opacity-90 shadow-sm",
+                                "rounded px-1.5 py-1 text-[10px] font-medium truncate hover:opacity-90 shadow-sm",
                                 getStatusColorClasses(lead.status) ||
-                                  "bg-gray-300 text-slate-900 font-semibold",
+                                  "bg-gray-300 text-slate-900 font-medium",
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -350,7 +350,7 @@ export default function FollowupCalendarPage() {
                             </div>
                           ))}
                           {dayLeads.length > 2 && (
-                            <div className="text-[9px] text-muted-foreground font-semibold italic px-1">
+                            <div className="text-[9px] text-muted-foreground font-medium italic px-1">
                               +{dayLeads.length - 2} more
                             </div>
                           )}

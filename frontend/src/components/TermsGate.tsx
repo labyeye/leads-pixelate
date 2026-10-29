@@ -58,7 +58,7 @@ export default function TermsGate() {
   }
 
   const link = (page: string, hash = "") => `${SITE}/${page}.html${hash}`;
-  const h = "font-semibold text-gray-900 mt-4 mb-1";
+  const h = "font-medium text-gray-900 mt-4 mb-1";
   const ul = "list-disc pl-5 space-y-1";
 
   return (
@@ -92,7 +92,7 @@ export default function TermsGate() {
             className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-lg bg-white text-gray-700 shadow-2xl"
           >
             <div className="border-b px-5 py-4">
-              <h2 className="text-lg font-bold text-gray-900">Terms &amp; Privacy Policy — {PRODUCT.name}</h2>
+              <h2 className="text-lg font-medium text-gray-900">Terms &amp; Privacy Policy — {PRODUCT.name}</h2>
               <p className="text-xs text-gray-500">Version {status!.version} · Pixelate Nest (Kalahanu Tech Studios LLP)</p>
             </div>
 
@@ -182,7 +182,7 @@ export default function TermsGate() {
                   type="button"
                   disabled={!agree || busy}
                   onClick={accept}
-                  className="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className="rounded bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                 >
                   {busy ? "Saving…" : "Accept & continue"}
                 </button>

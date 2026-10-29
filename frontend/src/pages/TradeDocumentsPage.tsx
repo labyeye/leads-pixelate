@@ -317,7 +317,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
     0,
   );
   const cardBtn =
-    "flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40";
+    "flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40";
 
   return (
     <AppLayout title={cfg.title}>
@@ -378,7 +378,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
             aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 border-2 border-black px-3 text-xs font-black uppercase tracking-widest bg-white outline-none cursor-pointer"
+            className="h-10 border-2 border-black px-3 text-xs font-medium uppercase tracking-widest bg-white outline-none cursor-pointer"
           >
             <option value="all">All statuses</option>
             {cfg.statuses.map((s) => (
@@ -412,7 +412,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
               key={d._id}
               className="border-b border-gray-200 hover:bg-gray-50"
             >
-              <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+              <td className="px-4 py-3 font-medium text-black whitespace-nowrap">
                 {d.number}
               </td>
               <td className="px-4 py-3">
@@ -427,7 +427,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
               <td className="px-4 py-3 whitespace-nowrap">
                 {fmtDate(d.dueDate)}
               </td>
-              <td className="px-4 py-3 font-black whitespace-nowrap">
+              <td className="px-4 py-3 font-medium whitespace-nowrap">
                 {money(d.total)}
               </td>
               <td className="px-4 py-3">
@@ -629,7 +629,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                       </div>
                       {stock && kind !== "invoice" && (
                         <p
-                          className={`text-[11px] mt-0.5 ${short ? "text-red-600 font-bold" : "text-gray-500"}`}
+                          className={`text-[11px] mt-0.5 ${short ? "text-red-600 font-medium" : "text-gray-500"}`}
                         >
                           {short ? "Only " : "In stock: "}
                           {stock.stockQuantity ?? 0} {stock.unit || "pcs"}
@@ -645,7 +645,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                 onClick={() =>
                   setForm({ ...form, items: [...form.items, { ...blankItem }] })
                 }
-                className="mt-2 inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[#024BAB]"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-medium uppercase tracking-widest text-[#024BAB]"
               >
                 <Plus className="w-3.5 h-3.5" /> Add item
               </button>
@@ -705,7 +705,7 @@ export default function TradeDocumentsPage({ kind }: { kind: TradeKind }) {
                 <dt>GST</dt>
                 <dd>{money(totals.tax)}</dd>
               </div>
-              <div className="flex justify-between font-black border-t border-black pt-1">
+              <div className="flex justify-between font-medium border-t border-black pt-1">
                 <dt>Total</dt>
                 <dd>{money(totals.total)}</dd>
               </div>

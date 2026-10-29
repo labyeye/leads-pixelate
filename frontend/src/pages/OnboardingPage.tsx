@@ -216,7 +216,7 @@ export default function OnboardingPage() {
             <Zap className="w-4 h-4 text-black fill-black" />
           </div>
           <div>
-            <span className="font-display font-bold text-black text-base block leading-tight">
+            <span className="font-display font-medium text-black text-base block leading-tight">
               NestLeads
             </span>
             {tenant?.name && (
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
         </div>
         <button
           onClick={logout}
-          className="flex items-center gap-2 text-xs font-bold text-black hover:text-red-600 transition-colors border-2 border-transparent hover:border-black px-3 py-1.5"
+          className="flex items-center gap-2 text-xs font-medium text-black hover:text-red-600 transition-colors border-2 border-transparent hover:border-black px-3 py-1.5"
         >
           <LogOut className="w-3.5 h-3.5" /> Sign out
         </button>
@@ -237,11 +237,11 @@ export default function OnboardingPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-[#024BAB] border-2 border-black px-4 py-1.5 nb-shadow-sm mb-4">
-            <span className="text-xs font-bold text-black uppercase tracking-wider">
+            <span className="text-xs font-medium text-black uppercase tracking-wider">
               Step 2 of 2 — Choose your plan
             </span>
           </div>
-          <h1 className="font-display font-bold text-3xl sm:text-4xl text-black mb-3">
+          <h1 className="font-display font-medium text-3xl sm:text-4xl text-black mb-3">
             Select a plan to get started
           </h1>
           <p className="text-muted-foreground text-base max-w-md mx-auto">
@@ -255,7 +255,7 @@ export default function OnboardingPage() {
             <button
               onClick={() => setBilling("monthly")}
               className={cn(
-                "px-5 py-2.5 text-sm font-bold transition-colors",
+                "px-5 py-2.5 text-sm font-medium transition-colors",
                 billing === "monthly"
                   ? "bg-[#024BAB] text-white"
                   : "bg-white text-black hover:bg-[#024BAB]/20",
@@ -266,14 +266,14 @@ export default function OnboardingPage() {
             <button
               onClick={() => setBilling("yearly")}
               className={cn(
-                "px-5 py-2.5 text-sm font-bold transition-colors border-l-2 border-black flex items-center gap-2",
+                "px-5 py-2.5 text-sm font-medium transition-colors border-l-2 border-black flex items-center gap-2",
                 billing === "yearly"
                   ? "bg-[#024BAB] text-white"
                   : "bg-white text-black hover:bg-[#024BAB]/20",
               )}
             >
               Yearly
-              <span className="bg-[#00C48C] text-black border border-black px-1.5 py-0.5 text-[10px] font-bold">
+              <span className="bg-[#00C48C] text-black border border-black px-1.5 py-0.5 text-[10px] font-medium">
                 2 months free
               </span>
             </button>
@@ -305,7 +305,7 @@ export default function OnboardingPage() {
                 }
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                  <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-medium text-white uppercase tracking-wider">
                     Most Popular
                   </div>
                 )}
@@ -324,10 +324,10 @@ export default function OnboardingPage() {
                   )}
                 </div>
 
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                   {plan.employees} employees
                 </span>
-                <h3 className="font-display font-bold text-base text-black mb-0.5 leading-tight">
+                <h3 className="font-display font-medium text-base text-black mb-0.5 leading-tight">
                   {plan.name}
                 </h3>
                 <p className="text-[11px] text-muted-foreground mb-3 leading-snug">
@@ -336,12 +336,12 @@ export default function OnboardingPage() {
 
                 <div className="mb-3">
                   {plan.custom ? (
-                    <span className="font-display font-bold text-2xl text-black">
+                    <span className="font-display font-medium text-2xl text-black">
                       Custom
                     </span>
                   ) : (
                     <>
-                      <span className="font-display font-bold text-2xl text-black">
+                      <span className="font-display font-medium text-2xl text-black">
                         ₹{planPrice!.toLocaleString()}
                       </span>
                       <span className="text-xs text-muted-foreground font-medium">
@@ -373,7 +373,7 @@ export default function OnboardingPage() {
         <div className="max-w-md mx-auto">
           <div className="nb-card bg-white p-5 mb-4">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-black">
+              <span className="text-sm font-medium text-black">
                 {currentPlan.name} Plan ·{" "}
                 {isCustom
                   ? "Custom"
@@ -382,11 +382,11 @@ export default function OnboardingPage() {
                     : "Monthly"}
               </span>
               {isCustom ? (
-                <span className="font-display font-bold text-xl text-black">
+                <span className="font-display font-medium text-xl text-black">
                   Custom
                 </span>
               ) : (
-                <span className="font-display font-bold text-xl text-black">
+                <span className="font-display font-medium text-xl text-black">
                   ₹{price!.toLocaleString()}
                   <span className="text-sm font-medium text-muted-foreground">
                     /mo
@@ -396,10 +396,10 @@ export default function OnboardingPage() {
             </div>
             {!isCustom && billing === "yearly" && (
               <div className="bg-[#A3E635]/20 border-2 border-[#A3E635] px-3 py-2 flex items-center justify-between">
-                <span className="text-xs font-bold text-black">
+                <span className="text-xs font-medium text-black">
                   Yearly saving
                 </span>
-                <span className="text-xs font-bold text-[#16A34A]">
+                <span className="text-xs font-medium text-[#16A34A]">
                   ₹{yearlySaving.toLocaleString()} / year
                 </span>
               </div>
@@ -414,7 +414,7 @@ export default function OnboardingPage() {
           {isCustom ? (
             <a
               href="mailto:sales@pixelatenest.com"
-              className="nb-btn w-full bg-[#A855F7] text-white py-4 text-base font-bold flex items-center justify-center gap-3"
+              className="nb-btn w-full bg-[#A855F7] text-white py-4 text-base font-medium flex items-center justify-center gap-3"
             >
               Contact Sales →
             </a>
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
             <button
               onClick={handlePay}
               disabled={paying}
-              className="nb-btn w-full bg-[#024BAB] text-white py-4 text-base font-bold flex items-center justify-center gap-3"
+              className="nb-btn w-full bg-[#024BAB] text-white py-4 text-base font-medium flex items-center justify-center gap-3"
             >
               {paying ? (
                 <>

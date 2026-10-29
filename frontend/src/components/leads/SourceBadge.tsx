@@ -87,7 +87,7 @@ export function SourceBadge({ source, size = "md" }: SourceBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 font-bold border uppercase tracking-wide leading-none",
+        "inline-flex items-center gap-1 font-medium border uppercase tracking-wide leading-none",
         cfg.bg,
         cfg.text,
         cfg.border,

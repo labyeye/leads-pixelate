@@ -155,7 +155,7 @@ export default function AutopilotReportTab({
                   <Text
                     style={[
                       s.legendText,
-                      { flex: 1, fontWeight: '800', color: '#000' },
+                      { flex: 1, fontWeight: '500', color: '#000' },
                     ]}
                     numberOfLines={1}
                   >
@@ -301,7 +301,7 @@ export default function AutopilotReportTab({
 }
 
 const s = StyleSheet.create({
-  scope: { fontSize: 16, fontWeight: '600', color: '#000', marginBottom: 6 },
+  scope: { fontSize: 16, fontWeight: '500', color: '#000', marginBottom: 6 },
   cmpRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -333,11 +333,11 @@ const s = StyleSheet.create({
   },
   tileLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#475569',
   },
-  tileValue: { fontSize: 24, fontWeight: '600', color: '#000', marginTop: 2 },
+  tileValue: { fontSize: 24, fontWeight: '500', color: '#000', marginTop: 2 },
   tileHint: { fontSize: 11, color: '#64748b' },
   muted: { fontSize: 12, color: '#64748b' },
   error: { fontSize: 13, color: '#b91c1c', marginTop: 12 },
@@ -353,7 +353,7 @@ const s = StyleSheet.create({
   legendText: { fontSize: 12, color: '#334155' },
   legendValue: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     marginLeft: 'auto',
   },

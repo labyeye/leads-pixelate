@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
   },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
@@ -429,10 +429,10 @@ const styles = StyleSheet.create({
   },
   summaryChipText: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
-  summaryChipCount: { fontSize: 13, fontWeight: '600' },
+  summaryChipCount: { fontSize: 13, fontWeight: '500' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 12, gap: 10 },
   card: {
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardInfo: { flex: 1 },
-  projectTitle: { fontSize: 14, fontWeight: '600', color: '#000' },
+  projectTitle: { fontSize: 14, fontWeight: '500', color: '#000' },
   clientName: { fontSize: 11, color: '#64748b' },
   statusBadge: {
     paddingHorizontal: 8,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  statusText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+  statusText: { fontSize: 10, fontWeight: '500', textTransform: 'uppercase' },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     backgroundColor: '#f8fafc',
   },
-  totalText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  totalText: { fontSize: 14, fontWeight: '500', color: '#000' },
   deleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -505,8 +505,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
   },
-  deleteBtnText: { fontSize: 12, fontWeight: '700', color: '#EF4444' },
+  deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptySub: { fontSize: 12, color: '#cbd5e1' },
 });

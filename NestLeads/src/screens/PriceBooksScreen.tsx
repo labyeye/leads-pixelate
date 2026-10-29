@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   addBtn: {
     marginLeft: 'auto' as any,
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  addBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  addBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
   searchRow: { paddingHorizontal: 12, paddingVertical: 10 },
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardInfo: { flex: 1 },
-  bookName: { fontSize: 14, fontWeight: '600', color: '#000' },
+  bookName: { fontSize: 14, fontWeight: '500', color: '#000' },
   bookDesc: { fontSize: 12, color: '#64748b', marginTop: 1 },
   statusBox: {
     borderWidth: 2,
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  statusText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+  statusText: { fontSize: 10, fontWeight: '500', textTransform: 'uppercase' },
   countText: { fontSize: 11, color: '#64748b', marginBottom: 8 },
   cardActions: {
     flexDirection: 'row',
@@ -559,9 +559,9 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
   },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  editBtnText: { fontSize: 12, fontWeight: '700', color: PRIMARY },
+  editBtnText: { fontSize: 12, fontWeight: '500', color: PRIMARY },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  deleteBtnText: { fontSize: 12, fontWeight: '700', color: '#EF4444' },
+  deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
     width: 80,
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#94a3b8',
     textAlign: 'center',
     paddingHorizontal: 30,
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  emptyAddBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  emptyAddBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#000' },
+  modalTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#000' },
   modalClose: {
     width: 32,
     height: 32,
@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
   modalBody: { padding: 16 },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   statusChipActive: { borderColor: PRIMARY, backgroundColor: '#eff6ff' },
-  statusChipText: { fontSize: 11, fontWeight: '800', color: '#64748b' },
+  statusChipText: { fontSize: 11, fontWeight: '500', color: '#64748b' },
   statusChipTextActive: { color: PRIMARY },
   priceRow: {
     flexDirection: 'row',
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
     maxWidth: 140,
   },
   productChipActive: { borderColor: PRIMARY, backgroundColor: '#eff6ff' },
-  productChipText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+  productChipText: { fontSize: 11, fontWeight: '500', color: '#64748b' },
   productChipTextActive: { color: PRIMARY },
   removeItemBtn: {
     width: 32,
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   },
   addItemBtnText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: PRIMARY,
     textTransform: 'uppercase',
   },
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  cancelBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   saveBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -733,5 +733,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  saveBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
 });

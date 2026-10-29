@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 36,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 4,
     marginTop: 26,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 20,
   },
-  bold: { fontWeight: '800', color: '#000' },
+  bold: { fontWeight: '500', color: '#000' },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,11 +445,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 16,
   },
-  errorText: { fontSize: 13, color: '#EF4444', fontWeight: '600', flex: 1 },
+  errorText: { fontSize: 13, color: '#EF4444', fontWeight: '500', flex: 1 },
   fieldGroup: { marginBottom: 16 },
   label: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#000',
     marginBottom: 6,
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   submitText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#fff',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 8,
   },
-  backLinkText: { fontSize: 13, fontWeight: '700', color: '#024BAB' },
+  backLinkText: { fontSize: 13, fontWeight: '500', color: '#024BAB' },
   methodRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  methodTitle: { fontSize: 14, fontWeight: '700', color: '#000' },
+  methodTitle: { fontSize: 14, fontWeight: '500', color: '#000' },
   methodSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   successBlock: { alignItems: 'center', gap: 4 },
   successIcon: {

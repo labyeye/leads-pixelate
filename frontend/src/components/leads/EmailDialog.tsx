@@ -163,7 +163,7 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
               <Mail className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-sm">
+              <p className="font-medium text-sm">
                 Connect your Gmail account
               </p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -187,7 +187,7 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
         ) : !lead?.email ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 p-8 text-center">
             <Mail className="w-8 h-8 text-muted-foreground" />
-            <p className="text-sm font-semibold">No email address on file</p>
+            <p className="text-sm font-medium">No email address on file</p>
             <p className="text-xs text-muted-foreground">
               Add an email to this lead before sending.
             </p>
@@ -243,7 +243,7 @@ export function EmailDialog({ open, onClose, lead, toast }: EmailDialogProps) {
                     )}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold">
+                      <span className="text-xs font-medium">
                         {email.direction === "outbound" ? "You" : lead?.name}
                       </span>
                       <span className="text-[10px] text-muted-foreground">

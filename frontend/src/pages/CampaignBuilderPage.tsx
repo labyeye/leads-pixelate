@@ -280,7 +280,7 @@ export default function CampaignBuilderPage() {
             <Megaphone className="w-4 h-4 text-orange-600" />
           </div>
           <div>
-            <h1 className="text-base font-semibold">
+            <h1 className="text-base font-medium">
               {isEdit ? "Edit Campaign" : "New Campaign"}
             </h1>
             <p className="text-xs text-muted-foreground">Step {step} of 4</p>
@@ -374,7 +374,7 @@ export default function CampaignBuilderPage() {
                       onClick={() => setTargetType(id as any)}
                       className={`flex-1 text-left p-3 rounded-xl border-2 transition-all ${targetType === id ? "border-orange-400 bg-orange-50" : "border-border hover:border-muted-foreground/30"}`}
                     >
-                      <p className="text-sm font-semibold">{label}</p>
+                      <p className="text-sm font-medium">{label}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {desc}
                       </p>
@@ -449,7 +449,7 @@ export default function CampaignBuilderPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-100 rounded-lg">
                       <Users className="w-4 h-4 text-orange-600" />
-                      <span className="text-sm font-bold text-orange-700">
+                      <span className="text-sm font-medium text-orange-700">
                         {audiencePreview.count}
                       </span>
                       <span className="text-sm text-orange-600">
@@ -466,7 +466,7 @@ export default function CampaignBuilderPage() {
                             key={i}
                             className="flex items-center gap-2 text-xs py-1 border-b border-border last:border-0"
                           >
-                            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground">
+                            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium text-muted-foreground">
                               {contact.name?.[0]?.toUpperCase()}
                             </div>
                             <span className="font-medium">{contact.name}</span>
@@ -508,7 +508,7 @@ export default function CampaignBuilderPage() {
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex gap-3">
                   <AlertCircle className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" />
                   <div className="text-xs text-yellow-700">
-                    <p className="font-semibold mb-1">
+                    <p className="font-medium mb-1">
                       No WhatsApp templates found
                     </p>
                     <p>
@@ -531,7 +531,7 @@ export default function CampaignBuilderPage() {
                           className={`w-full text-left p-3 rounded-xl border-2 transition-all ${selectedTemplateId === t._id ? "border-orange-400 bg-orange-50" : "border-border hover:border-muted-foreground/30"}`}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-semibold">
+                            <p className="text-sm font-medium">
                               {t.displayName || t.name}
                             </p>
                             {selectedTemplateId === t._id && (
@@ -645,7 +645,7 @@ export default function CampaignBuilderPage() {
           {/* ─── Step 4: Review ───────────────────────────────────────── */}
           {step === 4 && (
             <>
-              <p className="text-sm font-semibold">Campaign Summary</p>
+              <p className="text-sm font-medium">Campaign Summary</p>
 
               <div className="bg-muted/30 rounded-xl p-4 space-y-3">
                 <ReviewRow label="Name" value={name} />
@@ -704,7 +704,7 @@ export default function CampaignBuilderPage() {
                   <div className="bg-[#ECE5DD] rounded-xl p-4">
                     <div className="bg-white rounded-xl p-3 max-w-xs shadow-sm text-xs text-gray-800 whitespace-pre-wrap">
                       {selectedTemplate.headerText && (
-                        <p className="font-bold mb-1">
+                        <p className="font-medium mb-1">
                           {selectedTemplate.headerText}
                         </p>
                       )}

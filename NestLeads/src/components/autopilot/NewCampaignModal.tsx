@@ -119,7 +119,7 @@ const s = StyleSheet.create({
     padding: 16,
     ...NB_SHADOW,
   },
-  title: { fontSize: 17, fontWeight: '800', color: '#000' },
+  title: { fontSize: 17, fontWeight: '500', color: '#000' },
   sub: { fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 10 },
   input: {
     borderWidth: 2,
@@ -149,5 +149,5 @@ const s = StyleSheet.create({
     minWidth: 96,
     alignItems: 'center',
   },
-  btnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  btnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
 });

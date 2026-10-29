@@ -178,7 +178,7 @@ export function BrandProfileEditor({
 
       <div className="space-y-4 rounded-lg border-2 border-black/20 p-3">
         <div>
-          <p className="text-sm font-semibold">Against your competitors</p>
+          <p className="text-sm font-medium">Against your competitors</p>
           <p className="text-xs text-muted-foreground">
             Filled in by the scan when you add competitors. Autopilot uses it to
             stand apart, never to copy them.

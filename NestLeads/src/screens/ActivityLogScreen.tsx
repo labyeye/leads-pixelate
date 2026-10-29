@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { flex: 1, fontSize: 17, fontWeight: '600', color: '#000' },
+  headerTitle: { flex: 1, fontSize: 17, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   deniedBox: {
     flex: 1,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: '#fff',
   },
-  deniedText: { fontSize: 13, color: '#94a3b8', fontWeight: '700' },
+  deniedText: { fontSize: 13, color: '#94a3b8', fontWeight: '500' },
   filters: {
     padding: 12,
     gap: 8,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
-  filterChipText: { fontSize: 11, fontWeight: '800', color: '#000' },
+  filterChipText: { fontSize: 11, fontWeight: '500', color: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   feed: { padding: 12 },
   emptyText: {
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   timestamp: { fontFamily: 'monospace', fontSize: 10, color: '#4b5563' },
-  action: { fontFamily: 'monospace', fontSize: 12, fontWeight: '600' },
+  action: { fontFamily: 'monospace', fontSize: 12, fontWeight: '500' },
   module: { fontFamily: 'monospace', fontSize: 12, color: '#9ca3af' },
   desc: {
     fontFamily: 'monospace',
@@ -367,5 +367,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  pickerRowText: { fontSize: 13, color: '#000', fontWeight: '600' },
+  pickerRowText: { fontSize: 13, color: '#000', fontWeight: '500' },
 });

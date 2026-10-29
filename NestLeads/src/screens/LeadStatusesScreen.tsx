@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '500', color: '#000' },
   saveBtn: {
     backgroundColor: '#024BAB',
     borderWidth: 2,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     minWidth: 64,
     alignItems: 'center',
   },
-  saveBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { padding: 16, gap: 16 },
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   categoryBlock: { gap: 8 },
   categoryTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -338,5 +338,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     justifyContent: 'center',
   },
-  addStageBtnText: { fontSize: 12, fontWeight: '800', color: '#024BAB' },
+  addStageBtnText: { fontSize: 12, fontWeight: '500', color: '#024BAB' },
 });

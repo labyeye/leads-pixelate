@@ -141,7 +141,7 @@ export default function SupportPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-black">Support</h1>
+            <h1 className="text-2xl font-medium text-black">Support</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Raise a ticket and our support team will respond here.
             </p>
@@ -162,7 +162,7 @@ export default function SupportPage() {
         ) : tickets.length === 0 ? (
           <div className="py-16 text-center border-2 border-dashed border-black">
             <LifeBuoy className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-            <p className="font-semibold text-black">No tickets yet</p>
+            <p className="font-medium text-black">No tickets yet</p>
             <p className="text-sm text-muted-foreground mt-1">
               Raise a ticket if you run into an issue or need help.
             </p>
@@ -179,7 +179,7 @@ export default function SupportPage() {
                   <LifeBuoy className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-black text-sm truncate">
+                  <p className="font-medium text-black text-sm truncate">
                     {ticket.subject}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -200,12 +200,12 @@ export default function SupportPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
-                    className={`text-xs px-2 py-1 border font-semibold capitalize ${PRIORITY_STYLES[ticket.priority]}`}
+                    className={`text-xs px-2 py-1 border font-medium capitalize ${PRIORITY_STYLES[ticket.priority]}`}
                   >
                     {ticket.priority}
                   </span>
                   <span
-                    className={`text-xs px-2 py-1 border font-semibold capitalize ${STATUS_STYLES[ticket.status]}`}
+                    className={`text-xs px-2 py-1 border font-medium capitalize ${STATUS_STYLES[ticket.status]}`}
                   >
                     {ticket.status.replace("_", " ")}
                   </span>
@@ -224,7 +224,7 @@ export default function SupportPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">
+              <label className="text-sm font-medium text-black">
                 Subject
               </label>
               <Input
@@ -235,7 +235,7 @@ export default function SupportPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">
+              <label className="text-sm font-medium text-black">
                 Description
               </label>
               <Textarea
@@ -246,7 +246,7 @@ export default function SupportPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">
+              <label className="text-sm font-medium text-black">
                 Priority
               </label>
               <div className="flex gap-2">
@@ -255,7 +255,7 @@ export default function SupportPage() {
                     key={p}
                     type="button"
                     onClick={() => setPriority(p)}
-                    className={`flex-1 text-xs px-2 py-1.5 border-2 font-semibold capitalize transition-colors ${
+                    className={`flex-1 text-xs px-2 py-1.5 border-2 font-medium capitalize transition-colors ${
                       priority === p
                         ? "bg-[#024BAB] border-black text-white"
                         : "bg-white border-black text-black hover:bg-[#024BAB]/10"
@@ -309,7 +309,7 @@ export default function SupportPage() {
           {selected && isEditing && (
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-black">
+                <label className="text-sm font-medium text-black">
                   Subject
                 </label>
                 <Input
@@ -319,7 +319,7 @@ export default function SupportPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-black">
+                <label className="text-sm font-medium text-black">
                   Description
                 </label>
                 <Textarea
@@ -329,7 +329,7 @@ export default function SupportPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-black">
+                <label className="text-sm font-medium text-black">
                   Priority
                 </label>
                 <div className="flex gap-2">
@@ -338,7 +338,7 @@ export default function SupportPage() {
                       key={p}
                       type="button"
                       onClick={() => setEditPriority(p)}
-                      className={`flex-1 text-xs px-2 py-1.5 border-2 font-semibold capitalize transition-colors ${
+                      className={`flex-1 text-xs px-2 py-1.5 border-2 font-medium capitalize transition-colors ${
                         editPriority === p
                           ? "bg-[#024BAB] border-black text-white"
                           : "bg-white border-black text-black hover:bg-[#024BAB]/10"
@@ -378,12 +378,12 @@ export default function SupportPage() {
                   {selected.ticketId}
                 </span>
                 <span
-                  className={`text-xs px-2 py-1 border font-semibold capitalize ${PRIORITY_STYLES[selected.priority]}`}
+                  className={`text-xs px-2 py-1 border font-medium capitalize ${PRIORITY_STYLES[selected.priority]}`}
                 >
                   {selected.priority}
                 </span>
                 <span
-                  className={`text-xs px-2 py-1 border font-semibold capitalize ${STATUS_STYLES[selected.status]}`}
+                  className={`text-xs px-2 py-1 border font-medium capitalize ${STATUS_STYLES[selected.status]}`}
                 >
                   {selected.status.replace("_", " ")}
                 </span>
@@ -427,7 +427,7 @@ export default function SupportPage() {
 
               {selected.replies?.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Replies
                   </p>
                   {selected.replies.map((reply, i) => (
@@ -439,7 +439,7 @@ export default function SupportPage() {
                           : "border-[#024BAB] bg-[#024BAB]/5 mr-8"
                       }`}
                     >
-                      <p className="font-semibold text-black text-xs mb-1">
+                      <p className="font-medium text-black text-xs mb-1">
                         {reply.senderName ||
                           (reply.from === "crm" ? "You" : "Support Team")}
                       </p>

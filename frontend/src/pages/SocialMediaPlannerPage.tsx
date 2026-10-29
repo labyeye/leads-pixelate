@@ -225,7 +225,7 @@ export default function SocialMediaPlannerPage() {
               <Instagram className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">Social Media Planner</h1>
+              <h1 className="text-xl font-medium">Social Media Planner</h1>
               <p className="text-xs text-muted-foreground">
                 Plan, approve & auto-post to Facebook, Instagram and LinkedIn
               </p>
@@ -288,7 +288,7 @@ export default function SocialMediaPlannerPage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-1 mr-6 text-sm font-bold border-b-2 transition-colors ${
+              className={`py-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === t.id
                   ? "border-primary-900 text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -467,7 +467,7 @@ function PostsTab({
             <button
               key={t.id}
               onClick={() => setFilter(t.id)}
-              className={`px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all border-2 ${
+              className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all border-2 ${
                 filter === t.id
                   ? "border-black bg-primary text-white"
                   : "border-transparent text-muted-foreground hover:border-black hover:bg-accent"
@@ -741,10 +741,10 @@ function CalendarTab({ toast }: { toast: any }) {
     <div className="p-6 overflow-y-auto h-full space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="border-2 border-black bg-[#A855F7] text-white px-3 py-1.5 text-xs font-bold flex items-center gap-1.5">
+          <span className="border-2 border-black bg-[#A855F7] text-white px-3 py-1.5 text-xs font-medium flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" /> {upcomingCount} Upcoming
           </span>
-          <span className="border-2 border-black bg-gray-200 text-black px-3 py-1.5 text-xs font-bold flex items-center gap-1.5">
+          <span className="border-2 border-black bg-gray-200 text-black px-3 py-1.5 text-xs font-medium flex items-center gap-1.5">
             <Pencil className="w-3.5 h-3.5" /> {draftCount} In Draft/Review
           </span>
         </div>
@@ -759,7 +759,7 @@ function CalendarTab({ toast }: { toast: any }) {
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="font-display font-bold text-base text-black min-w-[130px] text-center">
+          <span className="font-display font-medium text-base text-black min-w-[130px] text-center">
             {format(currentDate, "MMMM yyyy")}
           </span>
           <button
@@ -774,7 +774,7 @@ function CalendarTab({ toast }: { toast: any }) {
           </button>
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="border-2 border-black bg-white px-3 py-1.5 text-xs font-bold hover:bg-black hover:text-white transition-colors"
+            className="border-2 border-black bg-white px-3 py-1.5 text-xs font-medium hover:bg-black hover:text-white transition-colors"
           >
             Today
           </button>
@@ -791,7 +791,7 @@ function CalendarTab({ toast }: { toast: any }) {
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
               <div
                 key={d}
-                className="text-center text-[10px] font-black uppercase tracking-widest text-white py-2 border-r border-white/10 last:border-r-0"
+                className="text-center text-[10px] font-medium uppercase tracking-widest text-white py-2 border-r border-white/10 last:border-r-0"
               >
                 {d}
               </div>
@@ -818,7 +818,7 @@ function CalendarTab({ toast }: { toast: any }) {
                 >
                   <span
                     className={cn(
-                      "text-xs font-bold w-5 h-5 flex items-center justify-center shrink-0",
+                      "text-xs font-medium w-5 h-5 flex items-center justify-center shrink-0",
                       isCurrentDay && "bg-primary text-white",
                     )}
                   >
@@ -832,7 +832,7 @@ function CalendarTab({ toast }: { toast: any }) {
                           e.stopPropagation();
                           setViewingPost(p);
                         }}
-                        className="flex items-center gap-1 text-[10px] font-bold truncate px-1 py-0.5 border border-black/10 bg-white hover:border-black transition-colors"
+                        className="flex items-center gap-1 text-[10px] font-medium truncate px-1 py-0.5 border border-black/10 bg-white hover:border-black transition-colors"
                         title={p.caption}
                       >
                         <span
@@ -848,7 +848,7 @@ function CalendarTab({ toast }: { toast: any }) {
                       </div>
                     ))}
                     {dayPosts.length > 3 && (
-                      <div className="text-[9px] text-muted-foreground font-bold px-1">
+                      <div className="text-[9px] text-muted-foreground font-medium px-1">
                         +{dayPosts.length - 3} more
                       </div>
                     )}
@@ -861,7 +861,7 @@ function CalendarTab({ toast }: { toast: any }) {
       )}
 
       {}
-      <div className="flex items-center gap-3 flex-wrap text-[11px] font-bold text-black">
+      <div className="flex items-center gap-3 flex-wrap text-[11px] font-medium text-black">
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
           <span key={key} className="flex items-center gap-1.5">
             <span
@@ -915,17 +915,17 @@ function CalendarTab({ toast }: { toast: any }) {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate">
+                        <p className="text-sm font-medium truncate">
                           {p.caption || "Untitled"}
                         </p>
                         <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border mt-1 ${cfg.color}`}
+                          className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border mt-1 ${cfg.color}`}
                         >
                           <StatusIcon className="w-2.5 h-2.5" />
                           {cfg.label}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+                      <span className="text-[10px] font-medium text-muted-foreground shrink-0">
                         {format(new Date(p.scheduledAt), "h:mm a")}
                       </span>
                     </button>
@@ -1000,7 +1000,7 @@ function PostCard({
             {}
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
               <span
-                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}
+                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.color}`}
               >
                 <StatusIcon
                   className={`w-3 h-3 ${post.status === "POSTING" ? "animate-spin" : ""}`}
@@ -1008,17 +1008,17 @@ function PostCard({
                 {cfg.label}
               </span>
               {post.platforms.includes("facebook") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-semibold">
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-medium">
                   <Facebook className="w-3 h-3" /> Facebook
                 </span>
               )}
               {post.platforms.includes("instagram") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-semibold">
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-medium">
                   <Instagram className="w-3 h-3" /> Instagram
                 </span>
               )}
               {post.platforms.includes("linkedin") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-semibold">
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-medium">
                   <LinkedInIcon className="w-3 h-3" /> LinkedIn
                 </span>
               )}
@@ -1433,7 +1433,7 @@ function PostWizard({
               <Instagram className="w-3.5 h-3.5 text-white" />
             </div>
             {editingPost ? "Edit Post" : "New Post"}
-            <span className="ml-auto text-xs font-bold text-muted-foreground border-2 border-black px-2 py-0.5">
+            <span className="ml-auto text-xs font-medium text-muted-foreground border-2 border-black px-2 py-0.5">
               Step {step} / 5
             </span>
           </DialogTitle>
@@ -1454,7 +1454,7 @@ function PostWizard({
               Draft recovered from your last session.
             </span>
             <button
-              className="font-bold underline shrink-0"
+              className="font-medium underline shrink-0"
               onClick={() => {
                 localStorage.removeItem(DRAFT_KEY);
                 setDraftRecovered(false);
@@ -1506,7 +1506,7 @@ function PostWizard({
                         if (!list.length) return null;
                         return (
                           <div key={platform}>
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase mb-1">
+                            <p className="text-[11px] font-medium text-muted-foreground uppercase mb-1">
                               {platform === "facebook"
                                 ? "Facebook Pages"
                                 : platform === "linkedin"
@@ -1775,7 +1775,7 @@ function PostWizard({
                       {}
                       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
                         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-pink-400" />
-                        <span className="text-xs font-semibold">
+                        <span className="text-xs font-medium">
                           {selectedAccounts[0]?.accountName || "Your Page"}
                         </span>
                       </div>
@@ -1994,7 +1994,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     <div className="p-6 max-w-4xl">
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
-          <h2 className="font-semibold text-base">Connected Accounts</h2>
+          <h2 className="font-medium text-base">Connected Accounts</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Fetched from the Facebook account connected on{" "}
             <Link to="/integrations" className="underline underline-offset-2">
@@ -2049,7 +2049,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           {groups.map(({ label, Icon, badge, items }) =>
             items.length === 0 ? null : (
               <section key={label}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                   {label} · {items.length}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2069,7 +2069,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                             }
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold text-muted-foreground">
+                          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-base font-medium text-muted-foreground">
                             {acc.accountName
                               .replace(/^@/, "")
                               .charAt(0)
@@ -2086,7 +2086,7 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">
+                        <p className="text-sm font-medium truncate">
                           {acc.accountName}
                         </p>
                         <p className="text-[11px] text-muted-foreground font-mono truncate">
@@ -2226,7 +2226,7 @@ function PostDetailModal({
           {}
           <div className="flex items-center gap-2 flex-wrap">
             <span
-              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}
+              className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.color}`}
             >
               <StatusIcon
                 className={`w-3 h-3 ${post.status === "POSTING" ? "animate-spin" : ""}`}
@@ -2234,22 +2234,22 @@ function PostDetailModal({
               {cfg.label}
             </span>
             {post.platforms.includes("facebook") && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-semibold">
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-medium">
                 <Facebook className="w-3 h-3" /> Facebook
               </span>
             )}
             {post.platforms.includes("instagram") && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-semibold">
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-medium">
                 <Instagram className="w-3 h-3" /> Instagram
               </span>
             )}
             {post.platforms.includes("linkedin") && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-semibold">
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-medium">
                 <LinkedInIcon className="w-3 h-3" /> LinkedIn
               </span>
             )}
             {post.postType && (
-              <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 font-semibold capitalize">
+              <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 font-medium capitalize">
                 {post.postType}
               </span>
             )}
@@ -2257,7 +2257,7 @@ function PostDetailModal({
 
           {}
           <div className="space-y-1">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Caption
             </p>
             <p className="text-sm text-foreground whitespace-pre-wrap">
@@ -2268,7 +2268,7 @@ function PostDetailModal({
           {}
           {post.hashtags.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Hashtags
               </p>
               <p className="text-xs text-primary-900">
@@ -2282,14 +2282,14 @@ function PostDetailModal({
           {}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
                 Scheduled
               </p>
               <p>{format(new Date(post.scheduledAt), "dd MMM yyyy, h:mm a")}</p>
             </div>
             {post.createdBy && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
                   Created By
                 </p>
                 <p>{post.createdBy.name}</p>
@@ -2297,7 +2297,7 @@ function PostDetailModal({
             )}
             {post.approvedBy && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
                   Approved By
                 </p>
                 <p>{post.approvedBy.name}</p>
@@ -2305,7 +2305,7 @@ function PostDetailModal({
             )}
             {post.rejectedBy && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
                   Rejected By
                 </p>
                 <p>{post.rejectedBy.name}</p>
@@ -2313,7 +2313,7 @@ function PostDetailModal({
             )}
             {post.postedAt && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
                   Posted At
                 </p>
                 <p>{format(new Date(post.postedAt), "dd MMM yyyy, h:mm a")}</p>
@@ -2341,7 +2341,7 @@ function PostDetailModal({
           {}
           {(fbLink || igLink) && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Published Links
               </p>
               <div className="flex flex-col gap-2">
@@ -2400,7 +2400,7 @@ function PostDetailModal({
             post.instagramPostId ||
             post.linkedinPostId) && (
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                 Post IDs
               </p>
               {post.facebookPostId && (
@@ -2547,8 +2547,8 @@ function AnalyticsTab() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statusOrder.slice(0, 4).map((s) => (
           <div key={s.key} className="border-2 p-4 space-y-1">
-            <p className="text-2xl font-bold">{statuses[s.key] ?? 0}</p>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <p className="text-2xl font-medium">{statuses[s.key] ?? 0}</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {s.label}
             </p>
           </div>
@@ -2564,10 +2564,10 @@ function AnalyticsTab() {
           { label: "Comments", value: engagement?.totals?.comments },
         ].map((c) => (
           <div key={c.label} className="border-2 border-primary/40 p-4 space-y-1">
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-medium">
               {engagement ? (c.value ?? 0).toLocaleString("en-IN") : "—"}
             </p>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {c.label}
             </p>
           </div>
@@ -2578,7 +2578,7 @@ function AnalyticsTab() {
       <div className="grid md:grid-cols-2 gap-6">
         {}
         <div className="border-2 p-4">
-          <p className="text-sm font-bold mb-4">Posts by Status</p>
+          <p className="text-sm font-medium mb-4">Posts by Status</p>
           <div className="space-y-2.5">
             {statusOrder
               .filter((s) => statuses[s.key])
@@ -2608,28 +2608,28 @@ function AnalyticsTab() {
 
         {}
         <div className="border-2 p-4">
-          <p className="text-sm font-bold mb-4">Published by Post Type</p>
+          <p className="text-sm font-medium mb-4">Published by Post Type</p>
           <div className="space-y-3">
             {Object.entries(engagement?.byType || {}).map(
               ([type, v]: [string, any]) => (
                 <div key={type} className="border border-border p-3">
                   <div className="flex justify-between text-xs mb-2">
-                    <span className="font-bold capitalize">{type}</span>
+                    <span className="font-medium capitalize">{type}</span>
                     <span className="text-muted-foreground">
                       {v.count} published
                     </span>
                   </div>
                   <div className="grid grid-cols-3 text-center text-xs">
                     <div>
-                      <p className="font-bold text-sm">{v.views}</p>
+                      <p className="font-medium text-sm">{v.views}</p>
                       <p className="text-muted-foreground">Views</p>
                     </div>
                     <div>
-                      <p className="font-bold text-sm">{v.likes}</p>
+                      <p className="font-medium text-sm">{v.likes}</p>
                       <p className="text-muted-foreground">Likes</p>
                     </div>
                     <div>
-                      <p className="font-bold text-sm">{v.comments}</p>
+                      <p className="font-medium text-sm">{v.comments}</p>
                       <p className="text-muted-foreground">Comments</p>
                     </div>
                   </div>
@@ -2646,7 +2646,7 @@ function AnalyticsTab() {
       {}
       {weekly.length > 0 && (
         <div className="border-2 p-4">
-          <p className="text-sm font-bold mb-4">
+          <p className="text-sm font-medium mb-4">
             Weekly Posting Activity (last 12 weeks)
           </p>
           <div className="flex items-end gap-2 h-24">
@@ -2674,7 +2674,7 @@ function AnalyticsTab() {
       {}
       {recentPosts.length > 0 && (
         <div className="border-2 p-4">
-          <p className="text-sm font-bold mb-4">Recently Published Posts</p>
+          <p className="text-sm font-medium mb-4">Recently Published Posts</p>
           <div className="space-y-3">
             {recentPosts.map((post: any) => {
               const fbLink = post.facebookPostId

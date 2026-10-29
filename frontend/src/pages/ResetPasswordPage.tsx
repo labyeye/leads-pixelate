@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
     <AuthShell>
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img src={logoimg} alt="NestLeads" className="w-10 h-10" />
-          <span className="font-display font-bold text-xl text-black">
+          <span className="font-display font-medium text-xl text-black">
             NestLeads
           </span>
         </div>
@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
             <div className="w-14 h-14 border-2 border-black bg-[#024BAB]/10 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-[#024BAB]" />
             </div>
-            <h2 className="font-display font-bold text-2xl text-black mb-2">
+            <h2 className="font-display font-medium text-2xl text-black mb-2">
               Password reset
             </h2>
             <p className="text-muted-foreground text-sm">
@@ -68,7 +68,7 @@ export default function ResetPasswordPage() {
           </div>
         ) : (
           <>
-            <h2 className="font-display font-bold text-3xl text-black mb-1">
+            <h2 className="font-display font-medium text-3xl text-black mb-1">
               Set a new password
             </h2>
             <p className="text-muted-foreground text-sm mb-8">
@@ -84,7 +84,7 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5 login-anim">
               <div>
-                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                   New password
                 </label>
                 <div className="flex border-2 border-black">
@@ -117,7 +117,7 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                   Confirm password
                 </label>
                 <div className="flex border-2 border-black">
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
             <p className="text-xs text-center text-muted-foreground mt-6">
               <Link
                 to="/login"
-                className="font-bold text-black underline hover:text-[#FF3366] transition-colors"
+                className="font-medium text-black underline hover:text-[#FF3366] transition-colors"
               >
                 Back to sign in
               </Link>

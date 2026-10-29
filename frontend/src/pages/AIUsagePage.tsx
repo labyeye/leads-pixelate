@@ -65,10 +65,10 @@ function Meter({
         <span className="w-8 h-8 border-2 border-black bg-[#044BAB] flex items-center justify-center shrink-0">
           {icon}
         </span>
-        <h3 className="font-display font-bold text-base text-black">{title}</h3>
+        <h3 className="font-display font-medium text-base text-black">{title}</h3>
       </div>
       <div>
-        <p className="font-display font-bold text-3xl text-black">
+        <p className="font-display font-medium text-3xl text-black">
           {fmtNum(used)}
           <span className="text-base font-medium text-muted-foreground">
             {" "}
@@ -88,7 +88,7 @@ function Meter({
             style={{ width: `${unlimited ? 0 : pct}%` }}
           />
         </div>
-        <p className={cn("text-xs font-bold mt-1.5", t.text)}>
+        <p className={cn("text-xs font-medium mt-1.5", t.text)}>
           {unlimited
             ? "No limit on your plan"
             : `${pct}% used · ${fmtNum(Math.max(0, limit - used))} left this month`}
@@ -139,10 +139,10 @@ export default function AIUsagePage() {
           <>
             <div className="nb-card p-4 sm:p-5 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Your plan
                 </p>
-                <h2 className="font-display font-bold text-2xl text-black">
+                <h2 className="font-display font-medium text-2xl text-black">
                   {usage.plan.id === "trial"
                     ? "Free trial"
                     : `${capitalise(usage.plan.id)} plan`}
@@ -167,7 +167,7 @@ export default function AIUsagePage() {
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>
                   You're close to your plan limit for {near.join(", ")}.{" "}
-                  <Link to="/billing" className="underline font-bold">
+                  <Link to="/billing" className="underline font-medium">
                     Upgrade
                   </Link>{" "}
                   to keep going.
@@ -214,7 +214,7 @@ export default function AIUsagePage() {
                         {" · "}
                         <Link
                           to="/social-autopilot"
-                          className="underline font-bold text-[#024BAB]"
+                          className="underline font-medium text-[#024BAB]"
                         >
                           Set it up
                         </Link>

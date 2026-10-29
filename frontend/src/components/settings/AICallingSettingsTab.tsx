@@ -227,7 +227,7 @@ export default function AICallingSettingsTab() {
               <Bot className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-black font-display tracking-wide uppercase">
+              <h2 className="text-2xl font-medium font-display tracking-wide uppercase">
                 ElevenLabs AI Outbound Voice Assistant
               </h2>
               <p className="text-xs text-blue-200 font-medium mt-1">
@@ -252,7 +252,7 @@ export default function AICallingSettingsTab() {
               />
               <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none border-2 border-white peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
             </label>
-            <span className="text-xs font-bold uppercase tracking-wider">
+            <span className="text-xs font-medium uppercase tracking-wider">
               {settings.enabled ? "Active" : "Disabled"}
             </span>
           </div>
@@ -266,7 +266,7 @@ export default function AICallingSettingsTab() {
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-black text-emerald-950 uppercase tracking-wide">
+            <h4 className="text-sm font-medium text-emerald-950 uppercase tracking-wide">
               ElevenLabs Voice Engine Ready
             </h4>
             <p className="text-xs text-emerald-800 font-medium">
@@ -279,7 +279,7 @@ export default function AICallingSettingsTab() {
           type="button"
           onClick={handleTestConnection}
           disabled={testing}
-          className="px-3.5 py-1.5 bg-emerald-700 text-white font-bold text-xs border-2 border-black hover:bg-emerald-800 transition-colors flex items-center gap-1.5 shrink-0"
+          className="px-3.5 py-1.5 bg-emerald-700 text-white font-medium text-xs border-2 border-black hover:bg-emerald-800 transition-colors flex items-center gap-1.5 shrink-0"
         >
           {testing ? (
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -292,7 +292,7 @@ export default function AICallingSettingsTab() {
 
       {/* Voice agent (per client: male / female voice = different ElevenLabs agent) */}
       <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_#000] space-y-2">
-        <label className="text-sm font-black text-black uppercase tracking-wide flex items-center gap-2">
+        <label className="text-sm font-medium text-black uppercase tracking-wide flex items-center gap-2">
           <Key className="w-4 h-4 text-blue-600" /> ElevenLabs Agent ID
         </label>
         <input
@@ -306,7 +306,7 @@ export default function AICallingSettingsTab() {
               ? "Leave blank to use the default agent"
               : "agent_xxxxxxxxxxxxxxxx"
           }
-          className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-bold font-mono focus:outline-none focus:border-blue-600"
+          className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-medium font-mono focus:outline-none focus:border-blue-600"
         />
         <p className="text-xs text-gray-500 font-medium">
           Paste the agent ID of the male or female voice agent you want for this
@@ -316,7 +316,7 @@ export default function AICallingSettingsTab() {
 
       {testResult && (
         <div
-          className={`p-3 border-2 text-xs font-bold flex items-center gap-2 ${testResult.success ? "bg-emerald-50 border-emerald-500 text-emerald-800" : "bg-red-50 border-red-500 text-red-800"}`}
+          className={`p-3 border-2 text-xs font-medium flex items-center gap-2 ${testResult.success ? "bg-emerald-50 border-emerald-500 text-emerald-800" : "bg-red-50 border-red-500 text-red-800"}`}
         >
           {testResult.success ? (
             <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -331,7 +331,7 @@ export default function AICallingSettingsTab() {
       <div className="bg-white border-2 border-black p-6 space-y-5 shadow-[4px_4px_0px_#000]">
         <div className="flex items-center justify-between border-b-2 border-black pb-3">
           <div>
-            <h3 className="text-lg font-black font-display text-black uppercase flex items-center gap-2">
+            <h3 className="text-lg font-medium font-display text-black uppercase flex items-center gap-2">
               <Sliders className="w-5 h-5 text-blue-600" /> Dynamic
               Qualification Questions
             </h3>
@@ -343,7 +343,7 @@ export default function AICallingSettingsTab() {
           <button
             type="button"
             onClick={addQuestion}
-            className="px-3 py-1.5 bg-blue-600 text-white font-bold text-xs border-2 border-black hover:bg-blue-700 transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 bg-blue-600 text-white font-medium text-xs border-2 border-black hover:bg-blue-700 transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> Add Question
           </button>
@@ -355,7 +355,7 @@ export default function AICallingSettingsTab() {
               key={q.id || idx}
               className="p-4 border-2 border-black bg-gray-50 flex flex-col md:flex-row gap-4 items-start md:items-center"
             >
-              <span className="w-7 h-7 shrink-0 bg-black text-white font-black text-xs flex items-center justify-center">
+              <span className="w-7 h-7 shrink-0 bg-black text-white font-medium text-xs flex items-center justify-center">
                 {idx + 1}
               </span>
               <div className="flex-1 space-y-2 w-full">
@@ -366,9 +366,9 @@ export default function AICallingSettingsTab() {
                     updateQuestion(idx, "questionText", e.target.value)
                   }
                   placeholder="Enter qualification question text (e.g. What is your estimated budget?)"
-                  className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-bold focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-medium focus:outline-none focus:border-blue-600"
                 />
-                <div className="flex items-center gap-4 text-xs font-semibold text-gray-600">
+                <div className="flex items-center gap-4 text-xs font-medium text-gray-600">
                   <label className="flex items-center gap-1.5">
                     <span>Map answer to Lead field:</span>
                     <select
@@ -376,7 +376,7 @@ export default function AICallingSettingsTab() {
                       onChange={(e) =>
                         updateQuestion(idx, "fieldKey", e.target.value)
                       }
-                      className="px-2 py-1 border-2 border-black bg-white text-xs font-bold"
+                      className="px-2 py-1 border-2 border-black bg-white text-xs font-medium"
                     >
                       <option value="">None (Append to remarks only)</option>
                       <option value="budget">Budget</option>
@@ -388,7 +388,7 @@ export default function AICallingSettingsTab() {
                   </label>
                 </div>
                 <div className="space-y-1.5">
-                  <p className="text-xs font-semibold text-gray-600">
+                  <p className="text-xs font-medium text-gray-600">
                     Answer options{" "}
                     <span className="font-normal">
                       (optional: the assistant offers these choices; leave empty
@@ -399,7 +399,7 @@ export default function AICallingSettingsTab() {
                     {(q.options || []).map((o, oi) => (
                       <span
                         key={oi}
-                        className="inline-flex items-center gap-1 border-2 border-black bg-white px-2 py-0.5 text-xs font-bold"
+                        className="inline-flex items-center gap-1 border-2 border-black bg-white px-2 py-0.5 text-xs font-medium"
                       >
                         {o}
                         <button
@@ -424,7 +424,7 @@ export default function AICallingSettingsTab() {
                     maxLength={60}
                     aria-label={`Add answer option for question ${idx + 1}`}
                     placeholder="Type an option and press Enter (e.g. Under 1 lakh)"
-                    className="w-full px-3 py-1.5 border-2 border-black bg-white text-xs font-bold focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-1.5 border-2 border-black bg-white text-xs font-medium focus:outline-none focus:border-blue-600"
                     onKeyDown={(e) => {
                       if (e.key !== "Enter") return;
                       e.preventDefault();
@@ -451,13 +451,13 @@ export default function AICallingSettingsTab() {
 
       {/* 3. Agent Greeting & Working Hours */}
       <div className="bg-white border-2 border-black p-6 space-y-5 shadow-[4px_4px_0px_#000]">
-        <h3 className="text-lg font-black font-display text-black uppercase border-b-2 border-black pb-3 flex items-center gap-2">
+        <h3 className="text-lg font-medium font-display text-black uppercase border-b-2 border-black pb-3 flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" /> Greeting Template &
           Allowed Calling Hours
         </h3>
 
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+          <label className="block text-xs font-medium uppercase tracking-wider text-black mb-1.5">
             Initial Agent Greeting Message
           </label>
           <textarea
@@ -473,14 +473,14 @@ export default function AICallingSettingsTab() {
           />
           <p className="text-[11px] text-gray-500 mt-1">
             Available dynamic placeholders:{" "}
-            <code className="bg-gray-100 font-bold px-1">{`{lead_name}`}</code>,{" "}
-            <code className="bg-gray-100 font-bold px-1">{`{company_name}`}</code>
+            <code className="bg-gray-100 font-medium px-1">{`{lead_name}`}</code>,{" "}
+            <code className="bg-gray-100 font-medium px-1">{`{company_name}`}</code>
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+            <label className="block text-xs font-medium uppercase tracking-wider text-black mb-1.5">
               Call Delay (Minutes after Lead Creation)
             </label>
             <input
@@ -499,7 +499,7 @@ export default function AICallingSettingsTab() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+            <label className="block text-xs font-medium uppercase tracking-wider text-black mb-1.5">
               Calling Window Start Time
             </label>
             <input
@@ -516,7 +516,7 @@ export default function AICallingSettingsTab() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-black mb-1.5">
+            <label className="block text-xs font-medium uppercase tracking-wider text-black mb-1.5">
               Calling Window End Time
             </label>
             <input
@@ -540,7 +540,7 @@ export default function AICallingSettingsTab() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-3 bg-blue-600 text-white font-black text-sm border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#000] transition-all flex items-center gap-2"
+          className="px-6 py-3 bg-blue-600 text-white font-medium text-sm border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#000] transition-all flex items-center gap-2"
         >
           {saving ? (
             <RefreshCw className="w-4 h-4 animate-spin" />

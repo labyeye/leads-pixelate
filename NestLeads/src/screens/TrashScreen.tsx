@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { flex: 1, fontSize: 17, fontWeight: '600', color: '#000' },
+  headerTitle: { flex: 1, fontSize: 17, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   centerBox: {
     flex: 1,
@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
   },
   type: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  title: { fontSize: 15, fontWeight: '800', color: '#000' },
+  title: { fontSize: 15, fontWeight: '500', color: '#000' },
   actions: { flexDirection: 'row', gap: 8, marginTop: 8 },
   btn: {
     flexDirection: 'row',
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
   },

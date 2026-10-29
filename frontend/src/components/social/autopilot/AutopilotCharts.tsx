@@ -42,7 +42,7 @@ export function RangePicker({
           type="button"
           aria-pressed={value === d}
           onClick={() => onChange(d)}
-          className={`px-3 py-1.5 text-xs font-bold ${i > 0 ? "border-l-2 border-black" : ""} ${
+          className={`px-3 py-1.5 text-xs font-medium ${i > 0 ? "border-l-2 border-black" : ""} ${
             value === d
               ? "bg-[#024BAB] text-white"
               : "bg-white text-black hover:bg-[#FFDE00]"

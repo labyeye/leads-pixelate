@@ -373,13 +373,13 @@ const box = {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: { height: 56, justifyContent: 'center', paddingHorizontal: 16 },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#000' },
+  headerTitle: { fontSize: 24, fontWeight: '500', color: '#000' },
   scroll: { padding: 16, gap: 18 },
 
   hero: { ...box, backgroundColor: '#fff', padding: 14, gap: 14 },
   heroTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  profileName: { fontSize: 18, fontWeight: '800', color: '#000' },
-  profileEmail: { fontSize: 12, color: '#64748b', fontWeight: '600', marginTop: 2 },
+  profileName: { fontSize: 18, fontWeight: '500', color: '#000' },
+  profileEmail: { fontSize: 12, color: '#64748b', fontWeight: '500', marginTop: 2 },
   rolePill: {
     alignSelf: 'flex-start',
     marginTop: 8,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  roleText: { fontSize: 10, fontWeight: '800', color: '#000' },
+  roleText: { fontSize: 10, fontWeight: '500', color: '#000' },
   heroBtns: { flexDirection: 'row', gap: 10 },
   heroBtn: {
     flex: 1,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     borderRadius: 8,
   },
-  heroBtnText: { fontSize: 13, fontWeight: '800' },
+  heroBtnText: { fontSize: 13, fontWeight: '500' },
 
   searchBox: {
     ...box,
@@ -413,10 +413,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: '#fff',
   },
-  searchInput: { flex: 1, paddingVertical: 11, fontSize: 14, color: '#000', fontWeight: '600' },
+  searchInput: { flex: 1, paddingVertical: 11, fontSize: 14, color: '#000', fontWeight: '500' },
 
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  sectionTitle: { fontSize: 11, fontWeight: '800', color: '#000', letterSpacing: 1 },
+  sectionTitle: { fontSize: 11, fontWeight: '500', color: '#000', letterSpacing: 1 },
   sectionLine: { flex: 1, height: 2, backgroundColor: '#000', marginLeft: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tile: { ...box, width: TILE_W, backgroundColor: '#fff', padding: 12, gap: 6, minHeight: 124 },
@@ -429,9 +429,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
-  tileLabel: { fontSize: 14, fontWeight: '800', color: '#000' },
+  tileLabel: { fontSize: 14, fontWeight: '500', color: '#000' },
   tileSub: { fontSize: 11, color: '#64748b', fontWeight: '500', lineHeight: 15 },
 
   empty: { alignItems: 'center', paddingVertical: 40, gap: 8 },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#64748b' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: '#64748b' },
 });

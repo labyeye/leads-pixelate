@@ -14,7 +14,7 @@ import type { Selection } from "./DesignerCanvas";
 import { fileToDataUrl } from "./imageUtil";
 
 const label =
-  "block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1";
+  "block text-[10px] font-medium uppercase tracking-widest text-black/60 mb-1";
 const input =
   "w-full border-2 border-black px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-[#024BAB]";
 
@@ -242,7 +242,7 @@ const Chk = ({
   value: boolean;
   onChange: (v: boolean) => void;
 }) => (
-  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer py-0.5">
+  <label className="flex items-center gap-2 text-xs font-medium cursor-pointer py-0.5">
     <input
       type="checkbox"
       checked={!!value}
@@ -285,7 +285,7 @@ function Color({
           <button
             type="button"
             onClick={() => onChange("")}
-            className="text-[10px] font-bold underline shrink-0"
+            className="text-[10px] font-medium underline shrink-0"
           >
             reset
           </button>
@@ -402,7 +402,7 @@ function ImageField({
             <ImageIcon className="w-5 h-5 text-black/30" />
           )}
         </div>
-        <label className="nb-btn cursor-pointer px-3 py-1.5 text-xs font-bold border-2 border-black bg-white hover:bg-[#FFDE00]/40">
+        <label className="nb-btn cursor-pointer px-3 py-1.5 text-xs font-medium border-2 border-black bg-white hover:bg-[#FFDE00]/40">
           {value ? "Replace" : "Upload"}
           <input
             type="file"
@@ -415,14 +415,14 @@ function ImageField({
           <button
             type="button"
             onClick={() => onChange("")}
-            className="text-[10px] font-bold underline"
+            className="text-[10px] font-medium underline"
           >
             remove
           </button>
         ) : null}
       </div>
       {err ? (
-        <p className="text-[11px] text-red-600 font-bold mt-1">{err}</p>
+        <p className="text-[11px] text-red-600 font-medium mt-1">{err}</p>
       ) : null}
     </div>
   );
@@ -432,7 +432,7 @@ function Heading({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-black">
       <div className="w-1 h-4 bg-[#024BAB]" />
-      <p className="text-xs font-black uppercase tracking-widest">{children}</p>
+      <p className="text-xs font-medium uppercase tracking-widest">{children}</p>
     </div>
   );
 }
@@ -593,7 +593,7 @@ export function Inspector({
         <button
           type="button"
           onClick={() => onRemove({ kind: "block", id: block.id })}
-          className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:underline pt-2"
+          className="flex items-center gap-1.5 text-xs font-medium text-red-600 hover:underline pt-2"
         >
           <Trash2 className="w-3.5 h-3.5" /> Remove this block
         </button>
@@ -706,7 +706,7 @@ export function Inspector({
         <button
           type="button"
           onClick={() => onRemove({ kind: "float", id: float.id })}
-          className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:underline pt-2"
+          className="flex items-center gap-1.5 text-xs font-medium text-red-600 hover:underline pt-2"
         >
           <Trash2 className="w-3.5 h-3.5" /> Delete this element
         </button>

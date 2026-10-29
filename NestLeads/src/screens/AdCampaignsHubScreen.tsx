@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   body: { padding: 16, gap: 12 },
   crossLinkCard: {
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     padding: 14,
   },
-  crossLinkTitle: { fontSize: 13, fontWeight: '600', color: '#000' },
+  crossLinkTitle: { fontSize: 13, fontWeight: '500', color: '#000' },
   crossLinkSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
   platformCard: {
     borderWidth: 2,
@@ -303,8 +303,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  glyphText: { fontSize: 15, fontWeight: '600' },
-  platformLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: '#000' },
+  glyphText: { fontSize: 15, fontWeight: '500' },
+  platformLabel: { flex: 1, fontSize: 14, fontWeight: '500', color: '#000' },
   linksList: { borderTopWidth: 1, borderTopColor: '#e2e8f0' },
   linkRow: {
     flexDirection: 'row',
@@ -314,5 +314,5 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   linkRowBorder: { borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-  linkLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: '#000' },
+  linkLabel: { flex: 1, fontSize: 13, fontWeight: '500', color: '#000' },
 });

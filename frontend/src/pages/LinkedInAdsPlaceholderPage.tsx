@@ -14,7 +14,7 @@ export default function LinkedInAdsPlaceholderPage({
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             LinkedIn {title}
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -31,7 +31,7 @@ export default function LinkedInAdsPlaceholderPage({
           </div>
         </div>
         <div>
-          <h3 className="font-display font-bold text-lg text-black">
+          <h3 className="font-display font-medium text-lg text-black">
             Not available yet
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
@@ -44,7 +44,7 @@ export default function LinkedInAdsPlaceholderPage({
         </div>
         <button
           onClick={() => navigate("/campaigns/linkedin")}
-          className="border-2 border-black bg-[#0A66C2] text-white px-4 py-2 text-sm font-bold"
+          className="border-2 border-black bg-[#0A66C2] text-white px-4 py-2 text-sm font-medium"
         >
           Go to LinkedIn Lead Sync Setup →
         </button>

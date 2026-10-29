@@ -95,11 +95,11 @@ export default function TrashPage() {
                   key={`${l.type}-${l._id}`}
                   className="border-t border-border"
                 >
-                  <td className="p-3 text-xs font-black uppercase">
+                  <td className="p-3 text-xs font-medium uppercase">
                     {l.label}
                   </td>
                   <td className="p-3">
-                    <div className="font-semibold">{l.title}</div>
+                    <div className="font-medium">{l.title}</div>
                     <div className="text-xs text-muted-foreground">{l.sub}</div>
                   </td>
                   <td className="p-3">
@@ -112,13 +112,13 @@ export default function TrashPage() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => act("restore", l)}
-                        className="flex items-center gap-1 px-2 py-1 border-2 border-black text-xs font-black uppercase hover:bg-emerald-100"
+                        className="flex items-center gap-1 px-2 py-1 border-2 border-black text-xs font-medium uppercase hover:bg-emerald-100"
                       >
                         <RotateCcw className="w-3.5 h-3.5" /> Restore
                       </button>
                       <button
                         onClick={() => act("purge", l)}
-                        className="flex items-center gap-1 px-2 py-1 border-2 border-black text-xs font-black uppercase text-red-600 hover:bg-red-100"
+                        className="flex items-center gap-1 px-2 py-1 border-2 border-black text-xs font-medium uppercase text-red-600 hover:bg-red-100"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> Delete forever
                       </button>

@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   logoMd: { width: 13, height: 13 },
   text: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },

@@ -68,5 +68,5 @@ export default function FollowersChart({
 const s = StyleSheet.create({
   zero: { position: 'absolute', left: 0, right: 0, height: 2, backgroundColor: '#000' },
   labels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-  label: { fontSize: 10, fontWeight: '700', color: '#000' },
+  label: { fontSize: 10, fontWeight: '500', color: '#000' },
 });

@@ -304,10 +304,10 @@ export function FacebookWizard({
       {}
       <div className="border-b-2 border-black p-5 flex items-center gap-4 bg-[#EFF6FF]">
         <div className="w-12 h-12 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
-          <span className="text-white font-display font-bold text-lg">f</span>
+          <span className="text-white font-display font-medium text-lg">f</span>
         </div>
         <div className="flex-1">
-          <h2 className="font-display font-bold text-xl text-black">
+          <h2 className="font-display font-medium text-xl text-black">
             Connect Facebook Lead Ads
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -316,7 +316,7 @@ export function FacebookWizard({
         </div>
         <button
           onClick={onClose}
-          className="text-xs font-bold text-muted-foreground hover:text-black border-2 border-transparent hover:border-black px-3 py-1.5 transition-all"
+          className="text-xs font-medium text-muted-foreground hover:text-black border-2 border-transparent hover:border-black px-3 py-1.5 transition-all"
         >
           ✕ Close
         </button>
@@ -357,7 +357,7 @@ export function FacebookWizard({
                   </div>
                   <span
                     className={cn(
-                      "text-[10px] font-bold mt-1 whitespace-nowrap",
+                      "text-[10px] font-medium mt-1 whitespace-nowrap",
                       active ? "text-black" : "text-muted-foreground",
                     )}
                   >
@@ -409,7 +409,7 @@ export function FacebookWizard({
                   >
                     <item.icon className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-xs font-bold text-black leading-tight">
+                  <p className="text-xs font-medium text-black leading-tight">
                     {item.label}
                   </p>
                 </div>
@@ -418,7 +418,7 @@ export function FacebookWizard({
 
             {}
             <div className="border-2 border-black p-4 bg-[#024BAB]/10 nb-shadow-sm">
-              <p className="text-xs font-bold text-black uppercase tracking-wider mb-3 flex items-center gap-1">
+              <p className="text-xs font-medium text-black uppercase tracking-wider mb-3 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> What you need before
                 connecting
               </p>
@@ -442,7 +442,7 @@ export function FacebookWizard({
 
             {}
             <div className="border-2 border-black p-4 bg-white nb-shadow-sm">
-              <p className="text-xs font-bold text-black uppercase tracking-wider mb-2">
+              <p className="text-xs font-medium text-black uppercase tracking-wider mb-2">
                 <ShieldCheck className="w-3.5 h-3.5 inline mr-1" /> Permissions
                 we ask for
               </p>
@@ -485,13 +485,13 @@ export function FacebookWizard({
             <button
               onClick={handleLoginWithFacebook}
               disabled={oauthLoading}
-              className="nb-btn w-full py-4 bg-[#1877F2] text-white font-bold text-base flex items-center justify-center gap-3"
+              className="nb-btn w-full py-4 bg-[#1877F2] text-white font-medium text-base flex items-center justify-center gap-3"
             >
               {oauthLoading ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
                 <div className="w-6 h-6 bg-white flex items-center justify-center rounded">
-                  <span className="text-[#1877F2] font-bold text-sm">f</span>
+                  <span className="text-[#1877F2] font-medium text-sm">f</span>
                 </div>
               )}
               {oauthLoading ? "Opening Facebook…" : "Login with Facebook"}
@@ -507,7 +507,7 @@ export function FacebookWizard({
         {step === "select_page" && (
           <div className="max-w-2xl mx-auto space-y-4">
             <div>
-              <h3 className="font-display font-bold text-xl text-black mb-1">
+              <h3 className="font-display font-medium text-xl text-black mb-1">
                 Which Facebook Page runs your Lead Ads?
               </h3>
               <p className="text-sm text-muted-foreground">
@@ -528,7 +528,7 @@ export function FacebookWizard({
             ) : pages.length === 0 ? (
               <div className="nb-card bg-white p-8 text-center">
                 <AlertCircle className="w-10 h-10 text-[#EF4444] mx-auto mb-3" />
-                <p className="font-bold text-black">No Pages found</p>
+                <p className="font-medium text-black">No Pages found</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Make sure you have a Facebook Business Page and you're logged
                   in with the right account.
@@ -566,13 +566,13 @@ export function FacebookWizard({
                         />
                       ) : (
                         <div className="w-12 h-12 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
-                          <span className="text-white font-bold text-lg">
+                          <span className="text-white font-medium text-lg">
                             {page.name[0]}
                           </span>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-black text-sm truncate">
+                        <p className="font-medium text-black text-sm truncate">
                           {page.name}
                         </p>
                         <p className="text-[11px] text-muted-foreground">
@@ -602,7 +602,7 @@ export function FacebookWizard({
             {selectedPage && (
               <div className="border-2 border-[#00C48C] bg-[#F0FDF4] p-3 nb-shadow-green flex items-center gap-2">
                 <Check className="w-4 h-4 text-[#00C48C] shrink-0" />
-                <p className="text-sm font-bold text-black">
+                <p className="text-sm font-medium text-black">
                   Selected:{" "}
                   <span className="text-[#16A34A]">{selectedPage.name}</span>
                 </p>
@@ -614,7 +614,7 @@ export function FacebookWizard({
         {step === "select_forms" && selectedPage && (
           <div className="max-w-2xl mx-auto space-y-4">
             <div>
-              <h3 className="font-display font-bold text-xl text-black mb-1">
+              <h3 className="font-display font-medium text-xl text-black mb-1">
                 Which Lead Forms should we capture?
               </h3>
               <p className="text-sm text-muted-foreground">
@@ -646,7 +646,7 @@ export function FacebookWizard({
                 {allForms && <Check className="w-3.5 h-3.5 text-black" />}
               </div>
               <div>
-                <p className="font-bold text-black text-sm">
+                <p className="font-medium text-black text-sm">
                   Capture from ALL forms (recommended)
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -657,7 +657,7 @@ export function FacebookWizard({
 
             {/* Individual forms */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 — or pick specific forms —
               </p>
 
@@ -673,7 +673,7 @@ export function FacebookWizard({
               ) : forms.length === 0 ? (
                 <div className="border-2 border-black p-5 text-center bg-white">
                   <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-40" />
-                  <p className="text-sm font-bold text-muted-foreground">
+                  <p className="text-sm font-medium text-muted-foreground">
                     No Lead Forms found on this Page
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -709,7 +709,7 @@ export function FacebookWizard({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-black text-sm truncate">
+                        <p className="font-medium text-black text-sm truncate">
                           {form.name}
                         </p>
                         <p className="text-[11px] text-muted-foreground">
@@ -743,7 +743,7 @@ export function FacebookWizard({
             {/* State / Location filter */}
             <div className="border-2 border-black p-4 bg-white space-y-3">
               <div>
-                <p className="text-xs font-bold text-black uppercase tracking-wider">
+                <p className="text-xs font-medium text-black uppercase tracking-wider">
                   Location Filter (Optional)
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -778,7 +778,7 @@ export function FacebookWizard({
                     }
                     setStateInput("");
                   }}
-                  className="border-2 border-black px-3 py-2 bg-black text-white text-sm font-bold hover:bg-gray-800"
+                  className="border-2 border-black px-3 py-2 bg-black text-white text-sm font-medium hover:bg-gray-800"
                 >
                   Add
                 </button>
@@ -789,7 +789,7 @@ export function FacebookWizard({
                   {allowedStates.map((s) => (
                     <span
                       key={s}
-                      className="flex items-center gap-1 border-2 border-black px-2 py-1 bg-[#EFF6FF] text-xs font-bold"
+                      className="flex items-center gap-1 border-2 border-black px-2 py-1 bg-[#EFF6FF] text-xs font-medium"
                     >
                       {s}
                       <button
@@ -817,7 +817,7 @@ export function FacebookWizard({
             {/* Default Assignee */}
             <div className="border-2 border-black p-4 bg-white space-y-3">
               <div>
-                <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                <p className="text-xs font-medium text-black uppercase tracking-wider flex items-center gap-1">
                   <UserCheck className="w-3.5 h-3.5" /> Default Assignee
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -843,7 +843,7 @@ export function FacebookWizard({
                 <CheckCircle2 className="w-7 h-7 text-black" />
               </div>
               <div>
-                <h3 className="font-display font-bold text-xl text-black">
+                <h3 className="font-display font-medium text-xl text-black">
                   Facebook Connected!
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -854,7 +854,7 @@ export function FacebookWizard({
 
             {/* Connected pages list */}
             <div className="space-y-2">
-              <p className="text-xs font-bold text-black uppercase tracking-wider">
+              <p className="text-xs font-medium text-black uppercase tracking-wider">
                 Connected Pages ({connectedPages.length})
               </p>
               {connectedPages.map((cp) => (
@@ -862,10 +862,10 @@ export function FacebookWizard({
                   {/* Page row */}
                   <div className="p-3 flex items-center gap-3">
                     <div className="w-8 h-8 bg-[#1877F2] border-2 border-black flex items-center justify-center shrink-0">
-                      <span className="text-white font-bold text-sm">f</span>
+                      <span className="text-white font-medium text-sm">f</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-black truncate">
+                      <p className="font-medium text-sm text-black truncate">
                         {cp.pageName}
                       </p>
                       {(cp.instagramUsername || cp.instagramId) && (
@@ -994,7 +994,7 @@ export function FacebookWizard({
                     <div className="border-t-2 border-black p-3 bg-[#FFFBEB] space-y-3">
                       {/* Assignee */}
                       <div className="space-y-1.5">
-                        <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                        <p className="text-xs font-medium text-black uppercase tracking-wider flex items-center gap-1">
                           <UserCheck className="w-3 h-3" /> Default Assignee
                         </p>
                         <AssigneePicker
@@ -1006,7 +1006,7 @@ export function FacebookWizard({
                         />
                       </div>
 
-                      <p className="text-xs font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                      <p className="text-xs font-medium text-black uppercase tracking-wider flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> Location Filter
                       </p>
                       <p className="text-[11px] text-muted-foreground">
@@ -1039,7 +1039,7 @@ export function FacebookWizard({
                             }
                             setEditFilterInput("");
                           }}
-                          className="border-2 border-black px-3 py-1.5 bg-black text-white text-sm font-bold hover:bg-gray-800"
+                          className="border-2 border-black px-3 py-1.5 bg-black text-white text-sm font-medium hover:bg-gray-800"
                         >
                           Add
                         </button>
@@ -1049,7 +1049,7 @@ export function FacebookWizard({
                           {editFilterValues.map((s) => (
                             <span
                               key={s}
-                              className="flex items-center gap-1 border-2 border-black px-2 py-0.5 bg-[#EFF6FF] text-xs font-bold"
+                              className="flex items-center gap-1 border-2 border-black px-2 py-0.5 bg-[#EFF6FF] text-xs font-medium"
                             >
                               {s}
                               <button
@@ -1074,7 +1074,7 @@ export function FacebookWizard({
                         <button
                           onClick={() => handleSaveFilter(cp)}
                           disabled={savingFilter}
-                          className="border-2 border-black px-4 py-1.5 bg-[#00C48C] text-black text-xs font-bold hover:bg-green-400 flex items-center gap-1"
+                          className="border-2 border-black px-4 py-1.5 bg-[#00C48C] text-black text-xs font-medium hover:bg-green-400 flex items-center gap-1"
                         >
                           {savingFilter ? (
                             <RefreshCw className="w-3 h-3 animate-spin" />
@@ -1085,7 +1085,7 @@ export function FacebookWizard({
                         </button>
                         <button
                           onClick={() => setEditingFilterPageId(null)}
-                          className="border-2 border-black px-4 py-1.5 bg-white text-black text-xs font-bold hover:bg-gray-100"
+                          className="border-2 border-black px-4 py-1.5 bg-white text-black text-xs font-medium hover:bg-gray-100"
                         >
                           Cancel
                         </button>
@@ -1104,7 +1104,7 @@ export function FacebookWizard({
                 setAllForms(true);
                 setStep("select_page");
               }}
-              className="nb-btn w-full bg-white text-black py-3 text-sm font-bold flex items-center justify-center gap-2 border-2 border-black hover:bg-[#EFF6FF]"
+              className="nb-btn w-full bg-white text-black py-3 text-sm font-medium flex items-center justify-center gap-2 border-2 border-black hover:bg-[#EFF6FF]"
             >
               <Plus className="w-4 h-4" /> Add Another Page
             </button>
@@ -1135,7 +1135,7 @@ export function FacebookWizard({
                     <item.icon className="w-4 h-4 text-black" />
                   </div>
                   <div>
-                    <p className="font-bold text-xs text-black">{item.title}</p>
+                    <p className="font-medium text-xs text-black">{item.title}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       {item.desc}
                     </p>
@@ -1161,7 +1161,7 @@ export function FacebookWizard({
           {step === "done" ? "Close" : step === "login" ? "Cancel" : "Back"}
         </button>
 
-        <div className="text-xs text-muted-foreground font-bold">
+        <div className="text-xs text-muted-foreground font-medium">
           Step {currentStepIdx + 1} of {STEPS.length}
         </div>
 
@@ -1169,12 +1169,12 @@ export function FacebookWizard({
           <button
             onClick={handleLoginWithFacebook}
             disabled={oauthLoading}
-            className="nb-btn bg-[#1877F2] text-white px-6 py-2.5 text-sm font-bold flex items-center gap-2"
+            className="nb-btn bg-[#1877F2] text-white px-6 py-2.5 text-sm font-medium flex items-center gap-2"
           >
             {oauthLoading ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
             ) : (
-              <span className="font-bold">f</span>
+              <span className="font-medium">f</span>
             )}
             Login with Facebook
           </button>
@@ -1185,7 +1185,7 @@ export function FacebookWizard({
             onClick={handleNextFromPage}
             disabled={!selectedPage}
             className={cn(
-              "nb-btn px-6 py-2.5 text-sm font-bold flex items-center gap-2",
+              "nb-btn px-6 py-2.5 text-sm font-medium flex items-center gap-2",
               selectedPage
                 ? "bg-[#1877F2] text-white"
                 : "bg-[#E5E7EB] text-muted-foreground cursor-not-allowed",
@@ -1200,7 +1200,7 @@ export function FacebookWizard({
             onClick={handleConnect}
             disabled={connecting || (!allForms && selectedFormIds.size === 0)}
             className={cn(
-              "nb-btn px-6 py-2.5 text-sm font-bold flex items-center gap-2",
+              "nb-btn px-6 py-2.5 text-sm font-medium flex items-center gap-2",
               !connecting && (allForms || selectedFormIds.size > 0)
                 ? "bg-[#00C48C] text-black"
                 : "bg-[#E5E7EB] text-muted-foreground cursor-not-allowed",
@@ -1221,7 +1221,7 @@ export function FacebookWizard({
         {step === "done" && (
           <button
             onClick={onClose}
-            className="nb-btn bg-[#024BAB] text-white px-6 py-2.5 text-sm font-bold flex items-center gap-2"
+            className="nb-btn bg-[#024BAB] text-white px-6 py-2.5 text-sm font-medium flex items-center gap-2"
           >
             Go to Leads →
           </button>

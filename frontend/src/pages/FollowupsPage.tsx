@@ -161,7 +161,7 @@ export default function FollowupsPage() {
         <div className="mb-6 bg-gradient-to-r from-blue-50 to-blue-100/50 border border-blue-200 rounded-lg p-4 flex items-center gap-3 animate-fade-in">
           <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <div>
-            <p className="font-semibold text-blue-900">
+            <p className="font-medium text-blue-900">
               You have {todayCount} follow-up{todayCount !== 1 ? "s" : ""} today
             </p>
             <p className="text-sm text-blue-700">
@@ -189,7 +189,7 @@ export default function FollowupsPage() {
           <AlertCircle className="w-4 h-4" />
           Overdue
           {overdueCount > 0 && (
-            <span className="ml-1 bg-destructive/20 text-destructive text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="ml-1 bg-destructive/20 text-destructive text-xs font-medium px-2 py-0.5 rounded-full">
               {overdueCount}
             </span>
           )}
@@ -210,7 +210,7 @@ export default function FollowupsPage() {
           <Clock className="w-4 h-4" />
           Today
           {todayCount > 0 && (
-            <span className="ml-1 bg-primary/20 text-primary text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="ml-1 bg-primary/20 text-primary text-xs font-medium px-2 py-0.5 rounded-full">
               {todayCount}
             </span>
           )}
@@ -231,7 +231,7 @@ export default function FollowupsPage() {
           <CalendarIcon className="w-4 h-4" />
           Tomorrow
           {tomorrowCount > 0 && (
-            <span className="ml-1 bg-blue-500/20 text-blue-600 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="ml-1 bg-blue-500/20 text-blue-600 text-xs font-medium px-2 py-0.5 rounded-full">
               {tomorrowCount}
             </span>
           )}
@@ -251,7 +251,7 @@ export default function FollowupsPage() {
         >
           This Week
           {weekCount > 0 && (
-            <span className="ml-1 bg-purple-500/20 text-purple-600 text-xs font-bold px-2 py-0.5 rounded-full">
+            <span className="ml-1 bg-purple-500/20 text-purple-600 text-xs font-medium px-2 py-0.5 rounded-full">
               {weekCount}
             </span>
           )}
@@ -327,22 +327,22 @@ export default function FollowupsPage() {
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-10 bg-background/95 shadow-sm">
                   <tr className="border-b border-border">
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 text-xs font-medium text-black uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden md:table-cell">
+                    <th className="text-left px-5 py-3 text-xs font-medium text-black uppercase tracking-wider hidden md:table-cell">
                       Phone
                     </th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 text-xs font-medium text-black uppercase tracking-wider">
                       Follow-up Date
                     </th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider hidden lg:table-cell">
+                    <th className="text-left px-5 py-3 text-xs font-medium text-black uppercase tracking-wider hidden lg:table-cell">
                       Remarks
                     </th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 text-xs font-medium text-black uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="text-left px-5 py-3 text-xs font-semibold text-black uppercase tracking-wider">
+                    <th className="text-left px-5 py-3 text-xs font-medium text-black uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>

@@ -65,7 +65,7 @@ const IN_STATES = [
 ];
 
 const box = "border-2 w-full px-3 py-2 text-sm bg-white";
-const lbl = "block text-[10px] font-black uppercase tracking-widest text-black";
+const lbl = "block text-[10px] font-medium uppercase tracking-widest text-black";
 
 interface Props {
   value: AddressValue;

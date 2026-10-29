@@ -113,7 +113,7 @@ export function ExportFieldsDialog({
                 aria-checked={format === f}
                 onClick={() => setFormat(f)}
                 className={cn(
-                  "flex-1 rounded border px-3 py-1.5 text-sm font-semibold transition-colors",
+                  "flex-1 rounded border px-3 py-1.5 text-sm font-medium transition-colors",
                   format === f
                     ? "border-primary bg-primary text-primary-foreground"
                     : "bg-background hover:bg-muted",
@@ -136,7 +136,7 @@ export function ExportFieldsDialog({
                 allSelected ? new Set() : new Set(fields.map((f) => f.key)),
               )
             }
-            className="text-xs font-semibold text-primary hover:underline"
+            className="text-xs font-medium text-primary hover:underline"
           >
             {allSelected ? "Deselect all" : "Select all"}
           </button>

@@ -58,7 +58,7 @@ function SalesFunnel({
         const width = Math.max((stage.count / max) * 100, 4);
         return (
           <div key={stage.label} className="flex items-center gap-3">
-            <div className="w-28 text-right text-xs font-bold text-black shrink-0">
+            <div className="w-28 text-right text-xs font-medium text-black shrink-0">
               {stage.label}
             </div>
             <div className="flex-1 h-8 border-2 border-black bg-white relative overflow-hidden">
@@ -69,7 +69,7 @@ function SalesFunnel({
                   backgroundColor: stage.color + "44",
                 }}
               />
-              <span className="absolute inset-y-0 left-3 flex items-center text-xs font-bold text-black z-10">
+              <span className="absolute inset-y-0 left-3 flex items-center text-xs font-medium text-black z-10">
                 {stage.count}
               </span>
             </div>
@@ -85,7 +85,7 @@ function TodayFollowUpsList({ leads }: { leads: any[] }) {
     return (
       <div className="flex flex-col items-center justify-center h-36 text-center">
         <CheckCircle2 className="w-8 h-8 mb-2 text-[#00C48C]" />
-        <p className="text-sm font-bold text-black">All clear for today!</p>
+        <p className="text-sm font-medium text-black">All clear for today!</p>
         <p className="text-xs text-muted-foreground mt-0.5">
           No follow-ups scheduled
         </p>
@@ -97,11 +97,11 @@ function TodayFollowUpsList({ leads }: { leads: any[] }) {
       {leads.slice(0, 6).map((lead) => (
         <Link key={lead._id} to="/leads">
           <div className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black hover: transition-all">
-            <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center text-xs font-bold text-black shrink-0">
+            <div className="w-8 h-8 bg-[#024BAB] border-2 border-black flex items-center justify-center text-xs font-medium text-black shrink-0">
               {(lead.name || "U")[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-black truncate">
+              <p className="text-sm font-medium text-black truncate">
                 {lead.name}
               </p>
               <p className="text-xs text-muted-foreground truncate">
@@ -121,7 +121,7 @@ function Leaderboard({ performers }: { performers: any[] }) {
     return (
       <div className="flex flex-col items-center justify-center h-36 text-center text-muted-foreground">
         <Users className="w-8 h-8 mb-2 opacity-30" />
-        <p className="text-sm font-bold">No performance data yet</p>
+        <p className="text-sm font-medium">No performance data yet</p>
       </div>
     );
   }
@@ -140,7 +140,7 @@ function Leaderboard({ performers }: { performers: any[] }) {
           >
             <span
               className={cn(
-                "w-7 h-7 shrink-0 rounded-full border-2 border-black flex items-center justify-center text-xs font-black text-black",
+                "w-7 h-7 shrink-0 rounded-full border-2 border-black flex items-center justify-center text-xs font-medium text-black",
                 medalColors[i] || "bg-white",
               )}
             >
@@ -154,13 +154,13 @@ function Leaderboard({ performers }: { performers: any[] }) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs font-black text-white">
+                <div className="w-full h-full flex items-center justify-center text-xs font-medium text-white">
                   {(p.name || "U")[0].toUpperCase()}
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-black truncate">{p.name}</p>
+              <p className="text-sm font-medium text-black truncate">{p.name}</p>
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex-1 h-1.5 bg-white border border-black overflow-hidden">
                   <div
@@ -168,13 +168,13 @@ function Leaderboard({ performers }: { performers: any[] }) {
                     style={{ width: `${convRate}%` }}
                   />
                 </div>
-                <span className="text-[10px] font-bold text-black shrink-0">
+                <span className="text-[10px] font-medium text-black shrink-0">
                   {convRate}%
                 </span>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-sm font-bold text-black">{p.conversions}</p>
+              <p className="text-sm font-medium text-black">{p.conversions}</p>
               <p className="text-[10px] font-medium text-muted-foreground">
                 {p.leadsCount} leads
               </p>
@@ -190,14 +190,14 @@ const NbTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border-2 border-black  px-3 py-2 text-xs">
-      <p className="font-bold text-black mb-1">{label}</p>
+      <p className="font-medium text-black mb-1">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center gap-2">
           <span
             className="w-2 h-2 border border-black shrink-0"
             style={{ background: p.color }}
           />
-          <span className="font-bold text-black capitalize">
+          <span className="font-medium text-black capitalize">
             {p.name}: {p.value}
           </span>
         </div>
@@ -264,7 +264,7 @@ export default function DashboardPage() {
     <AppLayout title="Dashboard">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             {greeting}, {user?.name?.split(" ")[0]}
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -278,7 +278,7 @@ export default function DashboardPage() {
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={cn(
-                  "text-xs px-3 py-2 font-bold transition-colors capitalize",
+                  "text-xs px-3 py-2 font-medium transition-colors capitalize",
                   i > 0 && "border-l-2 border-black",
                   period === p
                     ? "bg-[#024BAB] text-white"
@@ -301,7 +301,7 @@ export default function DashboardPage() {
         stats.uncontactedLeads > 0 ||
         stats.hotLeads > 0) && (
         <div className="flex flex-wrap gap-2 mb-6 p-3 border-2 border-[#EF4444] bg-[#FFF0F0] ">
-          <span className="text-xs font-bold text-[#EF4444] uppercase tracking-wider flex items-center gap-1">
+          <span className="text-xs font-medium text-[#EF4444] uppercase tracking-wider flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5" /> Action needed
           </span>
           {stats.hotLeads > 0 && (
@@ -377,7 +377,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
         <div className="lg:col-span-2 border-2 bg-white p-5">
-          <h3 className="font-display font-bold text-base text-black mb-1">
+          <h3 className="font-display font-medium text-base text-black mb-1">
             Sales Funnel
           </h3>
           <p className="text-xs text-muted-foreground mb-4">
@@ -389,14 +389,14 @@ export default function DashboardPage() {
         <div className="lg:col-span-3 border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-display font-bold text-base text-black">
+              <h3 className="font-display font-medium text-base text-black">
                 Leads Overview
               </h3>
               <p className="text-xs text-muted-foreground">
                 6-month lead volume
               </p>
             </div>
-            <div className="flex items-center gap-3 text-[11px] font-bold">
+            <div className="flex items-center gap-3 text-[11px] font-medium">
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 border border-black bg-[#024BAB] inline-block" />{" "}
                 Leads
@@ -416,12 +416,12 @@ export default function DashboardPage() {
               />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 11, fontWeight: 700 }}
+                tick={{ fontSize: 11, fontWeight: 500 }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fontWeight: 700 }}
+                tick={{ fontSize: 11, fontWeight: 500 }}
                 tickLine={false}
                 axisLine={false}
                 width={28}
@@ -448,7 +448,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="border-2 bg-white p-5">
-          <h3 className="font-display font-bold text-base text-black mb-1">
+          <h3 className="font-display font-medium text-base text-black mb-1">
             Lead Sources
           </h3>
           <p className="text-xs text-muted-foreground mb-3">
@@ -483,7 +483,7 @@ export default function DashboardPage() {
                 {sourceData.map((entry: any) => (
                   <span
                     key={entry.name}
-                    className="flex items-center gap-1 text-[11px] font-bold text-black"
+                    className="flex items-center gap-1 text-[11px] font-medium text-black"
                   >
                     <span
                       className="w-2.5 h-2.5 border border-black shrink-0"
@@ -497,7 +497,7 @@ export default function DashboardPage() {
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-bold">
+            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
               No data yet
             </div>
           )}
@@ -507,7 +507,7 @@ export default function DashboardPage() {
         <div className="border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="font-display font-bold text-base text-black">
+              <h3 className="font-display font-medium text-base text-black">
                 Today's Follow-ups
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -515,7 +515,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link to="/followup-calendar">
-              <button className="text-xs font-bold text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
+              <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
                 View all →
               </button>
             </Link>
@@ -527,7 +527,7 @@ export default function DashboardPage() {
         <div className="border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="font-display font-bold text-base text-black">
+              <h3 className="font-display font-medium text-base text-black">
                 Team Leaderboard
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -535,7 +535,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link to="/users">
-              <button className="text-xs font-bold text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
+              <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
                 Team →
               </button>
             </Link>

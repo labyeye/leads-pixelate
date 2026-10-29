@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   saveBtn: {
     backgroundColor: '#FF751F',
     paddingHorizontal: 14,
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  saveBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  saveBtnText: { color: '#fff', fontWeight: '500', fontSize: 13 },
   divider: { height: 2, backgroundColor: '#000' },
   scroll: { padding: 16, gap: 12 },
 
@@ -499,13 +499,13 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 14,
   },
   fieldGroup: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: '700', color: '#000', marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: '500', color: '#000', marginBottom: 6 },
   inputBorder: {
     borderWidth: 2,
     borderRadius: 8,
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#22c55e',
   },
-  statePillText: { fontSize: 13, color: '#15803d', fontWeight: '600' },
+  statePillText: { fontSize: 13, color: '#15803d', fontWeight: '500' },
 
   // Modals
   modalOverlay: {
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 16,
@@ -584,8 +584,8 @@ const styles = StyleSheet.create({
   },
   pickerRowActive: { backgroundColor: '#eff6ff' },
   pickerText: { fontSize: 15, color: '#000', fontWeight: '500' },
-  pickerTextActive: { color: '#024BAB', fontWeight: '700' },
-  pickerCheck: { color: '#024BAB', fontSize: 16, fontWeight: '600' },
+  pickerTextActive: { color: '#024BAB', fontWeight: '500' },
+  pickerCheck: { color: '#024BAB', fontSize: 16, fontWeight: '500' },
   modalCancelBtn: {
     marginTop: 16,
     paddingVertical: 13,
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
-  modalCancelText: { fontWeight: '700', color: '#000', fontSize: 14 },
+  modalCancelText: { fontWeight: '500', color: '#000', fontSize: 14 },
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   checkboxChecked: { backgroundColor: '#024BAB' },
-  checkMark: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  checkMark: { color: '#fff', fontSize: 13, fontWeight: '500' },
   checkLabel: { fontSize: 14, color: '#000', flex: 1, fontWeight: '500' },
   modalDoneBtn: {
     marginTop: 16,
@@ -634,5 +634,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  modalDoneText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  modalDoneText: { color: '#fff', fontWeight: '500', fontSize: 15 },
 });

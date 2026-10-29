@@ -1057,7 +1057,7 @@ const styles = StyleSheet.create({
     right: 0,
     textAlign: 'center',
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
@@ -1093,7 +1093,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     backgroundColor: '#fff',
   },
-  pipelineTitle: { fontSize: 18, fontWeight: '800', color: '#000' },
+  pipelineTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   pipelineBtns: { flexDirection: 'row', gap: 8 },
   pillBtn: {
     flexDirection: 'row',
@@ -1109,7 +1109,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
   },
   pillBtnActive: { backgroundColor: PRIMARY },
-  pillBtnText: { fontSize: 13, fontWeight: '700', color: '#000' },
+  pillBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   syncRow: {
     flexDirection: 'row',
     marginHorizontal: 12,
@@ -1130,7 +1130,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   syncLogo: { width: 26, height: 26 },
-  syncChipText: { fontSize: 9, fontWeight: '800', textAlign: 'center' },
+  syncChipText: { fontSize: 9, fontWeight: '500', textAlign: 'center' },
   filterBtn: {
     width: 39.5,
     height: 39.5,
@@ -1155,7 +1155,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 2,
   },
-  filterDotText: { fontSize: 8, fontWeight: '600', color: '#fff' },
+  filterDotText: { fontSize: 8, fontWeight: '500', color: '#fff' },
 
   // Active filter chips
   activeFiltersRow: {
@@ -1185,7 +1185,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#0A0A0A',
     borderColor: '#000',
   },
-  clearAllText: { fontSize: 11, fontWeight: '600', color: '#fff' },
+  clearAllText: { fontSize: 11, fontWeight: '500', color: '#fff' },
   activeChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1197,7 +1197,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  activeChipText: { fontSize: 10, fontWeight: '700', color: '#000' },
+  activeChipText: { fontSize: 10, fontWeight: '500', color: '#000' },
 
   // Search
   searchRow: {
@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
-  addBtnInlineText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  addBtnInlineText: { fontSize: 13, fontWeight: '500', color: '#fff' },
 
   // Tabs
   // Fixed height so this row can never stretch to fill leftover vertical
@@ -1274,7 +1274,7 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: PRIMARY },
   tabText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -1289,7 +1289,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tabCountActive: { backgroundColor: '#fff' },
-  tabCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  tabCountText: { fontSize: 10, fontWeight: '500', color: '#fff' },
   tabCountTextActive: { color: PRIMARY },
   divider: { height: 2, backgroundColor: '#000' },
 
@@ -1321,9 +1321,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 24, fontWeight: '900', color: '#FBFBFB' },
+  avatarText: { fontSize: 24, fontWeight: '500', color: '#FBFBFB' },
   cardTopMid: { flex: 1 },
-  leadName: { fontSize: 17, fontWeight: '800', color: '#000' },
+  leadName: { fontSize: 17, fontWeight: '500', color: '#000' },
   leadSubtitle: { fontSize: 13, color: '#374151', fontWeight: '500', marginTop: 2 },
   pillRow: { flexDirection: 'row', marginTop: 8 },
   pill: {
@@ -1333,9 +1333,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  pillText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
+  pillText: { fontSize: 11, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.4 },
   scoreWrap: { alignItems: 'center', gap: 4 },
-  scoreLabel: { fontSize: 10, color: '#000', fontWeight: '800', textTransform: 'uppercase' },
+  scoreLabel: { fontSize: 10, color: '#000', fontWeight: '500', textTransform: 'uppercase' },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1349,13 +1349,13 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 10,
     color: '#000',
-    fontWeight: '800',
+    fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statValue: { fontSize: 15, fontWeight: '800', color: '#000' },
+  statValue: { fontSize: 15, fontWeight: '500', color: '#000' },
   statDivider: { width: 2, alignSelf: 'stretch', backgroundColor: '#000', marginHorizontal: 10 },
   actionsRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
   actionBtn: {
@@ -1373,7 +1373,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
   },
   actionDisabled: { opacity: 0.4 },
-  actionText: { fontSize: 13, fontWeight: '800', color: '#000', textTransform: 'uppercase' },
+  actionText: { fontSize: 13, fontWeight: '500', color: '#000', textTransform: 'uppercase' },
   detailsBtn: {
     flex: 1.3,
     flexDirection: 'row',
@@ -1388,14 +1388,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: '#000',
   },
-  detailsText: { fontSize: 13, fontWeight: '800', color: '#fff', textTransform: 'uppercase' },
+  detailsText: { fontSize: 13, fontWeight: '500', color: '#fff', textTransform: 'uppercase' },
   followUpRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     marginTop: 2,
   },
-  followUpText: { fontSize: 11, color: PRIMARY, fontWeight: '700' },
+  followUpText: { fontSize: 11, color: PRIMARY, fontWeight: '500' },
   centerBox: {
     flex: 1,
     alignItems: 'center',
@@ -1409,7 +1409,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
+  emptyTitle: { fontSize: 16, fontWeight: '500', color: '#000' },
   emptySub: { fontSize: 13, color: '#64748b', marginTop: 4 },
 
   // Filter modal
@@ -1431,7 +1431,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  modalTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   modalHeaderBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   resetBtn: {
     paddingHorizontal: 10,
@@ -1440,7 +1440,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#ef4444',
   },
-  resetBtnText: { fontSize: 12, fontWeight: '600', color: '#ef4444' },
+  resetBtnText: { fontSize: 12, fontWeight: '500', color: '#ef4444' },
   modalCloseBtn: {
     width: 32,
     height: 32,
@@ -1470,12 +1470,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   allBtnActive: { backgroundColor: PRIMARY },
-  allBtnText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  allBtnText: { fontSize: 14, fontWeight: '500', color: '#000' },
   allBtnTextActive: { color: '#fff' },
 
   filterSectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -1500,10 +1500,10 @@ const styles = StyleSheet.create({
   sourceChipLabel: {
     flex: 1,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
   },
-  sourceChipLabelActive: { color: PRIMARY, fontWeight: '800' },
+  sourceChipLabelActive: { color: PRIMARY, fontWeight: '500' },
   // Date range in filter
   dateRangeRow: {
     flexDirection: 'row',
@@ -1514,7 +1514,7 @@ const styles = StyleSheet.create({
   dateRangeField: { flex: 1 },
   dateRangeFieldLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1531,12 +1531,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
     backgroundColor: '#fff',
   },
   dateRangeSep: { paddingBottom: 10 },
-  dateRangeSepText: { fontSize: 16, fontWeight: '600', color: '#000' },
+  dateRangeSepText: { fontSize: 16, fontWeight: '500', color: '#000' },
   budgetCustomRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1546,7 +1546,7 @@ const styles = StyleSheet.create({
   filterEmptyText: {
     fontSize: 12,
     color: '#000',
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 8,
   },
   statusChip: {
@@ -1562,7 +1562,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#000',
   },
@@ -1582,7 +1582,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 14, fontWeight: '500', color: '#000' },
   applyBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -1599,7 +1599,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 13,
   },
-  applyBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  applyBtnText: { fontSize: 14, fontWeight: '500', color: '#fff' },
 
   syncDateRow: { flexDirection: 'row', gap: 8 },
   syncDateBtn: {
@@ -1616,13 +1616,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   syncDateBtnActive: { backgroundColor: PRIMARY },
-  syncDateText: { fontSize: 12, fontWeight: '700', color: '#000' },
+  syncDateText: { fontSize: 12, fontWeight: '500', color: '#000' },
   syncDateTextActive: { color: '#fff' },
   customDateRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   customDateField: { flex: 1 },
   customDateLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.8,

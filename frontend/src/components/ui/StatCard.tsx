@@ -49,10 +49,10 @@ export function StatCard({
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-bold text-black leading-tight tabular-nums">
+        <p className="text-2xl font-medium text-black leading-tight tabular-nums">
           <AnimatedValue value={value} />
         </p>
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider truncate">
           {label}
         </p>
         {sub ? (

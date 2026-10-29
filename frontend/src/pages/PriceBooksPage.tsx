@@ -163,7 +163,7 @@ export default function PriceBooksPage() {
               key={b._id}
               className="border-b border-gray-200 hover:bg-gray-50"
             >
-              <td className="px-4 py-3 font-black text-black">{b.name}</td>
+              <td className="px-4 py-3 font-medium text-black">{b.name}</td>
               <td className="px-4 py-3 text-gray-600">
                 {b.description || "—"}
               </td>
@@ -318,7 +318,7 @@ export default function PriceBooksPage() {
                     items: [...form.items, { product: "", price: "" }],
                   })
                 }
-                className="mt-2 inline-flex items-center gap-1 text-xs font-black uppercase tracking-widest text-[#024BAB]"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-medium uppercase tracking-widest text-[#024BAB]"
               >
                 <Plus className="w-3.5 h-3.5" /> Add product
               </button>

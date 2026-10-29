@@ -529,7 +529,7 @@ const s = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '500', color: '#000' },
   addBtn: {
     width: 36,
     height: 36,
@@ -553,7 +553,7 @@ const s = StyleSheet.create({
   tabOn: { backgroundColor: '#024BAB' },
   tabText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#000',
   },
@@ -562,7 +562,7 @@ const s = StyleSheet.create({
   empty: {
     textAlign: 'center',
     color: '#94a3b8',
-    fontWeight: '700',
+    fontWeight: '500',
     marginTop: 30,
   },
   card: {
@@ -578,7 +578,7 @@ const s = StyleSheet.create({
     borderColor: '#000',
     padding: 12,
   },
-  roleName: { fontSize: 15, fontWeight: '600', color: '#000' },
+  roleName: { fontSize: 15, fontWeight: '500', color: '#000' },
   tags: { flexDirection: 'row', gap: 6, marginTop: 6 },
   tag: {
     borderWidth: 2,
@@ -589,7 +589,7 @@ const s = StyleSheet.create({
   },
   tagText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#024BAB',
     textTransform: 'uppercase',
   },
@@ -612,7 +612,7 @@ const s = StyleSheet.create({
   pillOn: { backgroundColor: '#024BAB', borderColor: '#024BAB' },
   pillText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#000',
   },
@@ -628,7 +628,7 @@ const s = StyleSheet.create({
   },
   matrixHeadText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#000',
   },
@@ -636,7 +636,7 @@ const s = StyleSheet.create({
     width: 40,
     textAlign: 'center',
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
   },
   matrixRow: {
@@ -647,7 +647,7 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
-  resName: { flex: 1, fontSize: 13, fontWeight: '700', color: '#000' },
+  resName: { flex: 1, fontSize: 13, fontWeight: '500', color: '#000' },
   check: {
     width: 32,
     height: 32,
@@ -680,7 +680,7 @@ const s = StyleSheet.create({
   saveText: {
     color: '#fff',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
   backdrop: {
@@ -702,13 +702,13 @@ const s = StyleSheet.create({
   },
   dialogTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 10,
   },
   label: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     marginTop: 8,
@@ -744,7 +744,7 @@ const s = StyleSheet.create({
   dialogBtnText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
 });

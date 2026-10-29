@@ -347,7 +347,7 @@ export default function WhatsappMessagingPage() {
               <MessageSquare className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">WhatsApp Messaging</h1>
+              <h1 className="text-xl font-medium">WhatsApp Messaging</h1>
               <p className="text-xs text-muted-foreground">
                 Manage & send WhatsApp campaigns to leads
               </p>
@@ -408,7 +408,7 @@ export default function WhatsappMessagingPage() {
                             {c.name}
                           </span>
                           <span
-                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[c.status] || "bg-gray-100 text-gray-700"}`}
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLORS[c.status] || "bg-gray-100 text-gray-700"}`}
                           >
                             {c.status}
                           </span>
@@ -740,7 +740,7 @@ export default function WhatsappMessagingPage() {
                   <div className="bg-[#e5ddd5] rounded-xl p-4">
                     <div className="bg-white rounded-lg p-3 shadow-sm max-w-xs ml-auto">
                       {selectedTemplate.headerText && (
-                        <p className="text-sm font-semibold text-gray-800 mb-1">
+                        <p className="text-sm font-medium text-gray-800 mb-1">
                           {selectedTemplate.headerText}
                         </p>
                       )}
@@ -955,7 +955,7 @@ function CampaignDetail({
       <div className="px-5 py-4 border-b border-border">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-semibold text-base">{campaign.name}</h2>
+            <h2 className="font-medium text-base">{campaign.name}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               {campaign.template?.displayName ||
                 campaign.templateSnapshot?.displayName}{" "}
@@ -966,7 +966,7 @@ function CampaignDetail({
             </p>
           </div>
           <span
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[campaign.status] || "bg-gray-100 text-gray-700"}`}
+            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLORS[campaign.status] || "bg-gray-100 text-gray-700"}`}
           >
             {campaign.status}
           </span>
@@ -989,7 +989,7 @@ function CampaignDetail({
           {stats.map((s) => (
             <div key={s.label} className="text-center">
               <s.icon className={`w-3.5 h-3.5 mx-auto mb-1 ${s.color}`} />
-              <p className={`text-sm font-semibold ${s.color}`}>{s.value}</p>
+              <p className={`text-sm font-medium ${s.color}`}>{s.value}</p>
               <p className="text-[10px] text-muted-foreground">{s.label}</p>
             </div>
           ))}
@@ -1122,7 +1122,7 @@ function MessageStatusBadge({ status }: { status: string }) {
   };
   return (
     <span
-      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] || "bg-gray-100 text-gray-600"}`}
+      className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${map[status] || "bg-gray-100 text-gray-600"}`}
     >
       {status}
     </span>

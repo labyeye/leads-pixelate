@@ -109,12 +109,12 @@ export default function NumberingTab({
           : previewNumber(t.format, 1) + "  (current style)";
         return (
           <div key={t.id} className="border-2 border-black bg-white p-4">
-            <h3 className="font-display font-bold text-sm mb-3">
+            <h3 className="font-display font-medium text-sm mb-3">
               {t.label} number
             </h3>
             <div className="grid sm:grid-cols-[1fr_140px] gap-3">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1">
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-black/60 mb-1">
                   Format
                 </label>
                 <input
@@ -126,7 +126,7 @@ export default function NumberingTab({
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-black/60 mb-1">
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-black/60 mb-1">
                   Next number
                 </label>
                 <input
@@ -144,7 +144,7 @@ export default function NumberingTab({
             </div>
             <p className="text-xs mt-2 text-black/70">
               Next one will look like:{" "}
-              <span className="font-bold">{shown}</span>
+              <span className="font-medium">{shown}</span>
             </p>
           </div>
         );
@@ -152,7 +152,7 @@ export default function NumberingTab({
       <button
         onClick={save}
         disabled={saving}
-        className="nb-btn px-5 py-2 text-sm font-bold text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
+        className="nb-btn px-5 py-2 text-sm font-medium text-white bg-[#024BAB] border-2 border-black flex items-center gap-2 disabled:opacity-50"
       >
         {saving ? (
           <Loader2 className="w-4 h-4 animate-spin" />

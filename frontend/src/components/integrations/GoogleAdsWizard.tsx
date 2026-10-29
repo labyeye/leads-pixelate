@@ -119,7 +119,7 @@ export function GoogleAdsWizard({
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-5 border-b-2 border-black">
         <div>
-          <h2 className="text-lg font-bold">Google Ads Lead Forms</h2>
+          <h2 className="text-lg font-medium">Google Ads Lead Forms</h2>
           <p className="text-xs text-black/60">
             Capture leads from Google Ads Lead Form Extensions
           </p>
@@ -139,7 +139,7 @@ export function GoogleAdsWizard({
             <button
               onClick={handleConnect}
               disabled={loading}
-              className="nb-btn px-6 py-2.5 text-sm font-bold bg-[#4285F4] text-white border-black"
+              className="nb-btn px-6 py-2.5 text-sm font-medium bg-[#4285F4] text-white border-black"
             >
               {loading ? "Redirecting…" : "Connect with Google →"}
             </button>
@@ -148,7 +148,7 @@ export function GoogleAdsWizard({
 
         {step === "select_account" && (
           <div className="space-y-3">
-            <p className="text-sm font-bold">Choose a Google Ads account</p>
+            <p className="text-sm font-medium">Choose a Google Ads account</p>
             {loading && <RefreshCw className="w-5 h-5 animate-spin mx-auto" />}
             {accounts.map((a) => (
               <button
@@ -157,7 +157,7 @@ export function GoogleAdsWizard({
                 className="w-full text-left border-2 border-black nb-shadow-sm p-4 hover:bg-black/5 flex items-center justify-between"
               >
                 <div>
-                  <p className="font-bold text-sm">{a.name}</p>
+                  <p className="font-medium text-sm">{a.name}</p>
                   <p className="text-xs text-black/60">Customer ID: {a.id}</p>
                 </div>
                 <ExternalLink className="w-4 h-4" />
@@ -173,7 +173,7 @@ export function GoogleAdsWizard({
 
         {step === "select_campaigns" && (
           <div className="space-y-4">
-            <p className="text-sm font-bold">
+            <p className="text-sm font-medium">
               Select campaigns to sync leads from (leave empty to sync all)
             </p>
             <div className="border-2 border-black nb-shadow-sm divide-y-2 divide-black max-h-64 overflow-y-auto">
@@ -201,7 +201,7 @@ export function GoogleAdsWizard({
             </div>
 
             <div>
-              <label className="text-xs font-bold block mb-1">
+              <label className="text-xs font-medium block mb-1">
                 Allowed States (optional — comma separated, filters leads by
                 location)
               </label>
@@ -217,7 +217,7 @@ export function GoogleAdsWizard({
             <button
               onClick={handleSaveConnection}
               disabled={loading}
-              className="nb-btn px-6 py-2.5 text-sm font-bold bg-[#4285F4] text-white border-black"
+              className="nb-btn px-6 py-2.5 text-sm font-medium bg-[#4285F4] text-white border-black"
             >
               {loading ? "Saving…" : "Save & Connect →"}
             </button>
@@ -229,7 +229,7 @@ export function GoogleAdsWizard({
             <div className="w-14 h-14 rounded-full bg-[#4285F4]/10 border-2 border-black flex items-center justify-center mx-auto">
               <Check className="w-7 h-7 text-[#4285F4]" />
             </div>
-            <p className="font-bold">Google Ads connected!</p>
+            <p className="font-medium">Google Ads connected!</p>
             <p className="text-sm text-black/70">
               We'll sync leads periodically. For instant delivery, add this
               webhook URL to your Lead Form asset's webhook delivery settings in
@@ -250,7 +250,7 @@ export function GoogleAdsWizard({
             )}
             <button
               onClick={onClose}
-              className="nb-btn px-6 py-2.5 text-sm font-bold"
+              className="nb-btn px-6 py-2.5 text-sm font-medium"
             >
               Done
             </button>

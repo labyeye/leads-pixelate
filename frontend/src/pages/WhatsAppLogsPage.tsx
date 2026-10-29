@@ -115,7 +115,7 @@ export default function WhatsAppLogsPage() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold">WhatsApp Logs</h1>
+            <h1 className="text-xl font-medium">WhatsApp Logs</h1>
             <p className="text-xs text-muted-foreground">
               All campaigns, delivery & read status
             </p>
@@ -172,7 +172,7 @@ export default function WhatsAppLogsPage() {
               >
                 <s.icon className={cn("w-5 h-5 shrink-0", s.color)} />
                 <div>
-                  <p className={cn("text-xl font-bold", s.color)}>{s.value}</p>
+                  <p className={cn("text-xl font-medium", s.color)}>{s.value}</p>
                   <p className="text-xs text-muted-foreground">{s.label}</p>
                 </div>
               </div>
@@ -239,10 +239,10 @@ export default function WhatsAppLogsPage() {
                               icon={faWhatsapp}
                               className="text-[#25D366] shrink-0"
                             />
-                            <span className="font-bold text-sm">{c.name}</span>
+                            <span className="font-medium text-sm">{c.name}</span>
                             <span
                               className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                                "text-[10px] font-medium px-2 py-0.5 rounded-full border",
                                 STATUS_COLORS[c.status],
                               )}
                             >
@@ -310,7 +310,7 @@ export default function WhatsAppLogsPage() {
                                 )}
                               >
                                 <s.icon className="w-3 h-3" />
-                                <span className="font-bold">{s.val}</span>
+                                <span className="font-medium">{s.val}</span>
                                 <span className="text-muted-foreground">
                                   {s.label}
                                 </span>
@@ -350,13 +350,13 @@ export default function WhatsAppLogsPage() {
                         </div>
 
                         <div className="text-right shrink-0">
-                          <p className="text-lg font-bold text-[#25D366]">
+                          <p className="text-lg font-medium text-[#25D366]">
                             {deliveryPct}%
                           </p>
                           <p className="text-[10px] text-muted-foreground">
                             delivered
                           </p>
-                          <p className="text-sm font-bold text-purple-600 mt-1">
+                          <p className="text-sm font-medium text-purple-600 mt-1">
                             {readPct}%
                           </p>
                           <p className="text-[10px] text-muted-foreground">
@@ -385,7 +385,7 @@ export default function WhatsAppLogsPage() {
                             {(detail.template?.bodyText ||
                               detail.templateSnapshot?.bodyText) && (
                               <div className="mb-4 bg-primary/5 border border-primary/10 rounded-xl p-3">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">
                                   Template Preview
                                 </p>
                                 <div className="relative bg-white border-2 border-secondary/30 rounded-xl rounded-tl-sm p-3 shadow-sm max-w-md">
@@ -399,16 +399,16 @@ export default function WhatsAppLogsPage() {
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="text-xs text-muted-foreground border-b border-gray-200">
-                                  <th className="text-left pb-2 pr-4 font-semibold">
+                                  <th className="text-left pb-2 pr-4 font-medium">
                                     Lead
                                   </th>
-                                  <th className="text-left pb-2 pr-4 font-semibold">
+                                  <th className="text-left pb-2 pr-4 font-medium">
                                     Phone
                                   </th>
-                                  <th className="text-left pb-2 pr-4 font-semibold">
+                                  <th className="text-left pb-2 pr-4 font-medium">
                                     Status
                                   </th>
-                                  <th className="text-left pb-2 font-semibold">
+                                  <th className="text-left pb-2 font-medium">
                                     Time
                                   </th>
                                 </tr>
@@ -480,7 +480,7 @@ function MsgStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "text-[10px] font-bold px-2 py-0.5 rounded-full",
+        "text-[10px] font-medium px-2 py-0.5 rounded-full",
         map[status] || "bg-gray-100 text-gray-600",
       )}
     >

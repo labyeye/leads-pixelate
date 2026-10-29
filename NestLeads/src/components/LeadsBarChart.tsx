@@ -69,7 +69,7 @@ export default function LeadsBarChart({
 const styles = StyleSheet.create({
   plot: { flexDirection: 'row', alignItems: 'flex-end' },
   col: { alignItems: 'center', justifyContent: 'flex-end' },
-  val: { fontSize: 11, fontWeight: '800', color: '#000', marginBottom: 3 },
+  val: { fontSize: 11, fontWeight: '500', color: '#000', marginBottom: 3 },
   bar: {
     borderWidth: 2,
     borderColor: '#000',
@@ -79,5 +79,5 @@ const styles = StyleSheet.create({
   },
   axis: { height: 2, backgroundColor: '#000' },
   labels: { flexDirection: 'row', marginTop: 6 },
-  label: { textAlign: 'center', fontSize: 10, fontWeight: '700', color: '#000' },
+  label: { textAlign: 'center', fontSize: 10, fontWeight: '500', color: '#000' },
 });

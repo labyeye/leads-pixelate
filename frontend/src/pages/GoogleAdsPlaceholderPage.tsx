@@ -10,7 +10,7 @@ export default function GoogleAdsPlaceholderPage({ title }: { title: string }) {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Google Ads {title}
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -27,7 +27,7 @@ export default function GoogleAdsPlaceholderPage({ title }: { title: string }) {
           </div>
         </div>
         <div>
-          <h3 className="font-display font-bold text-lg text-black">
+          <h3 className="font-display font-medium text-lg text-black">
             Not available yet
           </h3>
           <p className="text-sm text-muted-foreground mt-1">
@@ -40,7 +40,7 @@ export default function GoogleAdsPlaceholderPage({ title }: { title: string }) {
         </div>
         <button
           onClick={() => navigate("/campaigns/google")}
-          className="border-2 border-black bg-[#4285F4] text-white px-4 py-2 text-sm font-bold"
+          className="border-2 border-black bg-[#4285F4] text-white px-4 py-2 text-sm font-medium"
         >
           Go to Google Ads Lead Sync Setup →
         </button>

@@ -79,10 +79,10 @@ function Kpi({
         {cloneElement(icon, { className: "w-5 h-5", style: { color: tint } })}
       </span>
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground truncate">
           {label}
         </p>
-        <p className="text-2xl font-bold text-black">{value}</p>
+        <p className="text-2xl font-medium text-black">{value}</p>
         {hint && (
           <p className="text-xs text-muted-foreground truncate">{hint}</p>
         )}
@@ -119,7 +119,7 @@ function CampaignCard({
         <button
           type="button"
           onClick={onOpen}
-          className="text-left font-display font-bold text-base text-black hover:underline"
+          className="text-left font-display font-medium text-base text-black hover:underline"
         >
           {c.name}
         </button>
@@ -134,7 +134,7 @@ function CampaignCard({
       </div>
       <span
         className={cn(
-          "inline-block px-2 py-0.5 text-[11px] font-bold border-2 border-black",
+          "inline-block px-2 py-0.5 text-[11px] font-medium border-2 border-black",
           pill.cls,
         )}
       >
@@ -153,7 +153,7 @@ function CampaignCard({
       {!c.onboarded && (
         <Link
           to={`/social-autopilot/setup?campaign=${c.id}`}
-          className="text-xs font-bold text-[#024BAB] underline"
+          className="text-xs font-medium text-[#024BAB] underline"
         >
           Finish setup
         </Link>
@@ -198,7 +198,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
   if (!overview || !campaigns.length) {
     return (
       <div className="nb-card p-8 bg-white text-center space-y-3">
-        <h2 className="font-display font-bold text-xl text-black">
+        <h2 className="font-display font-medium text-xl text-black">
           Create your first Autopilot campaign
         </h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -287,7 +287,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
               <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={cn(
-                    "px-2.5 py-1 text-xs font-bold border-2 border-black",
+                    "px-2.5 py-1 text-xs font-medium border-2 border-black",
                     pill.cls,
                   )}
                 >
@@ -325,7 +325,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
                     Create a post now
                   </Button>
                 )}
-                <label className="flex items-center gap-2 text-sm font-bold">
+                <label className="flex items-center gap-2 text-sm font-medium">
                   {enabled ? "On" : "Off"}
                   <Switch
                     aria-label="Autopilot on or off"
@@ -386,7 +386,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
       {/* numbers */}
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display font-bold text-xl text-black">
+          <h2 className="font-display font-medium text-xl text-black">
             Overview
           </h2>
           <RangePicker value={days} onChange={setDays} />
@@ -434,7 +434,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="nb-card p-4 bg-white lg:col-span-2 space-y-3">
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             Posts per day
           </h3>
           {stats ? (
@@ -448,12 +448,12 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
           className="nb-card p-4 bg-white space-y-3"
           aria-label="Plan usage"
         >
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             Plan usage
           </h3>
           {meter ? (
             <>
-              <p className="font-display font-bold text-3xl text-black">
+              <p className="font-display font-medium text-3xl text-black">
                 {meter.used}
                 <span className="text-base font-medium text-muted-foreground">
                   {" "}
@@ -491,7 +491,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
               </p>
               <Link
                 to="/ai-usage"
-                className="text-xs font-bold text-[#024BAB] underline"
+                className="text-xs font-medium text-[#024BAB] underline"
               >
                 See all AI usage
               </Link>
@@ -512,7 +512,7 @@ export function AutopilotDashboard({ toast }: { toast: any }) {
 
       {/* queue */}
       <section id="queue" className="space-y-3">
-        <h2 className="font-display font-bold text-xl text-black">Queue</h2>
+        <h2 className="font-display font-medium text-xl text-black">Queue</h2>
         <AutopilotPosts
           toast={toast}
           onChange={reloadStats}

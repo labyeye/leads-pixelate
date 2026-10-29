@@ -1134,7 +1134,7 @@ export default function ReportsPage() {
         {}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="font-display font-black text-2xl text-black">
+            <h1 className="font-display font-medium text-2xl text-black">
               Reports
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -1145,7 +1145,7 @@ export default function ReportsPage() {
             <button
               onClick={() => setView("catalog")}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors",
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-medium uppercase tracking-widest transition-colors",
                 view === "catalog"
                   ? "bg-black text-white"
                   : "bg-white text-black hover:bg-gray-50",
@@ -1156,7 +1156,7 @@ export default function ReportsPage() {
             <button
               onClick={() => setView("analytics")}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 text-xs font-black uppercase tracking-widest border-l-2 border-black transition-colors",
+                "flex items-center gap-1.5 px-4 py-2 text-xs font-medium uppercase tracking-widest border-l-2 border-black transition-colors",
                 view === "analytics"
                   ? "bg-black text-white"
                   : "bg-white text-black hover:bg-gray-50",
@@ -1186,7 +1186,7 @@ export default function ReportsPage() {
                     key={cat}
                     onClick={() => setCatalogCategory(cat)}
                     className={cn(
-                      "px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
+                      "px-3 py-2 text-xs font-medium uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
                       catalogCategory === cat
                         ? "bg-black text-white"
                         : "bg-white text-black hover:bg-gray-50",
@@ -1202,7 +1202,7 @@ export default function ReportsPage() {
               {Object.entries(categoryCounts).map(([cat, count]) => (
                 <div
                   key={cat}
-                  className="flex items-center gap-2 border-2 border-black px-3 py-1.5 bg-white text-xs font-bold"
+                  className="flex items-center gap-2 border-2 border-black px-3 py-1.5 bg-white text-xs font-medium"
                 >
                   <span className={cn("w-2.5 h-2.5", CATEGORY_COLORS[cat])} />
                   {cat.toUpperCase()} {count} report{count !== 1 ? "s" : ""}
@@ -1211,13 +1211,13 @@ export default function ReportsPage() {
             </div>
 
             {groupedCatalog.length === 0 ? (
-              <div className="border-2 border-black bg-white p-12 text-center text-sm font-bold text-muted-foreground">
+              <div className="border-2 border-black bg-white p-12 text-center text-sm font-medium text-muted-foreground">
                 No reports match your search.
               </div>
             ) : (
               groupedCatalog.map(({ cat, reports }) => (
                 <div key={cat} className="space-y-3">
-                  <p className="text-xs font-black uppercase tracking-widest text-black flex items-center gap-2">
+                  <p className="text-xs font-medium uppercase tracking-widest text-black flex items-center gap-2">
                     <span className={cn("w-1.5 h-4", CATEGORY_COLORS[cat])} />
                     {cat.toUpperCase()} ({reports.length})
                   </p>
@@ -1241,7 +1241,7 @@ export default function ReportsPage() {
                             </div>
                             <span
                               className={cn(
-                                "text-[10px] font-black uppercase tracking-widest px-2 py-1 text-white",
+                                "text-[10px] font-medium uppercase tracking-widest px-2 py-1 text-white",
                                 CATEGORY_COLORS[r.category],
                               )}
                             >
@@ -1249,7 +1249,7 @@ export default function ReportsPage() {
                             </span>
                           </div>
                           <div className="flex-1">
-                            <p className="font-black text-sm text-black">
+                            <p className="font-medium text-sm text-black">
                               {r.title}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
@@ -1259,7 +1259,7 @@ export default function ReportsPage() {
                           <button
                             onClick={() => handleGenerate(r)}
                             disabled={isGenerating}
-                            className="w-full border-2 border-black py-2 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-50"
+                            className="w-full border-2 border-black py-2 text-xs font-medium uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-50"
                           >
                             {isGenerating ? (
                               <>
@@ -1291,7 +1291,7 @@ export default function ReportsPage() {
                   key={t.key}
                   onClick={() => setActiveTab(t.key)}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-black uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
+                    "flex-1 flex items-center justify-center gap-2 py-3 text-xs font-medium uppercase tracking-widest border-r-2 border-black last:border-r-0 transition-colors",
                     activeTab === t.key
                       ? "bg-primary text-white"
                       : "bg-white text-black hover:bg-gray-50",
@@ -1344,7 +1344,7 @@ export default function ReportsPage() {
                       <SlidersHorizontal className="w-3.5 h-3.5" />
                       Filters
                       {activeFilterCount > 0 && (
-                        <span className="bg-yellow-300 text-black text-[10px] font-black px-1.5 py-0.5 border border-black">
+                        <span className="bg-yellow-300 text-black text-[10px] font-medium px-1.5 py-0.5 border border-black">
                           {activeFilterCount} active
                         </span>
                       )}
@@ -1356,7 +1356,7 @@ export default function ReportsPage() {
                     <div className="p-4 space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                         <div className="xl:col-span-2 space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             Search
                           </label>
                           <div className="flex items-center gap-2 border-2 border-black px-2 py-1.5 bg-white focus-within:ring-2 focus-within:ring-black">
@@ -1382,18 +1382,18 @@ export default function ReportsPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             Status
                           </label>
                           <Select
                             value={filters.status}
                             onValueChange={(v) => setFilter("status", v)}
                           >
-                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-medium shadow-none focus:ring-2 focus:ring-black">
                               <SelectValue placeholder="All Statuses" />
                             </SelectTrigger>
                             <SelectContent className="border-2 border-black rounded-lg">
-                              <SelectItem value="all" className="font-bold">
+                              <SelectItem value="all" className="font-medium">
                                 All Statuses
                               </SelectItem>
                               {STATUSES.map((s) => (
@@ -1410,18 +1410,18 @@ export default function ReportsPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             Source
                           </label>
                           <Select
                             value={filters.source}
                             onValueChange={(v) => setFilter("source", v)}
                           >
-                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-medium shadow-none focus:ring-2 focus:ring-black">
                               <SelectValue placeholder="All Sources" />
                             </SelectTrigger>
                             <SelectContent className="border-2 border-black rounded-lg">
-                              <SelectItem value="all" className="font-bold">
+                              <SelectItem value="all" className="font-medium">
                                 All Sources
                               </SelectItem>
                               {SOURCES.map((s) => (
@@ -1438,18 +1438,18 @@ export default function ReportsPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             Assigned To
                           </label>
                           <Select
                             value={filters.assignedTo}
                             onValueChange={(v) => setFilter("assignedTo", v)}
                           >
-                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                            <SelectTrigger className="h-9 border-2 border-black rounded-lg text-sm font-medium shadow-none focus:ring-2 focus:ring-black">
                               <SelectValue placeholder="All Members" />
                             </SelectTrigger>
                             <SelectContent className="border-2 border-black rounded-lg">
-                              <SelectItem value="all" className="font-bold">
+                              <SelectItem value="all" className="font-medium">
                                 All Members
                               </SelectItem>
                               {users.map((u) => (
@@ -1466,7 +1466,7 @@ export default function ReportsPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             From — To
                           </label>
                           <div className="flex gap-1">
@@ -1476,7 +1476,7 @@ export default function ReportsPage() {
                               onChange={(e) =>
                                 setFilter("startDate", e.target.value)
                               }
-                              className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
+                              className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
                             />
                             <input
                               type="date"
@@ -1484,7 +1484,7 @@ export default function ReportsPage() {
                               onChange={(e) =>
                                 setFilter("endDate", e.target.value)
                               }
-                              className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
+                              className="flex-1 border-2 border-black px-2 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-black bg-white text-black min-w-0"
                             />
                           </div>
                         </div>
@@ -1494,7 +1494,7 @@ export default function ReportsPage() {
                         <button
                           onClick={() => fetchLeads()}
                           disabled={loading}
-                          className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50"
+                          className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50"
                         >
                           {loading && (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1504,7 +1504,7 @@ export default function ReportsPage() {
                         {activeFilterCount > 0 && (
                           <button
                             onClick={handleReset}
-                            className="flex items-center gap-1 px-4 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                            className="flex items-center gap-1 px-4 py-2 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
                           >
                             <X className="w-3 h-3" /> Reset
                           </button>
@@ -1542,7 +1542,7 @@ export default function ReportsPage() {
                           : applyDatePreset(key)
                       }
                       className={cn(
-                        "px-3 py-1.5 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                        "px-3 py-1.5 text-xs font-medium uppercase tracking-widest border-2 border-black transition-all",
                         activeDatePreset === key
                           ? "bg-[#FA731C] text-white shadow-none translate-x-[2px] translate-y-[2px]"
                           : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
@@ -1556,7 +1556,7 @@ export default function ReportsPage() {
                 {}
                 <div className="border-2 border-black bg-white overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black">
                       {loading ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
@@ -1570,14 +1570,14 @@ export default function ReportsPage() {
                       <button
                         onClick={() => setShowExportDialog(true)}
                         disabled={loading || leads.length === 0}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-medium uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Download className="w-3.5 h-3.5" /> CSV
                       </button>
                       <button
                         onClick={exportPDF}
                         disabled={loading || leads.length === 0 || exporting}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-400 text-black font-medium uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {exporting ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1607,7 +1607,7 @@ export default function ReportsPage() {
                           ].map((h) => (
                             <th
                               key={h}
-                              className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                              className="text-left px-4 py-3 text-[10px] font-medium uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                             >
                               {h}
                             </th>
@@ -1619,7 +1619,7 @@ export default function ReportsPage() {
                           <tr>
                             <td colSpan={10} className="text-center py-16">
                               <Loader2 className="w-8 h-8 animate-spin mx-auto text-black" />
-                              <p className="text-sm font-bold text-black mt-2 uppercase tracking-widest">
+                              <p className="text-sm font-medium text-black mt-2 uppercase tracking-widest">
                                 Loading leads...
                               </p>
                             </td>
@@ -1627,7 +1627,7 @@ export default function ReportsPage() {
                         ) : leads.length === 0 ? (
                           <tr>
                             <td colSpan={10} className="text-center py-16">
-                              <p className="text-sm font-black uppercase tracking-widest text-black">
+                              <p className="text-sm font-medium uppercase tracking-widest text-black">
                                 No leads found.
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
@@ -1644,11 +1644,11 @@ export default function ReportsPage() {
                                 i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
                               )}
                             >
-                              <td className="px-4 py-3 text-xs font-black text-gray-400 whitespace-nowrap">
+                              <td className="px-4 py-3 text-xs font-medium text-gray-400 whitespace-nowrap">
                                 {i + 1}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <p className="font-black text-black text-sm">
+                                <p className="font-medium text-black text-sm">
                                   {lead.name || "—"}
                                 </p>
                                 {lead.email && (
@@ -1657,18 +1657,18 @@ export default function ReportsPage() {
                                   </p>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-sm font-medium text-black whitespace-nowrap">
                                 {resolveCompany(lead)}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">
+                                <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-1 border-2 border-black bg-gray-100">
                                   {lead.source || "—"}
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <span
                                   className={cn(
-                                    "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                    "text-[10px] font-medium uppercase tracking-wider px-2 py-1 border-2",
                                     statusBadge(lead.status),
                                   )}
                                 >
@@ -1679,7 +1679,7 @@ export default function ReportsPage() {
                                 {lead.contactTag ? (
                                   <span
                                     className={cn(
-                                      "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                      "text-[10px] font-medium uppercase tracking-wider px-2 py-1 border-2",
                                       lead.contactTag === "HOT"
                                         ? "bg-red-500 text-white border-red-700"
                                         : lead.contactTag === "WARM"
@@ -1693,14 +1693,14 @@ export default function ReportsPage() {
                                   <span className="text-gray-300">—</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-sm font-medium text-black whitespace-nowrap">
                                 {lead.assignedTo?.name || (
                                   <span className="text-gray-400 italic font-medium text-xs">
                                     Unassigned
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-xs font-medium text-black whitespace-nowrap">
                                 {lead.followUpDate ? (
                                   new Date(
                                     lead.followUpDate,
@@ -1713,7 +1713,7 @@ export default function ReportsPage() {
                                   <span className="text-gray-400">—</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-xs font-medium text-black whitespace-nowrap">
                                 {lead.createdAt ? (
                                   new Date(lead.createdAt).toLocaleDateString(
                                     "en-IN",
@@ -1744,7 +1744,7 @@ export default function ReportsPage() {
                   </div>
 
                   {leads.length > 0 && (
-                    <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+                    <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-medium uppercase tracking-widest flex justify-between">
                       <span>Total: {leads.length} leads</span>
                       <span>
                         Won: {counts.won} · Drop: {counts.drop} · Pending:{" "}
@@ -1761,13 +1761,13 @@ export default function ReportsPage() {
               <>
                 {}
                 <div className="border-2 border-black bg-white">
-                  <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                  <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-medium uppercase tracking-widest flex items-center gap-2">
                     <Activity className="w-3.5 h-3.5" /> Status Activity Filters
                   </div>
                   <div className="p-4 space-y-4">
                     {}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                      <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                         Period
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -1776,7 +1776,7 @@ export default function ReportsPage() {
                             key={p.key}
                             onClick={() => setActivityPeriod(p.key)}
                             className={cn(
-                              "px-4 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                              "px-4 py-2 text-xs font-medium uppercase tracking-widest border-2 border-black transition-all",
                               activityPeriod === p.key
                                 ? "bg-primary text-white shadow-none translate-x-[2px] translate-y-[2px]"
                                 : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
@@ -1791,7 +1791,7 @@ export default function ReportsPage() {
                     {activityPeriod === "custom" && (
                       <div className="flex gap-3 items-end">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             From
                           </label>
                           <input
@@ -1800,11 +1800,11 @@ export default function ReportsPage() {
                             onChange={(e) =>
                               setActivityCustomFrom(e.target.value)
                             }
-                            className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
+                            className="border-2 border-black px-2 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-black bg-white text-black"
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                          <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                             To
                           </label>
                           <input
@@ -1813,13 +1813,13 @@ export default function ReportsPage() {
                             onChange={(e) =>
                               setActivityCustomTo(e.target.value)
                             }
-                            className="border-2 border-black px-2 py-1.5 text-xs font-bold outline-none focus:ring-2 focus:ring-black bg-white text-black"
+                            className="border-2 border-black px-2 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-black bg-white text-black"
                           />
                         </div>
                         <button
                           onClick={fetchActivity}
                           disabled={!activityCustomFrom || !activityCustomTo}
-                          className="px-4 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40"
+                          className="px-4 py-2 bg-primary text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40"
                         >
                           Apply
                         </button>
@@ -1828,18 +1828,18 @@ export default function ReportsPage() {
 
                     <div className="flex flex-wrap gap-4 items-end">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-black">
+                        <label className="text-[10px] font-medium uppercase tracking-widest text-black">
                           Team Member
                         </label>
                         <Select
                           value={activityUser}
                           onValueChange={(v) => setActivityUser(v)}
                         >
-                          <SelectTrigger className="w-48 h-9 border-2 border-black rounded-lg text-sm font-bold shadow-none focus:ring-2 focus:ring-black">
+                          <SelectTrigger className="w-48 h-9 border-2 border-black rounded-lg text-sm font-medium shadow-none focus:ring-2 focus:ring-black">
                             <SelectValue placeholder="All Members" />
                           </SelectTrigger>
                           <SelectContent className="border-2 border-black rounded-lg">
-                            <SelectItem value="all" className="font-bold">
+                            <SelectItem value="all" className="font-medium">
                               All Members
                             </SelectItem>
                             {users.map((u) => (
@@ -1857,7 +1857,7 @@ export default function ReportsPage() {
                       <button
                         onClick={fetchActivity}
                         disabled={activityLoading}
-                        className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 h-9"
+                        className="flex items-center gap-2 px-5 py-2 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all disabled:opacity-50 h-9"
                       >
                         {activityLoading && (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1871,7 +1871,7 @@ export default function ReportsPage() {
                 {}
                 <div className="border-2 border-black bg-white overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b-2 border-black bg-white">
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black">
                       {activityLoading ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
@@ -1884,7 +1884,7 @@ export default function ReportsPage() {
                     <button
                       onClick={exportActivityCSV}
                       disabled={activityLoading || activityData.length === 0}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-black uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-400 text-black font-medium uppercase text-[10px] tracking-widest border-2 border-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Download className="w-3.5 h-3.5" /> CSV
                     </button>
@@ -1907,7 +1907,7 @@ export default function ReportsPage() {
                           ].map((h) => (
                             <th
                               key={h}
-                              className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                              className="text-left px-4 py-3 text-[10px] font-medium uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                             >
                               {h}
                             </th>
@@ -1924,7 +1924,7 @@ export default function ReportsPage() {
                         ) : activityData.length === 0 ? (
                           <tr>
                             <td colSpan={9} className="text-center py-16">
-                              <p className="text-sm font-black uppercase tracking-widest text-black">
+                              <p className="text-sm font-medium uppercase tracking-widest text-black">
                                 No activity found.
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
@@ -1941,38 +1941,38 @@ export default function ReportsPage() {
                                 i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
                               )}
                             >
-                              <td className="px-4 py-3 text-xs font-black text-gray-400">
+                              <td className="px-4 py-3 text-xs font-medium text-gray-400">
                                 {i + 1}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <p className="font-black text-black text-sm">
+                                <p className="font-medium text-black text-sm">
                                   {row.leadName || "—"}
                                 </p>
                               </td>
-                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-sm font-medium text-black whitespace-nowrap">
                                 {row.leadCompany || "—"}
                               </td>
-                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-sm font-medium text-black whitespace-nowrap">
                                 {row.leadPhone || "—"}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <span
                                   className={cn(
-                                    "text-[10px] font-black uppercase tracking-wider px-2 py-1 border-2",
+                                    "text-[10px] font-medium uppercase tracking-wider px-2 py-1 border-2",
                                     statusBadge(row.changedToStatus),
                                   )}
                                 >
                                   {row.changedToStatus || "—"}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-sm font-medium text-black whitespace-nowrap">
                                 {row.changedBy || (
                                   <span className="text-gray-400 italic text-xs">
                                     System
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-sm font-medium text-black whitespace-nowrap">
                                 {row.assignedTo || (
                                   <span className="text-gray-400 italic text-xs">
                                     —
@@ -1988,7 +1988,7 @@ export default function ReportsPage() {
                                   )}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-xs font-bold text-black whitespace-nowrap">
+                              <td className="px-4 py-3 text-xs font-medium text-black whitespace-nowrap">
                                 {row.timestamp ? (
                                   <>
                                     <p>
@@ -2028,7 +2028,7 @@ export default function ReportsPage() {
               <>
                 {}
                 <div className="border-2 border-black bg-white">
-                  <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                  <div className="px-4 py-3 border-b-2 border-black bg-primary text-white text-xs font-medium uppercase tracking-widest flex items-center gap-2">
                     <BarChart3 className="w-3.5 h-3.5" /> Team Performance
                     Period
                   </div>
@@ -2039,7 +2039,7 @@ export default function ReportsPage() {
                           key={p.key}
                           onClick={() => setTeamPeriod(p.key)}
                           className={cn(
-                            "px-4 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                            "px-4 py-2 text-xs font-medium uppercase tracking-widest border-2 border-black transition-all",
                             teamPeriod === p.key
                               ? "bg-primary text-white shadow-none translate-x-[2px] translate-y-[2px]"
                               : "bg-white text-black shadow-[2px_2px_0px_#000] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]",
@@ -2055,7 +2055,7 @@ export default function ReportsPage() {
                 {}
                 <div className="border-2 border-black bg-white overflow-hidden">
                   <div className="px-4 py-3 border-b-2 border-black bg-white flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-widest text-black">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black">
                       {teamLoading ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />{" "}
@@ -2084,7 +2084,7 @@ export default function ReportsPage() {
                           ].map((h) => (
                             <th
                               key={h}
-                              className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                              className="text-left px-4 py-3 text-[10px] font-medium uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                             >
                               {h}
                             </th>
@@ -2101,7 +2101,7 @@ export default function ReportsPage() {
                         ) : teamStats.length === 0 ? (
                           <tr>
                             <td colSpan={9} className="text-center py-16">
-                              <p className="text-sm font-black uppercase tracking-widest text-black">
+                              <p className="text-sm font-medium uppercase tracking-widest text-black">
                                 No data found.
                               </p>
                             </td>
@@ -2115,21 +2115,21 @@ export default function ReportsPage() {
                                 i % 2 === 0 ? "bg-white" : "bg-gray-50/50",
                               )}
                             >
-                              <td className="px-4 py-3 text-xs font-black text-gray-400">
+                              <td className="px-4 py-3 text-xs font-medium text-gray-400">
                                 {i + 1}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <p className="font-black text-black text-sm">
+                                <p className="font-medium text-black text-sm">
                                   {member.name}
                                 </p>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-lg font-black text-primary tabular-nums">
+                                <span className="text-lg font-medium text-primary tabular-nums">
                                   {member.total}
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-black text-green-600 tabular-nums">
+                                <span className="text-sm font-medium text-green-600 tabular-nums">
                                   {member.won}
                                 </span>
                                 {member.total > 0 && (
@@ -2143,27 +2143,27 @@ export default function ReportsPage() {
                                 )}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-black text-red-500 tabular-nums">
+                                <span className="text-sm font-medium text-red-500 tabular-nums">
                                   {member.drop}
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-black text-yellow-600 tabular-nums">
+                                <span className="text-sm font-medium text-yellow-600 tabular-nums">
                                   {member.pending}
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-black text-purple-600 tabular-nums">
+                                <span className="text-sm font-medium text-purple-600 tabular-nums">
                                   {member.discussion}
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-black text-orange-500 tabular-nums">
+                                <span className="text-sm font-medium text-orange-500 tabular-nums">
                                   {member.quotation}
                                 </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-black text-blue-600 tabular-nums">
+                                <span className="text-sm font-medium text-blue-600 tabular-nums">
                                   {member.visited}
                                 </span>
                               </td>
@@ -2175,7 +2175,7 @@ export default function ReportsPage() {
                   </div>
 
                   {teamStats.length > 0 && (
-                    <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+                    <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-medium uppercase tracking-widest flex justify-between">
                       <span>Team: {teamStats.length} members</span>
                       <span>
                         Total: {teamLeads.length} · Won:{" "}
@@ -2195,10 +2195,10 @@ export default function ReportsPage() {
                         className="border-2 border-black bg-white p-4 space-y-3 hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all shadow-[3px_3px_0px_#000]"
                       >
                         <div className="flex items-center justify-between border-b-2 border-black pb-2">
-                          <p className="font-black text-black uppercase tracking-wide">
+                          <p className="font-medium text-black uppercase tracking-wide">
                             {member.name}
                           </p>
-                          <span className="text-2xl font-black text-primary tabular-nums">
+                          <span className="text-2xl font-medium text-primary tabular-nums">
                             {member.total}
                           </span>
                         </div>
@@ -2241,13 +2241,13 @@ export default function ReportsPage() {
                             >
                               <p
                                 className={cn(
-                                  "text-lg font-black tabular-nums",
+                                  "text-lg font-medium tabular-nums",
                                   color,
                                 )}
                               >
                                 {value}
                               </p>
-                              <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+                              <p className="text-[9px] font-medium uppercase tracking-widest text-gray-500">
                                 {label}
                               </p>
                             </div>
@@ -2255,7 +2255,7 @@ export default function ReportsPage() {
                         </div>
                         {member.total > 0 && (
                           <div className="space-y-1">
-                            <div className="flex justify-between text-[10px] font-black uppercase">
+                            <div className="flex justify-between text-[10px] font-medium uppercase">
                               <span className="text-green-600">
                                 WON{" "}
                                 {Math.round((member.won / member.total) * 100)}%
@@ -2323,7 +2323,7 @@ export default function ReportsPage() {
                       {previewTable.headers.map((h) => (
                         <th
                           key={h}
-                          className="text-left px-3 py-2 font-black uppercase tracking-wider whitespace-nowrap border-r border-white/10 last:border-r-0"
+                          className="text-left px-3 py-2 font-medium uppercase tracking-wider whitespace-nowrap border-r border-white/10 last:border-r-0"
                         >
                           {h}
                         </th>
@@ -2335,7 +2335,7 @@ export default function ReportsPage() {
                       <tr>
                         <td
                           colSpan={previewTable.headers.length}
-                          className="text-center py-10 text-muted-foreground font-bold"
+                          className="text-center py-10 text-muted-foreground font-medium"
                         >
                           No data found for this report.
                         </td>
@@ -2369,28 +2369,28 @@ export default function ReportsPage() {
           <DialogFooter className="gap-2 sm:justify-end">
             <button
               onClick={closePreview}
-              className="px-4 py-2 text-sm font-bold border-2 border-black bg-white text-black"
+              className="px-4 py-2 text-sm font-medium border-2 border-black bg-white text-black"
             >
               Close
             </button>
             <button
               onClick={exportPreviewAsCSV}
               disabled={!previewTable || previewTable.rows.length === 0}
-              className="px-4 py-2 text-sm font-black border-2 border-black bg-blue-400 text-black flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium border-2 border-black bg-blue-400 text-black flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" /> CSV
             </button>
             <button
               onClick={exportPreviewAsExcel}
               disabled={!previewTable || previewTable.rows.length === 0}
-              className="px-4 py-2 text-sm font-black border-2 border-black bg-green-500 text-black flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium border-2 border-black bg-green-500 text-black flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" /> Excel
             </button>
             <button
               onClick={exportPreviewAsPDF}
               disabled={!previewTable || previewTable.rows.length === 0}
-              className="px-4 py-2 text-sm font-black border-2 border-black bg-red-500 text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium border-2 border-black bg-red-500 text-white flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <FileText className="w-4 h-4" /> PDF
             </button>

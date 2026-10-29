@@ -27,10 +27,10 @@ export function LeadAssignmentPanel({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center justify-between w-full text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2"
+        className="flex items-center justify-between w-full text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2"
       >
         Lead Assignment
-        <span className="text-[10px] font-black text-[#024BAB]">
+        <span className="text-[10px] font-medium text-[#024BAB]">
           {open ? "Hide" : "Edit"}
         </span>
       </button>
@@ -77,7 +77,7 @@ export function LeadAssignmentPanel({
             })}
           </div>
           {assigneeIds.length > 1 && (
-            <label className="flex items-center gap-2 mb-3 text-xs font-bold text-black">
+            <label className="flex items-center gap-2 mb-3 text-xs font-medium text-black">
               Leads per person before rotating
               <input
                 type="number"
@@ -92,7 +92,7 @@ export function LeadAssignmentPanel({
                     ),
                   )
                 }
-                className="w-16 border-2 border-black px-2 py-1 text-sm font-bold"
+                className="w-16 border-2 border-black px-2 py-1 text-sm font-medium"
               />
             </label>
           )}
@@ -100,7 +100,7 @@ export function LeadAssignmentPanel({
             type="button"
             disabled={saving}
             onClick={onSave}
-            className="nb-btn w-full py-2 text-sm font-bold bg-[#024BAB] text-white"
+            className="nb-btn w-full py-2 text-sm font-medium bg-[#024BAB] text-white"
           >
             {saving ? "Saving…" : "Save Assignment"}
           </button>

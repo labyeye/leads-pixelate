@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   iconLabel: {
     color: PRIMARY,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   logoTagline: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000000',
     letterSpacing: 2,
     textTransform: 'uppercase',

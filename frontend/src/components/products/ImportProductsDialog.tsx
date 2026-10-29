@@ -210,7 +210,7 @@ export function ImportProductsDialog({
               <div className="max-h-56 overflow-y-auto rounded border text-xs divide-y">
                 {result.failed.map((f) => (
                   <div key={f.row} className="px-3 py-2">
-                    <span className="font-semibold">
+                    <span className="font-medium">
                       Row {f.row}
                       {f.name ? ` (${f.name})` : ""}:
                     </span>{" "}

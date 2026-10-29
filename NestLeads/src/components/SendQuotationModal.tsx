@@ -241,7 +241,7 @@ const s = StyleSheet.create({
     borderColor: '#000',
     padding: 16,
   },
-  title: { fontSize: 16, fontWeight: '700', color: '#000' },
+  title: { fontSize: 16, fontWeight: '500', color: '#000' },
   sub: { fontSize: 12, color: '#64748b', marginBottom: 8 },
   note: {
     fontSize: 13,
@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '500',
     textTransform: 'uppercase',
     marginTop: 10,
     marginBottom: 4,
@@ -273,7 +273,7 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   rowOn: { backgroundColor: '#024BAB' },
-  rowText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  rowText: { fontSize: 13, fontWeight: '500', color: '#000' },
   rowTextOn: { color: '#fff' },
   preview: {
     backgroundColor: '#DCF8C6',
@@ -283,7 +283,7 @@ const s = StyleSheet.create({
     marginTop: 10,
   },
   previewText: { fontSize: 13, color: '#000' },
-  previewFile: { fontSize: 11, fontWeight: '700', marginTop: 6 },
+  previewFile: { fontSize: 11, fontWeight: '500', marginTop: 6 },
   btn: {
     marginTop: 14,
     backgroundColor: '#024BAB',
@@ -292,5 +292,5 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  btnText: { color: '#fff', fontWeight: '500', fontSize: 14 },
 });

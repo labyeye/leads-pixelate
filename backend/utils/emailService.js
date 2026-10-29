@@ -170,7 +170,7 @@ function buildInvoiceHtml({
     bg = "#fff",
     color = "#111827",
   ) =>
-    `<td style="padding:8px 10px;font-size:12px;text-align:${align};background:${bg};color:${color};${bold ? "font-weight:700;" : ""}border:1px solid #e5e7eb;">${content}</td>`;
+    `<td style="padding:8px 10px;font-size:12px;text-align:${align};background:${bg};color:${color};${bold ? "font-weight:500;" : ""}border:1px solid #e5e7eb;">${content}</td>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -187,7 +187,7 @@ function buildInvoiceHtml({
   <!-- ══ TITLE BAR ══ -->
   <tr>
     <td style="padding:18px 24px 0;text-align:center;border-bottom:2px solid #111827;">
-      <p style="margin:0;font-size:22px;font-weight:900;letter-spacing:3px;color:#111827;">TAX INVOICE</p>
+      <p style="margin:0;font-size:22px;font-weight:500;letter-spacing:3px;color:#111827;">TAX INVOICE</p>
       <p style="margin:2px 0 12px;font-size:11px;color:#6b7280;">Original for Recipient</p>
     </td>
   </tr>
@@ -199,17 +199,17 @@ function buildInvoiceHtml({
         <tr>
           <!-- LEFT: company details -->
           <td style="vertical-align:top;width:60%;">
-            <p style="margin:0 0 2px;font-size:15px;font-weight:800;color:#111827;">Kalahanu Tech Studios LLP</p>
+            <p style="margin:0 0 2px;font-size:15px;font-weight:500;color:#111827;">Kalahanu Tech Studios LLP</p>
             <p style="margin:0 0 2px;font-size:11px;color:#374151;">Kala Bhawan, Akharaghat Road, Muzaffarpur, Bihar – 842001</p>
             <p style="margin:0 0 2px;font-size:11px;color:#374151;">Email: support@pixelatenest.com &nbsp;|&nbsp; Phone: +91 84069 12345</p>
             <p style="margin:0 0 2px;font-size:11px;color:#374151;">Website: pixelatenest.com</p>
-            <p style="margin:4px 0 0;font-size:11px;font-weight:700;color:#111827;">GSTIN: 10ABFFK0650E1Z2</p>
+            <p style="margin:4px 0 0;font-size:11px;font-weight:500;color:#111827;">GSTIN: 10ABFFK0650E1Z2</p>
             <p style="margin:2px 0 0;font-size:11px;color:#374151;">PAN: ABFFK0650E &nbsp;|&nbsp; State: Bihar (Code: 10)</p>
           </td>
           <!-- RIGHT: invoice meta -->
           <td style="vertical-align:top;text-align:right;">
             <table cellpadding="0" cellspacing="0" style="margin-left:auto;">
-              <tr><td style="font-size:11px;color:#6b7280;padding:2px 0;">Invoice No.</td><td style="font-size:11px;font-weight:700;color:#111827;padding:2px 0 2px 12px;">${invoiceNumber}</td></tr>
+              <tr><td style="font-size:11px;color:#6b7280;padding:2px 0;">Invoice No.</td><td style="font-size:11px;font-weight:500;color:#111827;padding:2px 0 2px 12px;">${invoiceNumber}</td></tr>
               <tr><td style="font-size:11px;color:#6b7280;padding:2px 0;">Invoice Date</td><td style="font-size:11px;color:#374151;padding:2px 0 2px 12px;">${invoiceDate}</td></tr>
               <tr><td style="font-size:11px;color:#6b7280;padding:2px 0;">Due Date</td><td style="font-size:11px;color:#374151;padding:2px 0 2px 12px;">${dueDate}</td></tr>
               <tr><td style="font-size:11px;color:#6b7280;padding:2px 0;">Place of Service</td><td style="font-size:11px;color:#374151;padding:2px 0 2px 12px;">India</td></tr>
@@ -226,14 +226,14 @@ function buildInvoiceHtml({
       <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
         <tr>
           <td style="width:50%;vertical-align:top;padding-right:16px;">
-            <p style="margin:0 0 6px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Bill To</p>
-            <p style="margin:0 0 2px;font-size:13px;font-weight:800;color:#111827;text-transform:uppercase;">${companyName}</p>
+            <p style="margin:0 0 6px;font-size:10px;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Bill To</p>
+            <p style="margin:0 0 2px;font-size:13px;font-weight:500;color:#111827;text-transform:uppercase;">${companyName}</p>
             <p style="margin:0 0 2px;font-size:11px;color:#374151;">Email: ${clientEmail}</p>
             ${clientPhone ? `<p style="margin:0;font-size:11px;color:#374151;">Phone: ${clientPhone}</p>` : ""}
           </td>
           <td style="width:50%;vertical-align:top;border-left:1px solid #e5e7eb;padding-left:16px;">
-            <p style="margin:0 0 6px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Ship To / Deliver To</p>
-            <p style="margin:0 0 2px;font-size:13px;font-weight:800;color:#111827;text-transform:uppercase;">${companyName}</p>
+            <p style="margin:0 0 6px;font-size:10px;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Ship To / Deliver To</p>
+            <p style="margin:0 0 2px;font-size:13px;font-weight:500;color:#111827;text-transform:uppercase;">${companyName}</p>
             <p style="margin:0;font-size:11px;color:#374151;">(Digital Delivery — SaaS Subscription)</p>
           </td>
         </tr>
@@ -247,14 +247,14 @@ function buildInvoiceHtml({
       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:12px;">
         <thead>
           <tr style="background:#1e293b;">
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;width:40px;">S.No</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;">Description of Services / Goods</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;text-align:center;">HSN/SAC</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;text-align:center;">Qty</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;text-align:center;">Unit</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;text-align:right;">Rate (Rs.)</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;text-align:center;">Disc.</td>
-            <td style="padding:8px 10px;font-size:11px;font-weight:700;color:#fff;border:1px solid #334155;text-align:right;">Amount (Rs.)</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;width:40px;">S.No</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;">Description of Services / Goods</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;text-align:center;">HSN/SAC</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;text-align:center;">Qty</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;text-align:center;">Unit</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;text-align:right;">Rate (Rs.)</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;text-align:center;">Disc.</td>
+            <td style="padding:8px 10px;font-size:11px;font-weight:500;color:#fff;border:1px solid #334155;text-align:right;">Amount (Rs.)</td>
           </tr>
         </thead>
         <tbody>
@@ -285,7 +285,7 @@ function buildInvoiceHtml({
         <tr>
           <!-- Bank details -->
           <td style="vertical-align:top;width:52%;padding-right:16px;">
-            <p style="margin:0 0 6px;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Bank Details</p>
+            <p style="margin:0 0 6px;font-size:10px;font-weight:500;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Bank Details</p>
             <table cellpadding="0" cellspacing="0">
               <tr><td style="font-size:11px;color:#6b7280;padding:1px 0;width:110px;">Bank Name</td><td style="font-size:11px;color:#374151;padding:1px 0;">: HDFC Bank Pvt. Ltd.</td></tr>
               <tr><td style="font-size:11px;color:#6b7280;padding:1px 0;">Account No.</td><td style="font-size:11px;color:#374151;padding:1px 0;">: 50200119083987</td></tr>
@@ -295,7 +295,7 @@ function buildInvoiceHtml({
               <tr><td style="font-size:11px;color:#6b7280;padding:1px 0;">Account Type</td><td style="font-size:11px;color:#374151;padding:1px 0;">: Current</td></tr>
             </table>
 
-            <p style="margin:12px 0 6px;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Terms &amp; Notes</p>
+            <p style="margin:12px 0 6px;font-size:10px;font-weight:500;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Terms &amp; Notes</p>
             <ol style="margin:0;padding-left:16px;">
               <li style="font-size:10px;color:#6b7280;padding:1px 0;">Payment is due within 30 days of invoice date.</li>
               <li style="font-size:10px;color:#6b7280;padding:1px 0;">Quote invoice number in all payment references.</li>
@@ -319,16 +319,16 @@ function buildInvoiceHtml({
                 <td style="font-size:11px;color:#374151;padding:5px 8px;border:1px solid #e5e7eb;text-align:right;">${fmt(igst)}</td>
               </tr>
               <tr style="background:#f8fafc;">
-                <td style="font-size:12px;font-weight:700;color:#111827;padding:7px 8px;border:1px solid #d1d5db;">Grand Total</td>
-                <td style="font-size:12px;font-weight:700;color:#111827;padding:7px 8px;border:1px solid #d1d5db;text-align:right;">${fmt(total)}</td>
+                <td style="font-size:12px;font-weight:500;color:#111827;padding:7px 8px;border:1px solid #d1d5db;">Grand Total</td>
+                <td style="font-size:12px;font-weight:500;color:#111827;padding:7px 8px;border:1px solid #d1d5db;text-align:right;">${fmt(total)}</td>
               </tr>
               <tr>
                 <td style="font-size:11px;color:#374151;padding:5px 8px;border:1px solid #e5e7eb;">(-) Amount Paid</td>
                 <td style="font-size:11px;color:#374151;padding:5px 8px;border:1px solid #e5e7eb;text-align:right;">${fmt(total)}</td>
               </tr>
               <tr style="background:#eff6ff;">
-                <td style="font-size:12px;font-weight:700;color:#024BAB;padding:7px 8px;border:1px solid #bfdbfe;">Balance Due</td>
-                <td style="font-size:12px;font-weight:700;color:#024BAB;padding:7px 8px;border:1px solid #bfdbfe;text-align:right;">Rs. 0.00</td>
+                <td style="font-size:12px;font-weight:500;color:#024BAB;padding:7px 8px;border:1px solid #bfdbfe;">Balance Due</td>
+                <td style="font-size:12px;font-weight:500;color:#024BAB;padding:7px 8px;border:1px solid #bfdbfe;text-align:right;">Rs. 0.00</td>
               </tr>
             </table>
           </td>
@@ -343,11 +343,11 @@ function buildInvoiceHtml({
       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:12px;">
         <thead>
           <tr style="background:#f8fafc;">
-            <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#374151;border:1px solid #d1d5db;">HSN / SAC Code</td>
-            <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#374151;border:1px solid #d1d5db;">Taxable Value</td>
-            <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#374151;border:1px solid #d1d5db;text-align:center;">IGST Rate</td>
-            <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#374151;border:1px solid #d1d5db;text-align:right;">IGST Amt</td>
-            <td style="padding:7px 10px;font-size:11px;font-weight:700;color:#374151;border:1px solid #d1d5db;text-align:right;">Total Tax</td>
+            <td style="padding:7px 10px;font-size:11px;font-weight:500;color:#374151;border:1px solid #d1d5db;">HSN / SAC Code</td>
+            <td style="padding:7px 10px;font-size:11px;font-weight:500;color:#374151;border:1px solid #d1d5db;">Taxable Value</td>
+            <td style="padding:7px 10px;font-size:11px;font-weight:500;color:#374151;border:1px solid #d1d5db;text-align:center;">IGST Rate</td>
+            <td style="padding:7px 10px;font-size:11px;font-weight:500;color:#374151;border:1px solid #d1d5db;text-align:right;">IGST Amt</td>
+            <td style="padding:7px 10px;font-size:11px;font-weight:500;color:#374151;border:1px solid #d1d5db;text-align:right;">Total Tax</td>
           </tr>
         </thead>
         <tbody>
@@ -359,11 +359,11 @@ function buildInvoiceHtml({
             <td style="padding:6px 10px;font-size:11px;color:#374151;border:1px solid #e5e7eb;text-align:right;">${fmt(igst)}</td>
           </tr>
           <tr style="background:#f8fafc;">
-            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#111827;border:1px solid #d1d5db;">Total</td>
-            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#111827;border:1px solid #d1d5db;">${fmt(taxable)}</td>
+            <td style="padding:6px 10px;font-size:11px;font-weight:500;color:#111827;border:1px solid #d1d5db;">Total</td>
+            <td style="padding:6px 10px;font-size:11px;font-weight:500;color:#111827;border:1px solid #d1d5db;">${fmt(taxable)}</td>
             <td style="padding:6px 10px;border:1px solid #d1d5db;"></td>
-            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#111827;border:1px solid #d1d5db;text-align:right;">${fmt(igst)}</td>
-            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#111827;border:1px solid #d1d5db;text-align:right;">${fmt(igst)}</td>
+            <td style="padding:6px 10px;font-size:11px;font-weight:500;color:#111827;border:1px solid #d1d5db;text-align:right;">${fmt(igst)}</td>
+            <td style="padding:6px 10px;font-size:11px;font-weight:500;color:#111827;border:1px solid #d1d5db;text-align:right;">${fmt(igst)}</td>
           </tr>
         </tbody>
       </table>
@@ -373,7 +373,7 @@ function buildInvoiceHtml({
   <!-- ══ PAYMENT REFERENCE ══ -->
   <tr>
     <td style="padding:0 24px 16px;border-top:1px solid #e5e7eb;">
-      <p style="margin:12px 0 4px;font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;">Payment Reference</p>
+      <p style="margin:12px 0 4px;font-size:10px;font-weight:500;color:#6b7280;text-transform:uppercase;letter-spacing:0.8px;">Payment Reference</p>
       <p style="margin:0;font-size:11px;color:#374151;">Razorpay Payment ID: <span style="font-family:monospace;color:#111827;">${paymentId}</span></p>
     </td>
   </tr>
@@ -384,13 +384,13 @@ function buildInvoiceHtml({
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td style="vertical-align:top;width:60%;">
-            <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Declaration</p>
+            <p style="margin:0 0 4px;font-size:10px;font-weight:500;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Declaration</p>
             <p style="margin:0 0 4px;font-size:10px;color:#6b7280;line-height:1.5;">We declare that this invoice shows the actual price of the goods/services described and that all particulars are true and correct.</p>
             <p style="margin:0;font-size:10px;color:#6b7280;">All disputes are subject to Muzaffarpur jurisdiction only.</p>
           </td>
           <td style="vertical-align:bottom;text-align:right;">
-            <p style="margin:0 0 2px;font-size:11px;font-weight:700;color:#374151;">For Kalahanu Tech Studios LLP</p>
-            <p style="margin:24px 0 2px;font-size:11px;font-weight:700;color:#111827;">Authorised Signatory</p>
+            <p style="margin:0 0 2px;font-size:11px;font-weight:500;color:#374151;">For Kalahanu Tech Studios LLP</p>
+            <p style="margin:24px 0 2px;font-size:11px;font-weight:500;color:#111827;">Authorised Signatory</p>
             <p style="margin:0;font-size:10px;color:#6b7280;">Labh Chandra Bothra, Co-Founder</p>
           </td>
         </tr>
@@ -433,8 +433,8 @@ function buildWelcomeHtml({
   <!-- Banner -->
   <tr>
     <td style="background:linear-gradient(135deg,#024BAB 0%,#0369a1 60%,#0c4a6e 100%);border-radius:16px 16px 0 0;padding:48px 40px 40px;text-align:center;">
-      <div style="display:inline-block;width:56px;height:56px;background:#fff;border-radius:14px;text-align:center;line-height:56px;font-size:28px;font-weight:900;color:#024BAB;margin-bottom:20px;">N</div>
-      <h1 style="margin:0 0 8px;font-size:32px;font-weight:800;color:#fff;letter-spacing:-0.5px;">NESTLeads</h1>
+      <div style="display:inline-block;width:56px;height:56px;background:#fff;border-radius:14px;text-align:center;line-height:56px;font-size:28px;font-weight:500;color:#024BAB;margin-bottom:20px;">N</div>
+      <h1 style="margin:0 0 8px;font-size:32px;font-weight:500;color:#fff;letter-spacing:-0.5px;">NESTLeads</h1>
       <p style="margin:0 0 20px;font-size:14px;color:#bfdbfe;letter-spacing:0.5px;">Lead Management Platform by Pixelate Nest</p>
       <div style="font-size:26px;letter-spacing:4px;">&#127881; &#128640; &#10024; &#127882;</div>
     </td>
@@ -443,22 +443,22 @@ function buildWelcomeHtml({
   <!-- Body -->
   <tr>
     <td style="background:#fff;padding:40px;">
-      <h2 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#111827;">Welcome aboard, ${companyName}! &#127881;</h2>
+      <h2 style="margin:0 0 8px;font-size:24px;font-weight:500;color:#111827;">Welcome aboard, ${companyName}! &#127881;</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6;">Hi ${userName}, your <strong style="color:#024BAB;">${planLabel} Plan</strong> is now active. Your lead management system is ready — let's grow your pipeline together.</p>
 
       <!-- Plan badge -->
       <div style="background:#eff6ff;border:2px solid #024BAB;border-radius:10px;padding:18px 24px;margin-bottom:28px;text-align:center;">
-        <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#024BAB;text-transform:uppercase;letter-spacing:1px;">Active Plan</p>
-        <p style="margin:0;font-size:26px;font-weight:800;color:#111827;">${planLabel}</p>
+        <p style="margin:0 0 4px;font-size:12px;font-weight:500;color:#024BAB;text-transform:uppercase;letter-spacing:1px;">Active Plan</p>
+        <p style="margin:0;font-size:26px;font-weight:500;color:#111827;">${planLabel}</p>
       </div>
 
       <!-- Features -->
-      <h3 style="margin:0 0 10px;font-size:14px;font-weight:700;color:#111827;">What's included:</h3>
+      <h3 style="margin:0 0 10px;font-size:14px;font-weight:500;color:#111827;">What's included:</h3>
       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">${featureRows}</table>
 
       <!-- CTA -->
       <div style="text-align:center;margin-bottom:32px;">
-        <a href="${dashboardUrl}" style="display:inline-block;background:#024BAB;color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 36px;border-radius:10px;">Go to Dashboard &rarr;</a>
+        <a href="${dashboardUrl}" style="display:inline-block;background:#024BAB;color:#fff;text-decoration:none;font-size:15px;font-weight:500;padding:14px 36px;border-radius:10px;">Go to Dashboard &rarr;</a>
       </div>
 
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 24px;"/>
@@ -472,7 +472,7 @@ function buildWelcomeHtml({
   <!-- Footer -->
   <tr>
     <td style="background:#1e293b;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;">
-      <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#fff;">NESTLeads by Pixelate Nest &mdash; Kalahanu Tech Studios LLP</p>
+      <p style="margin:0 0 6px;font-size:13px;font-weight:500;color:#fff;">NESTLeads by Pixelate Nest &mdash; Kalahanu Tech Studios LLP</p>
       <p style="margin:0 0 12px;font-size:12px;color:#94a3b8;">support@pixelatenest.com &nbsp;|&nbsp; +91 84069 12345</p>
       <p style="margin:0;font-size:11px;color:#64748b;">&copy; ${new Date().getFullYear()} Kalahanu Tech Studios LLP. All rights reserved.</p>
     </td>
@@ -548,8 +548,8 @@ function buildPasswordResetHtml({ userName, resetUrl }) {
 
   <tr>
     <td style="background:linear-gradient(135deg,#024BAB 0%,#0369a1 60%,#0c4a6e 100%);border-radius:16px 16px 0 0;padding:36px 40px;text-align:center;">
-      <div style="display:inline-block;width:48px;height:48px;background:#fff;border-radius:12px;text-align:center;line-height:48px;font-size:24px;font-weight:900;color:#024BAB;margin-bottom:14px;">N</div>
-      <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;">Reset your password</h1>
+      <div style="display:inline-block;width:48px;height:48px;background:#fff;border-radius:12px;text-align:center;line-height:48px;font-size:24px;font-weight:500;color:#024BAB;margin-bottom:14px;">N</div>
+      <h1 style="margin:0;font-size:22px;font-weight:500;color:#fff;letter-spacing:-0.5px;">Reset your password</h1>
     </td>
   </tr>
 
@@ -559,7 +559,7 @@ function buildPasswordResetHtml({ userName, resetUrl }) {
       <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">We received a request to reset the password for your NESTLeads account. Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.</p>
 
       <div style="text-align:center;margin-bottom:24px;">
-        <a href="${resetUrl}" style="display:inline-block;background:#024BAB;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:13px 32px;border-radius:10px;">Reset Password &rarr;</a>
+        <a href="${resetUrl}" style="display:inline-block;background:#024BAB;color:#fff;text-decoration:none;font-size:14px;font-weight:500;padding:13px 32px;border-radius:10px;">Reset Password &rarr;</a>
       </div>
 
       <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;line-height:1.6;">If the button doesn't work, copy and paste this link into your browser:</p>
@@ -626,7 +626,7 @@ async function sendOtpEmail({ to, userName, otp, purpose }) {
 <tr><td style="padding:32px 36px;">
 <p style="margin:0 0 12px;font-size:15px;color:#111;">Hi ${esc(userName || "there")},</p>
 <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.6;">${intro}</p>
-<p style="margin:0 0 20px;text-align:center;font-size:34px;font-weight:700;letter-spacing:8px;color:#024BAB;">${esc(otp)}</p>
+<p style="margin:0 0 20px;text-align:center;font-size:34px;font-weight:500;letter-spacing:8px;color:#024BAB;">${esc(otp)}</p>
 <p style="margin:0;font-size:12px;color:#6b7280;line-height:1.6;">This code expires in 10 minutes. If you didn't request it, you can ignore this email — nobody can sign in without it.</p>
 </td></tr></table></td></tr></table></body></html>`;
 

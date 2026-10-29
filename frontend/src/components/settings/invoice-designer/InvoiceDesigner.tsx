@@ -402,10 +402,10 @@ export default function InvoiceDesigner({
   }, [dirty]);
 
   const btn =
-    "nb-btn px-3 py-1.5 text-xs font-bold border-2 border-black bg-white hover:bg-[#FFDE00]/40 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed";
+    "nb-btn px-3 py-1.5 text-xs font-medium border-2 border-black bg-white hover:bg-[#FFDE00]/40 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed";
   const rowCls = (on: boolean, over: boolean) =>
     cn(
-      "flex items-center gap-1 border-2 px-1.5 py-1.5 text-xs font-bold bg-white cursor-pointer",
+      "flex items-center gap-1 border-2 px-1.5 py-1.5 text-xs font-medium bg-white cursor-pointer",
       on
         ? "border-[#024BAB] bg-[#024BAB]/10"
         : "border-black/20 hover:border-black",
@@ -435,7 +435,7 @@ export default function InvoiceDesigner({
         <select
           value=""
           onChange={(e) => applyPreset(e.target.value)}
-          className="border-2 border-black px-2 py-1.5 text-xs font-bold bg-white"
+          className="border-2 border-black px-2 py-1.5 text-xs font-medium bg-white"
           aria-label="Start from a preset"
         >
           <option value="">Start from preset…</option>
@@ -457,7 +457,7 @@ export default function InvoiceDesigner({
         </button>
         <div className="flex-1" />
         {dirty && (
-          <span className="text-[11px] font-bold text-amber-700">
+          <span className="text-[11px] font-medium text-amber-700">
             Unsaved changes
           </span>
         )}
@@ -472,7 +472,7 @@ export default function InvoiceDesigner({
         <button
           onClick={save}
           disabled={saving || !dirty}
-          className="nb-btn px-4 py-1.5 text-xs font-bold text-white border-2 border-black bg-[#024BAB] hover:bg-[#01368A] flex items-center gap-1.5 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="nb-btn px-4 py-1.5 text-xs font-medium text-white border-2 border-black bg-[#024BAB] hover:bg-[#01368A] flex items-center gap-1.5 disabled:bg-gray-400 disabled:cursor-not-allowed"
           title="Ctrl+S"
         >
           {saving ? (
@@ -488,7 +488,7 @@ export default function InvoiceDesigner({
         {/* layers */}
         <div className="border-b-2 lg:border-b-0 lg:border-r-2 border-black bg-white overflow-y-auto p-3 space-y-4 max-h-72 lg:max-h-none">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-black/50 mb-2">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-black/50 mb-2">
               Layout (drag to reorder)
             </p>
             <div className="space-y-1">
@@ -526,7 +526,7 @@ export default function InvoiceDesigner({
                   >
                     {BLOCK_LABELS[b.type]}
                     {Number(b.props.w) > 0 && Number(b.props.w) < 100 ? (
-                      <span className="font-black text-[#024BAB]">
+                      <span className="font-medium text-[#024BAB]">
                         {" "}
                         {Math.round(Number(b.props.w))}%
                       </span>
@@ -582,7 +582,7 @@ export default function InvoiceDesigner({
               onChange={(e) =>
                 e.target.value && addBlock(e.target.value as BlockType)
               }
-              className="mt-2 w-full border-2 border-dashed border-black px-2 py-1.5 text-xs font-bold bg-white"
+              className="mt-2 w-full border-2 border-dashed border-black px-2 py-1.5 text-xs font-medium bg-white"
               aria-label="Add a block"
             >
               <option value="">+ Add block…</option>
@@ -595,7 +595,7 @@ export default function InvoiceDesigner({
           </div>
 
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-black/50 mb-2">
+            <p className="text-[10px] font-medium uppercase tracking-widest text-black/50 mb-2">
               Images &amp; text on the page
             </p>
             <div className="flex gap-2 mb-2">

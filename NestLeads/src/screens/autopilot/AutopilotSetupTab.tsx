@@ -916,7 +916,7 @@ const s = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     marginTop: 4,
     marginBottom: 6,
@@ -946,7 +946,7 @@ const s = StyleSheet.create({
     textAlignVertical: 'center',
   },
   chips: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
-  tick: { width: 24, fontSize: 15, color: '#16a34a', fontWeight: '600' },
+  tick: { width: 24, fontSize: 15, color: '#16a34a', fontWeight: '500' },
   stepText: { fontSize: 13, color: '#000', paddingVertical: 4 },
   profile: {
     marginTop: 14,
@@ -956,7 +956,7 @@ const s = StyleSheet.create({
   },
   profileTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 4,
   },
@@ -976,12 +976,12 @@ const s = StyleSheet.create({
     borderColor: '#cbd5e1',
     backgroundColor: '#f1f5f9',
   },
-  logoName: { fontSize: 13, fontWeight: '700', color: '#000' },
-  link: { fontSize: 12, color: '#024BAB', fontWeight: '800', marginTop: 4 },
+  logoName: { fontSize: 13, fontWeight: '500', color: '#000' },
+  link: { fontSize: 12, color: '#024BAB', fontWeight: '500', marginTop: 4 },
   delete: {
     fontSize: 12,
     color: '#b91c1c',
-    fontWeight: '800',
+    fontWeight: '500',
     paddingHorizontal: 6,
   },
   refThumb: {

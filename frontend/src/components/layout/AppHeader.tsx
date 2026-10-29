@@ -23,7 +23,7 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
         >
           <Menu className="w-[18px] h-[18px] text-black" />
         </button>
-        <h1 className="font-display font-bold text-lg sm:text-xl text-black">
+        <h1 className="font-display font-medium text-lg sm:text-xl text-black">
           {title}
         </h1>
       </div>
@@ -57,12 +57,12 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-white flex items-center justify-center text-[10px] font-bold text-black">
+              <div className="w-full h-full bg-white flex items-center justify-center text-[10px] font-medium text-black">
                 {user.name?.[0]?.toUpperCase() ?? "U"}
               </div>
             )}
           </div>
-          <span className="hidden sm:block text-sm font-bold text-white max-w-[100px] truncate">
+          <span className="hidden sm:block text-sm font-medium text-white max-w-[100px] truncate">
             {user.name}
           </span>
         </div>

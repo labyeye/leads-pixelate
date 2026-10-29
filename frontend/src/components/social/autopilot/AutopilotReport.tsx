@@ -23,10 +23,10 @@ function Tile({
 }) {
   return (
     <div className="nb-card p-4 bg-white" data-testid={`tile-${label}`}>
-      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-      <p className="font-display font-bold text-2xl text-black">{value}</p>
+      <p className="font-display font-medium text-2xl text-black">{value}</p>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
@@ -60,7 +60,7 @@ export function AutopilotReport() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display font-bold text-xl text-black">
+          <h2 className="font-display font-medium text-xl text-black">
             Report{scope ? ` · ${scope}` : ""}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -99,7 +99,7 @@ export function AutopilotReport() {
           className="nb-card p-4 bg-white space-y-3"
           aria-label="Campaign comparison"
         >
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             By campaign
           </h3>
           <div className="overflow-x-auto">
@@ -134,7 +134,7 @@ export function AutopilotReport() {
       )}
 
       <section className="nb-card p-4 bg-white space-y-3">
-        <h3 className="font-display font-bold text-base text-black">
+        <h3 className="font-display font-medium text-base text-black">
           Activity
         </h3>
         <ActivityChart series={stats.series} />
@@ -142,20 +142,20 @@ export function AutopilotReport() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             Where the posts ended up
           </h3>
           <StatusDonut totals={t} />
         </section>
 
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             Review loop
           </h3>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div data-testid="tile-Approval rate">
               <dt className="text-xs text-muted-foreground">Approval rate</dt>
-              <dd className="font-display font-bold text-2xl">
+              <dd className="font-display font-medium text-2xl">
                 {r.approvalRate == null ? "—" : `${r.approvalRate}%`}
               </dd>
               <dd className="text-xs text-muted-foreground">
@@ -164,7 +164,7 @@ export function AutopilotReport() {
             </div>
             <div data-testid="tile-Time to approve">
               <dt className="text-xs text-muted-foreground">Time to approve</dt>
-              <dd className="font-display font-bold text-2xl">
+              <dd className="font-display font-medium text-2xl">
                 {r.avgApprovalHours == null ? "—" : `${r.avgApprovalHours} h`}
               </dd>
               <dd className="text-xs text-muted-foreground">average</dd>
@@ -173,7 +173,7 @@ export function AutopilotReport() {
               <dt className="text-xs text-muted-foreground">
                 Posts you changed
               </dt>
-              <dd className="font-display font-bold text-2xl">
+              <dd className="font-display font-medium text-2xl">
                 {r.revisedPosts}
               </dd>
               <dd className="text-xs text-muted-foreground">
@@ -182,7 +182,7 @@ export function AutopilotReport() {
             </div>
             <div data-testid="tile-Change requests">
               <dt className="text-xs text-muted-foreground">Change requests</dt>
-              <dd className="font-display font-bold text-2xl">{r.revisions}</dd>
+              <dd className="font-display font-medium text-2xl">{r.revisions}</dd>
               <dd className="text-xs text-muted-foreground">
                 fixed and regenerated
               </dd>
@@ -196,7 +196,7 @@ export function AutopilotReport() {
         </section>
 
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             By platform
           </h3>
           {stats.platforms.length ? (
@@ -222,7 +222,7 @@ export function AutopilotReport() {
         </section>
 
         <section className="nb-card p-4 bg-white space-y-3">
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             Topics Autopilot covered
           </h3>
           {stats.topics.length ? (

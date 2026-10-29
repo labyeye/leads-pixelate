@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   addBtn: {
     marginLeft: 'auto' as any,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  addBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  addBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
   searchRow: { paddingHorizontal: 12, paddingVertical: 10 },
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardInfo: { flex: 1 },
-  clientName: { fontSize: 14, fontWeight: '600', color: '#000' },
+  clientName: { fontSize: 14, fontWeight: '500', color: '#000' },
   productName: { fontSize: 11, color: '#64748b', marginTop: 1 },
   statusPill: {
     borderWidth: 2,
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  statusPillText: { fontSize: 10, fontWeight: '600' },
+  statusPillText: { fontSize: 10, fontWeight: '500' },
   timeline: { fontSize: 11, color: '#64748b', marginBottom: 6 },
   progressRow: {
     flexDirection: 'row',
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: '#024BAB' },
   progressText: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     width: 32,
     textAlign: 'right',
@@ -610,9 +610,9 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
   },
   editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  editBtnText: { fontSize: 12, fontWeight: '700', color: '#024BAB' },
+  editBtnText: { fontSize: 12, fontWeight: '500', color: '#024BAB' },
   deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  deleteBtnText: { fontSize: 12, fontWeight: '700', color: '#EF4444' },
+  deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
     width: 80,
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...NB_SHADOW,
   },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptyAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  emptyAddBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  emptyAddBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#000' },
+  modalTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#000' },
   modalClose: {
     width: 32,
     height: 32,
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   modalBody: { padding: 16 },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#fff',
   },
-  statusChipText: { fontSize: 11, fontWeight: '800', color: '#000' },
+  statusChipText: { fontSize: 11, fontWeight: '500', color: '#000' },
   modalFooter: {
     flexDirection: 'row',
     gap: 10,
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  cancelBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   saveBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -769,5 +769,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  saveBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
 });

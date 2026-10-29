@@ -518,7 +518,7 @@ function Stepper({ step }: { step: number }) {
           aria-current={i === step ? "step" : undefined}
         >
           <span
-            className={`w-7 h-7 shrink-0 rounded-full border-2 border-black text-xs font-semibold flex items-center justify-center transition-colors ${
+            className={`w-7 h-7 shrink-0 rounded-full border-2 border-black text-xs font-medium flex items-center justify-center transition-colors ${
               i < step
                 ? "bg-green-500 text-white"
                 : i === step
@@ -529,7 +529,7 @@ function Stepper({ step }: { step: number }) {
             {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
           </span>
           <span
-            className={`hidden lg:inline text-xs whitespace-nowrap ${i === step ? "font-semibold" : "text-muted-foreground"}`}
+            className={`hidden lg:inline text-xs whitespace-nowrap ${i === step ? "font-medium" : "text-muted-foreground"}`}
           >
             {label}
           </span>
@@ -559,7 +559,7 @@ function Heading({
         {icon}
       </div>
       <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <h2 className="text-lg font-medium">{title}</h2>
         <p className="text-sm text-muted-foreground">{text}</p>
       </div>
     </div>
@@ -1026,7 +1026,7 @@ function Launch({
       <span className="mx-auto w-16 h-16 rounded-full border-2 border-black bg-green-500 flex items-center justify-center nb-shadow animate-pop-in">
         <PartyPopper className="w-8 h-8 text-white" />
       </span>
-      <h2 className="text-xl font-semibold">Autopilot is live</h2>
+      <h2 className="text-xl font-medium">Autopilot is live</h2>
       <p className="text-sm text-muted-foreground max-w-md mx-auto">
         A month of posts is prepared upfront at the times you chose. During your
         free trial you approve each one, and what you approve or correct teaches
@@ -1107,7 +1107,7 @@ function SamplePost({
             href={sample.story}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 text-xs font-semibold text-primary hover:underline"
+            className="flex items-center gap-3 text-xs font-medium text-primary hover:underline"
           >
             <img
               src={sample.story}
@@ -1136,7 +1136,7 @@ function SamplePost({
             <button
               type="button"
               onClick={() => setShowPrompt((s) => !s)}
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-xs font-medium text-primary hover:underline"
             >
               {showPrompt ? "Hide" : "View"} image prompt used
             </button>
@@ -1150,7 +1150,7 @@ function SamplePost({
                   onClick={() =>
                     navigator.clipboard.writeText(sample.imagePrompt!)
                   }
-                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                 >
                   <Copy className="w-3 h-3" /> Copy
                 </button>

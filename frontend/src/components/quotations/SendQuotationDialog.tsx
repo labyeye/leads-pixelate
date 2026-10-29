@@ -184,7 +184,7 @@ export function SendQuotationDialog({
         ) : senders.length === 0 ? (
           <p className="text-sm p-4 border-2 border-black">
             WhatsApp isn't connected yet.{" "}
-            <Link to="/whatsapp/setup" className="underline font-bold">
+            <Link to="/whatsapp/setup" className="underline font-medium">
               Connect WhatsApp
             </Link>
           </p>
@@ -193,7 +193,7 @@ export function SendQuotationDialog({
             No approved template with a <b>Document header</b> found — the PDF
             can't be attached. Update or create a template with a Document
             header in{" "}
-            <Link to="/whatsapp/campaigns" className="underline font-bold">
+            <Link to="/whatsapp/campaigns" className="underline font-medium">
               WhatsApp → Campaigns
             </Link>
             , then click <b>Sync</b>.
@@ -201,7 +201,7 @@ export function SendQuotationDialog({
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider">
+              <label className="text-xs font-medium uppercase tracking-wider">
                 Send to (WhatsApp number)
               </label>
               <Input
@@ -213,7 +213,7 @@ export function SendQuotationDialog({
               />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider">
+              <label className="text-xs font-medium uppercase tracking-wider">
                 Template
               </label>
               <Select value={templateId} onValueChange={pickTemplate}>
@@ -232,7 +232,7 @@ export function SendQuotationDialog({
 
             {senders.length > 1 && (
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider">
+                <label className="text-xs font-medium uppercase tracking-wider">
                   Send from
                 </label>
                 <Select value={senderId} onValueChange={setSenderId}>
@@ -255,20 +255,20 @@ export function SendQuotationDialog({
             {template && (
               <div className="p-3 bg-[#DCF8C6] border-2 border-black text-sm whitespace-pre-wrap">
                 {preview}
-                <p className="mt-2 text-xs font-bold">📎 {quotation?.number}.pdf</p>
+                <p className="mt-2 text-xs font-medium">📎 {quotation?.number}.pdf</p>
               </div>
             )}
 
             {mapping.some((m) => m.fieldKey === "custom") && (
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider">
+                <label className="text-xs font-medium uppercase tracking-wider">
                   Fill the rest
                 </label>
                 {mapping
                   .filter((m) => m.fieldKey === "custom")
                   .map((m) => (
                     <div key={m.position} className="flex items-center gap-2">
-                      <span className="text-xs font-bold w-10">{`{{${m.position}}}`}</span>
+                      <span className="text-xs font-medium w-10">{`{{${m.position}}}`}</span>
                       <Input
                         placeholder="Type value"
                         value={m.customValue}

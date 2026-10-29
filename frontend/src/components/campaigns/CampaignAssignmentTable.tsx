@@ -53,27 +53,27 @@ export function CampaignAssignmentTable({
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="border-b-2 border-black bg-[#024BAB]">
-              <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                 Campaign
               </th>
               {showPlatformColumn && (
-                <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                   Platform
                 </th>
               )}
-              <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                 Status
               </th>
-              <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                 Assigned To
               </th>
-              <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                 Spend
               </th>
-              <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                 Results
               </th>
-              <th className="text-left px-4 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+              <th className="text-left px-4 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                 Owner
               </th>
             </tr>
@@ -106,21 +106,21 @@ export function CampaignAssignmentTable({
                     className="border-b border-black/10 hover:bg-[#024BAB]/5"
                   >
                     <td className="px-4 py-3">
-                      <p className="font-bold text-black text-sm">{row.name}</p>
+                      <p className="font-medium text-black text-sm">{row.name}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {row.subLabel}
                       </p>
                     </td>
                     {showPlatformColumn && (
                       <td className="px-4 py-3">
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 border-2 border-black bg-gray-100 capitalize">
+                        <span className="text-[10px] font-medium uppercase px-2 py-0.5 border-2 border-black bg-gray-100 capitalize">
                           {row.platform}
                         </span>
                       </td>
                     )}
                     <td className="px-4 py-3">
                       <span
-                        className={`text-[10px] px-2 py-0.5 border-2 font-bold ${row.status.cls}`}
+                        className={`text-[10px] px-2 py-0.5 border-2 font-medium ${row.status.cls}`}
                       >
                         {row.status.label}
                       </span>
@@ -130,7 +130,7 @@ export function CampaignAssignmentTable({
                         value={assignedTo?._id || ""}
                         disabled={savingKey === row.key}
                         onChange={(e) => onAssign(row, e.target.value)}
-                        className="border-2 border-black px-2 py-1.5 text-xs font-bold bg-white min-w-[140px]"
+                        className="border-2 border-black px-2 py-1.5 text-xs font-medium bg-white min-w-[140px]"
                       >
                         <option value="">— Unassigned —</option>
                         {users.map((u) => (
@@ -140,19 +140,19 @@ export function CampaignAssignmentTable({
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3 font-bold text-[#024BAB]">
+                    <td className="px-4 py-3 font-medium text-[#024BAB]">
                       {row.spend === undefined
                         ? "—"
                         : `₹${row.spend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                     </td>
-                    <td className="px-4 py-3 font-bold text-[#00C48C]">
+                    <td className="px-4 py-3 font-medium text-[#00C48C]">
                       {row.results === undefined
                         ? "—"
                         : row.results.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {assignedTo ? (
-                        <span className="flex items-center gap-1 text-[#00C48C] font-bold">
+                        <span className="flex items-center gap-1 text-[#00C48C] font-medium">
                           <UserCheck className="w-3.5 h-3.5" /> Owned
                         </span>
                       ) : (

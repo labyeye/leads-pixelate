@@ -41,8 +41,8 @@ export default function IntroOnboarding() {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-white text-slate-900" role="dialog" aria-modal="true">
       <div className="flex items-center justify-between px-6 py-4">
-        <span className="text-2xl font-bold text-primary">NestLeads</span>
-        <button onClick={finish} className="text-sm font-semibold text-slate-500 hover:text-slate-800">
+        <span className="text-2xl font-medium text-primary">NestLeads</span>
+        <button onClick={finish} className="text-sm font-medium text-slate-500 hover:text-slate-800">
           Skip
         </button>
       </div>
@@ -54,7 +54,7 @@ export default function IntroOnboarding() {
           <img src={s.image} alt="" className="h-full w-full object-contain" />
         </div>
         <div className="max-w-md text-center">
-          <h1 className="mb-3 text-3xl font-bold leading-tight">{s.title}</h1>
+          <h1 className="mb-3 text-3xl font-medium leading-tight">{s.title}</h1>
           <p className="text-base leading-relaxed text-slate-500">{s.body}</p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function IntroOnboarding() {
         </div>
         <button
           onClick={() => (last ? finish() : setStep(step + 1))}
-          className="flex h-[54px] items-center justify-center gap-3 rounded-lg bg-primary text-base font-bold text-white"
+          className="flex h-[54px] items-center justify-center gap-3 rounded-lg bg-primary text-base font-medium text-white"
         >
           {last ? "Get started" : "Next"} <span className="text-xl">→</span>
         </button>

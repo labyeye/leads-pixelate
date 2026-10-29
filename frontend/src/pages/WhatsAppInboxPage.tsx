@@ -93,7 +93,7 @@ export default function WhatsAppInboxPage() {
           {}
           <div className="flex items-center gap-3 px-4 py-3 border-b-2 border-black bg-[#25D366]">
             <FontAwesomeIcon icon={faWhatsapp} className="text-white text-xl" />
-            <h1 className="text-base font-bold text-white">Inbox</h1>
+            <h1 className="text-base font-medium text-white">Inbox</h1>
             <button
               onClick={fetchReplies}
               className="ml-auto text-white/80 hover:text-white"
@@ -144,13 +144,13 @@ export default function WhatsAppInboxPage() {
                   )}
                 >
                   <div className="w-9 h-9 rounded-full bg-[#25D366]/10 border-2 border-[#25D366]/20 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-sm font-bold text-[#25D366]">
+                    <span className="text-sm font-medium text-[#25D366]">
                       {(r.leadName || r.phone)[0].toUpperCase()}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold truncate">
+                      <p className="text-sm font-medium truncate">
                         {r.leadName || r.phone}
                       </p>
                       <p className="text-[10px] text-muted-foreground shrink-0">
@@ -179,12 +179,12 @@ export default function WhatsAppInboxPage() {
                 ← Back
               </button>
               <div className="w-9 h-9 rounded-full bg-[#25D366]/10 border-2 border-[#25D366]/30 flex items-center justify-center shrink-0">
-                <span className="text-sm font-bold text-[#25D366]">
+                <span className="text-sm font-medium text-[#25D366]">
                   {(selected.leadName || selected.phone)[0].toUpperCase()}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-bold">
+                <p className="text-sm font-medium">
                   {selected.leadName || selected.phone}
                 </p>
                 <p className="text-xs text-muted-foreground font-mono">

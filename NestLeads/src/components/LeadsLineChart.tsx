@@ -92,7 +92,7 @@ export default function LeadsLineChart({
       >
         {data.map((d, i) => (
           <View key={i} style={{ alignItems: 'center', minWidth: 28 }}>
-            <Text style={{ fontSize: 10, fontWeight: '700', color: '#000' }}>
+            <Text style={{ fontSize: 10, fontWeight: '500', color: '#000' }}>
               {d.value}
             </Text>
             <Text style={{ fontSize: 9, color: '#64748b' }}>{d.label}</Text>

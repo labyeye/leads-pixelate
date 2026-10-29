@@ -673,7 +673,7 @@ function PostDetailModal({
                 color="#1d4ed8"
               />
               <Text style={[styles.alertText, { color: '#1e40af' }]}>
-                <Text style={{ fontWeight: '800' }}>Note: </Text>
+                <Text style={{ fontWeight: '500' }}>Note: </Text>
                 {post.approvalNote}
               </Text>
             </View>
@@ -687,7 +687,7 @@ function PostDetailModal({
             >
               <Icon name="close-circle-outline" size={14} color="#dc2626" />
               <Text style={[styles.alertText, { color: '#991b1b' }]}>
-                <Text style={{ fontWeight: '800' }}>Rejected: </Text>
+                <Text style={{ fontWeight: '500' }}>Rejected: </Text>
                 {post.rejectionReason}
               </Text>
             </View>
@@ -1456,8 +1456,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   folTotals: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  folBig: { fontSize: 24, fontWeight: '800', color: '#000' },
-  folDelta: { fontSize: 11, fontWeight: '800' },
+  folBig: { fontSize: 24, fontWeight: '500', color: '#000' },
+  folDelta: { fontSize: 11, fontWeight: '500' },
   rangeRow: { flexDirection: 'row', gap: 6 },
   rangeBtn: {
     paddingHorizontal: 10,
@@ -1468,7 +1468,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   rangeBtnOn: { backgroundColor: PRIMARY },
-  rangeText: { fontSize: 11, fontWeight: '800', color: '#000' },
+  rangeText: { fontSize: 11, fontWeight: '500', color: '#000' },
   engCard: {
     flex: 1,
     alignItems: 'center',
@@ -1491,10 +1491,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  typeName: { fontSize: 12, fontWeight: '800', color: '#000' },
-  typeCount: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+  typeName: { fontSize: 12, fontWeight: '500', color: '#000' },
+  typeCount: { fontSize: 11, fontWeight: '500', color: '#64748b' },
   typeStats: { flexDirection: 'row', justifyContent: 'space-between' },
-  typeStat: { fontSize: 13, fontWeight: '800', color: '#000' },
+  typeStat: { fontSize: 13, fontWeight: '500', color: '#000' },
   editStatus: {
     marginLeft: 'auto',
     paddingHorizontal: 10,
@@ -1503,7 +1503,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     borderRadius: 6,
   },
-  editStatusText: { fontSize: 10, fontWeight: '800' },
+  editStatusText: { fontSize: 10, fontWeight: '500' },
   editBody: {
     padding: 16,
     gap: 14,
@@ -1529,7 +1529,7 @@ const styles = StyleSheet.create({
   },
   editCardTitle: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     letterSpacing: 1,
   },
@@ -1537,7 +1537,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginTop: 6,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#64748b',
   },
   editNote: {
@@ -1550,7 +1550,7 @@ const styles = StyleSheet.create({
     borderColor: '#93c5fd',
     borderRadius: 8,
   },
-  editNoteText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#1e40af' },
+  editNoteText: { flex: 1, fontSize: 12, fontWeight: '500', color: '#1e40af' },
   editBar: {
     flexDirection: 'row',
     gap: 10,
@@ -1603,7 +1603,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  failTitle: { flex: 1, fontSize: 16, fontWeight: '800', color: '#991b1b' },
+  failTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#991b1b' },
   failMsg: {
     fontSize: 14,
     lineHeight: 20,
@@ -1625,7 +1625,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: '#000',
   },
-  failBtnText: { fontSize: 13, fontWeight: '800', color: '#000' },
+  failBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   badgesFull: { flexDirection: 'row', gap: 8 },
   fullBadge: {
     flex: 1,
@@ -1641,7 +1641,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: '#000',
   },
-  fullBadgeText: { fontSize: 12, fontWeight: '800', flexShrink: 1 },
+  fullBadgeText: { fontSize: 12, fontWeight: '500', flexShrink: 1 },
   moreBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1649,7 +1649,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 8,
   },
-  moreBtnText: { fontSize: 13, fontWeight: '800', color: PRIMARY },
+  moreBtnText: { fontSize: 13, fontWeight: '500', color: PRIMARY },
   editBtn: {
     marginLeft: 'auto',
     flexDirection: 'row',
@@ -1664,10 +1664,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: '#000',
   },
-  editBtnText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  editBtnText: { fontSize: 11, fontWeight: '500', color: '#fff' },
   editLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     marginTop: 14,
@@ -1690,7 +1690,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748b',
     marginTop: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   saveBtn: {
     marginTop: 20,
@@ -1703,14 +1703,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 5,
     borderColor: '#000',
   },
-  saveBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  saveBtnText: { fontSize: 14, fontWeight: '500', color: '#fff' },
   headerTitleCenter: {
     position: 'absolute',
     left: 0,
     right: 0,
     textAlign: 'center',
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
   },
   plusBtn: {
@@ -1748,10 +1748,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sumValue: { fontSize: 19, fontWeight: '800', color: '#000' },
+  sumValue: { fontSize: 19, fontWeight: '500', color: '#000' },
   sumLabel: {
     fontSize: 8,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 0.5,
   },
@@ -1768,21 +1768,21 @@ const styles = StyleSheet.create({
   },
   panelLabel: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     letterSpacing: 1,
     marginBottom: 12,
   },
   panelLabelPlain: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     letterSpacing: 1,
     marginTop: 4,
   },
   subLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     marginTop: 16,
@@ -1798,11 +1798,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#f8fafc',
   },
-  anBig: { fontSize: 22, fontWeight: '800', color: PRIMARY },
-  anMid: { fontSize: 18, fontWeight: '800', color: '#000' },
+  anBig: { fontSize: 22, fontWeight: '500', color: PRIMARY },
+  anMid: { fontSize: 18, fontWeight: '500', color: '#000' },
   anSmall: {
     fontSize: 8,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#64748b',
     marginTop: 2,
     letterSpacing: 0.5,
@@ -1818,7 +1818,7 @@ const styles = StyleSheet.create({
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 10, height: 10, borderWidth: 1.5, borderColor: '#000' },
-  legendText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  legendText: { fontSize: 11, fontWeight: '500', color: '#000' },
   platBox: {
     flex: 1,
     flexDirection: 'row',
@@ -1829,9 +1829,9 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     borderRadius: 6,
   },
-  platText: { flex: 1, fontSize: 12, fontWeight: '700', color: '#000' },
-  platCount: { fontSize: 16, fontWeight: '800', color: '#000' },
-  muted: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  platText: { flex: 1, fontSize: 12, fontWeight: '500', color: '#000' },
+  platCount: { fontSize: 16, fontWeight: '500', color: '#000' },
+  muted: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   tHead: {
     flexDirection: 'row',
     paddingBottom: 6,
@@ -1840,7 +1840,7 @@ const styles = StyleSheet.create({
   },
   tHeadText: {
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 0.5,
   },
@@ -1852,9 +1852,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e2e8f0',
     gap: 4,
   },
-  tCaption: { fontSize: 12, fontWeight: '700', color: '#000' },
+  tCaption: { fontSize: 12, fontWeight: '500', color: '#000' },
   tPlat: { flexDirection: 'row', gap: 6 },
-  tCell: { fontSize: 11, fontWeight: '600', color: '#334155' },
+  tCell: { fontSize: 11, fontWeight: '500', color: '#334155' },
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,
@@ -1899,8 +1899,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  newPostBtnText: { fontSize: 11, fontWeight: '600', color: '#fff' },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  newPostBtnText: { fontSize: 11, fontWeight: '500', color: '#fff' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
@@ -1911,10 +1911,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   statCell: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: '600' },
+  statValue: { fontSize: 20, fontWeight: '500' },
   statLabel: {
     fontSize: 8,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
     marginTop: 1,
@@ -1941,7 +1941,7 @@ const styles = StyleSheet.create({
   filterChipActive: { borderColor: '#000', backgroundColor: PRIMARY },
   filterChipText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
   },
@@ -1995,7 +1995,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
   },
-  statusText: { fontSize: 8, fontWeight: '600', textTransform: 'uppercase' },
+  statusText: { fontSize: 8, fontWeight: '500', textTransform: 'uppercase' },
   platformBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2003,13 +2003,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
-  platformText: { fontSize: 9, fontWeight: '700' },
+  platformText: { fontSize: 9, fontWeight: '500' },
   typeBadge: {
     backgroundColor: '#f1f5f9',
     paddingHorizontal: 6,
     paddingVertical: 3,
   },
-  typeBadgeText: { fontSize: 8, fontWeight: '700', color: '#64748b' },
+  typeBadgeText: { fontSize: 8, fontWeight: '500', color: '#64748b' },
 
   caption: { fontSize: 13, color: '#000', lineHeight: 18 },
   hashtags: { fontSize: 11, color: '#7c3aed' },
@@ -2042,10 +2042,10 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     gap: 5,
   },
-  quickBtnText: { fontSize: 12, fontWeight: '800' },
+  quickBtnText: { fontSize: 12, fontWeight: '500' },
 
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyTitle: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptySub: { fontSize: 12, color: '#cbd5e1' },
 
   // Modal
@@ -2057,7 +2057,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  modalTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   modalBody: { padding: 16, gap: 16 },
 
   mediaImage: {
@@ -2078,7 +2078,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  videoPlaceholderText: { fontSize: 13, color: '#94a3b8', fontWeight: '600' },
+  videoPlaceholderText: { fontSize: 13, color: '#94a3b8', fontWeight: '500' },
   carouselRow: { marginBottom: 4 },
   carouselThumb: {
     width: 72,
@@ -2092,7 +2092,7 @@ const styles = StyleSheet.create({
   section: { gap: 6 },
   sectionLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -2104,12 +2104,12 @@ const styles = StyleSheet.create({
   metaCell: { minWidth: '45%', gap: 3 },
   metaLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
-  metaValue: { fontSize: 13, fontWeight: '600', color: '#000' },
+  metaValue: { fontSize: 13, fontWeight: '500', color: '#000' },
 
   alertBox: {
     flexDirection: 'row',
@@ -2128,7 +2128,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
-  linkBtnText: { flex: 1, fontSize: 13, fontWeight: '700' },
+  linkBtnText: { flex: 1, fontSize: 13, fontWeight: '500' },
 
   actionRow: { flexDirection: 'row', gap: 10 },
   actionBtn: {
@@ -2145,5 +2145,5 @@ const styles = StyleSheet.create({
     borderRightColor: '#0A0A0A',
     borderBottomColor: '#0A0A0A',
   },
-  actionBtnText: { fontSize: 13, fontWeight: '600' },
+  actionBtnText: { fontSize: 13, fontWeight: '500' },
 });

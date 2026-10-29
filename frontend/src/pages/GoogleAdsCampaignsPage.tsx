@@ -258,7 +258,7 @@ export default function GoogleAdsCampaignsPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Google Ads Campaigns
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -285,7 +285,7 @@ export default function GoogleAdsCampaignsPage() {
             <GoogleAdsIcon className="w-9 h-9" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-lg text-black">
+            <h3 className="font-display font-medium text-lg text-black">
               Connect Google Ads
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -294,7 +294,7 @@ export default function GoogleAdsCampaignsPage() {
             </p>
           </div>
           <div className="text-left border-2 border-black p-4 bg-[#4285F4]/10">
-            <p className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+            <p className="text-xs font-medium uppercase tracking-wider mb-2 flex items-center gap-1">
               <AlertCircle className="w-3.5 h-3.5" /> Before connecting
             </p>
             <ul className="space-y-1.5 text-xs text-black">
@@ -311,7 +311,7 @@ export default function GoogleAdsCampaignsPage() {
           <button
             onClick={handleLogin}
             disabled={oauthLoading}
-            className="w-full border-2 border-black bg-[#4285F4] text-white py-3 font-bold text-sm flex items-center justify-center gap-2"
+            className="w-full border-2 border-black bg-[#4285F4] text-white py-3 font-medium text-sm flex items-center justify-center gap-2"
           >
             {oauthLoading ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -345,7 +345,7 @@ export default function GoogleAdsCampaignsPage() {
           <div className="border-2 bg-white p-5">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="font-display font-bold text-base text-black">
+                <h3 className="font-display font-medium text-base text-black">
                   Connected Ad Accounts
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -357,7 +357,7 @@ export default function GoogleAdsCampaignsPage() {
                   setShowAddAccount((v) => !v);
                   if (!showAddAccount) loadAccounts();
                 }}
-                className="border-2 border-black px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 hover:bg-[#4285F4]/10 transition-colors"
+                className="border-2 border-black px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 hover:bg-[#4285F4]/10 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Account
               </button>
@@ -366,7 +366,7 @@ export default function GoogleAdsCampaignsPage() {
             {connectedAccounts.length === 0 && !showAddAccount && (
               <div className="flex flex-col items-center justify-center py-10 gap-2 text-center border-2 border-dashed border-black bg-[#fafafa]">
                 <GoogleAdsIcon className="w-8 h-8 opacity-40" />
-                <p className="text-sm font-bold">No accounts connected yet</p>
+                <p className="text-sm font-medium">No accounts connected yet</p>
                 <p className="text-xs text-muted-foreground">
                   Add an account to start pulling in Google Ads leads.
                 </p>
@@ -383,7 +383,7 @@ export default function GoogleAdsCampaignsPage() {
                     <GoogleAdsIcon className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-black truncate">
+                    <p className="font-medium text-sm text-black truncate">
                       {a.customerName || a.customerId}
                     </p>
                     <p className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
@@ -434,7 +434,7 @@ export default function GoogleAdsCampaignsPage() {
             {showAddAccount && (
               <div className="border-t-2 border-black mt-4 pt-4 space-y-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide mb-1.5">
+                  <p className="text-xs font-medium uppercase tracking-wide mb-1.5">
                     Ad Account
                   </p>
                   {accountsLoading ? (
@@ -463,7 +463,7 @@ export default function GoogleAdsCampaignsPage() {
                 {selectedAccountId && (
                   <>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide mb-1.5">
+                      <p className="text-xs font-medium uppercase tracking-wide mb-1.5">
                         Campaigns
                       </p>
                       <button
@@ -480,7 +480,7 @@ export default function GoogleAdsCampaignsPage() {
                             <Check className="w-3 h-3 text-white" />
                           )}
                         </div>
-                        <span className="text-sm font-bold">
+                        <span className="text-sm font-medium">
                           Capture from all campaigns
                         </span>
                       </button>
@@ -506,7 +506,7 @@ export default function GoogleAdsCampaignsPage() {
                                     <Check className="w-2.5 h-2.5 text-white" />
                                   )}
                                 </div>
-                                <span className="text-xs font-semibold truncate flex-1">
+                                <span className="text-xs font-medium truncate flex-1">
                                   {c.name}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
@@ -520,7 +520,7 @@ export default function GoogleAdsCampaignsPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide mb-1.5">
+                      <p className="text-xs font-medium uppercase tracking-wide mb-1.5">
                         Location Filter (optional)
                       </p>
                       <div className="flex gap-2">
@@ -549,7 +549,7 @@ export default function GoogleAdsCampaignsPage() {
                             }
                             setStateInput("");
                           }}
-                          className="border-2 border-black px-3 py-2 bg-black text-white text-sm font-bold"
+                          className="border-2 border-black px-3 py-2 bg-black text-white text-sm font-medium"
                         >
                           Add
                         </button>
@@ -559,7 +559,7 @@ export default function GoogleAdsCampaignsPage() {
                           {allowedStates.map((s) => (
                             <span
                               key={s}
-                              className="flex items-center gap-1 border-2 border-black px-2 py-0.5 bg-[#4285F4]/10 text-xs font-bold"
+                              className="flex items-center gap-1 border-2 border-black px-2 py-0.5 bg-[#4285F4]/10 text-xs font-medium"
                             >
                               {s}
                               <button
@@ -578,7 +578,7 @@ export default function GoogleAdsCampaignsPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-wide mb-1.5">
+                      <p className="text-xs font-medium uppercase tracking-wide mb-1.5">
                         Assign Leads To
                       </p>
                       <AssigneePicker
@@ -600,7 +600,7 @@ export default function GoogleAdsCampaignsPage() {
                       connecting ||
                       (!allCampaigns && selectedCampaignIds.size === 0)
                     }
-                    className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+                    className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {connecting ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -614,7 +614,7 @@ export default function GoogleAdsCampaignsPage() {
                       setShowAddAccount(false);
                       resetAddAccountForm();
                     }}
-                    className="border-2 border-black px-4 py-2 bg-white text-black text-sm font-bold"
+                    className="border-2 border-black px-4 py-2 bg-white text-black text-sm font-medium"
                   >
                     Cancel
                   </button>

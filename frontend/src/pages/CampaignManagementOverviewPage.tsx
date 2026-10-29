@@ -155,7 +155,7 @@ export default function CampaignManagementOverviewPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Campaign Management
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">

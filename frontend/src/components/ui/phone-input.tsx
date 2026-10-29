@@ -103,7 +103,7 @@ export function PhoneInput({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-xs font-bold text-black uppercase tracking-wider">
+        <label className="block text-xs font-medium text-black uppercase tracking-wider">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -117,7 +117,7 @@ export function PhoneInput({
             aria-haspopup="listbox"
             aria-expanded={open}
             aria-label="Country code"
-            className="no-nb flex shrink-0 items-center gap-1.5 border-r-2 border-black px-2.5 text-sm font-bold hover:bg-muted disabled:bg-muted"
+            className="no-nb flex shrink-0 items-center gap-1.5 border-r-2 border-black px-2.5 text-sm font-medium hover:bg-muted disabled:bg-muted"
           >
             <Flag iso={current.iso} name={current.name} />+{current.code}
             <ChevronDown className="h-3.5 w-3.5" />
@@ -147,7 +147,7 @@ export function PhoneInput({
                     update(c.code, local);
                     setOpen(false);
                   }}
-                  className={`no-nb flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-[#024BAB]/10 ${c.code === country ? "bg-[#024BAB]/10 font-bold" : ""}`}
+                  className={`no-nb flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-[#024BAB]/10 ${c.code === country ? "bg-[#024BAB]/10 font-medium" : ""}`}
                 >
                   <Flag iso={c.iso} name={c.name} />
                   <span className="flex-1">{c.name}</span>

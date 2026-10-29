@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap");
 
 @layer base {
   :root {
@@ -67,7 +67,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family:
-      "Inter",
+      "DM Sans",
       system-ui,
       -apple-system,
       sans-serif;
@@ -79,8 +79,8 @@
   h4,
   h5,
   h6 {
-    font-family: "Space Grotesk", system-ui, sans-serif;
-    @apply font-bold tracking-tight;
+    font-family: "DM Sans", system-ui, sans-serif;
+    @apply font-medium tracking-tight;
   }
 }
 
@@ -114,7 +114,7 @@
   }
 
   .nb-btn {
-    @apply border-2 border-black rounded-lg font-bold transition-all duration-100;
+    @apply border-2 border-black rounded-lg font-medium transition-all duration-100;
     box-shadow: 3px 3px 0px #0a0a0a;
   }
   .nb-btn:hover {
@@ -136,7 +136,7 @@
   }
 
   .nb-badge {
-    @apply border-2 border-black rounded-full font-bold text-xs px-2 py-0.5;
+    @apply border-2 border-black rounded-full font-medium text-xs px-2 py-0.5;
   }
 
   .nb-tag-blue {
@@ -584,7 +584,7 @@ span:is(
     [class*="text-[10px]"],
     [class*="text-[11px]"],
     [class*="text-xs"]
-  )[class*="uppercase"]:is([class*="font-bold"], [class*="font-semibold"]):is(
+  )[class*="uppercase"]:is([class*="font-medium"], [class*="font-medium"]):is(
     [class*="px-1.5"],
     [class*="px-2"]
   ):is([class*="py-0.5"], [class*="py-1"]):not([class*="bg-black/"], .no-nb) {
@@ -872,3 +872,6 @@ main :is(.border-2, .nb-card):hover :is(div, span):is(.w-7, .w-8, .w-9, .w-10, .
     transition: none !important;
   }
 }
+
+h1,h2,h3,h4,h5,h6,b,strong,th,label,button,input,select,textarea{font-family:"DM Sans",system-ui,sans-serif;font-weight:500}
+b,strong,th{font-weight:500}

@@ -253,7 +253,7 @@ export default function ConsolePage() {
               <Terminal className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white font-mono tracking-wide">
+              <h1 className="text-lg font-medium text-white font-mono tracking-wide">
                 NESTLEADS CONSOLE
               </h1>
               <p className="text-[10px] text-gray-400 font-mono">
@@ -323,12 +323,12 @@ export default function ConsolePage() {
                   s.color,
                 )}
               >
-                <p className={cn("text-2xl font-black font-mono", s.text)}>
+                <p className={cn("text-2xl font-medium font-mono", s.text)}>
                   {s.value?.toLocaleString() ?? 0}
                 </p>
                 <p
                   className={cn(
-                    "text-[10px] font-bold font-mono tracking-widest opacity-70",
+                    "text-[10px] font-medium font-mono tracking-widest opacity-70",
                     s.text,
                   )}
                 >
@@ -475,22 +475,22 @@ export default function ConsolePage() {
             <table className="w-full text-xs font-mono border-collapse">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-primary text-white">
-                  <th className="text-left px-4 py-2.5 font-bold tracking-widest w-36">
+                  <th className="text-left px-4 py-2.5 font-medium tracking-widest w-36">
                     TIMESTAMP
                   </th>
-                  <th className="text-left px-4 py-2.5 font-bold tracking-widest w-28">
+                  <th className="text-left px-4 py-2.5 font-medium tracking-widest w-28">
                     ACTION
                   </th>
-                  <th className="text-left px-4 py-2.5 font-bold tracking-widest w-24">
+                  <th className="text-left px-4 py-2.5 font-medium tracking-widest w-24">
                     MODULE
                   </th>
-                  <th className="text-left px-4 py-2.5 font-bold tracking-widest">
+                  <th className="text-left px-4 py-2.5 font-medium tracking-widest">
                     USER
                   </th>
-                  <th className="text-left px-4 py-2.5 font-bold tracking-widest">
+                  <th className="text-left px-4 py-2.5 font-medium tracking-widest">
                     DESCRIPTION
                   </th>
-                  <th className="text-left px-4 py-2.5 font-bold tracking-widest w-28">
+                  <th className="text-left px-4 py-2.5 font-medium tracking-widest w-28">
                     IP
                   </th>
                 </tr>
@@ -525,7 +525,7 @@ export default function ConsolePage() {
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3 h-3 text-gray-400 shrink-0" />
                           <div>
-                            <p className="text-[11px] font-bold text-gray-700">
+                            <p className="text-[11px] font-medium text-gray-700">
                               {format(new Date(log.timestamp), "dd MMM yyyy")}
                             </p>
                             <p className="text-[10px] text-gray-400">
@@ -539,7 +539,7 @@ export default function ConsolePage() {
                       <td className="px-4 py-2.5">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 px-2 py-0.5 border-2 font-bold text-[10px] tracking-wide",
+                            "inline-flex items-center gap-1 px-2 py-0.5 border-2 font-medium text-[10px] tracking-wide",
                             ac.color,
                             ac.bg,
                             ac.border,
@@ -555,7 +555,7 @@ export default function ConsolePage() {
                         {log.module ? (
                           <span
                             className={cn(
-                              "flex items-center gap-1 font-bold text-[11px]",
+                              "flex items-center gap-1 font-medium text-[11px]",
                               mc.color,
                             )}
                           >
@@ -570,7 +570,7 @@ export default function ConsolePage() {
                       {}
                       <td className="px-4 py-2.5">
                         <div>
-                          <p className="font-bold text-[11px] text-black">
+                          <p className="font-medium text-[11px] text-black">
                             {log.userName || "System"}
                           </p>
                           <p className="text-[10px] text-gray-400">
@@ -579,7 +579,7 @@ export default function ConsolePage() {
                           {log.userRole && (
                             <span
                               className={cn(
-                                "inline-block text-[9px] font-bold px-1.5 py-0 border mt-0.5",
+                                "inline-block text-[9px] font-medium px-1.5 py-0 border mt-0.5",
                                 ROLE_BADGE[log.userRole] ||
                                   "bg-gray-100 text-gray-600 border-gray-300",
                               )}
@@ -622,7 +622,7 @@ export default function ConsolePage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex items-center gap-1.5 text-xs font-mono font-bold border-2 border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-xs font-mono font-medium border-2 border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> PREV
             </button>
@@ -639,7 +639,7 @@ export default function ConsolePage() {
                     key={p}
                     onClick={() => setPage(p)}
                     className={cn(
-                      "w-8 h-8 text-xs font-mono font-bold border-2 transition-colors",
+                      "w-8 h-8 text-xs font-mono font-medium border-2 transition-colors",
                       p === page
                         ? "bg-black text-white border-black"
                         : "bg-white text-black border-black hover:bg-black hover:text-white",
@@ -654,7 +654,7 @@ export default function ConsolePage() {
             <button
               onClick={() => setPage((p) => Math.min(pages, p + 1))}
               disabled={page === pages}
-              className="flex items-center gap-1.5 text-xs font-mono font-bold border-2 border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 text-xs font-mono font-medium border-2 border-black px-3 py-1.5 hover:bg-black hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               NEXT <ChevronRight className="w-3.5 h-3.5" />
             </button>

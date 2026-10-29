@@ -1140,7 +1140,7 @@ export default function LeadsPage() {
         align="start"
       >
         <div className="space-y-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-black">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-black">
             Budget Range
           </h4>
           <div className="grid grid-cols-2 gap-2">
@@ -1206,7 +1206,7 @@ export default function LeadsPage() {
         align="end"
       >
         <div className="p-3 border-b border-border bg-muted/50 rounded-t-lg">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-black">
+          <h4 className="text-xs font-medium uppercase tracking-wider text-black">
             Select Follow-up Date
           </h4>
         </div>
@@ -1333,13 +1333,13 @@ export default function LeadsPage() {
       <PopoverTrigger asChild>
         <button
           title="Configure columns"
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-2 border-black bg-white text-black hover:bg-[#FFDE00] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-widest border-2 border-black bg-white text-black hover:bg-[#FFDE00] transition-colors"
         >
           <Filter className="w-3.5 h-3.5" /> Columns
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2" align="end">
-        <p className="text-[10px] font-black uppercase tracking-widest text-black px-2 pb-1">
+        <p className="text-[10px] font-medium uppercase tracking-widest text-black px-2 pb-1">
           Show Columns
         </p>
         <p className="text-[10px] text-black/50 px-2 pb-2">
@@ -1605,7 +1605,7 @@ export default function LeadsPage() {
                 }}
               >
                 <DialogTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap">
+                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap">
                     <UserCheck className="w-3.5 h-3.5" />
                     Assign Lead
                   </button>
@@ -1680,7 +1680,7 @@ export default function LeadsPage() {
 
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Lead
@@ -1690,7 +1690,7 @@ export default function LeadsPage() {
               onClick={() => setWaDialogOpen(true)}
               disabled={filtered.length === 0}
               title="Send a WhatsApp template (with a Document Vault file if the template has one) to the selected leads — or to all leads shown if none are selected"
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-700 font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-700 font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               WhatsApp (
@@ -1704,7 +1704,7 @@ export default function LeadsPage() {
               <button
                 onClick={() => setBulkDeleteOpen(true)}
                 title="Move the selected leads to Trash"
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete ({selectedLeadIds.length})
@@ -1713,7 +1713,7 @@ export default function LeadsPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
                   <FileText className="w-3.5 h-3.5" />
                   Import / Export
                   <ChevronDown className="w-3.5 h-3.5" />
@@ -1724,13 +1724,13 @@ export default function LeadsPage() {
                 className="border-2 border-black"
               >
                 <DropdownMenuItem
-                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-emerald-700"
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-emerald-700"
                   onSelect={() => setImportModalOpen(true)}
                 >
                   <FileText className="w-3.5 h-3.5" /> Import Excel
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-blue-700"
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
                   onSelect={() => setShowExportDialog(true)}
                 >
                   <FileText className="w-3.5 h-3.5" /> Export
@@ -1740,7 +1740,7 @@ export default function LeadsPage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#024BAB] font-black uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#024BAB] font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
                   {fbSyncing ||
                   syncing ||
                   tiSyncing ||
@@ -1760,7 +1760,7 @@ export default function LeadsPage() {
               >
                 {fbConnected && (
                   <DropdownMenuItem
-                    className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#1877F2]"
+                    className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#1877F2]"
                     disabled={fbSyncing}
                     onSelect={() => setFbSyncModalOpen(true)}
                   >
@@ -1776,7 +1776,7 @@ export default function LeadsPage() {
                   <>
                     <DropdownMenuItem
                       id="indiamart-sync-btn"
-                      className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]"
+                      className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#E07B39]"
                       disabled={syncing}
                       onSelect={() => setSyncModalOpen(true)}
                     >
@@ -1787,14 +1787,14 @@ export default function LeadsPage() {
                       />
                       {syncing ? "Syncing IndiaMART..." : "Sync IndiaMART"}
                     </DropdownMenuItem>
-                    {/* <DropdownMenuItem className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#E07B39]/80 pl-8" onSelect={() => setSyncPanelOpen(!syncPanelOpen)}>
+                    {/* <DropdownMenuItem className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#E07B39]/80 pl-8" onSelect={() => setSyncPanelOpen(!syncPanelOpen)}>
                       {syncPanelOpen ? "Hide" : "Show"} IndiaMART sync details
                     </DropdownMenuItem> */}
                   </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#22C55E]"
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#22C55E]"
                   disabled={tiSyncing}
                   onSelect={() => handleTradeindiaSyncAttempt()}
                 >
@@ -1802,7 +1802,7 @@ export default function LeadsPage() {
                   {tiSyncing ? "Syncing TradeIndia..." : "Sync TradeIndia"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#EF4444]"
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#EF4444]"
                   disabled={jdSyncing}
                   onSelect={() => handleJustdialSyncAttempt()}
                 >
@@ -1810,7 +1810,7 @@ export default function LeadsPage() {
                   {jdSyncing ? "Checking Justdial..." : "Justdial Status"}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="gap-2 text-xs font-bold uppercase tracking-wider cursor-pointer text-[#0A66C2]"
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#0A66C2]"
                   disabled={linkedinSyncing}
                   onSelect={() => handleLinkedinSync()}
                 >
@@ -1833,7 +1833,7 @@ export default function LeadsPage() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent text-xs font-bold outline-none w-full text-black"
+                className="bg-transparent text-xs font-medium outline-none w-full text-black"
                 title="Start Date"
               />
             </div>
@@ -1843,7 +1843,7 @@ export default function LeadsPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent text-xs font-bold outline-none w-full text-black"
+                className="bg-transparent text-xs font-medium outline-none w-full text-black"
                 title="End Date"
               />
             </div>
@@ -1939,7 +1939,7 @@ export default function LeadsPage() {
                 onClick={() => setViewMode("table")}
                 title="Table view"
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest border-r-2 border-black transition-colors",
+                  "flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-widest border-r-2 border-black transition-colors",
                   viewMode === "table"
                     ? "bg-[#024BAB] text-white"
                     : "bg-white text-black hover:bg-[#FFDE00]",
@@ -1955,7 +1955,7 @@ export default function LeadsPage() {
                 }}
                 title="Kanban view"
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 text-xs font-black uppercase tracking-widest transition-colors",
+                  "flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-widest transition-colors",
                   viewMode === "kanban"
                     ? "bg-[#024BAB] text-white"
                     : "bg-white text-black hover:bg-[#FFDE00]",
@@ -1974,7 +1974,7 @@ export default function LeadsPage() {
                 if (view) applySavedView(view);
               }}
             >
-              <SelectTrigger className="h-9 w-[150px] border-2 border-black bg-white text-xs font-black uppercase tracking-widest">
+              <SelectTrigger className="h-9 w-[150px] border-2 border-black bg-white text-xs font-medium uppercase tracking-widest">
                 <Bookmark className="w-3.5 h-3.5 mr-1" />
                 <SelectValue placeholder="Saved Views" />
               </SelectTrigger>
@@ -2006,7 +2006,7 @@ export default function LeadsPage() {
             >
               <DialogTrigger asChild>
                 <button
-                  className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
+                  className="flex items-center gap-1 px-3 py-2 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
                   title="Save current filters as a view"
                 >
                   <BookmarkPlus className="w-3.5 h-3.5" />{" "}
@@ -2065,7 +2065,7 @@ export default function LeadsPage() {
                   setFollowUpDateFilter(undefined);
                   setActiveSavedViewId("");
                 }}
-                className="flex items-center gap-1 px-3 py-2 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
+                className="flex items-center gap-1 px-3 py-2 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
               >
                 <X className="w-3 h-3" /> Reset All
               </button>
@@ -2082,7 +2082,7 @@ export default function LeadsPage() {
                   setSelectedLeadId(null);
                 }}
                 className={cn(
-                  "px-4 py-2.5 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 border-r-2 border-black last:border-r-0",
+                  "px-4 py-2.5 text-xs font-medium uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 border-r-2 border-black last:border-r-0",
                   activeCategory === cat
                     ? "bg-[#024BAB] text-white"
                     : "bg-white text-black hover:bg-[#FFDE00] hover:text-black",
@@ -2091,7 +2091,7 @@ export default function LeadsPage() {
                 {cat}
                 <span
                   className={cn(
-                    "text-[10px] font-black px-1.5 py-0.5 border border-black min-w-[20px] text-center",
+                    "text-[10px] font-medium px-1.5 py-0.5 border border-black min-w-[20px] text-center",
                     activeCategory === cat
                       ? "bg-[#FFDE00] text-black"
                       : "bg-black text-white",
@@ -2113,12 +2113,12 @@ export default function LeadsPage() {
           <div className="border-2 border-black shadow-[4px_4px_0px_#000] bg-orange-50 animate-fade-in">
             <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-black bg-orange-400">
               <Zap className="w-4 h-4 text-black" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-black">
+              <h4 className="text-xs font-medium uppercase tracking-widest text-black">
                 IndiaMART Integration Status
               </h4>
               <span
                 className={cn(
-                  "text-[10px] font-black px-2 py-0.5 border-2 border-black ml-auto",
+                  "text-[10px] font-medium px-2 py-0.5 border-2 border-black ml-auto",
                   syncStatus.apiKeyConfigured
                     ? "bg-green-400 text-black"
                     : "bg-red-400 text-black",
@@ -2131,36 +2131,36 @@ export default function LeadsPage() {
             </div>
             <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
               <div className="bg-white border-2 border-black p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-black">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-black">
                   Total IM Leads
                 </p>
-                <p className="text-2xl font-black text-orange-600">
+                <p className="text-2xl font-medium text-orange-600">
                   {syncStatus.totalIndiamartLeads || 0}
                 </p>
               </div>
               <div className="bg-white border-2 border-black p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-black">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-black">
                   Last 7 Days
                 </p>
-                <p className="text-2xl font-black text-orange-500">
+                <p className="text-2xl font-medium text-orange-500">
                   {syncStatus.last7DaysLeads || 0}
                 </p>
               </div>
               {lastSyncResult && (
                 <>
                   <div className="bg-green-400 border-2 border-black p-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-black">
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-black">
                       Last Sync: New
                     </p>
-                    <p className="text-2xl font-black text-black">
+                    <p className="text-2xl font-medium text-black">
                       {lastSyncResult.created || 0}
                     </p>
                   </div>
                   <div className="bg-white border-2 border-black p-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-black">
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-black">
                       Last Sync: Skipped
                     </p>
-                    <p className="text-2xl font-black text-gray-500">
+                    <p className="text-2xl font-medium text-gray-500">
                       {lastSyncResult.skipped || 0}
                     </p>
                   </div>
@@ -2169,7 +2169,7 @@ export default function LeadsPage() {
             </div>
             {syncStatus.recentSyncs?.length > 0 && (
               <div className="px-4 pb-4">
-                <p className="text-[10px] font-black uppercase tracking-widest text-black mb-2">
+                <p className="text-[10px] font-medium uppercase tracking-widest text-black mb-2">
                   Recent Syncs
                 </p>
                 <div className="space-y-1 max-h-40 overflow-y-auto border-2 border-black">
@@ -2178,21 +2178,21 @@ export default function LeadsPage() {
                       key={i}
                       className="flex items-center justify-between bg-white px-3 py-2 text-xs border-b-2 border-black last:border-b-0"
                     >
-                      <span className="font-bold text-black">
+                      <span className="font-medium text-black">
                         {new Date(log.timestamp).toLocaleString("en-IN", {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}
                       </span>
-                      <span className="font-black text-green-700">
+                      <span className="font-medium text-green-700">
                         +{log.created} new
                       </span>
-                      <span className="font-bold text-black">
+                      <span className="font-medium text-black">
                         {log.skipped} skipped
                       </span>
                       <span
                         className={cn(
-                          "font-black",
+                          "font-medium",
                           log.errors?.length > 0
                             ? "text-red-600"
                             : "text-gray-400",
@@ -2207,7 +2207,7 @@ export default function LeadsPage() {
                 </div>
               </div>
             )}
-            <p className="text-[10px] font-bold text-black/50 px-4 pb-3">
+            <p className="text-[10px] font-medium text-black/50 px-4 pb-3">
               Auto-sync runs every 5 minutes. Click "Sync IndiaMART" to fetch
               immediately.
             </p>
@@ -2247,10 +2247,10 @@ export default function LeadsPage() {
                         style.accent,
                       )}
                     >
-                      <span className="text-xs font-black uppercase tracking-widest text-white">
+                      <span className="text-xs font-medium uppercase tracking-widest text-white">
                         {cat}
                       </span>
-                      <span className="text-[10px] font-black bg-white text-black px-1.5 py-0.5 border border-black min-w-[20px] text-center">
+                      <span className="text-[10px] font-medium bg-white text-black px-1.5 py-0.5 border border-black min-w-[20px] text-center">
                         {colLeads.length}
                       </span>
                     </div>
@@ -2267,7 +2267,7 @@ export default function LeadsPage() {
                           <Loader2 className="w-5 h-5 animate-spin text-[#024BAB]" />
                         </div>
                       ) : colLeads.length === 0 ? (
-                        <div className="text-center pt-10 text-[10px] font-black uppercase tracking-widest text-black/30">
+                        <div className="text-center pt-10 text-[10px] font-medium uppercase tracking-widest text-black/30">
                           No leads
                         </div>
                       ) : (
@@ -2290,7 +2290,7 @@ export default function LeadsPage() {
                               <div className="flex justify-end mb-1.5">
                                 <span
                                   className={cn(
-                                    "inline-flex items-center gap-0.5 text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
+                                    "inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 border border-black uppercase",
                                     l.contactTag === "HOT" &&
                                       "bg-red-500 text-white",
                                     l.contactTag === "WARM" &&
@@ -2312,7 +2312,7 @@ export default function LeadsPage() {
                                 </span>
                               </div>
                             )}
-                            <p className="font-black text-black text-sm leading-tight">
+                            <p className="font-medium text-black text-sm leading-tight">
                               {l.name}
                             </p>
                             <p className="text-[10px] text-black/60 font-medium mt-0.5 truncate">
@@ -2327,7 +2327,7 @@ export default function LeadsPage() {
                               <SourceBadge source={l.source} size="sm" />
                               <span
                                 className={cn(
-                                  "text-[9px] font-black px-1.5 py-0.5 border border-black uppercase",
+                                  "text-[9px] font-medium px-1.5 py-0.5 border border-black uppercase",
                                   getStatusColorClasses(l.status) ||
                                     "bg-gray-100 text-black border-transparent",
                                 )}
@@ -2336,7 +2336,7 @@ export default function LeadsPage() {
                               </span>
                             </div>
                             {l.assignedTo?.name && (
-                              <p className="text-[9px] text-black/40 font-bold mt-1.5 truncate">
+                              <p className="text-[9px] text-black/40 font-medium mt-1.5 truncate">
                                 → {l.assignedTo.name}
                               </p>
                             )}
@@ -2368,7 +2368,7 @@ export default function LeadsPage() {
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-20">
                   <tr className="border-b-2 border-black bg-[#024BAB]">
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                    <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                       <div className="flex items-center gap-2.5">
                         <Checkbox
                           aria-label="Select all leads"
@@ -2389,7 +2389,7 @@ export default function LeadsPage() {
                       </div>
                     </th>
                     {isColVisible("source") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest group">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest group">
                         <div className="flex items-center gap-1">
                           Source
                           {renderHeaderFilter(
@@ -2412,72 +2412,72 @@ export default function LeadsPage() {
                       </th>
                     )}
                     {isColVisible("adPlatform") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Ad Platform
                       </th>
                     )}
                     {isColVisible("inquiryDate") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Inquiry Date
                       </th>
                     )}
                     {isColVisible("createdAt") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Created At
                       </th>
                     )}
                     {isColVisible("phone") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Phone
                       </th>
                     )}
                     {isColVisible("email") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Email
                       </th>
                     )}
                     {isColVisible("website") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Website
                       </th>
                     )}
                     {isColVisible("city") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         City
                       </th>
                     )}
                     {isColVisible("state") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         State
                       </th>
                     )}
                     {isColVisible("pageName") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Facebook Page
                       </th>
                     )}
                     {isColVisible("campaign") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Ad Name
                       </th>
                     )}
                     {isColVisible("campaignName") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Campaign Name
                       </th>
                     )}
                     {isColVisible("adsetName") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Ad Set Name
                       </th>
                     )}
                     {isColVisible("formName") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Lead Form
                       </th>
                     )}
                     {isColVisible("budget") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
                           Budget
                           {renderBudgetRangeFilter()}
@@ -2485,7 +2485,7 @@ export default function LeadsPage() {
                       </th>
                     )}
                     {isColVisible("product") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
                           Interested
                           {renderHeaderFilter(
@@ -2498,7 +2498,7 @@ export default function LeadsPage() {
                       </th>
                     )}
                     {isColVisible("remarks") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Remarks
                       </th>
                     )}
@@ -2507,12 +2507,12 @@ export default function LeadsPage() {
                       .map((c) => (
                         <th
                           key={c.id}
-                          className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest"
+                          className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest"
                         >
                           {c.label}
                         </th>
                       ))}
-                    <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                    <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                       <div className="flex items-center gap-1">
                         Status
                         {renderHeaderFilter(
@@ -2524,12 +2524,12 @@ export default function LeadsPage() {
                       </div>
                     </th>
                     {showAssignedCol && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Assigned
                       </th>
                     )}
                     {isColVisible("followup") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
                           Follow-up
                           {renderFollowUpDateFilter()}
@@ -2537,12 +2537,12 @@ export default function LeadsPage() {
                       </th>
                     )}
                     {isColVisible("visitScheduled") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Visit Scheduled
                       </th>
                     )}
                     {isColVisible("visitActual") && (
-                      <th className="text-left px-5 py-3 text-[11px] font-black text-white uppercase tracking-widest">
+                      <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         Visit Completed
                       </th>
                     )}
@@ -2596,7 +2596,7 @@ export default function LeadsPage() {
                             >
                               <td
                                 colSpan={visibleColumnCount}
-                                className="px-5 py-2.5 text-xs font-bold text-black uppercase tracking-widest"
+                                className="px-5 py-2.5 text-xs font-medium text-black uppercase tracking-widest"
                               >
                                 <div className="flex items-center gap-2">
                                   <CalendarIcon className="w-3.5 h-3.5 text-primary/70" />
@@ -2712,12 +2712,12 @@ export default function LeadsPage() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-800 border border-green-300 hover:underline"
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-800 border border-green-300 hover:underline"
                                   >
                                     Yes
                                   </a>
                                 ) : (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500 border border-gray-300">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-300">
                                     No
                                   </span>
                                 )}
@@ -2832,7 +2832,7 @@ export default function LeadsPage() {
                                   l.stagePath?.some((s: string) =>
                                     s.includes("QUOTATION"),
                                   ) && (
-                                    <span className="text-[9px] text-purple-600 font-bold whitespace-nowrap bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-0.5">
+                                    <span className="text-[9px] text-purple-600 font-medium whitespace-nowrap bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 flex items-center gap-0.5">
                                       <Check className="w-2 h-2" /> Quotation
                                       Sent
                                     </span>
@@ -2994,7 +2994,7 @@ export default function LeadsPage() {
                 htmlFor="remarks"
                 className="text-xs text-black uppercase tracking-wider"
               >
-                Remarks <span className="text-destructive font-bold">*</span>
+                Remarks <span className="text-destructive font-medium">*</span>
               </Label>
               <textarea
                 id="remarks"
@@ -3198,7 +3198,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="name"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Contact Name *
                   </Label>
@@ -3216,7 +3216,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="company"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Company Name *
                   </Label>
@@ -3234,7 +3234,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="phone"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Phone Number *
                   </Label>
@@ -3256,7 +3256,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="email"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Email Address
                   </Label>
@@ -3274,7 +3274,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="website"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Website
                   </Label>
@@ -3291,7 +3291,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="location"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Location
                   </Label>
@@ -3314,7 +3314,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="state"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     State
                   </Label>
@@ -3335,7 +3335,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="source"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Source
                   </Label>
@@ -3370,12 +3370,12 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="budget"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Budget
                   </Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-black">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-black">
                       ₹
                     </span>
                     <Input
@@ -3393,7 +3393,7 @@ export default function LeadsPage() {
                 <div className="space-y-2">
                   <Label
                     htmlFor="assignedTo"
-                    className="text-xs font-semibold uppercase text-black"
+                    className="text-xs font-medium uppercase text-black"
                   >
                     Assign To *
                   </Label>
@@ -3416,7 +3416,7 @@ export default function LeadsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase text-black">
+                  <Label className="text-xs font-medium uppercase text-black">
                     Interested In
                   </Label>
                   <Popover>
@@ -3481,7 +3481,7 @@ export default function LeadsPage() {
             <div className="space-y-2">
               <Label
                 htmlFor="requirement"
-                className="text-xs font-semibold uppercase text-black"
+                className="text-xs font-medium uppercase text-black"
               >
                 Requirement *
               </Label>
@@ -3526,7 +3526,7 @@ export default function LeadsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b-2 border-black px-5 py-4">
-              <h2 className="text-base font-black uppercase tracking-widest">
+              <h2 className="text-base font-medium uppercase tracking-widest">
                 Import Leads via Excel
               </h2>
               <button
@@ -3544,17 +3544,17 @@ export default function LeadsPage() {
             <div className="p-5 space-y-5">
               {/* Expected headers */}
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">
                   Required Excel Columns
                 </p>
                 <div className="border-2 border-black overflow-x-auto">
                   <table className="w-full min-w-[340px] text-xs border-collapse">
                     <thead>
                       <tr className="bg-gray-100 border-b-2 border-black">
-                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider border-r border-black">
+                        <th className="text-left px-3 py-2 font-medium uppercase tracking-wider border-r border-black">
                           Column Header
                         </th>
-                        <th className="text-left px-3 py-2 font-black uppercase tracking-wider">
+                        <th className="text-left px-3 py-2 font-medium uppercase tracking-wider">
                           Required?
                         </th>
                       </tr>
@@ -3565,11 +3565,11 @@ export default function LeadsPage() {
                           key={h.key}
                           className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
                         >
-                          <td className="px-3 py-1.5 font-bold border-r border-black font-mono">
+                          <td className="px-3 py-1.5 font-medium border-r border-black font-mono">
                             {h.label}
                           </td>
                           <td
-                            className={`px-3 py-1.5 font-black text-xs ${h.required ? "text-red-600" : "text-gray-400"}`}
+                            className={`px-3 py-1.5 font-medium text-xs ${h.required ? "text-red-600" : "text-gray-400"}`}
                           >
                             {h.required ? "Required" : "Optional"}
                           </td>
@@ -3580,19 +3580,19 @@ export default function LeadsPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1.5">
                   Source will be set to{" "}
-                  <span className="font-bold text-black">Manual</span> for all
+                  <span className="font-medium text-black">Manual</span> for all
                   imported leads. Column names are case-insensitive.
                 </p>
               </div>
 
               {/* File upload */}
               <div>
-                <p className="text-xs font-black uppercase tracking-wider text-gray-500 mb-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">
                   Upload File (.xlsx / .xls)
                 </p>
                 <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-black bg-gray-50 hover:bg-gray-100 cursor-pointer py-6 transition-colors">
                   <FileText className="w-6 h-6 mb-2 text-emerald-700" />
-                  <span className="text-xs font-bold">
+                  <span className="text-xs font-medium">
                     {importFile
                       ? importFile.name
                       : "Click to select Excel file"}
@@ -3616,7 +3616,7 @@ export default function LeadsPage() {
               {importPreview.length > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border-2 border-emerald-600">
                   <Check className="w-4 h-4 text-emerald-700 shrink-0" />
-                  <span className="text-xs font-black text-emerald-700">
+                  <span className="text-xs font-medium text-emerald-700">
                     {importPreview.length} rows ready to import
                   </span>
                 </div>
@@ -3629,14 +3629,14 @@ export default function LeadsPage() {
                     setImportFile(null);
                     setImportPreview([]);
                   }}
-                  className="flex-1 px-4 py-2 border-2 border-black font-black uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
+                  className="flex-1 px-4 py-2 border-2 border-black font-medium uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleImport}
                   disabled={importing || importPreview.length === 0}
-                  className="flex-1 px-4 py-2 bg-emerald-600 border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-emerald-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-emerald-600 border-2 border-black text-white font-medium uppercase text-xs tracking-widest hover:bg-emerald-700 transition-colors shadow-[3px_3px_0px_#000] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {importing ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -3663,11 +3663,11 @@ export default function LeadsPage() {
                 alt="Meta"
                 className="w-6 h-6 object-contain"
               />
-              <h2 className="text-lg font-black uppercase tracking-widest">
+              <h2 className="text-lg font-medium uppercase tracking-widest">
                 Sync Meta
               </h2>
             </div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
               Leads Fetch Range
             </p>
             <div className="flex flex-col gap-2 mb-5">
@@ -3683,7 +3683,7 @@ export default function LeadsPage() {
                 <button
                   key={opt.value}
                   onClick={() => setFbSyncDateOption(opt.value)}
-                  className={`w-full text-left px-4 py-2.5 border-2 border-black font-bold text-sm transition-colors ${
+                  className={`w-full text-left px-4 py-2.5 border-2 border-black font-medium text-sm transition-colors ${
                     fbSyncDateOption === opt.value
                       ? "bg-[#1877F2] text-white"
                       : "bg-white hover:bg-blue-50"
@@ -3696,25 +3696,25 @@ export default function LeadsPage() {
             {fbSyncDateOption === "custom" && (
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium uppercase tracking-wider mb-1">
                     From
                   </label>
                   <input
                     type="date"
                     value={fbCustomFrom}
                     onChange={(e) => setFbCustomFrom(e.target.value)}
-                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-medium focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium uppercase tracking-wider mb-1">
                     To
                   </label>
                   <input
                     type="date"
                     value={fbCustomTo}
                     onChange={(e) => setFbCustomTo(e.target.value)}
-                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-medium focus:outline-none"
                   />
                 </div>
               </div>
@@ -3722,7 +3722,7 @@ export default function LeadsPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setFbSyncModalOpen(false)}
-                className="flex-1 px-4 py-2 border-2 border-black font-black uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
+                className="flex-1 px-4 py-2 border-2 border-black font-medium uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
               >
                 Cancel
               </button>
@@ -3765,7 +3765,7 @@ export default function LeadsPage() {
                   handleFacebookSync(since, until);
                 }}
                 disabled={fbSyncing}
-                className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[#1877F2] border-2 border-black text-white font-medium uppercase text-xs tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {fbSyncing ? "Syncing..." : "Sync Now"}
               </button>
@@ -3778,10 +3778,10 @@ export default function LeadsPage() {
       {syncModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] w-full max-w-sm mx-4 p-6">
-            <h2 className="text-lg font-black uppercase tracking-widest mb-4 border-b-2 border-black pb-2">
+            <h2 className="text-lg font-medium uppercase tracking-widest mb-4 border-b-2 border-black pb-2">
               Sync IndiaMART
             </h2>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
               Select Date Range
             </p>
             <div className="flex flex-col gap-2 mb-5">
@@ -3795,7 +3795,7 @@ export default function LeadsPage() {
                 <button
                   key={opt.value}
                   onClick={() => setSyncDateOption(opt.value)}
-                  className={`w-full text-left px-4 py-2.5 border-2 border-black font-bold text-sm transition-colors ${
+                  className={`w-full text-left px-4 py-2.5 border-2 border-black font-medium text-sm transition-colors ${
                     syncDateOption === opt.value
                       ? "bg-[#E07B39] text-white"
                       : "bg-white hover:bg-orange-50"
@@ -3808,25 +3808,25 @@ export default function LeadsPage() {
             {syncDateOption === "custom" && (
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium uppercase tracking-wider mb-1">
                     From
                   </label>
                   <input
                     type="date"
                     value={customFrom}
                     onChange={(e) => setCustomFrom(e.target.value)}
-                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-medium focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium uppercase tracking-wider mb-1">
                     To
                   </label>
                   <input
                     type="date"
                     value={customTo}
                     onChange={(e) => setCustomTo(e.target.value)}
-                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-bold focus:outline-none"
+                    className="w-full border-2 border-black px-2 py-1.5 text-sm font-medium focus:outline-none"
                   />
                 </div>
               </div>
@@ -3834,13 +3834,13 @@ export default function LeadsPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setSyncModalOpen(false)}
-                className="flex-1 px-4 py-2 border-2 border-black font-black uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
+                className="flex-1 px-4 py-2 border-2 border-black font-medium uppercase text-xs tracking-widest hover:bg-gray-100 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleIndiamartSync}
-                className="flex-1 px-4 py-2 bg-[#E07B39] border-2 border-black text-white font-black uppercase text-xs tracking-widest hover:bg-orange-600 transition-colors shadow-[3px_3px_0px_#000]"
+                className="flex-1 px-4 py-2 bg-[#E07B39] border-2 border-black text-white font-medium uppercase text-xs tracking-widest hover:bg-orange-600 transition-colors shadow-[3px_3px_0px_#000]"
               >
                 Sync
               </button>

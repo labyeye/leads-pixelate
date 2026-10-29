@@ -205,7 +205,7 @@ export function LeadDetailPanel({
       )}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Lead Details</h3>
+        <h3 className="font-medium text-foreground">Lead Details</h3>
         <div className="flex items-center gap-3">
           {can("Leads", "update") && (
             <button onClick={() => setEditOpen(true)} title="Edit lead">
@@ -228,7 +228,7 @@ export function LeadDetailPanel({
 
       <div className="space-y-4 mb-6">
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-semibold">{lead.name}</p>
+          <p className="text-sm font-medium">{lead.name}</p>
           <p className="text-xs text-muted-foreground">{lead.company}</p>
         </div>
 
@@ -301,7 +301,7 @@ export function LeadDetailPanel({
             )}
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="w-4 h-4 flex items-center justify-center font-bold text-xs">
+            <div className="w-4 h-4 flex items-center justify-center font-medium text-xs">
               <Mail className="w-4 h-4 text-black" />
             </div>
             <span className="text-primary">{lead.email || "No email"}</span>
@@ -311,7 +311,7 @@ export function LeadDetailPanel({
             {lead.facebookAdName && (
               <div className="flex items-start gap-2 text-muted-foreground">
                 <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
-                  <span className="text-white font-bold text-[9px]">f</span>
+                  <span className="text-white font-medium text-[9px]">f</span>
                 </div>
                 <span className="text-foreground font-medium text-xs leading-tight">
                   Campaign: {lead.facebookAdName}
@@ -320,7 +320,7 @@ export function LeadDetailPanel({
             )}
             <div className="flex items-start gap-2 text-muted-foreground">
               <IndianRupee className="w-4 h-4 mt-0.5 text-success/70" />
-              <span className="text-success font-bold text-xs leading-tight">
+              <span className="text-success font-medium text-xs leading-tight">
                 Budget: {lead.budget || "Not Specified"}
               </span>
             </div>
@@ -328,7 +328,7 @@ export function LeadDetailPanel({
 
           <div className="flex items-start gap-2 text-muted-foreground pt-2">
             <CalendarIcon className="w-4 h-4 mt-0.5 text-blue-500/70" />
-            <span className="text-secondary font-bold text-xs leading-tight">
+            <span className="text-secondary font-medium text-xs leading-tight">
               Inquiry Date:{" "}
               {lead.indiamartQueryTime
                 ? format(new Date(lead.indiamartQueryTime), "PPP p")
@@ -338,7 +338,7 @@ export function LeadDetailPanel({
           {lead.visitScheduledDate && (
             <div className="flex items-start gap-2 text-muted-foreground pt-2">
               <CalendarIcon className="w-4 h-4 mt-0.5 text-indigo-500/70" />
-              <span className="text-indigo-600 font-bold text-xs leading-tight">
+              <span className="text-indigo-600 font-medium text-xs leading-tight">
                 Scheduled Visit:{" "}
                 {format(new Date(lead.visitScheduledDate), "PPP p")}
               </span>
@@ -346,13 +346,13 @@ export function LeadDetailPanel({
           )}
           <div className="flex items-start gap-2 text-muted-foreground pt-2">
             <FileText className="w-4 h-4 mt-0.5" />
-            <span className="text-primary font-bold text-xs leading-tight">
+            <span className="text-primary font-medium text-xs leading-tight">
               Requirement: {lead.requirement || "No requirement specified."}
             </span>
           </div>
           <div className="flex items-start gap-2 text-muted-foreground pt-2">
             <FileText className="w-4 h-4 mt-0.5 text-primary/70" />
-            <span className="text-black font-semibold text-md leading-tight">
+            <span className="text-black font-medium text-md leading-tight">
               Remarks: {lead.remarks || "No remarks added."}
             </span>
           </div>
@@ -386,7 +386,7 @@ export function LeadDetailPanel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Button
               variant="outline"
-              className="w-full border-2 justify-center gap-1.5 text-green-700 hover:text-green-800 hover:bg-green-50 border-black font-bold text-xs"
+              className="w-full border-2 justify-center gap-1.5 text-green-700 hover:text-green-800 hover:bg-green-50 border-black font-medium text-xs"
               onClick={() => setWaDialogOpen(true)}
             >
               <WhatsAppIcon className="w-4 h-4" />
@@ -395,7 +395,7 @@ export function LeadDetailPanel({
 
             <Button
               variant="outline"
-              className="w-full border-2 justify-center gap-1.5 text-blue-900 hover:text-blue-950 hover:bg-blue-50 border-black font-bold text-xs bg-gradient-to-r from-blue-50 to-indigo-50"
+              className="w-full border-2 justify-center gap-1.5 text-blue-900 hover:text-blue-950 hover:bg-blue-50 border-black font-medium text-xs bg-gradient-to-r from-blue-50 to-indigo-50"
               onClick={handleTriggerAICall}
               disabled // ponytail: coming soon, needs an upgraded ElevenLabs plan; drop this and the badge to re-enable
             >
@@ -405,14 +405,14 @@ export function LeadDetailPanel({
                 <Bot className="w-4 h-4 text-blue-600" />
               )}
               AI Voice Call
-              <span className="ml-1 rounded-full border border-black/30 bg-white px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-black/60">
+              <span className="ml-1 rounded-full border border-black/30 bg-white px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-black/60">
                 Coming soon
               </span>
             </Button>
 
             <Button
               variant="outline"
-              className="w-full sm:col-span-2 border-2 justify-center gap-1.5 text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 border-black font-bold text-xs"
+              className="w-full sm:col-span-2 border-2 justify-center gap-1.5 text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 border-black font-medium text-xs"
               onClick={() => setCallDialogOpen(true)}
             >
               <Phone className="w-4 h-4" />
@@ -739,7 +739,7 @@ export function LeadDetailPanel({
       {isTagModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 rounded-lg">
           <div className="bg-card rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Select Contact Tag</h3>
+            <h3 className="text-lg font-medium mb-4">Select Contact Tag</h3>
             <p className="text-sm text-muted-foreground mb-6">
               How interested is this lead?
             </p>

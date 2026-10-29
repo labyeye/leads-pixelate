@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export const inputCls =
   "w-full border-2 border-black px-3 py-2 text-sm font-medium outline-none bg-white focus:border-[#024BAB]";
 export const labelCls =
-  "block text-[10px] font-black uppercase tracking-widest text-black mb-1";
+  "block text-[10px] font-medium uppercase tracking-widest text-black mb-1";
 
 export const money = (n: number) =>
   `₹${(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -39,7 +39,7 @@ export function StatusPill({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "text-[10px] font-black uppercase tracking-wide px-2 py-1 border whitespace-nowrap",
+        "text-[10px] font-medium uppercase tracking-wide px-2 py-1 border whitespace-nowrap",
         STATUS_COLOR[status] || "bg-gray-100 text-gray-700 border-gray-300",
       )}
     >
@@ -80,7 +80,7 @@ export function Toolbar({
       {onAdd && (
         <button
           onClick={onAdd}
-          className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
+          className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
         >
           <Plus className="w-3.5 h-3.5" /> {addLabel}
         </button>
@@ -111,7 +111,7 @@ export function DataTable({
               {heads.map((h) => (
                 <th
                   key={h}
-                  className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                  className="text-left px-4 py-3 text-[10px] font-medium uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                 >
                   {h}
                 </th>
@@ -141,7 +141,7 @@ export function DataTable({
         </table>
       </div>
       {footer && (
-        <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest">
+        <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-medium uppercase tracking-widest">
           {footer}
         </div>
       )}
@@ -173,13 +173,13 @@ export function Modal({
         )}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-[#024BAB] sticky top-0">
-          <h2 className="text-sm font-black uppercase tracking-widest text-white">
+          <h2 className="text-sm font-medium uppercase tracking-widest text-white">
             {title}
           </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="text-white hover:text-orange-300 font-black text-lg leading-none"
+            className="text-white hover:text-orange-300 font-medium text-lg leading-none"
           >
             ✕
           </button>
@@ -204,14 +204,14 @@ export function SaveBar({
       <button
         type="button"
         onClick={onCancel}
-        className="flex-1 h-10 border-2 border-black font-black uppercase text-xs tracking-widest bg-white hover:bg-gray-50"
+        className="flex-1 h-10 border-2 border-black font-medium uppercase text-xs tracking-widest bg-white hover:bg-gray-50"
       >
         Cancel
       </button>
       <button
         type="submit"
         disabled={saving}
-        className="flex-1 h-10 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black disabled:opacity-60 flex items-center justify-center gap-1.5"
+        className="flex-1 h-10 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black disabled:opacity-60 flex items-center justify-center gap-1.5"
       >
         {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
         {label}

@@ -134,7 +134,7 @@ export function MediaUpload({ value, onChange, kind, multiple, label, rule, stri
         return c ? (
           <p
             key={"c" + u}
-            className={`text-xs font-semibold px-2 py-1 rounded border ${
+            className={`text-xs font-medium px-2 py-1 rounded border ${
               c.status === "ok"
                 ? "bg-green-50 border-green-300 text-green-800"
                 : c.status === "warn"

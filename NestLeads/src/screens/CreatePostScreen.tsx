@@ -858,7 +858,7 @@ export default function CreatePostScreen({ navigation }: any) {
               <Text
                 style={[
                   styles.stepLabel,
-                  active && { color: PRIMARY, fontWeight: '800' },
+                  active && { color: PRIMARY, fontWeight: '500' },
                 ]}
               >
                 {label}
@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
@@ -989,10 +989,10 @@ const styles = StyleSheet.create({
   },
   stepDotActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
   stepDotDone: { backgroundColor: '#22c55e', borderColor: '#22c55e' },
-  stepNum: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
+  stepNum: { fontSize: 11, fontWeight: '500', color: '#94a3b8' },
   stepLabel: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
   },
@@ -1002,7 +1002,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -1023,7 +1023,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   typeBtnActive: { borderColor: '#000', backgroundColor: PRIMARY },
-  typeBtnText: { fontSize: 10, fontWeight: '600', color: '#64748b' },
+  typeBtnText: { fontSize: 10, fontWeight: '500', color: '#64748b' },
   typeBtnTextActive: { color: '#fff' },
 
   mediaSection: { gap: 8 },
@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: '#f8fafc',
   },
-  mediaPlaceholderText: { fontSize: 13, fontWeight: '700', color: '#94a3b8' },
+  mediaPlaceholderText: { fontSize: 13, fontWeight: '500', color: '#94a3b8' },
   mediaPlaceholderSub: { fontSize: 11, color: '#cbd5e1' },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1085,7 +1085,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  carouselAddText: { fontSize: 10, fontWeight: '700', color: PRIMARY },
+  carouselAddText: { fontSize: 10, fontWeight: '500', color: PRIMARY },
 
   captionInput: {
     borderWidth: 2,
@@ -1141,7 +1141,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  tagText: { fontSize: 12, color: '#7c3aed', fontWeight: '700' },
+  tagText: { fontSize: 12, color: '#7c3aed', fontWeight: '500' },
 
   dtBtn: {
     flexDirection: 'row',
@@ -1157,7 +1157,7 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: '#fff',
   },
-  dtBtnText: { flex: 1, fontSize: 14, color: '#000', fontWeight: '700' },
+  dtBtnText: { flex: 1, fontSize: 14, color: '#000', fontWeight: '500' },
   dtOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1178,7 +1178,7 @@ const styles = StyleSheet.create({
   },
   dtTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textAlign: 'center',
     marginBottom: 16,
@@ -1189,14 +1189,14 @@ const styles = StyleSheet.create({
   dtArrow: { padding: 6 },
   dtVal: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     minWidth: 50,
     textAlign: 'center',
   },
   dtFieldLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -1211,7 +1211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  dtCancelText: { fontSize: 12, fontWeight: '600', color: '#000' },
+  dtCancelText: { fontSize: 12, fontWeight: '500', color: '#000' },
   dtConfirm: {
     flex: 1,
     backgroundColor: PRIMARY,
@@ -1221,7 +1221,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
   },
-  dtConfirmText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  dtConfirmText: { fontSize: 12, fontWeight: '500', color: '#fff' },
 
   centerBox: { paddingTop: 40, alignItems: 'center' },
   emptyBox: {
@@ -1230,7 +1230,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 20,
   },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyTitle: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptySub: {
     fontSize: 12,
     color: '#cbd5e1',
@@ -1257,7 +1257,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   accountInfo: { flex: 1 },
-  accountName: { fontSize: 14, fontWeight: '800', color: '#000' },
+  accountName: { fontSize: 14, fontWeight: '500', color: '#000' },
   accountPlatform: { fontSize: 11, color: '#64748b', marginTop: 1 },
   checkbox: {
     width: 22,
@@ -1301,7 +1301,7 @@ const styles = StyleSheet.create({
   },
   reviewLabel: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -1343,7 +1343,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  prevBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  prevBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   nextBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -1361,7 +1361,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   nextBtnDisabled: { backgroundColor: '#94a3b8', borderColor: '#94a3b8' },
-  nextBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  nextBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   submitBtns: { flex: 2, flexDirection: 'row', gap: 8 },
   draftBtn: {
     flex: 1,
@@ -1378,7 +1378,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  draftBtnText: { fontSize: 11, fontWeight: '600', color: '#000' },
+  draftBtnText: { fontSize: 11, fontWeight: '500', color: '#000' },
   submitBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -1395,5 +1395,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  submitBtnText: { fontSize: 11, fontWeight: '600', color: '#fff' },
+  submitBtnText: { fontSize: 11, fontWeight: '500', color: '#fff' },
 });

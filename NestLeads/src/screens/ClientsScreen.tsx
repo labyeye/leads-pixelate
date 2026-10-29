@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 8,
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   addBtn: {
     flexDirection: 'row',
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     marginRight: 8,
   },
-  addBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  addBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
   searchRow: { paddingHorizontal: 12, paddingVertical: 10 },
@@ -585,9 +585,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  avatarText: { fontSize: 14, fontWeight: '500', color: '#fff' },
   cardInfo: { flex: 1 },
-  clientName: { fontSize: 14, fontWeight: '600', color: '#000' },
+  clientName: { fontSize: 14, fontWeight: '500', color: '#000' },
   clientCompany: { fontSize: 11, color: '#64748b' },
   cardActions: { flexDirection: 'row', gap: 6 },
   iconBtn: {
@@ -610,9 +610,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  badgeText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+  badgeText: { fontSize: 10, fontWeight: '500', textTransform: 'uppercase' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   // Modal
   modalOverlay: {
     flex: 1,
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
   },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  cancelBtnText: { fontWeight: '700', color: '#000' },
+  cancelBtnText: { fontWeight: '500', color: '#000' },
   saveBtn: {
     flex: 1,
     paddingVertical: 13,
@@ -668,10 +668,10 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  saveBtnText: { fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontWeight: '500', color: '#fff' },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
@@ -707,6 +707,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pickerOptionActive: { backgroundColor: '#024BAB' },
-  pickerOptionText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  pickerOptionText: { fontSize: 11, fontWeight: '500', color: '#000' },
   pickerOptionTextActive: { color: '#fff' },
 });

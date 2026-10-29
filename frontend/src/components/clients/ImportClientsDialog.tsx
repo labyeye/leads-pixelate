@@ -202,7 +202,7 @@ export function ImportClientsDialog({ open, onOpenChange, onImported }: Props) {
               <div className="max-h-56 overflow-y-auto rounded border text-xs divide-y">
                 {result.skipped.map((s) => (
                   <div key={s.row} className="px-3 py-2">
-                    <span className="font-semibold">
+                    <span className="font-medium">
                       Row {s.row}
                       {s.name ? ` (${s.name})` : ""}:
                     </span>{" "}

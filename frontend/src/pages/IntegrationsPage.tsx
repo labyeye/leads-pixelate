@@ -112,7 +112,7 @@ function HighlightBox({
 }) {
   return (
     <div className="relative border-2 border-[#024BAB] bg-[#024BAB]/10 p-3 nb-shadow-blue">
-      <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-black uppercase">
+      <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-medium text-black uppercase">
         {label}
       </div>
       {children}
@@ -123,7 +123,7 @@ function HighlightBox({
 const IndiamartStep1Visual = () => (
   <MockBrowser>
     <div className="p-4 space-y-2">
-      <div className="text-xs font-bold text-gray-400 uppercase mb-3">
+      <div className="text-xs font-medium text-gray-400 uppercase mb-3">
         IndiaMART Seller Panel
       </div>
       <div className="flex gap-2">
@@ -133,7 +133,7 @@ const IndiamartStep1Visual = () => (
             className={cn(
               "text-xs px-2 py-1 border",
               i === 3
-                ? "border-[#FB923C] bg-[#FB923C]/10 font-bold text-[#FB923C]"
+                ? "border-[#FB923C] bg-[#FB923C]/10 font-medium text-[#FB923C]"
                 : "border-gray-200 text-gray-400",
             )}
           >
@@ -142,7 +142,7 @@ const IndiamartStep1Visual = () => (
         ))}
       </div>
       <div className="mt-3 border border-gray-200 p-3">
-        <div className="text-xs font-bold mb-2">Settings → API</div>
+        <div className="text-xs font-medium mb-2">Settings → API</div>
         <HighlightBox label="Click here">
           <div className="text-xs text-gray-700 font-medium">
             CRM API Integration
@@ -159,7 +159,7 @@ const IndiamartStep1Visual = () => (
 const IndiamartStep2Visual = () => (
   <MockBrowser>
     <div className="p-4">
-      <div className="text-xs font-bold text-gray-400 mb-3">
+      <div className="text-xs font-medium text-gray-400 mb-3">
         CRM API Integration
       </div>
       <div className="space-y-2">
@@ -183,7 +183,7 @@ const IndiamartStep3Visual = () => (
   <div className="border-2 border-black bg-[#A3E635]/10 p-5 flex flex-col items-center justify-center gap-3 nb-shadow-sm min-h-[140px]">
     <CheckCircle2 className="w-10 h-10 text-[#00C48C]" />
     <div className="text-center">
-      <p className="font-display font-bold text-base text-black">
+      <p className="font-display font-medium text-base text-black">
         Connection verified!
       </p>
       <p className="text-xs text-muted-foreground mt-1">
@@ -192,11 +192,11 @@ const IndiamartStep3Visual = () => (
     </div>
     <div className="flex gap-4 mt-1">
       <div className="text-center">
-        <p className="font-bold text-lg text-black">14</p>
+        <p className="font-medium text-lg text-black">14</p>
         <p className="text-[10px] text-muted-foreground">Today</p>
       </div>
       <div className="text-center">
-        <p className="font-bold text-lg text-black">2 min</p>
+        <p className="font-medium text-lg text-black">2 min</p>
         <p className="text-[10px] text-muted-foreground">Last sync</p>
       </div>
     </div>
@@ -206,18 +206,18 @@ const IndiamartStep3Visual = () => (
 const FacebookStep1Visual = () => (
   <div className="border-2 border-black nb-shadow-sm overflow-hidden">
     <div className="bg-[#1877F2] p-4 text-center">
-      <div className="text-white font-bold text-lg">f</div>
+      <div className="text-white font-medium text-lg">f</div>
     </div>
     <div className="bg-white p-4 space-y-3">
       <div className="text-center">
-        <p className="text-xs font-bold text-black">Facebook for Developers</p>
+        <p className="text-xs font-medium text-black">Facebook for Developers</p>
         <p className="text-[10px] text-muted-foreground">
           developers.facebook.com/apps
         </p>
       </div>
       <HighlightBox label="Go here">
         <div className="flex items-center justify-between">
-          <div className="text-xs font-bold text-black">My Apps → Your App</div>
+          <div className="text-xs font-medium text-black">My Apps → Your App</div>
           <ChevronRight className="w-3 h-3" />
         </div>
         <div className="text-[10px] text-gray-500 mt-0.5">
@@ -231,7 +231,7 @@ const FacebookStep1Visual = () => (
 const FacebookStep2Visual = () => (
   <div className="border-2 border-black nb-shadow-sm overflow-hidden">
     <div className="bg-white border-b-2 border-black p-3">
-      <div className="text-xs font-bold text-black">
+      <div className="text-xs font-medium text-black">
         Facebook Page Settings → Webhooks
       </div>
     </div>
@@ -257,13 +257,13 @@ const FacebookStep2Visual = () => (
 const FacebookStep3Visual = () => (
   <div className="border-2 border-black nb-shadow-sm overflow-hidden">
     <div className="bg-white border-b-2 border-black p-3">
-      <div className="text-xs font-bold text-black">
+      <div className="text-xs font-medium text-black">
         Facebook Page → Settings → Access Tokens
       </div>
     </div>
     <div className="bg-white p-4 space-y-2">
       <HighlightBox label="Copy this">
-        <div className="text-xs font-bold text-black mb-1">
+        <div className="text-xs font-medium text-black mb-1">
           Page Access Token
         </div>
         <div className="font-mono text-[10px] text-gray-700 bg-white border border-gray-200 p-1.5 break-all">
@@ -283,7 +283,7 @@ const FacebookStep4Visual = () => (
   <div className="border-2 border-black bg-[#3B82F6]/10 p-5 flex flex-col items-center justify-center gap-3 nb-shadow-sm min-h-[140px]">
     <ShieldCheck className="w-10 h-10 text-[#3B82F6]" />
     <div className="text-center">
-      <p className="font-display font-bold text-base text-black">All set!</p>
+      <p className="font-display font-medium text-base text-black">All set!</p>
       <p className="text-xs text-muted-foreground mt-1">
         New Facebook Lead Ad submissions will appear in NestLeads instantly.
       </p>
@@ -478,11 +478,11 @@ const INTEGRATIONS: Integration[] = [
         visual: (
           <div className="border-2 border-black p-5 bg-[#F0FDF4] text-center nb-shadow-sm">
             <div className="w-12 h-12 bg-[#16A34A] border-2 border-black flex items-center justify-center mx-auto mb-3">
-              <span className="text-white font-display font-bold text-sm">
+              <span className="text-white font-display font-medium text-sm">
                 TI
               </span>
             </div>
-            <p className="text-sm font-bold text-black">
+            <p className="text-sm font-medium text-black">
               tradeindia.com/seller
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -534,7 +534,7 @@ const INTEGRATIONS: Integration[] = [
         visual: (
           <div className="border-2 border-black bg-[#F0FDF4] p-5 flex flex-col items-center justify-center gap-3 nb-shadow-sm">
             <CheckCircle2 className="w-10 h-10 text-[#16A34A]" />
-            <p className="font-display font-bold text-base text-black text-center">
+            <p className="font-display font-medium text-base text-black text-center">
               TradeIndia connected!
             </p>
             <p className="text-xs text-muted-foreground text-center">
@@ -579,7 +579,7 @@ const INTEGRATIONS: Integration[] = [
         subtitle: "Step 1 of 2 — Contact Justdial for API access",
         visual: (
           <div className="border-2 border-black p-5 bg-[#FEF2F2] nb-shadow-sm">
-            <div className="text-xs font-bold text-black mb-3">
+            <div className="text-xs font-medium text-black mb-3">
               How to get your Justdial API Key:
             </div>
             {[
@@ -590,7 +590,7 @@ const INTEGRATIONS: Integration[] = [
             ].map((s, i) => (
               <div key={i} className="flex items-start gap-2 mb-2">
                 <div className="w-5 h-5 bg-[#DC2626] border-2 border-black flex items-center justify-center shrink-0">
-                  <span className="text-white text-[10px] font-bold">
+                  <span className="text-white text-[10px] font-medium">
                     {i + 1}
                   </span>
                 </div>
@@ -622,7 +622,7 @@ const INTEGRATIONS: Integration[] = [
         visual: (
           <div className="border-2 border-black bg-[#FEF2F2] p-5 flex flex-col items-center justify-center gap-3 nb-shadow-sm">
             <CheckCircle2 className="w-10 h-10 text-[#DC2626]" />
-            <p className="font-display font-bold text-base text-black text-center">
+            <p className="font-display font-medium text-base text-black text-center">
               Justdial connected!
             </p>
             <p className="text-xs text-muted-foreground text-center">
@@ -766,7 +766,7 @@ function IntegrationWizard({
         style={{ backgroundColor: integration.bgColor }}
       >
         <div
-          className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-bold text-sm text-white shrink-0 overflow-hidden"
+          className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-medium text-sm text-white shrink-0 overflow-hidden"
           style={{
             backgroundColor: integration.logo ? "#fff" : integration.color,
           }}
@@ -782,14 +782,14 @@ function IntegrationWizard({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="font-display font-bold text-xl text-black">
+          <h2 className="font-display font-medium text-xl text-black">
             {integration.name}
           </h2>
           <p className="text-xs text-muted-foreground">{current.subtitle}</p>
         </div>
         <button
           onClick={onClose}
-          className="text-xs font-bold text-muted-foreground hover:text-black border-2 border-transparent hover:border-black px-3 py-1.5 transition-all"
+          className="text-xs font-medium text-muted-foreground hover:text-black border-2 border-transparent hover:border-black px-3 py-1.5 transition-all"
         >
           ✕ Close
         </button>
@@ -801,7 +801,7 @@ function IntegrationWizard({
             <div key={i} className="flex items-center gap-1 flex-1">
               <div
                 className={cn(
-                  "w-7 h-7 border-2 border-black flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
+                  "w-7 h-7 border-2 border-black flex items-center justify-center text-xs font-medium shrink-0 transition-colors",
                   i < step
                     ? "bg-[#00C48C] text-black"
                     : i === step
@@ -827,7 +827,7 @@ function IntegrationWizard({
             <div key={i} className="flex-1 text-center">
               <span
                 className={cn(
-                  "text-[10px] font-bold",
+                  "text-[10px] font-medium",
                   i === step ? "text-black" : "text-muted-foreground",
                 )}
               >
@@ -842,7 +842,7 @@ function IntegrationWizard({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4 sm:p-6">
           <div className="space-y-5">
             <div>
-              <h3 className="font-display font-bold text-xl text-black mb-1">
+              <h3 className="font-display font-medium text-xl text-black mb-1">
                 {current.title}
               </h3>
             </div>
@@ -851,7 +851,7 @@ function IntegrationWizard({
               {current.instructions.map((inst, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div
-                    className="w-6 h-6 border-2 border-black flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
+                    className="w-6 h-6 border-2 border-black flex items-center justify-center text-xs font-medium shrink-0 mt-0.5"
                     style={{
                       backgroundColor: integration.color,
                       color: "#fff",
@@ -873,7 +873,7 @@ function IntegrationWizard({
                     : (fields[field.key] ?? "");
                   return (
                     <div key={field.key}>
-                      <label className="block text-sm font-bold text-black mb-1">
+                      <label className="block text-sm font-medium text-black mb-1">
                         {field.label}
                       </label>
                       {field.help && (
@@ -906,7 +906,7 @@ function IntegrationWizard({
                           <button
                             type="button"
                             onClick={() => copyToClipboard(val, field.label)}
-                            className="px-3 border-l-2 border-black hover:bg-[#024BAB]/30 transition-colors flex items-center gap-1 text-xs font-bold text-black"
+                            className="px-3 border-l-2 border-black hover:bg-[#024BAB]/30 transition-colors flex items-center gap-1 text-xs font-medium text-black"
                           >
                             <Copy className="w-3.5 h-3.5" /> Copy
                           </button>
@@ -919,7 +919,7 @@ function IntegrationWizard({
                                 onClick={() =>
                                   copyToClipboard(val, field.label)
                                 }
-                                className="px-3 border-l-2 border-black hover:bg-[#024BAB]/30 transition-colors flex items-center gap-1 text-xs font-bold text-black"
+                                className="px-3 border-l-2 border-black hover:bg-[#024BAB]/30 transition-colors flex items-center gap-1 text-xs font-medium text-black"
                                 title="Copy to clipboard"
                               >
                                 <Copy className="w-3.5 h-3.5" />
@@ -956,7 +956,7 @@ function IntegrationWizard({
                 href={integration.docsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-black underline underline-offset-2 hover:opacity-70 transition-opacity"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-black underline underline-offset-2 hover:opacity-70 transition-opacity"
               >
                 <ExternalLink className="w-3 h-3" />
                 Read official documentation
@@ -965,7 +965,7 @@ function IntegrationWizard({
           </div>
 
           <div className="space-y-4">
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+            <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
               <Link2 className="w-3 h-3" /> Visual Guide
             </div>
             {current.visual}
@@ -974,7 +974,7 @@ function IntegrationWizard({
               <div className="border-2 border-[#024BAB] bg-[#024BAB]/10 p-3 nb-shadow-blue flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-black shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-black">Need help?</p>
+                  <p className="text-xs font-medium text-black">Need help?</p>
                   <p className="text-[11px] text-black/70 mt-0.5">
                     If you're stuck, follow the numbered steps on the left
                     exactly as shown in the visual above.
@@ -1002,7 +1002,7 @@ function IntegrationWizard({
         <button
           onClick={handleNext}
           disabled={saving}
-          className="nb-btn px-6 py-2.5 text-sm flex items-center gap-2 font-bold"
+          className="nb-btn px-6 py-2.5 text-sm flex items-center gap-2 font-medium"
           style={{
             backgroundColor: "#024BAB",
             color: "#fff",
@@ -1342,7 +1342,7 @@ export default function IntegrationsPage() {
         <div className="border-2 bg-[#024BAB] p-4 sm:p-5 flex items-center gap-4">
           <img src={companylogo} alt="Logo" className="w-12 h-12" />
           <div>
-            <h2 className="font-display font-bold text-xl text-white">
+            <h2 className="font-display font-medium text-xl text-white">
               Connect your lead sources
             </h2>
             <p className="text-sm font-medium text-white/70 mt-0.5">
@@ -1363,7 +1363,7 @@ export default function IntegrationsPage() {
                 {/* Card top */}
                 <div className="flex items-start gap-3 mb-4">
                   <div
-                    className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-bold text-sm text-white shrink-0 overflow-hidden"
+                    className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-medium text-sm text-white shrink-0 overflow-hidden"
                     style={{
                       backgroundColor: integ.logo ? "#fff" : integ.color,
                     }}
@@ -1380,7 +1380,7 @@ export default function IntegrationsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-display font-bold text-base text-black">
+                      <h3 className="font-display font-medium text-base text-black">
                         {integ.name}
                       </h3>
                       {isConnected && (
@@ -1398,16 +1398,16 @@ export default function IntegrationsPage() {
                 {isConnected && (
                   <div className="flex gap-3 mb-4 pb-4 border-b-2 border-black">
                     <div className="border-2 border-black px-3 py-1.5 bg-[#024BAB]/20 text-center flex-1">
-                      <p className="font-bold text-lg text-black">14</p>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                      <p className="font-medium text-lg text-black">14</p>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase">
                         Today
                       </p>
                     </div>
                     <div className="border-2 border-black px-3 py-1.5 bg-[#A3E635]/20 text-center flex-1">
-                      <p className="font-bold text-sm text-black flex items-center justify-center gap-1">
+                      <p className="font-medium text-sm text-black flex items-center justify-center gap-1">
                         <Clock className="w-3 h-3" /> 2 min
                       </p>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase">
                         Last sync
                       </p>
                     </div>
@@ -1417,9 +1417,9 @@ export default function IntegrationsPage() {
                 <div className="flex items-center gap-1 mb-4 flex-wrap">
                   {integ.steps.slice(0, -1).map((s, i) => (
                     <div key={i} className="flex items-center gap-1">
-                      <div className="flex items-center gap-1 border border-black px-2 py-0.5 text-[10px] font-bold text-black bg-[#F9FAFB]">
+                      <div className="flex items-center gap-1 border border-black px-2 py-0.5 text-[10px] font-medium text-black bg-[#F9FAFB]">
                         <span
-                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-medium text-white"
                           style={{ backgroundColor: integ.color }}
                         >
                           {i + 1}
@@ -1437,7 +1437,7 @@ export default function IntegrationsPage() {
 
                 <button
                   onClick={() => handleOpen(integ)}
-                  className="nb-btn w-full py-2.5 text-sm font-bold flex items-center justify-center gap-2 mt-auto"
+                  className="nb-btn w-full py-2.5 text-sm font-medium flex items-center justify-center gap-2 mt-auto"
                   style={
                     isConnected
                       ? { backgroundColor: "#fff", color: "#0A0A0A" }
@@ -1460,7 +1460,7 @@ export default function IntegrationsPage() {
                     <button
                       onClick={handleUnlinkLinkedin}
                       disabled={unlinkingLinkedin}
-                      className="w-full py-2 text-xs font-bold text-red-600 hover:underline disabled:opacity-60 mt-2"
+                      className="w-full py-2 text-xs font-medium text-red-600 hover:underline disabled:opacity-60 mt-2"
                     >
                       {unlinkingLinkedin ? "Unlinking…" : "Unlink LinkedIn"}
                     </button>
@@ -1601,7 +1601,7 @@ export default function IntegrationsPage() {
         </div>
 
         <div className="border-2 bg-white p-4 sm:p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
             Coming Soon
           </p>
           <div className="flex flex-wrap gap-2">
@@ -1612,7 +1612,7 @@ export default function IntegrationsPage() {
                   className="flex items-center gap-2 border-2 border-dashed border-black px-3 py-1.5"
                 >
                   <div className="w-2 h-2 bg-muted-foreground/30 border border-black" />
-                  <span className="text-xs font-bold text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {name}
                   </span>
                 </div>

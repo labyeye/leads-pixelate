@@ -51,7 +51,7 @@ const s = StyleSheet.create({
   fill: { height: '100%', borderRadius: 3 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },
   dot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  tick: { color: '#fff', fontSize: 11, fontWeight: '900', lineHeight: 13 },
+  tick: { color: '#fff', fontSize: 11, fontWeight: '500', lineHeight: 13 },
   label: { flex: 1, fontSize: 12, color: '#6B7280', fontWeight: '500' },
   labelOk: { color: '#15803D' },
   hint: { fontSize: 11, color: '#6B7280', marginTop: 8, lineHeight: 15 },

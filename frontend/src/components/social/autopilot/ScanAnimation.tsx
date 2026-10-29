@@ -168,7 +168,7 @@ export function ScanAnimation({
         {accountName && (
           <p className="text-sm text-muted-foreground">
             Scanning{" "}
-            <span className="font-semibold text-foreground">{accountName}</span>
+            <span className="font-medium text-foreground">{accountName}</span>
           </p>
         )}
         <ol className="space-y-2.5">
@@ -197,7 +197,7 @@ export function ScanAnimation({
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                   ) : null}
                 </span>
-                <span className={active ? "font-semibold" : ""}>{s.label}</span>
+                <span className={active ? "font-medium" : ""}>{s.label}</span>
               </li>
             );
           })}

@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     padding: 18,
     gap: 12,
   },
-  title: { fontSize: 16, fontWeight: '600', color: '#000' },
+  title: { fontSize: 16, fontWeight: '500', color: '#000' },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   metaText: { fontSize: 11, color: '#64748b' },
-  linkText: { fontSize: 11, fontWeight: '800', color: '#024BAB' },
+  linkText: { fontSize: 11, fontWeight: '500', color: '#024BAB' },
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxChecked: { backgroundColor: '#024BAB' },
-  fieldLabel: { fontSize: 13, color: '#000', fontWeight: '600' },
+  fieldLabel: { fontSize: 13, color: '#000', fontWeight: '500' },
   footer: {
     flexDirection: 'row',
     gap: 10,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  cancelBtnText: { fontSize: 12, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 12, fontWeight: '500', color: '#000' },
   exportBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -217,5 +217,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#024BAB',
     paddingVertical: 12,
   },
-  exportBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  exportBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
 });

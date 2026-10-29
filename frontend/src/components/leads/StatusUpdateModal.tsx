@@ -316,9 +316,9 @@ export function StatusUpdateModal({
         <div className="space-y-4 py-4">
           {showTagPicker && (
             <div className="space-y-4 p-4 rounded-xl border border-border bg-card/50">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
                 Assign Contact Tag{" "}
-                <span className="text-destructive font-bold">*</span>
+                <span className="text-destructive font-medium">*</span>
               </Label>
               <div className="flex gap-2">
                 {(["HOT", "WARM", "COLD"] as const).map((tag) => (
@@ -340,7 +340,7 @@ export function StatusUpdateModal({
                     {tag === "HOT" && <Flame className="w-4 h-4" />}
                     {tag === "WARM" && <Wind className="w-4 h-4" />}
                     {tag === "COLD" && <Snowflake className="w-4 h-4" />}
-                    <span className="text-xs font-bold">{tag}</span>
+                    <span className="text-xs font-medium">{tag}</span>
                   </button>
                 ))}
               </div>
@@ -372,7 +372,7 @@ export function StatusUpdateModal({
               htmlFor="remarks"
               className="text-xs text-muted-foreground uppercase tracking-wider"
             >
-              Remarks <span className="text-destructive font-bold">*</span>
+              Remarks <span className="text-destructive font-medium">*</span>
             </Label>
             <Textarea
               id="remarks"
@@ -439,7 +439,7 @@ export function StatusUpdateModal({
             <div className="space-y-2 pt-2 border-t border-border/50">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider block">
                 Follow-up Date & Time{" "}
-                <span className="text-destructive font-bold">*</span>
+                <span className="text-destructive font-medium">*</span>
               </Label>
               <div className="flex gap-2">
                 <Popover>
@@ -485,7 +485,7 @@ export function StatusUpdateModal({
             <div className="space-y-2 pt-2 border-t border-border/50">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider block">
                 Scheduled Visit Date & Time{" "}
-                <span className="text-destructive font-bold">*</span>
+                <span className="text-destructive font-medium">*</span>
               </Label>
               <div className="flex gap-2">
                 <Popover>
@@ -531,7 +531,7 @@ export function StatusUpdateModal({
             <div className="space-y-2 pt-2 border-t border-border/50">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider block">
                 Actual Visit Date{" "}
-                <span className="text-destructive font-bold">*</span>
+                <span className="text-destructive font-medium">*</span>
               </Label>
               <Popover>
                 <PopoverTrigger asChild>

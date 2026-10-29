@@ -127,7 +127,7 @@ export function ContentBrief({
               }`}
             >
               <f.icon className="w-5 h-5 mb-1" />
-              <p className="text-sm font-semibold">{f.label}</p>
+              <p className="text-sm font-medium">{f.label}</p>
               <p className="text-xs text-muted-foreground">{f.hint}</p>
             </button>
           ))}

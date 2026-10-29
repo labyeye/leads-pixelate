@@ -79,7 +79,7 @@ export function TemplateLibraryDialog({
               type="button"
               onClick={() => setGroup(g)}
               className={cn(
-                "px-3 py-1.5 text-xs font-bold uppercase tracking-wider border-2 border-black",
+                "px-3 py-1.5 text-xs font-medium uppercase tracking-wider border-2 border-black",
                 group === g ? "bg-[#024BAB] text-white" : "bg-white",
               )}
             >
@@ -94,7 +94,7 @@ export function TemplateLibraryDialog({
                 type="button"
                 onClick={() => setLang(l)}
                 className={cn(
-                  "px-2.5 py-1 text-xs font-bold border-2 border-black",
+                  "px-2.5 py-1 text-xs font-medium border-2 border-black",
                   lang === l ? "bg-black text-white" : "bg-white",
                 )}
               >
@@ -115,10 +115,10 @@ export function TemplateLibraryDialog({
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-bold text-sm">{t.title}</h4>
+                    <h4 className="font-medium text-sm">{t.title}</h4>
                     <span
                       className={cn(
-                        "text-[10px] font-bold px-2 py-0.5 border-2 border-black shrink-0",
+                        "text-[10px] font-medium px-2 py-0.5 border-2 border-black shrink-0",
                         t.category === "UTILITY"
                           ? "bg-[#DBEAFE]"
                           : "bg-[#FFEDD5]",
@@ -134,10 +134,10 @@ export function TemplateLibraryDialog({
 
                 <div className="bg-[#DCF8C6] border-2 border-black p-3 text-xs whitespace-pre-wrap flex-1">
                   {t.headerType === "TEXT" && t.headerText && (
-                    <p className="font-bold mb-1">{t.headerText}</p>
+                    <p className="font-medium mb-1">{t.headerText}</p>
                   )}
                   {t.headerType === "DOCUMENT" && (
-                    <p className="flex items-center gap-1 font-bold mb-1">
+                    <p className="flex items-center gap-1 font-medium mb-1">
                       <FileText className="w-3.5 h-3.5" /> Document attached
                       (PDF)
                     </p>

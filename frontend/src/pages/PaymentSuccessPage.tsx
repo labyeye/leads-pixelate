@@ -101,7 +101,7 @@ export default function PaymentSuccessPage() {
         .btn-dashboard {
           background: #024BAB; color: #fff; border: none;
           border-radius: 12px; padding: 15px 40px;
-          font-size: 16px; font-weight: 700; cursor: pointer;
+          font-size: 16px; font-weight: 500; cursor: pointer;
           letter-spacing: 0.3px; transition: background 0.2s, transform 0.15s;
         }
         .btn-dashboard:hover { background: #0357c7; transform: translateY(-2px); }
@@ -173,7 +173,7 @@ export default function PaymentSuccessPage() {
           style={{
             margin: "0 0 10px",
             fontSize: "clamp(28px, 5vw, 44px)",
-            fontWeight: 800,
+            fontWeight: 500,
             background:
               "linear-gradient(90deg, #FBFBFB 0%, #93c5fd 50%, #FBFBFB 100%)",
             backgroundSize: "200% auto",
@@ -219,7 +219,7 @@ export default function PaymentSuccessPage() {
         <div
           style={{
             fontSize: 12,
-            fontWeight: 600,
+            fontWeight: 500,
             color: "#64748b",
             textTransform: "uppercase",
             letterSpacing: "1.5px",
@@ -231,7 +231,7 @@ export default function PaymentSuccessPage() {
         <div
           style={{
             fontSize: 30,
-            fontWeight: 800,
+            fontWeight: 500,
             color: "#fff",
             marginBottom: 8,
           }}
@@ -247,7 +247,7 @@ export default function PaymentSuccessPage() {
             borderRadius: 999,
             padding: "4px 14px",
             fontSize: 12,
-            fontWeight: 600,
+            fontWeight: 500,
           }}
         >
           {billing === "yearly" ? "Yearly" : "Monthly"} · Active

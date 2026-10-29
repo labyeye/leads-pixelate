@@ -47,8 +47,8 @@ export function KpiCard({
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-2xl font-bold text-black leading-tight">{value}</p>
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider truncate">
+        <p className="text-2xl font-medium text-black leading-tight">{value}</p>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider truncate">
           {title}
         </p>
         {sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}
@@ -56,7 +56,7 @@ export function KpiCard({
       {trend && (
         <span
           className={cn(
-            "self-start flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 border-2 border-black",
+            "self-start flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 border-2 border-black",
             trend === "up"
               ? "bg-[#A3E635] text-black"
               : "bg-[#EF4444] text-white",

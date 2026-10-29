@@ -362,12 +362,12 @@ export default function CalendarPage() {
             <Button
               variant="outline"
               size="sm"
-              className="text-xs font-semibold px-4 border-border hover:bg-muted"
+              className="text-xs font-medium px-4 border-border hover:bg-muted"
               onClick={goToToday}
             >
               TODAY
             </Button>
-            <h2 className="text-xl font-bold text-black min-w-[150px]">
+            <h2 className="text-xl font-medium text-black min-w-[150px]">
               {format(currentDate, "MMMM yyyy")}
             </h2>
           </div>
@@ -378,7 +378,7 @@ export default function CalendarPage() {
                 <button
                   key={view}
                   className={cn(
-                    "px-3 py-1.5 text-[10px] font-bold tracking-wider rounded-md transition-all",
+                    "px-3 py-1.5 text-[10px] font-medium tracking-wider rounded-md transition-all",
                     view === "MONTH"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-black hover:text-black",
@@ -398,7 +398,7 @@ export default function CalendarPage() {
             {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((day) => (
               <div
                 key={day}
-                className="py-3 text-center text-xs font-bold text-black tracking-widest border-r border-border last:border-r-0"
+                className="py-3 text-center text-xs font-medium text-black tracking-widest border-r border-border last:border-r-0"
               >
                 {day}
               </div>
@@ -426,7 +426,7 @@ export default function CalendarPage() {
                   <div className="flex justify-end items-start mb-1">
                     <span
                       className={cn(
-                        "text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full transition-colors",
+                        "text-[11px] font-medium w-6 h-6 flex items-center justify-center rounded-full transition-colors",
                         isToday(day)
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "text-black group-hover:text-black",
@@ -442,7 +442,7 @@ export default function CalendarPage() {
                       <div
                         key={lIdx}
                         className={cn(
-                          "px-1.5 py-0.5 rounded text-[9px] font-bold truncate border shadow-sm",
+                          "px-1.5 py-0.5 rounded text-[9px] font-medium truncate border shadow-sm",
                           getStatusColorClasses(lead.displayStatus) ||
                             "bg-muted text-black border-transparent",
                         )}
@@ -455,7 +455,7 @@ export default function CalendarPage() {
                       </div>
                     ))}
                     {dayLeads.length > 4 && (
-                      <div className="text-[9px] text-primary font-bold pl-1 mt-1">
+                      <div className="text-[9px] text-primary font-medium pl-1 mt-1">
                         + {dayLeads.length - 4} more
                       </div>
                     )}
@@ -522,13 +522,13 @@ export default function CalendarPage() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 border-b border-border sticky top-0 z-10 backdrop-blur-sm">
                         <tr>
-                          <th className="text-left px-5 py-4 text-xs font-bold text-black uppercase tracking-widest">
+                          <th className="text-left px-5 py-4 text-xs font-medium text-black uppercase tracking-widest">
                             Lead / Company
                           </th>
-                          <th className="text-left px-5 py-4 text-xs font-bold text-black uppercase tracking-widest">
+                          <th className="text-left px-5 py-4 text-xs font-medium text-black uppercase tracking-widest">
                             Contact
                           </th>
-                          <th className="text-left px-5 py-4 text-xs font-bold text-black uppercase tracking-widest">
+                          <th className="text-left px-5 py-4 text-xs font-medium text-black uppercase tracking-widest">
                             <div className="flex items-center gap-1">
                               Status
                               {renderHeaderFilter(
@@ -544,10 +544,10 @@ export default function CalendarPage() {
                               )}
                             </div>
                           </th>
-                          <th className="text-left px-5 py-4 text-xs font-bold text-black uppercase tracking-widest">
+                          <th className="text-left px-5 py-4 text-xs font-medium text-black uppercase tracking-widest">
                             Requirements
                           </th>
-                          <th className="text-left px-5 py-4 text-xs font-bold text-black uppercase tracking-widest">
+                          <th className="text-left px-5 py-4 text-xs font-medium text-black uppercase tracking-widest">
                             Date & Time
                           </th>
                         </tr>
@@ -567,7 +567,7 @@ export default function CalendarPage() {
                             }
                           >
                             <td className="px-5 py-4">
-                              <p className="font-bold text-black">
+                              <p className="font-medium text-black">
                                 {lead.name}
                               </p>
                               <p className="text-[11px] text-black mt-0.5">
@@ -589,7 +589,7 @@ export default function CalendarPage() {
                                 <Badge
                                   variant="outline"
                                   className={cn(
-                                    "text-[10px] uppercase font-bold px-2 py-0.5 border-none",
+                                    "text-[10px] uppercase font-medium px-2 py-0.5 border-none",
                                     getStatusColorClasses(lead.status) ||
                                       "bg-muted text-black",
                                   )}

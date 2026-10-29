@@ -225,7 +225,7 @@ export default function AccountSecurityPage() {
     <AppLayout title="Security">
       <div>
         <div className="mb-5">
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Account Security
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -253,7 +253,7 @@ export default function AccountSecurityPage() {
                   <Lock className="w-5 h-5 text-[#FA731C]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-display font-bold text-base text-black">
+                  <h3 className="font-display font-medium text-base text-black">
                     Reset Password
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -293,7 +293,7 @@ export default function AccountSecurityPage() {
                 <button
                   type="submit"
                   disabled={pwLoading}
-                  className="border-2 border-black px-4 py-2 bg-[#FA731C] text-white text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  className="border-2 border-black px-4 py-2 bg-[#FA731C] text-white text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {pwLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Update Password
@@ -311,7 +311,7 @@ export default function AccountSecurityPage() {
                   <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-display font-bold text-base text-black">
+                  <h3 className="font-display font-medium text-base text-black">
                     WhatsApp Verification
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -340,7 +340,7 @@ export default function AccountSecurityPage() {
                   <button
                     onClick={handleSavePhone}
                     disabled={phoneSaving || !phone || phone === savedPhone}
-                    className="border-2 border-black px-3 py-2 bg-white text-black text-sm font-bold flex items-center gap-1.5 disabled:opacity-50 h-[38px]"
+                    className="border-2 border-black px-3 py-2 bg-white text-black text-sm font-medium flex items-center gap-1.5 disabled:opacity-50 h-[38px]"
                   >
                     {phoneSaving ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -357,7 +357,7 @@ export default function AccountSecurityPage() {
                       <button
                         onClick={handleSendPhoneOtp}
                         disabled={phoneLoading}
-                        className="border-2 border-black px-4 py-2 bg-[#25D366]/10 text-black text-sm font-bold flex items-center gap-1.5"
+                        className="border-2 border-black px-4 py-2 bg-[#25D366]/10 text-black text-sm font-medium flex items-center gap-1.5"
                       >
                         {phoneLoading && (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -375,12 +375,12 @@ export default function AccountSecurityPage() {
                             setPhoneOtp(e.target.value.replace(/\D/g, ""))
                           }
                           placeholder="6-digit code"
-                          className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
+                          className="border-2 border-black px-3 py-2 text-sm font-medium tracking-widest"
                         />
                         <button
                           onClick={handleVerifyPhoneOtp}
                           disabled={phoneLoading || phoneOtp.length !== 6}
-                          className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold disabled:opacity-50"
+                          className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-medium disabled:opacity-50"
                         >
                           Verify
                         </button>
@@ -400,7 +400,7 @@ export default function AccountSecurityPage() {
                   <KeyRound className="w-5 h-5 text-[#024BAB]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-display font-bold text-base text-black">
+                  <h3 className="font-display font-medium text-base text-black">
                     Authenticator App
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -418,7 +418,7 @@ export default function AccountSecurityPage() {
                 <button
                   onClick={handleDisableTotp}
                   disabled={totpLoading}
-                  className="border-2 border-black px-4 py-2 bg-white text-red-600 text-sm font-bold flex items-center gap-1.5"
+                  className="border-2 border-black px-4 py-2 bg-white text-red-600 text-sm font-medium flex items-center gap-1.5"
                 >
                   {totpLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -431,7 +431,7 @@ export default function AccountSecurityPage() {
                 <button
                   onClick={handleStartTotpSetup}
                   disabled={totpLoading}
-                  className="border-2 border-black px-4 py-2 bg-[#024BAB]/10 text-black text-sm font-bold flex items-center gap-1.5"
+                  className="border-2 border-black px-4 py-2 bg-[#024BAB]/10 text-black text-sm font-medium flex items-center gap-1.5"
                 >
                   {totpLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Set up authenticator app
@@ -463,12 +463,12 @@ export default function AccountSecurityPage() {
                         setTotpToken(e.target.value.replace(/\D/g, ""))
                       }
                       placeholder="6-digit code"
-                      className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
+                      className="border-2 border-black px-3 py-2 text-sm font-medium tracking-widest"
                     />
                     <button
                       onClick={handleVerifyTotp}
                       disabled={totpLoading || totpToken.length !== 6}
-                      className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-bold disabled:opacity-50"
+                      className="border-2 border-black px-4 py-2 bg-[#00C48C] text-black text-sm font-medium disabled:opacity-50"
                     >
                       Verify & Enable
                     </button>

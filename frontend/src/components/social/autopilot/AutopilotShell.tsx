@@ -101,7 +101,7 @@ function CampaignSwitcher() {
         onValueChange={(v) => (v === NEW ? openNewCampaign() : select(v))}
       >
         <SelectTrigger
-          className="w-[230px] h-10 border-2 border-black bg-white font-bold"
+          className="w-[230px] h-10 border-2 border-black bg-white font-medium"
           aria-label="Campaign"
         >
           <SelectValue placeholder="Choose a campaign" />
@@ -171,7 +171,7 @@ function Frame({ children }: { children: React.ReactNode }) {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-1.5 px-4 py-2 text-sm font-bold border-2 border-black transition-colors",
+                  "flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-2 border-black transition-colors",
                   isActive
                     ? "bg-[#024BAB] text-white nb-shadow-sm"
                     : "bg-white text-black hover:bg-[#FFDE00]",

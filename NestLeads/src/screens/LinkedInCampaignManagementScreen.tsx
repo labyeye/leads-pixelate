@@ -148,6 +148,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: '#000' },
+  headerTitle: { flex: 1, fontSize: 14, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
 });

@@ -346,8 +346,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
-  resetText: { fontSize: 13, fontWeight: '700', color: '#EF4444' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
+  resetText: { fontSize: 13, fontWeight: '500', color: '#EF4444' },
   divider: { height: 2, backgroundColor: '#000' },
   scroll: { padding: 16, gap: 12 },
 
@@ -365,15 +365,15 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 12,
   },
   dateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   dateField: { flex: 1 },
-  dateSep: { fontSize: 16, fontWeight: '700', color: '#000', marginBottom: 8 },
-  label: { fontSize: 13, fontWeight: '700', color: '#000', marginBottom: 6 },
+  dateSep: { fontSize: 16, fontWeight: '500', color: '#000', marginBottom: 8 },
+  label: { fontSize: 13, fontWeight: '500', color: '#000', marginBottom: 6 },
   inputBorder: {
     borderWidth: 2,
     borderRadius: 8,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  savedViewAddText: { fontSize: 11, fontWeight: '800', color: '#024BAB' },
+  savedViewAddText: { fontSize: 11, fontWeight: '500', color: '#024BAB' },
   saveViewRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   saveViewBtn: {
     backgroundColor: '#FFDE00',
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveViewBtnText: { fontSize: 12, fontWeight: '600', color: '#000' },
+  saveViewBtnText: { fontSize: 12, fontWeight: '500', color: '#000' },
   noViewsText: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   viewChip: {
     flexDirection: 'row',
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#fff',
   },
-  viewChipText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  viewChipText: { fontSize: 11, fontWeight: '500', color: '#000' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
     flexDirection: 'row',
@@ -437,8 +437,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 4,
   },
-  chipText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  chipCheck: { fontSize: 10, fontWeight: '600' },
+  chipText: { fontSize: 11, fontWeight: '500', textTransform: 'uppercase' },
+  chipCheck: { fontSize: 10, fontWeight: '500' },
   sourceChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -466,5 +466,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  applyBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  applyBtnText: { color: '#fff', fontSize: 15, fontWeight: '500' },
 });

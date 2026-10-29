@@ -138,7 +138,7 @@ export default function DocumentVaultPage() {
       <div className="p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold">Document Vault</h1>
+            <h1 className="text-xl font-medium">Document Vault</h1>
             <p className="text-xs text-muted-foreground">
               Brochures, catalogues and price lists, ready to send to leads on
               WhatsApp.

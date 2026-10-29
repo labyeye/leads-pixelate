@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 10, color: '#64748b' },
   headerBadge: {
     flexDirection: 'row',
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  headerBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  headerBadgeText: { fontSize: 11, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   toggle: {
     flexDirection: 'row',
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
   },
@@ -534,8 +534,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   monthCenter: { alignItems: 'center' },
-  monthLabel: { fontSize: 20, fontWeight: '600', color: '#000' },
-  yearLabel: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  monthLabel: { fontSize: 20, fontWeight: '500', color: '#000' },
+  yearLabel: { fontSize: 12, color: '#64748b', fontWeight: '500' },
 
   calCard: {
     margin: 12,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   dayHeader: { flex: 1, alignItems: 'center', paddingVertical: 8 },
   dayHeaderText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
   },
@@ -577,10 +577,10 @@ const styles = StyleSheet.create({
   },
   dayCellSelected: { backgroundColor: PRIMARY },
   dayCellPast: { opacity: 0.45 },
-  dayText: { fontSize: 14, fontWeight: '700', color: '#000' },
+  dayText: { fontSize: 14, fontWeight: '500', color: '#000' },
   dayTextWeekend: { color: '#64748b' },
-  dayTextToday: { color: PRIMARY, fontWeight: '600' },
-  dayTextSelected: { color: '#fff', fontWeight: '600' },
+  dayTextToday: { color: PRIMARY, fontWeight: '500' },
+  dayTextSelected: { color: '#fff', fontWeight: '500' },
   dayTextPast: { color: '#94a3b8' },
   dot: {
     position: 'absolute',
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
   },
   dotSelected: { backgroundColor: '#fff' },
   dotPast: { backgroundColor: '#94a3b8' },
-  dotText: { fontSize: 9, fontWeight: '600', color: '#fff' },
+  dotText: { fontSize: 9, fontWeight: '500', color: '#fff' },
 
   legend: {
     flexDirection: 'row',
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 12, height: 12, borderWidth: 1, borderColor: '#000' },
-  legendText: { fontSize: 11, color: '#64748b', fontWeight: '600' },
+  legendText: { fontSize: 11, color: '#64748b', fontWeight: '500' },
 
   panel: {
     margin: 12,
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  panelTitle: { flex: 1, fontSize: 13, fontWeight: '600', color: '#000' },
+  panelTitle: { flex: 1, fontSize: 13, fontWeight: '500', color: '#000' },
   panelBadge: {
     backgroundColor: PRIMARY,
     width: 26,
@@ -646,10 +646,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  panelBadgeText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  panelBadgeText: { fontSize: 12, fontWeight: '500', color: '#fff' },
 
   emptyPanel: { alignItems: 'center', paddingVertical: 20, gap: 8 },
-  emptyPanelText: { fontSize: 13, color: '#64748b', fontWeight: '600' },
+  emptyPanelText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
 
   leadCard: {
     flexDirection: 'row',
@@ -669,9 +669,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
   },
-  timeText: { fontSize: 9, fontWeight: '600', color: '#fff' },
+  timeText: { fontSize: 9, fontWeight: '500', color: '#fff' },
   leadInfo: { flex: 1 },
-  leadName: { fontSize: 13, fontWeight: '600', color: '#000' },
+  leadName: { fontSize: 13, fontWeight: '500', color: '#000' },
   leadSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
   statusPill: {
     alignSelf: 'flex-start',
@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
   leadActions: { flexDirection: 'row', gap: 6 },

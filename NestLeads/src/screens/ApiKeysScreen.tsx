@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   addBtn: {
     marginLeft: 'auto' as any,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  addBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  addBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   securityNote: {
     flexDirection: 'row',
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardInfo: { flex: 1 },
-  keyName: { fontSize: 14, fontWeight: '600', color: '#000' },
+  keyName: { fontSize: 14, fontWeight: '500', color: '#000' },
   keyPrefix: {
     fontSize: 11,
     color: '#64748b',
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...NB_SHADOW,
   },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptyAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  emptyAddBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  emptyAddBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#000' },
+  modalTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#000' },
   modalClose: {
     width: 32,
     height: 32,
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   modalBody: { padding: 16 },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  cancelBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   saveBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  saveBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   revealSheet: {
     marginHorizontal: 16,
     backgroundColor: '#fff',
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fffbeb',
     padding: 10,
   },
-  warnText: { fontSize: 12, fontWeight: '700', color: '#92400e' },
+  warnText: { fontSize: 12, fontWeight: '500', color: '#92400e' },
   keyBox: {
     borderWidth: 2,
     borderRadius: 8,
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  copyBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  copyBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   doneBtn: { alignItems: 'center', paddingVertical: 10 },
-  doneBtnText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
+  doneBtnText: { fontSize: 12, fontWeight: '500', color: '#64748b' },
 });

@@ -1677,7 +1677,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b', fontWeight: '500' },
   divider: { height: 2, backgroundColor: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -1698,7 +1698,7 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: PRIMARY },
   tabText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
   },
@@ -1726,7 +1726,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -1738,7 +1738,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#000',
   },
-  sectionBadgeText: { fontSize: 9, fontWeight: '600', color: '#fff' },
+  sectionBadgeText: { fontSize: 9, fontWeight: '500', color: '#fff' },
 
   // KPI grid
   kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -1766,10 +1766,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  kpiValue: { fontSize: 22, fontWeight: '700', color: '#000' },
+  kpiValue: { fontSize: 22, fontWeight: '500', color: '#000' },
   kpiTitle: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -1792,8 +1792,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  acqLabel: { width: 72, fontSize: 11, fontWeight: '700', color: '#000' },
-  acqValue: { width: 60, fontSize: 11, fontWeight: '600', color: '#000' },
+  acqLabel: { width: 72, fontSize: 11, fontWeight: '500', color: '#000' },
+  acqValue: { width: 60, fontSize: 11, fontWeight: '500', color: '#000' },
   acqBar: {
     height: 16,
     borderWidth: 2,
@@ -1820,7 +1820,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  tempPillText: { fontSize: 9, fontWeight: '600' },
+  tempPillText: { fontSize: 9, fontWeight: '500' },
   tempBarWrap: {
     flex: 1,
     height: 20,
@@ -1843,7 +1843,7 @@ const styles = StyleSheet.create({
   },
   tempCount: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     width: 28,
     textAlign: 'right',
@@ -1865,7 +1865,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  funnelLabel: { width: 80, fontSize: 10, fontWeight: '700', color: '#000' },
+  funnelLabel: { width: 80, fontSize: 10, fontWeight: '500', color: '#000' },
   funnelBarWrap: {
     flex: 1,
     height: 24,
@@ -1884,7 +1884,7 @@ const styles = StyleSheet.create({
   funnelCount: {
     paddingLeft: 8,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
   },
 
@@ -1915,10 +1915,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sourceDetailInfo: { flex: 1, gap: 4 },
-  sourceDetailName: { fontSize: 12, fontWeight: '700', color: '#000' },
+  sourceDetailName: { fontSize: 12, fontWeight: '500', color: '#000' },
   sourceDetailRight: { alignItems: 'flex-end' },
-  sourceDetailCount: { fontSize: 16, fontWeight: '600', color: '#000' },
-  sourceDetailPct: { fontSize: 10, color: '#64748b', fontWeight: '600' },
+  sourceDetailCount: { fontSize: 16, fontWeight: '500', color: '#000' },
+  sourceDetailPct: { fontSize: 10, color: '#64748b', fontWeight: '500' },
 
   statusDetailRow: {
     flexDirection: 'row',
@@ -1935,12 +1935,12 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 8,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
   statusCount: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     width: 24,
     textAlign: 'right',
@@ -1953,7 +1953,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 10,
   },
-  topPerformerName: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  topPerformerName: { fontSize: 16, fontWeight: '500', color: '#fff' },
   topPerformerStat: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.8)',
@@ -1986,12 +1986,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  agentRankText: { fontSize: 10, fontWeight: '600' },
+  agentRankText: { fontSize: 10, fontWeight: '500' },
   agentInfo: { flex: 1, gap: 4 },
-  agentName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  agentName: { fontSize: 13, fontWeight: '500', color: '#000' },
   agentStats: { alignItems: 'flex-end' },
-  agentLeadsCount: { fontSize: 15, fontWeight: '600', color: '#000' },
-  agentClientsCount: { fontSize: 10, color: '#64748b', fontWeight: '600' },
+  agentLeadsCount: { fontSize: 15, fontWeight: '500', color: '#000' },
+  agentClientsCount: { fontSize: 10, color: '#64748b', fontWeight: '500' },
   agentRatePill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1999,7 +1999,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  agentRateText: { fontSize: 11, fontWeight: '600' },
+  agentRateText: { fontSize: 11, fontWeight: '500' },
 
   hotRow: {
     flexDirection: 'row',
@@ -2009,7 +2009,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  hotAgentName: { flex: 1, fontSize: 13, fontWeight: '700', color: '#000' },
+  hotAgentName: { flex: 1, fontSize: 13, fontWeight: '500', color: '#000' },
   hotPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2021,11 +2021,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  hotPillText: { fontSize: 11, fontWeight: '600', color: '#fff' },
+  hotPillText: { fontSize: 11, fontWeight: '500', color: '#fff' },
   noDataText: {
     fontSize: 13,
     color: '#94a3b8',
-    fontWeight: '600',
+    fontWeight: '500',
     textAlign: 'center',
     paddingVertical: 16,
   },
@@ -2037,7 +2037,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 12,
   },
-  trendMonth: { width: 42, fontSize: 10, fontWeight: '600', color: '#000' },
+  trendMonth: { width: 42, fontSize: 10, fontWeight: '500', color: '#000' },
   trendBarWrap: {
     height: 20,
     borderWidth: 1,
@@ -2051,7 +2051,7 @@ const styles = StyleSheet.create({
   trendBarLabel: {
     paddingLeft: 6,
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
   },
   legendRow: {
@@ -2064,7 +2064,7 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 11,
     color: '#64748b',
-    fontWeight: '600',
+    fontWeight: '500',
     marginRight: 12,
   },
   distRow: {
@@ -2084,7 +2084,7 @@ const styles = StyleSheet.create({
   distLabel: {
     width: 82,
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
   },
@@ -2100,7 +2100,7 @@ const styles = StyleSheet.create({
   distCount: {
     width: 24,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textAlign: 'right',
   },
@@ -2122,10 +2122,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  fuKpiValue: { fontSize: 26, fontWeight: '600' },
+  fuKpiValue: { fontSize: 26, fontWeight: '500' },
   fuKpiLabel: {
     fontSize: 8,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -2140,7 +2140,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e2e8f0',
   },
   fuInfo: { flex: 1 },
-  fuName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  fuName: { fontSize: 13, fontWeight: '500', color: '#000' },
   fuSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
   fuOverduePill: {
     backgroundColor: '#ef4444',
@@ -2150,7 +2150,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  fuOverdueText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  fuOverdueText: { fontSize: 10, fontWeight: '500', color: '#fff' },
   fuStatusPill: {
     alignSelf: 'flex-start',
     paddingHorizontal: 6,
@@ -2159,7 +2159,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     marginTop: 3,
   },
-  fuStatusText: { fontSize: 8, fontWeight: '600', textTransform: 'uppercase' },
+  fuStatusText: { fontSize: 8, fontWeight: '500', textTransform: 'uppercase' },
   fuDatePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2171,11 +2171,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     backgroundColor: '#fff',
   },
-  fuDateText: { fontSize: 11, fontWeight: '700', color: PRIMARY },
+  fuDateText: { fontSize: 11, fontWeight: '500', color: PRIMARY },
 
   // Empty
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
+  emptyTitle: { fontSize: 16, fontWeight: '500', color: '#000' },
   emptySub: {
     fontSize: 13,
     color: '#64748b',
@@ -2193,7 +2193,7 @@ const styles = StyleSheet.create({
   },
   viewToggleText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#94a3b8',
     textTransform: 'uppercase',
   },
@@ -2230,7 +2230,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     backgroundColor: '#fff',
   },
-  catChipText: { fontSize: 11, fontWeight: '800', color: '#000' },
+  catChipText: { fontSize: 11, fontWeight: '500', color: '#000' },
   reportCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2261,11 +2261,11 @@ const styles = StyleSheet.create({
   },
   reportCatBadgeText: {
     fontSize: 8,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#fff',
     textTransform: 'uppercase',
   },
-  reportTitle: { fontSize: 13, fontWeight: '600', color: '#000' },
+  reportTitle: { fontSize: 13, fontWeight: '500', color: '#000' },
   reportDesc: { fontSize: 11, color: '#64748b', marginTop: 2 },
   generateBtn: {
     width: 34,
@@ -2294,7 +2294,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  previewTitle: { fontSize: 16, fontWeight: '600', color: '#000', flex: 1 },
+  previewTitle: { fontSize: 16, fontWeight: '500', color: '#000', flex: 1 },
   previewSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   previewRow: {
     flexDirection: 'row',
@@ -2306,7 +2306,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     backgroundColor: '#f1f5f9',
     textTransform: 'uppercase',
@@ -2333,5 +2333,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  exportCsvBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  exportCsvBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
 });

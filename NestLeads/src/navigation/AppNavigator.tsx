@@ -422,7 +422,7 @@ const tb = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
     maxWidth: '100%',

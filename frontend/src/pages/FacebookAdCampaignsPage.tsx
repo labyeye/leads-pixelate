@@ -204,7 +204,7 @@ export default function FacebookAdCampaignsPage() {
       render: (c) => {
         return (
           <div className="min-w-[220px]">
-            <span className="font-bold text-sm">{c.name}</span>
+            <span className="font-medium text-sm">{c.name}</span>
             <p className="text-[11px] text-muted-foreground">
               {c.adAccountName}
               {c.objective &&
@@ -218,7 +218,7 @@ export default function FacebookAdCampaignsPage() {
       header: "Assigned To",
       render: (c) =>
         assignments[c.id] ? (
-          <span className="text-[10px] bg-[#00C48C]/10 text-[#00C48C] px-1.5 py-0.5 border border-[#00C48C] font-bold flex items-center gap-1 whitespace-nowrap w-fit">
+          <span className="text-[10px] bg-[#00C48C]/10 text-[#00C48C] px-1.5 py-0.5 border border-[#00C48C] font-medium flex items-center gap-1 whitespace-nowrap w-fit">
             <UserCheck className="w-3 h-3" />
             {assignments[c.id]}
           </span>
@@ -232,7 +232,7 @@ export default function FacebookAdCampaignsPage() {
         const st = statusBadge(c.effective_status || c.status);
         return (
           <span
-            className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}
+            className={`text-[10px] px-2 py-0.5 border-2 font-medium whitespace-nowrap ${st.cls}`}
           >
             {st.label}
           </span>
@@ -243,7 +243,7 @@ export default function FacebookAdCampaignsPage() {
       header: "Results",
       align: "right",
       render: (c) => (
-        <span className="flex items-center justify-end gap-1 font-semibold text-[#00C48C]">
+        <span className="flex items-center justify-end gap-1 font-medium text-[#00C48C]">
           <TrendingUp className="w-3 h-3" />
           {(insights[c.id]?.results ?? 0).toLocaleString()}
         </span>
@@ -337,7 +337,7 @@ export default function FacebookAdCampaignsPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Facebook Ad Campaigns
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -360,7 +360,7 @@ export default function FacebookAdCampaignsPage() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="border-2 border-black bg-[#024BAB] text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5"
+              className="border-2 border-black bg-[#024BAB] text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> New Campaign
             </button>
@@ -375,14 +375,14 @@ export default function FacebookAdCampaignsPage() {
               <Info className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold mb-1">
+              <p className="text-sm font-medium mb-1">
                 {error.includes("permission")
                   ? "Ads Permission Required"
                   : "Facebook Not Connected"}
               </p>
               <p className="text-xs text-muted-foreground mb-3">{error}</p>
               <a href="/integrations">
-                <button className="border-2 border-black px-3 py-1.5 text-xs font-bold hover:bg-[#024BAB]/10 transition-colors">
+                <button className="border-2 border-black px-3 py-1.5 text-xs font-medium hover:bg-[#024BAB]/10 transition-colors">
                   Go to Integrations
                 </button>
               </a>
@@ -392,7 +392,7 @@ export default function FacebookAdCampaignsPage() {
       ) : (
         <div className="border-2 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <p className="text-xs text-muted-foreground font-bold">
+            <p className="text-xs text-muted-foreground font-medium">
               {filtered.length} campaign{filtered.length === 1 ? "" : "s"}
             </p>
             <DeliveryFilterBar
@@ -449,14 +449,14 @@ export default function FacebookAdCampaignsPage() {
           <DialogFooter className="gap-2">
             <button
               onClick={() => setDeleteTarget(null)}
-              className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-bold"
+              className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               onClick={handleDelete}
               disabled={!!actionId}
-              className="border-2 border-black bg-red-600 text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+              className="border-2 border-black bg-red-600 text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
             >
               {actionId && <Loader2 className="w-4 h-4 animate-spin" />}
               Delete
@@ -563,7 +563,7 @@ function CampaignFormDialog({
         <div className="space-y-3">
           {!campaign && (
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Ad Account *
               </label>
               <Select value={adAccountId} onValueChange={setAdAccountId}>
@@ -581,7 +581,7 @@ function CampaignFormDialog({
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Campaign Name *
             </label>
             <input
@@ -593,7 +593,7 @@ function CampaignFormDialog({
           </div>
           {!campaign && (
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Objective *
               </label>
               <Select value={objective} onValueChange={setObjective}>
@@ -612,7 +612,7 @@ function CampaignFormDialog({
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Status
               </label>
               <Select value={status} onValueChange={setStatus}>
@@ -626,7 +626,7 @@ function CampaignFormDialog({
               </Select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Budget Type
               </label>
               <Select
@@ -644,7 +644,7 @@ function CampaignFormDialog({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Budget (₹)
             </label>
             <input
@@ -657,7 +657,7 @@ function CampaignFormDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Start Date
               </label>
               <input
@@ -668,7 +668,7 @@ function CampaignFormDialog({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 End Date
               </label>
               <input
@@ -683,14 +683,14 @@ function CampaignFormDialog({
         <DialogFooter className="gap-2">
           <button
             onClick={onClose}
-            className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-bold"
+            className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !name.trim() || (!campaign && !adAccountId)}
-            className="border-2 border-black bg-[#024BAB] text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+            className="border-2 border-black bg-[#024BAB] text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {campaign ? "Update" : "Create"} Campaign

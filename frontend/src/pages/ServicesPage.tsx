@@ -245,7 +245,7 @@ export default function ServicesPage() {
               {can("Services", "create") && (
                 <button
                   onClick={() => resetFormAndCloseModal()}
-                  className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all w-full sm:w-auto sm:ml-auto"
                 >
                   <Plus className="w-3.5 h-3.5" /> Allocate Service
                 </button>
@@ -415,7 +415,7 @@ export default function ServicesPage() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                      className="text-left px-4 py-3 text-[10px] font-medium uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                     >
                       {h}
                     </th>
@@ -427,7 +427,7 @@ export default function ServicesPage() {
                   <tr>
                     <td colSpan={9} className="text-center py-16">
                       <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                      <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
+                      <p className="text-xs font-medium uppercase tracking-widest text-gray-400 mt-2">
                         Loading...
                       </p>
                     </td>
@@ -436,7 +436,7 @@ export default function ServicesPage() {
                   <tr>
                     <td colSpan={9} className="text-center py-16">
                       <Briefcase className="w-10 h-10 mx-auto text-gray-200 mb-2" />
-                      <p className="text-sm font-black uppercase tracking-widest text-gray-400">
+                      <p className="text-sm font-medium uppercase tracking-widest text-gray-400">
                         {search
                           ? "No allocations match your search"
                           : "No service allocations yet"}
@@ -452,10 +452,10 @@ export default function ServicesPage() {
                         i % 2 === 0 ? "bg-white" : "bg-gray-50/60",
                       )}
                     >
-                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">
+                      <td className="px-4 py-3 text-xs font-medium text-gray-400 w-10">
                         {i + 1}
                       </td>
-                      <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium text-black whitespace-nowrap">
                         {item.allocatedClient?.name || "Unknown"}
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
@@ -463,10 +463,10 @@ export default function ServicesPage() {
                           <span className="text-gray-300 italic">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-black text-black whitespace-nowrap max-w-[220px] truncate">
+                      <td className="px-4 py-3 font-medium text-black whitespace-nowrap max-w-[220px] truncate">
                         {item.product?.name || "Unknown Product"}
                       </td>
-                      <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium text-black whitespace-nowrap">
                         {item.product?.price ? (
                           `₹${item.product.price.toLocaleString("en-IN")}`
                         ) : (
@@ -486,7 +486,7 @@ export default function ServicesPage() {
                               style={{ width: `${item.progress || 0}%` }}
                             />
                           </div>
-                          <span className="text-[10px] font-black text-black">
+                          <span className="text-[10px] font-medium text-black">
                             {item.progress || 0}%
                           </span>
                         </div>
@@ -494,7 +494,7 @@ export default function ServicesPage() {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={cn(
-                            "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",
+                            "text-[10px] font-medium uppercase tracking-wide px-2 py-1 border-2",
                             statusColors[item.status] || statusColors.Pending,
                           )}
                         >
@@ -506,7 +506,7 @@ export default function ServicesPage() {
                           {can("Services", "update") && (
                             <button
                               onClick={() => handleEditClick(item)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                               <Pencil className="w-3 h-3" /> Edit
                             </button>
@@ -516,7 +516,7 @@ export default function ServicesPage() {
                               onClick={() =>
                                 handleDeleteClick(item._id || item.id)
                               }
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                               <Trash2 className="w-3 h-3" /> Delete
                             </button>
@@ -531,7 +531,7 @@ export default function ServicesPage() {
           </div>
 
           {filtered.length > 0 && (
-            <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+            <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-medium uppercase tracking-widest flex justify-between">
               <span>
                 {filtered.length} allocation{filtered.length !== 1 ? "s" : ""}
               </span>

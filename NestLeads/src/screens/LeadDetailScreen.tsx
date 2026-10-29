@@ -636,8 +636,8 @@ const infoStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  label: { width: 96, fontSize: 13, color: '#64748b', fontWeight: '600' },
-  value: { flex: 1, fontSize: 14, color: '#000', fontWeight: '700' },
+  label: { width: 96, fontSize: 13, color: '#64748b', fontWeight: '500' },
+  value: { flex: 1, fontSize: 14, color: '#000', fontWeight: '500' },
 });
 
 const styles = StyleSheet.create({
@@ -654,8 +654,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backBtn: { paddingVertical: 4, paddingRight: 4 },
-  backBtnText: { fontSize: 14, fontWeight: '700', color: '#024BAB' },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: '600', color: '#000' },
+  backBtnText: { fontSize: 14, fontWeight: '500', color: '#024BAB' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '500', color: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 12, color: '#64748b', fontSize: 14 },
   scroll: { padding: 16, gap: 12 },
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -699,9 +699,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 18, fontWeight: '600', color: '#fff' },
+  avatarText: { fontSize: 18, fontWeight: '500', color: '#fff' },
   nameInfo: { flex: 1 },
-  leadName: { fontSize: 17, fontWeight: '600', color: '#000' },
+  leadName: { fontSize: 17, fontWeight: '500', color: '#000' },
   leadCompany: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   tagPill: {
     paddingHorizontal: 8,
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  tagPillText: { fontSize: 11, fontWeight: '600' },
+  tagPillText: { fontSize: 11, fontWeight: '500' },
   badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   statusPill: {
     paddingHorizontal: 8,
@@ -720,7 +720,7 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
   sourcePill: {
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-  sourcePillText: { fontSize: 10, fontWeight: '700' },
+  sourcePillText: { fontSize: 10, fontWeight: '500' },
   catPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#f8fafc',
   },
-  catPillText: { fontSize: 10, fontWeight: '700', color: '#64748b' },
+  catPillText: { fontSize: 10, fontWeight: '500', color: '#64748b' },
 
   // Actions
   actionsRow: { flexDirection: 'row', gap: 8 },
@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 2,
   },
-  actionBtnText: { fontSize: 12, fontWeight: '600', color: '#044bab' },
+  actionBtnText: { fontSize: 12, fontWeight: '500', color: '#044bab' },
 
   // Products
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     backgroundColor: '#eff6ff',
   },
-  productChipText: { fontSize: 12, color: '#024BAB', fontWeight: '700' },
+  productChipText: { fontSize: 12, color: '#024BAB', fontWeight: '500' },
 
   // Status update grid
   statusGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
   },
   statusOptionText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
 
@@ -818,7 +818,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  noteSendText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  noteSendText: { color: '#fff', fontWeight: '500', fontSize: 13 },
   notesList: { gap: 8 },
   noteItem: {
     borderWidth: 2,
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 4,
   },
-  noteAuthor: { fontSize: 11, fontWeight: '700', color: '#024BAB' },
+  noteAuthor: { fontSize: 11, fontWeight: '500', color: '#024BAB' },
   noteDate: { fontSize: 10, color: '#94a3b8' },
   noteText: { fontSize: 13, color: '#000', fontWeight: '500', lineHeight: 18 },
   emptyNotes: {
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
   },
   historyContent: { flex: 1 },
   historyTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  historyStatus: { fontSize: 12, fontWeight: '600', color: '#000' },
+  historyStatus: { fontSize: 12, fontWeight: '500', color: '#000' },
   historyDate: { fontSize: 11, color: '#94a3b8' },
   historyRemarks: { fontSize: 12, color: '#475569', marginTop: 2 },
   historyBy: { fontSize: 11, color: '#94a3b8', marginTop: 1 },
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 4,
   },
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
   },
   modalLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     marginBottom: 6,
@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginTop: 8,
   },
-  modalCancelText: { fontWeight: '700', color: '#000', fontSize: 14 },
+  modalCancelText: { fontWeight: '500', color: '#000', fontSize: 14 },
   modalConfirmBtn: {
     flex: 1,
     paddingVertical: 13,
@@ -942,7 +942,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
   },
-  modalConfirmText: { fontWeight: '600', color: '#fff', fontSize: 14 },
+  modalConfirmText: { fontWeight: '500', color: '#fff', fontSize: 14 },
   tagOptionBtn: {
     paddingVertical: 14,
     alignItems: 'center',
@@ -951,5 +951,5 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     marginBottom: 8,
   },
-  tagOptionText: { fontSize: 16, fontWeight: '600' },
+  tagOptionText: { fontSize: 16, fontWeight: '500' },
 });

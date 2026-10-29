@@ -336,7 +336,7 @@ export const sharedStyles = StyleSheet.create({
     borderColor: '#000',
     alignSelf: 'flex-start',
   },
-  badgeText: { fontSize: 9, fontWeight: '600' },
+  badgeText: { fontSize: 9, fontWeight: '500' },
   toggleTrack: {
     width: 36,
     height: 20,
@@ -371,7 +371,7 @@ export const sharedStyles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   filterChipBorder: { borderLeftWidth: 2, borderLeftColor: '#000' },
-  filterChipText: { fontSize: 11, fontWeight: '600', color: '#000' },
+  filterChipText: { fontSize: 11, fontWeight: '500', color: '#000' },
   searchInput: {
     borderWidth: 2,
     borderRadius: 8,

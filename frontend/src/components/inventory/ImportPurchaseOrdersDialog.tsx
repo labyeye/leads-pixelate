@@ -294,7 +294,7 @@ export function ImportPurchaseOrdersDialog({
               <div className="max-h-56 overflow-y-auto rounded border text-xs divide-y">
                 {result.failed.map((f) => (
                   <div key={f.key} className="px-3 py-2">
-                    <span className="font-semibold">{f.key}:</span> {f.reason}
+                    <span className="font-medium">{f.key}:</span> {f.reason}
                   </div>
                 ))}
               </div>

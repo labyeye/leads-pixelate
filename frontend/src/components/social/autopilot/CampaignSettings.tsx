@@ -72,10 +72,10 @@ export function CampaignSettings({
     <div className="rounded-lg border-2 border-black p-4 space-y-5 bg-background">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Campaign settings</h2>
+          <h2 className="text-lg font-medium">Campaign settings</h2>
           <p className="text-xs text-muted-foreground">{banner}</p>
         </div>
-        <label className="flex items-center gap-2 text-sm font-bold">
+        <label className="flex items-center gap-2 text-sm font-medium">
           {settings.enabled ? "On" : "Off"}
           <Switch
             aria-label="Autopilot on or off"

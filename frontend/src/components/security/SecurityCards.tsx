@@ -53,7 +53,7 @@ function Card({
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-display font-bold text-base text-black">
+          <h3 className="font-display font-medium text-base text-black">
             {title}
           </h3>
           <p className="text-xs text-muted-foreground">{subtitle}</p>
@@ -72,7 +72,7 @@ const VerifiedBadge = ({ text = "Verified" }: { text?: string }) => (
 );
 
 const btn =
-  "border-2 border-black px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50";
+  "border-2 border-black px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50";
 
 // ── Email verification ────────────────────────────────────────────────────
 export function EmailVerificationCard({
@@ -169,7 +169,7 @@ export function EmailVerificationCard({
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                 placeholder="6-digit code"
-                className="border-2 border-black px-3 py-2 text-sm font-bold tracking-widest"
+                className="border-2 border-black px-3 py-2 text-sm font-medium tracking-widest"
               />
               <button
                 onClick={verify}
@@ -275,7 +275,7 @@ export function PasskeyCard() {
             >
               <KeyRound className="w-4 h-4 text-[#FA731C] shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-black truncate">{p.name}</p>
+                <p className="text-sm font-medium text-black truncate">{p.name}</p>
                 <p className="text-[11px] text-muted-foreground">
                   Added {new Date(p.createdAt).toLocaleDateString()}
                   {p.lastUsedAt
@@ -380,7 +380,7 @@ export function DevicesCard() {
                 <Smartphone className="w-4 h-4 text-[#0EA5E9] shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-black truncate">
+                <p className="text-sm font-medium text-black truncate">
                   {d.deviceName}
                   {d.current && (
                     <span className="ml-2 text-[10px] text-[#00A676]">
@@ -483,7 +483,7 @@ export function BackupCodesCard() {
         )}
         {codes ? (
           <>
-            <div className="grid grid-cols-2 gap-2 border-2 border-black bg-[#FFF8E7] p-3 font-mono text-sm font-bold tracking-wider">
+            <div className="grid grid-cols-2 gap-2 border-2 border-black bg-[#FFF8E7] p-3 font-mono text-sm font-medium tracking-wider">
               {codes.map((c) => (
                 <span key={c}>{c}</span>
               ))}

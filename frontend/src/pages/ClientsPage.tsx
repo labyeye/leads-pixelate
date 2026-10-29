@@ -126,7 +126,7 @@ const NbInput = ({
   <div className="space-y-1">
     <label
       htmlFor={id}
-      className="block text-[10px] font-black uppercase tracking-widest text-black"
+      className="block text-[10px] font-medium uppercase tracking-widest text-black"
     >
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
@@ -158,16 +158,16 @@ const NbInput = ({
 
 const NbSelect = ({ label, value, onChange, options }: any) => (
   <div className="space-y-1">
-    <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+    <label className="block text-[10px] font-medium uppercase tracking-widest text-black">
       {label}
     </label>
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="border-2 border-black rounded-lg nb-shadow-sm focus:ring-0 bg-white font-bold h-10">
+      <SelectTrigger className="border-2 border-black rounded-lg nb-shadow-sm focus:ring-0 bg-white font-medium h-10">
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
         {options.map((o: string) => (
-          <SelectItem key={o} value={o} className="font-bold">
+          <SelectItem key={o} value={o} className="font-medium">
             {o}
           </SelectItem>
         ))}
@@ -400,7 +400,7 @@ export default function ClientsPage() {
           <DialogContent className="sm:max-w-lg border-2 border-black rounded-lg p-0 gap-0 max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4 sticky top-0 z-10">
-                <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
+                <DialogTitle className="text-white font-medium uppercase tracking-wider text-base">
                   {editingClientId ? "Edit Client" : "Add New Client"}
                 </DialogTitle>
               </DialogHeader>
@@ -527,14 +527,14 @@ export default function ClientsPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="border-2 bg-white text-black px-4 py-2 text-sm font-bold"
+                  className="border-2 bg-white text-black px-4 py-2 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                  className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingClientId ? "Update Client" : "Save Client"}
@@ -562,7 +562,7 @@ export default function ClientsPage() {
                   <th
                     key={h}
                     className={cn(
-                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest",
+                      "px-5 py-3 text-[10px] font-medium text-white uppercase tracking-widest",
                       i < 5 ? "text-left" : "text-right",
                       i === 1 ? "hidden md:table-cell" : "",
                       i === 2 ? "hidden lg:table-cell" : "",
@@ -580,7 +580,7 @@ export default function ClientsPage() {
                 <tr>
                   <td colSpan={6} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black/30 mt-2">
                       Loading...
                     </p>
                   </td>
@@ -588,7 +588,7 @@ export default function ClientsPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-14">
-                    <p className="text-sm font-black uppercase tracking-widest text-black/30">
+                    <p className="text-sm font-medium uppercase tracking-widest text-black/30">
                       {search
                         ? "No clients match your search."
                         : "No clients yet"}
@@ -624,7 +624,7 @@ export default function ClientsPage() {
                     )}
                   >
                     <td className="px-5 py-3.5">
-                      <p className="font-black text-black text-sm">
+                      <p className="font-medium text-black text-sm">
                         {client.name}
                       </p>
                       <p className="text-xs text-black/50 font-medium">
@@ -632,7 +632,7 @@ export default function ClientsPage() {
                       </p>
                     </td>
                     <td className="px-5 py-3.5 hidden md:table-cell">
-                      <p className="font-bold text-black text-sm">
+                      <p className="font-medium text-black text-sm">
                         {client.email}
                       </p>
                       <p className="text-xs text-black/50">{client.phone}</p>
@@ -641,7 +641,7 @@ export default function ClientsPage() {
                       <div className="flex flex-col gap-1.5 items-start">
                         <span
                           className={cn(
-                            "text-[10px] font-black px-2 py-0.5 border-2 uppercase tracking-wider",
+                            "text-[10px] font-medium px-2 py-0.5 border-2 uppercase tracking-wider",
                             PROJECT_NB[client.projectStatus] ||
                               "bg-white text-black border-black",
                           )}
@@ -650,7 +650,7 @@ export default function ClientsPage() {
                         </span>
                         <span
                           className={cn(
-                            "text-[10px] font-black px-2 py-0.5 border-2 uppercase tracking-wider",
+                            "text-[10px] font-medium px-2 py-0.5 border-2 uppercase tracking-wider",
                             PAYMENT_NB[client.paymentStatus] ||
                               "bg-white text-black border-black",
                           )}
@@ -660,7 +660,7 @@ export default function ClientsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5 hidden xl:table-cell">
-                      <p className="text-xs font-bold text-black">
+                      <p className="text-xs font-medium text-black">
                         {client.address}
                       </p>
                       <p className="text-xs text-black/50">
@@ -668,7 +668,7 @@ export default function ClientsPage() {
                       </p>
                     </td>
                     <td className="px-5 py-3.5 hidden md:table-cell">
-                      <p className="text-xs font-bold text-black">
+                      <p className="text-xs font-medium text-black">
                         {client.createdBy?.name || "—"}
                       </p>
                       <p className="text-xs text-black/50">
@@ -689,7 +689,7 @@ export default function ClientsPage() {
                           {can("Clients", "update") && (
                             <DropdownMenuItem
                               onClick={() => handleEditClick(client)}
-                              className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
+                              className="font-medium text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
                             >
                               <Pencil className="w-4 h-4 mr-2" /> Edit
                             </DropdownMenuItem>
@@ -699,7 +699,7 @@ export default function ClientsPage() {
                               onClick={() =>
                                 handleDeleteClick(client._id || client.id)
                               }
-                              className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
+                              className="font-medium text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
                             >
                               <Trash2 className="w-4 h-4 mr-2" /> Delete
                             </DropdownMenuItem>

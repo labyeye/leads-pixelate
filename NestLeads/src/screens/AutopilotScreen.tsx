@@ -264,7 +264,7 @@ const s = StyleSheet.create({
     marginRight: 12,
     backgroundColor: '#fff',
   },
-  title: { fontSize: 18, fontWeight: '600', color: '#000' },
+  title: { fontSize: 18, fontWeight: '500', color: '#000' },
   tabs: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -285,7 +285,7 @@ const s = StyleSheet.create({
     backgroundColor: '#fff',
   },
   tabActive: { backgroundColor: PRIMARY },
-  tabText: { fontSize: 12, fontWeight: '800', color: '#000' },
+  tabText: { fontSize: 12, fontWeight: '500', color: '#000' },
   campaignBar: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -300,7 +300,7 @@ const s = StyleSheet.create({
   error: { color: '#b91c1c', fontSize: 14, textAlign: 'center' },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 6,
   },
@@ -322,5 +322,5 @@ const s = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 18,
   },
-  createText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+  createText: { color: '#fff', fontWeight: '500', fontSize: 13 },
 });

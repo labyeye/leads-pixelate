@@ -135,7 +135,7 @@ export default function FacebookDashboardPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Facebook Dashboard
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -162,14 +162,14 @@ export default function FacebookDashboardPage() {
               <Info className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold mb-1">
+              <p className="text-sm font-medium mb-1">
                 {error.includes("permission")
                   ? "Ads Permission Required"
                   : "Facebook Not Connected"}
               </p>
               <p className="text-xs text-muted-foreground mb-3">{error}</p>
               <a href="/integrations">
-                <button className="border-2 border-black px-3 py-1.5 text-xs font-bold hover:bg-[#024BAB]/10 transition-colors">
+                <button className="border-2 border-black px-3 py-1.5 text-xs font-medium hover:bg-[#024BAB]/10 transition-colors">
                   Go to Integrations
                 </button>
               </a>
@@ -211,7 +211,7 @@ export default function FacebookDashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2 border-2 bg-white p-5">
-              <h3 className="font-display font-bold text-base text-black mb-1">
+              <h3 className="font-display font-medium text-base text-black mb-1">
                 Campaign Status
               </h3>
               <p className="text-xs text-muted-foreground mb-3">
@@ -246,7 +246,7 @@ export default function FacebookDashboardPage() {
                     {statusData.map((entry) => (
                       <span
                         key={entry.name}
-                        className="flex items-center gap-1 text-[11px] font-bold text-black"
+                        className="flex items-center gap-1 text-[11px] font-medium text-black"
                       >
                         <span
                           className="w-2.5 h-2.5 border border-black shrink-0"
@@ -260,7 +260,7 @@ export default function FacebookDashboardPage() {
                   </div>
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-bold text-center gap-1 px-4">
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-medium text-center gap-1 px-4">
                   <span>No campaign data yet</span>
                   <span className="text-xs font-normal">
                     Connect your Facebook Ad Account in{" "}
@@ -279,14 +279,14 @@ export default function FacebookDashboardPage() {
             <div className="lg:col-span-3 border-2 bg-white p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-display font-bold text-base text-black">
+                  <h3 className="font-display font-medium text-base text-black">
                     Spend & Results by Campaign
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     Top 8 campaigns · {periodLabel}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-[11px] font-bold">
+                <div className="flex items-center gap-3 text-[11px] font-medium">
                   <span className="flex items-center gap-1.5">
                     <span className="w-3 h-3 border border-black bg-[#024BAB] inline-block" />{" "}
                     Spend
@@ -311,12 +311,12 @@ export default function FacebookDashboardPage() {
                     />
                     <XAxis
                       dataKey="name"
-                      tick={{ fontSize: 10, fontWeight: 700 }}
+                      tick={{ fontSize: 10, fontWeight: 500 }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fontWeight: 700 }}
+                      tick={{ fontSize: 11, fontWeight: 500 }}
                       tickLine={false}
                       axisLine={false}
                       width={28}
@@ -342,7 +342,7 @@ export default function FacebookDashboardPage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-bold text-center gap-1 px-4">
+                <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-medium text-center gap-1 px-4">
                   <span>No campaign data yet</span>
                   <span className="text-xs font-normal">
                     Connect your Facebook Ad Account in{" "}

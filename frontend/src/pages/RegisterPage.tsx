@@ -78,14 +78,14 @@ export default function RegisterPage() {
 
   return (
     <AuthShell>
-          <h2 className="font-display font-bold text-3xl text-black mb-1">
+          <h2 className="font-display font-medium text-3xl text-black mb-1">
             Create your account
           </h2>
           <p className="text-muted-foreground text-sm mb-6">
             Already have an account?{" "}
             <Link
               to="/login"
-              className="font-bold text-black underline hover:text-[#FF3366] transition-colors"
+              className="font-medium text-black underline hover:text-[#FF3366] transition-colors"
             >
               Sign in
             </Link>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5 login-anim">
             <div>
-              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                 Company / Business Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -114,7 +114,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                 Your Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -128,7 +128,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                 Work Email <span className="text-red-500">*</span>
               </label>
               <input
@@ -142,7 +142,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                 Password <span className="text-red-500">*</span>
               </label>
               <div className="flex border-2 border-black">
@@ -175,7 +175,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                 Confirm Password <span className="text-red-500">*</span>
               </label>
               <div className="flex border-2 border-black">
@@ -210,7 +210,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
+              className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

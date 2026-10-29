@@ -131,7 +131,7 @@ const s = StyleSheet.create({
     backgroundColor: '#fff',
   },
   checkOn: { backgroundColor: '#024BAB' },
-  name: { fontSize: 12, fontWeight: '700', color: '#000', flexShrink: 1 },
+  name: { fontSize: 12, fontWeight: '500', color: '#000', flexShrink: 1 },
   batchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -150,7 +150,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
   },
 });

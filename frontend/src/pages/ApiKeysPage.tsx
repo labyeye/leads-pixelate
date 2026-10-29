@@ -221,7 +221,7 @@ function FieldBuilder({
     <div className="space-y-3">
       {/* Fixed fields */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
           Always Included
         </p>
         <div className="space-y-1">
@@ -231,10 +231,10 @@ function FieldBuilder({
               className="flex items-center gap-3 px-3 py-2 border-2 border-black bg-zinc-50"
             >
               <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span className="text-sm font-semibold text-black flex-1">
+              <span className="text-sm font-medium text-black flex-1">
                 {f.label}
               </span>
-              <span className="text-xs text-red-600 font-semibold">
+              <span className="text-xs text-red-600 font-medium">
                 Required
               </span>
             </div>
@@ -244,7 +244,7 @@ function FieldBuilder({
 
       {/* Configurable fields */}
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
           Optional Fields — Toggle to add
         </p>
         <div className="space-y-1">
@@ -271,7 +271,7 @@ function FieldBuilder({
                   >
                     {isOn && <CheckCircle className="w-3 h-3 text-white" />}
                   </button>
-                  <span className="text-sm font-semibold text-black flex-1">
+                  <span className="text-sm font-medium text-black flex-1">
                     {avail.label}
                   </span>
                   {isOn && (
@@ -280,7 +280,7 @@ function FieldBuilder({
                       onClick={() =>
                         setRequired(avail.key, !fieldConf?.required)
                       }
-                      className={`text-xs px-2 py-0.5 border font-semibold transition-colors ${
+                      className={`text-xs px-2 py-0.5 border font-medium transition-colors ${
                         fieldConf?.required
                           ? "bg-red-100 border-red-400 text-red-700"
                           : "bg-zinc-100 border-zinc-300 text-zinc-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600"
@@ -423,7 +423,7 @@ export default function ApiKeysPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-black">API Keys</h1>
+            <h1 className="text-2xl font-medium text-black">API Keys</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Generate secret keys to receive leads from your website forms
               directly into this CRM.
@@ -442,7 +442,7 @@ export default function ApiKeysPage() {
         <div className="flex items-start gap-3 border-2 border-emerald-500 bg-emerald-50 p-4">
           <Shield className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           <div className="text-sm text-emerald-800 space-y-0.5">
-            <p className="font-bold">Your data is fully protected</p>
+            <p className="font-medium">Your data is fully protected</p>
             <p>
               The public endpoint can <strong>only create leads</strong> — it is
               impossible to read, list, or fetch any of your existing leads
@@ -458,7 +458,7 @@ export default function ApiKeysPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-semibold border-2 border-b-0 transition-colors ${
+              className={`px-4 py-2 text-sm font-medium border-2 border-b-0 transition-colors ${
                 activeTab === tab
                   ? "bg-[#024BAB] text-white border-black"
                   : "border-transparent text-black hover:bg-[#024BAB]/10"
@@ -474,7 +474,7 @@ export default function ApiKeysPage() {
           <div className="space-y-4">
             {/* Endpoint pill */}
             <div className="border-2 border-black bg-zinc-50 p-4 flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-bold px-2 py-0.5 bg-[#024BAB] text-white">
+              <span className="text-xs font-medium px-2 py-0.5 bg-[#024BAB] text-white">
                 POST
               </span>
               <code className="text-sm font-mono text-black flex-1 break-all">
@@ -501,7 +501,7 @@ export default function ApiKeysPage() {
             ) : keys.length === 0 ? (
               <div className="py-16 text-center border-2 border-dashed border-black">
                 <Key className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-semibold text-black">No API keys yet</p>
+                <p className="font-medium text-black">No API keys yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Generate your first key to start receiving leads from your
                   website.
@@ -516,7 +516,7 @@ export default function ApiKeysPage() {
                         <Key className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-black text-sm">
+                        <p className="font-medium text-black text-sm">
                           {key.name}
                         </p>
                         <p className="text-xs font-mono text-muted-foreground mt-0.5">
@@ -538,7 +538,7 @@ export default function ApiKeysPage() {
                               )}
                             </span>
                           )}
-                          <span className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
+                          <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
                             <CheckCircle className="w-3 h-3" />
                             Active
                           </span>
@@ -580,7 +580,7 @@ export default function ApiKeysPage() {
                       <div className="border-t-2 border-black bg-zinc-50 p-4 space-y-4">
                         {/* Field list */}
                         <div>
-                          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
                             Form Fields
                           </p>
                           <div className="flex flex-wrap gap-2">
@@ -599,7 +599,7 @@ export default function ApiKeysPage() {
                             ].map((f) => (
                               <span
                                 key={f.key}
-                                className={`text-xs px-2 py-1 border font-semibold ${
+                                className={`text-xs px-2 py-1 border font-medium ${
                                   f.required
                                     ? "bg-red-50 border-red-400 text-red-700"
                                     : "bg-white border-zinc-300 text-zinc-700"
@@ -615,7 +615,7 @@ export default function ApiKeysPage() {
                         {/* HTML snippet for this specific key */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                               HTML Snippet for This Key
                             </p>
                             <button
@@ -625,7 +625,7 @@ export default function ApiKeysPage() {
                                   "Snippet copied!",
                                 );
                               }}
-                              className="flex items-center gap-1.5 text-xs px-3 py-1 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-semibold"
+                              className="flex items-center gap-1.5 text-xs px-3 py-1 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-medium"
                             >
                               <Copy className="w-3 h-3" />
                               Copy Snippet
@@ -656,7 +656,7 @@ export default function ApiKeysPage() {
         {activeTab === "docs" && (
           <div className="space-y-6">
             <div className="border-2 border-black p-5 space-y-3">
-              <h2 className="font-bold text-black">How it works</h2>
+              <h2 className="font-medium text-black">How it works</h2>
               <ol className="space-y-2 text-sm text-black list-decimal list-inside">
                 <li>
                   Generate an API key — choose which fields your form should
@@ -678,7 +678,7 @@ export default function ApiKeysPage() {
             </div>
 
             <div className="border-2 border-black p-5 space-y-3">
-              <h2 className="font-bold text-black flex items-center gap-2">
+              <h2 className="font-medium text-black flex items-center gap-2">
                 <Shield className="w-4 h-4 text-emerald-600" />
                 Security Model
               </h2>
@@ -711,14 +711,14 @@ export default function ApiKeysPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-black uppercase tracking-wider">
+                <p className="text-sm font-medium text-black uppercase tracking-wider">
                   Example HTML Snippet
                 </p>
                 <button
                   onClick={() => {
                     copyText(docsSnippet, "Snippet copied!");
                   }}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-semibold"
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-medium"
                 >
                   <Copy className="w-3 h-3" />
                   Copy
@@ -731,14 +731,14 @@ export default function ApiKeysPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-black uppercase tracking-wider">
+                <p className="text-sm font-medium text-black uppercase tracking-wider">
                   cURL Example
                 </p>
                 <button
                   onClick={() => {
                     copyText(curlSnippet, "Copied!");
                   }}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-semibold"
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-medium"
                 >
                   <Copy className="w-3 h-3" />
                   Copy
@@ -750,7 +750,7 @@ export default function ApiKeysPage() {
             </div>
 
             <div className="border-2 border-black p-5 space-y-3">
-              <h2 className="font-bold text-black">Response Format</h2>
+              <h2 className="font-medium text-black">Response Format</h2>
               <pre className="bg-zinc-900 text-zinc-100 text-xs p-4 border-2 border-black font-mono">
                 {`// Success (201)
 { "success": true, "message": "Your enquiry has been submitted successfully.", "data": { "id": "..." } }
@@ -777,7 +777,7 @@ export default function ApiKeysPage() {
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">
+              <label className="text-sm font-medium text-black">
                 Key Name
               </label>
               <Input
@@ -792,7 +792,7 @@ export default function ApiKeysPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-black">
+              <label className="text-sm font-medium text-black">
                 Form Fields
               </label>
               <p className="text-xs text-muted-foreground">
@@ -805,7 +805,7 @@ export default function ApiKeysPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-black">
+              <label className="text-sm font-medium text-black">
                 Assign Leads To
               </label>
               <AssigneePicker
@@ -852,7 +852,7 @@ export default function ApiKeysPage() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             {/* Warning */}
-            <div className="bg-amber-50 border-2 border-amber-400 p-3 text-sm font-semibold text-amber-800">
+            <div className="bg-amber-50 border-2 border-amber-400 p-3 text-sm font-medium text-amber-800">
               Copy this key now. It will <strong>NOT be shown again</strong> —
               we only store a hash.
             </div>
@@ -878,7 +878,7 @@ export default function ApiKeysPage() {
             {revealedKeyData && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Ready-to-use HTML Snippet
                   </p>
                   <button
@@ -888,7 +888,7 @@ export default function ApiKeysPage() {
                         "Snippet copied!",
                       )
                     }
-                    className="flex items-center gap-1.5 text-xs px-3 py-1 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-semibold"
+                    className="flex items-center gap-1.5 text-xs px-3 py-1 border-2 border-black bg-white hover:bg-[#024BAB]/10 font-medium"
                   >
                     <Copy className="w-3 h-3" />
                     Copy Snippet

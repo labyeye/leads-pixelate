@@ -329,7 +329,7 @@ export default function FactoryPage() {
           <ChevronRight className="w-3 h-3" />
           <span className="capitalize">{activeTab}</span>
         </div>
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="text-2xl font-medium text-foreground">
           Factory Inventory & Printing
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -391,7 +391,7 @@ export default function FactoryPage() {
 
           {}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="text-base font-semibold text-foreground">
+            <h2 className="text-base font-medium text-foreground">
               All Reels
             </h2>
             <div className="flex gap-2">
@@ -467,7 +467,7 @@ export default function FactoryPage() {
                         style={{ animationDelay: `${i * 40}ms` }}
                       >
                         <td className="px-5 py-3.5">
-                          <span className="font-mono font-semibold text-primary text-xs bg-primary/8 px-2 py-0.5 rounded">
+                          <span className="font-mono font-medium text-primary text-xs bg-primary/8 px-2 py-0.5 rounded">
                             {reel.reelNo}
                           </span>
                         </td>
@@ -516,7 +516,7 @@ export default function FactoryPage() {
                 <Printer className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-foreground">
+                <h2 className="text-base font-medium text-foreground">
                   Log New Print Batch
                 </h2>
                 <p className="text-xs text-muted-foreground">
@@ -645,7 +645,7 @@ export default function FactoryPage() {
           {}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-foreground">
+              <h2 className="text-base font-medium text-foreground">
                 Recent Print Logs
               </h2>
               <button
@@ -706,7 +706,7 @@ export default function FactoryPage() {
                           style={{ animationDelay: `${i * 40}ms` }}
                         >
                           <td className="px-4 py-3">
-                            <span className="font-mono text-xs font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded">
+                            <span className="font-mono text-xs font-medium text-secondary bg-secondary/10 px-2 py-0.5 rounded">
                               {log.printingId}
                             </span>
                           </td>
@@ -761,7 +761,7 @@ export default function FactoryPage() {
           <div className="bg-card rounded-xl border border-border card-shadow p-5">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">
+              <h2 className="text-sm font-medium text-foreground">
                 Date Filter
               </h2>
             </div>
@@ -869,7 +869,7 @@ export default function FactoryPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {}
               <div className="bg-card rounded-xl border border-border card-shadow p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-primary" /> Prints by
                   Company
                 </h3>
@@ -891,7 +891,7 @@ export default function FactoryPage() {
                         >
                           {row._id}
                         </span>
-                        <span className="font-bold text-foreground text-sm">
+                        <span className="font-medium text-foreground text-sm">
                           {row.count}
                         </span>
                       </div>
@@ -902,7 +902,7 @@ export default function FactoryPage() {
 
               {}
               <div className="bg-card rounded-xl border border-border card-shadow p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <Hash className="w-4 h-4 text-secondary" /> Prints by Reel
                 </h3>
                 {reports.byReel?.length === 0 ? (
@@ -915,14 +915,14 @@ export default function FactoryPage() {
                         className="flex items-center justify-between"
                       >
                         <div>
-                          <span className="font-mono text-xs font-semibold text-primary">
+                          <span className="font-mono text-xs font-medium text-primary">
                             {row._id}
                           </span>
                           <span className="ml-1 text-[10px] text-muted-foreground">
                             ({row.company})
                           </span>
                         </div>
-                        <span className="font-bold text-foreground text-sm">
+                        <span className="font-medium text-foreground text-sm">
                           {row.count}
                         </span>
                       </div>
@@ -933,7 +933,7 @@ export default function FactoryPage() {
 
               {}
               <div className="bg-card rounded-xl border border-border card-shadow p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
                   <User className="w-4 h-4 text-success" /> Prints by Staff
                 </h3>
                 {reports.byStaff?.length === 0 ? (
@@ -948,7 +948,7 @@ export default function FactoryPage() {
                         <span className="text-sm text-foreground">
                           {row.name}
                         </span>
-                        <span className="font-bold text-foreground text-sm">
+                        <span className="font-medium text-foreground text-sm">
                           {row.count}
                         </span>
                       </div>

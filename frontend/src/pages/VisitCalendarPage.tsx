@@ -170,7 +170,7 @@ export default function VisitCalendarPage() {
         {}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-medium text-foreground">
               Visit Calendar
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -219,7 +219,7 @@ export default function VisitCalendarPage() {
           <div className="flex-1 flex flex-col bg-card border border-border p-6 overflow-hidden">
             {}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">
+              <h2 className="text-xl font-medium">
                 {format(currentDate, "MMMM yyyy")}
               </h2>
               <div className="flex gap-2">
@@ -274,7 +274,7 @@ export default function VisitCalendarPage() {
                     (day) => (
                       <div
                         key={day}
-                        className="text-center font-bold text-sm text-muted-foreground py-2"
+                        className="text-center font-medium text-sm text-muted-foreground py-2"
                       >
                         {day}
                       </div>
@@ -311,7 +311,7 @@ export default function VisitCalendarPage() {
                       >
                         <span
                           className={cn(
-                            "text-xs font-bold mb-1",
+                            "text-xs font-medium mb-1",
                             isCurrentDay
                               ? "text-primary"
                               : "text-muted-foreground",
@@ -323,7 +323,7 @@ export default function VisitCalendarPage() {
                           {dayLeads.slice(0, 2).map((lead) => (
                             <div
                               key={lead._id}
-                              className="bg-blue-400 rounded px-1.5 py-1 text-[10px] font-bold text-white truncate hover:bg-blue-500 shadow-sm"
+                              className="bg-blue-400 rounded px-1.5 py-1 text-[10px] font-medium text-white truncate hover:bg-blue-500 shadow-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedDate(date);

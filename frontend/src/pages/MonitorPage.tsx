@@ -269,7 +269,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
       <div className="hidden sm:block">
         <span
           className={cn(
-            "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wide",
+            "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md uppercase tracking-wide",
             actionMeta.badge,
           )}
         >
@@ -295,7 +295,7 @@ function LogRow({ log, isNew }: { log: ActivityLog; isNew?: boolean }) {
         <div className="flex items-center gap-1.5 mb-0.5 sm:hidden">
           <span
             className={cn(
-              "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide",
+              "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded uppercase tracking-wide",
               actionMeta.badge,
             )}
           >
@@ -465,7 +465,7 @@ export default function MonitorPage() {
                 liveMode ? "bg-success animate-pulse" : "bg-muted-foreground",
               )}
             />
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-medium text-foreground">
               Activity Monitor
             </h1>
           </div>
@@ -723,7 +723,7 @@ export default function MonitorPage() {
           <div className="bg-card border border-border rounded-xl card-shadow p-5">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">
+              <h3 className="text-sm font-medium text-foreground">
                 Events by Module
               </h3>
             </div>
@@ -750,7 +750,7 @@ export default function MonitorPage() {
                         <ModIcon className="w-3.5 h-3.5" />
                         {row._id}
                       </div>
-                      <span className="text-xs font-semibold text-foreground">
+                      <span className="text-xs font-medium text-foreground">
                         {row.count}{" "}
                         <span className="text-muted-foreground font-normal">
                           ({pct}%)
@@ -773,7 +773,7 @@ export default function MonitorPage() {
           <div className="bg-card border border-border rounded-xl card-shadow p-5">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="w-4 h-4 text-secondary" />
-              <h3 className="text-sm font-semibold text-foreground">
+              <h3 className="text-sm font-medium text-foreground">
                 Events by Action
               </h3>
             </div>
@@ -796,7 +796,7 @@ export default function MonitorPage() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase",
+                            "inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded uppercase",
                             meta.badge,
                           )}
                         >
@@ -804,7 +804,7 @@ export default function MonitorPage() {
                           {meta.label}
                         </span>
                       </div>
-                      <span className="text-xs font-semibold text-foreground">
+                      <span className="text-xs font-medium text-foreground">
                         {row.count}{" "}
                         <span className="text-muted-foreground font-normal">
                           ({pct}%)

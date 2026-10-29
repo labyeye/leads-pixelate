@@ -168,7 +168,7 @@ export default function WhatsappSettingsPage() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold">WhatsApp Setup</h1>
+            <h1 className="text-xl font-medium">WhatsApp Setup</h1>
             <p className="text-xs text-muted-foreground">
               Connection, templates & campaign analytics
             </p>
@@ -393,7 +393,7 @@ function TemplatesTab({ toast }: { toast: any }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="font-semibold text-base">WhatsApp Templates</h2>
+          <h2 className="font-medium text-base">WhatsApp Templates</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Create and manage message templates. Templates must be approved in
             Meta Business Manager before use.
@@ -769,7 +769,7 @@ function TemplatesTab({ toast }: { toast: any }) {
               <div className="bg-[#e5ddd5] rounded-xl p-4">
                 <div className="bg-white rounded-lg p-3 shadow-sm max-w-xs ml-auto">
                   {form.headerType === "TEXT" && form.headerText && (
-                    <p className="text-sm font-semibold text-gray-800 mb-1">
+                    <p className="text-sm font-medium text-gray-800 mb-1">
                       {form.headerText}
                     </p>
                   )}
@@ -883,7 +883,7 @@ function TemplateCard({
               {template.category}
             </Badge>
             <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_COLORS[template.status] || "bg-gray-100 text-gray-600"}`}
+              className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLORS[template.status] || "bg-gray-100 text-gray-600"}`}
             >
               {template.status}
             </span>
@@ -977,7 +977,7 @@ function TemplateCard({
               <div className="bg-[#e5ddd5] rounded-xl p-3">
                 <div className="bg-white rounded-lg p-3 shadow-sm">
                   {template.headerType === "TEXT" && template.headerText && (
-                    <p className="text-sm font-semibold text-gray-800 mb-1">
+                    <p className="text-sm font-medium text-gray-800 mb-1">
                       {template.headerText}
                     </p>
                   )}
@@ -1063,7 +1063,7 @@ function AnalyticsTab({ toast }: { toast: any }) {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="font-semibold text-base">Campaign Analytics</h2>
+        <h2 className="font-medium text-base">Campaign Analytics</h2>
         <Button variant="outline" size="sm" onClick={fetchCampaigns}>
           <RefreshCw className="w-4 h-4 mr-1" /> Refresh
         </Button>
@@ -1107,7 +1107,7 @@ function AnalyticsTab({ toast }: { toast: any }) {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm">{c.name}</span>
                         <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${CAMPAIGN_STATUS_COLORS[c.status] || "bg-gray-100 text-gray-600"}`}
+                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${CAMPAIGN_STATUS_COLORS[c.status] || "bg-gray-100 text-gray-600"}`}
                         >
                           {c.status}
                         </span>
@@ -1192,13 +1192,13 @@ function AnalyticsTab({ toast }: { toast: any }) {
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-semibold text-green-600">
+                      <p className="text-sm font-medium text-green-600">
                         {deliveryRate}%
                       </p>
                       <p className="text-[10px] text-muted-foreground">
                         delivered
                       </p>
-                      <p className="text-sm font-semibold text-purple-600 mt-1">
+                      <p className="text-sm font-medium text-purple-600 mt-1">
                         {readRate}%
                       </p>
                       <p className="text-[10px] text-muted-foreground">read</p>
@@ -1303,7 +1303,7 @@ function MsgStatusBadge({ status }: { status: string }) {
   };
   return (
     <span
-      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${map[status] || "bg-gray-100 text-gray-600"}`}
+      className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${map[status] || "bg-gray-100 text-gray-600"}`}
     >
       {status}
     </span>
@@ -1334,7 +1334,7 @@ function RepliesTab({ toast }: { toast: any }) {
     <div className="p-6">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="font-semibold text-base">Incoming Replies</h2>
+          <h2 className="font-medium text-base">Incoming Replies</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Replies received from leads via WhatsApp webhook.
           </p>
@@ -1448,7 +1448,7 @@ function AutomationsCard({ toast }: { toast: any }) {
 
   return (
     <div className="bg-muted/30 rounded-lg p-4 border border-border">
-      <h3 className="text-sm font-semibold mb-1">Automatic messages</h3>
+      <h3 className="text-sm font-medium mb-1">Automatic messages</h3>
       <p className="text-xs text-muted-foreground mb-3">
         Sent from your own WhatsApp number above (Nest Leads never sends for
         you). Campaigns use the same number. Pick an approved template so the
@@ -1694,7 +1694,7 @@ function ConnectionTab({ toast }: { toast: any }) {
   return (
     <div className="p-6 max-w-2xl space-y-6">
       <div>
-        <h2 className="font-semibold text-base">
+        <h2 className="font-medium text-base">
           WhatsApp Business Connection
         </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -1715,7 +1715,7 @@ function ConnectionTab({ toast }: { toast: any }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${status?.isConnected ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium ${status?.isConnected ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}
                 >
                   {status?.isConnected ? <Check className="w-3 h-3" /> : "1"}
                 </div>
@@ -1783,7 +1783,7 @@ function ConnectionTab({ toast }: { toast: any }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${phoneNumbers.length > 0 ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium ${phoneNumbers.length > 0 ? "bg-green-500 text-white" : "bg-muted text-muted-foreground border"}`}
                 >
                   {phoneNumbers.length > 0 ? (
                     <Check className="w-3 h-3" />
@@ -1880,7 +1880,7 @@ function ConnectionTab({ toast }: { toast: any }) {
 
           {}
           <div>
-            <h3 className="text-sm font-semibold mb-2">
+            <h3 className="text-sm font-medium mb-2">
               Webhook Configuration
             </h3>
             <div className="bg-muted/30 rounded-lg p-4 border border-border space-y-3">

@@ -40,7 +40,7 @@ export function GenerationProgress({ stage }: { stage?: string }) {
           <Sparkles className="w-4 h-4 text-white animate-pulse motion-reduce:animate-none" />
         </span>
         <div>
-          <p className="font-semibold text-sm">Creating your first post</p>
+          <p className="font-medium text-sm">Creating your first post</p>
           <p className="text-xs text-muted-foreground">
             Usually 1–2 minutes. The rest of your month is prepared in the
             background after this.
@@ -77,7 +77,7 @@ export function GenerationProgress({ stage }: { stage?: string }) {
               </span>
               <span>
                 <span
-                  className={`block text-sm ${active ? "font-semibold" : ""}`}
+                  className={`block text-sm ${active ? "font-medium" : ""}`}
                 >
                   {s.label}
                 </span>

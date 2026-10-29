@@ -55,7 +55,7 @@ export function RecentActivity() {
 
   return (
     <div className="bg-card rounded-xl border border-border p-5 card-shadow">
-      <h3 className="text-sm font-semibold text-foreground mb-4">
+      <h3 className="text-sm font-medium text-foreground mb-4">
         Recent Activity
       </h3>
 

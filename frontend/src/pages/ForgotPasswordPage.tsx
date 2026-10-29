@@ -174,7 +174,7 @@ export default function ForgotPasswordPage() {
     <AuthShell>
         <div className="flex items-center gap-2 mb-8 justify-center">
           <img src={logoimg} alt="NestLeads" className="w-10 h-10" />
-          <span className="font-display font-bold text-xl text-black">
+          <span className="font-display font-medium text-xl text-black">
             NestLeads
           </span>
         </div>
@@ -188,7 +188,7 @@ export default function ForgotPasswordPage() {
 
         {step === "email" && (
           <>
-            <h2 className="font-display font-bold text-3xl text-black mb-1">
+            <h2 className="font-display font-medium text-3xl text-black mb-1">
               Forgot password?
             </h2>
             <p className="text-muted-foreground text-sm mb-8">
@@ -197,7 +197,7 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleEmailSubmit} className="space-y-5 login-anim">
               <div>
-                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                   Email
                 </label>
                 <div className="flex border-2 border-black">
@@ -220,7 +220,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -237,7 +237,7 @@ export default function ForgotPasswordPage() {
               Remembered your password?{" "}
               <Link
                 to="/login"
-                className="font-bold text-black underline hover:text-[#FF3366] transition-colors"
+                className="font-medium text-black underline hover:text-[#FF3366] transition-colors"
               >
                 Sign in
               </Link>
@@ -247,7 +247,7 @@ export default function ForgotPasswordPage() {
 
         {step === "choose" && (
           <>
-            <h2 className="font-display font-bold text-2xl text-black mb-1">
+            <h2 className="font-display font-medium text-2xl text-black mb-1">
               How do you want to reset it?
             </h2>
             <p className="text-muted-foreground text-sm mb-6">
@@ -265,7 +265,7 @@ export default function ForgotPasswordPage() {
                     {METHOD_INFO[m]?.icon ?? <Mail className="w-5 h-5" />}
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-black">
+                    <p className="font-medium text-sm text-black">
                       {METHOD_INFO[m]?.label ?? m}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -277,7 +277,7 @@ export default function ForgotPasswordPage() {
             </div>
             <button
               onClick={() => setStep("email")}
-              className="text-xs font-bold text-muted-foreground hover:text-black mt-6"
+              className="text-xs font-medium text-muted-foreground hover:text-black mt-6"
             >
               ← Back
             </button>
@@ -289,7 +289,7 @@ export default function ForgotPasswordPage() {
             <div className="w-14 h-14 border-2 border-black bg-[#024BAB]/10 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-[#024BAB]" />
             </div>
-            <h2 className="font-display font-bold text-2xl text-black mb-2">
+            <h2 className="font-display font-medium text-2xl text-black mb-2">
               Check your email
             </h2>
             <p className="text-muted-foreground text-sm mb-8">
@@ -298,7 +298,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link
               to="/login"
-              className="inline-block w-full border-2 border-black bg-[#024BAB] text-white py-3 text-sm font-bold hover:bg-black transition-colors"
+              className="inline-block w-full border-2 border-black bg-[#024BAB] text-white py-3 text-sm font-medium hover:bg-black transition-colors"
             >
               Back to Sign In
             </Link>
@@ -307,7 +307,7 @@ export default function ForgotPasswordPage() {
 
         {(step === "otp" || step === "totp" || step === "backup" || step === "passkey") && (
           <>
-            <h2 className="font-display font-bold text-2xl text-black mb-1">
+            <h2 className="font-display font-medium text-2xl text-black mb-1">
               {step === "otp"
                 ? "Enter WhatsApp code"
                 : step === "backup"
@@ -329,7 +329,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleCodeSubmit} className="space-y-5 login-anim">
               {step !== "passkey" && (
                 <div>
-                  <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                     {step === "otp"
                       ? "WhatsApp code"
                       : step === "backup"
@@ -349,14 +349,14 @@ export default function ForgotPasswordPage() {
                       )
                     }
                     placeholder={step === "backup" ? "XXXXX-XXXXX" : "123456"}
-                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors tracking-widest text-center font-bold"
+                    className="w-full px-4 py-3 border-2 border-black text-sm font-medium bg-white focus:outline-none transition-colors tracking-widest text-center font-medium"
                     required
                     autoFocus
                   />
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                   New password
                 </label>
                 <input
@@ -371,7 +371,7 @@ export default function ForgotPasswordPage() {
               {password && <PasswordChecklist password={password} />}
               </div>
               <div>
-                <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                   Confirm new password
                 </label>
                 <input
@@ -387,7 +387,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
+                className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -402,7 +402,7 @@ export default function ForgotPasswordPage() {
 
             <button
               onClick={() => setStep("choose")}
-              className="text-xs font-bold text-muted-foreground hover:text-black mt-6"
+              className="text-xs font-medium text-muted-foreground hover:text-black mt-6"
             >
               ← Choose a different method
             </button>
@@ -414,7 +414,7 @@ export default function ForgotPasswordPage() {
             <div className="w-14 h-14 border-2 border-black bg-[#00C48C]/10 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-[#00C48C]" />
             </div>
-            <h2 className="font-display font-bold text-2xl text-black mb-2">
+            <h2 className="font-display font-medium text-2xl text-black mb-2">
               Password reset!
             </h2>
             <p className="text-muted-foreground text-sm mb-8">
@@ -422,7 +422,7 @@ export default function ForgotPasswordPage() {
             </p>
             <button
               onClick={() => navigate("/login")}
-              className="inline-block w-full border-2 border-black bg-[#024BAB] text-white py-3 text-sm font-bold hover:bg-black transition-colors"
+              className="inline-block w-full border-2 border-black bg-[#024BAB] text-white py-3 text-sm font-medium hover:bg-black transition-colors"
             >
               Back to Sign In
             </button>

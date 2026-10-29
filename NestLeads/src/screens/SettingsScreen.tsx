@@ -609,20 +609,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderColor: '#000',
   },
-  verifyBtnText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  verifyBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   phoneStatusRow: { flexDirection: 'row', marginTop: 8 },
   statusChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 2, borderRadius: 6 },
   chipOk: { backgroundColor: '#dcfce7', borderColor: '#86efac' },
   chipWarn: { backgroundColor: '#fef9c3', borderColor: '#fde047' },
-  statusChipText: { fontSize: 11, fontWeight: '800' },
+  statusChipText: { fontSize: 11, fontWeight: '500' },
   otpOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
   otpBox: { backgroundColor: '#fff', padding: 18, borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderColor: '#000' },
   otpHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  otpTitle: { fontSize: 17, fontWeight: '800', color: '#000' },
-  otpSub: { fontSize: 13, color: '#64748b', fontWeight: '600', marginVertical: 12 },
-  otpInput: { borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderColor: '#000', paddingVertical: 12, fontSize: 24, fontWeight: '800', letterSpacing: 10, textAlign: 'center', color: '#000' },
+  otpTitle: { fontSize: 17, fontWeight: '500', color: '#000' },
+  otpSub: { fontSize: 13, color: '#64748b', fontWeight: '500', marginVertical: 12 },
+  otpInput: { borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderColor: '#000', paddingVertical: 12, fontSize: 24, fontWeight: '500', letterSpacing: 10, textAlign: 'center', color: '#000' },
   otpLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
-  otpLink: { fontSize: 13, fontWeight: '800', color: PRIMARY_BLUE },
+  otpLink: { fontSize: 13, fontWeight: '500', color: PRIMARY_BLUE },
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   thinDivider: { height: 1, backgroundColor: '#e2e8f0' },
   profileCard: {
@@ -675,7 +675,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  avatarText: { fontSize: 22, fontWeight: '600', color: '#fff' },
+  avatarText: { fontSize: 22, fontWeight: '500', color: '#fff' },
   avatarEditBadge: {
     position: 'absolute',
     bottom: 0,
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileInfo: { flex: 1, gap: 3 },
-  profileName: { fontSize: 16, fontWeight: '600', color: '#000' },
+  profileName: { fontSize: 16, fontWeight: '500', color: '#000' },
   profileEmail: { fontSize: 12, color: '#64748b' },
   roleBadge: {
     alignSelf: 'flex-start',
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginTop: 2,
   },
-  roleText: { fontSize: 9, fontWeight: '600', color: '#000' },
+  roleText: { fontSize: 9, fontWeight: '500', color: '#000' },
   tabs: {
     flexDirection: 'row',
     marginHorizontal: 16,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: '#024BAB' },
   tabText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
   },
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   formSection: { paddingHorizontal: 16, paddingTop: 16 },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     marginTop: 20,
   },
-  saveBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 14, fontWeight: '500', color: '#fff' },
   infoSection: {
     margin: 16,
     marginTop: 20,
@@ -799,7 +799,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  infoText: { flex: 1, fontSize: 13, color: '#000', fontWeight: '600' },
+  infoText: { flex: 1, fontSize: 13, color: '#000', fontWeight: '500' },
   infoValue: { fontSize: 12, color: '#64748b' },
   leadStatusesBtn: {
     flexDirection: 'row',
@@ -832,7 +832,7 @@ const styles = StyleSheet.create({
   leadStatusesBtnText: {
     flex: 1,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
   },
   logoutSection: { marginHorizontal: 16, marginTop: 8 },
@@ -846,5 +846,5 @@ const styles = StyleSheet.create({
     padding: 14,
     justifyContent: 'center',
   },
-  logoutText: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
+  logoutText: { fontSize: 14, fontWeight: '500', color: '#EF4444' },
 });

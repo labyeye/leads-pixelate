@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { flex: 1, fontSize: 17, fontWeight: '600', color: '#000' },
+  headerTitle: { flex: 1, fontSize: 17, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   filters: {
     padding: 12,
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  name: { fontSize: 13, fontWeight: '600', color: '#000' },
+  name: { fontSize: 13, fontWeight: '500', color: '#000' },
   subLabel: { fontSize: 10, color: '#64748b', marginTop: 2 },
   assignedRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   assignedText: { fontSize: 10, color: '#64748b' },
@@ -700,8 +700,8 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   metricBox: { width: '25%', alignItems: 'center', gap: 2, marginBottom: 4 },
-  metricLabel: { fontSize: 7, fontWeight: '600', color: '#94a3b8' },
-  metricValue: { fontSize: 11, fontWeight: '600', color: '#000' },
+  metricLabel: { fontSize: 7, fontWeight: '500', color: '#94a3b8' },
+  metricValue: { fontSize: 11, fontWeight: '500', color: '#000' },
   actionRow: {
     flexDirection: 'row',
     gap: 8,
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
-  actionBtnText: { fontSize: 10, fontWeight: '800', color: '#000' },
+  actionBtnText: { fontSize: 10, fontWeight: '500', color: '#000' },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -739,13 +739,13 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 6,
   },
   formLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  pickerBtnText: { fontSize: 12, color: '#000', fontWeight: '600' },
+  pickerBtnText: { fontSize: 12, color: '#000', fontWeight: '500' },
   toggleRow: { flexDirection: 'row', gap: 8 },
   togglePill: {
     flex: 1,
@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 8,
   },
-  togglePillText: { fontSize: 11, fontWeight: '800', color: '#000' },
+  togglePillText: { fontSize: 11, fontWeight: '500', color: '#000' },
   dateRow: { flexDirection: 'row', gap: 10 },
   formFooter: { flexDirection: 'row', gap: 10, marginTop: 14 },
   cancelBtn: {
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  cancelBtnText: { fontSize: 12, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 12, fontWeight: '500', color: '#000' },
   saveBtn: {
     flex: 1,
     alignItems: 'center',
@@ -818,7 +818,7 @@ const styles = StyleSheet.create({
     backgroundColor: FB_COLOR,
     paddingVertical: 12,
   },
-  saveBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   pickerSheet: {
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -837,5 +837,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  pickerRowText: { fontSize: 13, color: '#000', fontWeight: '600' },
+  pickerRowText: { fontSize: 13, color: '#000', fontWeight: '500' },
 });

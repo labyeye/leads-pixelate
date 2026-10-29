@@ -93,5 +93,5 @@ const s = StyleSheet.create({
   },
   avatar: { width: 38, height: 38, borderRadius: 19, overflow: 'hidden' },
   greet: { marginTop: 14, fontSize: 13, color: '#475569', fontWeight: '500' },
-  title: { fontSize: 28, fontWeight: '700', color: '#000', marginTop: 2 },
+  title: { fontSize: 28, fontWeight: '500', color: '#000', marginTop: 2 },
 });

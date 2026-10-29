@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   headerSub: { fontSize: 11, color: '#64748b' },
   addBtn: {
     marginLeft: 'auto' as any,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  addBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  addBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 12, gap: 10 },
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardInfo: { flex: 1 },
-  subjectText: { fontSize: 14, fontWeight: '600', color: '#000' },
+  subjectText: { fontSize: 14, fontWeight: '500', color: '#000' },
   ticketMeta: { fontSize: 11, color: '#64748b', marginTop: 2 },
   pillRow: {
     flexDirection: 'row',
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  pillText: { fontSize: 10, fontWeight: '600', textTransform: 'capitalize' },
+  pillText: { fontSize: 10, fontWeight: '500', textTransform: 'capitalize' },
   replyBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   replyBadgeText: { fontSize: 11, color: '#64748b' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...NB_SHADOW,
   },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#94a3b8' },
+  emptyText: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptyAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  emptyAddBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  emptyAddBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  modalTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#000' },
+  modalTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#000' },
   modalClose: {
     width: 32,
     height: 32,
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   modalBody: { padding: 16 },
   fieldLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   statusChipText: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'capitalize',
   },
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  cancelBtnText: { fontSize: 13, fontWeight: '600', color: '#000' },
+  cancelBtnText: { fontSize: 13, fontWeight: '500', color: '#000' },
   saveBtn: {
     flex: 2,
     flexDirection: 'row',
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     paddingVertical: 12,
   },
-  saveBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  saveBtnText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   descBox: {
     borderWidth: 2,
     borderRadius: 8,
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   },
   replySender: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     marginBottom: 4,
   },

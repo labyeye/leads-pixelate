@@ -9,11 +9,11 @@ const FONT_BY_WEIGHT: Record<string, string> = {
   normal: 'DMSans-Regular',
   '400': 'DMSans-Regular',
   '500': 'DMSans-Medium',
-  '600': 'DMSans-SemiBold',
-  bold: 'DMSans-SemiBold',
-  '700': 'DMSans-SemiBold',
-  '800': 'DMSans-SemiBold',
-  '900': 'DMSans-SemiBold',
+  '600': 'DMSans-Medium',
+  bold: 'DMSans-Medium',
+  '700': 'DMSans-Medium',
+  '800': 'DMSans-Medium',
+  '900': 'DMSans-Medium',
 };
 
 function resolveFontFamily(flatStyle: any): string {

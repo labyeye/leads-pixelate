@@ -440,7 +440,7 @@ export default function BillingPage() {
                   <Crown className="w-5 h-5 text-[#024BAB]" />
                 </div>
                 <div>
-                  <p className="font-display font-bold text-white text-lg">
+                  <p className="font-display font-medium text-white text-lg">
                     {capitalise(currentPlanId)} Plan —{" "}
                     {isActive
                       ? "Active"
@@ -565,13 +565,13 @@ export default function BillingPage() {
                     <stat.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="font-display font-bold text-2xl text-black">
+                    <p className="font-display font-medium text-2xl text-black">
                       {stat.value}
                       <span className="text-sm font-medium text-muted-foreground ml-1">
                         / {stat.max}
                       </span>
                     </p>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
                       {stat.label}
                     </p>
                   </div>
@@ -588,12 +588,12 @@ export default function BillingPage() {
             {}
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <h2 className="font-display font-bold text-2xl text-black">
+                <h2 className="font-display font-medium text-2xl text-black">
                   {currentPlanId === "trial" ? "Choose a Plan" : "Change Plan"}
                 </h2>
                 <Link
                   to="/ai-usage"
-                  className="text-xs font-bold text-[#024BAB] underline sm:order-none"
+                  className="text-xs font-medium text-[#024BAB] underline sm:order-none"
                 >
                   See what your plan includes & your AI usage
                 </Link>
@@ -601,7 +601,7 @@ export default function BillingPage() {
                   <button
                     onClick={() => setBilling("monthly")}
                     className={cn(
-                      "px-4 py-2 text-sm font-bold transition-colors",
+                      "px-4 py-2 text-sm font-medium transition-colors",
                       billing === "monthly"
                         ? "bg-[#024BAB] text-white"
                         : "bg-white text-black hover:bg-[#024BAB]/10",
@@ -612,14 +612,14 @@ export default function BillingPage() {
                   <button
                     onClick={() => setBilling("yearly")}
                     className={cn(
-                      "px-4 py-2 text-sm font-bold transition-colors border-l-2 border-black",
+                      "px-4 py-2 text-sm font-medium transition-colors border-l-2 border-black",
                       billing === "yearly"
                         ? "bg-[#024BAB] text-white"
                         : "bg-white text-black hover:bg-[#024BAB]/10",
                     )}
                   >
                     Yearly
-                    <span className="ml-1.5 text-[10px] bg-[#00C48C] text-black border border-black px-1 py-0.5 font-bold">
+                    <span className="ml-1.5 text-[10px] bg-[#00C48C] text-black border border-black px-1 py-0.5 font-medium">
                       2 months free
                     </span>
                   </button>
@@ -662,17 +662,17 @@ export default function BillingPage() {
                       }
                     >
                       {meta.popular && (
-                        <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+                        <div className="absolute -top-3 left-3 bg-[#024BAB] border-2 border-black px-2 py-0.5 text-[10px] font-medium text-white uppercase tracking-wider">
                           Most Popular
                         </div>
                       )}
                       {isCurrent && (
-                        <div className="absolute -top-3 right-3 bg-[#00C48C] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-black uppercase tracking-wider flex items-center gap-1">
+                        <div className="absolute -top-3 right-3 bg-[#00C48C] border-2 border-black px-2 py-0.5 text-[10px] font-medium text-black uppercase tracking-wider flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" /> Active
                         </div>
                       )}
                       {isRenewable && (
-                        <div className="absolute -top-3 right-3 bg-[#FF3366] border-2 border-black px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1">
+                        <div className="absolute -top-3 right-3 bg-[#FF3366] border-2 border-black px-2 py-0.5 text-[10px] font-medium text-white uppercase tracking-wider flex items-center gap-1">
                           <RefreshCw className="w-3 h-3" /> Expired
                         </div>
                       )}
@@ -682,9 +682,9 @@ export default function BillingPage() {
                       >
                         <Zap className="w-3.5 h-3.5 text-black" />
                       </div>
-                      <h3 className="font-display font-bold text-base text-black leading-tight">
+                      <h3 className="font-display font-medium text-base text-black leading-tight">
                         {meta.employees && (
-                          <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                          <span className="block text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
                             {meta.employees} employees
                           </span>
                         )}
@@ -698,7 +698,7 @@ export default function BillingPage() {
                         {meta.description}
                       </p>
                       <div className="mb-3">
-                        <span className="font-display font-bold text-2xl text-black">
+                        <span className="font-display font-medium text-2xl text-black">
                           {priceDisplay}
                         </span>
                         {!isCustom && (
@@ -767,18 +767,18 @@ export default function BillingPage() {
 
             {}
             <div className="nb-card p-4 sm:p-5 bg-white">
-              <h3 className="font-display font-bold text-lg text-black mb-4 flex items-center gap-2">
+              <h3 className="font-display font-medium text-lg text-black mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5" /> Payment Method
               </h3>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border-2 border-black bg-[#A3E635]/20 nb-shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-8 bg-[#024BAB] flex items-center justify-center shrink-0 border border-black">
-                    <span className="text-white font-bold text-[10px] leading-tight text-center">
+                    <span className="text-white font-medium text-[10px] leading-tight text-center">
                       RZRPY
                     </span>
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-black">Razorpay</p>
+                    <p className="font-medium text-sm text-black">Razorpay</p>
                     <p className="text-xs text-muted-foreground">
                       {subscription?.status === "active"
                         ? "Your subscription is managed securely via Razorpay"
@@ -802,7 +802,7 @@ export default function BillingPage() {
 
             {}
             <div className="nb-card p-4 sm:p-5 bg-white">
-              <h3 className="font-display font-bold text-lg text-black mb-4 flex items-center gap-2">
+              <h3 className="font-display font-medium text-lg text-black mb-4 flex items-center gap-2">
                 <Building2 className="w-5 h-5" /> Invoice History
               </h3>
               {invoices.length === 0 ? (
@@ -820,7 +820,7 @@ export default function BillingPage() {
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 border-2 border-black hover:bg-[#024BAB]/10 transition-colors"
                     >
                       <div className="flex items-center gap-4">
-                        <span className="text-xs font-bold text-muted-foreground">
+                        <span className="text-xs font-medium text-muted-foreground">
                           {inv.invoiceNumber}
                         </span>
                         <span className="text-sm font-medium text-black">
@@ -833,7 +833,7 @@ export default function BillingPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="font-bold text-black">
+                        <span className="font-medium text-black">
                           {formatAmount(inv.amount)}
                         </span>
                         <span className="nb-badge nb-tag-lime text-[11px]">
@@ -843,7 +843,7 @@ export default function BillingPage() {
                           onClick={() =>
                             downloadInvoicePDF(inv, settings).catch(() => {})
                           }
-                          className="text-xs font-bold text-black underline hover:text-[#FF3366] transition-colors flex items-center gap-1"
+                          className="text-xs font-medium text-black underline hover:text-[#FF3366] transition-colors flex items-center gap-1"
                         >
                           <Download className="w-3 h-3" /> Download
                         </button>

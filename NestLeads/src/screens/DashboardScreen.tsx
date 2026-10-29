@@ -657,12 +657,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 50,
   },
-  headerAvatarText: { fontSize: 18, fontWeight: '600', color: '#fff' },
+  headerAvatarText: { fontSize: 18, fontWeight: '500', color: '#fff' },
   headerInfo: { flex: 1 },
-  headerGreeting: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  headerGreeting: { fontSize: 12, color: '#64748b', fontWeight: '500' },
   headerName: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     letterSpacing: 0.3,
   },
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     borderRadius: 10,
   },
-  bellBadgeText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  bellBadgeText: { fontSize: 12, fontWeight: '500', color: '#fff' },
 
   // Notification modal
   notifOverlay: {
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifHeaderTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  notifHeaderTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   notifCloseBtn: {
     width: 32,
     height: 32,
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
   },
   notifSectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#000',
   },
-  notifCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  notifCountText: { fontSize: 10, fontWeight: '500', color: '#fff' },
   notifItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -770,15 +770,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifItemInitial: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  notifItemInitial: { fontSize: 15, fontWeight: '500', color: '#fff' },
   notifItemInfo: { flex: 1 },
-  notifItemTitle: { fontSize: 13, fontWeight: '700', color: '#000' },
+  notifItemTitle: { fontSize: 13, fontWeight: '500', color: '#000' },
   notifItemSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
   notifItemTime: {
     fontSize: 10,
     color: '#94a3b8',
     marginTop: 2,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   notifItemBadge: {
     paddingHorizontal: 8,
@@ -787,7 +787,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  notifItemBadgeText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  notifItemBadgeText: { fontSize: 10, fontWeight: '500', color: '#fff' },
   notifLeadStatus: {
     paddingHorizontal: 6,
     paddingVertical: 3,
@@ -798,12 +798,12 @@ const styles = StyleSheet.create({
   },
   notifLeadStatusText: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
   },
   notifEmpty: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  notifEmptyText: { fontSize: 13, color: '#94a3b8', fontWeight: '600' },
+  notifEmptyText: { fontSize: 13, color: '#94a3b8', fontWeight: '500' },
 
   divider: { height: 2, backgroundColor: '#000' },
 
@@ -824,7 +824,7 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: PRIMARY },
   tabText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   tabCountActive: { backgroundColor: '#fff' },
-  tabCountText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  tabCountText: { fontSize: 10, fontWeight: '500', color: '#fff' },
   tabCountTextActive: { color: PRIMARY },
   tabDivider: { height: 2, backgroundColor: '#000' },
 
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   },
   periodBtnLast: { borderRightWidth: 0 },
   periodBtnActive: { backgroundColor: PRIMARY },
-  periodBtnText: { fontSize: 11, fontWeight: '700', color: '#000' },
+  periodBtnText: { fontSize: 11, fontWeight: '500', color: '#000' },
   periodBtnTextActive: { color: '#fff' },
 
   // Alert
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 12,
   },
-  alertText: { fontSize: 11, fontWeight: '700', color: SECONDARY },
+  alertText: { fontSize: 11, fontWeight: '500', color: SECONDARY },
   alertPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -895,12 +895,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-  alertPillText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  alertPillText: { fontSize: 10, fontWeight: '500', color: '#fff' },
 
   // Section label
   sectionLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000',
   },
-  sectionCountText: { fontSize: 11, fontWeight: '600', color: '#fff' },
+  sectionCountText: { fontSize: 11, fontWeight: '500', color: '#fff' },
 
   // KPI cards — 2 per row
   kpiRow: { flexDirection: 'row', gap: 10 },
@@ -950,10 +950,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  kpiValue: { fontSize: 19, fontWeight: '700', color: '#000' },
+  kpiValue: { fontSize: 19, fontWeight: '500', color: '#000' },
   kpiTitle: {
     fontSize: 8,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -991,8 +991,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  monthRowLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: '#000' },
-  monthRowValue: { fontSize: 16, fontWeight: '600', color: '#000' },
+  monthRowLabel: { flex: 1, fontSize: 13, fontWeight: '500', color: '#000' },
+  monthRowValue: { fontSize: 16, fontWeight: '500', color: '#000' },
 
   // Funnel
   funnelRow: {
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000',
   },
-  funnelLabel: { width: 70, fontSize: 11, fontWeight: '700', color: '#000' },
+  funnelLabel: { width: 70, fontSize: 11, fontWeight: '500', color: '#000' },
   funnelBar: {
     flex: 1,
     height: 28,
@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
   funnelCount: {
     paddingLeft: 8,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
   },
 
@@ -1046,14 +1046,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  leadAvatarText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  leadAvatarText: { fontSize: 13, fontWeight: '500', color: '#fff' },
   leadInfo: { flex: 1 },
-  leadName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  leadName: { fontSize: 13, fontWeight: '500', color: '#000' },
   leadSub: { fontSize: 11, color: '#64748b' },
   leadRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   leadStatus: {
     fontSize: 9,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
     maxWidth: 80,
@@ -1068,11 +1068,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
     marginTop: 4,
   },
-  viewMoreText: { fontSize: 12, fontWeight: '700', color: PRIMARY },
+  viewMoreText: { fontSize: 12, fontWeight: '500', color: PRIMARY },
 
   // Empty
   emptyBox: { alignItems: 'center', paddingVertical: 20 },
-  emptyTitle: { fontSize: 14, fontWeight: '700', color: '#000', marginTop: 8 },
+  emptyTitle: { fontSize: 14, fontWeight: '500', color: '#000', marginTop: 8 },
   emptySub: { fontSize: 12, color: '#64748b', marginTop: 2 },
 
   // Pie chart
@@ -1093,17 +1093,17 @@ const styles = StyleSheet.create({
   },
   pieCenterValue: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '500',
     lineHeight: 26,
   },
   pieCenterPct: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#64748b',
   },
   pieCenterName: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
     textAlign: 'center',
     textTransform: 'uppercase',
@@ -1139,16 +1139,16 @@ const styles = StyleSheet.create({
   pieLegendLabel: {
     flex: 1,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#000',
   },
   pieLegendVal: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   pieLegendPct: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     minWidth: 30,
     textAlign: 'right',
@@ -1170,8 +1170,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  sourceLabel: { fontSize: 12, fontWeight: '700', color: '#000' },
-  sourceCount: { fontSize: 12, fontWeight: '600', color: '#000' },
+  sourceLabel: { fontSize: 12, fontWeight: '500', color: '#000' },
+  sourceCount: { fontSize: 12, fontWeight: '500', color: '#000' },
   sourcePct: { fontSize: 10, fontWeight: '500', color: '#64748b' },
   sourceBarBg: {
     height: 6,
@@ -1191,7 +1191,7 @@ const styles = StyleSheet.create({
   },
   tHeadText: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#64748b',
     letterSpacing: 0.6,
   },
@@ -1202,10 +1202,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  tName: { fontSize: 12, fontWeight: '700', color: '#000', paddingRight: 6 },
+  tName: { fontSize: 12, fontWeight: '500', color: '#000', paddingRight: 6 },
   tCell: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
   },
@@ -1227,9 +1227,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lbRankText: { fontSize: 11, fontWeight: '600' },
+  lbRankText: { fontSize: 11, fontWeight: '500' },
   lbInfo: { flex: 1 },
-  lbName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  lbName: { fontSize: 13, fontWeight: '500', color: '#000' },
   lbBar: {
     height: 5,
     backgroundColor: '#e2e8f0',
@@ -1240,6 +1240,6 @@ const styles = StyleSheet.create({
   },
   lbFill: { height: '100%' },
   lbRight: { alignItems: 'flex-end' },
-  lbConv: { fontSize: 14, fontWeight: '600', color: '#000' },
+  lbConv: { fontSize: 14, fontWeight: '500', color: '#000' },
   lbLeads: { fontSize: 10, color: '#64748b' },
 });

@@ -348,7 +348,7 @@ export default function ProductsPage() {
           <select
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
-            className="h-10 border-2 border-black px-3 text-xs font-black uppercase tracking-widest bg-white outline-none cursor-pointer"
+            className="h-10 border-2 border-black px-3 text-xs font-medium uppercase tracking-widest bg-white outline-none cursor-pointer"
           >
             <option value="all">All Categories</option>
             {CATEGORIES.map((c) => (
@@ -362,7 +362,7 @@ export default function ProductsPage() {
             <button
               onClick={exportProducts}
               disabled={filtered.length === 0}
-              className="flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40"
+              className="flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black disabled:opacity-40"
             >
               <Download className="w-3.5 h-3.5" /> Export
             </button>
@@ -370,13 +370,13 @@ export default function ProductsPage() {
               <>
                 <button
                   onClick={() => setImportOpen(true)}
-                  className="flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-black uppercase text-xs tracking-widest border-2 border-black"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black"
                 >
                   <Upload className="w-3.5 h-3.5" /> Import
                 </button>
                 <button
                   onClick={openAdd}
-                  className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Product
                 </button>
@@ -411,7 +411,7 @@ export default function ProductsPage() {
                           ? "HSN code for goods, SAC code for services — used for GST billing"
                           : undefined
                       }
-                      className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
+                      className="text-left px-4 py-3 text-[10px] font-medium uppercase tracking-widest whitespace-nowrap border-r border-white/10 last:border-r-0"
                     >
                       {h}
                     </th>
@@ -423,7 +423,7 @@ export default function ProductsPage() {
                   <tr>
                     <td colSpan={10} className="text-center py-16">
                       <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                      <p className="text-xs font-black uppercase tracking-widest text-gray-400 mt-2">
+                      <p className="text-xs font-medium uppercase tracking-widest text-gray-400 mt-2">
                         Loading...
                       </p>
                     </td>
@@ -432,7 +432,7 @@ export default function ProductsPage() {
                   <tr>
                     <td colSpan={10} className="text-center py-16">
                       <Package className="w-10 h-10 mx-auto text-gray-200 mb-2" />
-                      <p className="text-sm font-black uppercase tracking-widest text-gray-400">
+                      <p className="text-sm font-medium uppercase tracking-widest text-gray-400">
                         {search
                           ? "No products match your search"
                           : "No products yet"}
@@ -446,7 +446,7 @@ export default function ProductsPage() {
                           {can("Products", "create") && (
                             <button
                               onClick={openAdd}
-                              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#024BAB] text-white font-black uppercase text-xs tracking-widest border-2 border-black"
+                              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-[#024BAB] text-white font-medium uppercase text-xs tracking-widest border-2 border-black"
                             >
                               <Plus className="w-3.5 h-3.5" /> Add Your First
                               Product
@@ -465,7 +465,7 @@ export default function ProductsPage() {
                         i % 2 === 0 ? "bg-white" : "bg-gray-50/60",
                       )}
                     >
-                      <td className="px-4 py-3 text-xs font-black text-gray-400 w-10">
+                      <td className="px-4 py-3 text-xs font-medium text-gray-400 w-10">
                         {i + 1}
                       </td>
 
@@ -483,7 +483,7 @@ export default function ProductsPage() {
                         </div>
                       </td>
 
-                      <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium text-black whitespace-nowrap">
                         {item.name}
                       </td>
 
@@ -496,7 +496,7 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={cn(
-                            "text-[10px] font-black uppercase tracking-wide px-2 py-1 border",
+                            "text-[10px] font-medium uppercase tracking-wide px-2 py-1 border",
                             CATEGORY_COLORS[item.category] ||
                               "bg-gray-100 text-gray-700 border-gray-300",
                           )}
@@ -505,17 +505,17 @@ export default function ProductsPage() {
                         </span>
                       </td>
 
-                      <td className="px-4 py-3 font-black text-black whitespace-nowrap">
+                      <td className="px-4 py-3 font-medium text-black whitespace-nowrap">
                         ₹{(item.price || 0).toLocaleString("en-IN")}
                       </td>
 
-                      <td className="px-4 py-3 whitespace-nowrap text-xs font-bold text-black">
+                      <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-black">
                         {item.stockQuantity ?? 0} {item.unit || "pcs"}
                       </td>
 
                       <td className="px-4 py-3 whitespace-nowrap">
                         {item.hsnCode ? (
-                          <span className="text-[10px] font-black font-mono tracking-wider bg-gray-100 border border-gray-300 px-2 py-1 text-gray-700">
+                          <span className="text-[10px] font-medium font-mono tracking-wider bg-gray-100 border border-gray-300 px-2 py-1 text-gray-700">
                             {item.hsnCode}
                           </span>
                         ) : (
@@ -538,7 +538,7 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={cn(
-                            "text-[10px] font-black uppercase tracking-wide px-2 py-1 border-2",
+                            "text-[10px] font-medium uppercase tracking-wide px-2 py-1 border-2",
                             item.status === "Active"
                               ? "bg-green-100 text-green-800 border-green-400"
                               : "bg-red-100 text-red-800 border-red-400",
@@ -553,7 +553,7 @@ export default function ProductsPage() {
                           {can("Products", "update") && (
                             <button
                               onClick={() => openEdit(item)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-widest border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
                             >
                               <Pencil className="w-3 h-3" /> Edit
                             </button>
@@ -562,7 +562,7 @@ export default function ProductsPage() {
                             <button
                               onClick={() => handleDelete(item._id)}
                               disabled={deletingId === item._id}
-                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-widest border-2 border-black bg-white text-red-600 hover:bg-red-600 hover:text-white transition-colors hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] disabled:opacity-50"
                             >
                               {deletingId === item._id ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -582,7 +582,7 @@ export default function ProductsPage() {
           </div>
 
           {filtered.length > 0 && (
-            <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-black uppercase tracking-widest flex justify-between">
+            <div className="border-t-2 border-black px-4 py-2 bg-gray-50 text-black text-[10px] font-medium uppercase tracking-widest flex justify-between">
               <span>
                 {filtered.length} product{filtered.length !== 1 ? "s" : ""}
               </span>
@@ -600,12 +600,12 @@ export default function ProductsPage() {
           <div className="bg-white border-2 border-black w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
             {}
             <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black bg-[#024BAB]">
-              <p className="text-sm font-black uppercase tracking-widest text-white">
+              <p className="text-sm font-medium uppercase tracking-widest text-white">
                 {editId ? "Edit Product" : "Add New Product"}
               </p>
               <button
                 onClick={closeModal}
-                className="text-white hover:text-orange-300 font-black text-lg leading-none"
+                className="text-white hover:text-orange-300 font-medium text-lg leading-none"
               >
                 ✕
               </button>
@@ -614,7 +614,7 @@ export default function ProductsPage() {
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               {}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                   Photos ({form.photos.length}/{MAX_PHOTOS})
                 </label>
                 <div className="flex flex-wrap items-center gap-2">
@@ -642,7 +642,7 @@ export default function ProductsPage() {
                         <X className="w-3 h-3" />
                       </button>
                       {i === 0 && (
-                        <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[8px] font-black uppercase text-center">
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[8px] font-medium uppercase text-center">
                           Main
                         </span>
                       )}
@@ -673,7 +673,7 @@ export default function ProductsPage() {
                 {form.photos.length > 0 && form.photos.length < MAX_PHOTOS && (
                   <div className="mt-2 flex flex-wrap items-center gap-2 border-2 border-black bg-primary/5 p-2">
                     <Sparkles className="w-4 h-4 text-primary shrink-0" />
-                    <span className="text-xs font-bold">
+                    <span className="text-xs font-medium">
                       AI photoshoot of the main photo
                     </span>
                     <select
@@ -693,7 +693,7 @@ export default function ProductsPage() {
                       type="button"
                       onClick={runPhotoshoot}
                       disabled={shooting}
-                      className="h-8 inline-flex items-center gap-1 border-2 border-black bg-primary px-3 text-xs font-bold text-white disabled:opacity-60"
+                      className="h-8 inline-flex items-center gap-1 border-2 border-black bg-primary px-3 text-xs font-medium text-white disabled:opacity-60"
                     >
                       {shooting ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -713,7 +713,7 @@ export default function ProductsPage() {
               {}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     Product Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -727,7 +727,7 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     SKU / Product Code{" "}
                   </label>
                   <input
@@ -740,7 +740,7 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     Category <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -776,7 +776,7 @@ export default function ProductsPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     Price (₹) <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -797,7 +797,7 @@ export default function ProductsPage() {
               {}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     Unit
                   </label>
                   <select
@@ -813,7 +813,7 @@ export default function ProductsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     Stock Qty
                   </label>
                   <input
@@ -830,7 +830,7 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     Tax Rate (%)
                   </label>
                   <input
@@ -847,7 +847,7 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                  <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                     HSN / SAC Code{" "}
                     <span className="text-gray-400 font-medium normal-case">
                       (for GST)
@@ -870,7 +870,7 @@ export default function ProductsPage() {
 
               {}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                   Status
                 </label>
                 <div className="flex gap-2">
@@ -880,7 +880,7 @@ export default function ProductsPage() {
                       type="button"
                       onClick={() => setForm({ ...form, status: s })}
                       className={cn(
-                        "flex-1 py-2 text-xs font-black uppercase tracking-widest border-2 border-black transition-all",
+                        "flex-1 py-2 text-xs font-medium uppercase tracking-widest border-2 border-black transition-all",
                         form.status === s
                           ? s === "Active"
                             ? "bg-green-500 text-white shadow-none translate-x-[2px] translate-y-[2px]"
@@ -896,7 +896,7 @@ export default function ProductsPage() {
 
               {}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-1">
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-black mb-1">
                   Description{" "}
                   <span className="text-gray-400 font-medium normal-case">
                     (optional)
@@ -922,14 +922,14 @@ export default function ProductsPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 py-2.5 text-xs font-black uppercase tracking-widest border-2 border-black bg-white hover:bg-gray-100 hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                  className="flex-1 py-2.5 text-xs font-medium uppercase tracking-widest border-2 border-black bg-white hover:bg-gray-100 hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-black uppercase tracking-widest border-2 border-black bg-[#FA731C] text-white hover:bg-[#e8661a] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-60"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium uppercase tracking-widest border-2 border-black bg-[#FA731C] text-white hover:bg-[#e8661a] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-60"
                 >
                   {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {editId ? "Update" : "Add Product"}

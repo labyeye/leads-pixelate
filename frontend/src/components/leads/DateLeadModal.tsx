@@ -120,7 +120,7 @@ export function DateLeadModal({
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold truncate">
+                          <span className="font-medium truncate">
                             {lead.name}
                           </span>
                           <span
@@ -139,7 +139,7 @@ export function DateLeadModal({
                         {lead.statusHistory &&
                           lead.statusHistory.length > 0 && (
                             <div className="mt-3 space-y-2 border-t border-border/40 pt-2">
-                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">
                                 Recent Activity
                               </p>
                               <div className="space-y-1.5">
@@ -160,7 +160,7 @@ export function DateLeadModal({
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-0.5">
-                                          <span className="text-[9px] font-bold text-primary/80 bg-primary/5 px-1 rounded truncate uppercase">
+                                          <span className="text-[9px] font-medium text-primary/80 bg-primary/5 px-1 rounded truncate uppercase">
                                             {getStatusLabel(h.status)}
                                           </span>
                                           <span className="text-[8px] text-muted-foreground font-medium">
@@ -192,7 +192,7 @@ export function DateLeadModal({
             ) : (
               <div className="h-full min-h-[280px] flex items-center justify-center rounded-xl border border-dashed border-border bg-muted/20">
                 <div className="text-center max-w-sm px-6">
-                  <p className="font-semibold text-foreground mb-1">
+                  <p className="font-medium text-foreground mb-1">
                     No leads for this date
                   </p>
                   <p className="text-sm text-muted-foreground">

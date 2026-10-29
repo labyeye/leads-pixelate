@@ -1166,7 +1166,7 @@ export function DesignerCanvas({
         {floats.filter((f) => !f.back).map(renderFloat)}
       </div>
       {overflow && (
-        <p className="mt-2 text-[11px] font-bold text-amber-700">
+        <p className="mt-2 text-[11px] font-medium text-amber-700">
           Content is longer than one page here. Extra rows continue on page 2 in
           the PDF.
         </p>

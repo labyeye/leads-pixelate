@@ -154,7 +154,7 @@ const NbInput = ({
   <div className="space-y-1">
     <label
       htmlFor={id}
-      className="block text-[10px] font-black uppercase tracking-widest text-black"
+      className="block text-[10px] font-medium uppercase tracking-widest text-black"
     >
       {label}
       {required && <span className="text-red-500 ml-1">*</span>}
@@ -420,7 +420,7 @@ export default function UsersPage() {
           <DialogContent className="sm:max-w-lg border-2 border-black rounded-lg p-0 gap-0">
             <form onSubmit={handleSubmitUser}>
               <DialogHeader className="border-b-2 border-black bg-[#024BAB] px-5 py-4">
-                <DialogTitle className="text-white font-black uppercase tracking-wider text-base">
+                <DialogTitle className="text-white font-medium uppercase tracking-wider text-base">
                   {editingUserId ? "Edit User" : "Add New User"}
                 </DialogTitle>
               </DialogHeader>
@@ -441,7 +441,7 @@ export default function UsersPage() {
                     type="button"
                     onClick={() => setModalTab(t.id)}
                     className={cn(
-                      "py-2.5 px-1 mr-5 text-xs font-black uppercase tracking-wider border-b-2 transition-colors",
+                      "py-2.5 px-1 mr-5 text-xs font-medium uppercase tracking-wider border-b-2 transition-colors",
                       modalTab === t.id
                         ? "border-[#FA731C] text-black"
                         : "border-transparent text-muted-foreground hover:text-black",
@@ -512,7 +512,7 @@ export default function UsersPage() {
                       />
                     )}
                     <div className="space-y-1">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                      <label className="block text-[10px] font-medium uppercase tracking-widest text-black">
                         Role <span className="text-red-500">*</span>
                       </label>
                       <Select
@@ -521,7 +521,7 @@ export default function UsersPage() {
                           setFormData({ ...formData, roleId: v })
                         }
                       >
-                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-medium h-10">
                           <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
@@ -529,7 +529,7 @@ export default function UsersPage() {
                             <SelectItem
                               key={r._id}
                               value={r._id}
-                              className="font-bold"
+                              className="font-medium"
                             >
                               {r.name}
                             </SelectItem>
@@ -537,7 +537,7 @@ export default function UsersPage() {
                           {currentUser?.role === "super_admin" && (
                             <SelectItem
                               value="__super_admin__"
-                              className="font-bold"
+                              className="font-medium"
                             >
                               Super Admin
                             </SelectItem>
@@ -567,7 +567,7 @@ export default function UsersPage() {
                     </div>
                     {}
                     <div className="space-y-1">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                      <label className="block text-[10px] font-medium uppercase tracking-widest text-black">
                         Profile Photo
                       </label>
                       <div className="flex items-center gap-3">
@@ -582,7 +582,7 @@ export default function UsersPage() {
                             <Camera className="w-5 h-5 text-white" />
                           )}
                         </div>
-                        <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-bold bg-white hover:bg-black hover:text-white transition-colors">
+                        <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-medium bg-white hover:bg-black hover:text-white transition-colors">
                           Upload Photo
                           <input
                             type="file"
@@ -617,7 +617,7 @@ export default function UsersPage() {
                             onClick={() =>
                               setFormData((f) => ({ ...f, avatar: "" }))
                             }
-                            className="text-xs font-bold text-red-500 underline"
+                            className="text-xs font-medium text-red-500 underline"
                           >
                             Remove
                           </button>
@@ -643,7 +643,7 @@ export default function UsersPage() {
                         placeholder="e.g. Senior Sales Executive"
                       />
                       <div className="space-y-1">
-                        <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                        <label className="block text-[10px] font-medium uppercase tracking-widest text-black">
                           Employment Type
                         </label>
                         <Select
@@ -652,7 +652,7 @@ export default function UsersPage() {
                             setFormData({ ...formData, employmentType: v })
                           }
                         >
-                          <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                          <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-medium h-10">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                           <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
@@ -665,7 +665,7 @@ export default function UsersPage() {
                               <SelectItem
                                 key={o.value}
                                 value={o.value}
-                                className="font-bold"
+                                className="font-medium"
                               >
                                 {o.label}
                               </SelectItem>
@@ -703,7 +703,7 @@ export default function UsersPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-black">
+                      <label className="block text-[10px] font-medium uppercase tracking-widest text-black">
                         Gender
                       </label>
                       <Select
@@ -712,7 +712,7 @@ export default function UsersPage() {
                           setFormData({ ...formData, gender: v })
                         }
                       >
-                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10">
+                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-medium h-10">
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
@@ -720,7 +720,7 @@ export default function UsersPage() {
                             <SelectItem
                               key={g}
                               value={g}
-                              className="font-bold capitalize"
+                              className="font-medium capitalize"
                             >
                               {g}
                             </SelectItem>
@@ -729,7 +729,7 @@ export default function UsersPage() {
                       </Select>
                     </div>
 
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
                       Address
                     </p>
                     <NbInput
@@ -784,7 +784,7 @@ export default function UsersPage() {
                       />
                     </div>
 
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
                       Emergency Contact
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -811,7 +811,7 @@ export default function UsersPage() {
                       />
                     </div>
 
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
+                    <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground border-t-2 border-black pt-3 -mb-1">
                       Identity &amp; Payroll
                     </p>
                     <NbInput
@@ -882,7 +882,7 @@ export default function UsersPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <Select value={docType} onValueChange={setDocType}>
-                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-bold h-10 w-44">
+                        <SelectTrigger className="border-2 border-black rounded-lg focus:ring-0 focus:ring-offset-0 bg-white font-medium h-10 w-44">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="border-2 border-black rounded-lg shadow-[4px_4px_0px_#000]">
@@ -890,14 +890,14 @@ export default function UsersPage() {
                             <SelectItem
                               key={d.value}
                               value={d.value}
-                              className="font-bold"
+                              className="font-medium"
                             >
                               {d.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-bold bg-white hover:bg-black hover:text-white transition-colors flex items-center gap-1.5">
+                      <label className="cursor-pointer border-2 border-black px-3 py-2 text-xs font-medium bg-white hover:bg-black hover:text-white transition-colors flex items-center gap-1.5">
                         {docUploading ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
@@ -962,11 +962,11 @@ export default function UsersPage() {
                               href={doc.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 min-w-0 truncate text-xs font-bold underline"
+                              className="flex-1 min-w-0 truncate text-xs font-medium underline"
                             >
                               {doc.name}
                             </a>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase shrink-0">
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase shrink-0">
                               {DOCUMENT_TYPES.find((d) => d.value === doc.type)
                                 ?.label || doc.type}
                             </span>
@@ -999,14 +999,14 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="border-2 bg-white text-black px-4 py-2 text-sm font-bold"
+                  className="border-2 bg-white text-black px-4 py-2 text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                  className="border-2 bg-[#024BAB] text-white px-5 py-2 text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingUserId ? "Update User" : "Save User"}
@@ -1052,7 +1052,7 @@ export default function UsersPage() {
                   <th
                     key={h}
                     className={cn(
-                      "px-5 py-3 text-[10px] font-black text-white uppercase tracking-widest text-left",
+                      "px-5 py-3 text-[10px] font-medium text-white uppercase tracking-widest text-left",
                       cls,
                       h === "Actions" && "text-right",
                     )}
@@ -1067,7 +1067,7 @@ export default function UsersPage() {
                 <tr>
                   <td colSpan={8} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
-                    <p className="text-xs font-black uppercase tracking-widest text-black/30 mt-2">
+                    <p className="text-xs font-medium uppercase tracking-widest text-black/30 mt-2">
                       Loading...
                     </p>
                   </td>
@@ -1076,7 +1076,7 @@ export default function UsersPage() {
                 <tr>
                   <td
                     colSpan={8}
-                    className="text-center py-14 text-sm font-black uppercase tracking-widest text-black/30"
+                    className="text-center py-14 text-sm font-medium uppercase tracking-widest text-black/30"
                   >
                     No users found.
                   </td>
@@ -1113,13 +1113,13 @@ export default function UsersPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xs font-black text-white">
+                              <div className="w-full h-full flex items-center justify-center text-xs font-medium text-white">
                                 {initials}
                               </div>
                             )}
                           </div>
                           <div>
-                            <p className="font-black text-black text-sm">
+                            <p className="font-medium text-black text-sm">
                               {user.name}
                             </p>
                             <p className="text-xs text-black/50 font-medium">
@@ -1129,14 +1129,14 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 hidden sm:table-cell">
-                        <span className="text-xs font-black text-black/60 font-mono">
+                        <span className="text-xs font-medium text-black/60 font-mono">
                           {user.employeeId || "—"}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span
                           className={cn(
-                            "text-[10px] font-black px-2 py-1 border-2 uppercase tracking-wider",
+                            "text-[10px] font-medium px-2 py-1 border-2 uppercase tracking-wider",
                             ROLE_NB[user.role] ||
                               "bg-white text-black border-black",
                           )}
@@ -1146,7 +1146,7 @@ export default function UsersPage() {
                             user.role}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell font-bold text-sm text-black">
+                      <td className="px-5 py-3.5 hidden md:table-cell font-medium text-sm text-black">
                         {user.department || (
                           <span className="text-black/30">—</span>
                         )}
@@ -1154,7 +1154,7 @@ export default function UsersPage() {
                       <td className="px-5 py-3.5 hidden lg:table-cell">
                         <span
                           className={cn(
-                            "text-[10px] font-black px-2 py-1 border-2 border-black uppercase tracking-wider",
+                            "text-[10px] font-medium px-2 py-1 border-2 border-black uppercase tracking-wider",
                             user.status === "active"
                               ? "bg-[#024BAB] text-white"
                               : "bg-white text-black",
@@ -1163,14 +1163,14 @@ export default function UsersPage() {
                           {user.status || "active"}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-bold text-black/50">
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-medium text-black/50">
                         {user.gender ? (
                           <span className="capitalize">{user.gender}</span>
                         ) : (
                           <span className="text-black/30">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-bold text-black/50">
+                      <td className="px-5 py-3.5 hidden lg:table-cell text-xs font-medium text-black/50">
                         {user.phone || <span className="text-black/30">—</span>}
                       </td>
                       <td className="px-5 py-3.5 text-right">
@@ -1186,7 +1186,7 @@ export default function UsersPage() {
                           >
                             <DropdownMenuItem
                               onClick={() => handleEditClick(user)}
-                              className="font-bold text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
+                              className="font-medium text-black hover:bg-[#024BAB] hover:text-white focus:bg-[#024BAB] focus:text-white rounded-none cursor-pointer px-4 py-2.5"
                             >
                               <Pencil className="w-4 h-4 mr-2" /> Edit
                             </DropdownMenuItem>
@@ -1195,7 +1195,7 @@ export default function UsersPage() {
                                 onClick={() =>
                                   handleDeleteClick(user._id || user.id)
                                 }
-                                className="font-bold text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
+                                className="font-medium text-black hover:bg-black hover:text-white focus:bg-black focus:text-white rounded-none cursor-pointer border-t-2 border-black px-4 py-2.5"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" /> Delete
                               </DropdownMenuItem>

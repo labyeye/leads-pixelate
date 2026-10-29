@@ -194,7 +194,7 @@ export default function LoginPage() {
               setMode("phone");
               setError("");
             }}
-            className="ml-auto shrink-0 underline font-bold"
+            className="ml-auto shrink-0 underline font-medium"
           >
             Use an OTP
           </button>
@@ -215,7 +215,7 @@ export default function LoginPage() {
     <button
       type="submit"
       disabled={disabled || isLoading}
-      className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
+      className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
     >
       {isLoading ? (
         <>
@@ -239,7 +239,7 @@ export default function LoginPage() {
     <button
       type="button"
       onClick={onClick}
-      className="w-full py-2 text-xs font-bold text-gray-500 hover:text-black transition-colors"
+      className="w-full py-2 text-xs font-medium text-gray-500 hover:text-black transition-colors"
     >
       ← {label}
     </button>
@@ -261,14 +261,14 @@ export default function LoginPage() {
             alt="NestLeads"
             className="w-14 h-14 object-contain"
           />
-          <span className="font-display font-bold text-white text-2xl">
+          <span className="font-display font-medium text-white text-2xl">
             NestLeads
           </span>
         </div>
 
         {/* Headline */}
         <div className="relative z-10">
-          <h1 className="text-3xl xl:text-4xl font-display font-bold text-white leading-tight mb-5">
+          <h1 className="text-3xl xl:text-4xl font-display font-medium text-white leading-tight mb-5">
             Every lead.
             
             Every follow-up.
@@ -286,7 +286,7 @@ export default function LoginPage() {
           {features.map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 text-white text-sm font-bold"
+              className="flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 text-white text-sm font-medium"
             >
               <Icon className="w-4 h-4 text-white/70" />
               {label}
@@ -299,7 +299,7 @@ export default function LoginPage() {
           {PLATFORMS.map(({ label, logo }) => (
             <div
               key={label}
-              className="border-2 border-black bg-white text-black px-3 py-1.5 text-xs font-bold flex items-center gap-2"
+              className="border-2 border-black bg-white text-black px-3 py-1.5 text-xs font-medium flex items-center gap-2"
             >
               <img
                 src={logo}
@@ -322,7 +322,7 @@ export default function LoginPage() {
               alt="NestLeads"
               className="w-10 h-10 object-contain"
             />
-            <span className="font-display font-bold text-xl text-black">
+            <span className="font-display font-medium text-xl text-black">
               NestLeads
             </span>
           </div>
@@ -333,7 +333,7 @@ export default function LoginPage() {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                   <ShieldCheck className="w-7 h-7 text-[#024BAB]" />
-                  <h2 className="text-2xl font-display font-bold text-black">
+                  <h2 className="text-2xl font-display font-medium text-black">
                     Two-Factor Auth
                   </h2>
                 </div>
@@ -344,7 +344,7 @@ export default function LoginPage() {
               <ErrorBanner />
               <form onSubmit={handle2FASubmit} className="space-y-5 login-anim">
                 <div>
-                  <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                     Authenticator Code
                   </label>
                   <input
@@ -355,7 +355,7 @@ export default function LoginPage() {
                       setError("");
                     }}
                     placeholder="000000"
-                    className="w-full px-4 py-3 border-2 border-black text-lg font-bold tracking-[0.5em] text-center bg-white focus:outline-none transition-colors"
+                    className="w-full px-4 py-3 border-2 border-black text-lg font-medium tracking-[0.5em] text-center bg-white focus:outline-none transition-colors"
                     autoFocus
                     maxLength={8}
                   />
@@ -382,7 +382,7 @@ export default function LoginPage() {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                   <Smartphone className="w-7 h-7 text-[#024BAB]" />
-                  <h2 className="text-2xl font-display font-bold text-black">
+                  <h2 className="text-2xl font-display font-medium text-black">
                     {otpSent
                       ? "Enter OTP"
                       : otpVia === "email"
@@ -401,7 +401,7 @@ export default function LoginPage() {
               {!otpSent ? (
                 <form onSubmit={handleSendOtp} className="space-y-5 login-anim">
                   <div>
-                    <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                       {otpVia === "email" ? "Email" : "Phone Number"}
                     </label>
                     {otpVia === "email" ? (
@@ -466,7 +466,7 @@ export default function LoginPage() {
               ) : (
                 <form onSubmit={handleVerifyOtp} className="space-y-5 login-anim">
                   <div>
-                    <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                       {otpVia === "email" ? "Email OTP" : "WhatsApp OTP"}
                     </label>
                     <input
@@ -477,7 +477,7 @@ export default function LoginPage() {
                         setError("");
                       }}
                       placeholder="000000"
-                      className="w-full px-4 py-3 border-2 border-black text-lg font-bold tracking-[0.5em] text-center bg-white focus:outline-none transition-colors"
+                      className="w-full px-4 py-3 border-2 border-black text-lg font-medium tracking-[0.5em] text-center bg-white focus:outline-none transition-colors"
                       autoFocus
                       maxLength={6}
                     />
@@ -502,7 +502,7 @@ export default function LoginPage() {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
                   <KeyRound className="w-7 h-7 text-[#024BAB]" />
-                  <h2 className="text-2xl font-display font-bold text-black">
+                  <h2 className="text-2xl font-display font-medium text-black">
                     Sign in with Passkey
                   </h2>
                 </div>
@@ -519,7 +519,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={handlePasskeyLogin}
                   disabled={passkeyLoading}
-                  className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-bold border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2"
                 >
                   {passkeyLoading ? (
                     <>
@@ -535,7 +535,7 @@ export default function LoginPage() {
 
                 {/* Info box */}
                 <div className="border-2 border-black/10 p-4 text-xs text-gray-500 space-y-1">
-                  <p className="font-bold text-black text-sm">
+                  <p className="font-medium text-black text-sm">
                     What is a Passkey?
                   </p>
                   <p>
@@ -562,7 +562,7 @@ export default function LoginPage() {
             /* ── Email / Password login ──────────────────────────── */
             <>
               <div className="mb-8">
-                <h2 className="text-2xl sm:text-3xl font-display font-bold text-black">
+                <h2 className="text-2xl sm:text-3xl font-display font-medium text-black">
                   Welcome back
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 font-medium">
@@ -574,7 +574,7 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-5 login-anim">
                 {/* Email */}
                 <div>
-                  <label className="block text-xs font-bold text-black uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
                     Email
                   </label>
                   <input
@@ -595,12 +595,12 @@ export default function LoginPage() {
                 {/* Password */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-black uppercase tracking-wider">
+                    <label className="block text-xs font-medium text-black uppercase tracking-wider">
                       Password
                     </label>
                     <Link
                       to="/forgot-password"
-                      className="text-xs font-bold text-[#024BAB] hover:underline"
+                      className="text-xs font-medium text-[#024BAB] hover:underline"
                     >
                       Forgot password?
                     </Link>
@@ -641,7 +641,7 @@ export default function LoginPage() {
               <div className="mt-6 flex flex-col items-center gap-3">
                 <div className="flex items-center gap-3 w-full">
                   <div className="flex-1 h-px bg-black/10" />
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Or continue with
                   </span>
                   <div className="flex-1 h-px bg-black/10" />
@@ -655,7 +655,7 @@ export default function LoginPage() {
                       setMode("phone");
                       setError("");
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 border-2 border-black py-2.5 text-xs font-bold text-black hover:bg-gray-50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0a0a0a] transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 border-2 border-black py-2.5 text-xs font-medium text-black hover:bg-gray-50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0a0a0a] transition-all"
                   >
                     <Smartphone className="w-4 h-4 text-[#024BAB]" />
                     Phone OTP
@@ -668,7 +668,7 @@ export default function LoginPage() {
                       setMode("passkey");
                       setError("");
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 border-2 border-black py-2.5 text-xs font-bold text-black hover:bg-gray-50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0a0a0a] transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 border-2 border-black py-2.5 text-xs font-medium text-black hover:bg-gray-50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_#0a0a0a] transition-all"
                   >
                     <KeyRound className="w-4 h-4 text-[#024BAB]" />
                     Passkey
@@ -682,7 +682,7 @@ export default function LoginPage() {
                   New to NestLeads?{" "}
                   <Link
                     to="/register"
-                    className="font-bold text-[#024BAB] hover:underline transition-colors"
+                    className="font-medium text-[#024BAB] hover:underline transition-colors"
                   >
                     Create an account
                   </Link>
@@ -705,7 +705,7 @@ function LegalFooter() {
         href="https://www.pixelatenest.com/legal/privacy-policy.html"
         target="_blank"
         rel="noopener noreferrer"
-        className="font-bold text-[#024BAB] hover:underline"
+        className="font-medium text-[#024BAB] hover:underline"
       >
         Privacy Policy
       </a>
@@ -714,7 +714,7 @@ function LegalFooter() {
         href="https://www.pixelatenest.com/legal/terms-of-service.html"
         target="_blank"
         rel="noopener noreferrer"
-        className="font-bold text-[#024BAB] hover:underline"
+        className="font-medium text-[#024BAB] hover:underline"
       >
         Terms of Service
       </a>

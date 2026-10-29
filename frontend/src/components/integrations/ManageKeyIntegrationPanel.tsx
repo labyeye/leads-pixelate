@@ -95,12 +95,12 @@ export function ManageKeyIntegrationPanel({
           <img src={logo} alt={name} className="w-8 h-8 object-contain" />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="font-display font-bold text-xl text-black">{name}</h2>
+          <h2 className="font-display font-medium text-xl text-black">{name}</h2>
           <p className="text-xs text-muted-foreground">Manage connection</p>
         </div>
         <button
           onClick={onClose}
-          className="text-xs font-bold text-muted-foreground hover:text-black border-2 border-transparent hover:border-black px-3 py-1.5 transition-all"
+          className="text-xs font-medium text-muted-foreground hover:text-black border-2 border-transparent hover:border-black px-3 py-1.5 transition-all"
         >
           ✕ Close
         </button>
@@ -114,7 +114,7 @@ export function ManageKeyIntegrationPanel({
         ) : (
           <>
             <div className="border-2 border-black p-4 space-y-3 bg-[#F9FAFB]">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Saved credentials
               </p>
               {kind === "tradeindia" && status?.userId && (
@@ -140,7 +140,7 @@ export function ManageKeyIntegrationPanel({
               <div className="flex gap-3">
                 <button
                   onClick={() => setRenewing(true)}
-                  className="nb-btn flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-2"
+                  className="nb-btn flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
                   style={{ backgroundColor: color, color: "#fff" }}
                 >
                   <RefreshCw className="w-4 h-4" /> Renew / Update Key
@@ -148,7 +148,7 @@ export function ManageKeyIntegrationPanel({
                 <button
                   onClick={disconnect}
                   disabled={disconnecting}
-                  className="nb-btn flex-1 py-2.5 text-sm font-bold flex items-center justify-center gap-2 bg-white text-red-600 border-red-600"
+                  className="nb-btn flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2 bg-white text-red-600 border-red-600"
                 >
                   {disconnecting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -185,7 +185,7 @@ function MaskedRow({
   const [show, setShow] = useState(!!plain);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-bold text-black w-24 shrink-0">
+      <span className="text-xs font-medium text-black w-24 shrink-0">
         {label}
       </span>
       <span className="flex-1 font-mono text-sm text-gray-700 truncate">
@@ -273,7 +273,7 @@ function RenewForm({
     placeholder = "",
   ) => (
     <div>
-      <label className="block text-sm font-bold text-black mb-1">{label}</label>
+      <label className="block text-sm font-medium text-black mb-1">{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -300,14 +300,14 @@ function RenewForm({
       <div className="flex gap-3">
         <button
           onClick={onDone}
-          className="nb-btn flex-1 py-2 text-sm font-bold bg-white text-black"
+          className="nb-btn flex-1 py-2 text-sm font-medium bg-white text-black"
         >
           Cancel
         </button>
         <button
           onClick={submit}
           disabled={saving}
-          className="nb-btn flex-1 py-2 text-sm font-bold flex items-center justify-center gap-2"
+          className="nb-btn flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2"
           style={{ backgroundColor: color, color: "#fff" }}
         >
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -42,14 +42,14 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             alt="NestLeads"
             className="w-14 h-14 object-contain"
           />
-          <span className="font-display font-bold text-white text-2xl">
+          <span className="font-display font-medium text-white text-2xl">
             NestLeads
           </span>
         </div>
 
         {/* Headline */}
         <div className="relative z-10">
-          <h1 className="text-3xl xl:text-4xl font-display font-bold text-white leading-tight mb-5">
+          <h1 className="text-3xl xl:text-4xl font-display font-medium text-white leading-tight mb-5">
             Every lead.
             
             Every follow-up.
@@ -67,7 +67,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           {features.map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 text-white text-sm font-bold"
+              className="flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 text-white text-sm font-medium"
             >
               <Icon className="w-4 h-4 text-white/70" />
               {label}
@@ -80,7 +80,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
           {PLATFORMS.map(({ label, logo }) => (
             <div
               key={label}
-              className="border-2 border-black bg-white text-black px-3 py-1.5 text-xs font-bold flex items-center gap-2"
+              className="border-2 border-black bg-white text-black px-3 py-1.5 text-xs font-medium flex items-center gap-2"
             >
               <img
                 src={logo}
@@ -101,7 +101,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
               alt="NestLeads"
               className="w-10 h-10 object-contain"
             />
-            <span className="font-display font-bold text-xl text-black">
+            <span className="font-display font-medium text-xl text-black">
               NestLeads
             </span>
           </div>

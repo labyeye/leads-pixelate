@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   label: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     borderRightColor: '#000',
     backgroundColor: '#fff',
   },
-  countryText: { fontSize: 13, fontWeight: '800', color: '#000' },
+  countryText: { fontSize: 13, fontWeight: '500', color: '#000' },
   input: {
     flex: 1,
     paddingHorizontal: 12,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     marginBottom: 10,
     color: '#000',
   },
@@ -207,5 +207,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  countryRowText: { fontSize: 14, color: '#000', fontWeight: '600' },
+  countryRowText: { fontSize: 14, color: '#000', fontWeight: '500' },
 });

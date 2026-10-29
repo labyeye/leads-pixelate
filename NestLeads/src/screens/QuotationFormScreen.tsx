@@ -563,7 +563,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
-  sheetText: { fontSize: 13, color: '#000', fontWeight: '700' },
+  sheetText: { fontSize: 13, color: '#000', fontWeight: '500' },
   sheetSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   sheetEmpty: { padding: 20, textAlign: 'center', color: '#94a3b8' },
   container: { flex: 1, backgroundColor: '#fff' },
@@ -583,11 +583,11 @@ const s = StyleSheet.create({
     borderRadius: 8,
     borderColor: '#000',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   section: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     marginTop: 16,
@@ -596,7 +596,7 @@ const s = StyleSheet.create({
   field: { marginBottom: 10 },
   label: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     marginBottom: 4,
@@ -634,7 +634,7 @@ const s = StyleSheet.create({
   },
   itemNo: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#64748b',
     textTransform: 'uppercase',
   },
@@ -653,7 +653,7 @@ const s = StyleSheet.create({
   },
   addItemText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '500',
     color: '#024BAB',
     textTransform: 'uppercase',
   },
@@ -668,7 +668,7 @@ const s = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
     color: '#000',
   },
@@ -682,16 +682,16 @@ const s = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  totalLabel: { fontSize: 12, color: '#64748b', fontWeight: '700' },
-  totalValue: { fontSize: 13, color: '#000', fontWeight: '800' },
+  totalLabel: { fontSize: 12, color: '#64748b', fontWeight: '500' },
+  totalValue: { fontSize: 13, color: '#000', fontWeight: '500' },
   grand: {
     borderTopWidth: 2,
     borderTopColor: '#000',
     paddingTop: 8,
     marginTop: 4,
   },
-  grandLabel: { fontSize: 14, fontWeight: '600', color: '#000' },
-  grandValue: { fontSize: 16, fontWeight: '600', color: '#000' },
+  grandLabel: { fontSize: 14, fontWeight: '500', color: '#000' },
+  grandValue: { fontSize: 16, fontWeight: '500', color: '#000' },
   save: {
     backgroundColor: '#024BAB',
     borderWidth: 2,
@@ -704,7 +704,7 @@ const s = StyleSheet.create({
   saveText: {
     color: '#fff',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
 });

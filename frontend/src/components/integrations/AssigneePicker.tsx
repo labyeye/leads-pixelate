@@ -54,7 +54,7 @@ export function AssigneePicker({
         })}
       </div>
       {assigneeIds.length > 1 && (
-        <label className="flex items-center gap-2 mt-2 text-xs font-bold text-black">
+        <label className="flex items-center gap-2 mt-2 text-xs font-medium text-black">
           Leads per person before rotating
           <input
             type="number"
@@ -66,7 +66,7 @@ export function AssigneePicker({
                 Math.max(1, Math.min(1000, parseInt(e.target.value, 10) || 1)),
               )
             }
-            className="w-16 border-2 border-black px-2 py-1 text-sm font-bold"
+            className="w-16 border-2 border-black px-2 py-1 text-sm font-medium"
           />
         </label>
       )}

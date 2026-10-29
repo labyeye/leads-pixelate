@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 16, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   body: { flex: 1, padding: 20, justifyContent: 'center' },
   card: {
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandGlyph: { fontSize: 24, fontWeight: '600' },
+  brandGlyph: { fontSize: 24, fontWeight: '500' },
   lockBadge: {
     position: 'absolute',
     bottom: -6,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 16, fontWeight: '600', color: '#000' },
+  title: { fontSize: 16, fontWeight: '500', color: '#000' },
   desc: { fontSize: 12, color: '#64748b', textAlign: 'center', lineHeight: 18 },
   ctaBtn: {
     borderWidth: 2,
@@ -160,5 +160,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 6,
   },
-  ctaBtnText: { fontSize: 13, fontWeight: '600' },
+  ctaBtnText: { fontSize: 13, fontWeight: '500' },
 });

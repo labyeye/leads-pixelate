@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#000' },
+  headerTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   divider: { height: 2, backgroundColor: '#000' },
   intro: { fontSize: 12, color: '#64748b', marginBottom: 4 },
   section: {
@@ -909,7 +909,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#000' },
+  sectionTitle: { fontSize: 14, fontWeight: '500', color: '#000' },
   sectionStatus: { fontSize: 11, color: '#64748b', marginTop: 2 },
   sectionBody: {
     borderTopWidth: 2,
@@ -940,12 +940,12 @@ const styles = StyleSheet.create({
   codeText: {
     width: '50%',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '500',
     letterSpacing: 1,
     color: '#000',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
-  passkeyName: { fontSize: 13, fontWeight: '700', color: '#000' },
+  passkeyName: { fontSize: 13, fontWeight: '500', color: '#000' },
   passkeyMeta: { fontSize: 10, color: '#64748b', marginTop: 2 },
   body: { padding: 16, gap: 14 },
   card: {
@@ -961,7 +961,7 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#000',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 12,
   },
-  primaryBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  primaryBtnText: { fontSize: 12, fontWeight: '500', color: '#fff' },
   secondaryBtn: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1003,7 +1003,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 10,
   },
-  secondaryBtnText: { fontSize: 12, fontWeight: '600', color: '#024BAB' },
+  secondaryBtnText: { fontSize: 12, fontWeight: '500', color: '#024BAB' },
   dangerBtn: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1013,7 +1013,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 10,
   },
-  dangerBtnText: { fontSize: 12, fontWeight: '600', color: '#ef4444' },
+  dangerBtnText: { fontSize: 12, fontWeight: '500', color: '#ef4444' },
   verifiedPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1021,7 +1021,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 4,
   },
-  verifiedText: { fontSize: 11, fontWeight: '800', color: '#00C48C' },
+  verifiedText: { fontSize: 11, fontWeight: '500', color: '#00C48C' },
   desc: { fontSize: 12, color: '#64748b', lineHeight: 18 },
   qrImage: {
     width: 180,

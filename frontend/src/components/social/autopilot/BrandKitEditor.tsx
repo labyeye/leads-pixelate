@@ -298,12 +298,12 @@ export function BrandKitEditor({ kit, toast, onChanged }: Props) {
           aria-label="Poster text preview"
         >
           <span
-            className={`absolute inset-x-3 flex justify-center font-extrabold text-center leading-tight text-white drop-shadow ${SIZE_TEXT_CLS[kit.headlineSize]} ${HEADLINE_POSITIONS.find((p) => p.id === kit.headlinePosition)?.cls || "top-2"}`}
+            className={`absolute inset-x-3 flex justify-center font-medium text-center leading-tight text-white drop-shadow ${SIZE_TEXT_CLS[kit.headlineSize]} ${HEADLINE_POSITIONS.find((p) => p.id === kit.headlinePosition)?.cls || "top-2"}`}
           >
             Your Headline Here
           </span>
           <span
-            className={`absolute inset-x-0 bottom-2 flex justify-center font-bold text-white rounded-full bg-primary px-2 py-1 mx-auto w-fit ${SIZE_TEXT_CLS[kit.ctaSize]}`}
+            className={`absolute inset-x-0 bottom-2 flex justify-center font-medium text-white rounded-full bg-primary px-2 py-1 mx-auto w-fit ${SIZE_TEXT_CLS[kit.ctaSize]}`}
           >
             Book Now
           </span>

@@ -227,7 +227,7 @@ export default function FacebookAdsPage() {
             )}
           </div>
           <div className="min-w-0">
-            <span className="font-bold text-sm block truncate">{a.name}</span>
+            <span className="font-medium text-sm block truncate">{a.name}</span>
             <p className="text-[11px] text-muted-foreground truncate">
               {a.campaignName} · {a.adSetName}
             </p>
@@ -241,7 +241,7 @@ export default function FacebookAdsPage() {
         const st = statusBadge(a.effective_status || a.status);
         return (
           <span
-            className={`text-[10px] px-2 py-0.5 border-2 font-bold whitespace-nowrap ${st.cls}`}
+            className={`text-[10px] px-2 py-0.5 border-2 font-medium whitespace-nowrap ${st.cls}`}
           >
             {st.label}
           </span>
@@ -252,7 +252,7 @@ export default function FacebookAdsPage() {
       header: "Assigned To",
       render: (a) =>
         assignments[a.campaign_id] ? (
-          <span className="text-[10px] bg-[#00C48C]/10 text-[#00C48C] px-1.5 py-0.5 border border-[#00C48C] font-bold flex items-center gap-1 whitespace-nowrap w-fit">
+          <span className="text-[10px] bg-[#00C48C]/10 text-[#00C48C] px-1.5 py-0.5 border border-[#00C48C] font-medium flex items-center gap-1 whitespace-nowrap w-fit">
             <UserCheck className="w-3 h-3" />
             {assignments[a.campaign_id]}
           </span>
@@ -264,7 +264,7 @@ export default function FacebookAdsPage() {
       header: "CTA",
       render: (a) =>
         a.creative?.call_to_action_type ? (
-          <span className="text-[10px] bg-[#00C48C]/20 text-green-800 px-2 py-0.5 border border-green-700 font-bold whitespace-nowrap">
+          <span className="text-[10px] bg-[#00C48C]/20 text-green-800 px-2 py-0.5 border border-green-700 font-medium whitespace-nowrap">
             {a.creative.call_to_action_type.replace(/_/g, " ")}
           </span>
         ) : (
@@ -275,7 +275,7 @@ export default function FacebookAdsPage() {
       header: "Results",
       align: "right",
       render: (a) => (
-        <span className="flex items-center justify-end gap-1 font-semibold text-[#00C48C]">
+        <span className="flex items-center justify-end gap-1 font-medium text-[#00C48C]">
           <TrendingUp className="w-3 h-3" />
           {(insights[a.id]?.results ?? 0).toLocaleString()}
         </span>
@@ -336,7 +336,7 @@ export default function FacebookAdsPage() {
     <AppLayout title="Campaigns">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h2 className="font-display font-bold text-2xl text-black">
+          <h2 className="font-display font-medium text-2xl text-black">
             Facebook Ads
           </h2>
           <p className="text-sm font-medium text-muted-foreground mt-0.5">
@@ -359,7 +359,7 @@ export default function FacebookAdsPage() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="border-2 border-black bg-[#00C48C] text-black px-4 py-2 text-sm font-bold flex items-center gap-1.5"
+              className="border-2 border-black bg-[#00C48C] text-black px-4 py-2 text-sm font-medium flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" /> New Ad
             </button>
@@ -374,7 +374,7 @@ export default function FacebookAdsPage() {
               <Info className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold mb-1">Couldn't load ads</p>
+              <p className="text-sm font-medium mb-1">Couldn't load ads</p>
               <p className="text-xs text-muted-foreground">{error}</p>
             </div>
           </div>
@@ -382,7 +382,7 @@ export default function FacebookAdsPage() {
       ) : (
         <div className="border-2 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <p className="text-xs text-muted-foreground font-bold">
+            <p className="text-xs text-muted-foreground font-medium">
               {filtered.length} ad{filtered.length === 1 ? "" : "s"}
             </p>
             <DeliveryFilterBar
@@ -440,14 +440,14 @@ export default function FacebookAdsPage() {
           <DialogFooter className="gap-2">
             <button
               onClick={() => setDeleteTarget(null)}
-              className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-bold"
+              className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-medium"
             >
               Cancel
             </button>
             <button
               onClick={handleDelete}
               disabled={!!actionId}
-              className="border-2 border-black bg-red-600 text-white px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+              className="border-2 border-black bg-red-600 text-white px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
             >
               {actionId && <Loader2 className="w-4 h-4 animate-spin" />}
               Delete
@@ -541,7 +541,7 @@ function AdFormDialog({
         <div className="space-y-3">
           {!ad && (
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+              <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                 Ad Set *
               </label>
               <Select value={adSetId} onValueChange={setAdSetId}>
@@ -559,7 +559,7 @@ function AdFormDialog({
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Ad Name *
             </label>
             <input
@@ -570,7 +570,7 @@ function AdFormDialog({
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+            <label className="block text-xs font-medium uppercase tracking-wide mb-1">
               Status
             </label>
             <Select value={status} onValueChange={setStatus}>
@@ -585,13 +585,13 @@ function AdFormDialog({
           </div>
 
           <div className="border-t-2 border-black pt-3">
-            <p className="text-xs font-bold uppercase tracking-wide mb-2">
+            <p className="text-xs font-medium uppercase tracking-wide mb-2">
               Creative
             </p>
             <div className="space-y-3">
               {pages.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+                  <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                     Facebook Page
                   </label>
                   <Select value={pageId} onValueChange={setPageId}>
@@ -609,7 +609,7 @@ function AdFormDialog({
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                   Headline
                 </label>
                 <input
@@ -620,7 +620,7 @@ function AdFormDialog({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                   Ad Body
                 </label>
                 <Textarea
@@ -632,7 +632,7 @@ function AdFormDialog({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                   Image
                 </label>
                 <MediaUpload
@@ -642,7 +642,7 @@ function AdFormDialog({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                   Destination URL
                 </label>
                 <input
@@ -653,7 +653,7 @@ function AdFormDialog({
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wide mb-1">
+                <label className="block text-xs font-medium uppercase tracking-wide mb-1">
                   Call to Action
                 </label>
                 <Select value={cta} onValueChange={setCta}>
@@ -675,14 +675,14 @@ function AdFormDialog({
         <DialogFooter className="gap-2">
           <button
             onClick={onClose}
-            className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-bold"
+            className="border-2 border-black bg-white text-black px-4 py-2 text-sm font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !name.trim() || (!ad && !adSetId)}
-            className="border-2 border-black bg-[#00C48C] text-black px-4 py-2 text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+            className="border-2 border-black bg-[#00C48C] text-black px-4 py-2 text-sm font-medium flex items-center gap-1.5 disabled:opacity-50"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {ad ? "Update" : "Create"} Ad

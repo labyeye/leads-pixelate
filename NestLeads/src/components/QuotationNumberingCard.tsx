@@ -93,7 +93,7 @@ export default function QuotationNumberingCard() {
         placeholderTextColor="#94a3b8"
       />
       <Text style={s.hint}>
-        Next: <Text style={{ fontWeight: '700' }}>
+        Next: <Text style={{ fontWeight: '500' }}>
           {format.trim() ? preview(format, Number(next) || 1) : '— (default)'}
         </Text>
       </Text>
@@ -114,7 +114,7 @@ export default function QuotationNumberingCard() {
 
 const s = StyleSheet.create({
   card: { borderWidth: 2, borderColor: '#000', padding: 12, gap: 8 },
-  title: { fontSize: 14, fontWeight: '700', color: '#000' },
+  title: { fontSize: 14, fontWeight: '500', color: '#000' },
   hint: { fontSize: 11, color: '#64748b' },
   input: {
     borderWidth: 2,
@@ -131,5 +131,5 @@ const s = StyleSheet.create({
     paddingVertical: 11,
     alignItems: 'center',
   },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  btnText: { color: '#fff', fontWeight: '500', fontSize: 13 },
 });
