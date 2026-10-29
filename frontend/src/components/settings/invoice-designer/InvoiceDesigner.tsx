@@ -180,6 +180,13 @@ export default function InvoiceDesigner({
   // ---- edits (every one is undoable; `group` merges rapid changes into one undo step) ----
   const setTheme = (patch: Partial<Theme>, group: string) =>
     set((t) => ({ ...t, theme: { ...t.theme, ...patch } }), group);
+  const setText = (key: string, value: string) =>
+    set(
+      (t) => ({ ...t, text: { ...(t.text || {}), [key]: value } }),
+      `text-${key}`,
+    );
+  const setMoney = (patch: { symbol?: string; roundOff?: boolean }) =>
+    set((t) => ({ ...t, money: { ...(t.money || {}), ...patch } }), "money");
   const setBlockProps = (
     id: string,
     patch: Record<string, any>,
@@ -283,7 +290,11 @@ export default function InvoiceDesigner({
 
   const applyPreset = (key: string) => {
     if (!PRESETS[key]) return;
-    set(localize(PRESETS[key].build(), kind, settings?.quotationFooter));
+    set((t) => ({
+      ...localize(PRESETS[key].build(), kind, settings?.quotationFooter),
+      text: t.text, // a new layout keeps the owner's wording
+      money: t.money,
+    }));
     setSel(null);
   };
 
@@ -704,6 +715,9 @@ export default function InvoiceDesigner({
             template={tpl}
             selection={sel}
             onTheme={setTheme}
+            onText={setText}
+            onMoney={setMoney}
+            labelDefaults={sample.labels}
             onBlockProps={setBlockProps}
             onFloat={setFloat}
             onRemove={remove}

@@ -67,7 +67,47 @@ export interface InvoiceTemplate {
   theme: Theme;
   blocks: Block[];
   floats: Float[];
+  // Owner-chosen wording for the fixed labels (key -> text); a missing key keeps the default.
+  text?: Record<string, string>;
+  // symbol: shown before every amount ("" = none); roundOff: round the grand total to a whole rupee.
+  money?: { symbol?: string; roundOff?: boolean };
 }
+
+// Every fixed label the owner can reword. Keep the keys in step with backend/utils/invoiceTemplate.js.
+export const TEXT_FIELDS: { key: string; label: string; def: string; group: string }[] = [
+  { key: "number", label: "Number", def: "Invoice No.", group: "Details box" },
+  { key: "date", label: "Date", def: "Invoice Date", group: "Details box" },
+  { key: "due", label: "Due / valid date", def: "Due Date", group: "Details box" },
+  { key: "po", label: "PO / reference", def: "PO / Ref No.", group: "Details box" },
+  { key: "place", label: "Place", def: "Place of Service", group: "Details box" },
+  { key: "sno", label: "Serial no. column", def: "S.No", group: "Items table" },
+  { key: "hsn", label: "HSN column", def: "HSN/SAC", group: "Items table" },
+  { key: "qty", label: "Quantity column", def: "Qty", group: "Items table" },
+  { key: "rate", label: "Rate column", def: "Rate (Rs.)", group: "Items table" },
+  { key: "dis", label: "Discount column", def: "Disc.", group: "Items table" },
+  { key: "amt", label: "Amount column", def: "Amount (Rs.)", group: "Items table" },
+  { key: "subtotal", label: "Subtotal", def: "Subtotal", group: "Totals" },
+  { key: "discount", label: "Discount", def: "(-) Discount", group: "Totals" },
+  { key: "taxable", label: "Taxable amount", def: "Taxable Amount", group: "Totals" },
+  { key: "roundOff", label: "Round off", def: "Round Off", group: "Totals" },
+  { key: "grand", label: "Grand total", def: "Grand Total", group: "Totals" },
+  { key: "paid", label: "Amount paid", def: "(-) Amount Paid", group: "Totals" },
+  { key: "balance", label: "Balance", def: "Balance Due", group: "Totals" },
+  { key: "bank", label: "Bank heading", def: "Bank Details", group: "Sections" },
+  { key: "declaration", label: "Declaration heading", def: "Declaration", group: "Sections" },
+  { key: "taxHsn", label: "HSN / SAC code", def: "HSN / SAC Code", group: "Tax summary" },
+  { key: "taxValue", label: "Taxable value", def: "Taxable Value", group: "Tax summary" },
+  { key: "taxTotal", label: "Total tax", def: "Total Tax", group: "Tax summary" },
+  { key: "total", label: "Total row", def: "Total", group: "Tax summary" },
+];
+export const TEXT_KEYS = TEXT_FIELDS.map((f) => f.key);
+
+// The owner's wording for a label, or the default.
+export const labelText = (
+  t: { text?: Record<string, string> } | undefined,
+  key: string,
+  fallback: string,
+) => t?.text?.[key]?.trim() || fallback;
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   title: "Title bar",
@@ -399,7 +439,16 @@ export function normalizeTemplate(raw: any): InvoiceTemplate {
         opacity: num(m.opacity, 0.05, 1, 1),
       };
     });
-  return { v: 1, theme, blocks, floats };
+  const text: Record<string, string> = {};
+  for (const k of TEXT_KEYS) {
+    const v = raw.text?.[k];
+    if (typeof v === "string" && v.trim()) text[k] = v.slice(0, 60);
+  }
+  const money: { symbol?: string; roundOff?: boolean } = {};
+  if (typeof raw.money?.symbol === "string")
+    money.symbol = raw.money.symbol.trim().slice(0, 8);
+  if (raw.money?.roundOff === true) money.roundOff = true;
+  return { v: 1, theme, blocks, floats, text, money };
 }
 
 export type VarCtx = Record<string, string>;

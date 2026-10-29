@@ -116,6 +116,14 @@ function prop(spec, v) {
   return isNum(v) ? clamp(v, spec[0], spec[1]) : undefined;
 }
 
+// Fixed labels the owner may reword. Keep in step with TEXT_FIELDS in frontend/src/lib/invoiceTemplate.ts.
+const TEXT_KEYS = [
+  "number", "date", "due", "po", "place",
+  "sno", "hsn", "qty", "rate", "dis", "amt",
+  "subtotal", "discount", "taxable", "roundOff", "grand", "paid", "balance",
+  "bank", "declaration", "taxHsn", "taxValue", "taxTotal", "total",
+];
+
 function sanitizeInvoiceTemplate(raw) {
   if (!raw || typeof raw !== "object" || !Array.isArray(raw.blocks))
     fail("Invalid invoice template.");
@@ -190,7 +198,18 @@ function sanitizeInvoiceTemplate(raw) {
       };
     });
 
-  const clean = { v: 1, theme, blocks, floats };
+  const text = {};
+  for (const k of TEXT_KEYS) {
+    const v = raw.text && raw.text[k];
+    if (typeof v === "string" && v.trim()) text[k] = v.trim().slice(0, 60);
+  }
+
+  const money = {};
+  if (raw.money && typeof raw.money.symbol === "string")
+    money.symbol = raw.money.symbol.trim().slice(0, 8);
+  if (raw.money && raw.money.roundOff === true) money.roundOff = true;
+
+  const clean = { v: 1, theme, blocks, floats, text, money };
   if (JSON.stringify(clean).length > MAX_TOTAL_CHARS)
     fail("The design is too large. Remove or shrink some images.");
   return clean;

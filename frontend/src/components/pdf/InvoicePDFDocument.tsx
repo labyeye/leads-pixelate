@@ -9,7 +9,7 @@ import {
 } from "@react-pdf/renderer";
 import {
   computeInvoice,
-  fmt,
+  fmt as fmtBase,
   numToWords,
   type InvoiceCalc,
 } from "@/lib/invoiceCalc";
@@ -17,6 +17,7 @@ import {
   blockH,
   blockW,
   fillVars,
+  labelText,
   groupRows,
   isPlainRow,
   normalizeTemplate,
@@ -299,8 +300,13 @@ export function InvoicePDFDocument({
 }) {
   const tpl = normalizeTemplate(template);
   const T = tpl.theme;
+  const L = (k: string, d: string) => labelText(tpl, k, d);
+  const sym = tpl.money?.symbol ?? "Rs.";
+  const fmt = (n: number) => fmtBase(n, sym);
   const { S, bold, fs, V } = makeStyles(T);
-  const c = computeInvoice(invoice, client, company);
+  const c = computeInvoice(invoice, client, company, {
+    roundOff: tpl.money?.roundOff,
+  });
 
   const ctx: VarCtx = {
     "company.name": company.name,
@@ -431,29 +437,29 @@ export function InvoicePDFDocument({
               >
                 <View style={S.metaRow}>
                   <Text style={S.metaLabel}>
-                    {labels?.number ?? "Invoice No."}
+                    {L("number", labels?.number ?? "Invoice No.")}
                   </Text>
                   <Text style={S.metaValue}>: {c.invNo}</Text>
                 </View>
                 <View style={S.metaRow}>
                   <Text style={S.metaLabel}>
-                    {labels?.date ?? "Invoice Date"}
+                    {L("date", labels?.date ?? "Invoice Date")}
                   </Text>
                   <Text style={S.metaValue}>: {c.invDate}</Text>
                 </View>
                 <View style={S.metaRow}>
-                  <Text style={S.metaLabel}>{labels?.due ?? "Due Date"}</Text>
+                  <Text style={S.metaLabel}>{L("due", labels?.due ?? "Due Date")}</Text>
                   <Text style={S.metaValue}>: {c.dueDate}</Text>
                 </View>
                 {invoice?.poNumber ? (
                   <View style={S.metaRow}>
-                    <Text style={S.metaLabel}>PO / Ref No.</Text>
+                    <Text style={S.metaLabel}>{L("po", "PO / Ref No.")}</Text>
                     <Text style={S.metaValue}>: {invoice.poNumber}</Text>
                   </View>
                 ) : null}
                 {p.showPlace ? (
                   <View style={S.metaRow}>
-                    <Text style={S.metaLabel}>Place of Service</Text>
+                    <Text style={S.metaLabel}>{L("place", "Place of Service")}</Text>
                     <Text style={S.metaValue}>
                       : {c.clientState || company.state || "—"}
                     </Text>
@@ -503,13 +509,13 @@ export function InvoicePDFDocument({
           p.amount && { key: "amt", style: S.colAmt },
         ].filter(Boolean) as { key: string; style: any }[];
         const heading: Record<string, string> = {
-          sno: "S.No",
+          sno: L("sno", "S.No"),
           desc: p.descLabel,
-          hsn: "HSN/SAC",
-          qty: "Qty",
-          rate: "Rate (Rs.)",
-          dis: "Disc.",
-          amt: "Amount (Rs.)",
+          hsn: L("hsn", "HSN/SAC"),
+          qty: L("qty", "Qty"),
+          rate: L("rate", sym ? `Rate (${sym})` : "Rate"),
+          dis: L("dis", "Disc."),
+          amt: L("amt", sym ? `Amount (${sym})` : "Amount"),
         };
         const empty = Math.max(0, (Number(p.minRows) || 0) - c.items.length);
         return (
@@ -610,7 +616,7 @@ export function InvoicePDFDocument({
                   p.showSignature ? { borderRight: V(1) } : {},
                 ]}
               >
-                <Text style={S.sectionLabel}>Declaration</Text>
+                <Text style={S.sectionLabel}>{L("declaration", "Declaration")}</Text>
                 <Text style={S.declarationText}>
                   {p.declaration
                     ? fillVars(p.declaration, ctx)
@@ -738,7 +744,7 @@ export function InvoicePDFDocument({
           >
             {p.showBank && bank ? (
               <>
-                <Text style={S.sectionLabel}>Bank Details</Text>
+                <Text style={S.sectionLabel}>{L("bank", "Bank Details")}</Text>
                 {bank.name ? (
                   <Text style={S.bankLine}>Bank Name : {bank.name}</Text>
                 ) : null}
@@ -796,9 +802,9 @@ export function InvoicePDFDocument({
     );
     return (
       <View style={S.bottomRight}>
-        {row("Subtotal", fmt(x.subtotal), "s")}
-        {x.discount > 0 && row("(-) Discount", fmt(x.discount), "d")}
-        {row("Taxable Amount", fmt(x.taxable), "t")}
+        {row(L("subtotal", "Subtotal"), fmt(x.subtotal), "s")}
+        {x.discount > 0 && row(L("discount", "(-) Discount"), fmt(x.discount), "d")}
+        {row(L("taxable", "Taxable Amount"), fmt(x.taxable), "t")}
         {x.isInterState
           ? x.igst > 0 && row(`IGST (${x.gstPct}%)`, fmt(x.igst), "i")
           : x.taxAmt > 0 && (
@@ -807,17 +813,23 @@ export function InvoicePDFDocument({
                 {row(`SGST (${x.halfPct}%)`, fmt(x.sgst), "g")}
               </>
             )}
-        {row("Grand Total", fmt(x.total), "gt")}
+        {Math.abs(x.roundAdj) > 0.004 &&
+          row(
+            L("roundOff", "Round Off"),
+            `${x.roundAdj > 0 ? "+" : "-"}${fmt(Math.abs(x.roundAdj))}`,
+            "ro",
+          )}
+        {row(L("grand", "Grand Total"), fmt(x.total), "gt")}
         {x.paidAmount > 0 && (
           <>
-            {row("(-) Amount Paid", fmt(x.paidAmount), "p")}
+            {row(L("paid", "(-) Amount Paid"), fmt(x.paidAmount), "p")}
             <View
               style={[
                 S.totalRow,
                 { backgroundColor: x.balance > 0 ? "#fff5f5" : "#f0fdf4" },
               ]}
             >
-              <Text style={S.totalLabelBold}>Balance Due</Text>
+              <Text style={S.totalLabelBold}>{L("balance", "Balance Due")}</Text>
               <Text
                 style={[
                   S.totalValueBold,
@@ -839,8 +851,8 @@ export function InvoicePDFDocument({
     return (
       <View key={b.id} style={S.taxSection}>
         <View style={S.taxHeader}>
-          <Text style={[S.taxColW, { fontFamily: bold }]}>HSN / SAC Code</Text>
-          {rate("Taxable Value")}
+          <Text style={[S.taxColW, { fontFamily: bold }]}>{L("taxHsn", "HSN / SAC Code")}</Text>
+          {rate(L("taxValue", "Taxable Value"))}
           {inter ? (
             <>
               {rate("IGST Rate")}
@@ -854,7 +866,7 @@ export function InvoicePDFDocument({
               {rate("SGST Amt")}
             </>
           )}
-          {rate("Total Tax")}
+          {rate(L("taxTotal", "Total Tax"))}
         </View>
         <View style={S.taxRow}>
           <Text style={S.taxColW}>{c.hsnDefault}</Text>
@@ -875,7 +887,7 @@ export function InvoicePDFDocument({
           <Text style={S.taxColN}>{fmt(c.taxAmt)}</Text>
         </View>
         <View style={S.taxTotalRow}>
-          <Text style={[S.taxColW, { fontFamily: bold }]}>Total</Text>
+          <Text style={[S.taxColW, { fontFamily: bold }]}>{L("total", "Total")}</Text>
           {rate(fmt(c.taxable))}
           {inter ? (
             <>

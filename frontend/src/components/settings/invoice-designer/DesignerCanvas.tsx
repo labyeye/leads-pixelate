@@ -1,11 +1,12 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import type { InvoiceCompany } from "@/components/pdf/InvoicePDFDocument";
-import { computeInvoice, fmt, numToWords } from "@/lib/invoiceCalc";
+import { computeInvoice, fmt as fmtBase, numToWords } from "@/lib/invoiceCalc";
 import {
   blockH,
   blockW,
   CAN_WIDTH,
   fillVars,
+  labelText,
   groupRows,
   isPlainRow,
   PAGE_H,
@@ -56,6 +57,9 @@ export function DesignerCanvas({
   onBlockProps: (id: string, patch: Record<string, any>, group: string) => void;
 }) {
   const T = template.theme;
+  const L = (k: string, d: string) => labelText(template, k, d);
+  const sym = template.money?.symbol ?? "Rs.";
+  const fmt = (n: number) => fmtBase(n, sym);
   const wrapRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -75,7 +79,9 @@ export function DesignerCanvas({
   const k = width / PAGE_W;
   const px = (pt: number) => pt * k;
   const height = px(PAGE_H);
-  const c = computeInvoice(sample.invoice, sample.client, company);
+  const c = computeInvoice(sample.invoice, sample.client, company, {
+    roundOff: template.money?.roundOff,
+  });
 
   useLayoutEffect(() => {
     setOverflow(
@@ -317,13 +323,13 @@ export function DesignerCanvas({
                 }}
               >
                 {[
-                  [sample.labels.number, c.invNo],
-                  [sample.labels.date, c.invDate],
-                  [sample.labels.due, c.dueDate],
+                  [L("number", sample.labels.number), c.invNo],
+                  [L("date", sample.labels.date), c.invDate],
+                  [L("due", sample.labels.due), c.dueDate],
                   ...(p.showPlace
                     ? [
                         [
-                          "Place of Service",
+                          L("place", "Place of Service"),
                           c.clientState || company.state || "—",
                         ],
                       ]
@@ -391,13 +397,13 @@ export function DesignerCanvas({
 
       case "items": {
         const cols = [
-          p.sno && ["sno", 24, "center", "S.No"],
+          p.sno && ["sno", 24, "center", L("sno", "S.No")],
           ["desc", 0, "left", p.descLabel],
-          p.hsn && ["hsn", 52, "center", "HSN/SAC"],
-          p.qty && ["qty", 34, "center", "Qty"],
-          p.rate && ["rate", 62, "right", "Rate (Rs.)"],
-          p.discount && ["dis", 42, "right", "Disc."],
-          p.amount && ["amt", 70, "right", "Amount (Rs.)"],
+          p.hsn && ["hsn", 52, "center", L("hsn", "HSN/SAC")],
+          p.qty && ["qty", 34, "center", L("qty", "Qty")],
+          p.rate && ["rate", 62, "right", L("rate", sym ? `Rate (${sym})` : "Rate")],
+          p.discount && ["dis", 42, "right", L("dis", "Disc.")],
+          p.amount && ["amt", 70, "right", L("amt", sym ? `Amount (${sym})` : "Amount")],
         ].filter(Boolean) as [
           string,
           number,
@@ -583,7 +589,7 @@ export function DesignerCanvas({
               >
                 {p.showBank && bank ? (
                   <>
-                    {sec("Bank Details")}
+                    {sec(L("bank", "Bank Details"))}
                     {(
                       [
                         ["Bank Name", bank.name],
@@ -627,9 +633,9 @@ export function DesignerCanvas({
             )}
             {p.showTotals ? (
               <div style={{ width: px(215) }}>
-                {row("Subtotal", fmt(c.subtotal))}
-                {c.discount > 0 && row("(-) Discount", fmt(c.discount))}
-                {row("Taxable Amount", fmt(c.taxable))}
+                {row(L("subtotal", "Subtotal"), fmt(c.subtotal))}
+                {c.discount > 0 && row(L("discount", "(-) Discount"), fmt(c.discount))}
+                {row(L("taxable", "Taxable Amount"), fmt(c.taxable))}
                 {c.isInterState
                   ? c.igst > 0 && row(`IGST (${c.gstPct}%)`, fmt(c.igst))
                   : c.taxAmt > 0 && (
@@ -638,11 +644,16 @@ export function DesignerCanvas({
                         {row(`SGST (${c.halfPct}%)`, fmt(c.sgst))}
                       </>
                     )}
-                {row("Grand Total", fmt(c.total))}
+                {Math.abs(c.roundAdj) > 0.004 &&
+                  row(
+                    L("roundOff", "Round Off"),
+                    `${c.roundAdj > 0 ? "+" : "-"}${fmt(Math.abs(c.roundAdj))}`,
+                  )}
+                {row(L("grand", "Grand Total"), fmt(c.total))}
                 {c.paidAmount > 0 && (
                   <>
-                    {row("(-) Amount Paid", fmt(c.paidAmount))}
-                    {row("Balance Due", fmt(Math.max(0, c.balance)), {
+                    {row(L("paid", "(-) Amount Paid"), fmt(c.paidAmount))}
+                    {row(L("balance", "Balance Due"), fmt(Math.max(0, c.balance)), {
                       background: c.balance > 0 ? "#fff5f5" : "#f0fdf4",
                       fontWeight: bold,
                     })}
@@ -703,8 +714,8 @@ export function DesignerCanvas({
                 borderBottom: H(0.5),
               }}
             >
-              {first("HSN / SAC Code", true)}
-              {cell("Taxable Value", true)}
+              {first(L("taxHsn", "HSN / SAC Code"), true)}
+              {cell(L("taxValue", "Taxable Value"), true)}
               {c.isInterState ? (
                 <>
                   {cell("IGST Rate", true)}
@@ -718,7 +729,7 @@ export function DesignerCanvas({
                   {cell("SGST Amt", true)}
                 </>
               )}
-              {cell("Total Tax", true)}
+              {cell(L("taxTotal", "Total Tax"), true)}
             </div>
             <div
               style={{ display: "flex", padding: px(4), borderBottom: soft }}
@@ -731,7 +742,7 @@ export function DesignerCanvas({
             <div
               style={{ display: "flex", padding: px(4), background: "#f0f0f0" }}
             >
-              {first("Total", true)}
+              {first(L("total", "Total"), true)}
               {cell(fmt(c.taxable), true)}
               {taxCells(false, true)}
               {cell(fmt(c.taxAmt), true)}
@@ -760,7 +771,7 @@ export function DesignerCanvas({
                     letterSpacing: px(0.5),
                   })}
                 >
-                  Declaration
+                  {L("declaration", "Declaration")}
                 </div>
                 <div
                   style={text(7, {

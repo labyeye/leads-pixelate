@@ -4,6 +4,7 @@ import {
   BLOCK_LABELS,
   CAN_WIDTH,
   TEMPLATE_VARS,
+  TEXT_FIELDS,
   type Block,
   type BlockType,
   type Float,
@@ -447,6 +448,9 @@ export function Inspector({
   template,
   selection,
   onTheme,
+  onText,
+  onMoney,
+  labelDefaults,
   onBlockProps,
   onFloat,
   onRemove,
@@ -454,6 +458,9 @@ export function Inspector({
   template: InvoiceTemplate;
   selection: Selection;
   onTheme: (patch: Partial<Theme>, group: string) => void;
+  onText: (key: string, value: string) => void;
+  onMoney: (patch: { symbol?: string; roundOff?: boolean }) => void;
+  labelDefaults: { number: string; date: string; due: string };
   onBlockProps: (id: string, patch: Record<string, any>, group: string) => void;
   onFloat: (id: string, patch: Partial<Float>, group: string) => void;
   onRemove: (s: NonNullable<Selection>) => void;
@@ -772,6 +779,58 @@ export function Inspector({
         step={2}
         onChange={t("margin")}
       />
+
+      <Heading>Amounts</Heading>
+      <label className="flex items-center gap-2">
+        <span className="text-[11px] text-black w-28 shrink-0">Currency text</span>
+        <input
+          value={template.money?.symbol ?? "Rs."}
+          maxLength={8}
+          placeholder="Rs."
+          onChange={(e) => onMoney({ symbol: e.target.value })}
+          className="w-24 border-2 border-black px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#024BAB]"
+        />
+      </label>
+      <p className="text-[10px] text-black/50 leading-snug">
+        Shown before every amount, e.g. Rs., INR, USD. Leave empty for no
+        symbol. The built-in PDF font can't draw the ₹ sign, so use text.
+      </p>
+      <Chk
+        text="Round the grand total to a whole rupee"
+        value={!!template.money?.roundOff}
+        onChange={(v: boolean) => onMoney({ roundOff: v })}
+      />
+
+      <Heading>Wording</Heading>
+      <p className="text-[10px] text-black/50">
+        Change the fixed text on the document, e.g. "Valid Till" to "Offer
+        valid until". Leave a box empty to keep the default.
+      </p>
+      {Array.from(new Set(TEXT_FIELDS.map((f) => f.group))).map((group) => (
+        <div key={group} className="space-y-1.5">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-black/50 pt-1">
+            {group}
+          </p>
+          {TEXT_FIELDS.filter((f) => f.group === group).map((f) => {
+            const def =
+              (labelDefaults as Record<string, string>)[f.key] ?? f.def;
+            return (
+              <label key={f.key} className="flex items-center gap-2">
+                <span className="text-[11px] text-black w-28 shrink-0 truncate" title={f.label}>
+                  {f.label}
+                </span>
+                <input
+                  value={template.text?.[f.key] ?? ""}
+                  maxLength={60}
+                  placeholder={def}
+                  onChange={(e) => onText(f.key, e.target.value)}
+                  className="flex-1 min-w-0 border-2 border-black px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#024BAB]"
+                />
+              </label>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }

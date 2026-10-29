@@ -3,8 +3,8 @@ import type { InvoiceCompany } from "@/components/pdf/InvoicePDFDocument";
 // Money, dates and totals for an invoice. Shared by the PDF renderer and the Invoice Designer's
 // live canvas so the two can never disagree on a number.
 
-export const fmt = (n: number) =>
-  `Rs. ${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const fmt = (n: number, symbol = "Rs.") =>
+  `${symbol ? symbol + " " : ""}${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export const fmtDate = (v: any) => {
   if (!v) return "—";
@@ -127,6 +127,7 @@ export function computeInvoice(
   invoice: any,
   client: any,
   company: InvoiceCompany,
+  opts?: { roundOff?: boolean },
 ) {
   const raw = getItems(invoice);
   const hsnDefault = String(invoice?.hsnCode || "998314");
@@ -176,7 +177,10 @@ export function computeInvoice(
   const sgst = isInterState ? 0 : taxAmt / 2;
   const igst = isInterState ? taxAmt : 0;
 
-  const total = taxable + taxAmt;
+  // Optional: round the grand total to the nearest rupee and show the difference as "Round Off".
+  const exact = taxable + taxAmt;
+  const total = opts?.roundOff ? Math.round(exact) : exact;
+  const roundAdj = total - exact;
   const paidAmount = Number(invoice?.paidAmount ?? invoice?.paid ?? 0) || 0;
 
   const clientAddress = client?.address || invoice?.clientAddress || "";
@@ -198,6 +202,7 @@ export function computeInvoice(
     sgst,
     igst,
     total,
+    roundAdj,
     paidAmount,
     balance: total - paidAmount,
     clientName: client?.name || invoice?.clientName || invoice?.client || "—",
