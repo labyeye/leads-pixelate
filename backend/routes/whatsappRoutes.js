@@ -24,6 +24,9 @@ const {
   verifyWebhook,
   handleWebhook,
   getReplies,
+  getConversations,
+  replyToConversation,
+  convertToLead,
   uploadMedia,
   getAutomations,
   saveAutomations,
@@ -87,5 +90,8 @@ router.post(
 );
 
 router.get("/replies", getReplies);
+router.get("/conversations", getConversations);
+router.post("/conversations/reply", replyToConversation);
+router.post("/conversations/convert", convertToLead);
 
 module.exports = router;

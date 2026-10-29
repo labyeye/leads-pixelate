@@ -25,6 +25,7 @@ const leadSchema = new mongoose.Schema(
         "Meta",
         "Google Ads",
         "LinkedIn",
+        "WhatsApp",
       ],
       required: [true, "Please specify the lead source"],
     },

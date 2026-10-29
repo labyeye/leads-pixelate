@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const WhatsappTemplate = require("../models/WhatsappTemplate");
 const WhatsappCampaign = require("../models/WhatsappCampaign");
 const Lead = require("../models/Lead");
+const WhatsappMessage = require("../models/WhatsappMessage");
 const Tenant = require("../models/Tenant");
 const Document = require("../models/Document");
 const Quotation = require("../models/Quotation");
@@ -1387,6 +1388,17 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     throw new Error("Choose a template, type a message, or pick a document");
   }
 
+  if (messageType === "text" && messageText) {
+    await WhatsappMessage.create({
+      tenantId: wa.tenantId,
+      phone,
+      direction: "out",
+      text: messageText,
+      waMessageId: waResult?.messages?.[0]?.id,
+      sentBy: req.user._id,
+    }).catch(() => {});
+  }
+
   res.json({
     success: true,
     data: { messageId: waResult?.messages?.[0]?.id || "" },
@@ -1562,6 +1574,10 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
         };
         const statusField = statusMap[newStatus];
         if (!statusField) continue;
+        await WhatsappMessage.updateOne(
+          { waMessageId },
+          { status: statusField },
+        ).catch(() => {});
         try {
           const tenantFilter = tenant ? { tenantId: tenant._id } : {};
           const campaign = await WhatsappCampaign.findOne({
@@ -1601,6 +1617,26 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
         if (incomingMsg.type !== "text") continue;
         const fromPhone = incomingMsg.from;
         const messageText = incomingMsg?.text?.body || "";
+        if (tenant) {
+          await WhatsappMessage.updateOne(
+            { waMessageId: incomingMsg.id },
+            {
+              $setOnInsert: {
+                tenantId: tenant._id,
+                phone: fromPhone,
+                direction: "in",
+                text: messageText,
+                waMessageId: incomingMsg.id,
+                timestamp: incomingMsg.timestamp
+                  ? new Date(Number(incomingMsg.timestamp) * 1000)
+                  : new Date(),
+              },
+            },
+            { upsert: true },
+          ).catch((err) =>
+            log.error("Inbox store failed", { message: err.message }),
+          );
+        }
         try {
           const tenantFilter = tenant ? { tenantId: tenant._id } : {};
           const campaign = await WhatsappCampaign.findOne({
@@ -1644,6 +1680,153 @@ exports.getReplies = asyncHandler(async (req, res) => {
   );
   replies.sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
   res.json({ success: true, count: replies.length, data: replies });
+});
+
+// WhatsApp-Web style conversation list: one row per phone, both directions.
+async function loadMessages(req) {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const [stored, campaigns] = await Promise.all([
+    WhatsappMessage.find(tenantFilter).sort({ timestamp: 1 }).lean(),
+    WhatsappCampaign.find({ repliedCount: { $gt: 0 }, ...tenantFilter })
+      .select("name replies")
+      .lean(),
+  ]);
+  const seen = new Set(stored.map((m) => m.waMessageId).filter(Boolean));
+  const msgs = stored.map((m) => ({
+    _id: m._id,
+    phone: m.phone,
+    direction: m.direction,
+    text: m.text,
+    status: m.status,
+    timestamp: m.timestamp,
+  }));
+  const names = {};
+  for (const c of campaigns)
+    for (const r of c.replies || []) {
+      if (r.leadName) names[r.phone] = r.leadName;
+      if (r.waMessageId && seen.has(r.waMessageId)) continue;
+      msgs.push({
+        _id: r._id,
+        phone: r.phone,
+        direction: "in",
+        text: r.messageText,
+        timestamp: r.receivedAt,
+      });
+    }
+  msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  return { msgs, names, tenantFilter };
+}
+
+exports.getConversations = asyncHandler(async (req, res) => {
+  const { msgs, names, tenantFilter } = await loadMessages(req);
+  const byPhone = {};
+  for (const m of msgs) {
+    const c = (byPhone[m.phone] ||= { phone: m.phone, messages: [] });
+    c.messages.push(m);
+  }
+  const phones = Object.keys(byPhone);
+  const leads = await Lead.find({
+    ...tenantFilter,
+    deletedAt: null,
+    phone: { $ne: "" },
+  })
+    .select("name phone")
+    .lean();
+  const leadByPhone = {};
+  for (const l of leads) {
+    const p = formatPhone(l.phone);
+    if (p && byPhone[p]) leadByPhone[p] = l;
+  }
+  const data = phones
+    .map((p) => {
+      const c = byPhone[p];
+      const lead = leadByPhone[p];
+      const last = c.messages[c.messages.length - 1];
+      const lastIn = [...c.messages].reverse().find((m) => m.direction === "in");
+      return {
+        phone: p,
+        name: lead?.name || names[p] || "",
+        leadId: lead?._id || null,
+        messages: c.messages,
+        lastMessage: last,
+        lastInboundAt: lastIn?.timestamp || null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.lastMessage.timestamp) - new Date(a.lastMessage.timestamp),
+    );
+  res.json({ success: true, data });
+});
+
+exports.replyToConversation = asyncHandler(async (req, res) => {
+  const { phone: rawPhone, text, phoneNumberId } = req.body;
+  const phone = formatPhone(rawPhone);
+  if (!phone || !String(text || "").trim()) {
+    res.status(400);
+    throw new Error("phone and text are required");
+  }
+  const wa = await getWaBase(req.user);
+  if (!wa) {
+    res.status(400);
+    throw new Error("WhatsApp is not connected");
+  }
+  const pnid = resolvePhoneNumberId(wa, phoneNumberId);
+  if (!pnid) {
+    res.status(400);
+    throw new Error("Specify a connected phoneNumberId");
+  }
+  const body = String(text).trim();
+  const result = await postWa(pnid, wa.accessToken, {
+    to: phone,
+    type: "text",
+    text: { body },
+  });
+  const msg = await WhatsappMessage.create({
+    tenantId: wa.tenantId,
+    phone,
+    direction: "out",
+    text: body,
+    waMessageId: result?.messages?.[0]?.id,
+    sentBy: req.user._id,
+  });
+  res.status(201).json({ success: true, data: msg });
+});
+
+exports.convertToLead = asyncHandler(async (req, res) => {
+  const phone = formatPhone(req.body.phone);
+  const name = String(req.body.name || "").trim();
+  if (!phone) {
+    res.status(400);
+    throw new Error("phone is required");
+  }
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const existing = (
+    await Lead.find({ ...tenantFilter, deletedAt: null, phone: { $ne: "" } })
+      .select("name phone")
+      .lean()
+  ).find((l) => formatPhone(l.phone) === phone);
+  if (existing) {
+    res.status(409);
+    throw new Error(`Already a lead: ${existing.name}`);
+  }
+  const lead = await Lead.create({
+    name: name || `+${phone}`,
+    phone,
+    source: "WhatsApp",
+    tenantId: req.user.tenantId || null,
+    assignedTo: req.user._id,
+    status: "PENDING CONTACT",
+    statusHistory: [
+      {
+        status: "PENDING CONTACT",
+        timestamp: new Date(),
+        changedBy: req.user._id,
+        remarks: "Converted from WhatsApp inbox",
+      },
+    ],
+  });
+  res.status(201).json({ success: true, data: lead });
 });
 
 exports.uploadMedia = asyncHandler(async (req, res) => {

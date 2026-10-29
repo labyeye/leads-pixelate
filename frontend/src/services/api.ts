@@ -1689,6 +1689,22 @@ export const whatsappAPI = {
       body: JSON.stringify(data),
     }),
 
+  getConversations: () =>
+    request<{ success: boolean; data: any[] }>("/whatsapp/conversations"),
+  replyToConversation: (data: {
+    phone: string;
+    text: string;
+    phoneNumberId?: string;
+  }) =>
+    request<{ success: boolean; data: any }>("/whatsapp/conversations/reply", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  convertToLead: (data: { phone: string; name?: string }) =>
+    request<{ success: boolean; data: any }>("/whatsapp/conversations/convert", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   getReplies: () =>
     request<{ success: boolean; count: number; data: any[] }>(
       "/whatsapp/replies",
