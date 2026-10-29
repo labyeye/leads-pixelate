@@ -38,6 +38,7 @@ import {
   GitBranch,
   Image as ImageIcon,
   Info,
+  Activity,
   Key,
   Layers,
   LayoutGrid,
@@ -225,6 +226,7 @@ const MAP: Record<string, LucideIcon> = {
   'key-outline': Key,
   'card-outline': CreditCard,
   'terminal-outline': Terminal,
+  'pulse-outline': Activity,
 };
 
 interface Props {

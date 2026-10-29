@@ -143,6 +143,9 @@ const BLOCK_DEFAULTS: Record<BlockType, Record<string, any>> = {
     showContact: true,
     showTaxIds: true,
     showMeta: true,
+    showNumber: true,
+    showDate: true,
+    showDue: true,
     showPlace: true,
   },
   parties: {

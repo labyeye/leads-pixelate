@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from './Icon';
 import UserAvatar from './UserAvatar';
 import { Hand, User } from 'lucide-react-native';
+import PaceBadge from './PaceBadge';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
   name?: string;
@@ -26,6 +28,8 @@ export default function AppHeader({
   onBell,
   onAvatar,
 }: Props) {
+  const { user } = useAuth();
+  const isStaff = !['admin', 'super_admin'].includes(user?.role);
   const h = new Date().getHours();
   const greeting =
     h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
@@ -37,6 +41,7 @@ export default function AppHeader({
           <Icon name="menu" size={26} color="#000" />
         </TouchableOpacity>
         <View style={s.right}>
+          {isStaff && <PaceBadge />}
           <TouchableOpacity onPress={onSearch} hitSlop={10}>
             <Icon name="search-outline" size={24} color="#000" />
           </TouchableOpacity>

@@ -99,6 +99,9 @@ const FIELDS: Record<BlockType, Fx[]> = {
     },
     { key: "showTaxIds", label: "Show GSTIN / PAN / state", type: "check" },
     { key: "showMeta", label: "Show invoice no. / dates", type: "check" },
+    { key: "showNumber", label: "Show number", type: "check" },
+    { key: "showDate", label: "Show date", type: "check" },
+    { key: "showDue", label: "Show due / valid-till date", type: "check" },
     { key: "showPlace", label: "Show place of service", type: "check" },
   ],
   parties: [

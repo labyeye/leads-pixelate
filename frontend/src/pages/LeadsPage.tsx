@@ -2363,7 +2363,7 @@ export default function LeadsPage() {
             <div
               ref={parentRef}
               className="overflow-x-auto overflow-y-auto relative"
-              style={{ maxHeight: "calc(100vh - 250px)" }}
+              style={{ maxHeight: "calc(100vh - 250px)", overflowAnchor: "none" }}
             >
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-20">
@@ -2592,6 +2592,8 @@ export default function LeadsPage() {
                           return (
                             <tr
                               key={`hdr-${vRow.index}`}
+                              data-index={vRow.index}
+                              ref={rowVirtualizer.measureElement}
                               className="bg-muted/40 border-y border-border/50 shadow-sm group"
                             >
                               <td
@@ -2613,6 +2615,8 @@ export default function LeadsPage() {
                         return (
                           <tr
                             key={l._id || l.id}
+                            data-index={vRow.index}
+                            ref={rowVirtualizer.measureElement}
                             className={cn(
                               "border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer",
                               selectedLeadId === (l._id || l.id)

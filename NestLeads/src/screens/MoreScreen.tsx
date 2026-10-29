@@ -42,7 +42,7 @@ const GROUPS: { title: string; icon: string; screens: string[] }[] = [
   { title: 'Marketing & Insights', icon: 'megaphone-outline', screens: ['AdCampaignsHub', 'Autopilot', 'Reports'] },
   { title: 'Workspace', icon: 'people-outline', screens: ['Users', 'Integrations', 'ApiKeys'] },
   { title: 'Account', icon: 'person-outline', screens: ['Billing', 'AccountSecurity', 'Support', 'Settings'] },
-  { title: 'Admin', icon: 'shield-checkmark-outline', screens: ['ActivityLog', 'Trash'] },
+  { title: 'Admin', icon: 'shield-checkmark-outline', screens: ['LivePerformance', 'ActivityLog', 'Trash'] },
 ];
 
 const MENU_ITEMS: MenuItem[] = [
@@ -193,6 +193,14 @@ const MENU_ITEMS: MenuItem[] = [
     sub: 'Password, WhatsApp & 2FA',
     screen: 'AccountSecurity',
     color: PRIMARY,
+  },
+  {
+    icon: 'pulse-outline',
+    label: 'Live Performance',
+    sub: 'Team calls, conversations & targets',
+    screen: 'LivePerformance',
+    color: PRIMARY,
+    adminOnly: true,
   },
   {
     icon: 'terminal-outline',

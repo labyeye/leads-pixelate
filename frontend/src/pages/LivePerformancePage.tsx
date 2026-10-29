@@ -40,6 +40,9 @@ interface TeamRow {
   name: string;
   role: string;
   calls: number;
+  conversations: number;
+  quotations: number;
+  visits: number;
   statusUpdates: number;
   done: number;
   connected: number;
@@ -48,13 +51,29 @@ interface TeamRow {
   statusChanges: number;
 }
 
+interface Target {
+  count: number;
+  perMinutes: number;
+}
+
 interface LiveData {
   now: string;
   windowMin: number;
-  targets: { calls: number; perMinutes: number; amberPct: number; countBy: "updates" | "calls" };
+  targets: {
+    calls: number;
+    perMinutes: number;
+    amberPct: number;
+    countBy: "updates" | "calls";
+    conversations: Target;
+    quotations: Target;
+    visits: Target;
+  };
   totals: {
     calls: number;
     done: number;
+    conversations: number;
+    quotations: number;
+    visits: number;
     connected: number;
     talkSeconds: number;
     newLeads: number;
@@ -83,6 +102,20 @@ interface LiveData {
   }[];
   statusCounts: Record<string, number>;
 }
+
+type ExtraKey = "conversations" | "quotations" | "visits";
+const EXTRAS: { key: ExtraKey; label: string }[] = [
+  { key: "conversations", label: "Conversations" },
+  { key: "quotations", label: "Quotations sent" },
+  { key: "visits", label: "Visits scheduled" },
+];
+const PERIODS = [
+  { min: 60, label: "per hour" },
+  { min: 240, label: "per 4 hours" },
+  { min: 480, label: "per 8 hours" },
+  { min: 1440, label: "per day" },
+  { min: 10080, label: "per week" },
+];
 
 const WINDOWS = [
   { min: 60, label: "1 hour" },
@@ -139,7 +172,13 @@ export default function LivePerformancePage() {
   const [error, setError] = useState("");
 
   // Target editor draft; null = not editing.
-  const [draft, setDraft] = useState<{ calls: string; perMinutes: string; amberPct: string; countBy: "updates" | "calls" } | null>(null);
+  const [draft, setDraft] = useState<{
+    calls: string;
+    perMinutes: string;
+    amberPct: string;
+    countBy: "updates" | "calls";
+    extra: Record<ExtraKey, { count: string; perMinutes: string }>;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(
@@ -209,6 +248,15 @@ export default function LivePerformancePage() {
       perMinutes: String(data.targets.perMinutes),
       amberPct: String(data.targets.amberPct),
       countBy: data.targets.countBy,
+      extra: Object.fromEntries(
+        EXTRAS.map((x) => [
+          x.key,
+          {
+            count: String(data.targets[x.key].count),
+            perMinutes: String(data.targets[x.key].perMinutes),
+          },
+        ]),
+      ) as Record<ExtraKey, { count: string; perMinutes: string }>,
     });
 
   const saveTargets = async () => {
@@ -224,9 +272,22 @@ export default function LivePerformancePage() {
       });
       return;
     }
+    const extra = Object.fromEntries(
+      EXTRAS.map((x) => [
+        x.key,
+        {
+          count: Math.round(Number(draft.extra[x.key].count) || 0),
+          perMinutes: Math.round(Number(draft.extra[x.key].perMinutes)) || 1440,
+        },
+      ]),
+    );
+    if (Object.values(extra).some((v: any) => v.count < 0 || v.count > 10000)) {
+      toast({ title: "Check the target values", description: "Targets must be 0–10000 (0 = no target).", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      await settingsAPI.update({ callTargets: { calls, perMinutes, amberPct, countBy: draft.countBy } });
+      await settingsAPI.update({ callTargets: { calls, perMinutes, amberPct, countBy: draft.countBy, ...extra } });
       toast({ title: "Target saved", description: `${calls} calls per ${minutesLabel(perMinutes)} per agent.` });
       setDraft(null);
       load(true);
@@ -322,6 +383,39 @@ export default function LivePerformancePage() {
                   <Field label="Amber from (% of target)">
                     <Input type="number" min={1} max={99} value={draft.amberPct} onChange={(e) => setDraft({ ...draft, amberPct: e.target.value })} className="h-9 w-28 border-2 border-black" />
                   </Field>
+                  <div className="basis-full grid grid-cols-1 md:grid-cols-3 gap-3 border-t-2 border-black pt-3">
+                    {EXTRAS.map((x) => (
+                      <div key={x.key} className="space-y-1">
+                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                          {x.label} per agent (0 = no target)
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            value={draft.extra[x.key].count}
+                            onChange={(e) =>
+                              setDraft({ ...draft, extra: { ...draft.extra, [x.key]: { ...draft.extra[x.key], count: e.target.value } } })
+                            }
+                            className="h-9 w-24 border-2 border-black"
+                          />
+                          <select
+                            value={draft.extra[x.key].perMinutes}
+                            onChange={(e) =>
+                              setDraft({ ...draft, extra: { ...draft.extra, [x.key]: { ...draft.extra[x.key], perMinutes: e.target.value } } })
+                            }
+                            className="h-9 border-2 border-black bg-white px-2 text-sm flex-1"
+                          >
+                            {PERIODS.map((p) => (
+                              <option key={p.min} value={p.min}>
+                                {p.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={saveTargets} disabled={saving} className="gap-1.5 h-9 border-2 border-black" style={{ backgroundColor: BLUE }}>
                       {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -350,6 +444,15 @@ export default function LivePerformancePage() {
                       <b>{Math.round(view.teamTarget)}</b> for the team ({data.team.length} agents). Amber from {t.amberPct}%.
                     </p>
                   </div>
+                  <p className="basis-full text-xs text-muted-foreground">
+                    {EXTRAS.map((x) =>
+                      t[x.key].count > 0
+                        ? `${x.label}: ${t[x.key].count} ${PERIODS.find((p) => p.min === t[x.key].perMinutes)?.label ?? `per ${minutesLabel(t[x.key].perMinutes)}`}`
+                        : null,
+                    )
+                      .filter(Boolean)
+                      .join(" · ") || "No targets set for conversations, quotations or visits yet."}
+                  </p>
                   <Button size="sm" variant="outline" onClick={startEdit} className="border-2 border-black h-8 text-xs">
                     Change target
                   </Button>
@@ -455,6 +558,80 @@ export default function LivePerformancePage() {
                       </ul>
                     </div>
                   </div>
+                </div>
+              );
+            })()}
+
+            {/* Performance table */}
+            {(() => {
+              type Col = { key: "calls" | ExtraKey; label: string; count: number; perMinutes: number };
+              const cols: Col[] = [
+                { key: "calls", label: "Calls", count: t.calls, perMinutes: t.perMinutes },
+                ...EXTRAS.map((x) => ({ key: x.key, label: x.label, ...t[x.key] })),
+              ];
+              const expected = (c: Col) => (c.count * data.windowMin) / c.perMinutes;
+              const value = (r: { done: number } & Record<ExtraKey, number>, c: Col) =>
+                c.key === "calls" ? r.done : r[c.key];
+              const cell = (done: number, exp: number) => {
+                if (exp <= 0) return { text: String(done), color: undefined as string | undefined, bg: undefined as string | undefined };
+                const tone = toneFor((done / exp) * 100, t.amberPct);
+                return {
+                  text: `${done} / ${Math.round(exp * 10) / 10}`,
+                  color: TONE[tone].hex,
+                  bg: TONE[tone].bg,
+                };
+              };
+              const agents = Math.max(data.team.length, 1);
+              return (
+                <div className="border-2 border-black bg-white overflow-x-auto">
+                  <div className="px-4 py-3 border-b-2 border-black bg-slate-100">
+                    <p className="text-sm font-semibold text-black">
+                      Team performance · last {WINDOWS.find((w) => w.min === windowMin)?.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Done / target for this window. A conversation is a lead moved out of New Lead; a quotation is a lead moved
+                      to the Quotation stage.
+                    </p>
+                  </div>
+                  <table className="w-full text-sm min-w-[640px]">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider text-muted-foreground border-b-2 border-black">
+                        <th className="text-left px-4 py-2 font-medium">Agent</th>
+                        {cols.map((c) => (
+                          <th key={c.key} className="text-right px-4 py-2 font-medium">
+                            {c.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.team.map((r) => (
+                        <tr key={r._id} className="border-b border-slate-200">
+                          <td className="px-4 py-2 font-medium text-black">{r.name}</td>
+                          {cols.map((c) => {
+                            const x = cell(value(r, c), expected(c));
+                            return (
+                              <td key={c.key} className="px-4 py-2 text-right tabular-nums font-medium" style={{ color: x.color, backgroundColor: x.bg }}>
+                                {x.text}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                      <tr className="bg-slate-100 font-semibold border-t-2 border-black">
+                        <td className="px-4 py-2 text-black">Team total</td>
+                        {cols.map((c) => {
+                          const total = c.key === "calls" ? data.totals.done : data.totals[c.key];
+                          const x = cell(total, expected(c) * agents);
+                          return (
+                            <td key={c.key} className="px-4 py-2 text-right tabular-nums" style={{ color: x.color }}>
+                              {x.text}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               );
             })()}

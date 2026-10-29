@@ -323,9 +323,15 @@ export function DesignerCanvas({
                 }}
               >
                 {[
-                  [L("number", sample.labels.number), c.invNo],
-                  [L("date", sample.labels.date), c.invDate],
-                  [L("due", sample.labels.due), c.dueDate],
+                  ...(p.showNumber !== false
+                    ? [[L("number", sample.labels.number), c.invNo]]
+                    : []),
+                  ...(p.showDate !== false
+                    ? [[L("date", sample.labels.date), c.invDate]]
+                    : []),
+                  ...(p.showDue !== false
+                    ? [[L("due", sample.labels.due), c.dueDate]]
+                    : []),
                   ...(p.showPlace
                     ? [
                         [

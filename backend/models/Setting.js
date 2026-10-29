@@ -136,6 +136,19 @@ const settingSchema = new mongoose.Schema(
       // What counts as work done toward the target: lead status updates (team calls from their own
       // phones and then log the outcome) or only calls placed through the CRM.
       countBy: { type: String, enum: ["updates", "calls"], default: "updates" },
+      // Further per-agent targets: `count` per `perMinutes` (count 0 = no target).
+      conversations: {
+        count: { type: Number, default: 0, min: 0, max: 10000 },
+        perMinutes: { type: Number, default: 1440, min: 5, max: 10080 },
+      },
+      quotations: {
+        count: { type: Number, default: 0, min: 0, max: 10000 },
+        perMinutes: { type: Number, default: 1440, min: 5, max: 10080 },
+      },
+      visits: {
+        count: { type: Number, default: 0, min: 0, max: 10000 },
+        perMinutes: { type: Number, default: 1440, min: 5, max: 10080 },
+      },
     },
 
     // Tenant-customized lead status labels/colors. Keyed by the fixed status

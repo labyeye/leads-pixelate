@@ -1244,6 +1244,10 @@ export default function SettingsPage() {
                     kind={kind}
                     settings={settings}
                     active={activeTab === `${kind}-design`}
+                    isOwner={isOwner}
+                    onNumberingSaved={(n) =>
+                      setSettings((prev: any) => ({ ...prev, numbering: n }))
+                    }
                     onSaved={(t) =>
                       setSettings((prev: any) => ({
                         ...prev,

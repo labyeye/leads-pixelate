@@ -555,6 +555,10 @@ export const campaignsAPI = {
 
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>('/dashboard/stats'),
+  getLive: (windowMin: number) =>
+    request<{ success: boolean; data: any }>(`/dashboard/live?window=${windowMin}`),
+  getMyPace: () =>
+    request<{ success: boolean; data: any }>('/dashboard/my-pace'),
 };
 
 export const indiamartAPI = {

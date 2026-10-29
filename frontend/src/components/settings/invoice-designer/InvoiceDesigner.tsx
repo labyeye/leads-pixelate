@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import defaultLogo from "@/assets/images/NestLeads_Logo_Name.png";
 import { DesignerCanvas, type Selection } from "./DesignerCanvas";
+import NumberFormatPanel from "./NumberFormatPanel";
 import { Inspector } from "./Inspector";
 import { fileToDataUrl } from "./imageUtil";
 
@@ -130,12 +131,17 @@ export default function InvoiceDesigner({
   settings,
   active,
   onSaved,
+  isOwner = false,
+  onNumberingSaved,
 }: {
   kind?: DocKind;
   settings: any;
   active: boolean;
   onSaved: (t: InvoiceTemplate) => void;
+  isOwner?: boolean;
+  onNumberingSaved?: (numbering: any) => void;
 }) {
+  const [previewNo, setPreviewNo] = useState<string | null>(null);
   const quotation = kind === "quotation";
   const field = quotation ? "quotationTemplate" : "invoiceTemplate";
   const sample = useMemo(
@@ -145,10 +151,12 @@ export default function InvoiceDesigner({
             ...SAMPLE,
             title: settings?.quotationTitle || "PROFORMA INVOICE",
             labels: QUOTATION_LABELS,
-            invoice: { ...SAMPLE.invoice, invoiceNo: "QT-0001" },
+            invoice: { ...SAMPLE.invoice, invoiceNo: previewNo || "QT-0001" },
           }
-        : SAMPLE,
-    [quotation, settings?.quotationTitle],
+        : previewNo
+          ? { ...SAMPLE, invoice: { ...SAMPLE.invoice, invoiceNo: previewNo } }
+          : SAMPLE,
+    [quotation, settings?.quotationTitle, previewNo],
   );
   const fresh = () =>
     localize(defaultTemplate(), kind, settings?.quotationFooter);
@@ -711,6 +719,13 @@ export default function InvoiceDesigner({
 
         {/* inspector */}
         <div className="border-t-2 lg:border-t-0 lg:border-l-2 border-black bg-white overflow-y-auto p-4">
+          <NumberFormatPanel
+            docType={quotation ? "quotation" : "invoice"}
+            saved={settings?.numbering?.[quotation ? "quotation" : "invoice"]}
+            isOwner={isOwner}
+            onSaved={(n) => onNumberingSaved?.(n)}
+            onPreview={setPreviewNo}
+          />
           <Inspector
             template={tpl}
             selection={sel}

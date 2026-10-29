@@ -435,22 +435,28 @@ export function InvoicePDFDocument({
                   stacked ? { width: "auto", borderTop: V(1) } : {},
                 ]}
               >
+                {p.showNumber !== false && (
                 <View style={S.metaRow}>
                   <Text style={S.metaLabel}>
                     {L("number", labels?.number ?? "Invoice No.")}
                   </Text>
                   <Text style={S.metaValue}>: {c.invNo}</Text>
                 </View>
+                )}
+                {p.showDate !== false && (
                 <View style={S.metaRow}>
                   <Text style={S.metaLabel}>
                     {L("date", labels?.date ?? "Invoice Date")}
                   </Text>
                   <Text style={S.metaValue}>: {c.invDate}</Text>
                 </View>
+                )}
+                {p.showDue !== false && (
                 <View style={S.metaRow}>
                   <Text style={S.metaLabel}>{L("due", labels?.due ?? "Due Date")}</Text>
                   <Text style={S.metaValue}>: {c.dueDate}</Text>
                 </View>
+                )}
                 {invoice?.poNumber ? (
                   <View style={S.metaRow}>
                     <Text style={S.metaLabel}>{L("po", "PO / Ref No.")}</Text>

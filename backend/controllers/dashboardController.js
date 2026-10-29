@@ -3,6 +3,7 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const CallLog = require("../models/CallLog");
 const ActivityLog = require("../models/ActivityLog");
+const { METRICS, statusEvents, countByUser, targetOf } = require("../utils/performanceMetrics");
 const Setting = require("../models/Setting");
 
 const CLOSED_STATUSES = ["WON", "DROP"];
@@ -282,7 +283,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
   });
   const humanCalls = { ...tf, initiatedBy: { $ne: null }, createdAt: { $gte: since } };
 
-  const [setting, agents, callsByAgent, callTrend, leadTrend, touchedLeads, leadActivity, recentLeads, aiCalls, statusRows] =
+  const [setting, agents, callsByAgent, callTrend, leadTrend, events, leadActivity, recentLeads, aiCalls, statusRows] =
     await Promise.all([
       Setting.findOne({ tenantId: req.user.tenantId || null }).select("callTargets").lean(),
       User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } })
@@ -310,10 +311,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
         { $match: { ...tf, createdAt: { $gte: since } } },
         { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
       ]),
-      Lead.find({ ...tf, "statusHistory.timestamp": { $gte: since } })
-        .select("statusHistory")
-        .limit(1000)
-        .lean(),
+      statusEvents(tf, since),
       ActivityLog.find({
         ...tf,
         module: "Lead",
@@ -334,26 +332,14 @@ const getLiveStats = asyncHandler(async (req, res) => {
     ]);
 
   const callMap = new Map(callsByAgent.map((r) => [String(r._id), r]));
-  // Status changes: a lead made by hand starts with a "PENDING CONTACT" creation entry, but leads
-  // from integrations (IndiaMART, Facebook...) have an empty history, so their first entry is a real change.
-  const pendingLeadIds = new Set();
-  for (const l of touchedLeads) {
-    const h = l.statusHistory || [];
-    h.forEach((e, i) => {
-      if (!e.timestamp || new Date(e.timestamp) < since) return;
-      const from = i === 0 ? "PENDING CONTACT" : h[i - 1].status;
-      if (from === "PENDING CONTACT" && e.status !== "PENDING CONTACT") pendingLeadIds.add(String(l._id));
-    });
-  }
+  const pendingLeadIds = new Set(
+    events.filter((e) => e.from === "PENDING CONTACT" && e.to !== "PENDING CONTACT").map((e) => String(e.leadId)),
+  );
+  const perUser = countByUser(events);
   // Everything else a person does to a lead (notes, remarks, follow-ups, edits) comes from the activity log.
   const changeMap = new Map();
   for (const a of leadActivity) {
     if (a.user) changeMap.set(String(a.user), (changeMap.get(String(a.user)) || 0) + 1);
-  }
-  const statusActs = leadActivity.filter((a) => a.action === "STATUS_UPDATED");
-  const statusMap = new Map();
-  for (const a of statusActs) {
-    if (a.user) statusMap.set(String(a.user), (statusMap.get(String(a.user)) || 0) + 1);
   }
   const countBy = setting?.callTargets?.countBy === "calls" ? "calls" : "updates";
   const updates = leadActivity.map((a) => ({
@@ -371,13 +357,17 @@ const getLiveStats = asyncHandler(async (req, res) => {
   const team = [...agents, ...extraUsers]
     .map((u) => {
       const c = callMap.get(String(u._id)) || {};
+      const m = perUser.get(String(u._id)) || { calls: 0, conversations: 0, quotations: 0, visits: 0 };
       return {
         _id: u._id,
         name: u.name,
         role: u.role,
         calls: c.calls || 0,
-        statusUpdates: statusMap.get(String(u._id)) || 0,
-        done: countBy === "calls" ? c.calls || 0 : statusMap.get(String(u._id)) || 0,
+        statusUpdates: m.calls,
+        done: countBy === "calls" ? c.calls || 0 : m.calls,
+        conversations: m.conversations,
+        quotations: m.quotations,
+        visits: m.visits,
         connected: c.connected || 0,
         talkSeconds: c.talkSeconds || 0,
         lastCallAt: c.lastCallAt || null,
@@ -394,8 +384,8 @@ const getLiveStats = asyncHandler(async (req, res) => {
     }));
   };
   const statusTrend = new Map();
-  for (const a of statusActs) {
-    const i = Math.floor((new Date(a.timestamp) - since) / bucketMs);
+  for (const e of events) {
+    const i = Math.floor((new Date(e.at) - since) / bucketMs);
     statusTrend.set(i, (statusTrend.get(i) || 0) + 1);
   }
   const callSeries = countBy === "calls" ? series(callTrend) : series([...statusTrend].map(([_id, n]) => ({ _id, n })));
@@ -412,10 +402,16 @@ const getLiveStats = asyncHandler(async (req, res) => {
         perMinutes: setting?.callTargets?.perMinutes ?? 60,
         amberPct: setting?.callTargets?.amberPct ?? 60,
         countBy,
+        conversations: targetOf(setting?.callTargets, "conversations"),
+        quotations: targetOf(setting?.callTargets, "quotations"),
+        visits: targetOf(setting?.callTargets, "visits"),
       },
       totals: {
         calls: team.reduce((a, t) => a + t.calls, 0),
         done: team.reduce((a, t) => a + t.done, 0),
+        conversations: team.reduce((a, t) => a + t.conversations, 0),
+        quotations: team.reduce((a, t) => a + t.quotations, 0),
+        visits: team.reduce((a, t) => a + t.visits, 0),
         connected: team.reduce((a, t) => a + t.connected, 0),
         talkSeconds: team.reduce((a, t) => a + t.talkSeconds, 0),
         newLeads: leadSeries.reduce((a, p) => a + p.n, 0),
@@ -433,39 +429,48 @@ const getLiveStats = asyncHandler(async (req, res) => {
   });
 });
 
-// The signed-in person's own pace against the target, for the header badge. Window = the target's
-// own period (e.g. last 60 min for "20 per 60 min"), so done/target compares directly.
+// The signed-in person's own pace against each target, for the header badge. Every metric is judged
+// over its own period (e.g. calls over the last 60 min, visits over the last 24 h).
 const getMyPace = asyncHandler(async (req, res) => {
   const setting = await Setting.findOne({ tenantId: req.user.tenantId || null })
     .select("callTargets")
     .lean();
-  const t = setting?.callTargets;
-  if (!t?.calls) return res.json({ success: true, data: { configured: false } });
+  const ct = setting?.callTargets;
+  if (!ct?.calls) return res.json({ success: true, data: { configured: false } });
 
-  const perMinutes = t.perMinutes || 60;
-  const since = new Date(Date.now() - perMinutes * 60000);
-  const countBy = t.countBy === "calls" ? "calls" : "updates";
-  const done =
-    countBy === "calls"
-      ? await CallLog.countDocuments({ initiatedBy: req.user._id, createdAt: { $gte: since } })
-      : await ActivityLog.countDocuments({
-          user: req.user._id,
-          module: "Lead",
-          action: "STATUS_UPDATED",
-          timestamp: { $gte: since },
-        });
-  const pct = (done / t.calls) * 100;
-  const amber = t.amberPct || 60;
-  res.json({
-    success: true,
-    data: {
-      configured: true,
+  const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const amber = ct.amberPct || 60;
+  const countBy = ct.countBy === "calls" ? "calls" : "updates";
+  const targets = METRICS.map((m) => ({ ...m, ...targetOf(ct, m.key) })).filter((m) => m.count > 0);
+  const longest = Math.max(...targets.map((m) => m.perMinutes));
+  const events = await statusEvents(tf, new Date(Date.now() - longest * 60000), req.user._id);
+
+  const metrics = [];
+  for (const m of targets) {
+    const since = new Date(Date.now() - m.perMinutes * 60000);
+    let done;
+    if (m.key === "calls" && countBy === "calls") {
+      done = await CallLog.countDocuments({ initiatedBy: req.user._id, createdAt: { $gte: since } });
+    } else {
+      const flag = { calls: null, conversations: "conversation", quotations: "quotation", visits: "visit" }[m.key];
+      done = events.filter((e) => new Date(e.at) >= since && (!flag || e[flag])).length;
+    }
+    const pct = (done / m.count) * 100;
+    metrics.push({
+      key: m.key,
+      label: m.label,
       done,
-      target: t.calls,
-      perMinutes,
+      target: m.count,
+      perMinutes: m.perMinutes,
       pct: Math.round(pct),
       tone: pct >= 100 ? "green" : pct >= amber ? "amber" : "red",
-    },
+    });
+  }
+  const rank = { red: 0, amber: 1, green: 2 };
+  const worst = metrics.reduce((w, m) => (rank[m.tone] < rank[w.tone] ? m : w), metrics[0]);
+  res.json({
+    success: true,
+    data: { configured: metrics.length > 0, metrics, tone: worst?.tone },
   });
 });
 
