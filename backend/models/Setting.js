@@ -126,6 +126,9 @@ const settingSchema = new mongoose.Schema(
       calls: { type: Number, default: 20, min: 1, max: 10000 },
       perMinutes: { type: Number, default: 60, min: 5, max: 10080 },
       amberPct: { type: Number, default: 60, min: 1, max: 99 },
+      // What counts as work done toward the target: lead status updates (team calls from their own
+      // phones and then log the outcome) or only calls placed through the CRM.
+      countBy: { type: String, enum: ["updates", "calls"], default: "updates" },
     },
 
     // Tenant-customized lead status labels/colors. Keyed by the fixed status

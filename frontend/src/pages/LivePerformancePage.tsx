@@ -40,6 +40,8 @@ interface TeamRow {
   name: string;
   role: string;
   calls: number;
+  statusUpdates: number;
+  done: number;
   connected: number;
   talkSeconds: number;
   lastCallAt: string | null;
@@ -49,9 +51,10 @@ interface TeamRow {
 interface LiveData {
   now: string;
   windowMin: number;
-  targets: { calls: number; perMinutes: number; amberPct: number };
+  targets: { calls: number; perMinutes: number; amberPct: number; countBy: "updates" | "calls" };
   totals: {
     calls: number;
+    done: number;
     connected: number;
     talkSeconds: number;
     newLeads: number;
@@ -136,7 +139,7 @@ export default function LivePerformancePage() {
   const [error, setError] = useState("");
 
   // Target editor draft; null = not editing.
-  const [draft, setDraft] = useState<{ calls: string; perMinutes: string; amberPct: string } | null>(null);
+  const [draft, setDraft] = useState<{ calls: string; perMinutes: string; amberPct: string; countBy: "updates" | "calls" } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(
@@ -176,11 +179,11 @@ export default function LivePerformancePage() {
     // Target is "calls per perMinutes", so scale it to the window being viewed.
     const perAgent = (targets.calls * data.windowMin) / targets.perMinutes;
     const rows = team.map((t) => {
-      const pct = perAgent > 0 ? (t.calls / perAgent) * 100 : 0;
+      const pct = perAgent > 0 ? (t.done / perAgent) * 100 : 0;
       return { ...t, pct, tone: toneFor(pct, targets.amberPct) };
     });
     const teamTarget = perAgent * Math.max(team.length, 1);
-    const teamPct = teamTarget > 0 ? (totals.calls / teamTarget) * 100 : 0;
+    const teamPct = teamTarget > 0 ? (totals.done / teamTarget) * 100 : 0;
     const groups: Record<Tone, typeof rows> = { green: [], amber: [], red: [] };
     rows.forEach((r) => groups[r.tone].push(r));
     return { perAgent, rows, teamTarget, teamPct, groups, teamTone: toneFor(teamPct, targets.amberPct) };
@@ -205,6 +208,7 @@ export default function LivePerformancePage() {
       calls: String(data.targets.calls),
       perMinutes: String(data.targets.perMinutes),
       amberPct: String(data.targets.amberPct),
+      countBy: data.targets.countBy,
     });
 
   const saveTargets = async () => {
@@ -222,7 +226,7 @@ export default function LivePerformancePage() {
     }
     setSaving(true);
     try {
-      await settingsAPI.update({ callTargets: { calls, perMinutes, amberPct } });
+      await settingsAPI.update({ callTargets: { calls, perMinutes, amberPct, countBy: draft.countBy } });
       toast({ title: "Target saved", description: `${calls} calls per ${minutesLabel(perMinutes)} per agent.` });
       setDraft(null);
       load(true);
@@ -236,6 +240,7 @@ export default function LivePerformancePage() {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   const t = data?.targets;
+  const unit = t?.countBy === "calls" ? "calls" : "status updates";
   const connectRate =
     data && data.totals.calls ? Math.round((data.totals.connected / data.totals.calls) * 100) : 0;
 
@@ -298,7 +303,17 @@ export default function LivePerformancePage() {
             <div className="border-2 border-black bg-white p-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
               {draft ? (
                 <div className="flex flex-wrap items-end gap-3">
-                  <Field label="Calls per agent">
+                  <Field label="Count">
+                    <select
+                      value={draft.countBy}
+                      onChange={(e) => setDraft({ ...draft, countBy: e.target.value as "updates" | "calls" })}
+                      className="h-9 border-2 border-black bg-white px-2 text-sm"
+                    >
+                      <option value="updates">Lead status updates</option>
+                      <option value="calls">CRM calls only</option>
+                    </select>
+                  </Field>
+                  <Field label="Target per agent">
                     <Input type="number" min={1} value={draft.calls} onChange={(e) => setDraft({ ...draft, calls: e.target.value })} className="h-9 w-28 border-2 border-black" />
                   </Field>
                   <Field label="In (minutes)">
@@ -327,7 +342,7 @@ export default function LivePerformancePage() {
                   </div>
                   <div className="mr-auto">
                     <p className="text-sm font-medium text-black">
-                      Target: {t.calls} calls per {minutesLabel(t.perMinutes)} per agent
+                      Target: {t.calls} {unit} per {minutesLabel(t.perMinutes)} per agent
                     </p>
                     <p className="text-xs text-muted-foreground">
                       For this {WINDOWS.find((w) => w.min === windowMin)?.label} window that is{" "}
@@ -364,7 +379,7 @@ export default function LivePerformancePage() {
                       ) : (
                         list.map((r) => (
                           <span key={r._id} className="text-xs font-medium bg-white border-2 border-black px-2 py-0.5">
-                            {r.name} · {r.calls}
+                            {r.name} · {r.done}
                           </span>
                         ))
                       )}
@@ -379,7 +394,7 @@ export default function LivePerformancePage() {
               <div className="flex items-baseline justify-between mb-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Team progress to target</p>
                 <p className="text-sm font-semibold tabular-nums" style={{ color: TONE[view.teamTone].hex }}>
-                  {data.totals.calls} / {Math.round(view.teamTarget)} calls · {Math.round(view.teamPct)}%
+                  {data.totals.done} / {Math.round(view.teamTarget)} {unit} · {Math.round(view.teamPct)}%
                 </p>
               </div>
               <Bar pct={view.teamPct} color={TONE[view.teamTone].hex} tall />
@@ -392,7 +407,7 @@ export default function LivePerformancePage() {
                 .filter((r) => r.tone !== "green")
                 .sort((a, b) => a.pct - b.pct);
               const need = (r: (typeof view.rows)[number]) =>
-                Math.max(1, Math.ceil(view.perAgent - r.calls));
+                Math.max(1, Math.ceil(view.perAgent - r.done));
               return (
                 <div className="border-2 border-black bg-white">
                   <div className="px-4 py-3 border-b-2 border-black bg-slate-100 flex flex-wrap items-center gap-2">
@@ -414,7 +429,7 @@ export default function LivePerformancePage() {
                           <li key={r._id} className="flex items-center justify-between text-sm">
                             <span className="font-medium text-black">{r.name}</span>
                             <span className="tabular-nums text-xs" style={{ color: TONE.green.hex }}>
-                              {r.calls} calls · +{Math.round((r.calls - view.perAgent) * 10) / 10} ahead
+                              {r.done} {unit} · +{Math.round((r.done - view.perAgent) * 10) / 10} ahead
                             </span>
                           </li>
                         ))}
@@ -433,7 +448,7 @@ export default function LivePerformancePage() {
                               {r.name}
                             </span>
                             <span className="tabular-nums text-xs" style={{ color: TONE[r.tone].hex }}>
-                              {r.calls} calls · {need(r)} short
+                              {r.done} {unit} · {need(r)} short
                             </span>
                           </li>
                         ))}
@@ -447,7 +462,7 @@ export default function LivePerformancePage() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
               <StatCard icon={Inbox} label="Pending worked" value={data.totals.pendingWorked} sub={`${data.totals.pendingNow} still pending`} color="#e11d48" />
-              <StatCard icon={PhoneCall} label="Calls made" value={data.totals.calls} color={BLUE} />
+              <StatCard icon={PhoneCall} label="CRM calls" value={data.totals.calls} color={BLUE} />
               <StatCard icon={PhoneIncoming} label="Connected" value={data.totals.connected} sub={`${connectRate}% pick-up`} color="#16a34a" />
               <StatCard icon={Clock} label="Talk time" value={talk(data.totals.talkSeconds)} color="#7c3aed" />
               <StatCard icon={UserPlus} label="New leads" value={data.totals.newLeads} color={ORANGE} />
@@ -458,7 +473,7 @@ export default function LivePerformancePage() {
             {/* Trend + recent leads */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <div className="xl:col-span-2 border-2 border-black bg-white p-4">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">Calls & new leads trend</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">{t?.countBy === "calls" ? "Calls" : "Status updates"} & new leads trend</p>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chart} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
@@ -477,7 +492,7 @@ export default function LivePerformancePage() {
                       <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                       <Tooltip contentStyle={{ border: "2px solid #000", borderRadius: 0, fontSize: 12 }} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Area type="monotone" dataKey="calls" name="Calls" stroke={BLUE} strokeWidth={2} fill="url(#gCalls)" />
+                      <Area type="monotone" dataKey="calls" name={t?.countBy === "calls" ? "Calls" : "Status updates"} stroke={BLUE} strokeWidth={2} fill="url(#gCalls)" />
                       <Area type="monotone" dataKey="leads" name="New leads" stroke={ORANGE} strokeWidth={2} fill="url(#gLeads)" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -559,7 +574,7 @@ export default function LivePerformancePage() {
                       <Bar pct={r.pct} color={TONE[r.tone].hex} />
                     </div>
                     <span className="text-xs tabular-nums w-24 text-right text-black">
-                      {r.calls}/{Math.round(view.perAgent * 10) / 10} · {Math.round(r.pct)}%
+                      {r.done}/{Math.round(view.perAgent * 10) / 10} · {Math.round(r.pct)}%
                     </span>
                   </div>
                   <span className="text-sm tabular-nums text-right">{r.connected}</span>

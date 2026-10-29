@@ -350,6 +350,12 @@ const getLiveStats = asyncHandler(async (req, res) => {
   for (const a of leadActivity) {
     if (a.user) changeMap.set(String(a.user), (changeMap.get(String(a.user)) || 0) + 1);
   }
+  const statusActs = leadActivity.filter((a) => a.action === "STATUS_UPDATED");
+  const statusMap = new Map();
+  for (const a of statusActs) {
+    if (a.user) statusMap.set(String(a.user), (statusMap.get(String(a.user)) || 0) + 1);
+  }
+  const countBy = setting?.callTargets?.countBy === "calls" ? "calls" : "updates";
   const updates = leadActivity.map((a) => ({
     leadId: a.targetId,
     action: a.action,
@@ -370,6 +376,8 @@ const getLiveStats = asyncHandler(async (req, res) => {
         name: u.name,
         role: u.role,
         calls: c.calls || 0,
+        statusUpdates: statusMap.get(String(u._id)) || 0,
+        done: countBy === "calls" ? c.calls || 0 : statusMap.get(String(u._id)) || 0,
         connected: c.connected || 0,
         talkSeconds: c.talkSeconds || 0,
         lastCallAt: c.lastCallAt || null,
@@ -385,7 +393,12 @@ const getLiveStats = asyncHandler(async (req, res) => {
       n: byIdx.get(i) || 0,
     }));
   };
-  const callSeries = series(callTrend);
+  const statusTrend = new Map();
+  for (const a of statusActs) {
+    const i = Math.floor((new Date(a.timestamp) - since) / bucketMs);
+    statusTrend.set(i, (statusTrend.get(i) || 0) + 1);
+  }
+  const callSeries = countBy === "calls" ? series(callTrend) : series([...statusTrend].map(([_id, n]) => ({ _id, n })));
   const leadSeries = series(leadTrend);
 
   res.json({
@@ -398,9 +411,11 @@ const getLiveStats = asyncHandler(async (req, res) => {
         calls: setting?.callTargets?.calls ?? 20,
         perMinutes: setting?.callTargets?.perMinutes ?? 60,
         amberPct: setting?.callTargets?.amberPct ?? 60,
+        countBy,
       },
       totals: {
         calls: team.reduce((a, t) => a + t.calls, 0),
+        done: team.reduce((a, t) => a + t.done, 0),
         connected: team.reduce((a, t) => a + t.connected, 0),
         talkSeconds: team.reduce((a, t) => a + t.talkSeconds, 0),
         newLeads: leadSeries.reduce((a, p) => a + p.n, 0),
