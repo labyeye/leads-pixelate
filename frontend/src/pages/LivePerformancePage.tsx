@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import {
   Clock,
+  Inbox,
   Loader2,
   PhoneCall,
   PhoneIncoming,
@@ -55,6 +56,8 @@ interface LiveData {
     talkSeconds: number;
     newLeads: number;
     statusChanges: number;
+    pendingWorked: number;
+    pendingNow: number;
     aiCalls: number;
   };
   team: TeamRow[];
@@ -67,6 +70,16 @@ interface LiveData {
     status: string;
     createdAt: string;
     assignedTo?: { name: string } | null;
+  }[];
+  updates: {
+    leadId: string;
+    name: string;
+    company: string;
+    from: string;
+    to: string;
+    by: string;
+    remarks: string;
+    at: string;
   }[];
   statusCounts: Record<string, number>;
 }
@@ -435,7 +448,8 @@ export default function LivePerformancePage() {
             })()}
 
             {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+              <StatCard icon={Inbox} label="Pending worked" value={data.totals.pendingWorked} sub={`${data.totals.pendingNow} still pending`} color="#e11d48" />
               <StatCard icon={PhoneCall} label="Calls made" value={data.totals.calls} color={BLUE} />
               <StatCard icon={PhoneIncoming} label="Connected" value={data.totals.connected} sub={`${connectRate}% pick-up`} color="#16a34a" />
               <StatCard icon={Clock} label="Talk time" value={talk(data.totals.talkSeconds)} color="#7c3aed" />
@@ -491,6 +505,44 @@ export default function LivePerformancePage() {
                   ))}
                 </ul>
               </div>
+            </div>
+
+            {/* Updates in this window */}
+            <div className="border-2 border-black bg-white">
+              <div className="px-4 py-3 border-b-2 border-black bg-slate-100 flex items-center gap-2">
+                <p className="text-sm font-semibold text-black">
+                  Updates in the last {WINDOWS.find((w) => w.min === windowMin)?.label}
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {data.totals.statusChanges} total · {data.totals.pendingWorked} leads moved out of Pending Contact
+                </span>
+              </div>
+              {data.updates.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">No lead updates in this window.</p>
+              ) : (
+                <ul className="divide-y divide-slate-200 max-h-96 overflow-y-auto">
+                  {data.updates.map((u, i) => {
+                    const fromPending = u.from === "PENDING CONTACT";
+                    return (
+                      <li key={`${u.leadId}-${u.at}-${i}`} className="px-4 py-2.5 flex items-center gap-3">
+                        <span className="w-2.5 h-2.5 shrink-0 border border-black" style={{ backgroundColor: fromPending ? "#e11d48" : BLUE }} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-black truncate">
+                            <b>{u.name}</b>
+                            <span className="text-muted-foreground"> · {title(u.from)} → </span>
+                            <b>{title(u.to)}</b>
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            by {u.by}
+                            {u.remarks ? ` · ${u.remarks}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground shrink-0">{ago(u.at, data.now)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
 
             {/* Agent table */}

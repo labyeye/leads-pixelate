@@ -281,7 +281,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
   });
   const humanCalls = { ...tf, initiatedBy: { $ne: null }, createdAt: { $gte: since } };
 
-  const [setting, agents, callsByAgent, callTrend, leadTrend, changesByAgent, recentLeads, aiCalls, statusRows] =
+  const [setting, agents, callsByAgent, callTrend, leadTrend, touchedLeads, recentLeads, aiCalls, statusRows] =
     await Promise.all([
       Setting.findOne({ tenantId: req.user.tenantId || null }).select("callTargets").lean(),
       User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } })
@@ -309,12 +309,11 @@ const getLiveStats = asyncHandler(async (req, res) => {
         { $match: { ...tf, createdAt: { $gte: since } } },
         { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
       ]),
-      Lead.aggregate([
-        { $match: { ...tf, "statusHistory.timestamp": { $gte: since } } },
-        { $unwind: "$statusHistory" },
-        { $match: { "statusHistory.timestamp": { $gte: since }, "statusHistory.changedBy": { $ne: null } } },
-        { $group: { _id: "$statusHistory.changedBy", n: { $sum: 1 } } },
-      ]),
+      Lead.find({ ...tf, "statusHistory.timestamp": { $gte: since } })
+        .select("name company statusHistory")
+        .populate("statusHistory.changedBy", "name")
+        .limit(1000)
+        .lean(),
       Lead.find({ ...tf })
         .sort({ createdAt: -1 })
         .limit(12)
@@ -326,7 +325,31 @@ const getLiveStats = asyncHandler(async (req, res) => {
     ]);
 
   const callMap = new Map(callsByAgent.map((r) => [String(r._id), r]));
-  const changeMap = new Map(changesByAgent.map((r) => [String(r._id), r.n]));
+  // One entry per status change; the first entry of a lead is its creation, not an update.
+  const changeMap = new Map();
+  const updates = [];
+  const pendingLeadIds = new Set();
+  for (const l of touchedLeads) {
+    const h = l.statusHistory || [];
+    h.forEach((e, i) => {
+      if (i === 0 || !e.timestamp || new Date(e.timestamp) < since) return;
+      const from = h[i - 1].status;
+      const by = e.changedBy;
+      if (by?._id) changeMap.set(String(by._id), (changeMap.get(String(by._id)) || 0) + 1);
+      if (from === "PENDING CONTACT" && e.status !== "PENDING CONTACT") pendingLeadIds.add(String(l._id));
+      updates.push({
+        leadId: l._id,
+        name: l.name,
+        company: l.company || "",
+        from,
+        to: e.status,
+        by: by?.name || "System",
+        remarks: e.remarks || "",
+        at: e.timestamp,
+      });
+    });
+  }
+  updates.sort((a, b) => new Date(b.at) - new Date(a.at));
   const knownIds = new Set(agents.map((a) => String(a._id)));
   // Someone with calls in the window who is no longer in the list (role changed) still counts.
   const extra = callsByAgent.filter((r) => !knownIds.has(String(r._id))).map((r) => r._id);
@@ -374,12 +397,15 @@ const getLiveStats = asyncHandler(async (req, res) => {
         connected: team.reduce((a, t) => a + t.connected, 0),
         talkSeconds: team.reduce((a, t) => a + t.talkSeconds, 0),
         newLeads: leadSeries.reduce((a, p) => a + p.n, 0),
-        statusChanges: team.reduce((a, t) => a + t.statusChanges, 0),
+        statusChanges: updates.length,
+        pendingWorked: pendingLeadIds.size,
+        pendingNow: statusRows.find((r) => r._id === "PENDING CONTACT")?.n || 0,
         aiCalls,
       },
       team,
       trend: callSeries.map((p, i) => ({ t: p.t, calls: p.n, leads: leadSeries[i].n })),
       recentLeads,
+      updates: updates.slice(0, 40),
       statusCounts: Object.fromEntries(statusRows.map((r) => [r._id, r.n])),
     },
   });
