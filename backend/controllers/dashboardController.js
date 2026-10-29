@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const CallLog = require("../models/CallLog");
+const ActivityLog = require("../models/ActivityLog");
 const Setting = require("../models/Setting");
 
 const CLOSED_STATUSES = ["WON", "DROP"];
@@ -281,7 +282,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
   });
   const humanCalls = { ...tf, initiatedBy: { $ne: null }, createdAt: { $gte: since } };
 
-  const [setting, agents, callsByAgent, callTrend, leadTrend, touchedLeads, recentLeads, aiCalls, statusRows] =
+  const [setting, agents, callsByAgent, callTrend, leadTrend, touchedLeads, leadActivity, recentLeads, aiCalls, statusRows] =
     await Promise.all([
       Setting.findOne({ tenantId: req.user.tenantId || null }).select("callTargets").lean(),
       User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } })
@@ -310,9 +311,17 @@ const getLiveStats = asyncHandler(async (req, res) => {
         { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
       ]),
       Lead.find({ ...tf, "statusHistory.timestamp": { $gte: since } })
-        .select("name company statusHistory")
-        .populate("statusHistory.changedBy", "name")
+        .select("statusHistory")
         .limit(1000)
+        .lean(),
+      ActivityLog.find({
+        ...tf,
+        module: "Lead",
+        action: { $in: ["UPDATE", "STATUS_UPDATED", "NOTE_ADDED", "LEAD_CONVERTED"] },
+        timestamp: { $gte: since },
+      })
+        .sort({ timestamp: -1 })
+        .limit(2000)
         .lean(),
       Lead.find({ ...tf })
         .sort({ createdAt: -1 })
@@ -325,31 +334,29 @@ const getLiveStats = asyncHandler(async (req, res) => {
     ]);
 
   const callMap = new Map(callsByAgent.map((r) => [String(r._id), r]));
-  // One entry per status change; the first entry of a lead is its creation, not an update.
-  const changeMap = new Map();
-  const updates = [];
+  // Status changes: a lead made by hand starts with a "PENDING CONTACT" creation entry, but leads
+  // from integrations (IndiaMART, Facebook...) have an empty history, so their first entry is a real change.
   const pendingLeadIds = new Set();
   for (const l of touchedLeads) {
     const h = l.statusHistory || [];
     h.forEach((e, i) => {
-      if (i === 0 || !e.timestamp || new Date(e.timestamp) < since) return;
-      const from = h[i - 1].status;
-      const by = e.changedBy;
-      if (by?._id) changeMap.set(String(by._id), (changeMap.get(String(by._id)) || 0) + 1);
+      if (!e.timestamp || new Date(e.timestamp) < since) return;
+      const from = i === 0 ? "PENDING CONTACT" : h[i - 1].status;
       if (from === "PENDING CONTACT" && e.status !== "PENDING CONTACT") pendingLeadIds.add(String(l._id));
-      updates.push({
-        leadId: l._id,
-        name: l.name,
-        company: l.company || "",
-        from,
-        to: e.status,
-        by: by?.name || "System",
-        remarks: e.remarks || "",
-        at: e.timestamp,
-      });
     });
   }
-  updates.sort((a, b) => new Date(b.at) - new Date(a.at));
+  // Everything else a person does to a lead (notes, remarks, follow-ups, edits) comes from the activity log.
+  const changeMap = new Map();
+  for (const a of leadActivity) {
+    if (a.user) changeMap.set(String(a.user), (changeMap.get(String(a.user)) || 0) + 1);
+  }
+  const updates = leadActivity.map((a) => ({
+    leadId: a.targetId,
+    action: a.action,
+    description: a.description || "",
+    by: a.userName || "System",
+    at: a.timestamp,
+  }));
   const knownIds = new Set(agents.map((a) => String(a._id)));
   // Someone with calls in the window who is no longer in the list (role changed) still counts.
   const extra = callsByAgent.filter((r) => !knownIds.has(String(r._id))).map((r) => r._id);

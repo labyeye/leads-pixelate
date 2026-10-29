@@ -72,13 +72,10 @@ interface LiveData {
     assignedTo?: { name: string } | null;
   }[];
   updates: {
-    leadId: string;
-    name: string;
-    company: string;
-    from: string;
-    to: string;
+    leadId?: string;
+    action: "UPDATE" | "STATUS_UPDATED" | "NOTE_ADDED" | "LEAD_CONVERTED";
+    description: string;
     by: string;
-    remarks: string;
     at: string;
   }[];
   statusCounts: Record<string, number>;
@@ -454,7 +451,7 @@ export default function LivePerformancePage() {
               <StatCard icon={PhoneIncoming} label="Connected" value={data.totals.connected} sub={`${connectRate}% pick-up`} color="#16a34a" />
               <StatCard icon={Clock} label="Talk time" value={talk(data.totals.talkSeconds)} color="#7c3aed" />
               <StatCard icon={UserPlus} label="New leads" value={data.totals.newLeads} color={ORANGE} />
-              <StatCard icon={Repeat} label="Status updates" value={data.totals.statusChanges} color="#0891b2" />
+              <StatCard icon={Repeat} label="Lead updates" value={data.totals.statusChanges} color="#0891b2" />
               <StatCard icon={Sparkles} label="AI calls" value={data.totals.aiCalls} color="#db2777" />
             </div>
 
@@ -514,7 +511,7 @@ export default function LivePerformancePage() {
                   Updates in the last {WINDOWS.find((w) => w.min === windowMin)?.label}
                 </p>
                 <span className="text-xs text-muted-foreground">
-                  {data.totals.statusChanges} total · {data.totals.pendingWorked} leads moved out of Pending Contact
+                  {data.totals.statusChanges} updates · {data.totals.pendingWorked} leads moved out of Pending Contact
                 </span>
               </div>
               {data.updates.length === 0 ? (
@@ -522,20 +519,14 @@ export default function LivePerformancePage() {
               ) : (
                 <ul className="divide-y divide-slate-200 max-h-96 overflow-y-auto">
                   {data.updates.map((u, i) => {
-                    const fromPending = u.from === "PENDING CONTACT";
+                    const dot =
+                      u.action === "STATUS_UPDATED" ? BLUE : u.action === "NOTE_ADDED" ? "#7c3aed" : u.action === "LEAD_CONVERTED" ? "#16a34a" : "#64748b";
                     return (
                       <li key={`${u.leadId}-${u.at}-${i}`} className="px-4 py-2.5 flex items-center gap-3">
-                        <span className="w-2.5 h-2.5 shrink-0 border border-black" style={{ backgroundColor: fromPending ? "#e11d48" : BLUE }} />
+                        <span className="w-2.5 h-2.5 shrink-0 border border-black" style={{ backgroundColor: dot }} />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-black truncate">
-                            <b>{u.name}</b>
-                            <span className="text-muted-foreground"> · {title(u.from)} → </span>
-                            <b>{title(u.to)}</b>
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            by {u.by}
-                            {u.remarks ? ` · ${u.remarks}` : ""}
-                          </p>
+                          <p className="text-sm text-black truncate">{u.description}</p>
+                          <p className="text-xs text-muted-foreground truncate">by {u.by}</p>
                         </div>
                         <span className="text-[11px] text-muted-foreground shrink-0">{ago(u.at, data.now)}</span>
                       </li>
