@@ -553,6 +553,24 @@ export const campaignsAPI = {
     request<{ success: boolean }>(`/campaigns/${id}`, { method: 'DELETE' }),
 };
 
+export const funnelsAPI = {
+  list: () => request<{ success: boolean; data: any[] }>('/funnels'),
+  create: (body: any) =>
+    request<{ success: boolean; data: any }>('/funnels', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  update: (id: string, body: any) =>
+    request<{ success: boolean; data: any }>(`/funnels/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean }>(`/funnels/${id}`, { method: 'DELETE' }),
+  jobs: (id: string) =>
+    request<{ success: boolean; data: any[] }>(`/funnels/${id}/jobs`),
+};
+
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>('/dashboard/stats'),
   getLive: (windowMin: number) =>

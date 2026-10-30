@@ -231,6 +231,7 @@ leadSchema.pre("save", function () {
 });
 leadSchema.post("save", function (lead) {
   if (!lead.$locals.wasNew || !lead.tenantId) return;
+  require("../services/funnelService").enroll(lead.tenantId, "lead_created", lead);
   require("../controllers/whatsappController").notify(
     lead.tenantId,
     "lead_welcome",

@@ -1587,6 +1587,24 @@ export const indiamartAPI = {
     ),
 };
 
+export const funnelsAPI = {
+  list: () => request<{ success: boolean; data: any[] }>("/funnels"),
+  create: (body: any) =>
+    request<{ success: boolean; data: any }>("/funnels", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  update: (id: string, body: any) =>
+    request<{ success: boolean; data: any }>(`/funnels/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean }>(`/funnels/${id}`, { method: "DELETE" }),
+  jobs: (id: string) =>
+    request<{ success: boolean; data: any[] }>(`/funnels/${id}/jobs`),
+};
+
 export const whatsappAPI = {
   getStatus: () => request<{ success: boolean; data: any }>("/whatsapp/status"),
   getConfig: () => request<{ success: boolean; data: any }>("/whatsapp/config"),

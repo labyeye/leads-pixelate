@@ -52,6 +52,7 @@ export default function LoginScreen({ navigation }: any) {
   const [tfaCode, setTfaCode] = useState('');
   const entrance = useRef(new Animated.Value(0)).current;
 
+  // Slide in once, when the screen opens — not again on every mode/step change.
   useEffect(() => {
     entrance.setValue(0);
 
@@ -60,7 +61,7 @@ export default function LoginScreen({ navigation }: any) {
       duration: 650,
       useNativeDriver: true,
     }).start();
-  }, [mode, pending2FA, entrance]);
+  }, [entrance]);
 
   const slideUp = (distance = 24) => ({
     opacity: entrance,

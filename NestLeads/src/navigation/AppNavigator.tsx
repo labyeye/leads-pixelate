@@ -58,6 +58,7 @@ import CampaignManagementOverviewScreen from '../screens/CampaignManagementOverv
 import CampaignReportsScreen from '../screens/CampaignReportsScreen';
 import ActivityLogScreen from '../screens/ActivityLogScreen';
 import LivePerformanceScreen from '../screens/LivePerformanceScreen';
+import FunnelsScreen from '../screens/FunnelsScreen';
 import TrashScreen from '../screens/TrashScreen';
 import AccountSecurityScreen from '../screens/AccountSecurityScreen';
 import { withSlideUp } from '../components/motion';
@@ -65,6 +66,7 @@ import { withSlideUp } from '../components/motion';
 const AccountSecurityScreenAnim = withSlideUp(AccountSecurityScreen);
 const ActivityLogScreenAnim = withSlideUp(ActivityLogScreen);
 const LivePerformanceScreenAnim = withSlideUp(LivePerformanceScreen);
+const FunnelsScreenAnim = withSlideUp(FunnelsScreen);
 const AdCampaignsHubScreenAnim = withSlideUp(AdCampaignsHubScreen);
 const AdPlatformLockedScreenAnim = withSlideUp(AdPlatformLockedScreen);
 const AddLeadScreenAnim = withSlideUp(AddLeadScreen);
@@ -169,6 +171,7 @@ export type MoreStackParamList = {
   CampaignReports: undefined;
   ActivityLog: undefined;
   LivePerformance: undefined;
+  Funnels: undefined;
   Trash: undefined;
   AccountSecurity: undefined;
 };
@@ -290,6 +293,7 @@ function MoreNavigator() {
       />
       <MoreStack.Screen name="ActivityLog" component={ActivityLogScreenAnim} />
       <MoreStack.Screen name="LivePerformance" component={LivePerformanceScreenAnim} />
+      <MoreStack.Screen name="Funnels" component={FunnelsScreenAnim} />
       <MoreStack.Screen name="Trash" component={TrashScreenAnim} />
       <MoreStack.Screen
         name="AccountSecurity"

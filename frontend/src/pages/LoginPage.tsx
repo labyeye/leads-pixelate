@@ -45,6 +45,51 @@ const features = [
 
 type LoginMode = "email" | "phone" | "passkey";
 
+// Defined at module level so React keeps the same component between renders —
+// defined inside LoginPage they remounted on every keystroke and replayed the slide-in.
+const PrimaryBtn = ({
+  disabled,
+  isLoading,
+  children,
+}: {
+  disabled?: boolean;
+  isLoading?: boolean;
+  children: React.ReactNode;
+}) => (
+  <button
+    type="submit"
+    disabled={disabled || isLoading}
+    className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
+  >
+    {isLoading ? (
+      <>
+        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        Please wait...
+      </>
+    ) : (
+      children
+    )}
+  </button>
+);
+
+// ── Back link ──────────────────────────────────────────────────────────────
+
+const BackLink = ({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="w-full py-2 text-xs font-medium text-gray-500 hover:text-black transition-colors"
+  >
+    ← {label}
+  </button>
+);
+
 export default function LoginPage() {
   const { login, completeLogin } = useAuth();
   const navigate = useNavigate();
@@ -182,8 +227,7 @@ export default function LoginPage() {
   };
 
   // ── Shared error banner ───────────────────────────────────────────────────
-  const ErrorBanner = () =>
-    error ? (
+  const errorBanner = error ? (
       <div className="flex items-center gap-2 bg-red-50 border-2 border-red-400 text-red-600 text-sm px-3 py-2.5 mb-5">
         <AlertCircle className="w-4 h-4 shrink-0" />
         <span className="font-medium">{error}</span>
@@ -200,50 +244,8 @@ export default function LoginPage() {
           </button>
         )}
       </div>
-    ) : null;
+  ) : null;
 
-  // ── Primary button ─────────────────────────────────────────────────────────
-  const PrimaryBtn = ({
-    disabled,
-    isLoading,
-    children,
-  }: {
-    disabled?: boolean;
-    isLoading?: boolean;
-    children: React.ReactNode;
-  }) => (
-    <button
-      type="submit"
-      disabled={disabled || isLoading}
-      className="w-full bg-[#024BAB] text-white py-3.5 text-sm font-medium border-2 border-black hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#0a0a0a] transition-all flex items-center justify-center gap-2 mt-2"
-    >
-      {isLoading ? (
-        <>
-          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          Please wait...
-        </>
-      ) : (
-        children
-      )}
-    </button>
-  );
-
-  // ── Back link ──────────────────────────────────────────────────────────────
-  const BackLink = ({
-    label,
-    onClick,
-  }: {
-    label: string;
-    onClick: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full py-2 text-xs font-medium text-gray-500 hover:text-black transition-colors"
-    >
-      ← {label}
-    </button>
-  );
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -341,7 +343,7 @@ export default function LoginPage() {
                   Enter the 6-digit code from your authenticator app.
                 </p>
               </div>
-              <ErrorBanner />
+              {errorBanner}
               <form onSubmit={handle2FASubmit} className="space-y-5 login-anim">
                 <div>
                   <label className="block text-xs font-medium text-black uppercase tracking-wider mb-1.5">
@@ -396,7 +398,7 @@ export default function LoginPage() {
                     : `We'll send a one-time password to your ${otpVia === "email" ? "email" : "WhatsApp"}.`}
                 </p>
               </div>
-              <ErrorBanner />
+              {errorBanner}
 
               {!otpSent ? (
                 <form onSubmit={handleSendOtp} className="space-y-5 login-anim">
@@ -511,7 +513,7 @@ export default function LoginPage() {
                   key.
                 </p>
               </div>
-              <ErrorBanner />
+              {errorBanner}
 
               <div className="space-y-4">
                 {/* Passkey trigger button */}
@@ -569,7 +571,7 @@ export default function LoginPage() {
                   Sign in to your workspace
                 </p>
               </div>
-              <ErrorBanner />
+              {errorBanner}
 
               <form onSubmit={handleSubmit} className="space-y-5 login-anim">
                 {/* Email */}

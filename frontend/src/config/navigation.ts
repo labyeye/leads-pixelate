@@ -34,6 +34,7 @@ import {
   Receipt,
   FolderOpen,
   Activity,
+  Workflow,
 } from "lucide-react";
 import { WhatsAppNavIcon } from "@/components/icons/WhatsAppIcon";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
@@ -373,6 +374,12 @@ const allGroups: NavGroup[] = [
             href: "/documents",
             icon: FolderOpen,
             roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Auto Funnels",
+            href: "/whatsapp/funnels",
+            icon: Workflow,
+            roles: ["super_admin", "admin"],
           },
           {
             // Connection, Templates, Campaign Analytics and Replies tabs

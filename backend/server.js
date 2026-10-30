@@ -23,6 +23,7 @@ connectDB().then(async () => {
   const User = require("./models/User");
 
   cron.schedule("* * * * *", runScheduledPosts);
+  cron.schedule("* * * * *", require("./services/funnelService").processDue);
   cron.schedule("0 * * * *", runAutopilotCron);
   // A restart kills any run in flight; free their locks so "Try again" works right away.
   // ponytail: assumes one backend process; with several instances this would free a live run's lock.
@@ -233,6 +234,7 @@ app.use("/api/google-ads", require("./routes/googleAdsRoutes"));
 app.use("/api/linkedin-ads", require("./routes/linkedinAdsRoutes"));
 app.use("/api/email", require("./routes/emailRoutes"));
 app.use("/api/whatsapp", require("./routes/whatsappRoutes"));
+app.use("/api/funnels", require("./routes/funnelRoutes"));
 app.use("/api/documents", require("./routes/documentRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));

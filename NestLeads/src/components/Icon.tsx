@@ -145,6 +145,7 @@ const MAP: Record<string, LucideIcon> = {
   'funnel-outline': Filter,
   funnel: Filter,
   'git-network-outline': GitBranch,
+  'git-branch-outline': GitBranch,
   'git-network': GitBranch,
   'log-in-outline': LogIn,
   'log-in': LogIn,

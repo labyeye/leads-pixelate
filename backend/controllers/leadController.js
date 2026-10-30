@@ -22,6 +22,7 @@ const {
   pickField: pickJDField,
 } = require("../services/justdialService");
 const User = require("../models/User");
+const funnels = require("../services/funnelService");
 const logActivity = require("../utils/activityLogger");
 const { resolvePincode } = require("../utils/pincode");
 const { nextBatchAssignee } = require("../utils/leadAssignment");
@@ -377,6 +378,8 @@ const updateLead = asyncHandler(async (req, res) => {
     .populate("assignedTo", "name email")
     .populate("statusHistory.changedBy", "name");
 
+  if (statusChanged) funnels.onStatusChange(req.user.tenantId, lead, lead.status);
+
   logActivity({
     user: req.user,
     action: statusChanged ? "STATUS_UPDATED" : "UPDATE",
@@ -498,6 +501,7 @@ const bulkUpdateStatus = asyncHandler(async (req, res) => {
     });
 
     updated.push(lead._id);
+    funnels.onStatusChange(req.user.tenantId, lead, status);
   }
 
   logActivity({
@@ -694,6 +698,7 @@ const convertToClient = asyncHandler(async (req, res) => {
   });
 
   await lead.save();
+  funnels.onStatusChange(lead.tenantId, lead, "WON");
 
   const clientData = {
     name: lead.name,

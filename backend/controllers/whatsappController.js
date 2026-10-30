@@ -395,6 +395,34 @@ exports.notify = async function notify(tenantId, event, rawPhone, vars = []) {
   }
 };
 
+// One template message to one lead for a message funnel (services/funnelService.js). Throws with a
+// readable reason; returns the WhatsApp message id.
+exports.sendFunnelMessage = async function sendFunnelMessage(tenantId, step, lead, preferredNumberId) {
+  const tenant = await Tenant.findById(tenantId);
+  const wa = tenant?.integrations?.whatsapp;
+  if (!wa?.isConnected || !wa.accessToken) throw new Error("WhatsApp is not connected");
+  const phone = formatPhone(lead.phone);
+  if (!phone) throw new Error("Lead has no valid phone number");
+  const template = await WhatsappTemplate.findOne({ _id: step.templateId, tenantId, status: "APPROVED" });
+  if (!template) throw new Error("Template is missing or not approved");
+  const numbers = wa.phoneNumbers || [];
+  const phoneNumberId =
+    numbers.length === 1
+      ? numbers[0].phoneNumberId
+      : numbers.find((n) => n.phoneNumberId === preferredNumberId)?.phoneNumberId || numbers[0]?.phoneNumberId;
+  if (!phoneNumberId) throw new Error("No WhatsApp number is connected");
+  const components = buildTemplateComponents(template, step.variableMapping || [], lead, null);
+  const r = await sendWaMessage(
+    phoneNumberId,
+    decrypt(wa.accessToken),
+    phone,
+    template.metaTemplateName || template.name,
+    template.language,
+    components,
+  );
+  return r?.messages?.[0]?.id || "";
+};
+
 exports.getAutomations = asyncHandler(async (req, res) => {
   const tenant = await Tenant.findOne(getTenantQuery(req.user));
   const saved = tenant?.integrations?.whatsapp?.automations || {};
