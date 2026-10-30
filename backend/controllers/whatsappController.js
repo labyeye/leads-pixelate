@@ -86,7 +86,11 @@ function buildTemplateComponents(template, variableMapping, lead, headerMedia) {
         },
       ],
     });
-  } else if (template.headerType === "TEXT" && template.headerText) {
+  } else if (
+    template.headerType === "TEXT" &&
+    template.headerText &&
+    /\{\{\d+\}\}/.test(template.headerText) // a header with no {{variable}} takes no parameters (Meta 132000 otherwise)
+  ) {
     components.push({
       type: "header",
       parameters: [{ type: "text", text: template.headerText }],
@@ -111,15 +115,16 @@ function buildTemplateComponents(template, variableMapping, lead, headerMedia) {
     });
   }
 
-  if (variableMapping?.length > 0) {
-    const params = [...variableMapping]
-      .sort((a, b) => a.position - b.position)
-      .map((v) => ({
-        type: "text",
-        text: resolveVariable(v.fieldKey, v.customValue, lead),
-      }));
-    if (params.length > 0)
-      components.push({ type: "body", parameters: params });
+  // Meta wants exactly as many body parameters as the template has {{n}}: no more, no fewer, none empty.
+  const count = template.variableCount || 0;
+  if (count > 0) {
+    const byPos = new Map((variableMapping || []).map((v) => [v.position, v]));
+    const params = Array.from({ length: count }, (_, i) => {
+      const v = byPos.get(i + 1);
+      const text = v ? resolveVariable(v.fieldKey, v.customValue, lead) : "";
+      return { type: "text", text: String(text || "").trim() || "-" };
+    });
+    components.push({ type: "body", parameters: params });
   }
 
   return components;
