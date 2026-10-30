@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Phone, MessageCircle, FileText, CalendarCheck } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { dashboardAPI } from "@/services/api";
 import { cn } from "@/lib/utils";
 
@@ -18,24 +19,28 @@ interface Metric {
 interface Pace {
   configured: boolean;
   metrics?: Metric[];
-  tone?: Tone;
 }
 
-const LOOK: Record<Tone, { label: string; cls: string; hex: string }> = {
-  green: { label: "On target", cls: "bg-[#16a34a] text-white", hex: "#16a34a" },
-  amber: { label: "Behind", cls: "bg-[#f59e0b] text-black", hex: "#f59e0b" },
-  red: { label: "Off pace", cls: "bg-[#dc2626] text-white", hex: "#dc2626" },
+const TONE: Record<Tone, { word: string; cls: string }> = {
+  green: { word: "On target", cls: "bg-[#16a34a] text-white" },
+  amber: { word: "Behind", cls: "bg-[#f59e0b] text-black" },
+  red: { word: "Off pace", cls: "bg-[#dc2626] text-white" },
+};
+
+const SHORT: Record<string, { label: string; icon: LucideIcon }> = {
+  calls: { label: "Calls", icon: Phone },
+  conversations: { label: "Convos", icon: MessageCircle },
+  quotations: { label: "Quotes", icon: FileText },
+  visits: { label: "Visits", icon: CalendarCheck },
 };
 
 const per = (m: number) =>
   m === 60 ? "hour" : m === 1440 ? "day" : m === 10080 ? "week" : m % 60 === 0 ? `${m / 60} hrs` : `${m} min`;
 
-// Staff-only: the signed-in person's own progress on every target the admin set (calls,
-// conversations, quotations, visits). The badge shows the worst of them; click for the list.
+// Staff-only: one badge per target the admin set (calls, conversations, quotations, visits),
+// each coloured by how that target is going. Hover a badge for the detail.
 export function PaceBadge() {
   const [pace, setPace] = useState<Pace | null>(null);
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -54,66 +59,35 @@ export function PaceBadge() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (!box.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  if (!pace?.configured || !pace.tone || !pace.metrics?.length) return null;
-  const look = LOOK[pace.tone];
-  const hit = pace.metrics.filter((m) => m.tone === "green").length;
+  if (!pace?.configured || !pace.metrics?.length) return null;
 
   return (
-    <div ref={box} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={cn(
-          "flex items-center gap-2 border-2 border-black px-2.5 py-1.5 text-xs font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
-          look.cls,
-        )}
-        aria-label="My targets"
-      >
-        <span className="w-2 h-2 rounded-full bg-current opacity-80 animate-pulse" />
-        <span className="uppercase tracking-wider">{look.label}</span>
-        <span className="tabular-nums hidden sm:inline">
-          {hit}/{pace.metrics.length}
-        </span>
-        <ChevronDown className="w-3 h-3" />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 mt-2 w-72 border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-30">
-          <p className="px-3 py-2 border-b-2 border-black bg-slate-100 text-[11px] font-medium uppercase tracking-wider text-black">
-            My targets
-          </p>
-          <ul className="divide-y divide-slate-200">
-            {pace.metrics.map((m) => (
-              <li key={m.key} className="px-3 py-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-medium text-black">{m.label}</span>
-                  <span className="text-xs tabular-nums font-semibold" style={{ color: LOOK[m.tone].hex }}>
-                    {m.done} / {m.target} · {LOOK[m.tone].label}
-                  </span>
-                </div>
-                <div className="mt-1 h-2 border border-black bg-slate-100">
-                  <div
-                    className="h-full"
-                    style={{ width: `${Math.min(100, m.pct)}%`, backgroundColor: LOOK[m.tone].hex }}
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  target {m.target} per {per(m.perMinutes)}
-                  {m.target > m.done ? ` · ${m.target - m.done} to go` : ""}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div className="flex items-center gap-1.5 max-w-[55vw] lg:max-w-none overflow-x-auto py-1 pr-1">
+      {pace.metrics.map((m) => {
+        const short = SHORT[m.key] ?? { label: m.label, icon: Phone };
+        const Icon = m.tone === "green" ? Check : short.icon;
+        const togo = Math.max(0, m.target - m.done);
+        return (
+          <div
+            key={m.key}
+            title={`${short.label}: ${m.done} of ${m.target} per ${per(m.perMinutes)} — ${TONE[m.tone].word}${
+              togo ? ` (${togo} to go)` : ""
+            }`}
+            className={cn(
+              "shrink-0 flex items-center gap-1.5 border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+              TONE[m.tone].cls,
+            )}
+          >
+            <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+            <span className="text-[11px] font-semibold uppercase tracking-wide leading-none">
+              {short.label}
+            </span>
+            <span className="text-xs font-bold tabular-nums leading-none border-l-2 border-current/40 pl-1.5">
+              {m.done}/{m.target}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

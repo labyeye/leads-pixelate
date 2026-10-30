@@ -41,7 +41,6 @@ export default function AppHeader({
           <Icon name="menu" size={26} color="#000" />
         </TouchableOpacity>
         <View style={s.right}>
-          {isStaff && <PaceBadge />}
           <TouchableOpacity onPress={onSearch} hitSlop={10}>
             <Icon name="search-outline" size={24} color="#000" />
           </TouchableOpacity>
@@ -68,6 +67,7 @@ export default function AppHeader({
         {greeting}, {first} <Hand size={14} color="#475569" style={{ marginLeft: 4 }} />
       </Text>
       <Text style={s.title}>{title}</Text>
+      {isStaff && <PaceBadge />}
     </View>
   );
 }
