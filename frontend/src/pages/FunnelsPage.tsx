@@ -83,6 +83,18 @@ const FIELDS = [
 const PERF_FIELDS = [
   { key: "name", label: "Team member's name" },
   { key: "perf_period", label: "Period (today / last 7 days / this month)" },
+  { key: "perf_calls", label: "Calls" },
+  { key: "perf_conversations", label: "Conversations" },
+  { key: "perf_quotations", label: "Quotations sent" },
+  { key: "perf_visits", label: "Visits scheduled" },
+  { key: "perf_rank", label: "Rank in team" },
+  { key: "perf_team_size", label: "Team: members" },
+  { key: "perf_team_calls", label: "Team: total calls" },
+  { key: "perf_team_conversations", label: "Team: total conversations" },
+  { key: "perf_team_quotations", label: "Team: total quotations" },
+  { key: "perf_team_visits", label: "Team: total visits" },
+  { key: "perf_top", label: "Team: top performer" },
+  { key: "perf_leaderboard", label: "Team: ranking of everyone" },
   { key: "perf_new", label: "New leads" },
   { key: "perf_won", label: "Leads won" },
   { key: "perf_dropped", label: "Leads dropped" },
@@ -94,6 +106,7 @@ const PERF_FIELDS = [
 ];
 
 const ROLES = [
+  ["super_admin", "Super admins"],
   ["admin", "Admins"],
   ["sales_executive", "Sales executives"],
   ["service_manager", "Service managers"],
@@ -580,7 +593,7 @@ export default function FunnelsPage() {
                 </div>
                 {draft.audience === "staff" && (
                   <p className="text-xs text-muted-foreground">
-                    Each team member gets their own numbers (new leads, won, follow-ups…) filled into the template. Members need a
+                    Each team member gets their own numbers (calls, conversations, quotations, visits, rank…) filled into the template; the "Team:" values give the owner everyone's totals and ranking. Rank = calls + 2×conversations + 3×quotations + 3×visits. Members need a
                     phone number on their profile.
                   </p>
                 )}

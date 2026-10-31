@@ -5,6 +5,9 @@ const MessageFunnel = require("../models/MessageFunnel");
 const FunnelJob = require("../models/FunnelJob");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
+const CallLog = require("../models/CallLog");
+const Setting = require("../models/Setting");
+const { statusEvents, countByUser } = require("../utils/performanceMetrics");
 const log = require("../utils/logger").scope("Funnel");
 
 const STUCK_MS = 10 * 60 * 1000;
@@ -75,6 +78,65 @@ function periodOf(frequency, now = new Date()) {
   return { start, label };
 }
 
+// Everyone's calls / conversations / quotations / visits over the period, ranked. Worked out once per
+// tenant and period and reused for a minute, since every recipient of a run needs the same table.
+// Points decide the rank: call 1, conversation 2, quotation 3, visit 3.
+const teamCache = new Map();
+async function teamBoard(tenantId, frequency) {
+  const key = `${tenantId}:${frequency}`;
+  const hit = teamCache.get(key);
+  if (hit && Date.now() - hit.at < 60000) return hit.board;
+
+  const { start } = periodOf(frequency);
+  const tf = { tenantId };
+  const [setting, members, events] = await Promise.all([
+    Setting.findOne({ tenantId }).select("callTargets").lean(),
+    User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } }).select("name").lean(),
+    statusEvents(tf, start),
+  ]);
+  const per = countByUser(events);
+  // Same rule as the live dashboard: count status updates, or real call logs when the tenant chose so.
+  const callLogs = new Map();
+  const byCallLog = setting?.callTargets?.countBy === "calls";
+  if (byCallLog) {
+    const rows = await CallLog.aggregate([
+      { $match: { ...tf, initiatedBy: { $ne: null }, createdAt: { $gte: start } } },
+      { $group: { _id: "$initiatedBy", n: { $sum: 1 } } },
+    ]);
+    rows.forEach((r) => callLogs.set(String(r._id), r.n));
+  }
+  const rows = members.map((u) => {
+    const m = per.get(String(u._id)) || { calls: 0, conversations: 0, quotations: 0, visits: 0 };
+    const calls = byCallLog ? callLogs.get(String(u._id)) || 0 : m.calls;
+    return {
+      id: String(u._id),
+      name: u.name,
+      calls,
+      conversations: m.conversations,
+      quotations: m.quotations,
+      visits: m.visits,
+      points: calls + m.conversations * 2 + m.quotations * 3 + m.visits * 3,
+    };
+  });
+  rows.sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+  rows.forEach((r, i) => (r.rank = i > 0 && rows[i - 1].points === r.points ? rows[i - 1].rank : i + 1));
+  const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+  const board = {
+    rows,
+    totals: { calls: sum("calls"), conversations: sum("conversations"), quotations: sum("quotations"), visits: sum("visits") },
+  };
+  teamCache.set(key, { at: Date.now(), board });
+  return board;
+}
+
+// Meta rejects newlines, tabs and long gaps inside a template value, so the table is one line.
+const leaderboardText = (rows) =>
+  rows
+    .slice(0, 10)
+    .map((r) => `${r.rank}. ${r.name} - ${r.calls} calls, ${r.conversations} talks, ${r.quotations} quotes, ${r.visits} visits`)
+    .join(" | ")
+    .slice(0, 900);
+
 // Numbers for one team member over the period; they fill the {{n}} of the template (perf_* fields).
 async function performanceOf(tenantId, user, frequency) {
   const { start, label } = periodOf(frequency);
@@ -91,7 +153,25 @@ async function performanceOf(tenantId, user, frequency) {
     Lead.countDocuments({ ...base, status: { $nin: ["WON", "DROP"] }, followUpDate: { $lte: endToday } }),
   ]);
   const closed = won + dropped;
+  const board = await teamBoard(tenantId, frequency);
+  const mine = board.rows.find((r) => r.id === String(user._id));
+  const top = board.rows[0];
   return {
+    // you
+    perf_calls: String(mine?.calls ?? 0),
+    perf_conversations: String(mine?.conversations ?? 0),
+    perf_quotations: String(mine?.quotations ?? 0),
+    perf_visits: String(mine?.visits ?? 0),
+    perf_points: String(mine?.points ?? 0),
+    perf_rank: mine ? `${mine.rank} of ${board.rows.length}` : "-",
+    // whole team (for the owner's summary)
+    perf_team_calls: String(board.totals.calls),
+    perf_team_conversations: String(board.totals.conversations),
+    perf_team_quotations: String(board.totals.quotations),
+    perf_team_visits: String(board.totals.visits),
+    perf_team_size: String(board.rows.length),
+    perf_top: top && top.points > 0 ? top.name : "-",
+    perf_leaderboard: board.rows.length ? leaderboardText(board.rows) : "-",
     perf_period: label,
     perf_new: String(fresh),
     perf_won: String(won),

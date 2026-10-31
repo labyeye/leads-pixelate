@@ -338,6 +338,34 @@ export const TEMPLATE_LIBRARY: LibraryTemplate[] = [
     en: "Hi {{1}}, your summary for {{2}}:\n\nNew leads: {{3}}\nWon: {{4}}\nDropped: {{5}}\nStill pending contact: {{6}}\nWin rate: {{7}}\n\nOpen the app to see the details.",
     hi: "नमस्ते {{1}} जी, {{2}} का आपका summary:\n\nनए leads: {{3}}\nWon: {{4}}\nDropped: {{5}}\nअभी pending contact: {{6}}\nWin rate: {{7}}\n\nपूरा detail देखने के लिए app खोलें।",
   },
+  {
+    id: "team_scorecard",
+    title: "Scorecard with rank — each member",
+    when: "Calls, conversations, quotations, visits and their rank in the team",
+    group: "Team performance",
+    category: "UTILITY",
+    headerType: "TEXT",
+    headerText: "Your scorecard",
+    vars: ["Team member", "Period", "Calls", "Conversations", "Quotations sent", "Visits scheduled", "Rank in team"],
+    map: ["name", "perf_period", "perf_calls", "perf_conversations", "perf_quotations", "perf_visits", "perf_rank"],
+    samples: ["Amit", "today", "42", "15", "6", "4", "2 of 8"],
+    en: "Hi {{1}}, your scorecard for {{2}}:\n\nCalls: {{3}}\nConversations: {{4}}\nQuotations sent: {{5}}\nVisits scheduled: {{6}}\n\nYour rank in the team: {{7}}\n\nKeep it up and aim for the top spot.",
+    hi: "नमस्ते {{1}} जी, {{2}} का आपका scorecard:\n\nCalls: {{3}}\nConversations: {{4}}\nभेजे गए Quotations: {{5}}\nScheduled Visits: {{6}}\n\nTeam में आपकी rank: {{7}}\n\nऐसे ही लगे रहिए और पहली rank का target रखिए।",
+  },
+  {
+    id: "owner_team_summary",
+    title: "Owner summary — all team members",
+    when: "For the super admin: team totals, top performer and everyone's ranking",
+    group: "Team performance",
+    category: "UTILITY",
+    headerType: "TEXT",
+    headerText: "Team performance summary",
+    vars: ["Owner name", "Period", "Team size", "Total calls", "Total conversations", "Total quotations", "Total visits", "Top performer", "Ranking of everyone"],
+    map: ["name", "perf_period", "perf_team_size", "perf_team_calls", "perf_team_conversations", "perf_team_quotations", "perf_team_visits", "perf_top", "perf_leaderboard"],
+    samples: ["Labh", "today", "8", "310", "96", "31", "18", "Amit", "1. Amit - 52 calls, 20 talks, 6 quotes, 4 visits | 2. Riya - 48 calls, 17 talks, 5 quotes, 3 visits"],
+    en: "Hi {{1}}, team summary for {{2}} ({{3}} members).\n\nCalls: {{4}}\nConversations: {{5}}\nQuotations sent: {{6}}\nVisits scheduled: {{7}}\n\nTop performer: {{8}}\n\nRanking: {{9}}\n\nOpen the app for the full details.",
+    hi: "नमस्ते {{1}} जी, {{2}} का team summary ({{3}} members)।\n\nCalls: {{4}}\nConversations: {{5}}\nभेजे गए Quotations: {{6}}\nScheduled Visits: {{7}}\n\nTop performer: {{8}}\n\nRanking: {{9}}\n\nपूरी detail के लिए app खोलें।",
+  },
 ];
 
 /** Meta template name: lowercase, digits, underscore; language suffix keeps EN/HI apart. */
@@ -370,6 +398,11 @@ export function libraryToForm(t: LibraryTemplate, lang: "en" | "hi") {
 export const PERF_VARS: { key: string; label: string; sample: string }[] = [
   { key: "name", label: "Team member", sample: "Amit" },
   { key: "perf_period", label: "Period", sample: "today" },
+  { key: "perf_calls", label: "Calls", sample: "42" },
+  { key: "perf_conversations", label: "Conversations", sample: "15" },
+  { key: "perf_quotations", label: "Quotations sent", sample: "6" },
+  { key: "perf_visits", label: "Visits scheduled", sample: "4" },
+  { key: "perf_rank", label: "Rank in team", sample: "2 of 8" },
   { key: "perf_new", label: "New leads", sample: "12" },
   { key: "perf_won", label: "Won", sample: "3" },
   { key: "perf_dropped", label: "Dropped", sample: "2" },
@@ -377,6 +410,13 @@ export const PERF_VARS: { key: string; label: string; sample: string }[] = [
   { key: "perf_active", label: "Open leads", sample: "25" },
   { key: "perf_followups", label: "Follow-ups due", sample: "5" },
   { key: "perf_winrate", label: "Win rate", sample: "60%" },
+  { key: "perf_team_size", label: "Team size", sample: "8" },
+  { key: "perf_team_calls", label: "Team calls", sample: "310" },
+  { key: "perf_team_conversations", label: "Team conversations", sample: "96" },
+  { key: "perf_team_quotations", label: "Team quotations", sample: "31" },
+  { key: "perf_team_visits", label: "Team visits", sample: "18" },
+  { key: "perf_top", label: "Top performer", sample: "Amit" },
+  { key: "perf_leaderboard", label: "Ranking of everyone", sample: "1. Amit - 52 calls, 20 talks | 2. Riya - 48 calls, 17 talks" },
 ];
 
 const MAP_KEYS = [

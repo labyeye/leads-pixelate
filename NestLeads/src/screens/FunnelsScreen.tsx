@@ -32,6 +32,18 @@ const FIELDS = [
 const PERF_FIELDS = [
   ['name', 'Team member'],
   ['perf_period', 'Period'],
+  ['perf_calls', 'Calls'],
+  ['perf_conversations', 'Conversations'],
+  ['perf_quotations', 'Quotations'],
+  ['perf_visits', 'Visits'],
+  ['perf_rank', 'Rank in team'],
+  ['perf_team_size', 'Team: members'],
+  ['perf_team_calls', 'Team: calls'],
+  ['perf_team_conversations', 'Team: conversations'],
+  ['perf_team_quotations', 'Team: quotations'],
+  ['perf_team_visits', 'Team: visits'],
+  ['perf_top', 'Team: top performer'],
+  ['perf_leaderboard', 'Team: ranking'],
   ['perf_new', 'New leads'],
   ['perf_won', 'Won'],
   ['perf_dropped', 'Dropped'],
@@ -42,6 +54,7 @@ const PERF_FIELDS = [
   ['custom', 'Custom'],
 ] as const;
 const ROLES = [
+  ['super_admin', 'Super admins'],
   ['admin', 'Admins'],
   ['sales_executive', 'Sales executives'],
   ['service_manager', 'Service managers'],

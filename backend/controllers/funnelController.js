@@ -7,9 +7,12 @@ const logActivity = require("../utils/activityLogger");
 const isId = (v) => /^[0-9a-f]{24}$/i.test(String(v || ""));
 const FIELD_KEYS = [
   "name", "company", "phone", "location", "requirement", "budget", "custom",
+  "perf_calls", "perf_conversations", "perf_quotations", "perf_visits", "perf_points", "perf_rank",
+  "perf_team_calls", "perf_team_conversations", "perf_team_quotations", "perf_team_visits", "perf_team_size",
+  "perf_top", "perf_leaderboard",
   "perf_period", "perf_new", "perf_won", "perf_dropped", "perf_pending", "perf_active", "perf_followups", "perf_winrate",
 ];
-const ROLES = ["admin", "sales_executive", "service_manager", "accountant"];
+const ROLES = ["super_admin", "admin", "sales_executive", "service_manager", "accountant"];
 const int = (v, lo, hi, d) => {
   const n = Math.round(Number(v));
   return Number.isFinite(n) ? Math.min(Math.max(n, lo), hi) : d;
