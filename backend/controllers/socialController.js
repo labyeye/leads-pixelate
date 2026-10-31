@@ -54,6 +54,7 @@ async function fbCall(path, accessToken, body) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...body, access_token: accessToken }),
+    signal: AbortSignal.timeout(60000),
   });
   const data = await res.json();
   if (!res.ok || data.error) {
@@ -66,6 +67,7 @@ async function waitForMediaReady(creationId, accessToken, maxTries = 60) {
   for (let i = 0; i < maxTries; i++) {
     const res = await fetch(
       `https://graph.facebook.com/v18.0/${creationId}?fields=status_code&access_token=${accessToken}`,
+      { signal: AbortSignal.timeout(30000) },
     );
     const data = await res.json();
     if (!res.ok || data.error) {
@@ -346,6 +348,8 @@ async function executePublish(post) {
         platform: account.platform,
         postId,
       });
+      post[`${account.platform}PostId`] = postId || post[`${account.platform}PostId`];
+      await post.save().catch(() => {});
       // Best effort: a failed story never fails the post itself.
       if (post.storyImageUrl && account.platform !== "linkedin") {
         await postStory(account, post.storyImageUrl).catch((err) =>
@@ -679,8 +683,27 @@ exports.publishPost = asyncHandler(async (req, res) => {
   }
 
   res.json({ success: true, message: "Publishing started", data: post });
-  await executePublish(post);
+  await executePublish(post).catch((err) => failStuckPost(post, err.message));
 });
+
+// A post must never stay in POSTING: settle it from whatever got published.
+async function failStuckPost(post, reason) {
+  const anyId = post.facebookPostId || post.instagramPostId || post.linkedinPostId;
+  await SocialPost.updateOne(
+    { _id: post._id },
+    {
+      $set: {
+        status: anyId ? "POSTED" : "FAILED",
+        postedAt: anyId ? post.postedAt || new Date() : null,
+        failureReason: anyId ? "" : `Publishing was interrupted: ${reason}`,
+      },
+    },
+  );
+  log.error("Post left in POSTING was settled", {
+    postId: String(post._id),
+    reason,
+  });
+}
 
 exports.runScheduledPosts = async () => {
   try {
@@ -691,12 +714,22 @@ exports.runScheduledPosts = async () => {
     });
 
     for (const post of duePosts) {
-      await executePublish(post).catch((err) =>
+      await executePublish(post).catch((err) => {
         log.error("Scheduled post publish failed", {
           postId: post._id,
           message: err.message,
-        }),
-      );
+        });
+        return failStuckPost(post, err.message);
+      });
+    }
+
+    // Posts stuck in POSTING (server restarted, request hung) for over 10 minutes.
+    const stuck = await SocialPost.find({
+      status: "POSTING",
+      updatedAt: { $lte: new Date(Date.now() - 10 * 60 * 1000) },
+    });
+    for (const post of stuck) {
+      await failStuckPost(post, "the server stopped before it finished");
     }
 
     if (duePosts.length) {
