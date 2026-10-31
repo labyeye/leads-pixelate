@@ -1820,6 +1820,10 @@ export const socialAPI = {
     request<{ success: boolean; data: any }>("/social/analytics"),
   getEngagement: () =>
     request<{ success: boolean; data: any }>("/social/engagement"),
+  importInstagram: () =>
+    request<{ success: boolean; data: any }>("/social/instagram/import", {
+      method: "POST",
+    }),
   getPosts: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
     return request<{ success: boolean; count: number; data: any[] }>(

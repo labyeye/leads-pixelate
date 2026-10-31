@@ -308,7 +308,7 @@ export default function SocialMediaPlannerPage() {
             />
           )}
           {activeTab === "calendar" && <CalendarTab toast={toast} />}
-          {activeTab === "analytics" && <AnalyticsTab />}
+          {activeTab === "analytics" && <AnalyticsTab isAdmin={isAdmin} toast={toast} />}
           {activeTab === "accounts" && (
             <AccountsTab isAdmin={isAdmin} toast={toast} />
           )}
@@ -2490,13 +2490,14 @@ function PostDetailModal({
   );
 }
 
-function AnalyticsTab() {
+function AnalyticsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
 
   const [engagement, setEngagement] = useState<any>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     socialAPI
       .getAnalytics()
       .then((res) => setData(res.data))
@@ -2508,6 +2509,29 @@ function AnalyticsTab() {
       .then((res) => setEngagement(res.data))
       .catch(() => {});
   }, []);
+
+  useEffect(load, [load]);
+
+  const importInstagram = async () => {
+    setImporting(true);
+    try {
+      const res = await socialAPI.importInstagram();
+      const { created, updated } = res.data;
+      toast({
+        title: "Instagram synced",
+        description: `${created} new post(s) imported, ${updated} refreshed.`,
+      });
+      load();
+    } catch (err: any) {
+      toast({
+        title: "Could not import from Instagram",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -2543,6 +2567,23 @@ function AnalyticsTab() {
 
   return (
     <div className="p-6 overflow-y-auto h-full space-y-6 max-w-4xl">
+      {isAdmin && (
+        <div className="flex items-center justify-between gap-3 border-2 p-3">
+          <p className="text-xs text-muted-foreground">
+            Bring every post already on your Instagram into the planner, with
+            its likes, comments, reach, saves and shares.
+          </p>
+          <Button size="sm" onClick={importInstagram} disabled={importing}>
+            {importing ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Instagram className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {importing ? "Importing…" : "Import from Instagram"}
+          </Button>
+        </div>
+      )}
+
       {}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statusOrder.slice(0, 4).map((s) => (
@@ -2562,6 +2603,9 @@ function AnalyticsTab() {
           { label: "Views", value: engagement?.totals?.views },
           { label: "Likes", value: engagement?.totals?.likes },
           { label: "Comments", value: engagement?.totals?.comments },
+          { label: "Reach", value: engagement?.totals?.reach },
+          { label: "Saved", value: engagement?.totals?.saved },
+          { label: "Shares", value: engagement?.totals?.shares },
         ].map((c) => (
           <div key={c.label} className="border-2 border-primary/40 p-4 space-y-1">
             <p className="text-2xl font-medium">
@@ -2643,6 +2687,50 @@ function AnalyticsTab() {
         </div>
       </div>
 
+      {(engagement?.topPosts?.length || 0) > 0 && (
+        <div className="border-2 p-4">
+          <p className="text-sm font-medium mb-4">Top Posts</p>
+          <div className="space-y-3">
+            {engagement.topPosts.map((p: any) => (
+              <div key={p._id} className="flex items-center gap-3 text-xs">
+                {p.imageUrl ? (
+                  <img
+                    src={p.imageUrl}
+                    alt=""
+                    className="w-10 h-10 object-cover shrink-0 border border-border rounded"
+                  />
+                ) : (
+                  <div className="w-10 h-10 shrink-0 bg-muted rounded" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm">{p.caption}</p>
+                  <p className="text-muted-foreground">
+                    {p.postedAt
+                      ? new Date(p.postedAt).toLocaleDateString("en-IN")
+                      : ""}
+                    {p.source === "imported" ? " · Imported" : ""}
+                  </p>
+                </div>
+                <div className="grid grid-cols-5 gap-3 text-center shrink-0">
+                  {[
+                    ["Views", p.engagement?.views],
+                    ["Likes", p.engagement?.likes],
+                    ["Cmts", p.engagement?.comments],
+                    ["Saved", p.engagement?.saved],
+                    ["Shares", p.engagement?.shares],
+                  ].map(([k, v]) => (
+                    <div key={k as string}>
+                      <p className="font-medium text-sm">{v ?? 0}</p>
+                      <p className="text-muted-foreground">{k}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {}
       {weekly.length > 0 && (
         <div className="border-2 p-4">
@@ -2685,9 +2773,11 @@ function AnalyticsTab() {
                       : `https://www.facebook.com/${post.facebookPostId}`;
                   })()
                 : null;
-              const igLink = post.instagramPostId
-                ? `https://www.instagram.com/p/${post.instagramPostId}/`
-                : null;
+              const igLink = post.permalink
+                ? post.permalink
+                : post.instagramPostId
+                  ? `https://www.instagram.com/p/${post.instagramPostId}/`
+                  : null;
               const liLink = post.linkedinPostId
                 ? `https://www.linkedin.com/feed/update/${encodeURIComponent(post.linkedinPostId)}`
                 : null;
@@ -2720,6 +2810,9 @@ function AnalyticsTab() {
                       <span className="capitalize">
                         {post.postType || "image"}
                       </span>
+                      {post.engagement?.fetchedAt &&
+                        ` · ${post.engagement.views ?? 0} views · ${post.engagement.likes ?? 0} likes · ${post.engagement.comments ?? 0} comments`}
+                      {post.source === "imported" && " · Imported"}
                     </p>
                   </div>
                   <div className="flex gap-1.5 shrink-0">

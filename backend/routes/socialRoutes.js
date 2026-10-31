@@ -23,6 +23,7 @@ const {
   getAnalytics,
   getEngagement,
   getFollowers,
+  importInstagramPosts,
 } = require("../controllers/socialController");
 const { protect, authorize } = require("../middleware/auth");
 
@@ -35,6 +36,11 @@ router.get("/stats", getStats);
 router.get("/analytics", getAnalytics);
 router.get("/engagement", getEngagement);
 router.get("/followers", getFollowers);
+router.post(
+  "/instagram/import",
+  authorize("super_admin", "admin"),
+  importInstagramPosts,
+);
 
 router.route("/posts").get(getPosts).post(createPost);
 router.route("/posts/:id").get(getPost).put(updatePost).delete(deletePost);

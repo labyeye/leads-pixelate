@@ -1314,7 +1314,7 @@ exports.getAnalytics = asyncHandler(async (req, res) => {
         .limit(20)
         .populate("createdBy", "name")
         .select(
-          "caption platforms facebookPostId instagramPostId postedAt postType imageUrl status",
+          "caption platforms facebookPostId instagramPostId postedAt postType imageUrl status permalink source engagement",
         ),
     ]);
 
@@ -1382,7 +1382,17 @@ async function fetchInstagramEngagement(mediaId, token) {
     likes: d?.like_count || 0,
     comments: d?.comments_count || 0,
     views: await firstInsight(mediaId, ["impressions", "plays", "reach"], token),
+    ...(await instagramExtras(mediaId, token)),
   };
+}
+
+async function instagramExtras(mediaId, token) {
+  const [reach, saved, shares] = await Promise.all([
+    firstInsight(mediaId, ["reach"], token),
+    firstInsight(mediaId, ["saved"], token),
+    firstInsight(mediaId, ["shares"], token),
+  ]);
+  return { reach, saved, shares };
 }
 
 exports.getEngagement = asyncHandler(async (req, res) => {
@@ -1419,11 +1429,9 @@ exports.getEngagement = asyncHandler(async (req, res) => {
 
   await Promise.allSettled(
     stale.map(async (post) => {
-      const total = { views: 0, likes: 0, comments: 0 };
+      const total = { views: 0, likes: 0, comments: 0, reach: 0, saved: 0, shares: 0 };
       const add = (r) => {
-        total.views += r.views;
-        total.likes += r.likes;
-        total.comments += r.comments;
+        for (const k of Object.keys(total)) total[k] += r[k] || 0;
       };
       const jobs = [];
       if (post.facebookPostId) {
@@ -1443,13 +1451,16 @@ exports.getEngagement = asyncHandler(async (req, res) => {
   );
 
   const empty = () => ({ count: 0, views: 0, likes: 0, comments: 0 });
-  const totals = { published: posts.length, views: 0, likes: 0, comments: 0 };
+  const totals = { published: posts.length, views: 0, likes: 0, comments: 0, reach: 0, saved: 0, shares: 0 };
   const byType = { image: empty(), carousel: empty(), reel: empty() };
   for (const p of posts) {
     const e = p.engagement || {};
     totals.views += e.views || 0;
     totals.likes += e.likes || 0;
     totals.comments += e.comments || 0;
+    totals.reach += e.reach || 0;
+    totals.saved += e.saved || 0;
+    totals.shares += e.shares || 0;
     const bucket = byType[p.postType || "image"] || (byType[p.postType] = empty());
     bucket.count += 1;
     bucket.views += e.views || 0;
@@ -1468,11 +1479,129 @@ exports.getEngagement = asyncHandler(async (req, res) => {
       caption: p.caption,
       postType: p.postType,
       imageUrl: p.imageUrl,
+      permalink: p.permalink,
+      source: p.source,
       postedAt: p.postedAt,
       engagement: p.engagement,
     }));
 
   res.json({ success: true, data: { totals, byType, topPosts } });
+});
+
+// ── Import what is already on Instagram ─────────────────────────────────────
+const IG_MEDIA_FIELDS =
+  "id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
+const IG_IMPORT_MAX = 100;
+
+function instagramPostType(m) {
+  if (m.media_type === "CAROUSEL_ALBUM") return "carousel";
+  if (m.media_type === "VIDEO" || m.media_product_type === "REELS") return "reel";
+  return "image";
+}
+
+// Pulls the account's existing posts into the planner as POSTED, with their numbers.
+// Posts we published ourselves are matched by their Instagram id and only get fresh numbers.
+exports.importInstagramPosts = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const accounts = await SocialAccount.find({
+    ...tenantFilter,
+    platform: "instagram",
+    isActive: true,
+  });
+  if (!accounts.length) {
+    res.status(400);
+    throw new Error("Connect an Instagram account first");
+  }
+
+  let created = 0;
+  let updated = 0;
+  const problems = [];
+
+  for (const account of accounts) {
+    const igId = account.instagramBusinessAccountId || account.accountId;
+    try {
+      const media = [];
+      let after = "";
+      while (media.length < IG_IMPORT_MAX) {
+        const page = await graphGet(
+          `${igId}/media?fields=${IG_MEDIA_FIELDS}&limit=50${after ? `&after=${encodeURIComponent(after)}` : ""}`,
+          account.accessToken,
+        );
+        media.push(...(page.data || []));
+        after = page?.paging?.next ? page?.paging?.cursors?.after : "";
+        if (!after) break;
+      }
+
+      const queue = media.slice(0, IG_IMPORT_MAX);
+      const workers = Array.from({ length: 6 }, async () => {
+        while (queue.length) {
+          const m = queue.shift();
+          try {
+            const extras = await instagramExtras(m.id, account.accessToken);
+            const views = await firstInsight(
+              m.id,
+              ["impressions", "plays", "reach"],
+              account.accessToken,
+            );
+            const engagement = {
+              views,
+              likes: m.like_count || 0,
+              comments: m.comments_count || 0,
+              ...extras,
+              fetchedAt: new Date(),
+            };
+            const existing = await SocialPost.findOne({
+              ...tenantFilter,
+              instagramPostId: m.id,
+            });
+            if (existing) {
+              existing.engagement = engagement;
+              if (!existing.permalink) existing.permalink = m.permalink || "";
+              await existing.save();
+              updated += 1;
+              continue;
+            }
+            const image =
+              m.media_type === "VIDEO" ? m.thumbnail_url || "" : m.media_url || "";
+            const type = instagramPostType(m);
+            await SocialPost.create({
+              ...tenantFilter,
+              caption: m.caption?.trim() || "(no caption)",
+              imageUrl: image,
+              videoUrl: type === "reel" ? m.media_url || "" : "",
+              hashtags: [],
+              platforms: ["instagram"],
+              accountIds: [String(account._id)],
+              postType: type,
+              scheduledAt: new Date(m.timestamp),
+              postedAt: new Date(m.timestamp),
+              status: "POSTED",
+              instagramPostId: m.id,
+              permalink: m.permalink || "",
+              source: "imported",
+              engagement,
+              createdBy: req.user._id,
+            });
+            created += 1;
+          } catch (err) {
+            problems.push(`${m.id}: ${err.message}`);
+          }
+        }
+      });
+      await Promise.all(workers);
+    } catch (err) {
+      problems.push(`${account.accountName}: ${err.message}`);
+    }
+  }
+
+  if (!created && !updated && problems.length) {
+    res.status(400);
+    throw new Error(problems[0]);
+  }
+  res.json({
+    success: true,
+    data: { created, updated, problems: problems.slice(0, 5) },
+  });
 });
 
 exports.getFollowers = asyncHandler(async (req, res) => {
