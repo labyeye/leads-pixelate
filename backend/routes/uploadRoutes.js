@@ -35,7 +35,7 @@ router.post("/", protect, upload.single("file"), (req, res) => {
       .json({ success: false, message: "No file uploaded" });
   }
   const baseUrl =
-    process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    process.env.API_BASE_URL || process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
   const url = `${baseUrl}/uploads/${req.file.filename}`;
   res.json({ success: true, url });
 });
