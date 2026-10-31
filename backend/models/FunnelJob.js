@@ -5,7 +5,11 @@ const jobSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", required: true },
     funnelId: { type: mongoose.Schema.Types.ObjectId, ref: "MessageFunnel", required: true },
-    leadId: { type: mongoose.Schema.Types.ObjectId, ref: "Lead", required: true },
+    leadId: { type: mongoose.Schema.Types.ObjectId, ref: "Lead" }, // set for lead funnels
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // set for staff funnels
+    audience: { type: String, enum: ["leads", "staff"], default: "leads" },
+    recipientName: { type: String, default: "" },
+    recipientPhone: { type: String, default: "" },
     stepIndex: { type: Number, required: true },
     runAt: { type: Date, required: true },
     status: {
@@ -23,6 +27,7 @@ const jobSchema = new mongoose.Schema(
 
 jobSchema.index({ status: 1, runAt: 1 });
 jobSchema.index({ funnelId: 1, leadId: 1 });
+jobSchema.index({ tenantId: 1, createdAt: -1 });
 jobSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 });
 
 module.exports = mongoose.model("FunnelJob", jobSchema);

@@ -25,10 +25,26 @@ const funnelSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 80 },
     enabled: { type: Boolean, default: false },
     trigger: {
-      event: { type: String, enum: ["lead_created", "status_changed"], required: true },
+      event: { type: String, enum: ["lead_created", "status_changed", "schedule", "manual"], required: true },
       status: { type: String, default: "" }, // status_changed: this status ("" = any change)
       sources: { type: [String], default: [] }, // only leads from these sources ([] = all)
     },
+    // Who gets the messages: the leads that trigger it, or the team (e.g. a performance report).
+    audience: { type: String, enum: ["leads", "staff"], default: "leads" },
+    staff: {
+      target: { type: String, enum: ["all", "roles", "selected"], default: "all" },
+      roles: { type: [String], default: [] },
+      userIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    },
+    // trigger.event "schedule": when it runs (server time, IST).
+    schedule: {
+      frequency: { type: String, enum: ["daily", "weekly", "monthly"], default: "daily" },
+      hour: { type: Number, default: 9, min: 0, max: 23 },
+      minute: { type: Number, default: 0, min: 0, max: 59 },
+      weekday: { type: Number, default: 1, min: 0, max: 6 }, // 0 = Sunday
+      dayOfMonth: { type: Number, default: 1, min: 1, max: 28 },
+    },
+    lastRunKey: { type: String, default: "" },
     steps: { type: [stepSchema], validate: (v) => v.length > 0 && v.length <= 8 },
     stopStatuses: { type: [String], default: ["WON", "DROP"] }, // pending messages stop when the lead reaches one
     phoneNumberId: { type: String, default: "" },

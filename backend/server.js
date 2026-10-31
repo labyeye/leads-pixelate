@@ -23,6 +23,7 @@ connectDB().then(async () => {
   const User = require("./models/User");
 
   cron.schedule("* * * * *", runScheduledPosts);
+  cron.schedule("* * * * *", require("./services/funnelService").runSchedules);
   cron.schedule("* * * * *", require("./services/funnelService").processDue);
   cron.schedule("0 * * * *", runAutopilotCron);
   // A restart kills any run in flight; free their locks so "Try again" works right away.

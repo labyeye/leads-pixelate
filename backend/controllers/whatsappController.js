@@ -65,6 +65,7 @@ function resolveVariable(fieldKey, customValue, lead) {
     total: lead.total,
     custom: customValue,
   };
+  if (String(fieldKey).startsWith("perf_")) return lead[fieldKey] ?? "0"; // staff performance values
   return map[fieldKey] || customValue || "";
 }
 

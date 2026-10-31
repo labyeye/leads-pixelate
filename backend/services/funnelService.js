@@ -4,6 +4,7 @@
 const MessageFunnel = require("../models/MessageFunnel");
 const FunnelJob = require("../models/FunnelJob");
 const Lead = require("../models/Lead");
+const User = require("../models/User");
 const log = require("../utils/logger").scope("Funnel");
 
 const STUCK_MS = 10 * 60 * 1000;
@@ -60,6 +61,126 @@ async function onStatusChange(tenantId, lead, newStatus) {
   await enroll(tenantId, "status_changed", lead, { status: newStatus });
 }
 
+// ---- staff funnels (e.g. a performance report sent to the team) ----
+const pad = (n) => String(n).padStart(2, "0");
+const dayKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+function periodOf(frequency, now = new Date()) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (frequency === "weekly") start.setDate(start.getDate() - 6);
+  if (frequency === "monthly") start.setDate(1);
+  const label =
+    frequency === "weekly" ? "last 7 days" : frequency === "monthly" ? "this month" : "today";
+  return { start, label };
+}
+
+// Numbers for one team member over the period; they fill the {{n}} of the template (perf_* fields).
+async function performanceOf(tenantId, user, frequency) {
+  const { start, label } = periodOf(frequency);
+  const base = { tenantId, assignedTo: user._id, deletedAt: null };
+  const endToday = new Date();
+  endToday.setHours(23, 59, 59, 999);
+  const moved = (status) => ({ ...base, statusHistory: { $elemMatch: { status, timestamp: { $gte: start } } } });
+  const [fresh, won, dropped, pending, active, followups] = await Promise.all([
+    Lead.countDocuments({ ...base, createdAt: { $gte: start } }),
+    Lead.countDocuments(moved("WON")),
+    Lead.countDocuments(moved("DROP")),
+    Lead.countDocuments({ ...base, status: "PENDING CONTACT" }),
+    Lead.countDocuments({ ...base, status: { $nin: ["WON", "DROP"] } }),
+    Lead.countDocuments({ ...base, status: { $nin: ["WON", "DROP"] }, followUpDate: { $lte: endToday } }),
+  ]);
+  const closed = won + dropped;
+  return {
+    perf_period: label,
+    perf_new: String(fresh),
+    perf_won: String(won),
+    perf_dropped: String(dropped),
+    perf_pending: String(pending),
+    perf_active: String(active),
+    perf_followups: String(followups),
+    perf_winrate: `${closed ? Math.round((won / closed) * 100) : 0}%`,
+  };
+}
+
+async function staffOf(funnel) {
+  const q = { tenantId: funnel.tenantId, status: "active", phone: { $exists: true, $ne: "" } };
+  const s = funnel.staff || {};
+  if (s.target === "selected") q._id = { $in: s.userIds || [] };
+  else if (s.target === "roles") q.role = { $in: s.roles || [] };
+  return User.find(q).select("name phone").lean();
+}
+
+// Queues the messages of a staff funnel for everyone it targets. Returns how many people.
+async function enrollStaff(funnel) {
+  const people = await staffOf(funnel);
+  let at = Date.now();
+  const steps = funnel.steps || [];
+  const jobs = [];
+  for (const u of people)
+    steps.forEach((s, i) => {
+      at = (i === 0 ? Date.now() : at) + (s.delayMinutes || 0) * 60000;
+      jobs.push({
+        tenantId: funnel.tenantId,
+        funnelId: funnel._id,
+        userId: u._id,
+        audience: "staff",
+        recipientName: u.name,
+        recipientPhone: u.phone,
+        stepIndex: i,
+        runAt: new Date(at),
+      });
+    });
+  if (jobs.length) {
+    await FunnelJob.insertMany(jobs);
+    await MessageFunnel.updateOne({ _id: funnel._id }, { $inc: { "stats.enrolled": people.length } });
+  }
+  return people.length;
+}
+
+// True when a schedule is due right now and has not already run for this day.
+function scheduleKey(f, now = new Date()) {
+  const sc = f.schedule || {};
+  if (now.getHours() * 60 + now.getMinutes() < (sc.hour ?? 9) * 60 + (sc.minute ?? 0)) return null;
+  if (sc.frequency === "weekly" && now.getDay() !== (sc.weekday ?? 1)) return null;
+  if (sc.frequency === "monthly" && now.getDate() !== (sc.dayOfMonth ?? 1)) return null;
+  return dayKey(now);
+}
+
+async function runSchedules() {
+  try {
+    const funnels = await MessageFunnel.find({ enabled: true, audience: "staff", "trigger.event": "schedule" }).lean();
+    for (const f of funnels) {
+      const key = scheduleKey(f);
+      if (!key || f.lastRunKey === key) continue;
+      // Claim the day first so two servers / overlapping ticks cannot both send.
+      const claimed = await MessageFunnel.updateOne({ _id: f._id, lastRunKey: { $ne: key } }, { $set: { lastRunKey: key } });
+      if (claimed.modifiedCount) await enrollStaff(f);
+    }
+  } catch (err) {
+    log.error("Could not run staff schedules", { message: err.message });
+  }
+}
+
+async function runStaffJob(job, funnel) {
+  const step = funnel.steps[job.stepIndex];
+  if (!step) return finish(job, { status: "cancelled", note: "Step no longer exists" });
+  const user = await User.findById(job.userId).select("name phone status").lean();
+  if (!user || user.status !== "active") return finish(job, { status: "cancelled", note: "Team member is inactive" });
+  try {
+    const perf = await performanceOf(funnel.tenantId, user, funnel.schedule?.frequency || "daily");
+    const id = await require("../controllers/whatsappController").sendFunnelMessage(
+      funnel.tenantId,
+      step,
+      { name: user.name, phone: user.phone, ...perf },
+      funnel.phoneNumberId,
+    );
+    await finish(job, { status: "sent", sentAt: new Date(), waMessageId: id }, "sent");
+  } catch (err) {
+    await finish(job, { status: "failed", note: String(err.message || err).slice(0, 300) }, "failed");
+  }
+}
+
 async function finish(job, patch, statKey) {
   await FunnelJob.updateOne({ _id: job._id }, { $set: patch });
   if (statKey) await MessageFunnel.updateOne({ _id: job.funnelId }, { $inc: { [`stats.${statKey}`]: 1 } });
@@ -68,6 +189,7 @@ async function finish(job, patch, statKey) {
 async function runJob(job) {
   const funnel = await MessageFunnel.findById(job.funnelId).lean();
   if (!funnel || !funnel.enabled) return finish(job, { status: "cancelled", note: "Funnel is off" });
+  if (job.audience === "staff") return runStaffJob(job, funnel);
   const lead = await Lead.findOne({ _id: job.leadId }).lean();
   if (!lead || lead.deletedAt) return finish(job, { status: "cancelled", note: "Lead was deleted" });
 
@@ -116,4 +238,4 @@ async function processDue() {
   }
 }
 
-module.exports = { enroll, onStatusChange, processDue };
+module.exports = { enroll, onStatusChange, processDue, runSchedules, enrollStaff, performanceOf };

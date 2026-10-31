@@ -1603,6 +1603,9 @@ export const funnelsAPI = {
     request<{ success: boolean }>(`/funnels/${id}`, { method: "DELETE" }),
   jobs: (id: string) =>
     request<{ success: boolean; data: any[] }>(`/funnels/${id}/jobs`),
+  overview: () => request<{ success: boolean; data: any }>("/funnels/overview"),
+  run: (id: string) =>
+    request<{ success: boolean; data: { people: number } }>(`/funnels/${id}/run`, { method: "POST" }),
 };
 
 export const whatsappAPI = {
