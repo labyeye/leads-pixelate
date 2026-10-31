@@ -24,6 +24,7 @@ const GROUPS: ("All" | LibraryCategory)[] = [
   "Visit & demo",
   "Order & payment",
   "Marketing",
+  "Team performance",
 ];
 
 const fillSamples = (text: string, samples: string[]) =>

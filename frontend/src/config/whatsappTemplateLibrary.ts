@@ -18,7 +18,8 @@ export type LibraryCategory =
   | "Quotation"
   | "Visit & demo"
   | "Order & payment"
-  | "Marketing";
+  | "Marketing"
+  | "Team performance";
 
 export interface LibraryTemplate {
   id: string;
@@ -308,6 +309,35 @@ export const TEMPLATE_LIBRARY: LibraryTemplate[] = [
     en: "Hi {{1}}, warm wishes from {{2}}!\n\nThis season we have a special offer for you: {{3}}.\n\nReply to this message to know more or to place your order.",
     hi: "नमस्ते {{1}} जी, {{2}} की तरफ़ से शुभकामनाएँ!\n\nइस season आपके लिए special offer है: {{3}}।\n\nजानने या order देने के लिए इस message पर reply करें।",
   },
+  // ───────────── Team performance (sent to staff by an Auto Funnel set to "My team")
+  {
+    id: "team_daily_performance",
+    title: "Daily performance — team member",
+    when: "End of day report to each team member",
+    group: "Team performance",
+    category: "UTILITY",
+    headerType: "TEXT",
+    headerText: "Your performance",
+    vars: ["Team member", "Period", "New leads", "Won", "Follow-ups due"],
+    map: ["name", "perf_period", "perf_new", "perf_won", "perf_followups"],
+    samples: ["Amit", "today", "12", "3", "5"],
+    en: "Hi {{1}}, here is your performance for {{2}}.\n\nNew leads: {{3}}\nLeads won: {{4}}\nFollow-ups due: {{5}}\n\nKeep going, and clear your follow-ups first.",
+    hi: "नमस्ते {{1}} जी, {{2}} की आपकी performance:\n\nनए leads: {{3}}\nWon leads: {{4}}\nFollow-ups बाकी: {{5}}\n\nबढ़िया चलते रहिए, पहले follow-ups पूरे करें।",
+  },
+  {
+    id: "team_full_performance",
+    title: "Full performance summary",
+    when: "Daily / weekly / monthly summary with win rate",
+    group: "Team performance",
+    category: "UTILITY",
+    headerType: "TEXT",
+    headerText: "Performance summary",
+    vars: ["Team member", "Period", "New leads", "Won", "Dropped", "Pending contact", "Win rate"],
+    map: ["name", "perf_period", "perf_new", "perf_won", "perf_dropped", "perf_pending", "perf_winrate"],
+    samples: ["Amit", "last 7 days", "40", "9", "6", "11", "60%"],
+    en: "Hi {{1}}, your summary for {{2}}:\n\nNew leads: {{3}}\nWon: {{4}}\nDropped: {{5}}\nStill pending contact: {{6}}\nWin rate: {{7}}\n\nOpen the app to see the details.",
+    hi: "नमस्ते {{1}} जी, {{2}} का आपका summary:\n\nनए leads: {{3}}\nWon: {{4}}\nDropped: {{5}}\nअभी pending contact: {{6}}\nWin rate: {{7}}\n\nपूरा detail देखने के लिए app खोलें।",
+  },
 ];
 
 /** Meta template name: lowercase, digits, underscore; language suffix keeps EN/HI apart. */
@@ -336,7 +366,21 @@ export function libraryToForm(t: LibraryTemplate, lang: "en" | "hi") {
   };
 }
 
+/** Team-performance values a funnel to staff can fill into a template (see backend funnelService). */
+export const PERF_VARS: { key: string; label: string; sample: string }[] = [
+  { key: "name", label: "Team member", sample: "Amit" },
+  { key: "perf_period", label: "Period", sample: "today" },
+  { key: "perf_new", label: "New leads", sample: "12" },
+  { key: "perf_won", label: "Won", sample: "3" },
+  { key: "perf_dropped", label: "Dropped", sample: "2" },
+  { key: "perf_pending", label: "Pending contact", sample: "8" },
+  { key: "perf_active", label: "Open leads", sample: "25" },
+  { key: "perf_followups", label: "Follow-ups due", sample: "5" },
+  { key: "perf_winrate", label: "Win rate", sample: "60%" },
+];
+
 const MAP_KEYS = [
+  ...PERF_VARS.map((v) => v.key),
   "name",
   "company",
   "phone",
@@ -351,7 +395,7 @@ export function mappingFromNotes(
   notes: string | undefined,
   variableCount: number,
 ): { position: number; fieldKey: string; customValue: string }[] {
-  const hint = /MAP:\s*([a-z,\s]+)/i
+  const hint = /MAP:\s*([a-z_,\s]+)/i
     .exec(notes || "")?.[1]
     .split(",")
     .map((s) => s.trim().toLowerCase());

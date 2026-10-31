@@ -26,6 +26,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { funnelsAPI, usersAPI, whatsappAPI } from "@/services/api";
 import { ALL_STATUSES } from "@/components/leads/statusConstants";
+import { mappingFromNotes } from "@/config/whatsappTemplateLibrary";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -252,11 +253,15 @@ export default function FunnelsPage() {
     patchStep(i, {
       templateId,
       // One row per {{n}} of the template, pre-filled with the lead's name for the first.
-      variableMapping: Array.from({ length: t?.variableCount || 0 }, (_, k) => ({
-        position: k + 1,
-        fieldKey: k === 0 ? "name" : draft?.audience === "staff" ? "perf_new" : "custom",
-        customValue: "",
-      })),
+      // Team templates carry their own variable mapping (set when the template was written).
+      variableMapping:
+        draft?.audience === "staff" && /MAP:/i.test(t?.notes || "")
+          ? mappingFromNotes(t?.notes, t?.variableCount || 0)
+          : Array.from({ length: t?.variableCount || 0 }, (_, k) => ({
+              position: k + 1,
+              fieldKey: k === 0 ? "name" : draft?.audience === "staff" ? "perf_new" : "custom",
+              customValue: "",
+            })),
     });
   };
 

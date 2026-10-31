@@ -60,6 +60,7 @@ import {
   X,
 } from "lucide-react";
 import { format } from "date-fns";
+import { PERF_VARS } from "@/config/whatsappTemplateLibrary";
 import { TemplateLibraryDialog } from "@/components/whatsapp/TemplateLibraryDialog";
 
 interface Template {
@@ -366,6 +367,28 @@ function TemplatesTab({ toast }: { toast: any }) {
       metaTemplateName: editing ? f.metaTemplateName : autoName,
     }));
   };
+
+  // Adds the next {{n}} to the body for a team-performance value, with its sample and its funnel mapping.
+  const addPerfVar = (v: { key: string; label: string; sample: string }) =>
+    setForm((f: any) => {
+      const nums = (f.bodyText.match(/\{\{(\d+)\}\}/g) || []).map((m: string) => parseInt(m.slice(2)));
+      const n = (nums.length ? Math.max(...nums) : 0) + 1;
+      const keys = (/MAP:\s*([a-z_,\s]+)/i.exec(f.notes || "")?.[1] || "")
+        .split(",")
+        .map((x: string) => x.trim())
+        .filter(Boolean);
+      keys[n - 1] = v.key;
+      const ev = [...(f.exampleValues || [])];
+      ev[n - 1] = v.sample;
+      const sep = f.bodyText && !/\s$/.test(f.bodyText) ? " " : "";
+      const rest = (f.notes || "").replace(/MAP:\s*[a-z_,\s]+/i, "").trim();
+      return {
+        ...f,
+        bodyText: `${f.bodyText}${sep}${v.label}: {{${n}}}`,
+        exampleValues: ev,
+        notes: `MAP: ${keys.join(",")}${rest ? ` ${rest}` : ""}`,
+      };
+    });
 
   const handleMediaUpload = async (file: File) => {
     setUploading(true);
@@ -703,6 +726,23 @@ function TemplatesTab({ toast }: { toast: any }) {
                 <code className="bg-muted px-1 rounded">{"{{2}}"}</code>, etc.
                 for dynamic variables (e.g. lead name, company).
               </p>
+              <div className="mt-2">
+                <p className="text-[11px] text-muted-foreground mb-1">
+                  Team performance (for Auto Funnels sent to your team) — click to add to the text:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PERF_VARS.map((v) => (
+                    <button
+                      key={v.key}
+                      type="button"
+                      onClick={() => addPerfVar(v)}
+                      className="text-xs border border-black px-2 py-1 bg-white hover:bg-slate-100"
+                    >
+                      + {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {[
                 ...new Set(
                   (form.bodyText.match(/\{\{(\d+)\}\}/g) || []).map(
