@@ -248,6 +248,64 @@ async function postWa(phoneNumberId, accessToken, body) {
   return data;
 }
 
+// ---- inbox: every message we send or receive is kept so it shows in the WhatsApp Inbox ----
+// What a template looked like once its {{n}} were filled, for the chat bubble.
+function renderTemplateText(template, components, extra = "") {
+  const body = (components || []).find((c) => c.type === "body");
+  const text = String(template.bodyText || "").replace(
+    /\{\{(\d+)\}\}/g,
+    (_, n) => body?.parameters?.[Number(n) - 1]?.text ?? "",
+  );
+  const head = template.headerType === "TEXT" && template.headerText ? `${template.headerText}\n` : "";
+  return [extra, `${head}${text}`.trim()].filter(Boolean).join("\n");
+}
+
+// Saves an outgoing message. Never throws: a send that already went out must not fail on bookkeeping.
+async function recordOutgoing({ tenantId, phone, text, result, userId }) {
+  try {
+    await WhatsappMessage.create({
+      tenantId,
+      phone,
+      direction: "out",
+      text: String(text || "").slice(0, 4000),
+      waMessageId: result?.messages?.[0]?.id,
+      sentBy: userId,
+    });
+  } catch (err) {
+    log.error("Could not save sent message to the inbox", { message: err.message });
+  }
+}
+
+// What an incoming message of any type looks like in the inbox.
+function describeIncoming(m) {
+  switch (m.type) {
+    case "text":
+      return m.text?.body || "";
+    case "button":
+      return m.button?.text || m.button?.payload || "(button reply)";
+    case "interactive":
+      return m.interactive?.button_reply?.title || m.interactive?.list_reply?.title || "(reply)";
+    case "image":
+      return `📷 Photo${m.image?.caption ? `: ${m.image.caption}` : ""}`;
+    case "video":
+      return `🎥 Video${m.video?.caption ? `: ${m.video.caption}` : ""}`;
+    case "audio":
+      return "🎤 Voice message";
+    case "document":
+      return `📄 ${m.document?.filename || "Document"}${m.document?.caption ? `: ${m.document.caption}` : ""}`;
+    case "sticker":
+      return "Sticker";
+    case "location":
+      return `📍 Location${m.location?.name ? `: ${m.location.name}` : ""}`;
+    case "contacts":
+      return "👤 Contact shared";
+    case "reaction":
+      return "";
+    default:
+      return `(${m.type || "message"} not supported yet)`;
+  }
+}
+
 async function sendWaMessage(
   phoneNumberId,
   accessToken,
@@ -426,6 +484,7 @@ exports.sendFunnelMessage = async function sendFunnelMessage(tenantId, step, lea
     template.language,
     components,
   );
+  if (lead._id) await recordOutgoing({ tenantId, phone, text: renderTemplateText(template, components), result: r });
   return r?.messages?.[0]?.id || "";
 };
 
@@ -1357,6 +1416,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
   const doc = documentId ? await loadVaultDoc(req.user, documentId) : null;
 
   let waResult;
+  let sentText = "";
   if (messageType === "document" && doc) {
     // Free-form: only delivered inside the 24h window after the lead's last message.
     const media = await uploadVaultDoc(
@@ -1366,6 +1426,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     );
     const caption = (messageText || "").trim();
     const kind = doc.mimeType.startsWith("image/") ? "image" : "document";
+    sentText = `${kind === "image" ? "📷" : "📄"} ${media.filename || doc.name || kind}${caption ? `\n${caption}` : ""}`;
     waResult = await postWa(resolvedPhoneNumberId, wa.accessToken, {
       to: phone,
       type: kind,
@@ -1376,6 +1437,7 @@ exports.sendMessage = asyncHandler(async (req, res) => {
       },
     });
   } else if (messageType === "text" && messageText) {
+    sentText = messageText;
     waResult = await postWa(resolvedPhoneNumberId, wa.accessToken, {
       to: phone,
       type: "text",
@@ -1409,6 +1471,11 @@ exports.sendMessage = asyncHandler(async (req, res) => {
       lead,
       headerMedia,
     );
+    sentText = renderTemplateText(
+      template,
+      components,
+      headerMedia ? `📄 ${headerMedia.filename || "Document"}` : "",
+    );
     waResult = await sendWaMessage(
       resolvedPhoneNumberId,
       wa.accessToken,
@@ -1422,16 +1489,13 @@ exports.sendMessage = asyncHandler(async (req, res) => {
     throw new Error("Choose a template, type a message, or pick a document");
   }
 
-  if (messageType === "text" && messageText) {
-    await WhatsappMessage.create({
-      tenantId: wa.tenantId,
-      phone,
-      direction: "out",
-      text: messageText,
-      waMessageId: waResult?.messages?.[0]?.id,
-      sentBy: req.user._id,
-    }).catch(() => {});
-  }
+  await recordOutgoing({
+    tenantId: wa.tenantId,
+    phone,
+    text: sentText,
+    result: waResult,
+    userId: req.user._id,
+  });
 
   res.json({
     success: true,
@@ -1522,6 +1586,13 @@ exports.sendQuotation = asyncHandler(async (req, res) => {
     template.language,
     components,
   );
+  await recordOutgoing({
+    tenantId: wa.tenantId,
+    phone,
+    text: renderTemplateText(template, components, `📄 ${fileName}`),
+    result,
+    userId: req.user._id,
+  });
   if (q.status === "Draft")
     await Quotation.updateOne({ _id: q._id }, { $set: { status: "Sent" } });
   res.json({
@@ -1571,6 +1642,35 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
         statuses: (value.statuses || []).length,
         messages: (value.messages || []).length,
       });
+
+      // Meta approved / rejected / paused a template: update it here so the Templates tab shows it.
+      if (change.field === "message_template_status_update") {
+        try {
+          const ev = String(value.event || "").toUpperCase();
+          const reason = value.reason && value.reason !== "NONE" ? String(value.reason) : "";
+          const next = { APPROVED: "APPROVED", REJECTED: "REJECTED", DISABLED: "REJECTED", PENDING: "PENDING" }[ev];
+          const tenantFilter = tenant ? { tenantId: tenant._id } : {};
+          const byId = value.message_template_id
+            ? { metaTemplateId: String(value.message_template_id) }
+            : null;
+          const t =
+            (byId && (await WhatsappTemplate.findOne({ ...byId, ...tenantFilter }))) ||
+            (await WhatsappTemplate.findOne({ metaTemplateName: value.message_template_name, ...tenantFilter }));
+          log.info("Template status update", { template: value.message_template_name, event: ev, reason });
+          if (t) {
+            if (next) t.status = next;
+            if (value.message_template_id) t.metaTemplateId = String(value.message_template_id);
+            if (ev === "APPROVED") t.rejectedReason = "";
+            else if (ev === "REJECTED") t.rejectedReason = reason || "Rejected by Meta";
+            else if (ev === "DISABLED") t.rejectedReason = reason || "Disabled by Meta";
+            else if (["PAUSED", "FLAGGED"].includes(ev)) t.rejectedReason = `${ev === "PAUSED" ? "Paused" : "Flagged"} by Meta${reason ? `: ${reason}` : ""}`;
+            await t.save();
+          }
+        } catch (err) {
+          log.error("Template status update failed", { message: err.message });
+        }
+        continue;
+      }
 
       for (const statusObj of value.statuses || []) {
         const waMessageId = statusObj.id;
@@ -1653,9 +1753,9 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
       }
 
       for (const incomingMsg of value.messages || []) {
-        if (incomingMsg.type !== "text") continue;
+        if (incomingMsg.type === "reaction") continue;
         const fromPhone = incomingMsg.from;
-        const messageText = incomingMsg?.text?.body || "";
+        const messageText = describeIncoming(incomingMsg);
         if (tenant) {
           await WhatsappMessage.updateOne(
             { waMessageId: incomingMsg.id },

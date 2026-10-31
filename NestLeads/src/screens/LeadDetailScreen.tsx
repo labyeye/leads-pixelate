@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import WhatsAppLogo from '../components/WhatsAppLogo';
+import SendWhatsAppModal from '../components/SendWhatsAppModal';
 import { leadsAPI, settingsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -82,6 +83,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   const leadId = route?.params?.leadId;
   const insets = useSafeAreaInsets();
   const [lead, setLead] = useState<any>(null);
+  const [waLead, setWaLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [noteText, setNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
@@ -169,10 +171,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
     if (lead?.phone) Linking.openURL(`tel:${lead.phone}`);
   };
   const handleWhatsApp = () => {
-    if (lead?.phone) {
-      const num = lead.phone.replace(/\D/g, '');
-      Linking.openURL(`https://wa.me/91${num}`);
-    }
+    if (lead?.phone) setWaLead(lead);
   };
   const handleEmail = () => {
     if (lead?.email) Linking.openURL(`mailto:${lead.email}`);
@@ -596,6 +595,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         onClose={() => setStatusModalOpen(false)}
         onDone={fetchLead}
       />
+      <SendWhatsAppModal lead={waLead} onClose={() => setWaLead(null)} />
     </View>
   );
 }

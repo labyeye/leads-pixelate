@@ -3,7 +3,7 @@ import { whatsappAPI } from "@/services/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { useToast } from "@/components/ui/use-toast";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -236,20 +236,41 @@ function TemplatesTab({ toast }: { toast: any }) {
     }
   };
 
-  const fetchTemplates = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await whatsappAPI.getTemplates();
-      setTemplates(res.data);
-    } catch {
-      toast({ title: "Failed to load templates", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  const seenStatus = useRef<Record<string, string>>({});
+  const fetchTemplates = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      try {
+        const res = await whatsappAPI.getTemplates();
+        // Meta decided on a template since the last look: say so.
+        for (const t of res.data as Template[]) {
+          const before = seenStatus.current[t._id];
+          if (before === "PENDING" && (t.status === "APPROVED" || t.status === "REJECTED"))
+            toast({
+              title:
+                t.status === "APPROVED"
+                  ? `"${t.displayName}" was approved by Meta`
+                  : `"${t.displayName}" was rejected by Meta`,
+              description: t.status === "REJECTED" ? t.rejectedReason : undefined,
+              variant: t.status === "REJECTED" ? "destructive" : "default",
+            });
+          seenStatus.current[t._id] = t.status;
+        }
+        setTemplates(res.data);
+      } catch {
+        if (!silent) toast({ title: "Failed to load templates", variant: "destructive" });
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [toast],
+  );
 
   useEffect(() => {
     fetchTemplates();
+    // Meta's answer arrives by webhook; pick it up without a manual refresh.
+    const t = setInterval(() => fetchTemplates(true), 30000);
+    return () => clearInterval(t);
   }, [fetchTemplates]);
 
   const openCreate = () => {
@@ -423,7 +444,7 @@ function TemplatesTab({ toast }: { toast: any }) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchTemplates}>
+          <Button variant="outline" size="sm" onClick={() => fetchTemplates()}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
           <Button
@@ -937,9 +958,9 @@ function TemplateCard({
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
             {template.bodyText}
           </p>
-          {template.status === "REJECTED" && template.rejectedReason && (
+          {template.rejectedReason && template.status !== "APPROVED" && (
             <p className="text-[11px] text-red-600 mt-1">
-              Rejected: {template.rejectedReason}
+              {template.status === "REJECTED" ? "Rejected" : "Note"}: {template.rejectedReason}
             </p>
           )}
         </div>

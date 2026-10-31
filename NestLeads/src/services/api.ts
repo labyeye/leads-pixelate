@@ -933,6 +933,27 @@ export const whatsappAPI = {
     }),
   getStatus: () => request<{ success: boolean; data: any }>('/whatsapp/status'),
   getConfig: () => request<{ success: boolean; data: any }>('/whatsapp/config'),
+  replyToConversation: (data: { phone: string; text: string }) =>
+    request<{ success: boolean; data: any }>('/whatsapp/conversations/reply', { method: 'POST', body: JSON.stringify(data) }),
+  convertToLead: (data: { phone: string; name?: string }) =>
+    request<{ success: boolean; data: any }>('/whatsapp/conversations/convert', { method: 'POST', body: JSON.stringify(data) }),
+  sendToLead: (body: {
+    leadId: string;
+    templateId?: string;
+    variableMapping?: { position: number; fieldKey: string; customValue: string }[];
+    messageType?: 'text';
+    messageText?: string;
+  }) => request<{ success: boolean }>('/whatsapp/send', { method: 'POST', body: JSON.stringify(body) }),
+  syncTemplates: () =>
+    request<{ success: boolean; message: string }>('/whatsapp/templates/sync', { method: 'POST' }),
+  submitTemplate: (id: string) =>
+    request<{ success: boolean; message: string }>(`/whatsapp/templates/${id}/submit`, { method: 'POST' }),
+  createTemplate: (data: any) =>
+    request<{ success: boolean; data: any }>('/whatsapp/templates', { method: 'POST', body: JSON.stringify(data) }),
+  updateTemplate: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/whatsapp/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteTemplate: (id: string) =>
+    request<{ success: boolean }>(`/whatsapp/templates/${id}`, { method: 'DELETE' }),
   sendQuotation: (body: {
     quotationId: string;
     templateId: string;
