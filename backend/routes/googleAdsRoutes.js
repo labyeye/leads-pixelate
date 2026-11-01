@@ -3,7 +3,7 @@ const { signState, readState } = require("../utils/oauthState");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
 const crypto = require("crypto");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 const { resolvePincode, isPincode } = require("../utils/pincode");
 const Lead = require("../models/Lead");
 const Tenant = require("../models/Tenant");
@@ -180,6 +180,7 @@ router.get(
 router.post(
   "/connect-account",
   protect,
+  authorize("super_admin", "admin"),
   asyncHandler(async (req, res) => {
     const {
       customerId,
@@ -260,6 +261,7 @@ router.post(
 router.post(
   "/disconnect",
   protect,
+  authorize("super_admin", "admin"),
   asyncHandler(async (req, res) => {
     const { customerId } = req.body;
     const query = tenantQuery(req);

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const asyncHandler = require("express-async-handler");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 const CampaignAssignment = require("../models/CampaignAssignment");
 
 function ownerFilter(req) {
@@ -31,6 +31,7 @@ router.get(
 router.put(
   "/",
   protect,
+  authorize("super_admin", "admin"),
   asyncHandler(async (req, res) => {
     const {
       platform,
@@ -74,6 +75,7 @@ router.put(
 router.delete(
   "/:id",
   protect,
+  authorize("super_admin", "admin"),
   asyncHandler(async (req, res) => {
     const assignment = await CampaignAssignment.findOne({
       _id: req.params.id,

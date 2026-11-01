@@ -1,0 +1,7 @@
+
+# OS / build noise that should never be committed
+.DS_Store
+*.log
+*.aab
+*.ipa
+*.apk

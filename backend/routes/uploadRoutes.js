@@ -16,7 +16,7 @@ const ALLOWED_EXT = new Set([".jpeg", ".jpg", ".png", ".gif", ".webp", ".mp4", "
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB (for videos)
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB for reels/videos; photos are held to 50MB below
   fileFilter: (req, file, cb) => {
     // Extension decides the stored name, so the extension itself must be on the allow-list
     // (a spoofed mimetype with ".html"/".svg" would otherwise be served as active content).
@@ -28,12 +28,44 @@ const upload = multer({
   },
 });
 
-router.post("/", protect, upload.single("file"), (req, res) => {
+// Instagram refuses photos over 8MB, so a big JPEG/PNG is re-saved as a smaller JPEG.
+const INSTAGRAM_MAX_PHOTO = 8 * 1024 * 1024;
+async function shrinkPhoto(file) {
+  const ext = path.extname(file.filename).toLowerCase();
+  if (![".jpg", ".jpeg", ".png"].includes(ext) || file.size <= INSTAGRAM_MAX_PHOTO) return;
+  const sharp = require("sharp");
+  const dir = path.dirname(file.path);
+  const out = `${path.basename(file.filename, ext)}.jpg`;
+  for (const [side, quality] of [[4096, 90], [4096, 80], [3072, 80], [2048, 75]]) {
+    const buf = await sharp(file.path)
+      .rotate()
+      .flatten({ background: "#ffffff" })
+      .resize({ width: side, height: side, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality })
+      .toBuffer();
+    if (buf.length <= INSTAGRAM_MAX_PHOTO || side === 2048) {
+      await require("fs").promises.writeFile(path.join(dir, out), buf);
+      if (out !== file.filename) await require("fs").promises.unlink(file.path).catch(() => {});
+      file.filename = out;
+      return;
+    }
+  }
+}
+
+router.post("/", protect, upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res
       .status(400)
       .json({ success: false, message: "No file uploaded" });
   }
+  const isVideo = [".mp4", ".mov", ".m4v"].includes(path.extname(req.file.filename).toLowerCase());
+  if (!isVideo && req.file.size > 50 * 1024 * 1024) {
+    await require("fs").promises.unlink(req.file.path).catch(() => {});
+    return res
+      .status(400)
+      .json({ success: false, message: "Photos and documents must be under 50MB" });
+  }
+  await shrinkPhoto(req.file).catch(() => {});
   const baseUrl =
     process.env.API_BASE_URL || process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
   const url = `${baseUrl}/uploads/${req.file.filename}`;
