@@ -1820,6 +1820,8 @@ export const socialAPI = {
     request<{ success: boolean; data: any }>("/social/analytics"),
   getEngagement: () =>
     request<{ success: boolean; data: any }>("/social/engagement"),
+  getFollowers: (days = 30) =>
+    request<{ success: boolean; data: any }>(`/social/followers?days=${days}`),
   importInstagram: () =>
     request<{ success: boolean; data: any }>("/social/instagram/import", {
       method: "POST",

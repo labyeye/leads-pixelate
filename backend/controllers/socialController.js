@@ -1485,7 +1485,95 @@ exports.getEngagement = asyncHandler(async (req, res) => {
       engagement: p.engagement,
     }));
 
-  res.json({ success: true, data: { totals, byType, topPosts } });
+  const score = (e = {}) =>
+    (e.likes || 0) + (e.comments || 0) + (e.saved || 0) + (e.shares || 0);
+
+  // Last 30 days against the 30 before, for the "vs last month" chips.
+  const DAY = 24 * 60 * 60 * 1000;
+  const sumWindow = (from, to) => {
+    const t = { posts: 0, engagement: 0, reach: 0, views: 0 };
+    for (const p of posts) {
+      const at = p.postedAt ? new Date(p.postedAt).getTime() : 0;
+      if (at >= from && at < to) {
+        t.posts += 1;
+        t.engagement += score(p.engagement);
+        t.reach += p.engagement?.reach || 0;
+        t.views += p.engagement?.views || 0;
+      }
+    }
+    return t;
+  };
+  const now = Date.now();
+  const trends = {
+    current: sumWindow(now - 30 * DAY, now + DAY),
+    previous: sumWindow(now - 60 * DAY, now - 30 * DAY),
+  };
+
+  // Which day/time slot (IST, 3-hour blocks) earns the most per post.
+  const cells = Array.from({ length: 7 }, () =>
+    Array.from({ length: 8 }, () => ({ total: 0, count: 0 })),
+  );
+  for (const p of posts) {
+    if (!p.postedAt) continue;
+    const ist = new Date(new Date(p.postedAt).getTime() + 5.5 * 60 * 60 * 1000);
+    const c = cells[ist.getUTCDay()][Math.floor(ist.getUTCHours() / 3)];
+    c.total += score(p.engagement);
+    c.count += 1;
+  }
+  const heatmap = cells.map((row) =>
+    row.map((c) => ({ count: c.count, avg: c.count ? Math.round(c.total / c.count) : 0 })),
+  );
+
+  // Per platform: followers now and a month ago, plus what its posts earned.
+  const FollowerSnapshot = require("../models/FollowerSnapshot");
+  const platforms = {};
+  for (const platform of ["instagram", "facebook", "linkedin"]) {
+    platforms[platform] = { platform, followers: 0, followersBefore: null, posts: 0, engagement: 0, reach: 0 };
+  }
+  for (const p of posts) {
+    for (const platform of p.platforms || []) {
+      const row = platforms[platform];
+      if (!row) continue;
+      row.posts += 1;
+      row.engagement += score(p.engagement);
+      row.reach += p.engagement?.reach || 0;
+    }
+  }
+  const dayKey = (t) => new Date(t).toISOString().slice(0, 10);
+  const snaps = await FollowerSnapshot.find({
+    ...tenantFilter,
+    date: { $gte: dayKey(now - 40 * DAY) },
+  })
+    .sort({ date: 1 })
+    .lean();
+  const latest = {};
+  const monthAgo = {};
+  for (const sn of snaps) {
+    latest[sn.accountId] = sn;
+    if (sn.date <= dayKey(now - 28 * DAY) || !monthAgo[sn.accountId]) monthAgo[sn.accountId] = sn;
+  }
+  for (const id of Object.keys(latest)) {
+    const row = platforms[latest[id].platform];
+    if (!row) continue;
+    row.followers += latest[id].followers || 0;
+    row.followersBefore = (row.followersBefore || 0) + (monthAgo[id]?.followers || 0);
+  }
+
+  const rows = posts.map((p) => ({
+    _id: p._id,
+    caption: p.caption,
+    postType: p.postType,
+    platforms: p.platforms,
+    postedAt: p.postedAt,
+    permalink: p.permalink,
+    source: p.source,
+    engagement: p.engagement,
+  }));
+
+  res.json({
+    success: true,
+    data: { totals, byType, topPosts, trends, heatmap, platforms: Object.values(platforms), rows },
+  });
 });
 
 // ── Import what is already on Instagram ─────────────────────────────────────
