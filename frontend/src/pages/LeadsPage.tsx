@@ -1727,7 +1727,7 @@ export default function LeadsPage() {
                   className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-emerald-700"
                   onSelect={() => setImportModalOpen(true)}
                 >
-                  <FileText className="w-3.5 h-3.5" /> Import Excel
+                  <FileText className="w-3.5 h-3.5" /> Import Excel / CSV
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
@@ -3592,21 +3592,21 @@ export default function LeadsPage() {
               {/* File upload */}
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">
-                  Upload File (.xlsx / .xls)
+                  Upload File (.xlsx / .xls / .csv)
                 </p>
                 <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-black bg-gray-50 hover:bg-gray-100 cursor-pointer py-6 transition-colors">
                   <FileText className="w-6 h-6 mb-2 text-emerald-700" />
                   <span className="text-xs font-medium">
                     {importFile
                       ? importFile.name
-                      : "Click to select Excel file"}
+                      : "Click to select Excel or CSV file"}
                   </span>
                   <span className="text-[10px] text-muted-foreground mt-0.5">
-                    .xlsx or .xls · max 5MB
+                    .xlsx, .xls or .csv · max 5MB
                   </span>
                   <input
                     type="file"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx,.xls,.csv"
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
@@ -3860,6 +3860,7 @@ export default function LeadsPage() {
         fields={LEAD_EXPORT_FIELDS}
         data={filtered}
         filenamePrefix="leads"
+        formats={["xlsx", "pdf", "csv"]}
       />
     </AppLayout>
   );

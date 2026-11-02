@@ -1,3 +1,5 @@
+// Funnel schedules and "today" boundaries use local time; the product runs on IST.
+process.env.TZ = process.env.TZ || "Asia/Kolkata";
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
