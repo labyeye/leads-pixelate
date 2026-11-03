@@ -16,7 +16,7 @@ function flush() {
   if (!queue.length) return;
   const events = queue.splice(0, 20).map((e) => ({ platform: "web", ...e }));
   try {
-    fetch(`${import.meta.env.VITE_API_URL}/telemetry`, {
+    fetch(`${import.meta.env.VITE_API_URL || "/api"}/telemetry`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ events }),
