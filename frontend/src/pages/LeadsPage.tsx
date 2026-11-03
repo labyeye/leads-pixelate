@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -204,6 +205,34 @@ export default function LeadsPage() {
   const [, setLoadingFullLead] = useState(false);
 
   const [leads, setLeads] = useState<any[]>([]);
+
+  // The search results float above everything (portal), so they follow the input's position.
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const [searchBox, setSearchBox] = useState<DOMRect | null>(null);
+  const searchMatches = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return leads
+      .filter(
+        (l) =>
+          (l.name || "").toLowerCase().includes(q) ||
+          (l.company || "").toLowerCase().includes(q) ||
+          (l.phone || "").toLowerCase().includes(q),
+      )
+      .slice(0, 20);
+  }, [leads, search]);
+  useEffect(() => {
+    if (!search.trim()) return;
+    const place = () =>
+      setSearchBox(searchBoxRef.current?.getBoundingClientRect() ?? null);
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [search]);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
   const notify = useNotify();
@@ -1848,7 +1877,10 @@ export default function LeadsPage() {
               />
             </div>
 
-            <div className="relative z-50 flex items-center gap-2 bg-white border-2 border-black px-3 h-10 flex-1 min-w-[200px]">
+            <div
+              ref={searchBoxRef}
+              className="relative z-50 flex items-center gap-2 bg-white border-2 border-black px-3 h-10 flex-1 min-w-[200px]"
+            >
               <Search className="w-4 h-4 text-black shrink-0" />
               <input
                 type="text"
@@ -1857,44 +1889,26 @@ export default function LeadsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
               />
-              {search.trim().length > 0 && (
-                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-popover border border-border rounded-md shadow-xl max-h-80 overflow-y-auto z-50">
-                  {leads
-                    .filter(
-                      (l) =>
-                        (l.name || "")
-                          .toLowerCase()
-                          .includes(search.toLowerCase()) ||
-                        (l.company || "")
-                          .toLowerCase()
-                          .includes(search.toLowerCase()) ||
-                        (l.phone || "")
-                          .toLowerCase()
-                          .includes(search.toLowerCase()),
-                    )
-                    .slice(0, 20).length === 0 ? (
-                    <div className="p-3 text-sm text-black">
-                      No leads found.
-                    </div>
-                  ) : (
-                    leads
-                      .filter(
-                        (l) =>
-                          (l.name || "")
-                            .toLowerCase()
-                            .includes(search.toLowerCase()) ||
-                          (l.company || "")
-                            .toLowerCase()
-                            .includes(search.toLowerCase()) ||
-                          (l.phone || "")
-                            .toLowerCase()
-                            .includes(search.toLowerCase()),
-                      )
-                      .slice(0, 20)
-                      .map((l) => (
+              {search.trim().length > 0 &&
+                searchBox &&
+                createPortal(
+                  <div
+                    className="fixed bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-80 overflow-y-auto z-[1000]"
+                    style={{
+                      top: searchBox.bottom + 4,
+                      left: searchBox.left,
+                      width: searchBox.width,
+                    }}
+                  >
+                    {searchMatches.length === 0 ? (
+                      <div className="p-3 text-sm text-black">
+                        No leads found.
+                      </div>
+                    ) : (
+                      searchMatches.map((l) => (
                         <div
                           key={l._id || l.id}
-                          className="p-3 hover:bg-muted cursor-pointer border-b border-border/50 last:border-b-0"
+                          className="p-3 bg-white hover:bg-[#FFF1E6] cursor-pointer border-b border-border/50 last:border-b-0"
                           onClick={() => {
                             setSearch("");
                             setActiveCategory(
@@ -1903,11 +1917,11 @@ export default function LeadsPage() {
                             setSelectedLeadId(l._id || l.id);
                           }}
                         >
-                          <div className="font-medium text-sm flex justify-between items-center">
-                            <span>{l.name}</span>
+                          <div className="font-medium text-sm flex justify-between items-center gap-2">
+                            <span className="truncate">{l.name}</span>
                             <span
                               className={cn(
-                                "text-[10px] px-2 py-0.5 rounded-full border",
+                                "text-[10px] px-2 py-0.5 rounded-full border shrink-0",
                                 getStatusColorClasses(l.status) ||
                                   "bg-muted text-black border-transparent",
                               )}
@@ -1922,9 +1936,10 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       ))
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>,
+                  document.body,
+                )}
             </div>
             {viewMode === "table" && (
               <div className="ml-auto">{renderColumnConfigurator()}</div>

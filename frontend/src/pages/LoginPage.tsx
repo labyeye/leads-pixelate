@@ -14,7 +14,7 @@ import {
   Smartphone,
   KeyRound,
 } from "lucide-react";
-import logoimg from "@/assets/images/Logo.png";
+import logoimg from "@/assets/images/nestlogowhitelarge.png";
 import indiamartLogo from "@/assets/images/logos/indiamart.png";
 import facebookLogo from "@/assets/images/logos/meta.png";
 import tradeindiLogo from "@/assets/images/logos/tradeindia.webp";
@@ -26,15 +26,15 @@ import {
   serializeAssertion,
   toRequestOptions,
 } from "@/lib/webauthn";
-
+import logodash from "../assets/images/login-dash.png";
 // ── Static data ───────────────────────────────────────────────────────────────
-const PLATFORMS = [
-  { label: "IndiaMART", logo: indiamartLogo },
-  { label: "Meta Ads", logo: facebookLogo },
-  { label: "TradeIndia", logo: tradeindiLogo },
-  { label: "JustDial", logo: justdialLogo },
-  { label: "Google Ads", logo: googleAdsLogo },
-];
+// const PLATFORMS = [
+//   { label: "IndiaMART", logo: indiamartLogo },
+//   { label: "Meta Ads", logo: facebookLogo },
+//   { label: "TradeIndia", logo: tradeindiLogo },
+//   { label: "JustDial", logo: justdialLogo },
+//   { label: "Google Ads", logo: googleAdsLogo },
+// ];
 
 const features = [
   { icon: Target, label: "Lead Capture" },
@@ -261,28 +261,24 @@ export default function LoginPage() {
           <img
             src={logoimg}
             alt="NestLeads"
-            className="w-14 h-14 object-contain"
+            className="w-auto h-14 object-contain"
           />
-          <span className="font-display font-medium text-white text-2xl">
-            NestLeads
-          </span>
+          
         </div>
-
+        <img
+          src={logodash}
+          alt="NestLeads"
+          className="relative z-10 w-full max-w-lg mt-10 mx-auto "
+        />
         {/* Headline */}
         <div className="relative z-10">
-          <h1 className="text-3xl xl:text-4xl font-display font-medium text-white leading-tight mb-5">
+          <h1 className="text-3xl xl:text-4xl font-display font-medium text-white leading-tight">
             Every lead.
-            
             Every follow-up.
-            
             One place.
           </h1>
-          <p className="text-white/70 text-base font-medium max-w-sm">
-            Centralize all your leads from various platforms and never miss a
-            follow-up again.
-          </p>
+          
         </div>
-
         {/* Feature pills */}
         <div className="relative z-10 flex flex-wrap gap-2">
           {features.map(({ icon: Icon, label }) => (
@@ -297,7 +293,7 @@ export default function LoginPage() {
         </div>
 
         {/* Platform logos row */}
-        <div className="relative z-10 flex flex-wrap gap-2">
+        {/* <div className="relative z-10 flex flex-wrap gap-2">
           {PLATFORMS.map(({ label, logo }) => (
             <div
               key={label}
@@ -311,7 +307,7 @@ export default function LoginPage() {
               {label}
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* ── Right panel ──────────────────────────────────────────── */}
