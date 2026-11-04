@@ -63,7 +63,11 @@ const protect = asyncHandler(async (req, res, next) => {
     req.sessionId = String(session._id);
   }
 
-  const isBillingRoute = req.baseUrl === "/api/billing";
+  // Billing (to renew) and /auth/me (to restore the session) must work on an expired plan, otherwise the
+  // owner can never reach the Renew screen: /auth/me 403s, the session is dropped and login loops.
+  const isBillingRoute =
+    req.baseUrl === "/api/billing" ||
+    (req.baseUrl === "/api/auth" && req.path === "/me");
   if (user.tenantId && !isBillingRoute) {
     const tenant = await Tenant.findById(user.tenantId).select(
       "status planExpiresAt",
