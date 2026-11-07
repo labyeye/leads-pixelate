@@ -442,6 +442,10 @@ export const callsAPI = {
     }>(`/calls/${id}`),
 };
 
+export const celebrationsAPI = {
+  today: () => request<{ success: boolean; data: any[] }>("/celebrations"),
+};
+
 export const usersAPI = {
   getAll: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";

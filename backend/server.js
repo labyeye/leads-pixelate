@@ -217,6 +217,7 @@ app.get("/.well-known/apple-app-site-association", (req, res) =>
 app.use("/api/auth", authLimiter, require("./routes/authRoutes"));
 app.use("/api/legal", require("./routes/legalRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/celebrations", require("./routes/celebrationRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
 app.use("/api/trash", require("./routes/trashRoutes"));
