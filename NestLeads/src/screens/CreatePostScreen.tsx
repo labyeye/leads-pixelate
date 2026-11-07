@@ -234,7 +234,7 @@ export default function CreatePostScreen({ navigation }: any) {
         text: 'Camera',
         onPress: () => {
           launchCamera(
-            { mediaType: type, quality: 0.85, videoQuality: 'high' },
+            { mediaType: type, quality: 1, videoQuality: 'high' },
             res => {
               if (res.assets?.[0]) {
                 const a = res.assets[0];
@@ -254,8 +254,11 @@ export default function CreatePostScreen({ navigation }: any) {
           launchImageLibrary(
             {
               mediaType: type,
-              quality: 0.85,
-              selectionLimit: type === 'photo' ? 1 : 1,
+              quality: 1,
+              selectionLimit: 1,
+              videoQuality: 'high',
+              // iOS: hand over the original file instead of a re-encoded copy.
+              assetRepresentationMode: 'current',
             },
             res => {
               if (res.assets?.[0]) {

@@ -36,12 +36,12 @@ async function shrinkPhoto(file) {
   const sharp = require("sharp");
   const dir = path.dirname(file.path);
   const out = `${path.basename(file.filename, ext)}.jpg`;
-  for (const [side, quality] of [[4096, 90], [4096, 80], [3072, 80], [2048, 75]]) {
+  for (const [side, quality] of [[4096, 95], [4096, 90], [3072, 90], [2048, 85]]) {
     const buf = await sharp(file.path)
       .rotate()
       .flatten({ background: "#ffffff" })
       .resize({ width: side, height: side, fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality })
+      .jpeg({ quality, chromaSubsampling: "4:4:4" })
       .toBuffer();
     if (buf.length <= INSTAGRAM_MAX_PHOTO || side === 2048) {
       await require("fs").promises.writeFile(path.join(dir, out), buf);

@@ -102,12 +102,21 @@ export default function MediaUploadField({
     Alert.alert(kind === 'video' ? 'Add video' : 'Add image', undefined, [
       {
         text: 'Camera',
-        onPress: () => launchCamera({ mediaType, quality: 0.8 }, handle),
+        onPress: () => launchCamera({ mediaType, quality: 1, videoQuality: 'high' }, handle),
       },
       {
         text: 'Library',
         onPress: () =>
-          launchImageLibrary({ mediaType, quality: 0.8, selectionLimit: 1 }, handle),
+          launchImageLibrary(
+            {
+              mediaType,
+              quality: 1,
+              selectionLimit: 1,
+              // iOS: hand over the original file instead of a re-encoded copy.
+              assetRepresentationMode: 'current',
+            },
+            handle,
+          ),
       },
       { text: 'Cancel', style: 'cancel' },
     ]);

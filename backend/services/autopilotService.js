@@ -15,6 +15,8 @@ const Product = require("../models/Product");
 const Lead = require("../models/Lead");
 const Setting = require("../models/Setting");
 const log = require("../utils/logger").scope("Autopilot");
+// Every JPEG we save for a post: near-lossless, no colour-detail loss (Instagram recompresses once more anyway).
+const JPEG_MAX = { quality: 95, chromaSubsampling: "4:4:4" };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TRIAL_DAYS = 3;
@@ -831,7 +833,7 @@ async function imageWithGemini(imagePrompt) {
   const buf = Buffer.from(block.data, "base64");
   if (buf[0] === 0xff && buf[1] === 0xd8) return buf;
   // Model ignores mime_type and may return PNG/WebP; Instagram only takes JPEG.
-  return require("sharp")(buf).jpeg({ quality: 90 }).toBuffer();
+  return require("sharp")(buf).jpeg(JPEG_MAX).toBuffer();
 }
 
 // A finished designed poster, 4:5, text and all. With refs (moodboard images, or a carousel's first
@@ -884,7 +886,7 @@ async function imageWithOpenAI(
   const [w, h] = OUTPUT_SIZE[size] || [1080, 1350];
   return require("sharp")(Buffer.from(b64, "base64"))
     .resize(w, h, { fit: "cover" })
-    .jpeg({ quality: 92 })
+    .jpeg(JPEG_MAX)
     .toBuffer();
 }
 
@@ -1195,7 +1197,7 @@ async function loadProductPhotos(products) {
     try {
       out.set(
         String(p.name).trim().toLowerCase(),
-        await require("sharp")(file).rotate().jpeg({ quality: 90 }).toBuffer(),
+        await require("sharp")(file).rotate().jpeg(JPEG_MAX).toBuffer(),
       );
     } catch {
       /* missing or unreadable photo: that product is just drawn without it */
@@ -1326,7 +1328,7 @@ async function applyLogo(buf, tenant) {
           top: v === "top" ? pad : height - m.height - pad,
         },
       ])
-      .jpeg({ quality: 90 })
+      .jpeg(JPEG_MAX)
       .toBuffer();
   } catch (err) {
     log.warn("Logo overlay skipped", {
