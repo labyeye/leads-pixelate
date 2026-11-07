@@ -12,8 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -496,7 +494,7 @@ function PostsTab({
       </div>
 
       {}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div>
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -510,7 +508,7 @@ function PostsTab({
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 max-w-3xl">
+          <div className="grid grid-cols-3 gap-4 max-w-full mt-10">
             {posts.map((post) => (
               <PostCard
                 key={post._id}

@@ -293,6 +293,7 @@ export default function LeadsPage() {
   const [savingView, setSavingView] = useState(false);
 
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [dragOverCat, setDragOverCat] = useState<string | null>(null);
   const [remarksInput, setRemarksInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
@@ -1481,6 +1482,22 @@ export default function LeadsPage() {
     }
   };
 
+  // Kanban drag & drop: dropping a card on another column opens the normal status dialog (remarks / follow-up date)
+  // for that column's first status. The server still enforces its own transition rules.
+  const handleKanbanDrop = (leadId: string, cat: string) => {
+    const l = leads.find((x) => String(x._id || x.id) === leadId);
+    const target = categories[cat]?.[0];
+    if (!l || !target || getCategoryByStatus(l.status || "ALL") === cat) return;
+    setSelectedLeadId(leadId);
+    setPendingStatus(target);
+    setRemarksInput(l.remarks || "");
+    setBudgetInput(l.budget || "");
+    setSelectedProducts(l.interestedProducts || []);
+    setSelectedDate(l.followUpDate ? new Date(l.followUpDate) : new Date());
+    setSelectedTime(l.followUpDate ? format(new Date(l.followUpDate), "HH:mm") : "12:00");
+    setIsStatusModalOpen(true);
+  };
+
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newLead.name.trim()) {
@@ -2272,9 +2289,20 @@ export default function LeadsPage() {
 
                     {}
                     <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (dragOverCat !== cat) setDragOverCat(cat);
+                      }}
+                      onDragLeave={() => setDragOverCat(null)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverCat(null);
+                        handleKanbanDrop(e.dataTransfer.getData("text/plain"), cat);
+                      }}
                       className={cn(
-                        "p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto",
+                        "p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto transition-colors",
                         style.bg,
+                        dragOverCat === cat && "ring-4 ring-inset ring-[#024BAB]",
                       )}
                     >
                       {loading ? (
@@ -2289,13 +2317,19 @@ export default function LeadsPage() {
                         colLeads.map((l) => (
                           <div
                             key={l._id || l.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("text/plain", String(l._id || l.id));
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
+                            onDragEnd={() => setDragOverCat(null)}
                             onClick={() => {
                               setSelectedLeadId(l._id || l.id);
                               setViewMode("table");
                               setActiveCategory(cat);
                             }}
                             className={cn(
-                              "bg-white border-2 border-black p-3 cursor-pointer transition-all hover hover:-translate-x-0.5 hover:-translate-y-0.5",
+                              "bg-white border-2 border-black p-3 cursor-grab active:cursor-grabbing transition-all hover hover:-translate-x-0.5 hover:-translate-y-0.5",
                               selectedLeadId === (l._id || l.id) &&
                                 "ring-2 ring-[#024BAB]",
                             )}
