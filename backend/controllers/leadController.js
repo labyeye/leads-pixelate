@@ -62,7 +62,7 @@ async function getTransitionMapsForTenant(tenantId) {
   const setting = await Setting.findOne({ tenantId: tenantId || null })
     .select("customLeadStatuses")
     .lean();
-  return buildTransitionMaps(setting?.customLeadStatuses || []);
+  return buildTransitionMaps(setting?.customLeadStatuses || [], { openFlow: true });
 }
 
 function isValidTransition(currentStatus, newStatus, VALID_TRANSITIONS) {
@@ -711,7 +711,10 @@ const convertToClient = asyncHandler(async (req, res) => {
   };
 
   const Client = require("../models/Client");
-  const client = await Client.create(clientData);
+  // A lead moved out of WON and back must not create a second client.
+  const client =
+    (await Client.findOne({ convertedFrom: lead._id })) ||
+    (await Client.create(clientData));
 
   logActivity({
     user: req.user,

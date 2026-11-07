@@ -294,7 +294,11 @@ const CUSTOM_TRANSITION_SHAPE = {
   },
 };
 
-function buildTransitionMaps(customStatuses = []) {
+// openFlow: every status can move to every other status (the lead screens show all options).
+// WON is the exception: it only happens through convertToClient (which also creates the Client),
+// so it stays reachable from VISITED as before and is not offered in the generic status update.
+// The AI call analysis keeps the guided pipeline (openFlow off) so it never jumps stages.
+function buildTransitionMaps(customStatuses = [], { openFlow = false } = {}) {
   const transitions = {};
   for (const [k, v] of Object.entries(BASE_VALID_TRANSITIONS)) {
     transitions[k] = [...v];
@@ -327,6 +331,13 @@ function buildTransitionMaps(customStatuses = []) {
     transitions[info.after] = transitions[info.after].map((t) =>
       t === info.insertBefore ? extras[0] : t,
     );
+  }
+
+  if (openFlow) {
+    const all = buildAllStatusesWithCustom(customStatuses);
+    for (const from of all) {
+      transitions[from] = all.filter((s) => s !== "WON" || from === "VISITED");
+    }
   }
 
   return {

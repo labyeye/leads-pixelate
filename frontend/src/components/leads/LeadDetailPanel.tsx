@@ -60,6 +60,7 @@ import {
   getCategoryByStatus,
   getStatusColorClasses,
   getStatusLabel,
+  categories,
 } from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { VaultDocPicker } from "../documents/VaultDocPicker";
@@ -733,6 +734,35 @@ export function LeadDetailPanel({
             </Button>
           </div>
         )}
+
+        {/* Any status can follow any status, so the quick buttons above are shortcuts, not the only way. */}
+        <div className="mt-3">
+          <label className="block text-xs font-bold text-black mb-1">
+            Change status to any stage
+          </label>
+          <select
+            className="w-full border-2 border-black bg-white px-3 py-2 text-sm"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) handleUpdateStatusTrigger(e.target.value);
+            }}
+          >
+            <option value="">Select a status…</option>
+            {Object.entries(categories).map(([cat, list]) => {
+              const opts = list.filter((s) => s !== lead.status);
+              if (!opts.length) return null;
+              return (
+                <optgroup key={cat} label={cat}>
+                  {opts.map((s) => (
+                    <option key={s} value={s}>
+                      {s === "WON" ? "Client (Won)" : getStatusLabel(s)}
+                    </option>
+                  ))}
+                </optgroup>
+              );
+            })}
+          </select>
+        </div>
       </div>
 
       {}

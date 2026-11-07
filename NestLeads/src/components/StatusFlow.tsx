@@ -17,6 +17,7 @@ import Icon from './Icon';
 import DateTimeField from './DateTimeField';
 import { leadsAPI, productsAPI } from '../services/api';
 import {
+  categories,
   getCategoryByStatus,
   getStatusColor,
   getStatusLabel,
@@ -289,29 +290,45 @@ export default function StatusFlow({
                   </Text>
                 </View>
               </View>
-              {actions.length === 0 ? (
+              {actions.length === 0 && (
                 <View style={s.doneBox}>
                   <Icon name="checkmark-circle" size={20} color="#16a34a" />
                   <Text style={s.doneText}>Successfully converted to Client</Text>
                 </View>
-              ) : (
-                <ScrollView style={{ maxHeight: 420 }}>
-                  {actions.map(a => {
-                    const t = TONES[a.tone];
-                    return (
-                      <TouchableOpacity
-                        key={a.label}
-                        style={[s.action, { backgroundColor: t.bg }]}
-                        onPress={() => pick(a.status)}
-                        activeOpacity={0.85}
-                      >
-                        <Icon name={a.icon} size={18} color={t.text} />
-                        <Text style={[s.actionText, { color: t.text }]}>{a.label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
               )}
+              <ScrollView style={{ maxHeight: 440 }}>
+                {actions.map(a => {
+                  const t = TONES[a.tone];
+                  return (
+                    <TouchableOpacity
+                      key={a.label}
+                      style={[s.action, { backgroundColor: t.bg }]}
+                      onPress={() => pick(a.status)}
+                      activeOpacity={0.85}
+                    >
+                      <Icon name={a.icon} size={18} color={t.text} />
+                      <Text style={[s.actionText, { color: t.text }]}>{a.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                {/* Any status can follow any status: the shortcuts above are not the only way. */}
+                <Text style={[s.sub, { marginTop: 12 }]}>Or move to any status</Text>
+                {Object.values(categories)
+                  .flat()
+                  .filter(st => st !== lead?.status)
+                  .map(st => (
+                    <TouchableOpacity
+                      key={st}
+                      style={[s.action, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb' }]}
+                      onPress={() => pick(st)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={[s.actionText, { color: '#000' }]}>
+                        {st === 'WON' ? 'Client (Won)' : getStatusLabel(st)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+              </ScrollView>
             </>
           )}
 
