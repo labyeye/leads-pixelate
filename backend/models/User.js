@@ -70,6 +70,9 @@ const userSchema = new mongoose.Schema(
     dateOfBirth: {
       type: Date,
     },
+    marriageAnniversary: {
+      type: Date,
+    },
     gender: {
       type: String,
       enum: ["male", "female", "other", ""],

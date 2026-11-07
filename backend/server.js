@@ -28,6 +28,10 @@ connectDB().then(async () => {
   cron.schedule("* * * * *", require("./services/funnelService").runSchedules);
   cron.schedule("* * * * *", require("./services/funnelService").processDue);
   cron.schedule("0 * * * *", runAutopilotCron);
+  // 03:30 UTC = 09:00 IST
+  cron.schedule("30 3 * * *", () =>
+    require("./services/celebrationService").runCelebrations().catch((e) => log.error("Celebrations failed", { message: e.message })),
+  );
   // A restart kills any run in flight; free their locks so "Try again" works right away.
   // ponytail: assumes one backend process; with several instances this would free a live run's lock.
   require("./models/AutopilotCampaign")

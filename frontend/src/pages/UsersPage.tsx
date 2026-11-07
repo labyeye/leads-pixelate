@@ -67,6 +67,7 @@ const EMPTY_FORM_DATA = {
   designation: "",
   dateOfJoining: "",
   dateOfBirth: "",
+  marriageAnniversary: "",
   gender: "",
   employmentType: "",
   addressLine1: "",
@@ -339,6 +340,7 @@ export default function UsersPage() {
         designation: full.designation || "",
         dateOfJoining: toDateInput(full.dateOfJoining),
         dateOfBirth: toDateInput(full.dateOfBirth),
+        marriageAnniversary: toDateInput(full.marriageAnniversary),
         gender: full.gender || "",
         employmentType: full.employmentType || "",
         addressLine1: full.address?.line1 || "",
@@ -697,6 +699,18 @@ export default function UsersPage() {
                           setFormData({
                             ...formData,
                             dateOfBirth: e.target.value,
+                          })
+                        }
+                      />
+                      <NbInput
+                        label="Marriage Anniversary"
+                        id="marriageAnniversary"
+                        type="date"
+                        value={formData.marriageAnniversary}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            marriageAnniversary: e.target.value,
                           })
                         }
                       />

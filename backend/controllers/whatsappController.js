@@ -354,6 +354,19 @@ async function sendWaMessage(
 // tenant automates. The shared Nest Leads number is never used for tenant messages.
 // vars are positional: they fill the chosen template's {{1}}, {{2}}... in order.
 const AUTOMATIONS = {
+  // Daily 09:00 IST wishes to the tenant's own TEAM (never to leads); see services/celebrationService.js.
+  team_birthday: {
+    label: "Team member birthday",
+    vars: ["Team member name", "Company name"],
+    text: ([name, company]) =>
+      `Happy Birthday, ${name}! 🎂 Wishing you a great year ahead. Thank you for being part of the ${company} team.`,
+  },
+  team_anniversary: {
+    label: "Team member marriage anniversary",
+    vars: ["Team member name", "Company name"],
+    text: ([name, company]) =>
+      `Happy Wedding Anniversary, ${name}! 💐 Wishing you and your family happiness always. Warm wishes from ${company}.`,
+  },
   quotation_sent: {
     label: "Quotation sent",
     vars: ["Client name", "Quotation no.", "Project", "Total"],
@@ -432,7 +445,7 @@ exports.notify = async function notify(tenantId, event, rawPhone, vars = []) {
         t.language,
         params.length ? [{ type: "body", parameters: params }] : [],
       );
-      return;
+      return true;
     }
 
     const res = await fetch(`${WA_API}/${phoneNumberId}/messages`, {
@@ -454,6 +467,7 @@ exports.notify = async function notify(tenantId, event, rawPhone, vars = []) {
         event,
         message: data?.error?.message || "unknown error",
       });
+    return res.ok;
   } catch (err) {
     log.error("Automation send failed", { event, message: err.message });
   }

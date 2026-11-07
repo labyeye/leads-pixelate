@@ -76,6 +76,7 @@ const createUser = asyncHandler(async (req, res) => {
     designation,
     dateOfJoining,
     dateOfBirth,
+    marriageAnniversary,
     gender,
     employmentType,
     address,
@@ -121,6 +122,7 @@ const createUser = asyncHandler(async (req, res) => {
     designation,
     dateOfJoining: dateOfJoining || undefined,
     dateOfBirth: dateOfBirth || undefined,
+    marriageAnniversary: marriageAnniversary || undefined,
     gender: gender || undefined,
     employmentType: employmentType || undefined,
     address,
@@ -154,6 +156,7 @@ const createUser = asyncHandler(async (req, res) => {
       designation: user.designation,
       dateOfJoining: user.dateOfJoining,
       dateOfBirth: user.dateOfBirth,
+      marriageAnniversary: user.marriageAnniversary,
       gender: user.gender,
       employmentType: user.employmentType,
       address: user.address,
@@ -190,6 +193,7 @@ const updateUser = asyncHandler(async (req, res) => {
     designation,
     dateOfJoining,
     dateOfBirth,
+    marriageAnniversary,
     gender,
     employmentType,
     address,
@@ -221,6 +225,8 @@ const updateUser = asyncHandler(async (req, res) => {
   if (designation !== undefined) user.designation = designation;
   if (dateOfJoining !== undefined) user.dateOfJoining = dateOfJoining || null;
   if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth || null;
+  if (marriageAnniversary !== undefined)
+    user.marriageAnniversary = marriageAnniversary || null;
   if (gender !== undefined) user.gender = gender;
   if (employmentType !== undefined) user.employmentType = employmentType;
   if (address !== undefined) user.address = address;
