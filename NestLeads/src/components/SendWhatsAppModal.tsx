@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, StyleSheet, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
-import { whatsappAPI } from '../services/api';
+import { whatsappAPI, documentsAPI, VaultDocument } from '../services/api';
 import { mappingFromNotes } from '../constants/whatsappTemplateLibrary';
 
 const BLUE = '#024BAB';
@@ -18,20 +18,32 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
   const [mapping, setMapping] = useState<{ position: number; fieldKey: string; customValue: string }[]>([]);
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [docs, setDocs] = useState<VaultDocument[]>([]);
+  const [documentId, setDocumentId] = useState('');
+  const [numbers, setNumbers] = useState<any[]>([]);
+  const [senderIdx, setSenderIdx] = useState(0);
 
   useEffect(() => {
     if (!lead) return;
     setPicked(null);
     setMessage('');
     setTemplates(null);
+    setDocumentId('');
     whatsappAPI
       .getTemplates()
-      .then(r => setTemplates((r.data || []).filter((t: any) => t.status === 'APPROVED' && !['DOCUMENT', 'IMAGE'].includes(t.headerType))))
+      .then(r => setTemplates((r.data || []).filter((t: any) => t.status === 'APPROVED')))
       .catch(() => setTemplates([]));
+    documentsAPI.getAll().then(r => setDocs(r.data || [])).catch(() => setDocs([]));
+    whatsappAPI.getStatus().then(r => { setNumbers(r.data?.phoneNumbers || []); setSenderIdx(0); }).catch(() => {});
   }, [lead]);
+
+  const needsDoc = mode === 'template' && ['DOCUMENT', 'IMAGE'].includes(picked?.headerType || '');
+  const docChoices = docs.filter(d => picked?.headerType !== 'IMAGE' || d.mimeType.startsWith('image/'));
+  const sender = numbers[senderIdx]?.phoneNumberId as string | undefined;
 
   const pick = (t: any) => {
     setPicked(t);
+    setDocumentId('');
     setMapping(mappingFromNotes(t.notes, t.variableCount || 0));
   };
 
@@ -46,8 +58,8 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
     setSending(true);
     try {
       if (mode === 'template' && picked)
-        await whatsappAPI.sendToLead({ leadId: lead._id, templateId: picked._id, variableMapping: mapping });
-      else await whatsappAPI.sendToLead({ leadId: lead._id, messageType: 'text', messageText: message.trim() });
+        await whatsappAPI.sendToLead({ leadId: lead._id, templateId: picked._id, variableMapping: mapping, phoneNumberId: sender, documentId: documentId || undefined });
+      else await whatsappAPI.sendToLead({ leadId: lead._id, messageType: 'text', messageText: message.trim(), phoneNumberId: sender });
       Alert.alert('Sent', 'It will show in your WhatsApp Inbox.');
       onClose();
     } catch (e: any) {
@@ -62,7 +74,7 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
     }
   };
 
-  const ready = mode === 'template' ? !!picked : !!message.trim();
+  const ready = mode === 'template' ? !!picked && (!needsDoc || !!documentId) : !!message.trim();
 
   return (
     <Modal visible={!!lead} animationType="slide" onRequestClose={onClose}>
@@ -88,6 +100,16 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
               <Text style={[s.chipText, mode === 'text' && { color: '#fff' }]}>Message</Text>
             </TouchableOpacity>
           </View>
+
+          {numbers.length > 1 && (
+            <TouchableOpacity style={s.sender} onPress={() => setSenderIdx(i => (i + 1) % numbers.length)}>
+              <Text style={s.hint}>Send from</Text>
+              <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: '#000' }} numberOfLines={1}>
+                {numbers[senderIdx]?.label || numbers[senderIdx]?.displayPhoneNumber || numbers[senderIdx]?.phoneNumberId}
+              </Text>
+              <Icon name="swap-horizontal" size={14} color="#64748b" />
+            </TouchableOpacity>
+          )}
 
           {mode === 'text' ? (
             <>
@@ -121,6 +143,21 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
                     </View>
                   ) : null,
                 )}
+              {needsDoc && (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={s.hint}>{`Pick the ${picked.headerType === 'IMAGE' ? 'image' : 'document'} to send (from Document Vault)`}</Text>
+                  {docChoices.length === 0 ? (
+                    <Text style={s.hint}>Nothing in the vault yet. Upload from More, Document Vault.</Text>
+                  ) : (
+                    docChoices.map(d => (
+                      <TouchableOpacity key={d._id} onPress={() => setDocumentId(d._id)} style={[s.tpl, documentId === d._id && s.tplOn]}>
+                        <Text style={{ fontWeight: '700', fontSize: 13, color: '#000' }} numberOfLines={1}>{d.name}</Text>
+                        <Text style={s.hint}>{d.fileName}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </View>
+              )}
               {!!preview && (
                 <View style={s.bubble}>
                   <Text style={{ fontSize: 13, color: '#000' }}>{preview}</Text>
@@ -142,6 +179,7 @@ const s = StyleSheet.create({
   divider: { height: 2, backgroundColor: '#000' },
   sendBtn: { backgroundColor: '#25D366', borderWidth: 2, borderColor: '#000', paddingHorizontal: 14, paddingVertical: 7 },
   chips: { flexDirection: 'row', gap: 6, marginBottom: 10 },
+  sender: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 8, marginBottom: 10 },
   chip: { borderWidth: 2, borderColor: '#000', paddingHorizontal: 12, paddingVertical: 6 },
   chipOn: { backgroundColor: BLUE },
   chipText: { fontSize: 12, fontWeight: '700', color: '#000' },

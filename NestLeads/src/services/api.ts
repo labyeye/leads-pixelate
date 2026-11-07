@@ -933,7 +933,7 @@ export const whatsappAPI = {
     }),
   getStatus: () => request<{ success: boolean; data: any }>('/whatsapp/status'),
   getConfig: () => request<{ success: boolean; data: any }>('/whatsapp/config'),
-  replyToConversation: (data: { phone: string; text: string }) =>
+  replyToConversation: (data: { phone: string; text: string; phoneNumberId?: string }) =>
     request<{ success: boolean; data: any }>('/whatsapp/conversations/reply', { method: 'POST', body: JSON.stringify(data) }),
   convertToLead: (data: { phone: string; name?: string }) =>
     request<{ success: boolean; data: any }>('/whatsapp/conversations/convert', { method: 'POST', body: JSON.stringify(data) }),
@@ -943,6 +943,8 @@ export const whatsappAPI = {
     variableMapping?: { position: number; fieldKey: string; customValue: string }[];
     messageType?: 'text';
     messageText?: string;
+    phoneNumberId?: string;
+    documentId?: string;
   }) => request<{ success: boolean }>('/whatsapp/send', { method: 'POST', body: JSON.stringify(body) }),
   syncTemplates: () =>
     request<{ success: boolean; message: string }>('/whatsapp/templates/sync', { method: 'POST' }),
@@ -975,6 +977,95 @@ export const whatsappAPI = {
   },
   getCampaign: (id: string) =>
     request<{ success: boolean; data: any }>(`/whatsapp/campaigns/${id}`),
+  resendCampaign: (id: string) =>
+    request<{ success: boolean; data: { resending: number } }>(
+      `/whatsapp/campaigns/${id}/resend`,
+      { method: 'POST' },
+    ),
+  getReplies: () =>
+    request<{ success: boolean; count: number; data: any[] }>('/whatsapp/replies'),
+  getAutomations: () =>
+    request<{ success: boolean; data: any[] }>('/whatsapp/automations'),
+  saveAutomations: (body: Record<string, { enabled: boolean; templateId: string }>) =>
+    request<{ success: boolean }>('/whatsapp/automations', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  setup: (data: { accessToken: string; wabaId?: string }) =>
+    request<{ success: boolean; message: string; data?: { warning?: string; added?: number } }>(
+      '/whatsapp/setup',
+      { method: 'POST', body: JSON.stringify(data) },
+    ),
+  addPhoneNumber: (data: {
+    phoneNumberId: string;
+    label?: string;
+    businessName?: string;
+    phoneNumber?: string;
+  }) =>
+    request<{ success: boolean; message: string; data: any }>('/whatsapp/phone-numbers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  removePhoneNumber: (phoneNumberId: string) =>
+    request<{ success: boolean; message: string }>(
+      `/whatsapp/phone-numbers/${phoneNumberId}`,
+      { method: 'DELETE' },
+    ),
+  syncPhoneNumbers: () =>
+    request<{ success: boolean; data: { added: number } }>('/whatsapp/phone-numbers/sync', {
+      method: 'POST',
+    }),
+  disconnect: () =>
+    request<{ success: boolean; message: string }>('/whatsapp/disconnect', { method: 'POST' }),
+  sendDocument: (body: {
+    leadId: string;
+    documentId: string;
+    phoneNumberId?: string;
+    messageText?: string;
+  }) =>
+    request<{ success: boolean }>('/whatsapp/send', { method: 'POST', body: JSON.stringify(body) }),
+};
+
+export interface VaultDocument {
+  _id: string;
+  name: string;
+  category: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  createdAt: string;
+  uploadedBy?: { name: string };
+}
+
+// Vault files are served by the backend origin, not under /api.
+export const documentFileUrl = (d: VaultDocument) =>
+  String(API_BASE).replace(/\/api\/?$/, '') + d.url;
+
+export const documentsAPI = {
+  getAll: () => request<{ success: boolean; data: VaultDocument[] }>('/documents'),
+  update: (id: string, data: { name?: string; category?: string }) =>
+    request<{ success: boolean; data: VaultDocument }>(`/documents/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean }>(`/documents/${id}`, { method: 'DELETE' }),
+  async upload(fileUri: string, fileName: string, mimeType: string, name: string, category: string) {
+    const token = await getToken();
+    const form = new FormData();
+    form.append('name', name);
+    form.append('category', category);
+    form.append('file', { uri: fileUri, name: fileName, type: mimeType } as any);
+    const res = await fetch(`${API_BASE}/documents`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed');
+    return data as { success: boolean; data: VaultDocument };
+  },
 };
 
 export const apiKeysAPI = {

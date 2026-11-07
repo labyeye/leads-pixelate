@@ -38,7 +38,7 @@ type MenuItem = {
 
 const GROUPS: { title: string; icon: string; screens: string[] }[] = [
   { title: 'Sales & Billing', icon: 'wallet-outline', screens: ['Clients', 'Quotations', 'SalesOrders', 'PurchaseOrders', 'Invoices', 'PriceBooks', 'Products', 'Services'] },
-  { title: 'WhatsApp', icon: 'chatbubbles-outline', screens: ['WhatsAppInbox', 'WhatsAppLogs', 'WhatsAppSetup', 'Campaigns', 'Funnels'] },
+  { title: 'WhatsApp', icon: 'chatbubbles-outline', screens: ['WhatsAppInbox', 'WhatsAppLogs', 'DocumentVault', 'WhatsAppSetup', 'Campaigns', 'Funnels'] },
   { title: 'Marketing & Insights', icon: 'megaphone-outline', screens: ['AdCampaignsHub', 'Autopilot', 'Reports'] },
   { title: 'Workspace', icon: 'people-outline', screens: ['Users', 'Integrations', 'ApiKeys'] },
   { title: 'Account', icon: 'person-outline', screens: ['Billing', 'AccountSecurity', 'Support', 'Settings'] },
@@ -72,6 +72,13 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'WhatsApp Inbox',
     sub: 'Messages from leads',
     screen: 'WhatsAppInbox',
+    color: '#25D366',
+  },
+  {
+    icon: 'folder-open-outline',
+    label: 'Document Vault',
+    sub: 'Brochures & catalogues to send on WhatsApp',
+    screen: 'DocumentVault',
     color: '#25D366',
   },
   {

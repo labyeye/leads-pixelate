@@ -34,6 +34,8 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
   const [openPhone, setOpenPhone] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [search, setSearch] = useState('');
+  const [senderId, setSenderId] = useState('');
   const listRef = useRef<FlatList>(null);
 
   const load = useCallback(async (isRefresh = false) => {
@@ -51,6 +53,10 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
 
   useEffect(() => {
     load();
+    whatsappAPI
+      .getStatus()
+      .then(r => setSenderId(r.data?.phoneNumbers?.[0]?.phoneNumberId || ''))
+      .catch(() => {});
     const t = setInterval(() => load(), 15000);
     return () => clearInterval(t);
   }, [load]);
@@ -67,7 +73,7 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
     if (!open || !body) return;
     setSending(true);
     try {
-      await whatsappAPI.replyToConversation({ phone: open.phone, text: body });
+      await whatsappAPI.replyToConversation({ phone: open.phone, text: body, phoneNumberId: senderId || undefined });
       setText('');
       await load();
     } catch (e: any) {
@@ -110,6 +116,14 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
         {open && !open.leadId && (
           <TouchableOpacity onPress={convert} style={s.addBtn}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: '#000' }}>Add as lead</Text>
+          </TouchableOpacity>
+        )}
+        {open && !!open.leadId && (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('LeadsStack', { screen: 'LeadDetail', params: { leadId: open.leadId } })}
+            style={s.addBtn}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#000' }}>View lead</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -178,6 +192,13 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
     <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {Header}
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search name, number or message"
+        placeholderTextColor="#94a3b8"
+        style={s.search}
+      />
       {loading ? (
         <View style={s.center}>
           <ActivityIndicator size="large" color="#25D366" />
@@ -190,7 +211,15 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          data={conversations}
+          data={conversations.filter(c => {
+            const q = search.trim().toLowerCase();
+            return (
+              !q ||
+              (c.name || '').toLowerCase().includes(q) ||
+              String(c.phone).includes(q) ||
+              (c.messages || []).some((m: any) => String(m.text || '').toLowerCase().includes(q))
+            );
+          })}
           keyExtractor={c => c.phone}
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#25D366" />}
@@ -233,6 +262,7 @@ const s = StyleSheet.create({
   sub: { fontSize: 11, color: '#64748b' },
   addBtn: { borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 6 },
   divider: { height: 2, backgroundColor: '#000' },
+  search: { margin: 10, borderWidth: 2, borderColor: '#000', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, color: '#000' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 24 },
   emptyTitle: { fontSize: 15, fontWeight: '700', color: '#000' },
   muted: { color: '#64748b', fontSize: 12, textAlign: 'center' },

@@ -1,6 +1,9 @@
 import React from 'react';
 import {
   AlertCircle,
+  Maximize2,
+  FolderOpen,
+  File as FileGeneric,
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
@@ -200,6 +203,9 @@ const MAP: Record<string, LucideIcon> = {
   'person-outline': User,
   play: Play,
   'play-circle-outline': PlayCircle,
+  'expand-outline': Maximize2,
+  'folder-open-outline': FolderOpen,
+  'document-outline': FileGeneric,
   'search-outline': Search,
   'server-outline': Server,
   'settings-outline': Settings,

@@ -88,6 +88,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   const [noteText, setNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [histOpen, setHistOpen] = useState(false);
   const { user } = useAuth();
   const [perm, setPerm] = useState<{ update?: boolean; delete?: boolean }>(
     LEAD_DEFAULTS[user?.role] || {},
@@ -262,7 +263,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Identity */}
+        {/* Identity + quick actions */}
         <View style={styles.section}>
           <View style={styles.nameRow}>
             <View style={styles.avatar}>
@@ -271,9 +272,13 @@ export default function LeadDetailScreen({ navigation, route }: any) {
               </Text>
             </View>
             <View style={styles.nameInfo}>
-              <Text style={styles.leadName}>{lead.name}</Text>
+              <Text style={styles.leadName} numberOfLines={1}>
+                {lead.name}
+              </Text>
               {lead.company ? (
-                <Text style={styles.leadCompany}>{lead.company}</Text>
+                <Text style={styles.leadCompany} numberOfLines={1}>
+                  {lead.company}
+                </Text>
               ) : null}
             </View>
             {tag && (
@@ -302,97 +307,78 @@ export default function LeadDetailScreen({ navigation, route }: any) {
               </Text>
             </View>
           </View>
-        </View>
-
-        {/* Contact information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>CONTACT INFORMATION</Text>
-          <InfoRow icon="mail-outline" label="Email" value={lead.email} />
-          <InfoRow icon="call-outline" label="Phone" value={lead.phone} />
-          <InfoRow icon="business-outline" label="Company" value={lead.company} />
-          <InfoRow icon="globe-outline" label="Website" value={lead.website} />
-          <InfoRow
-            icon="location-outline"
-            label="Location"
-            value={location}
-            last={!lead.facebookAdName}
-          />
-          {lead.facebookAdName ? (
-            <InfoRow
-              icon="megaphone-outline"
-              label="Campaign"
-              value={lead.facebookAdName}
-              last
-            />
-          ) : null}
-        </View>
-
-        {/* Lead details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>LEAD DETAILS</Text>
-          <InfoRow
-            icon="calendar-outline"
-            label="Inquiry Date"
-            value={fmtDate(lead.indiamartQueryTime || lead.createdAt)}
-          />
-          <InfoRow
-            icon="wallet-outline"
-            label="Budget"
-            value={lead.budget || 'Not Specified'}
-            strong
-          />
-          <InfoRow
-            icon="person-outline"
-            label="Assigned To"
-            value={lead.assignedTo?.name}
-          />
-          {lead.followUpDate ? (
-            <InfoRow
-              icon="time-outline"
-              label="Follow-up"
-              value={fmtDateTime(lead.followUpDate)}
-            />
-          ) : null}
-          {lead.visitScheduledDate ? (
-            <InfoRow
-              icon="location-outline"
-              label="Visit Scheduled"
-              value={fmtDateTime(lead.visitScheduledDate)}
-            />
-          ) : null}
-          {lead.visitActualDate ? (
-            <InfoRow
-              icon="checkmark-circle-outline"
-              label="Visited On"
-              value={fmtDate(lead.visitActualDate)}
-            />
-          ) : null}
-          <InfoRow
-            icon="document-text-outline"
-            label="Requirement"
-            value={lead.requirement}
-          />
-          <InfoRow
-            icon="chatbubbles-outline"
-            label="Remarks"
-            value={lead.remarks}
-            last
-          />
-        </View>
-
-        {/* Interested products */}
-        {lead.interestedProducts?.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>INTERESTED IN</Text>
-            <View style={styles.chipsWrap}>
-              {lead.interestedProducts.map((p: string, i: number) => (
-                <View key={i} style={styles.productChip}>
-                  <Text style={styles.productChipText}>{p}</Text>
-                </View>
-              ))}
-            </View>
+          <View style={[styles.actionsRow, { marginTop: 10 }]}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              onPress={handleCall}
+              disabled={!lead.phone}
+            >
+              <Icon name="call-outline" size={16} color="#044bab" />
+              <Text style={styles.actionBtnText}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              onPress={handleWhatsApp}
+              disabled={!lead.phone}
+            >
+              <View style={styles.whatsappLogoChip}>
+                <WhatsAppLogo size={12} />
+              </View>
+              <Text style={styles.actionBtnText}>WhatsApp</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#024BAB' }, !lead.email && { opacity: 0.4 }]}
+              onPress={handleEmail}
+              disabled={!lead.email}
+            >
+              <Icon name="mail-outline" size={16} color="#fff" />
+              <Text style={[styles.actionBtnText, { color: '#fff' }]}>Email</Text>
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
+
+        {/* All details in one compact two-column grid */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>DETAILS</Text>
+          <View style={styles.grid}>
+            <Field icon="call-outline" label="Phone" value={lead.phone} />
+            <Field icon="mail-outline" label="Email" value={lead.email} />
+            <Field icon="wallet-outline" label="Budget" value={lead.budget || 'Not specified'} strong />
+            <Field icon="person-outline" label="Assigned to" value={lead.assignedTo?.name} />
+            <Field icon="calendar-outline" label="Inquiry" value={fmtDate(lead.indiamartQueryTime || lead.createdAt)} />
+            <Field icon="location-outline" label="Location" value={location} />
+            {lead.company ? <Field icon="business-outline" label="Company" value={lead.company} /> : null}
+            {lead.website ? <Field icon="globe-outline" label="Website" value={lead.website} /> : null}
+            {lead.followUpDate ? <Field icon="time-outline" label="Follow-up" value={fmtDateTime(lead.followUpDate)} /> : null}
+            {lead.visitScheduledDate ? <Field icon="location-outline" label="Visit" value={fmtDateTime(lead.visitScheduledDate)} /> : null}
+            {lead.visitActualDate ? <Field icon="checkmark-circle-outline" label="Visited on" value={fmtDate(lead.visitActualDate)} /> : null}
+            {lead.facebookAdName ? <Field icon="megaphone-outline" label="Campaign" value={lead.facebookAdName} /> : null}
+          </View>
+          {lead.requirement ? (
+            <View style={styles.textBlock}>
+              <Text style={styles.fieldLabel}>Requirement</Text>
+              <Text style={styles.fieldText} selectable>{lead.requirement}</Text>
+            </View>
+          ) : null}
+          {lead.remarks ? (
+            <View style={styles.textBlock}>
+              <Text style={styles.fieldLabel}>Remarks</Text>
+              <Text style={styles.fieldText} selectable>{lead.remarks}</Text>
+            </View>
+          ) : null}
+          {lead.interestedProducts?.length > 0 && (
+            <View style={styles.textBlock}>
+              <Text style={styles.fieldLabel}>Interested in</Text>
+              <View style={styles.chipsWrap}>
+                {lead.interestedProducts.map((p: string, i: number) => (
+                  <View key={i} style={styles.productChip}>
+                    <Text style={styles.productChipText}>{p}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* Notes */}
         <View style={styles.section}>
@@ -439,91 +425,54 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                 </View>
               ))}
             </View>
-          ) : (
-            <Text style={styles.emptyNotes}>No notes yet</Text>
-          )}
+          ) : null}
         </View>
 
-        {/* Status history */}
+        {/* Status history (collapsed by default) */}
         {lead.statusHistory?.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>STATUS HISTORY</Text>
-            {[...lead.statusHistory].reverse().map((h: any, i: number) => {
-              const hsc = getStatusColor(h.status);
-              return (
-                <View key={i} style={styles.historyRow}>
-                  <View
-                    style={[
-                      styles.historyDot,
-                      { backgroundColor: hsc.bg, borderColor: '#000' },
-                    ]}
-                  />
-                  <View style={styles.historyContent}>
-                    <View style={styles.historyTop}>
-                      <Text style={styles.historyStatus}>
-                        {getStatusLabel(h.status)}
-                      </Text>
-                      <Text style={styles.historyDate}>
-                        {fmtDate(h.changedAt)}
-                      </Text>
+            <TouchableOpacity
+              style={styles.histHead}
+              onPress={() => setHistOpen(v => !v)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.sectionLabel, { marginBottom: 0, flex: 1 }]}>
+                STATUS HISTORY ({lead.statusHistory.length})
+              </Text>
+              <Icon name={histOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#64748b" />
+            </TouchableOpacity>
+            {histOpen &&
+              [...lead.statusHistory].reverse().map((h: any, i: number) => {
+                const hsc = getStatusColor(h.status);
+                return (
+                  <View key={i} style={[styles.historyRow, i === 0 && { marginTop: 10 }]}>
+                    <View
+                      style={[
+                        styles.historyDot,
+                        { backgroundColor: hsc.bg, borderColor: '#000' },
+                      ]}
+                    />
+                    <View style={styles.historyContent}>
+                      <View style={styles.historyTop}>
+                        <Text style={styles.historyStatus}>
+                          {getStatusLabel(h.status)}
+                        </Text>
+                        <Text style={styles.historyDate}>
+                          {fmtDate(h.changedAt)}
+                        </Text>
+                      </View>
+                      {h.remarks ? (
+                        <Text style={styles.historyRemarks}>{h.remarks}</Text>
+                      ) : null}
+                      {h.changedBy?.name ? (
+                        <Text style={styles.historyBy}>by {h.changedBy.name}</Text>
+                      ) : null}
                     </View>
-                    {h.remarks ? (
-                      <Text style={styles.historyRemarks}>{h.remarks}</Text>
-                    ) : null}
-                    {h.changedBy?.name ? (
-                      <Text style={styles.historyBy}>by {h.changedBy.name}</Text>
-                    ) : null}
                   </View>
-                </View>
-              );
-            })}
+                );
+              })}
           </View>
         )}
-
-        {/* Quick actions — last */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                { backgroundColor: '#FBFBFB' },
-                !lead.phone && { opacity: 0.4 },
-              ]}
-              onPress={handleCall}
-              disabled={!lead.phone}
-            >
-              <Icon name="call-outline" size={16} color="#044bab" />
-              <Text style={styles.actionBtnText}>Call</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                { backgroundColor: '#FBFBFB' },
-                !lead.phone && { opacity: 0.4 },
-              ]}
-              onPress={handleWhatsApp}
-              disabled={!lead.phone}
-            >
-              <View style={styles.whatsappLogoChip}>
-                <WhatsAppLogo size={12} />
-              </View>
-              <Text style={styles.actionBtnText}>WhatsApp</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                { backgroundColor: '#024BAB' },
-                !lead.email && { opacity: 0.4 },
-              ]}
-              onPress={handleEmail}
-              disabled={!lead.email}
-            >
-              <Icon name="mail-outline" size={16} color="#fff" />
-              <Text style={styles.actionBtnText}>Email</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
 
       {/* Edit Lead Modal */}
@@ -600,6 +549,41 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   );
 }
 
+function Field({
+  icon,
+  label,
+  value,
+  strong,
+}: {
+  icon: string;
+  label: string;
+  value?: string;
+  strong?: boolean;
+}) {
+  return (
+    <View style={fieldStyles.cell}>
+      <View style={fieldStyles.labelRow}>
+        <Icon name={icon} size={12} color="#64748b" />
+        <Text style={fieldStyles.label}>{label}</Text>
+      </View>
+      <Text
+        style={[fieldStyles.value, strong && { color: '#024BAB' }]}
+        numberOfLines={2}
+        selectable
+      >
+        {value || '—'}
+      </Text>
+    </View>
+  );
+}
+
+const fieldStyles = StyleSheet.create({
+  cell: { width: '50%', paddingVertical: 6, paddingRight: 8 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
+  label: { fontSize: 11, color: '#64748b', fontWeight: '500' },
+  value: { fontSize: 13, color: '#000', fontWeight: '500' },
+});
+
 function InfoRow({
   icon,
   label,
@@ -644,7 +628,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
 
   header: {
-    height: 64,
+    height: 52,
     backgroundColor: '#fff',
     borderBottomWidth: 2,
     borderBottomColor: '#000',
@@ -658,7 +642,12 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, fontSize: 18, fontWeight: '500', color: '#000' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { marginTop: 12, color: '#64748b', fontSize: 14 },
-  scroll: { padding: 16, gap: 12 },
+  scroll: { padding: 12, gap: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  textBlock: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  fieldLabel: { fontSize: 11, color: '#64748b', fontWeight: '500', marginBottom: 3 },
+  fieldText: { fontSize: 13, color: '#000', fontWeight: '500', lineHeight: 18 },
+  histHead: { flexDirection: 'row', alignItems: 'center' },
 
   // Sections â€" white, border-2 border-black, nb shadow
   section: {
@@ -670,7 +659,7 @@ const styles = StyleSheet.create({
     borderRightColor: '#0A0A0A',
     borderBottomColor: '#0A0A0A',
     borderColor: '#000',
-    padding: 14,
+    padding: 12,
     marginBottom: 0,
   },
   sectionLabel: {
@@ -679,19 +668,19 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 12,
+    marginBottom: 8,
   },
 
   // Identity
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     gap: 10,
   },
   avatar: {
-    width: 44,
-    height: 44,
+    width: 38,
+    height: 38,
     backgroundColor: '#024BAB',
     borderWidth: 2,
     borderRadius: 8,
@@ -743,7 +732,7 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     flex: 1,
-    paddingVertical: 11,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -46,7 +46,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function FacebookDashboardPage() {
   const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
   const [insights, setInsights] = useState<Record<string, Insight>>({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const periodState = usePeriodFilter();
@@ -261,8 +261,15 @@ export default function FacebookDashboardPage() {
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-medium text-center gap-1 px-4">
-                  <span>No campaign data yet</span>
-                  <span className="text-xs font-normal">
+                  {loading ? (
+                    <>
+                      <span className="w-6 h-6 rounded-full border-2 border-[#024BAB] border-t-transparent animate-spin" />
+                      <span>Loading campaigns…</span>
+                    </>
+                  ) : (
+                    <span>No campaign data yet</span>
+                  )}
+                  <span className={loading ? "hidden" : "text-xs font-normal"}>
                     Connect your Facebook Ad Account in{" "}
                     <Link
                       to="/integrations"
@@ -343,8 +350,15 @@ export default function FacebookDashboardPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm font-medium text-center gap-1 px-4">
-                  <span>No campaign data yet</span>
-                  <span className="text-xs font-normal">
+                  {loading ? (
+                    <>
+                      <span className="w-6 h-6 rounded-full border-2 border-[#024BAB] border-t-transparent animate-spin" />
+                      <span>Loading campaigns…</span>
+                    </>
+                  ) : (
+                    <span>No campaign data yet</span>
+                  )}
+                  <span className={loading ? "hidden" : "text-xs font-normal"}>
                     Connect your Facebook Ad Account in{" "}
                     <Link
                       to="/integrations"

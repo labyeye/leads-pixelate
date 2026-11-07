@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ImageZoomModal from '../components/ImageZoomModal';
 import { socialAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { SourceLogo } from '../components/SourceBadge';
@@ -449,8 +450,10 @@ function PostDetailModal({
   const insets = useSafeAreaInsets();
   const [captionOpen, setCaptionOpen] = useState(false);
   const [failOpen, setFailOpen] = useState(false);
+  const [zoomAt, setZoomAt] = useState<number | null>(null);
   useEffect(() => {
     setCaptionOpen(false);
+    setZoomAt(null);
     setFailOpen(false);
   }, [post?._id]);
   if (!post) return null;
@@ -499,16 +502,25 @@ function PostDetailModal({
         >
           {/* Media */}
           {post.imageUrl ? (
-            <Image
-              source={{ uri: post.imageUrl }}
-              style={styles.mediaImage}
-              resizeMode="cover"
-            />
+            <TouchableOpacity activeOpacity={0.9} onPress={() => setZoomAt(-1)}>
+              <Image
+                source={{ uri: post.imageUrl }}
+                style={styles.mediaImage}
+                resizeMode="cover"
+              />
+              <View style={styles.zoomHint}>
+                <Icon name="expand-outline" size={14} color="#fff" />
+                <Text style={styles.zoomHintText}>Tap to zoom</Text>
+              </View>
+            </TouchableOpacity>
           ) : post.videoUrl ? (
-            <View style={styles.videoPlaceholder}>
-              <Icon name="videocam-outline" size={40} color="#94a3b8" />
-              <Text style={styles.videoPlaceholderText}>Video Post</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.videoPlaceholder}
+              onPress={() => setZoomAt(-2)}
+            >
+              <Icon name="play-circle-outline" size={40} color="#94a3b8" />
+              <Text style={styles.videoPlaceholderText}>Video Post · tap to play</Text>
+            </TouchableOpacity>
           ) : null}
 
           {/* Carousel thumbnails */}
@@ -519,11 +531,9 @@ function PostDetailModal({
               style={styles.carouselRow}
             >
               {post.mediaUrls.map((url: string, i: number) => (
-                <Image
-                  key={i}
-                  source={{ uri: url }}
-                  style={styles.carouselThumb}
-                />
+                <TouchableOpacity key={i} onPress={() => setZoomAt(i)}>
+                  <Image source={{ uri: url }} style={styles.carouselThumb} />
+                </TouchableOpacity>
               ))}
             </ScrollView>
           )}
@@ -825,6 +835,21 @@ function PostDetailModal({
             </View>
           </View>
         </Modal>
+        <ImageZoomModal
+          visible={zoomAt !== null}
+          urls={
+            zoomAt === -2
+              ? []
+              : post.mediaUrls?.length > 0 && zoomAt !== null && zoomAt >= 0
+                ? post.mediaUrls
+                : post.imageUrl
+                  ? [post.imageUrl]
+                  : post.mediaUrls || []
+          }
+          index={zoomAt !== null && zoomAt >= 0 ? zoomAt : 0}
+          videoUrl={zoomAt === -2 ? post.videoUrl : undefined}
+          onClose={() => setZoomAt(null)}
+        />
       </View>
     </Modal>
   );
@@ -846,6 +871,7 @@ export default function SocialPlannerScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [viewingPost, setViewingPost] = useState<any>(null);
+  const [listZoom, setListZoom] = useState<{ urls: string[] } | null>(null);
   const [editingPost, setEditingPost] = useState<any>(null);
   const justSaved = React.useRef(false);
 
@@ -1058,7 +1084,16 @@ export default function SocialPlannerScreen({ navigation }: any) {
         <View style={styles.cardInner}>
           {/* Thumbnail */}
           {p.imageUrl ? (
-            <Image source={{ uri: p.imageUrl }} style={styles.thumb} />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                setListZoom({
+                  urls: p.mediaUrls?.length ? p.mediaUrls : [p.imageUrl],
+                })
+              }
+            >
+              <Image source={{ uri: p.imageUrl }} style={styles.thumb} />
+            </TouchableOpacity>
           ) : (
             <View style={[styles.thumb, styles.thumbPlaceholder]}>
               <Icon
@@ -1415,6 +1450,12 @@ export default function SocialPlannerScreen({ navigation }: any) {
           }
         />
       )}
+
+      <ImageZoomModal
+        visible={!!listZoom}
+        urls={listZoom?.urls || []}
+        onClose={() => setListZoom(null)}
+      />
 
       {/* Detail modal */}
       <PostDetailModal
@@ -2060,6 +2101,19 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '500', color: '#000' },
   modalBody: { padding: 16, gap: 16 },
 
+  zoomHint: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  zoomHintText: { color: '#fff', fontSize: 11, fontWeight: '500' },
   mediaImage: {
     width: '100%',
     height: 220,

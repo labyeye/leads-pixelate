@@ -5,6 +5,7 @@ const CallLog = require("../models/CallLog");
 const ActivityLog = require("../models/ActivityLog");
 const { METRICS, statusEvents, countByUser, targetOf } = require("../utils/performanceMetrics");
 const Setting = require("../models/Setting");
+const Quotation = require("../models/Quotation");
 
 const CLOSED_STATUSES = ["WON", "DROP"];
 
@@ -239,9 +240,59 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     value,
   }));
 
+  const recentLeads = await Lead.find({ ...tf })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .select("name company phone status source createdAt assignedTo")
+    .populate("assignedTo", "name")
+    .lean();
+
+  // Clients won per agent per month (last 6 months), top 5 agents by total, for the line graph.
+  const wonRows = await Lead.find({
+    ...tf,
+    status: "WON",
+    assignedTo: { $ne: null },
+    updatedAt: { $gte: monthBoundaries[0].monthStart },
+  })
+    .select("assignedTo updatedAt")
+    .lean();
+  const startIdx = monthBoundaries[0].monthStart.getFullYear() * 12 + monthBoundaries[0].monthStart.getMonth();
+  const perAgent = new Map(); // userId -> number[6]
+  for (const l of wonRows) {
+    const d = new Date(l.updatedAt);
+    const i = d.getFullYear() * 12 + d.getMonth() - startIdx;
+    if (i < 0 || i > 5) continue;
+    const k = String(l.assignedTo);
+    if (!perAgent.has(k)) perAgent.set(k, [0, 0, 0, 0, 0, 0]);
+    perAgent.get(k)[i]++;
+  }
+  const topIds = [...perAgent.entries()]
+    .sort((a, b) => b[1].reduce((x, y) => x + y, 0) - a[1].reduce((x, y) => x + y, 0))
+    .slice(0, 5);
+  const agentUsers = topIds.length ? await User.find({ _id: { $in: topIds.map(([id]) => id) } }).select("name").lean() : [];
+  const nameOf = new Map(agentUsers.map((u) => [String(u._id), u.name]));
+  const trendAgents = topIds.map(([id]) => nameOf.get(id) || "Former user");
+  const performerTrend = {
+    agents: trendAgents,
+    data: monthBoundaries.map((m, i) => ({
+      month: m.monthName,
+      ...Object.fromEntries(topIds.map(([, arr], j) => [trendAgents[j], arr[i]])),
+    })),
+  };
+
+  const recentQuotations = await Quotation.find({ ...tf })
+    .sort({ createdAt: -1 })
+    .limit(8)
+    .select("number clientName companyName projectTitle total status createdAt createdBy")
+    .populate("createdBy", "name")
+    .lean();
+
   res.json({
     success: true,
     data: {
+      recentLeads,
+      recentQuotations,
+      performerTrend,
       stats: {
         totalLeads,
         newLeadsToday,
@@ -287,7 +338,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
     await Promise.all([
       Setting.findOne({ tenantId: req.user.tenantId || null }).select("callTargets").lean(),
       User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } })
-        .select("name role")
+        .select("name role avatar")
         .lean(),
       CallLog.aggregate([
         { $match: humanCalls },
@@ -352,7 +403,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
   const knownIds = new Set(agents.map((a) => String(a._id)));
   // Someone with calls in the window who is no longer in the list (role changed) still counts.
   const extra = callsByAgent.filter((r) => !knownIds.has(String(r._id))).map((r) => r._id);
-  const extraUsers = extra.length ? await User.find({ _id: { $in: extra } }).select("name role").lean() : [];
+  const extraUsers = extra.length ? await User.find({ _id: { $in: extra } }).select("name role avatar").lean() : [];
 
   const team = [...agents, ...extraUsers]
     .map((u) => {
@@ -361,6 +412,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
       return {
         _id: u._id,
         name: u.name,
+        avatar: u.avatar,
         role: u.role,
         calls: c.calls || 0,
         statusUpdates: m.calls,

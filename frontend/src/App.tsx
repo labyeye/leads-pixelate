@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useUsageTracker } from "@/hooks/useUsageTracker";
 import TermsGate from "@/components/TermsGate";
 import { lazy, Suspense } from "react";
+import { TopLoader } from "@/components/ui/TopLoader";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -627,6 +628,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
+          <TopLoader />
           <NotificationProvider>
             <AppRoutes />
             <TermsGate />

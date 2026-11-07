@@ -16,6 +16,11 @@ import {
   PieChart,
   Pie,
   Cell,
+  ComposedChart,
+  LineChart,
+  Line,
+  LabelList,
+  Legend,
 } from "recharts";
 import {
   Target,
@@ -29,8 +34,29 @@ import {
   ChevronRight,
   Zap,
   TrendingUp,
+  UserPlus,
+  CalendarCheck,
+  PhoneOff,
+  XCircle,
+  Trophy,
+  Radio,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Globe,
+  PenLine,
+  Store,
+  Phone,
+  FileText,
 } from "lucide-react";
 import nestleadslogosmall from "../../public/favicon.png";
+import logoIndiamart from "../assets/images/logos/indiamart.png";
+import logoFacebook from "../assets/images/logos/facebook.png";
+import logoInstagram from "../assets/images/logos/instagram.webp";
+import logoMeta from "../assets/images/logos/meta.png";
+import logoLinkedin from "../assets/images/logos/linkedIn.webp";
+import logoJustdial from "../assets/images/logos/justdial.webp";
+import logoTradeindia from "../assets/images/logos/tradeindia.webp";
 
 type Period = "today" | "week" | "month";
 
@@ -44,6 +70,30 @@ const SOURCE_COLORS: Record<string, string> = {
   Justdial: "#EF4444",
   Website: "#A855F7",
   Manual: "#6B7280",
+};
+
+const AGENT_COLORS = ["#024BAB", "#00C48C", "#FA731C", "#C026D3", "#EF4444"];
+
+const SOURCE_LOGOS: Record<string, string> = {
+  IndiaMART: logoIndiamart,
+  TradeIndia: logoTradeindia,
+  Facebook: logoFacebook,
+  Meta: logoMeta,
+  Instagram: logoInstagram,
+  LinkedIn: logoLinkedin,
+  Justdial: logoJustdial,
+};
+
+const SOURCE_ICONS: Record<string, any> = {
+  IndiaMART: Store,
+  TradeIndia: Store,
+  Facebook,
+  Meta: Facebook,
+  Instagram,
+  LinkedIn: Linkedin,
+  Justdial: Phone,
+  Website: Globe,
+  Manual: PenLine,
 };
 
 function SalesFunnel({
@@ -186,6 +236,228 @@ function Leaderboard({ performers }: { performers: any[] }) {
   );
 }
 
+function timeAgo(d: string) {
+  const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  if (m < 1440) return `${Math.floor(m / 60)}h ago`;
+  return `${Math.floor(m / 1440)}d ago`;
+}
+
+function RecentLeadsList({ leads }: { leads: any[] }) {
+  if (leads.length === 0)
+    return (
+      <div className="flex items-center justify-center h-36 text-sm text-muted-foreground">
+        No leads yet
+      </div>
+    );
+  return (
+    <div className="space-y-2">
+      {leads.map((lead) => (
+        <Link key={lead._id} to="/leads">
+          <div className="flex items-center gap-3 p-2.5 border-2 border-transparent hover:border-black transition-all">
+            <div className="w-9 h-9 bg-[#024BAB] border-2 border-black flex items-center justify-center text-xs font-medium text-white shrink-0">
+              {(lead.name || "U")[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-black truncate">{lead.name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {lead.company || lead.phone}
+                {lead.source ? ` · ${lead.source}` : ""}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-[10px] font-medium text-black border border-black px-1.5 py-0.5 truncate max-w-[110px]">
+                {lead.status}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {lead.createdAt ? timeAgo(lead.createdAt) : ""}
+              </p>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+const QUOTE_TONE: Record<string, string> = {
+  Sent: "bg-blue-100 text-blue-800",
+  Approved: "bg-green-100 text-green-800",
+  Rejected: "bg-red-100 text-red-800",
+  Draft: "bg-slate-100 text-slate-700",
+};
+
+// Newest quotations; shows only as many rows as fit beside Recent Leads, so no empty space is left.
+function RecentQuotations({ quotations, rows, className }: { quotations: any[]; rows: number; className?: string }) {
+  const list = quotations.slice(0, rows);
+  return (
+    <div className={cn("border-2 bg-white p-5 flex flex-col", className)}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="font-display font-medium text-base text-black">Recent Quotations</h3>
+          <p className="text-xs text-muted-foreground">Latest {list.length} created</p>
+        </div>
+        <Link to="/quotations">
+          <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">View all →</button>
+        </Link>
+      </div>
+      {list.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground py-6">No quotations yet</div>
+      ) : (
+        <div className="flex-1 flex flex-col justify-between gap-2">
+          {list.map((q) => (
+            <Link key={q._id} to="/quotations">
+              <div className="flex items-center gap-3 p-2 border-2 border-transparent hover:border-black transition-all">
+                <div className="w-9 h-9 bg-[#FA731C] border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#000]">
+                  <FileText className="w-4 h-4 text-white" strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-black truncate">{q.companyName || q.clientName}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {q.number} · {q.projectTitle}
+                    {q.createdBy?.name ? ` · ${q.createdBy.name}` : ""}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-black">₹{Number(q.total || 0).toLocaleString("en-IN")}</p>
+                  <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 border border-black", QUOTE_TONE[q.status] || "bg-white")}>{q.status}</span>
+                    <span className="text-[10px] text-muted-foreground">{q.createdAt ? timeAgo(q.createdAt) : ""}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const LIVE_WINDOWS = [
+  { min: 60, label: "1h" },
+  { min: 240, label: "4h" },
+  { min: 480, label: "8h" },
+  { min: 1440, label: "24h" },
+];
+const liveTalk = (sec: number) => {
+  if (sec < 60) return `${sec}s`;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return h ? `${h}h ${m}m` : `${m}m`;
+};
+
+// Admin-only compact summary of the Live Performance page: ranked agents, done counts, call share bar.
+function LiveSummary() {
+  const [windowMin, setWindowMin] = useState(480);
+  const [live, setLive] = useState<any>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      dashboardAPI
+        .getLive(windowMin)
+        .then((r) => alive && r.success && setLive(r.data))
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 60000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [windowMin]);
+
+  const team: any[] = live ? [...live.team].sort((a, b) => b.done - a.done || b.calls - a.calls) : [];
+  const maxDone = Math.max(1, ...team.map((r) => r.done));
+  const tot = live?.totals;
+  const connectRate = tot && tot.calls ? Math.round((tot.connected / tot.calls) * 100) : 0;
+  const heads = ["Agent", "Calls", "Connected", "Talk time", "Conversations", "Quotations", "Visits", "Last call"];
+
+  return (
+    <div className="border-2 bg-white p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h3 className="font-display font-medium text-base text-black">Live Performance</h3>
+          <p className="text-xs text-muted-foreground">
+            {tot ? `${tot.calls} calls · ${connectRate}% picked up · ${tot.conversations} conversations · ${tot.quotations} quotations` : "Loading…"}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex border-2 border-black">
+            {LIVE_WINDOWS.map((w) => (
+              <button
+                key={w.min}
+                onClick={() => setWindowMin(w.min)}
+                className={cn("px-2.5 py-1 text-xs font-medium", windowMin === w.min ? "bg-[#024BAB] text-white" : "bg-white hover:bg-slate-100")}
+              >
+                {w.label}
+              </button>
+            ))}
+          </div>
+          <Link to="/live-performance">
+            <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">Full view →</button>
+          </Link>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b-2 border-black text-[10px] uppercase tracking-wider text-muted-foreground">
+              {heads.map((h, i) => (
+                <th key={h} className={cn("py-2 px-2 font-medium", i === 0 ? "text-left" : "text-right")}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {team.map((r, i) => (
+              <tr key={r._id} className="border-b border-slate-200">
+                <td className="py-2 px-2">
+                  <div className="flex items-center gap-2.5 min-w-[190px]">
+                    <span className="w-5 text-xs font-bold text-muted-foreground">{i + 1}</span>
+                    <div className="w-8 h-8 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] text-white flex items-center justify-center text-xs font-bold">
+                      {r.avatar ? <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" /> : r.name?.[0]?.toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-black truncate">{r.name}</p>
+                      <div className="h-1 bg-slate-100 border border-black/30 mt-1">
+                        <div className="h-full bg-[#024BAB]" style={{ width: `${(r.done / maxDone) * 100}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-2 px-2 text-right font-bold tabular-nums">{r.calls}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{r.connected}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{liveTalk(r.talkSeconds || 0)}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{r.conversations}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{r.quotations}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{r.visits}</td>
+                <td className="py-2 px-2 text-right text-xs text-muted-foreground whitespace-nowrap">{r.lastCallAt ? timeAgo(r.lastCallAt) : "—"}</td>
+              </tr>
+            ))}
+            {live && team.length === 0 && (
+              <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No agents yet</td></tr>
+            )}
+          </tbody>
+          {tot && (
+            <tfoot>
+              <tr className="bg-slate-100 font-semibold border-t-2 border-black">
+                <td className="py-2 px-2">Team total</td>
+                <td className="py-2 px-2 text-right tabular-nums">{tot.calls}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{tot.connected}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{liveTalk(tot.talkSeconds || 0)}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{tot.conversations}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{tot.quotations}</td>
+                <td className="py-2 px-2 text-right tabular-nums">{tot.visits}</td>
+                <td />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+}
+
 const NbTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -241,8 +513,11 @@ export default function DashboardPage() {
     leadsChartData,
     funnelStages,
     sourceData,
+    recentLeads,
     todayFollowUps,
     userPerformance,
+    recentQuotations,
+    performerTrend,
   } = data;
 
   const greetingHour = new Date().getHours();
@@ -252,6 +527,17 @@ export default function DashboardPage() {
       : greetingHour < 17
         ? "Good afternoon"
         : "Good evening";
+
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const sc = data.statusCounts || {};
+  const visits = (sc["VISIT SCHEDULED"] || 0) + (sc["VISITED"] || 0);
+  const dropped = sc["DROP"] || 0;
+  const topSource = Object.entries(data.sourceCounts || {}).sort(
+    (a: any, b: any) => b[1] - a[1],
+  )[0] as [string, number] | undefined;
+  const topAgent = (userPerformance || [])[0];
+  const pct = (n: number) =>
+    stats.totalLeads > 0 ? Math.round((n / stats.totalLeads) * 100) : 0;
 
   const newLeadsValue =
     period === "today"
@@ -373,10 +659,143 @@ export default function DashboardPage() {
           trendLabel={`${stats.totalLeads > 0 ? Math.round(((stats.convertedClients ?? 0) / stats.totalLeads) * 100) : 0}%`}
           to="/leads"
         />
+        <KpiCard
+          title={`New Leads (${period === "today" ? "Today" : period === "week" ? "Week" : "Month"})`}
+          value={newLeadsValue ?? 0}
+          sub="Added in selected period"
+          icon={UserPlus}
+          bg="bg-[#3B82F6]"
+          to="/leads"
+        />
+        <KpiCard
+          title="Overdue Follow-ups"
+          value={stats.overdueFollowUps ?? 0}
+          sub="Missed, call them now"
+          icon={AlertTriangle}
+          bg="bg-[#EF4444]"
+          urgent={stats.overdueFollowUps > 0}
+          to="/leads"
+        />
+        <KpiCard
+          title="Uncontacted"
+          value={stats.uncontactedLeads ?? 0}
+          sub="Not called yet"
+          icon={PhoneOff}
+          bg="bg-[#A855F7]"
+          urgent={stats.uncontactedLeads > 0}
+          to="/leads"
+        />
+        <KpiCard
+          title="Site Visits"
+          value={visits}
+          sub={`${sc["VISIT SCHEDULED"] || 0} scheduled, ${sc["VISITED"] || 0} done`}
+          icon={CalendarCheck}
+          bg="bg-[#14B8A6]"
+          to="/leads"
+        />
+        <KpiCard
+          title="Dropped Leads"
+          value={dropped}
+          sub={`${pct(dropped)}% of all leads`}
+          icon={XCircle}
+          bg="bg-[#6B7280]"
+          to="/leads"
+        />
+        <KpiCard
+          title="Top Source"
+          value={topSource ? topSource[0] : "-"}
+          sub={topSource ? `${topSource[1]} leads (${pct(topSource[1])}%)` : "No data yet"}
+          icon={Radio}
+          bg="bg-[#FB923C]"
+          to="/leads"
+        />
+        <KpiCard
+          title="Top Performer"
+          value={topAgent?.name?.split(" ")[0] ?? "-"}
+          sub={topAgent ? `${topAgent.conversions} won of ${topAgent.leadsCount} leads` : "No data yet"}
+          icon={Trophy}
+          bg="bg-[#EAB308]"
+        />
+        <KpiCard
+          title="Team Members"
+          value={stats.totalUsers ?? 0}
+          sub="Active users"
+          icon={Users}
+          bg="bg-[#024BAB]"
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
-        <div className="lg:col-span-2 border-2 bg-white p-5">
+      {/* Clients won + monthly performers */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+        <div className="border-2 bg-white p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h3 className="font-display font-medium text-base text-black">Clients Won · Monthly</h3>
+              <p className="text-xs text-muted-foreground">
+                {(leadsChartData || []).reduce((a: number, m: any) => a + m.converted, 0)} clients won in the last 6 months, with win rate
+              </p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <ComposedChart data={leadsChartData} margin={{ top: 18, right: 8, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="l" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={36} unit="%" />
+              <Tooltip content={<NbTooltip />} cursor={{ fill: "#00C48C22" }} />
+              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
+              <Bar yAxisId="l" dataKey="converted" name="Clients won" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2}>
+                <LabelList dataKey="converted" position="top" style={{ fontSize: 11, fontWeight: 700 }} />
+              </Bar>
+              <Line yAxisId="r" type="monotone" dataKey="conversionRate" name="Win rate %" stroke="#FA731C" strokeWidth={3} dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: "#FA731C" }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="border-2 bg-white p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h3 className="font-display font-medium text-base text-black">Monthly Performers</h3>
+              <p className="text-xs text-muted-foreground">Clients won per agent, last 6 months</p>
+            </div>
+            <Link to="/users">
+              <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">Team →</button>
+            </Link>
+          </div>
+          {!performerTrend || performerTrend.agents.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">No clients won yet</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={performerTrend.data} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+                <Tooltip content={<NbTooltip />} />
+                <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
+                {performerTrend.agents.map((name: string, i: number) => (
+                  <Line
+                    key={name}
+                    type="monotone"
+                    dataKey={name}
+                    stroke={AGENT_COLORS[i % AGENT_COLORS.length]}
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: AGENT_COLORS[i % AGENT_COLORS.length] }}
+                    activeDot={{ r: 6, stroke: "#0A0A0A", strokeWidth: 2 }}
+                    isAnimationActive
+                    animationBegin={i * 250}
+                    animationDuration={1600}
+                    animationEasing="ease-out"
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* Funnel + sources + overview in one row */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-4">
+        <div className="xl:col-span-4 border-2 bg-white p-5">
           <h3 className="font-display font-medium text-base text-black mb-1">
             Sales Funnel
           </h3>
@@ -386,7 +805,90 @@ export default function DashboardPage() {
           <SalesFunnel stages={funnelStages || []} />
         </div>
 
-        <div className="lg:col-span-3 border-2 bg-white p-5">
+        <div className="xl:col-span-3 border-2 bg-white p-5">
+          <h3 className="font-display font-medium text-base text-black mb-1">
+            Lead Sources
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Where your leads come from
+          </p>
+          {sourceData && sourceData.length > 0 ? (
+            <>
+              {(() => {
+                const total = sourceData.reduce((a: number, e: any) => a + e.value, 0);
+                const rows = [...sourceData].sort((a: any, b: any) => b.value - a.value);
+                return (
+                  <>
+                    <div className="relative">
+                      <ResponsiveContainer width="100%" height={170}>
+                        <PieChart>
+                          <Pie
+                            data={rows}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={52}
+                            outerRadius={78}
+                            paddingAngle={3}
+                            dataKey="value"
+                            stroke="#0A0A0A"
+                            strokeWidth={2}
+                          >
+                            {rows.map((entry: any) => (
+                              <Cell key={entry.name} fill={SOURCE_COLORS[entry.name] || "#024BAB"} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(v: number, n: string) => [v, n]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-2xl font-black leading-none">{total.toLocaleString("en-IN")}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">total leads</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {rows.map((entry: any) => {
+                        const Icon = SOURCE_ICONS[entry.name] || Target;
+                        const color = SOURCE_COLORS[entry.name] || "#024BAB";
+                        const pct = total ? (entry.value / total) * 100 : 0;
+                        return (
+                          <div key={entry.name} className="flex items-center gap-3">
+                            {SOURCE_LOGOS[entry.name] ? (
+                              <span className="w-9 h-9 border-2 border-black bg-white flex items-center justify-center shrink-0 p-1 shadow-[2px_2px_0_0_#000]">
+                                <img src={SOURCE_LOGOS[entry.name]} alt={entry.name} className="w-full h-full object-contain" />
+                              </span>
+                            ) : (
+                              <span className="w-9 h-9 border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#000]" style={{ background: color }}>
+                                <Icon className="w-4 h-4 text-white" strokeWidth={2.5} />
+                              </span>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="text-sm font-bold text-black truncate">{entry.name}</span>
+                                <span className="text-sm font-black text-black">
+                                  {entry.value.toLocaleString("en-IN")}
+                                  <span className="ml-1 text-[11px] font-bold text-muted-foreground">{pct.toFixed(pct < 10 ? 1 : 0)}%</span>
+                                </span>
+                              </div>
+                              <div className="h-1.5 border border-black bg-gray-100 mt-1">
+                                <div className="h-full" style={{ width: `${Math.max(pct, 2)}%`, background: color }} />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
+              No data yet
+            </div>
+          )}
+        </div>
+
+        <div className="xl:col-span-5 border-2 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-display font-medium text-base text-black">
@@ -446,101 +948,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="border-2 bg-white p-5">
-          <h3 className="font-display font-medium text-base text-black mb-1">
-            Lead Sources
-          </h3>
-          <p className="text-xs text-muted-foreground mb-3">
-            Where your leads come from
-          </p>
-          {sourceData && sourceData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={140}>
-                <PieChart>
-                  <Pie
-                    data={sourceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={62}
-                    paddingAngle={4}
-                    dataKey="value"
-                    stroke="#0A0A0A"
-                    strokeWidth={2}
-                  >
-                    {sourceData.map((entry: any, i: number) => (
-                      <Cell
-                        key={entry.name}
-                        fill={SOURCE_COLORS[entry.name] || "#024BAB"}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number, n: string) => [v, n]} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2">
-                {sourceData.map((entry: any) => (
-                  <span
-                    key={entry.name}
-                    className="flex items-center gap-1 text-[11px] font-medium text-black"
-                  >
-                    <span
-                      className="w-2.5 h-2.5 border border-black shrink-0"
-                      style={{
-                        background: SOURCE_COLORS[entry.name] || "#024BAB",
-                      }}
-                    />
-                    {entry.name} ({entry.value})
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
-              No data yet
-            </div>
-          )}
-        </div>
-
-        {}
-        <div className="border-2 bg-white p-5">
+      {/* Recent leads + live performance in one row */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="border-2 bg-white p-5 xl:col-span-5">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-display font-medium text-base text-black">
-                Today's Follow-ups
+                Recent Leads
               </h3>
               <p className="text-xs text-muted-foreground">
-                {todayFollowUps?.length ?? 0} scheduled
+                Latest {recentLeads?.length ?? 0} added
               </p>
             </div>
-            <Link to="/followup-calendar">
+            <Link to="/leads">
               <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
                 View all →
               </button>
             </Link>
           </div>
-          <TodayFollowUpsList leads={todayFollowUps || []} />
+          <RecentLeadsList leads={recentLeads || []} />
         </div>
-
-        {/* Team leaderboard */}
-        <div className="border-2 bg-white p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="font-display font-medium text-base text-black">
-                Team Leaderboard
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Conversions this month
-              </p>
-            </div>
-            <Link to="/users">
-              <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors ">
-                Team →
-              </button>
-            </Link>
-          </div>
-          <Leaderboard performers={userPerformance || []} />
+        <div className="xl:col-span-7 flex flex-col gap-4">
+          {isAdmin && <LiveSummary />}
+          <RecentQuotations quotations={recentQuotations || []} rows={isAdmin ? 4 : 8} className="flex-1" />
         </div>
       </div>
 

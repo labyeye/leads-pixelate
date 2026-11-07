@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 interface TeamRow {
   _id: string;
   name: string;
+  avatar?: string;
   role: string;
   calls: number;
   conversations: number;
@@ -307,7 +308,7 @@ export default function LivePerformancePage() {
 
   return (
     <AppLayout title="Live Performance">
-      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+      <div className="p-4 md:p-6 max-w-full mx-auto space-y-5">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="mr-auto">
@@ -547,7 +548,7 @@ export default function LivePerformancePage() {
                         {notMet.map((r) => (
                           <li key={r._id} className="flex items-center justify-between text-sm">
                             <span className="font-medium text-black flex items-center gap-2">
-                              <span className="w-2.5 h-2.5 border border-black" style={{ backgroundColor: TONE[r.tone].hex }} />
+                              <span className="w-2.5 h-2.5 rounded-full border border-black" style={{ backgroundColor: TONE[r.tone].hex }} />
                               {r.name}
                             </span>
                             <span className="tabular-nums text-xs" style={{ color: TONE[r.tone].hex }}>
@@ -607,7 +608,14 @@ export default function LivePerformancePage() {
                     <tbody>
                       {data.team.map((r) => (
                         <tr key={r._id} className="border-b border-slate-200">
-                          <td className="px-4 py-2 font-medium text-black">{r.name}</td>
+                          <td className="px-4 py-2 font-medium text-black">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] text-white flex items-center justify-center text-sm font-bold">
+                                {r.avatar ? <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" /> : r.name?.[0]?.toUpperCase()}
+                              </div>
+                              {r.name}
+                            </div>
+                          </td>
                           {cols.map((c) => {
                             const x = cell(value(r, c), expected(c));
                             return (

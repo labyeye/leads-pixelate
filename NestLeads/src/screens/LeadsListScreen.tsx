@@ -363,71 +363,53 @@ export default function LeadsListScreen({ navigation }: Props) {
                 {subtitle}
               </Text>
             )}
-            <View style={styles.pillRow}>
-              {tag ? (
-                <View style={[styles.pill, { backgroundColor: tag.bg }]}>
-                  <Text style={[styles.pillText, { color: tag.text }]}>
-                    {tag.label}
-                  </Text>
-                </View>
-              ) : (
-                <View style={[styles.pill, { backgroundColor: sc.bg }]}>
-                  <Text style={[styles.pillText, { color: sc.text }]}>
-                    {getStatusLabel(l.status) || 'Pending'}
-                  </Text>
-                </View>
-              )}
-            </View>
           </View>
-          
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Budget</Text>
-            <Text style={styles.statValue} numberOfLines={1}>
-              {budget || '—'}
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Source</Text>
-            <View style={styles.sourceRow}>
-              {!!l.source && <SourceLogo source={l.source} size={20} />}
-              <Text style={[styles.statValue, { flexShrink: 1 }]} numberOfLines={1}>
-                {l.source || '—'}
+          <View style={styles.pillCol}>
+            <View style={[styles.pill, { backgroundColor: sc.bg }]}>
+              <Text style={[styles.pillText, { color: sc.text }]} numberOfLines={1}>
+                {getStatusLabel(l.status) || 'Pending'}
               </Text>
             </View>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Added</Text>
-            <Text style={styles.statValue} numberOfLines={1}>
-              {timeAgo(l.createdAt)}
-            </Text>
+            {tag && (
+              <View style={[styles.pill, { backgroundColor: tag.bg }]}>
+                <Text style={[styles.pillText, { color: tag.text }]}>{tag.label}</Text>
+              </View>
+            )}
           </View>
         </View>
 
-        <View style={styles.actionsRow}>
+        <View style={styles.metaRow}>
+          <View style={styles.metaInfo}>
+            {!!l.source && <SourceLogo source={l.source} size={16} />}
+            <Text style={styles.metaText} numberOfLines={1}>
+              {[l.source, budget, timeAgo(l.createdAt)].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
           <TouchableOpacity
-            style={[styles.actionBtn, !l.email && styles.actionDisabled]}
-            disabled={!l.email}
-            onPress={() => Linking.openURL(`mailto:${l.email}`)}
-          >
-            <Mail size={16} color="#000" />
-            <Text style={styles.actionText}>Email</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, !l.phone && styles.actionDisabled]}
+            style={[styles.iconBtn, !l.phone && styles.actionDisabled]}
             disabled={!l.phone}
             onPress={() => Linking.openURL(`tel:${l.phone}`)}
+            hitSlop={4}
           >
             <PhoneCall size={16} color="#000" />
-            <Text style={styles.actionText}>Call</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.detailsBtn} onPress={open}>
-            <Text style={styles.detailsText}>Details</Text>
-            <ArrowRight size={16} color="#fff" />
+          <TouchableOpacity
+            style={[styles.iconBtn, !l.phone && styles.actionDisabled]}
+            disabled={!l.phone}
+            onPress={() =>
+              Linking.openURL(`https://wa.me/${String(l.phone).replace(/\D/g, '')}`)
+            }
+            hitSlop={4}
+          >
+            <Icon name="logo-whatsapp" size={16} color="#16a34a" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconBtn, !l.email && styles.actionDisabled]}
+            disabled={!l.email}
+            onPress={() => Linking.openURL(`mailto:${l.email}`)}
+            hitSlop={4}
+          >
+            <Mail size={16} color="#000" />
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -1305,13 +1287,13 @@ const styles = StyleSheet.create({
     borderRightColor: '#0A0A0A',
     borderBottomColor: '#0A0A0A',
     borderColor: '#000',
-    padding: 14,
+    padding: 10,
     marginBottom: 2,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: {
-    width: 56,
-    height: 56,
+    width: 40,
+    height: 40,
     borderRadius: 8,
     backgroundColor: '#044bab',
     borderWidth: 2,
@@ -1321,10 +1303,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: 24, fontWeight: '500', color: '#FBFBFB' },
+  avatarText: { fontSize: 18, fontWeight: '500', color: '#FBFBFB' },
   cardTopMid: { flex: 1 },
-  leadName: { fontSize: 17, fontWeight: '500', color: '#000' },
-  leadSubtitle: { fontSize: 13, color: '#374151', fontWeight: '500', marginTop: 2 },
+  leadName: { fontSize: 15, fontWeight: '500', color: '#000' },
+  leadSubtitle: { fontSize: 12, color: '#374151', fontWeight: '500', marginTop: 1 },
+  pillCol: { alignItems: 'flex-end', gap: 4, maxWidth: 120 },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  metaInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaText: { flexShrink: 1, fontSize: 12, fontWeight: '500', color: '#374151' },
+  iconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pillRow: { flexDirection: 'row', marginTop: 8 },
   pill: {
     paddingHorizontal: 8,

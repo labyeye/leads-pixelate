@@ -16,6 +16,7 @@ import { whatsappAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TemplateEditorModal, { EMPTY_TEMPLATE } from '../components/TemplateEditorModal';
 import TemplateLibraryModal from '../components/TemplateLibraryModal';
+import { ConnectionTab, AnalyticsTab, RepliesTab } from '../components/WhatsAppSetupTabs';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -42,6 +43,7 @@ export default function WhatsAppSetupScreen({ navigation }: any) {
   const { user } = useAuth();
   const canManage = ['admin', 'super_admin'].includes(user?.role);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [tab, setTab] = useState<'connection' | 'templates' | 'analytics' | 'replies'>('connection');
   const [editor, setEditor] = useState<{ form: typeof EMPTY_TEMPLATE; id: string | null } | null>(null);
 
   const loadAll = useCallback(async (isRefresh = false) => {
@@ -161,7 +163,30 @@ export default function WhatsAppSetupScreen({ navigation }: any) {
       </View>
       <View style={styles.divider} />
 
-      {loading ? (
+      <View style={styles.tabBar}>
+        {([
+          ['connection', 'Connection'],
+          ['templates', 'Templates'],
+          ['analytics', 'Analytics'],
+          ['replies', 'Replies'],
+        ] as const).map(([k, label]) => (
+          <TouchableOpacity
+            key={k}
+            style={[styles.tabBtn, tab === k && styles.tabBtnOn]}
+            onPress={() => setTab(k)}
+          >
+            <Text style={[styles.tabText, tab === k && { color: '#fff' }]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {tab === 'connection' ? (
+        <ConnectionTab canManage={canManage} />
+      ) : tab === 'analytics' ? (
+        <AnalyticsTab />
+      ) : tab === 'replies' ? (
+        <RepliesTab />
+      ) : loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color="#024BAB" />
         </View>
@@ -182,45 +207,6 @@ export default function WhatsAppSetupScreen({ navigation }: any) {
           }
           ListHeaderComponent={
             <View style={{ gap: 16, marginBottom: 8 }}>
-              {/* Connection status */}
-              <View
-                style={[
-                  styles.statusCard,
-                  isConnected ? styles.statusCardOn : styles.statusCardOff,
-                ]}
-              >
-                <Icon
-                  name={isConnected ? 'checkmark-circle' : 'close-circle'}
-                  size={22}
-                  color={isConnected ? '#22c55e' : '#EF4444'}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.statusTitle}>
-                    {isConnected ? 'Connected' : 'Not Connected'}
-                  </Text>
-                  <Text style={styles.statusSub}>
-                    {isConnected
-                      ? 'WhatsApp Business API is active'
-                      : 'Connect WhatsApp Business API on the web dashboard'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Phone numbers */}
-              {phoneNumbers.length > 0 && (
-                <View>
-                  <Text style={styles.sectionTitle}>Phone Numbers</Text>
-                  {phoneNumbers.map((p: any, i: number) => (
-                    <View key={p.id || i} style={styles.phoneRow}>
-                      <Icon name="call-outline" size={14} color="#024BAB" />
-                      <Text style={styles.phoneText}>
-                        {p.displayPhoneNumber || p.phoneNumber || p.number}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
               <Text style={styles.sectionTitle}>
                 Message Templates ({templates.length})
               </Text>
@@ -364,6 +350,10 @@ const styles = StyleSheet.create({
   statusCardOff: { backgroundColor: '#fef2f2' },
   statusTitle: { fontSize: 14, fontWeight: '500', color: '#000' },
   statusSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  tabBar: { flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
+  tabBtn: { flex: 1, paddingVertical: 7, alignItems: 'center', borderWidth: 2, borderColor: '#000', borderRadius: 8, backgroundColor: '#fff' },
+  tabBtnOn: { backgroundColor: '#025D2F' },
+  tabText: { fontSize: 12, fontWeight: '500', color: '#000' },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '500',

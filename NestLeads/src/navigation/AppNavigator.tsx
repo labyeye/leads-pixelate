@@ -42,6 +42,7 @@ import ApiKeysScreen from '../screens/ApiKeysScreen';
 import SupportScreen from '../screens/SupportScreen';
 import BillingScreen from '../screens/BillingScreen';
 import WhatsAppLogsScreen from '../screens/WhatsAppLogsScreen';
+import DocumentVaultScreen from '../screens/DocumentVaultScreen';
 import WhatsAppSetupScreen from '../screens/WhatsAppSetupScreen';
 import LeadStatusesScreen from '../screens/LeadStatusesScreen';
 import AdCampaignsHubScreen from '../screens/AdCampaignsHubScreen';
@@ -108,6 +109,7 @@ const TrashScreenAnim = withSlideUp(TrashScreen);
 const UsersScreenAnim = withSlideUp(UsersScreen);
 const WhatsAppInboxScreenAnim = withSlideUp(WhatsAppInboxScreen);
 const WhatsAppLogsScreenAnim = withSlideUp(WhatsAppLogsScreen);
+const DocumentVaultScreenAnim = withSlideUp(DocumentVaultScreen);
 const WhatsAppSetupScreenAnim = withSlideUp(WhatsAppSetupScreen);
 
 initUsageTracker(TRACK_BASE);
@@ -155,6 +157,7 @@ export type MoreStackParamList = {
   Support: undefined;
   Billing: undefined;
   WhatsAppLogs: undefined;
+  DocumentVault: undefined;
   WhatsAppSetup: undefined;
   LeadStatuses: undefined;
   AdCampaignsHub: undefined;
@@ -244,6 +247,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="Support" component={SupportScreenAnim} />
       <MoreStack.Screen name="Billing" component={BillingScreenAnim} />
       <MoreStack.Screen name="WhatsAppLogs" component={WhatsAppLogsScreenAnim} />
+      <MoreStack.Screen name="DocumentVault" component={DocumentVaultScreenAnim} />
       <MoreStack.Screen name="WhatsAppSetup" component={WhatsAppSetupScreenAnim} />
       <MoreStack.Screen name="LeadStatuses" component={LeadStatusesScreenAnim} />
       <MoreStack.Screen
