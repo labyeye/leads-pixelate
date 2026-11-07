@@ -40,4 +40,13 @@ socialAccountSchema.index(
   { unique: true },
 );
 
-module.exports = mongoose.model("SocialAccount", socialAccountSchema);
+const SocialAccount = mongoose.model("SocialAccount", socialAccountSchema);
+
+// Older databases still carry the pre-multi-tenant index { platform, accountId } (unique across ALL tenants), which
+// makes a second tenant connecting the same page fail with E11000. Mongoose never drops old indexes, so do it here.
+// Commands are buffered until the connection is up; "index not found" (27) just means it is already gone.
+SocialAccount.collection.dropIndex("platform_1_accountId_1").catch((e) => {
+  if (e.code !== 27 && e.codeName !== "IndexNotFound" && e.code !== 26) console.error("SocialAccount: dropping stale index failed:", e.message);
+});
+
+module.exports = SocialAccount;
