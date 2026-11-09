@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +63,7 @@ import {
   Copy,
   Info,
   Users,
+  X,
 } from "lucide-react";
 import {
   format,
@@ -1042,7 +1044,7 @@ function CalendarTab({ toast }: { toast: any }) {
                       className="w-full flex items-center gap-3 p-2.5 border-2 border-black hover:bg-primary/5 transition-colors text-left"
                     >
                       {p.imageUrl ? (
-                        <img
+                        <img referrerPolicy="no-referrer"
                           src={p.imageUrl}
                           alt=""
                           className="w-10 h-10 object-cover shrink-0 border border-black"
@@ -1123,7 +1125,7 @@ function PostCard({
         <div className="flex items-start gap-4">
           {}
           {post.imageUrl ? (
-            <img
+            <img referrerPolicy="no-referrer"
               src={post.imageUrl}
               alt=""
               className="w-16 h-16 object-cover shrink-0 border-2 border-black"
@@ -1919,7 +1921,7 @@ function PostWizard({
                       </div>
                       {}
                       {previewImage && (
-                        <img
+                        <img referrerPolicy="no-referrer"
                           src={previewImage}
                           alt=""
                           className="w-full object-cover max-h-48"
@@ -2057,6 +2059,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [syncError, setSyncError] = useState("");
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const syncAbort = useRef<AbortController | null>(null);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -2070,17 +2075,50 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   }, [toast]);
 
   const sync = useCallback(async () => {
+    const ctl = new AbortController();
+    syncAbort.current = ctl;
     setSyncing(true);
     try {
-      await socialAPI.importFromIntegration();
+      await socialAPI.importFromIntegration(ctl.signal);
       setSyncError("");
     } catch (err: any) {
-      setSyncError(err.message || "Couldn't fetch accounts from Integrations");
+      if (err?.name !== "AbortError")
+        setSyncError(err.message || "Couldn't fetch accounts from Integrations");
     } finally {
       await fetchAccounts();
-      setSyncing(false);
+      if (syncAbort.current === ctl) setSyncing(false);
     }
   }, [fetchAccounts]);
+
+  const stopSync = () => {
+    syncAbort.current?.abort();
+    syncAbort.current = null;
+    setSyncing(false);
+    toast({
+      title: "Sync stopped",
+      description: "Accounts already fetched are kept. Press Refresh to run it again.",
+    });
+  };
+
+  const toggleSelected = (id: string) =>
+    setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+
+  const handleBulkDisconnect = async () => {
+    setDisconnecting(true);
+    const results = await Promise.allSettled(
+      selected.map((id) => socialAPI.disconnectAccount(id)),
+    );
+    const failed = results.filter((r) => r.status === "rejected").length;
+    toast({
+      title: failed ? "Some accounts could not be disconnected" : "Accounts disconnected",
+      description: `${selected.length - failed} disconnected${failed ? `, ${failed} failed` : ""}.`,
+      variant: failed ? "destructive" : undefined,
+    });
+    setSelected([]);
+    setBulkOpen(false);
+    setDisconnecting(false);
+    await fetchAccounts();
+  };
 
   // Show what's saved right away, then pull in anything new from Integrations.
   useEffect(() => {
@@ -2141,13 +2179,51 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
             .
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={sync} disabled={syncing}>
-          <RefreshCw
-            className={cn("w-4 h-4 mr-1", syncing && "animate-spin")}
-          />
-          {syncing ? "Syncing…" : "Refresh"}
-        </Button>
+        <div className="flex gap-2">
+          {syncing && (
+            <Button variant="outline" size="sm" onClick={stopSync} className="border-red-600 text-red-600 hover:bg-red-50">
+              <X className="w-4 h-4 mr-1" /> Stop
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={sync} disabled={syncing}>
+            <RefreshCw
+              className={cn("w-4 h-4 mr-1", syncing && "animate-spin")}
+            />
+            {syncing ? "Syncing…" : "Refresh"}
+          </Button>
+        </div>
       </div>
+
+      {isAdmin && accounts.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 border-2 border-black bg-white px-3 py-2 text-xs">
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={selected.length === accounts.length}
+              onCheckedChange={() =>
+                setSelected(selected.length === accounts.length ? [] : accounts.map((a) => a._id))
+              }
+            />
+            Select all
+          </label>
+          <span className="text-muted-foreground">
+            {selected.length ? `${selected.length} selected` : "Tick accounts to disconnect them together"}
+          </span>
+          {selected.length > 0 && (
+            <>
+              <button className="text-[#024BAB] hover:underline" onClick={() => setSelected([])}>
+                Clear
+              </button>
+              <Button
+                size="sm"
+                className="ml-auto bg-red-600 text-white hover:bg-red-700"
+                onClick={() => setBulkOpen(true)}
+              >
+                <Link2Off className="mr-1.5 h-3.5 w-3.5" /> Disconnect selected ({selected.length})
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {syncError && !noFacebook && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
@@ -2194,11 +2270,21 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                   {items.map((acc) => (
                     <div
                       key={acc._id}
-                      className="flex items-center gap-3 p-4 border border-border rounded-xl bg-white hover:shadow-sm transition-shadow"
+                      className={cn(
+                        "flex items-center gap-3 p-4 border border-border rounded-xl bg-white hover:shadow-sm transition-shadow",
+                        selected.includes(acc._id) && "border-red-500 bg-red-50/40",
+                      )}
                     >
+                      {isAdmin && (
+                        <Checkbox
+                          checked={selected.includes(acc._id)}
+                          onCheckedChange={() => toggleSelected(acc._id)}
+                          aria-label={`Select ${acc.accountName}`}
+                        />
+                      )}
                       <div className="relative shrink-0">
                         {acc.profilePicture ? (
-                          <img
+                          <img referrerPolicy="no-referrer"
                             src={acc.profilePicture}
                             alt=""
                             className="w-12 h-12 rounded-full object-cover border border-border bg-muted"
@@ -2254,6 +2340,28 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           )}
         </div>
       )}
+
+      <AlertDialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect {selected.length} accounts?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Scheduled posts targeting these accounts will fail. Refresh brings
+              them back while the Integrations login can still reach them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDisconnect}
+              disabled={disconnecting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {disconnecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Disconnect all
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!disconnectId}
@@ -2340,7 +2448,7 @@ function PostDetailModal({
                   poster={post.coverImageUrl}
                 />
               ) : (
-                <img
+                <img referrerPolicy="no-referrer"
                   src={post.imageUrl}
                   alt=""
                   className="w-full max-h-64 object-contain"
@@ -2351,7 +2459,7 @@ function PostDetailModal({
           {post.mediaUrls && post.mediaUrls.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
               {post.mediaUrls.map((url, i) => (
-                <img
+                <img referrerPolicy="no-referrer"
                   key={i}
                   src={url}
                   alt=""

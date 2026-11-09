@@ -108,7 +108,8 @@ async function request<T>(
       headers,
       credentials: "include",
     });
-  } catch {
+  } catch (e) {
+    if ((e as Error)?.name === "AbortError") throw e; // the caller cancelled on purpose
     throw new ApiError(NETWORK_MSG, 0);
   }
 
@@ -1898,10 +1899,10 @@ export const socialAPI = {
       method: "POST",
       body: JSON.stringify({ userToken }),
     }),
-  importFromIntegration: () =>
+  importFromIntegration: (signal?: AbortSignal) =>
     request<{ success: boolean; data: { connected: number } }>(
       "/social/accounts/import-from-integration",
-      { method: "POST" },
+      { method: "POST", signal },
     ),
 };
 

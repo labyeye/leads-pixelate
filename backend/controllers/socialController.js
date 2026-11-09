@@ -1585,9 +1585,15 @@ const IG_IMPORT_MAX = 100;
 async function keepInstagramPicture(url, mediaId) {
   if (!url) return "";
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(30000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; NestLeads/1.0)" },
+    });
     const type = res.headers.get("content-type") || "";
-    if (!res.ok || !type.startsWith("image/")) return "";
+    if (!res.ok || !type.startsWith("image/")) {
+      log.warn("Instagram picture not saved", { mediaId, status: res.status, type });
+      return "";
+    }
     const buf = Buffer.from(await res.arrayBuffer());
     if (buf.length > 15 * 1024 * 1024) return "";
     const fs = require("fs");
@@ -1601,7 +1607,8 @@ async function keepInstagramPicture(url, mediaId) {
       process.env.BACKEND_URL ||
       `http://localhost:${process.env.PORT || 5000}`;
     return `${base}/uploads/${name}`;
-  } catch {
+  } catch (err) {
+    log.warn("Instagram picture not saved", { mediaId, message: err.message });
     return "";
   }
 }

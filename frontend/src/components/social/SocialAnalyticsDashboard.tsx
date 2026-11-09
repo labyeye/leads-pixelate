@@ -452,7 +452,7 @@ export function SocialAnalyticsDashboard({
                       >
                         <Checkbox checked={picked.includes(a._id)} onCheckedChange={() => togglePicked(a._id)} />
                         {a.profilePicture ? (
-                          <img src={a.profilePicture} alt="" className="h-6 w-6 rounded-full border border-black object-cover" />
+                          <img referrerPolicy="no-referrer" src={a.profilePicture} alt="" className="h-6 w-6 rounded-full border border-black object-cover" />
                         ) : (
                           <span className="h-6 w-6 rounded-full border border-black bg-muted" />
                         )}
@@ -773,7 +773,7 @@ export function SocialAnalyticsDashboard({
                 >
                   <span className="w-5 text-center font-medium text-muted-foreground">{i + 1}</span>
                   {p.imageUrl ? (
-                    <img src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 border border-black object-cover" />
+                    <img referrerPolicy="no-referrer" src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 border border-black object-cover" />
                   ) : (
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-black bg-muted">
                       <ImageIcon className="h-4 w-4 text-muted-foreground" />
