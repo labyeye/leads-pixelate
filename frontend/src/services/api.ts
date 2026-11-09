@@ -1826,9 +1826,10 @@ export const socialAPI = {
     request<{ success: boolean; data: any }>("/social/engagement"),
   getFollowers: (days = 30) =>
     request<{ success: boolean; data: any }>(`/social/followers?days=${days}`),
-  importInstagram: () =>
+  importInstagram: (accountIds?: string[]) =>
     request<{ success: boolean; data: any }>("/social/instagram/import", {
       method: "POST",
+      body: JSON.stringify({ accountIds: accountIds || [] }),
     }),
   getPosts: (params?: Record<string, string>) => {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";

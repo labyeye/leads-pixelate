@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { socialAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { cn } from "@/lib/utils";
 
@@ -236,6 +238,39 @@ export function SocialAnalyticsDashboard({
   const [range, setRange] = useState<30 | 90 | 180>(30);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [igAccounts, setIgAccounts] = useState<any[]>([]);
+  const [picked, setPicked] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ig-import-accounts") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const openPicker = (open: boolean) => {
+    setPickerOpen(open);
+    if (!open) return;
+    socialAPI
+      .getAccounts()
+      .then((r) => {
+        const list = (r.data || []).filter((a: any) => a.platform === "instagram" && a.isActive !== false);
+        setIgAccounts(list);
+        // Keep only ticks that still exist; first time, nothing is ticked.
+        setPicked((cur) => cur.filter((id) => list.some((a: any) => a._id === id)));
+      })
+      .catch(() => {});
+  };
+  const togglePicked = (id: string) =>
+    setPicked((cur) => {
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      try {
+        localStorage.setItem("ig-import-accounts", JSON.stringify(next));
+      } catch {
+        /* remembering the choice is a convenience only */
+      }
+      return next;
+    });
 
   const load = useCallback(() => {
     socialAPI
@@ -253,9 +288,14 @@ export function SocialAnalyticsDashboard({
   }, [range]);
 
   const importInstagram = async () => {
+    if (!picked.length) {
+      toast({ title: "Pick at least one account to import", variant: "destructive" });
+      return;
+    }
     setImporting(true);
+    setPickerOpen(false);
     try {
-      const res = await socialAPI.importInstagram();
+      const res = await socialAPI.importInstagram(picked);
       toast({
         title: "Instagram synced",
         description: `${res.data.created} new post(s) imported, ${res.data.updated} refreshed.`,
@@ -375,14 +415,66 @@ export function SocialAnalyticsDashboard({
               <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
             </Button>
             {isAdmin && (
-              <Button size="sm" onClick={importInstagram} disabled={importing}>
-                {importing ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Instagram className="mr-1.5 h-3.5 w-3.5" />
-                )}
-                {importing ? "Importing…" : "Import from Instagram"}
-              </Button>
+              <Popover open={pickerOpen} onOpenChange={openPicker}>
+                <PopoverTrigger asChild>
+                  <Button size="sm" disabled={importing}>
+                    {importing ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Instagram className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    {importing ? "Importing…" : "Import from Instagram"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 border-2 border-black p-0 nb-shadow-sm">
+                  <div className="flex items-center justify-between border-b-2 border-black px-3 py-2">
+                    <p className="text-xs font-medium">Choose accounts to import</p>
+                    <button
+                      className="text-[11px] text-[#024BAB] hover:underline"
+                      onClick={() => {
+                        const all = picked.length === igAccounts.length ? [] : igAccounts.map((a) => a._id);
+                        setPicked(all);
+                        try {
+                          localStorage.setItem("ig-import-accounts", JSON.stringify(all));
+                        } catch {
+                          /* convenience only */
+                        }
+                      }}
+                    >
+                      {picked.length === igAccounts.length && igAccounts.length ? "Clear all" : "Select all"}
+                    </button>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {igAccounts.map((a) => (
+                      <label
+                        key={a._id}
+                        className="flex cursor-pointer items-center gap-2.5 border-b border-border px-3 py-2 text-xs last:border-b-0 hover:bg-muted/50"
+                      >
+                        <Checkbox checked={picked.includes(a._id)} onCheckedChange={() => togglePicked(a._id)} />
+                        {a.profilePicture ? (
+                          <img src={a.profilePicture} alt="" className="h-6 w-6 rounded-full border border-black object-cover" />
+                        ) : (
+                          <span className="h-6 w-6 rounded-full border border-black bg-muted" />
+                        )}
+                        <span className="min-w-0 flex-1 truncate">{a.accountName}</span>
+                      </label>
+                    ))}
+                    {!igAccounts.length && (
+                      <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+                        No Instagram accounts connected.
+                      </p>
+                    )}
+                  </div>
+                  <div className="border-t-2 border-black p-2">
+                    <Button size="sm" className="w-full" onClick={importInstagram} disabled={!picked.length}>
+                      Import {picked.length ? `${picked.length} account${picked.length > 1 ? "s" : ""}` : ""}
+                    </Button>
+                    <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
+                      Latest 100 posts per account.
+                    </p>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
         </div>

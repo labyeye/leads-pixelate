@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  ArrowUpDown,
+  Search,
   Calendar,
   Plus,
   Loader2,
@@ -98,6 +100,9 @@ interface SocialPost {
   approvedBy?: { name: string };
   rejectedBy?: { name: string };
   createdAt: string;
+  source?: string;
+  permalink?: string;
+  engagement?: { views?: number; likes?: number; comments?: number; saved?: number; shares?: number };
 }
 
 interface SocialAccount {
@@ -341,6 +346,60 @@ function PostsTab({
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Filters and sort run in the browser over the loaded posts; newest first by default.
+  const [sort, setSort] = useState("newest");
+  const [q, setQ] = useState("");
+  const [fPlatform, setFPlatform] = useState("");
+  const [fType, setFType] = useState("");
+  const [fSource, setFSource] = useState("");
+  const [fAccount, setFAccount] = useState("");
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  useEffect(() => {
+    socialAPI.getAccounts().then((r) => setAccounts(r.data || [])).catch(() => {});
+  }, []);
+
+  const dateOf = (p: SocialPost) =>
+    new Date(p.postedAt || p.scheduledAt || p.createdAt).getTime();
+  const engagementOf = (p: SocialPost) => {
+    const e = p.engagement || {};
+    return (e.likes || 0) + (e.comments || 0) + (e.saved || 0) + (e.shares || 0);
+  };
+  const activeFilters = [q, fPlatform, fType, fSource, fAccount, fFrom, fTo].filter(Boolean).length;
+  const clearFilters = () => {
+    setQ("");
+    setFPlatform("");
+    setFType("");
+    setFSource("");
+    setFAccount("");
+    setFFrom("");
+    setFTo("");
+  };
+  const visiblePosts = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const from = fFrom ? new Date(fFrom).getTime() : 0;
+    const to = fTo ? new Date(fTo).getTime() + 24 * 60 * 60 * 1000 : Infinity;
+    const list = posts.filter((p) => {
+      if (needle && !(p.caption || "").toLowerCase().includes(needle) && !(p.hashtags || []).join(" ").toLowerCase().includes(needle)) return false;
+      if (fPlatform && !(p.platforms || []).includes(fPlatform)) return false;
+      if (fType && (p.postType || "image") !== fType) return false;
+      if (fSource && (p.source || "manual") !== fSource) return false;
+      if (fAccount && !(p.accountIds || []).map(String).includes(fAccount)) return false;
+      const d = dateOf(p);
+      return d >= from && d < to;
+    });
+    const by: Record<string, (a: SocialPost, b: SocialPost) => number> = {
+      newest: (a, b) => dateOf(b) - dateOf(a),
+      oldest: (a, b) => dateOf(a) - dateOf(b),
+      engagement: (a, b) => engagementOf(b) - engagementOf(a),
+      likes: (a, b) => (b.engagement?.likes || 0) - (a.engagement?.likes || 0),
+      views: (a, b) => (b.engagement?.views || 0) - (a.engagement?.views || 0),
+      caption: (a, b) => (a.caption || "").localeCompare(b.caption || ""),
+    };
+    return [...list].sort(by[sort] || by.newest);
+  }, [posts, q, fPlatform, fType, fSource, fAccount, fFrom, fTo, sort]);
+
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
@@ -493,23 +552,103 @@ function PostsTab({
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
+        <div className="flex h-9 min-w-[180px] flex-1 items-center gap-2 border-2 border-black bg-white px-2.5">
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search caption or hashtags…"
+            className="w-full bg-transparent text-xs outline-none"
+          />
+        </div>
+        {[
+          { v: fPlatform, set: setFPlatform, all: "All platforms", opts: [["instagram", "Instagram"], ["facebook", "Facebook"], ["linkedin", "LinkedIn"]] },
+          { v: fType, set: setFType, all: "All types", opts: [["image", "Image"], ["carousel", "Carousel"], ["reel", "Reel"]] },
+          { v: fSource, set: setFSource, all: "All sources", opts: [["manual", "Created here"], ["autopilot", "Autopilot"], ["imported", "Imported"]] },
+          { v: fAccount, set: setFAccount, all: "All accounts", opts: accounts.map((a) => [a._id, a.accountName]) },
+        ].map((f) => (
+          <select
+            key={f.all}
+            value={f.v}
+            onChange={(e) => f.set(e.target.value)}
+            className={cn(
+              "h-9 max-w-[170px] border-2 border-black bg-white px-2 text-xs outline-none",
+              f.v && "bg-[#FFF1E6]",
+            )}
+          >
+            <option value="">{f.all}</option>
+            {f.opts.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        ))}
+        <input
+          type="date"
+          value={fFrom}
+          onChange={(e) => setFFrom(e.target.value)}
+          title="From date"
+          className="h-9 border-2 border-black bg-white px-2 text-xs outline-none"
+        />
+        <input
+          type="date"
+          value={fTo}
+          onChange={(e) => setFTo(e.target.value)}
+          title="To date"
+          className="h-9 border-2 border-black bg-white px-2 text-xs outline-none"
+        />
+        <div className="flex items-center gap-1.5">
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="h-9 border-2 border-black bg-white px-2 text-xs outline-none"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="engagement">Most engagement</option>
+            <option value="likes">Most likes</option>
+            <option value="views">Most views</option>
+            <option value="caption">Caption A–Z</option>
+          </select>
+        </div>
+        {activeFilters > 0 && (
+          <button onClick={clearFilters} className="h-9 border-2 border-black bg-white px-2.5 text-xs font-medium hover:bg-[#FFDE00]">
+            Clear ({activeFilters})
+          </button>
+        )}
+        <span className="ml-auto text-xs text-muted-foreground">
+          {visiblePosts.length === posts.length
+            ? `${posts.length} posts`
+            : `${visiblePosts.length} of ${posts.length} posts`}
+        </span>
+      </div>
+
       {}
       <div>
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
-        ) : posts.length === 0 ? (
+        ) : visiblePosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
             <Calendar className="w-10 h-10 text-muted-foreground/30" />
             <p className="text-sm text-muted-foreground">
-              No posts yet. Click <strong>New Post</strong> to schedule your
-              first one.
+              {posts.length ? (
+                "No posts match these filters."
+              ) : (
+                <>
+                  No posts yet. Click <strong>New Post</strong> to schedule your
+                  first one.
+                </>
+              )}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-4 max-w-full mt-10">
-            {posts.map((post) => (
+            {visiblePosts.map((post) => (
               <PostCard
                 key={post._id}
                 post={post}

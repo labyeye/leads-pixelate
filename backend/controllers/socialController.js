@@ -395,7 +395,7 @@ exports.getPosts = asyncHandler(async (req, res) => {
   if (req.user.tenantId) filter.tenantId = req.user.tenantId;
   if (req.query.status) filter.status = req.query.status;
   if (req.query.platform) filter.platforms = req.query.platform;
-  if (["manual", "autopilot"].includes(req.query.source))
+  if (["manual", "autopilot", "imported"].includes(req.query.source))
     filter.source = req.query.source;
   if (/^[0-9a-f]{24}$/i.test(req.query.campaignId || ""))
     filter.campaignId = req.query.campaignId; // one Autopilot campaign
@@ -1581,6 +1581,31 @@ const IG_MEDIA_FIELDS =
   "id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
 const IG_IMPORT_MAX = 100;
 
+// Instagram's CDN links expire within days, so the picture is copied to our own uploads/ folder.
+async function keepInstagramPicture(url, mediaId) {
+  if (!url) return "";
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
+    const type = res.headers.get("content-type") || "";
+    if (!res.ok || !type.startsWith("image/")) return "";
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 15 * 1024 * 1024) return "";
+    const fs = require("fs");
+    const path = require("path");
+    const dir = path.join(__dirname, "../uploads");
+    await fs.promises.mkdir(dir, { recursive: true });
+    const name = `ig-${String(mediaId).replace(/[^0-9a-z]/gi, "")}.jpg`;
+    await fs.promises.writeFile(path.join(dir, name), buf);
+    const base =
+      process.env.API_BASE_URL ||
+      process.env.BACKEND_URL ||
+      `http://localhost:${process.env.PORT || 5000}`;
+    return `${base}/uploads/${name}`;
+  } catch {
+    return "";
+  }
+}
+
 function instagramPostType(m) {
   if (m.media_type === "CAROUSEL_ALBUM") return "carousel";
   if (m.media_type === "VIDEO" || m.media_product_type === "REELS") return "reel";
@@ -1591,14 +1616,21 @@ function instagramPostType(m) {
 // Posts we published ourselves are matched by their Instagram id and only get fresh numbers.
 exports.importInstagramPosts = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  // Only the accounts the user ticked; with none given, every connected Instagram account.
+  const picked = (Array.isArray(req.body?.accountIds) ? req.body.accountIds : []).filter(
+    (id) => /^[0-9a-f]{24}$/i.test(String(id)),
+  );
   const accounts = await SocialAccount.find({
     ...tenantFilter,
     platform: "instagram",
     isActive: true,
+    ...(picked.length && { _id: { $in: picked } }),
   });
   if (!accounts.length) {
     res.status(400);
-    throw new Error("Connect an Instagram account first");
+    throw new Error(
+      picked.length ? "None of the selected accounts could be found" : "Connect an Instagram account first",
+    );
   }
 
   let created = 0;
@@ -1642,15 +1674,20 @@ exports.importInstagramPosts = asyncHandler(async (req, res) => {
               ...tenantFilter,
               instagramPostId: m.id,
             });
+            const picture = m.media_type === "VIDEO" ? m.thumbnail_url || "" : m.media_url || "";
             if (existing) {
               existing.engagement = engagement;
               if (!existing.permalink) existing.permalink = m.permalink || "";
+              // Imported posts get their picture re-saved; posts we published keep their own.
+              if (existing.source === "imported") {
+                const kept = await keepInstagramPicture(picture, m.id);
+                if (kept) existing.imageUrl = kept;
+              }
               await existing.save();
               updated += 1;
               continue;
             }
-            const image =
-              m.media_type === "VIDEO" ? m.thumbnail_url || "" : m.media_url || "";
+            const image = await keepInstagramPicture(picture, m.id);
             const type = instagramPostType(m);
             await SocialPost.create({
               ...tenantFilter,
