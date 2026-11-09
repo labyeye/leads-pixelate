@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import SendWhatsAppModal from '../components/SendWhatsAppModal';
-import { leadsAPI, settingsAPI } from '../services/api';
+import { leadsAPI, settingsAPI, callsAPI, aiCallingAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getStatusColor,
@@ -171,6 +171,30 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   const handleCall = () => {
     if (lead?.phone) Linking.openURL(`tel:${lead.phone}`);
   };
+  // Twilio rings the agent's own phone first, then bridges to the lead (same as web).
+  const placeCall = (kind: 'manual' | 'ai') => {
+    const ai = kind === 'ai';
+    Alert.alert(
+      ai ? 'AI voice call' : 'Call via app',
+      ai
+        ? `AI agent will call ${lead.name}.`
+        : `We ring your phone first, then connect you to ${lead.name}.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Start',
+          onPress: async () => {
+            try {
+              const r = await (ai ? aiCallingAPI.callLead(leadId) : callsAPI.manual(leadId));
+              Alert.alert('Call started', r.message || 'Pick up your phone.');
+            } catch (err: any) {
+              Alert.alert("Couldn't place call", err.message);
+            }
+          },
+        },
+      ],
+    );
+  };
   const handleWhatsApp = () => {
     if (lead?.phone) setWaLead(lead);
   };
@@ -315,6 +339,22 @@ export default function LeadDetailScreen({ navigation, route }: any) {
             >
               <Icon name="call-outline" size={16} color="#044bab" />
               <Text style={styles.actionBtnText}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              onPress={() => placeCall('manual')}
+              disabled={!lead.phone}
+            >
+              <Icon name="swap-horizontal-outline" size={16} color="#044bab" />
+              <Text style={styles.actionBtnText}>In-app</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              onPress={() => placeCall('ai')}
+              disabled={!lead.phone}
+            >
+              <Icon name="flash-outline" size={16} color="#044bab" />
+              <Text style={styles.actionBtnText}>AI Call</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
@@ -729,8 +769,9 @@ const styles = StyleSheet.create({
   catPillText: { fontSize: 10, fontWeight: '500', color: '#64748b' },
 
   // Actions
-  actionsRow: { flexDirection: 'row', gap: 8 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   actionBtn: {
+    minWidth: '30%',
     flex: 1,
     paddingVertical: 8,
     flexDirection: 'row',

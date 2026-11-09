@@ -291,6 +291,26 @@ export const leadsAPI = {
     }),
   delete: (id: string) =>
     request<{ success: boolean }>(`/leads/${id}`, { method: 'DELETE' }),
+  bulkUpdateStatus: (leadIds: string[], status: string, remarks?: string) =>
+    request<{ success: boolean; updatedCount: number; skipped: any[] }>(
+      '/leads/bulk-status',
+      { method: 'POST', body: JSON.stringify({ leadIds, status, remarks }) },
+    ),
+  importBulk: (leads: any[]) =>
+    request<{ success: boolean; count: number; message: string }>('/leads/import', {
+      method: 'POST',
+      body: JSON.stringify({ leads }),
+    }),
+  bulkAssign: (leadIds: string[], assignedTo: string) =>
+    request<{ success: boolean; updatedCount: number; skippedCount: number }>(
+      '/leads/bulk-assign',
+      { method: 'POST', body: JSON.stringify({ leadIds, assignedTo }) },
+    ),
+  bulkDelete: (leadIds: string[]) =>
+    request<{ success: boolean; deletedCount: number }>('/leads/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ leadIds }),
+    }),
   addNote: (id: string, text: string) =>
     request<{ success: boolean; data: any }>(`/leads/${id}/notes`, {
       method: 'POST',
@@ -1244,4 +1264,20 @@ export const servicesAPI = {
     }),
   delete: (id: string) =>
     request<{ success: boolean }>(`/services/${id}`, { method: 'DELETE' }),
+};
+
+export const callsAPI = {
+  manual: (leadId: string) =>
+    request<{ success: boolean; message: string; data: any }>('/calls/manual', {
+      method: 'POST',
+      body: JSON.stringify({ leadId }),
+    }),
+};
+
+export const aiCallingAPI = {
+  callLead: (leadId: string) =>
+    request<{ success: boolean; message: string; data: any }>(
+      `/ai-calling/call-lead/${leadId}`,
+      { method: 'POST' },
+    ),
 };

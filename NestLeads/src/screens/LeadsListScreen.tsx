@@ -25,8 +25,11 @@ import {
   tradeindiaSyncAPI,
   justdialSyncAPI,
   productsAPI,
+  usersAPI,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import ExportFieldsDialog, { type ExportField } from '../components/ExportFieldsDialog';
+import { csvToLeads } from '../lib/leadsImport';
 import {
   categoryOrder,
   getCategoryByStatus,
@@ -60,6 +63,7 @@ export interface FilterState {
   budgetMin: string;
   budgetMax: string;
   products: string[];
+  assignees?: string[];
 }
 
 interface Props {
@@ -103,6 +107,7 @@ const BLANK_FILTER: FilterState = {
   budgetMin: '',
   budgetMax: '',
   products: [],
+  assignees: [],
 };
 
 const BUDGET_PRESETS = [
@@ -110,6 +115,24 @@ const BUDGET_PRESETS = [
   { label: '₹1L–5L', min: '100000', max: '500000' },
   { label: '₹5L–10L', min: '500000', max: '1000000' },
   { label: '₹10L+', min: '1000000', max: '' },
+];
+
+const LEAD_EXPORT_FIELDS: ExportField[] = [
+  { key: 'name', label: 'Name', get: (l: any) => l.name || '' },
+  { key: 'phone', label: 'Phone', get: (l: any) => l.phone || '' },
+  { key: 'email', label: 'Email', get: (l: any) => l.email || '' },
+  { key: 'company', label: 'Company', get: (l: any) => l.company || '' },
+  { key: 'source', label: 'Source', get: (l: any) => l.source || '' },
+  { key: 'status', label: 'Status', get: (l: any) => l.status || '' },
+  { key: 'assigned', label: 'Assigned', get: (l: any) => l.assignedTo?.name || '' },
+  { key: 'budget', label: 'Budget', get: (l: any) => l.budget || '' },
+  { key: 'product', label: 'Interested', get: (l: any) => l.interestedProduct || l.product?.name || '' },
+  { key: 'city', label: 'City', default: false, get: (l: any) => l.city || '' },
+  { key: 'state', label: 'State', default: false, get: (l: any) => l.state || '' },
+  { key: 'requirement', label: 'Requirement', default: false, get: (l: any) => l.requirement || '' },
+  { key: 'remarks', label: 'Remarks', default: false, get: (l: any) => l.remarks || '' },
+  { key: 'tag', label: 'Tag', default: false, get: (l: any) => l.contactTag || '' },
+  { key: 'created', label: 'Created At', default: false, get: (l: any) => l.createdAt || '' },
 ];
 
 export default function LeadsListScreen({ navigation }: Props) {
@@ -121,9 +144,76 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name' | 'budget' | 'updated'>('newest');
   const [filters, setFilters] = useState<FilterState>(BLANK_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const runImport = async () => {
+    const { leads: rows, error } = csvToLeads(importText);
+    if (error) return Alert.alert('Import', error);
+    try {
+      setImporting(true);
+      const r = await leadsAPI.importBulk(rows);
+      Alert.alert('Import complete', r.message || `${r.count} imported`);
+      setImportOpen(false);
+      setImportText('');
+      fetchLeads(true);
+    } catch (e: any) {
+      Alert.alert('Import failed', e.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+  const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
+  const selecting = selected.length > 0;
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const toggleSel = (id: string) =>
+    setSelected(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
+  const bulkStatus = async (status: string) => {
+    setBulkStatusOpen(false);
+    try {
+      const r = await leadsAPI.bulkUpdateStatus(selected, status);
+      Alert.alert('Updated', `${r.updatedCount} lead(s) moved to ${status}.`);
+      setSelected([]);
+      fetchLeads(true);
+    } catch (e: any) {
+      Alert.alert('Failed', e.message);
+    }
+  };
+  const bulkAssign = async (userId: string) => {
+    setBulkAssignOpen(false);
+    try {
+      const r = await leadsAPI.bulkAssign(selected, userId);
+      Alert.alert('Reassigned', `${r.updatedCount} updated, ${r.skippedCount} skipped.`);
+      setSelected([]);
+      fetchLeads(true);
+    } catch (e: any) {
+      Alert.alert('Failed', e.message);
+    }
+  };
+  const bulkDelete = () =>
+    Alert.alert('Delete leads', `Move ${selected.length} lead(s) to Trash?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await leadsAPI.bulkDelete(selected);
+            setSelected([]);
+            fetchLeads(true);
+          } catch (e: any) {
+            Alert.alert('Failed', e.message);
+          }
+        },
+      },
+    ]);
   const [draftFilters, setDraftFilters] = useState<FilterState>(BLANK_FILTER);
   const [syncingSource, setSyncingSource] = useState<string | null>(null);
   const [syncDateOption, setSyncDateOption] = useState<
@@ -137,6 +227,14 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [productsList, setProductsList] = useState<
     { _id: string; name: string }[]
   >([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    usersAPI
+      .getAll()
+      .then(res => setUsers(res.data || []))
+      .catch(() => {});
+  }, [isAdmin]);
 
   useEffect(() => {
     productsAPI
@@ -185,15 +283,31 @@ export default function LeadsListScreen({ navigation }: Props) {
         return false;
       if (filters.statuses.length && !filters.statuses.includes(l.status))
         return false;
+      if (filters.assignees?.length && !filters.assignees.includes(l.assignedTo?._id || l.assignedTo))
+        return false;
+      if (filters.products.length && !filters.products.includes(l.product?._id || l.product))
+        return false;
+      if (filters.budgetMin || filters.budgetMax) {
+        const b = Number(String(l.budget || '').replace(/[^\d.]/g, ''));
+        if (!b) return false;
+        if (filters.budgetMin && b < Number(filters.budgetMin)) return false;
+        if (filters.budgetMax && b > Number(filters.budgetMax)) return false;
+      }
       return true;
     });
     const time = (l: any) => new Date(l.createdAt || 0).getTime();
+    const num = (l: any) => Number(String(l.budget || '').replace(/[^\d.]/g, '')) || 0;
+    const upd = (l: any) => new Date(l.updatedAt || l.createdAt || 0).getTime();
     return [...list].sort((a, b) =>
-      sortBy === 'name'
-        ? (a.name || '').localeCompare(b.name || '')
-        : sortBy === 'oldest'
-          ? time(a) - time(b)
-          : time(b) - time(a),
+      sortBy === 'budget'
+        ? num(b) - num(a)
+        : sortBy === 'updated'
+          ? upd(b) - upd(a)
+          : sortBy === 'name'
+            ? (a.name || '').localeCompare(b.name || '')
+            : sortBy === 'oldest'
+              ? time(a) - time(b)
+              : time(b) - time(a),
     );
   }, [leads, activeCategory, search, filters, sortBy]);
 
@@ -211,19 +325,23 @@ export default function LeadsListScreen({ navigation }: Props) {
     filters.statuses.length > 0 ||
     !!filters.startDate ||
     !!filters.budgetMin ||
-    filters.products.length > 0;
+    filters.products.length > 0 ||
+    !!filters.assignees?.length;
   const filterCount =
     filters.sources.length +
     filters.statuses.length +
     (filters.startDate ? 1 : 0) +
     (filters.budgetMin ? 1 : 0) +
-    filters.products.length;
+    filters.products.length +
+    (filters.assignees?.length || 0);
 
   const openSort = () =>
     Alert.alert('Sort leads', undefined, [
       { text: 'Newest first', onPress: () => setSortBy('newest') },
       { text: 'Oldest first', onPress: () => setSortBy('oldest') },
       { text: 'Name (A–Z)', onPress: () => setSortBy('name') },
+      { text: 'Budget (high → low)', onPress: () => setSortBy('budget') },
+      { text: 'Recently updated', onPress: () => setSortBy('updated') },
       { text: 'Cancel', style: 'cancel' },
     ]);
 
@@ -344,10 +462,16 @@ export default function LeadsListScreen({ navigation }: Props) {
       ? `₹${l.budget}`
       : l.budget;
     const score = Number(l.aiScore);
+    const id = l._id || l.id;
     const open = () =>
-      navigation.navigate('LeadDetail', { leadId: l._id || l.id });
+      selecting ? toggleSel(id) : navigation.navigate('LeadDetail', { leadId: id });
     return (
-      <TouchableOpacity style={styles.card} onPress={open} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={[styles.card, selected.includes(id) && { borderColor: PRIMARY, borderWidth: 3 }]}
+        onPress={open}
+        onLongPress={() => toggleSel(id)}
+        activeOpacity={0.85}
+      >
         <View style={styles.cardTop}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
@@ -467,6 +591,108 @@ export default function LeadsListScreen({ navigation }: Props) {
         </View>
       )}
 
+      {selecting && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, backgroundColor: '#FFDE00', borderBottomWidth: 2, borderColor: '#000' }}>
+          <TouchableOpacity onPress={() => setSelected([])} hitSlop={8}>
+            <Icon name="close" size={20} color="#000" />
+          </TouchableOpacity>
+          <Text style={{ flex: 1, fontWeight: '500', color: '#000' }}>{selected.length} selected</Text>
+          <TouchableOpacity style={styles.pillBtn} onPress={() => setSelected(filtered.map(l => l._id || l.id))}>
+            <Text style={styles.pillBtnText}>All</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillBtn} onPress={() => setBulkStatusOpen(true)}>
+            <Text style={styles.pillBtnText}>Status</Text>
+          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity style={styles.pillBtn} onPress={() => setBulkAssignOpen(true)}>
+              <Text style={styles.pillBtnText}>Assign</Text>
+            </TouchableOpacity>
+          )}
+          {isAdmin && (
+            <TouchableOpacity style={[styles.pillBtn, { backgroundColor: '#dc2626' }]} onPress={bulkDelete}>
+              <Text style={[styles.pillBtnText, { color: '#fff' }]}>Delete</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      <ExportFieldsDialog
+        visible={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title={selecting ? `Export ${selected.length} selected` : 'Export Leads'}
+        fields={LEAD_EXPORT_FIELDS}
+        data={selecting ? filtered.filter(l => selected.includes(l._id || l.id)) : filtered}
+        filenamePrefix="leads"
+      />
+
+      <Modal visible={importOpen} transparent animationType="slide" onRequestClose={() => setImportOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Import leads (paste CSV)</Text>
+            <Text style={{ color: '#64748b', fontSize: 12, marginBottom: 8 }}>
+              First row = headers (name required; phone, email, company, source, city, budget, requirement, remarks optional). Copy rows from Excel/Sheets and paste.
+            </Text>
+            <TextInput
+              style={{ minHeight: 160, maxHeight: 280, borderWidth: 2, borderColor: '#000', padding: 8, textAlignVertical: 'top', color: '#000' }}
+              multiline
+              value={importText}
+              onChangeText={setImportText}
+              placeholder={'name,phone,email\nAsha,9876543210,asha@x.com'}
+              placeholderTextColor="#94a3b8"
+              autoCapitalize="none"
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <TouchableOpacity style={[styles.pillBtn, { flex: 1, justifyContent: 'center' }]} onPress={() => setImportOpen(false)}>
+                <Text style={styles.pillBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pillBtn, styles.pillBtnActive, { flex: 1, justifyContent: 'center' }]}
+                onPress={runImport}
+                disabled={importing || !importText.trim()}
+              >
+                <Text style={[styles.pillBtnText, { color: '#fff' }]}>{importing ? 'Importing…' : 'Import'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={bulkAssignOpen} transparent animationType="slide" onRequestClose={() => setBulkAssignOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Assign {selected.length} lead(s) to</Text>
+            <ScrollView>
+              {users.map(u => (
+                <TouchableOpacity key={u._id} style={{ paddingVertical: 12 }} onPress={() => bulkAssign(u._id)}>
+                  <Text style={{ color: '#000', fontWeight: '500' }}>{u.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={{ paddingVertical: 12 }} onPress={() => setBulkAssignOpen(false)}>
+              <Text style={{ color: '#64748b' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={bulkStatusOpen} transparent animationType="slide" onRequestClose={() => setBulkStatusOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Set status for {selected.length}</Text>
+            <ScrollView>
+              {ALL_STATUSES.map(st => (
+                <TouchableOpacity key={st} style={{ paddingVertical: 12 }} onPress={() => bulkStatus(st)}>
+                  <Text style={{ color: '#000', fontWeight: '500' }}>{getStatusLabel(st) || st}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={{ paddingVertical: 12 }} onPress={() => setBulkStatusOpen(false)}>
+              <Text style={{ color: '#64748b' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.pipelineRow}>
         <Text style={styles.pipelineTitle}>Lead Pipeline</Text>
         <View style={styles.pipelineBtns}>
@@ -482,6 +708,12 @@ export default function LeadsListScreen({ navigation }: Props) {
           <TouchableOpacity style={styles.pillBtn} onPress={openSort}>
             <Icon name="swap-vertical" size={15} color="#000" />
             <Text style={styles.pillBtnText}>Sort</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillBtn} onPress={() => setExportOpen(true)}>
+            <Icon name="download-outline" size={15} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillBtn} onPress={() => setImportOpen(true)}>
+            <Icon name="cloud-upload-outline" size={15} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
@@ -582,6 +814,7 @@ export default function LeadsListScreen({ navigation }: Props) {
           data={filtered}
           keyExtractor={i => i._id || i.id}
           renderItem={renderLeadCard}
+          extraData={selected}
           contentContainerStyle={[
             styles.listContent,
             { paddingBottom: insets.bottom + 24 },
@@ -949,6 +1182,38 @@ export default function LeadsListScreen({ navigation }: Props) {
                   />
                 </View>
               </View>
+
+              {isAdmin && users.length > 0 && (
+                <>
+                  <Text style={styles.filterSectionLabel}>ASSIGNED TO</Text>
+                  <View style={styles.sourceGrid}>
+                    {users.map(u => {
+                      const active = draftFilters.assignees?.includes(u._id);
+                      return (
+                        <TouchableOpacity
+                          key={u._id}
+                          style={[styles.sourceChip, active && styles.sourceChipActive]}
+                          onPress={() =>
+                            setDraftFilters(f => {
+                              const cur = f.assignees || [];
+                              return {
+                                ...f,
+                                assignees: cur.includes(u._id)
+                                  ? cur.filter(x => x !== u._id)
+                                  : [...cur, u._id],
+                              };
+                            })
+                          }
+                        >
+                          <Text style={[styles.sourceChipLabel, active && styles.sourceChipLabelActive]} numberOfLines={1}>
+                            {u.name}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </>
+              )}
 
               {/* Product filter */}
               <Text style={styles.filterSectionLabel}>PRODUCT</Text>

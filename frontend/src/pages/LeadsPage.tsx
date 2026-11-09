@@ -2114,7 +2114,7 @@ export default function LeadsPage() {
                   setSelectedLeadId(null);
                 }}
                 className={cn(
-                  "px-4 py-2.5 text-xs font-medium uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 border-r-2 border-black last:border-r-0",
+                  "flex-1 justify-center px-4 py-2.5 text-xs font-medium uppercase tracking-widest whitespace-nowrap transition-all flex items-center gap-2 border-r-2 border-black last:border-r-0",
                   activeCategory === cat
                     ? "bg-[#024BAB] text-white"
                     : "bg-white text-black hover:bg-[#FFDE00] hover:text-black",

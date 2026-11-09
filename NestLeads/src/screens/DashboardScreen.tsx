@@ -209,6 +209,40 @@ export default function DashboardScreen({ navigation }: any) {
               delay={240}
             />
           </View>
+          <View style={[styles.kpiRow, { marginTop: 10 }]}>
+            <KpiCard
+              title="FOLLOW-UPS TODAY"
+              value={data?.todayFollowUps?.length ?? 0}
+              icon="time-outline"
+              iconBg="#65a30d"
+              delay={280}
+            />
+            <KpiCard
+              title="OVERDUE"
+              value={data?.stats?.overdueFollowUps ?? 0}
+              icon="alert-circle-outline"
+              iconBg="#ef4444"
+              urgent={(data?.stats?.overdueFollowUps ?? 0) > 0}
+              delay={320}
+            />
+            <KpiCard
+              title="DROPPED"
+              value={data?.statusCounts?.DROP ?? 0}
+              icon="close-circle-outline"
+              iconBg="#6b7280"
+              delay={360}
+            />
+            <KpiCard
+              title="VISITS"
+              value={
+                (data?.statusCounts?.['VISIT SCHEDULED'] ?? 0) +
+                (data?.statusCounts?.VISITED ?? 0)
+              }
+              icon="calendar-outline"
+              iconBg="#14b8a6"
+              delay={400}
+            />
+          </View>
           <SlideIn delay={400} style={[styles.section, { marginTop: 12 }]}>
             <Text style={styles.sectionLabel}>DAILY LEADS · LAST 7 DAYS</Text>
             <LeadsBarChart data={dailyLeads} width={SCREEN_WIDTH - 62} />
@@ -278,6 +312,36 @@ export default function DashboardScreen({ navigation }: any) {
               ))
             )}
           </SlideIn>
+          {(data?.recentQuotations?.length ?? 0) > 0 && (
+            <SlideIn delay={420} style={[styles.section, { marginTop: 12 }]}>
+              <Text style={styles.sectionLabel}>RECENT QUOTATIONS</Text>
+              {data.recentQuotations.slice(0, 5).map((q: any) => (
+                <TouchableOpacity
+                  key={q._id}
+                  style={styles.tRow}
+                  onPress={() =>
+                    navigation?.navigate('More', { screen: 'Quotations' })
+                  }
+                >
+                  <View style={{ flex: 2 }}>
+                    <Text style={styles.tName} numberOfLines={1}>
+                      {q.companyName || q.clientName || '—'}
+                    </Text>
+                    <Text style={styles.emptySub} numberOfLines={1}>
+                      {q.number}
+                      {q.projectTitle ? ` · ${q.projectTitle}` : ''}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <Text style={styles.tName}>
+                      ₹{Number(q.total || 0).toLocaleString('en-IN')}
+                    </Text>
+                    <Text style={styles.emptySub}>{q.status}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </SlideIn>
+          )}
 
           {/* Source Breakdown — Pie Chart */}
           {data?.sourceData?.length > 0 &&
