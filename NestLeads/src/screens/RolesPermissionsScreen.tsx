@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { rolesAPI, settingsAPI } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 // Admin-only. Two parts, matching the web Settings page:
 //  • Roles: named labels a tenant maps onto one of four permission tiers.
@@ -302,18 +304,18 @@ export default function RolesPermissionsScreen({ navigation }: any) {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Roles & Permissions</Text>
-        {tab === 'roles' && (
-          <TouchableOpacity style={s.addBtn} onPress={openAdd}>
-            <Icon name="add" size={16} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={s.divider} />
+      <ScreenHeader
+        icon="shield-checkmark-outline"
+        title="Roles & Permissions"
+        onBack={() => navigation.goBack()}
+        right={
+          tab === 'roles' ? (
+            <TouchableOpacity onPress={openAdd} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       <View style={s.tabs}>
         {(['roles', 'permissions'] as const).map(t => (
@@ -460,7 +462,7 @@ export default function RolesPermissionsScreen({ navigation }: any) {
             <Text style={s.dialogTitle}>
               {editing ? 'Edit role' : 'New role'}
             </Text>
-            <Text style={s.label}>Name</Text>
+            <FieldLabel style={s.label}>Name</FieldLabel>
             <TextInput
               style={s.input}
               value={form.name}
@@ -468,7 +470,7 @@ export default function RolesPermissionsScreen({ navigation }: any) {
               placeholder="e.g. Field Sales"
               placeholderTextColor="#94a3b8"
             />
-            <Text style={s.label}>Permission tier</Text>
+            <FieldLabel style={s.label}>Permission tier</FieldLabel>
             <View style={s.tierWrap}>
               {TIERS.map(t => (
                 <TouchableOpacity

@@ -14,8 +14,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { leadsAPI, usersAPI, productsAPI } from '../services/api';
 import { ALL_SOURCES } from '../constants/statusConstants';
+import FieldLabel from '../components/FieldLabel';
 
 export default function AddLeadScreen({ navigation }: any) {
   const onBack = () => navigation.goBack();
@@ -128,28 +130,20 @@ export default function AddLeadScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Lead</Text>
-        <TouchableOpacity
-          style={[styles.saveBtn, saving && { opacity: 0.7 }]}
-          onPress={handleSubmit}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color="#fff" />
+      <ScreenHeader
+        icon="person-add-outline"
+        title="New Lead"
+        onBack={onBack}
+        right={
+          saving ? (
+            <ActivityIndicator size="small" color="#000" />
           ) : (
-            <>
-              <Icon name="checkmark" size={16} color="#fff" />
-              <Text style={styles.saveBtnText}>Save</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.divider} />
+              <TouchableOpacity onPress={handleSubmit} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="checkmark" size={26} color="#1FA85A" />
+            </TouchableOpacity>
+          )
+        }
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -213,7 +207,7 @@ export default function AddLeadScreen({ navigation }: any) {
 
           <View style={styles.twoCol}>
             <View style={styles.halfCol}>
-              <Text style={styles.label}>Lead Source</Text>
+              <FieldLabel style={styles.label}>Lead Source</FieldLabel>
               <TouchableOpacity
                 style={styles.selectRow}
                 onPress={() => setSourceModalOpen(true)}
@@ -253,9 +247,9 @@ export default function AddLeadScreen({ navigation }: any) {
 
           <View style={styles.twoCol}>
             <View style={styles.halfCol}>
-              <Text style={styles.label} numberOfLines={1}>
+              <FieldLabel style={styles.label} numberOfLines={1}>
                 City / Pincode{pincodeLoading ? '…' : ''}
-              </Text>
+              </FieldLabel>
               <View style={styles.inputBorder}>
                 <TextInput
                   style={styles.input}
@@ -294,7 +288,7 @@ export default function AddLeadScreen({ navigation }: any) {
             <View style={styles.twoCol}>
               {hasAssignment && (
                 <View style={styles.halfCol}>
-                  <Text style={styles.label}>Assign To</Text>
+                  <FieldLabel style={styles.label}>Assign To</FieldLabel>
                   <TouchableOpacity
                     style={styles.selectRow}
                     onPress={() => setAssignModalOpen(true)}
@@ -309,7 +303,7 @@ export default function AddLeadScreen({ navigation }: any) {
 
               {hasProducts && (
                 <View style={styles.halfCol}>
-                  <Text style={styles.label}>Interested In</Text>
+                  <FieldLabel style={styles.label}>Interested In</FieldLabel>
                   <TouchableOpacity
                     style={styles.selectRow}
                     onPress={() => setProductModalOpen(true)}
@@ -421,9 +415,9 @@ function Field({
 }: any) {
   return (
     <View>
-      <Text style={styles.label} numberOfLines={1}>
+      <FieldLabel style={styles.label} numberOfLines={1}>
         {label}
-      </Text>
+      </FieldLabel>
       <View style={styles.inputBorder}>
         <TextInput
           style={[styles.input, multiline && styles.inputMultiline]}

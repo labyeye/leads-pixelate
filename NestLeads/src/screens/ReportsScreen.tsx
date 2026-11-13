@@ -1880,7 +1880,6 @@ export default function ReportsScreen({ navigation }: any) {
         </View>
           </>
         } />
-      <View style={styles.divider} />
 
       {/* Catalog / Analytics toggle */}
       <View style={styles.viewToggle}>

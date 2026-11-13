@@ -105,7 +105,6 @@ export default function LinkedInCampaignManagementScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <CampaignAssignmentList
         rows={rows}

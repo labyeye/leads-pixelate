@@ -18,6 +18,7 @@ import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 
 import { servicesAPI, clientsAPI, productsAPI } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -237,7 +238,6 @@ export default function ServicesScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -324,7 +324,7 @@ export default function ServicesScreen({ navigation }: any) {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.fieldLabel}>CLIENT *</Text>
+              <FieldLabel style={styles.fieldLabel}>CLIENT *</FieldLabel>
               <TouchableOpacity
                 style={styles.picker}
                 onPress={() => setClientPicker(!clientPicker)}
@@ -358,7 +358,7 @@ export default function ServicesScreen({ navigation }: any) {
                 </View>
               )}
 
-              <Text style={styles.fieldLabel}>PRODUCT / SERVICE *</Text>
+              <FieldLabel style={styles.fieldLabel}>PRODUCT / SERVICE *</FieldLabel>
               <TouchableOpacity
                 style={styles.picker}
                 onPress={() => setProductPicker(!productPicker)}
@@ -391,7 +391,7 @@ export default function ServicesScreen({ navigation }: any) {
                 </View>
               )}
 
-              <Text style={styles.fieldLabel}>STATUS</Text>
+              <FieldLabel style={styles.fieldLabel}>STATUS</FieldLabel>
               <View style={styles.statusChips}>
                 {STATUS_OPTIONS.map(s => (
                   <TouchableOpacity
@@ -419,7 +419,7 @@ export default function ServicesScreen({ navigation }: any) {
 
               <View style={styles.rowInputs}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>PROGRESS %</Text>
+                  <FieldLabel style={styles.fieldLabel}>PROGRESS %</FieldLabel>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -430,7 +430,7 @@ export default function ServicesScreen({ navigation }: any) {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>TIMELINE</Text>
+                  <FieldLabel style={styles.fieldLabel}>TIMELINE</FieldLabel>
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. 2 weeks"
@@ -441,7 +441,7 @@ export default function ServicesScreen({ navigation }: any) {
                 </View>
               </View>
 
-              <Text style={styles.fieldLabel}>NOTES</Text>
+              <FieldLabel style={styles.fieldLabel}>NOTES</FieldLabel>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Implementation notes..."
@@ -610,6 +610,7 @@ const styles = StyleSheet.create({
   deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
+    backgroundColor: '#fff',
     width: 80,
     height: 80,
     borderWidth: 2,

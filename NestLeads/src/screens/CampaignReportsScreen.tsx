@@ -130,7 +130,6 @@ export default function CampaignReportsScreen({ navigation }: any) {
         </View>
           </>
         } />
-      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.centerBox}>

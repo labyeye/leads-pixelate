@@ -98,7 +98,6 @@ export default function FacebookCampaignManagementScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <CampaignAssignmentList
         rows={rows}

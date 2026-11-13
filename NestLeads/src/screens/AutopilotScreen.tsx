@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import NewCampaignModal from '../components/autopilot/NewCampaignModal';
 import { Chip } from '../components/autopilot/ui';
 import { autopilotAPI } from '../services/api';
@@ -110,16 +111,7 @@ export default function AutopilotScreen({ navigation }: any) {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={s.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={s.backBtn}
-          accessibilityLabel="Back"
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={s.title}>Social Autopilot</Text>
-      </View>
+      <ScreenHeader icon="megaphone-outline" title="Social Autopilot" onBack={() => navigation.goBack()} />
       <View style={s.tabs}>
         {TABS.map(t => (
           <TouchableOpacity

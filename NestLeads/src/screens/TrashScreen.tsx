@@ -71,7 +71,6 @@ export default function TrashScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="trash-outline" title="Trash" onBack={() => navigation.goBack()} />
-      <View style={styles.divider} />
 
       {!isAdmin ? (
         <View style={styles.centerBox}>

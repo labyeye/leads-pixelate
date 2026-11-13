@@ -18,6 +18,7 @@ import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 
 import { priceBooksAPI, productsAPI } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -224,7 +225,6 @@ export default function PriceBooksScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -310,7 +310,7 @@ export default function PriceBooksScreen({ navigation }: any) {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.fieldLabel}>NAME *</Text>
+              <FieldLabel style={styles.fieldLabel}>NAME *</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Wholesale 2026"
@@ -318,7 +318,7 @@ export default function PriceBooksScreen({ navigation }: any) {
                 value={form.name}
                 onChangeText={v => setForm(f => ({ ...f, name: v }))}
               />
-              <Text style={styles.fieldLabel}>DESCRIPTION</Text>
+              <FieldLabel style={styles.fieldLabel}>DESCRIPTION</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="Description"
@@ -326,7 +326,7 @@ export default function PriceBooksScreen({ navigation }: any) {
                 value={form.description}
                 onChangeText={v => setForm(f => ({ ...f, description: v }))}
               />
-              <Text style={styles.fieldLabel}>STATUS</Text>
+              <FieldLabel style={styles.fieldLabel}>STATUS</FieldLabel>
               <View style={styles.statusChips}>
                 {['Active', 'Inactive'].map(s => (
                   <TouchableOpacity
@@ -349,7 +349,7 @@ export default function PriceBooksScreen({ navigation }: any) {
                 ))}
               </View>
 
-              <Text style={styles.fieldLabel}>SPECIAL PRICES</Text>
+              <FieldLabel style={styles.fieldLabel}>SPECIAL PRICES</FieldLabel>
               {form.items.map((r, i) => {
                 const normal = products.find(p => p._id === r.product)?.price;
                 return (
@@ -559,6 +559,7 @@ const styles = StyleSheet.create({
   deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
+    backgroundColor: '#fff',
     width: 80,
     height: 80,
     borderWidth: 2,

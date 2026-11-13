@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import {
   ALL_SOURCES,
   ALL_STATUSES,
@@ -20,6 +21,7 @@ import {
 import { FilterState } from './LeadsListScreen';
 import SourceBadge from '../components/SourceBadge';
 import { leadsAPI, SavedView } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -137,23 +139,16 @@ export default function FiltersScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          Filters{activeCount > 0 ? ` (${activeCount})` : ''}
-        </Text>
-        <TouchableOpacity onPress={handleReset}>
-          <Text style={styles.resetText}>Reset</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Divider */}
-      <View style={styles.divider} />
+      <ScreenHeader
+        icon="funnel-outline"
+        title={`Filters${activeCount > 0 ? ` (${activeCount})` : ''}`}
+        onBack={() => navigation.goBack()}
+        right={
+          <TouchableOpacity onPress={handleReset} hitSlop={8}>
+            <Text style={styles.resetText}>Reset</Text>
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         contentContainerStyle={[
@@ -221,7 +216,7 @@ export default function FiltersScreen({ navigation, route }: any) {
           <Text style={styles.sectionLabel}>DATE RANGE</Text>
           <View style={styles.dateRow}>
             <View style={styles.dateField}>
-              <Text style={styles.label}>From</Text>
+              <FieldLabel style={styles.label}>From</FieldLabel>
               <View style={styles.inputBorder}>
                 <TextInput
                   style={styles.dateInput}
@@ -234,7 +229,7 @@ export default function FiltersScreen({ navigation, route }: any) {
             </View>
             <Text style={styles.dateSep}>to</Text>
             <View style={styles.dateField}>
-              <Text style={styles.label}>To</Text>
+              <FieldLabel style={styles.label}>To</FieldLabel>
               <View style={styles.inputBorder}>
                 <TextInput
                   style={styles.dateInput}

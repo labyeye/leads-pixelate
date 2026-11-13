@@ -23,6 +23,7 @@ import { usersAPI, rolesAPI, uploadFile } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import PhoneInput from '../components/PhoneInput';
 import { CountText } from '../components/motion';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -465,7 +466,6 @@ export default function UsersScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.roleStripWrap}>
         <ScrollView
@@ -628,7 +628,7 @@ export default function UsersScreen({ navigation }: any) {
                     ) : null}
                   </View>
 
-                  <Text style={styles.fieldLabel}>NAME *</Text>
+                  <FieldLabel style={styles.fieldLabel}>NAME *</FieldLabel>
                   <TextInput
                     style={styles.fieldInput}
                     value={form.name}
@@ -639,7 +639,7 @@ export default function UsersScreen({ navigation }: any) {
 
                   {!editing && (
                     <>
-                      <Text style={styles.fieldLabel}>EMAIL *</Text>
+                      <FieldLabel style={styles.fieldLabel}>EMAIL *</FieldLabel>
                       <TextInput
                         style={styles.fieldInput}
                         value={form.email}
@@ -660,11 +660,11 @@ export default function UsersScreen({ navigation }: any) {
                     />
                   </View>
 
-                  <Text style={styles.fieldLabel}>
+                  <FieldLabel style={styles.fieldLabel}>
                     {editing
                       ? 'NEW PASSWORD (leave blank to keep)'
                       : 'PASSWORD *'}
-                  </Text>
+                  </FieldLabel>
                   <View style={styles.pwdRow}>
                     <TextInput
                       style={[styles.fieldInput, { flex: 1, marginBottom: 0 }]}
@@ -686,7 +686,7 @@ export default function UsersScreen({ navigation }: any) {
                     </TouchableOpacity>
                   </View>
 
-                  <Text style={styles.fieldLabel}>ROLE *</Text>
+                  <FieldLabel style={styles.fieldLabel}>ROLE *</FieldLabel>
                   <TouchableOpacity
                     style={styles.pickerBtn}
                     onPress={() => setRolePickerOpen(true)}
@@ -697,7 +697,7 @@ export default function UsersScreen({ navigation }: any) {
                     <Icon name="chevron-down" size={14} color="#000" />
                   </TouchableOpacity>
 
-                  <Text style={styles.fieldLabel}>DEPARTMENT</Text>
+                  <FieldLabel style={styles.fieldLabel}>DEPARTMENT</FieldLabel>
                   <TextInput
                     style={styles.fieldInput}
                     value={form.department}
@@ -706,7 +706,7 @@ export default function UsersScreen({ navigation }: any) {
                     placeholderTextColor="#94a3b8"
                   />
 
-                  <Text style={styles.fieldLabel}>DESIGNATION</Text>
+                  <FieldLabel style={styles.fieldLabel}>DESIGNATION</FieldLabel>
                   <TextInput
                     style={styles.fieldInput}
                     value={form.designation}
@@ -721,7 +721,7 @@ export default function UsersScreen({ navigation }: any) {
                 <>
                   <View style={styles.dateRow}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.fieldLabel}>DATE OF JOINING</Text>
+                      <FieldLabel style={styles.fieldLabel}>DATE OF JOINING</FieldLabel>
                       <TextInput
                         style={styles.fieldInput}
                         value={form.dateOfJoining}
@@ -733,7 +733,7 @@ export default function UsersScreen({ navigation }: any) {
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.fieldLabel}>DATE OF BIRTH</Text>
+                      <FieldLabel style={styles.fieldLabel}>DATE OF BIRTH</FieldLabel>
                       <TextInput
                         style={styles.fieldInput}
                         value={form.dateOfBirth}
@@ -746,7 +746,7 @@ export default function UsersScreen({ navigation }: any) {
                     </View>
                   </View>
 
-                  <Text style={styles.fieldLabel}>GENDER</Text>
+                  <FieldLabel style={styles.fieldLabel}>GENDER</FieldLabel>
                   <View style={styles.chipRow}>
                     {GENDERS.map(g => (
                       <TouchableOpacity
@@ -769,7 +769,7 @@ export default function UsersScreen({ navigation }: any) {
                     ))}
                   </View>
 
-                  <Text style={styles.fieldLabel}>EMPLOYMENT TYPE</Text>
+                  <FieldLabel style={styles.fieldLabel}>EMPLOYMENT TYPE</FieldLabel>
                   <View style={styles.chipRow}>
                     {EMPLOYMENT_TYPES.map(t => (
                       <TouchableOpacity
@@ -794,7 +794,7 @@ export default function UsersScreen({ navigation }: any) {
                     ))}
                   </View>
 
-                  <Text style={styles.fieldLabel}>ADDRESS</Text>
+                  <FieldLabel style={styles.fieldLabel}>ADDRESS</FieldLabel>
                   <TextInput
                     style={styles.fieldInput}
                     value={form.addressLine1}
@@ -844,7 +844,7 @@ export default function UsersScreen({ navigation }: any) {
                       }
                     />
                   </View>
-                  <Text style={styles.fieldLabel}>EMERGENCY CONTACT NAME</Text>
+                  <FieldLabel style={styles.fieldLabel}>EMERGENCY CONTACT NAME</FieldLabel>
                   <TextInput
                     style={styles.fieldInput}
                     value={form.emergencyName}
@@ -855,7 +855,7 @@ export default function UsersScreen({ navigation }: any) {
                     placeholderTextColor="#94a3b8"
                   />
 
-                  <Text style={styles.fieldLabel}>PAN NUMBER</Text>
+                  <FieldLabel style={styles.fieldLabel}>PAN NUMBER</FieldLabel>
                   <TextInput
                     style={styles.fieldInput}
                     value={form.panNumber}

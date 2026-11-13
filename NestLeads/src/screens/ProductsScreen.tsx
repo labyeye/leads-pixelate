@@ -19,6 +19,7 @@ import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 
 import { productsAPI } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -211,7 +212,6 @@ export default function ProductsScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -298,7 +298,7 @@ export default function ProductsScreen({ navigation }: any) {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.fieldLabel}>PRODUCT NAME *</Text>
+              <FieldLabel style={styles.fieldLabel}>PRODUCT NAME *</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="Enter product name"
@@ -307,7 +307,7 @@ export default function ProductsScreen({ navigation }: any) {
                 value={form.name}
                 onChangeText={v => setForm(f => ({ ...f, name: v }))}
               />
-              <Text style={styles.fieldLabel}>SKU / PRODUCT CODE</Text>
+              <FieldLabel style={styles.fieldLabel}>SKU / PRODUCT CODE</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. OPM-2024-01"
@@ -316,7 +316,7 @@ export default function ProductsScreen({ navigation }: any) {
                 maxLength={40}
                 onChangeText={v => setForm(f => ({ ...f, sku: v }))}
               />
-              <Text style={styles.fieldLabel}>CATEGORY</Text>
+              <FieldLabel style={styles.fieldLabel}>CATEGORY</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Software, Service, Hardware"
@@ -326,7 +326,7 @@ export default function ProductsScreen({ navigation }: any) {
               />
               <View style={styles.rowInputs}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>PRICE (â‚¹)</Text>
+                  <FieldLabel style={styles.fieldLabel}>PRICE (â‚¹)</FieldLabel>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -338,7 +338,7 @@ export default function ProductsScreen({ navigation }: any) {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>STOCK QTY</Text>
+                  <FieldLabel style={styles.fieldLabel}>STOCK QTY</FieldLabel>
                   <TextInput
                     style={styles.input}
                     placeholder="0"
@@ -352,7 +352,7 @@ export default function ProductsScreen({ navigation }: any) {
                   />
                 </View>
               </View>
-              <Text style={styles.fieldLabel}>UNIT</Text>
+              <FieldLabel style={styles.fieldLabel}>UNIT</FieldLabel>
               <View style={styles.unitRow}>
                 {UNITS.map(u => (
                   <TouchableOpacity
@@ -376,7 +376,7 @@ export default function ProductsScreen({ navigation }: any) {
               </View>
               <View style={styles.rowInputs}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>TAX RATE (%)</Text>
+                  <FieldLabel style={styles.fieldLabel}>TAX RATE (%)</FieldLabel>
                   <TextInput
                     style={styles.input}
                     placeholder="18"
@@ -388,7 +388,7 @@ export default function ProductsScreen({ navigation }: any) {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>HSN / SAC (FOR GST)</Text>
+                  <FieldLabel style={styles.fieldLabel}>HSN / SAC (FOR GST)</FieldLabel>
                   <TextInput
                     style={styles.input}
                     placeholder="e.g. 998315"
@@ -399,7 +399,7 @@ export default function ProductsScreen({ navigation }: any) {
                   />
                 </View>
               </View>
-              <Text style={styles.fieldLabel}>DESCRIPTION</Text>
+              <FieldLabel style={styles.fieldLabel}>DESCRIPTION</FieldLabel>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Product description..."
@@ -558,6 +558,7 @@ const styles = StyleSheet.create({
   deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
+    backgroundColor: '#fff',
     width: 80,
     height: 80,
     borderWidth: 2,

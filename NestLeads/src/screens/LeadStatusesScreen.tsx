@@ -134,7 +134,6 @@ export default function LeadStatusesScreen({ navigation }: any) {
         </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.centerBox}>

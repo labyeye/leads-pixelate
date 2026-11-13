@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { whatsappAPI } from '../services/api';
+import FieldLabel from './FieldLabel';
 
 // Quotation -> WhatsApp. Pick an approved template with a Document header; the server renders the
 // quotation PDF and attaches it. No such template -> tell the user to update one.
@@ -154,7 +155,7 @@ export default function SendQuotationModal({
             </Text>
           ) : (
             <>
-              <Text style={s.label}>Send to (WhatsApp number)</Text>
+              <FieldLabel style={s.label}>Send to (WhatsApp number)</FieldLabel>
               <TextInput
                 style={s.input}
                 value={phone}
@@ -163,7 +164,7 @@ export default function SendQuotationModal({
                 placeholder="10-digit number"
                 placeholderTextColor="#94a3b8"
               />
-              <Text style={s.label}>Choose template</Text>
+              <FieldLabel style={s.label}>Choose template</FieldLabel>
               <ScrollView style={{ maxHeight: 220 }}>
                 {templates.map(t => (
                   <TouchableOpacity
@@ -192,7 +193,7 @@ export default function SendQuotationModal({
                 .filter(m => m.fieldKey === 'custom')
                 .map(m => (
                   <View key={m.position}>
-                    <Text style={s.label}>{`Fill {{${m.position}}}`}</Text>
+                    <FieldLabel style={s.label}>{`Fill {{${m.position}}}`}</FieldLabel>
                     <TextInput
                       style={s.input}
                       value={m.customValue}

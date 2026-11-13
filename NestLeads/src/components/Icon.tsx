@@ -1,4 +1,5 @@
 import React from 'react';
+import WhatsAppLogo from './WhatsAppLogo';
 import {
   AlertCircle,
   Maximize2,
@@ -30,6 +31,7 @@ import {
   Clock,
   CreditCard,
   DollarSign,
+  IndianRupee,
   Download,
   Edit2,
   ExternalLink,
@@ -189,7 +191,7 @@ const MAP: Record<string, LucideIcon> = {
   'information-circle-outline': Info,
   'lock-closed-outline': Lock,
   'log-out-outline': LogOut,
-  'logo-usd': DollarSign,
+  'logo-usd': IndianRupee,
   'logo-whatsapp': MessageCircle,
   'mail-outline': Mail,
   'megaphone-outline': Megaphone,
@@ -249,6 +251,7 @@ export default function Icon({
   color = '#000',
   style,
 }: Props) {
+  if (name === 'logo-whatsapp') return <WhatsAppLogo size={size} style={style} />;
   const LucideComponent = MAP[name];
   if (!LucideComponent) return null;
   return <LucideComponent size={size} color={color} style={style} />;

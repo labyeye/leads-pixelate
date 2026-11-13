@@ -24,6 +24,7 @@ import {
   salesOrdersAPI,
 } from '../services/api';
 import { CountText } from '../components/motion';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -355,7 +356,6 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -444,7 +444,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.fieldLabel}>CLIENT *</Text>
+              <FieldLabel style={styles.fieldLabel}>CLIENT *</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="Client or company name"
@@ -452,7 +452,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
                 value={form.partyName}
                 onChangeText={v => setForm(f => ({ ...f, partyName: v }))}
               />
-              <Text style={styles.fieldLabel}>REFERENCE (OPTIONAL)</Text>
+              <FieldLabel style={styles.fieldLabel}>REFERENCE (OPTIONAL)</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="Quotation or PO number"
@@ -461,7 +461,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
                 onChangeText={v => setForm(f => ({ ...f, reference: v }))}
               />
 
-              <Text style={styles.fieldLabel}>ITEMS</Text>
+              <FieldLabel style={styles.fieldLabel}>ITEMS</FieldLabel>
               {form.items.map((it, i) => {
                 const stock = products.find(p => p._id === it.productId);
                 const short =
@@ -543,7 +543,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
 
               <View style={styles.rowInputs}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>DISCOUNT (₹)</Text>
+                  <FieldLabel style={styles.fieldLabel}>DISCOUNT (₹)</FieldLabel>
                   <TextInput
                     style={styles.input}
                     keyboardType="numeric"
@@ -552,7 +552,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.fieldLabel}>GST %</Text>
+                  <FieldLabel style={styles.fieldLabel}>GST %</FieldLabel>
                   <TextInput
                     style={styles.input}
                     keyboardType="numeric"
@@ -562,7 +562,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
                 </View>
               </View>
 
-              <Text style={styles.fieldLabel}>STATUS</Text>
+              <FieldLabel style={styles.fieldLabel}>STATUS</FieldLabel>
               <View style={styles.statusChips}>
                 {cfg.statuses.map(s => (
                   <TouchableOpacity
@@ -602,7 +602,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
                 </View>
               </View>
 
-              <Text style={styles.fieldLabel}>NOTES</Text>
+              <FieldLabel style={styles.fieldLabel}>NOTES</FieldLabel>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Notes..."
@@ -751,6 +751,7 @@ const styles = StyleSheet.create({
   deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
+    backgroundColor: '#fff',
     width: 80,
     height: 80,
     borderWidth: 2,

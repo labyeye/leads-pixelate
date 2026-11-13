@@ -131,7 +131,6 @@ export default function FacebookAdsDashboardScreen({ navigation }: any) {
         </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.centerBox}>

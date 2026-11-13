@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { quotationsAPI } from '../services/api';
 import SendQuotationModal from '../components/SendQuotationModal';
 import ExportFieldsDialog, {
@@ -241,26 +242,21 @@ export default function QuotationsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Quotations</Text>
-          <Text style={styles.headerSub}>{quotations.length} total</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => navigation.navigate('QuotationForm')}
-        >
-          <Icon name="add" size={16} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.exportBtn}
-          onPress={() => setExportOpen(true)}
-          disabled={filtered.length === 0}
-        >
-          <Icon name="download-outline" size={15} color="#000" />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.divider} />
+      <ScreenHeader
+        icon="document-text-outline"
+        title="Quotations"
+        right={
+          <>
+            <TouchableOpacity onPress={() => setExportOpen(true)} hitSlop={8} style={{ padding: 4 }}
+              disabled={filtered.length === 0}>
+              <Icon name="download-outline" size={22} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('QuotationForm')} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+          </>
+        }
+      />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>

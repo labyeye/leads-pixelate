@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import {
   quotationsAPI,
   clientsAPI,
@@ -23,6 +24,7 @@ import {
   leadsAPI,
 } from '../services/api';
 import { CountText } from '../components/motion';
+import FieldLabel from '../components/FieldLabel';
 
 // Create / edit a quotation. Field set, validation and the total calculation
 // (18% tax on the discounted subtotal) mirror the web QuotationsPage.
@@ -267,7 +269,7 @@ export default function QuotationFormScreen({ navigation, route }: any) {
 
   const field = (k: keyof typeof f, label: string, extra: object = {}) => (
     <View style={s.field}>
-      <Text style={s.label}>{label}</Text>
+      <FieldLabel style={s.label}>{label}</FieldLabel>
       <TextInput
         style={s.input}
         value={f[k]}
@@ -284,215 +286,243 @@ export default function QuotationFormScreen({ navigation, route }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>
-          {editing ? 'Edit Quotation' : 'New Quotation'}
-        </Text>
-      </View>
-      <View style={s.divider} />
+      <ScreenHeader
+        icon="document-text-outline"
+        title={editing ? 'Edit Quotation' : 'New Quotation'}
+        onBack={() => navigation.goBack()}
+        right={
+          saving ? (
+            <ActivityIndicator size="small" color="#000" />
+          ) : (
+            <TouchableOpacity onPress={save} hitSlop={8} style={{ padding: 4 }} accessibilityLabel="Save quotation">
+              <Icon name="checkmark" size={26} color="#1FA85A" />
+            </TouchableOpacity>
+          )
+        }
+      />
 
       <ScrollView
         contentContainerStyle={{
-          padding: 14,
-          paddingBottom: insets.bottom + 40,
+          padding: 16,
+          gap: 14,
+          paddingBottom: insets.bottom + 24,
         }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={s.section}>Buyer</Text>
-        {!editing && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity
-              style={[s.addItem, { flex: 1 }]}
-              onPress={() => setPicker('client')}
-            >
-              <Icon name="people-outline" size={14} color="#024BAB" />
-              <Text style={s.addItemText}>From client</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[s.addItem, { flex: 1 }]}
-              onPress={() => setPicker('lead')}
-            >
-              <Icon name="person-outline" size={14} color="#024BAB" />
-              <Text style={s.addItemText}>From lead</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {field('clientName', 'Name *', { placeholder: 'e.g. Raj Kumar' })}
-        {field('companyName', 'Company', {
-          placeholder: 'e.g. Raj Enterprises',
-        })}
-        {field('addressLine', 'Address', {
-          multiline: true,
-          maxLength: 300,
-          style: [s.input, { height: 70, textAlignVertical: 'top' }],
-        })}
-        {field('zip', 'PIN / ZIP', {
-          keyboardType: 'number-pad',
-          maxLength: 12,
-          onChangeText: onZip,
-        })}
-        {!!pinNote && (
-          <Text style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
-            {pinNote}
-          </Text>
-        )}
-        {field('city', 'City')}
-        {field('state', 'State')}
-        {field('country', 'Country')}
-        {field('gst', 'GST No', {
-          autoCapitalize: 'characters',
-          maxLength: 15,
-          placeholder: '09AAGCB9274N1ZW',
-        })}
-        {field('mobile', 'Mobile', {
-          keyboardType: 'phone-pad',
-          maxLength: 10,
-          placeholder: '9999999999',
-        })}
-        {field('aadhar', 'Aadhar', {
-          keyboardType: 'number-pad',
-          maxLength: 12,
-        })}
-        {field('pan', 'PAN', {
-          autoCapitalize: 'characters',
-          maxLength: 10,
-          placeholder: 'ABCDE1234F',
-        })}
-
-        <Text style={s.section}>Project</Text>
-        {field('projectTitle', 'Project / Title *', {
-          placeholder: 'e.g. Supply of Machinery',
-        })}
-        {field('leadTag', 'Lead Tag', { placeholder: 'e.g. IndiaMART' })}
-        {field('date', 'Date (YYYY-MM-DD)', { placeholder: today() })}
-
-        <Text style={s.section}>Services</Text>
-        {items.map((it, i) => (
-          <View key={i} style={s.itemCard}>
-            <View style={s.itemHead}>
-              <Text style={s.itemNo}>Item {i + 1}</Text>
-              {items.length > 1 && (
-                <TouchableOpacity
-                  onPress={() =>
-                    setItems(prev => prev.filter((_, idx) => idx !== i))
-                  }
-                  hitSlop={8}
-                >
-                  <Icon name="trash-outline" size={15} color="#EF4444" />
-                </TouchableOpacity>
-              )}
-            </View>
-            <TextInput
-              style={s.input}
-              value={it.name}
-              onChangeText={v => setItem(i, 'name', v)}
-              placeholder="Item description *"
-              placeholderTextColor="#94a3b8"
-            />
-            {products.length > 0 && (
-              <TouchableOpacity onPress={() => setPicker(i)} hitSlop={6}>
-                <Text style={s.addItemText}>Pick from products</Text>
-              </TouchableOpacity>
-            )}
-            <View style={s.row3}>
-              <TextInput
-                style={[s.input, { flex: 1.2 }]}
-                value={it.hsnCode}
-                onChangeText={v => setItem(i, 'hsnCode', v)}
-                placeholder="HSN"
-                placeholderTextColor="#94a3b8"
-              />
-              <TextInput
-                style={[s.input, { flex: 1 }]}
-                value={it.price}
-                onChangeText={v => setItem(i, 'price', v)}
-                placeholder="Price *"
-                keyboardType="numeric"
-                placeholderTextColor="#94a3b8"
-              />
-              <TextInput
-                style={[s.input, { flex: 0.7 }]}
-                value={it.quantity}
-                onChangeText={v => setItem(i, 'quantity', v)}
-                placeholder="Qty"
-                keyboardType="number-pad"
-                placeholderTextColor="#94a3b8"
-              />
-            </View>
-          </View>
-        ))}
-        <TouchableOpacity
-          style={s.addItem}
-          onPress={() => setItems(prev => [...prev, { ...EMPTY_ITEM }])}
-        >
-          <Icon name="add" size={14} color="#024BAB" />
-          <Text style={s.addItemText}>Add item</Text>
-        </TouchableOpacity>
-
-        {field('discount', 'Discount (₹)', { keyboardType: 'numeric' })}
-
-        <Text style={s.section}>Status</Text>
-        <View style={s.statusRow}>
-          {STATUSES.map(st => {
-            const on = f.status === st;
-            const c = STATUS_COLORS[st];
-            return (
+        {/* Buyer */}
+        <View style={s.card}>
+          <Text style={s.sectionLabel}>BUYER</Text>
+          {!editing && (
+            <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
-                key={st}
-                style={[
-                  s.statusChip,
-                  on && { backgroundColor: c.bg === '#fff' ? '#000' : c.bg },
-                ]}
-                onPress={() => set('status', st)}
+                style={[s.addItem, { flex: 1, marginBottom: 0 }]}
+                onPress={() => setPicker('client')}
               >
-                <Text
-                  style={[
-                    s.statusText,
-                    on && { color: c.bg === '#fff' ? '#fff' : c.text },
-                  ]}
-                >
-                  {st}
-                </Text>
+                <Icon name="people-outline" size={14} color="#024BAB" />
+                <Text style={s.addItemText}>From client</Text>
               </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={s.totals}>
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Subtotal</Text>
-            <CountText style={s.totalValue}>{inr(subtotal)}</CountText>
-          </View>
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Discount</Text>
-            <CountText style={s.totalValue}>-{inr(discount)}</CountText>
-          </View>
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Tax (18%)</Text>
-            <CountText style={s.totalValue}>{inr(tax)}</CountText>
-          </View>
-          <View style={[s.totalRow, s.grand]}>
-            <Text style={s.grandLabel}>Total</Text>
-            <CountText style={s.grandValue}>{inr(total)}</CountText>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={[s.save, saving && { opacity: 0.6 }]}
-          onPress={save}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={s.saveText}>
-              {editing ? 'Save Changes' : 'Create Quotation'}
-            </Text>
+              <TouchableOpacity
+                style={[s.addItem, { flex: 1, marginBottom: 0 }]}
+                onPress={() => setPicker('lead')}
+              >
+                <Icon name="person-outline" size={14} color="#024BAB" />
+                <Text style={s.addItemText}>From lead</Text>
+              </TouchableOpacity>
+            </View>
           )}
-        </TouchableOpacity>
+          <View style={s.twoCol}>
+            <View style={s.halfCol}>
+              {field('clientName', 'Name *', { placeholder: 'Enter full name' })}
+            </View>
+            <View style={s.halfCol}>
+              {field('companyName', 'Company', { placeholder: 'Enter company name' })}
+            </View>
+          </View>
+          {field('addressLine', 'Address', {
+            placeholder: 'Enter full address',
+            multiline: true,
+            maxLength: 300,
+            style: [s.input, { height: 64, textAlignVertical: 'top' }],
+          })}
+          <View style={s.twoCol}>
+            <View style={s.halfCol}>
+              {field('zip', 'PIN / ZIP', {
+                placeholder: 'Enter 6-digit PIN code',
+                keyboardType: 'number-pad',
+                maxLength: 12,
+                onChangeText: onZip,
+              })}
+            </View>
+            <View style={s.halfCol}>{field('city', 'City', { placeholder: 'Enter city' })}</View>
+          </View>
+          {!!pinNote && (
+            <Text style={{ fontSize: 11, color: '#64748b' }}>{pinNote}</Text>
+          )}
+          <View style={s.twoCol}>
+            <View style={s.halfCol}>{field('state', 'State', { placeholder: 'Enter state' })}</View>
+            <View style={s.halfCol}>{field('country', 'Country', { placeholder: 'Enter country' })}</View>
+          </View>
+          <View style={s.twoCol}>
+            <View style={s.halfCol}>
+              {field('mobile', 'Mobile', {
+                keyboardType: 'phone-pad',
+                maxLength: 10,
+                placeholder: 'Enter 10-digit mobile number',
+              })}
+            </View>
+            <View style={s.halfCol}>
+              {field('gst', 'GST No', {
+                autoCapitalize: 'characters',
+                maxLength: 15,
+                placeholder: 'Enter GST number',
+              })}
+            </View>
+          </View>
+          <View style={s.twoCol}>
+            <View style={s.halfCol}>
+              {field('aadhar', 'Aadhar', { placeholder: 'Enter 12-digit Aadhar number', keyboardType: 'number-pad', maxLength: 12 })}
+            </View>
+            <View style={s.halfCol}>
+              {field('pan', 'PAN', {
+                autoCapitalize: 'characters',
+                maxLength: 10,
+                placeholder: 'Enter PAN number',
+              })}
+            </View>
+          </View>
+        </View>
+
+        {/* Project */}
+        <View style={s.card}>
+          <Text style={s.sectionLabel}>PROJECT</Text>
+          {field('projectTitle', 'Project / Title *', {
+            placeholder: 'Enter project or quotation title',
+          })}
+          <View style={s.twoCol}>
+            <View style={s.halfCol}>
+              {field('leadTag', 'Lead Tag', { placeholder: 'Enter lead tag' })}
+            </View>
+            <View style={s.halfCol}>
+              {field('date', 'Date', { placeholder: 'Enter date (YYYY-MM-DD)' })}
+            </View>
+          </View>
+        </View>
+
+        {/* Services */}
+        <View style={s.card}>
+          <Text style={s.sectionLabel}>SERVICES</Text>
+          {items.map((it, i) => (
+            <View key={i} style={s.itemCard}>
+              <View style={s.itemHead}>
+                <Text style={s.itemNo}>Item {i + 1}</Text>
+                <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+                  {products.length > 0 && (
+                    <TouchableOpacity onPress={() => setPicker(i)} hitSlop={6}>
+                      <Text style={s.addItemText}>Pick product</Text>
+                    </TouchableOpacity>
+                  )}
+                  {items.length > 1 && (
+                    <TouchableOpacity
+                      onPress={() => setItems(prev => prev.filter((_, idx) => idx !== i))}
+                      hitSlop={8}
+                    >
+                      <Icon name="trash-outline" size={15} color="#EF4444" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              <TextInput
+                style={s.input}
+                value={it.name}
+                onChangeText={v => setItem(i, 'name', v)}
+                placeholder="Enter item name / description *"
+                placeholderTextColor="#94a3b8"
+              />
+              <View style={s.row3}>
+                <TextInput
+                  style={[s.input, { flex: 1.2 }]}
+                  value={it.hsnCode}
+                  onChangeText={v => setItem(i, 'hsnCode', v)}
+                  placeholder="Enter HSN / SAC"
+                  placeholderTextColor="#94a3b8"
+                />
+                <TextInput
+                  style={[s.input, { flex: 1 }]}
+                  value={it.price}
+                  onChangeText={v => setItem(i, 'price', v)}
+                  placeholder="Enter price (₹) *"
+                  keyboardType="numeric"
+                  placeholderTextColor="#94a3b8"
+                />
+                <TextInput
+                  style={[s.input, { flex: 0.7 }]}
+                  value={it.quantity}
+                  onChangeText={v => setItem(i, 'quantity', v)}
+                  placeholder="Enter qty"
+                  keyboardType="number-pad"
+                  placeholderTextColor="#94a3b8"
+                />
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity
+            style={[s.addItem, { marginBottom: 0 }]}
+            onPress={() => setItems(prev => [...prev, { ...EMPTY_ITEM }])}
+          >
+            <Icon name="add" size={14} color="#024BAB" />
+            <Text style={s.addItemText}>Add item</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Status & totals */}
+        <View style={s.card}>
+          <Text style={s.sectionLabel}>STATUS & TOTAL</Text>
+          <View style={s.statusRow}>
+            {STATUSES.map(st => {
+              const on = f.status === st;
+              const c = STATUS_COLORS[st];
+              return (
+                <TouchableOpacity
+                  key={st}
+                  style={[
+                    s.statusChip,
+                    on && { backgroundColor: c.bg === '#fff' ? '#000' : c.bg },
+                  ]}
+                  onPress={() => set('status', st)}
+                >
+                  <Text
+                    style={[
+                      s.statusText,
+                      on && { color: c.bg === '#fff' ? '#fff' : c.text },
+                    ]}
+                  >
+                    {st}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {field('discount', 'Discount (₹)', { placeholder: 'Enter discount amount (optional)', keyboardType: 'numeric' })}
+          <View style={[s.totals, { marginTop: 0 }]}>
+            <View style={s.totalRow}>
+              <Text style={s.totalLabel}>Subtotal</Text>
+              <CountText style={s.totalValue}>{inr(subtotal)}</CountText>
+            </View>
+            <View style={s.totalRow}>
+              <Text style={s.totalLabel}>Discount</Text>
+              <CountText style={s.totalValue}>-{inr(discount)}</CountText>
+            </View>
+            <View style={s.totalRow}>
+              <Text style={s.totalLabel}>Tax (18%)</Text>
+              <CountText style={s.totalValue}>{inr(tax)}</CountText>
+            </View>
+            <View style={[s.totalRow, s.grand]}>
+              <Text style={s.grandLabel}>Total</Text>
+              <CountText style={s.grandValue}>{inr(total)}</CountText>
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
       <Modal
@@ -566,7 +596,7 @@ const s = StyleSheet.create({
   sheetText: { fontSize: 13, color: '#000', fontWeight: '500' },
   sheetSub: { fontSize: 11, color: '#64748b', marginTop: 2 },
   sheetEmpty: { padding: 20, textAlign: 'center', color: '#94a3b8' },
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
   header: {
     height: 60,
     flexDirection: 'row',
@@ -593,14 +623,19 @@ const s = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  field: { marginBottom: 10 },
-  label: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#000',
-    textTransform: 'uppercase',
-    marginBottom: 4,
+  card: {
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    backgroundColor: '#fff',
+    padding: 1,
+    gap: 12,
   },
+  sectionLabel: { fontSize: 10, fontWeight: '500', color: '#64748b', letterSpacing: 1 },
+  twoCol: { flexDirection: 'row', gap: 10 },
+  halfCol: { flex: 1 },
+  field: {},
+  label: { fontSize: 12, fontWeight: '500', color: '#000', marginBottom: 6 },
   input: {
     borderWidth: 2,
     borderRadius: 8,

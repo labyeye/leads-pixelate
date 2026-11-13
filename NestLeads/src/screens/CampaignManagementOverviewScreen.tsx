@@ -137,7 +137,6 @@ export default function CampaignManagementOverviewScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <CampaignAssignmentList
         rows={rows}

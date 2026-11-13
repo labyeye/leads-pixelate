@@ -820,7 +820,6 @@ export default function CreatePostScreen({ navigation }: any) {
         </View>
           </>
         } />
-      <View style={styles.divider} />
 
       {/* Progress bar */}
       <View style={styles.progressTrack}>

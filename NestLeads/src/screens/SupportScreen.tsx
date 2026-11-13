@@ -18,6 +18,7 @@ import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 
 import { supportAPI } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -162,7 +163,6 @@ export default function SupportScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.centerBox}>
@@ -227,7 +227,7 @@ export default function SupportScreen({ navigation }: any) {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.fieldLabel}>SUBJECT</Text>
+              <FieldLabel style={styles.fieldLabel}>SUBJECT</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="Briefly describe the issue"
@@ -235,7 +235,7 @@ export default function SupportScreen({ navigation }: any) {
                 value={subject}
                 onChangeText={setSubject}
               />
-              <Text style={styles.fieldLabel}>DESCRIPTION</Text>
+              <FieldLabel style={styles.fieldLabel}>DESCRIPTION</FieldLabel>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="What happened, what you expected, steps to reproduce..."
@@ -246,7 +246,7 @@ export default function SupportScreen({ navigation }: any) {
                 numberOfLines={4}
                 textAlignVertical="top"
               />
-              <Text style={styles.fieldLabel}>PRIORITY</Text>
+              <FieldLabel style={styles.fieldLabel}>PRIORITY</FieldLabel>
               <View style={styles.statusChips}>
                 {PRIORITIES.map(p => (
                   <TouchableOpacity
@@ -370,7 +370,7 @@ export default function SupportScreen({ navigation }: any) {
                 </View>
                 {selected.replies?.length > 0 && (
                   <View style={{ marginTop: 12, gap: 8 }}>
-                    <Text style={styles.fieldLabel}>REPLIES</Text>
+                    <FieldLabel style={styles.fieldLabel}>REPLIES</FieldLabel>
                     {selected.replies.map((r: any, i: number) => (
                       <View
                         key={i}
@@ -485,6 +485,7 @@ const styles = StyleSheet.create({
   replyBadgeText: { fontSize: 11, color: '#64748b' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
+    backgroundColor: '#fff',
     width: 80,
     height: 80,
     borderWidth: 2,

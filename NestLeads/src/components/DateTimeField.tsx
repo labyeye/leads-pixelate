@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import Icon from './Icon';
+import FieldLabel from './FieldLabel';
 
 const PRIMARY = '#024BAB';
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -52,7 +53,7 @@ export default function DateTimeField({
       <TouchableOpacity onPress={() => adjust(field, -1)} style={s.arrow}>
         <Icon name="chevron-down" size={20} color="#000" />
       </TouchableOpacity>
-      <Text style={s.fieldLabel}>{field.toUpperCase()}</Text>
+      <FieldLabel style={s.fieldLabel}>{field.toUpperCase()}</FieldLabel>
     </View>
   );
 

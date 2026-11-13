@@ -840,7 +840,6 @@ export default function IntegrationsScreen({ navigation }: any) {
         </View>
           </>
         } />
-      <View style={styles.divider} />
 
       <ScrollView
         contentContainerStyle={[

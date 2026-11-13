@@ -202,7 +202,6 @@ export default function SettingsScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="settings-outline" title="Settings" onBack={() => navigation.goBack()} />
-      <View style={styles.divider} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}>
         {/* Profile card */}

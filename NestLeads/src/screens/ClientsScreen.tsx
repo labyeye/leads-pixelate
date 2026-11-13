@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { clientsAPI } from '../services/api';
 import ExportFieldsDialog, {
   type ExportField,
 } from '../components/ExportFieldsDialog';
+import FieldLabel from '../components/FieldLabel';
 
 const CLIENT_EXPORT_FIELDS: ExportField[] = [
   { key: 'name', label: 'Name', get: (c: any) => c.name || '' },
@@ -267,23 +269,21 @@ export default function ClientsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Clients</Text>
-        <Text style={styles.headerSub}>{clients.length} total</Text>
-        <View style={{ flex: 1 }} />
-        <TouchableOpacity
-          style={styles.exportBtn}
-          onPress={() => setExportOpen(true)}
-          disabled={filtered.length === 0}
-        >
-          <Icon name="download-outline" size={15} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.addBtn} onPress={openAdd}>
-          <Icon name="add" size={16} color="#fff" />
-          <Text style={styles.addBtnText}>New</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.divider} />
+      <ScreenHeader
+        icon="people-outline"
+        title="Clients"
+        right={
+          <>
+            <TouchableOpacity onPress={() => setExportOpen(true)} hitSlop={8} style={{ padding: 4 }}
+              disabled={filtered.length === 0}>
+              <Icon name="download-outline" size={22} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={openAdd} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+          </>
+        }
+      />
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -455,7 +455,7 @@ function MField({
 }: any) {
   return (
     <View>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <FieldLabel style={styles.fieldLabel}>{label}</FieldLabel>
       <View style={styles.fieldBorder}>
         <TextInput
           style={[styles.fieldInput, multiline && styles.fieldInputMulti]}
@@ -476,7 +476,7 @@ function MField({
 function StatusPicker({ label, value, options, onChange }: any) {
   return (
     <View>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <FieldLabel style={styles.fieldLabel}>{label}</FieldLabel>
       <View style={styles.pickerRow}>
         {options.map((o: string) => (
           <TouchableOpacity

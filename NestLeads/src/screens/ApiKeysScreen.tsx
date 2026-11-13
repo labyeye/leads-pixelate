@@ -19,6 +19,7 @@ import ScreenHeader from '../components/ScreenHeader';
 
 import { apiKeysAPI, usersAPI } from '../services/api';
 import AssigneePicker from '../components/AssigneePicker';
+import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -151,7 +152,6 @@ export default function ApiKeysScreen({ navigation }: any) {
           </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.securityNote}>
         <Icon name="shield-checkmark-outline" size={16} color="#059669" />
@@ -221,7 +221,7 @@ export default function ApiKeysScreen({ navigation }: any) {
             </View>
             <View style={styles.modalDivider} />
             <View style={styles.modalBody}>
-              <Text style={styles.fieldLabel}>KEY NAME</Text>
+              <FieldLabel style={styles.fieldLabel}>KEY NAME</FieldLabel>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. Website Form, Landing Page"
@@ -229,7 +229,7 @@ export default function ApiKeysScreen({ navigation }: any) {
                 value={name}
                 onChangeText={setName}
               />
-              <Text style={styles.fieldLabel}>ASSIGN LEADS TO</Text>
+              <FieldLabel style={styles.fieldLabel}>ASSIGN LEADS TO</FieldLabel>
               <AssigneePicker
                 users={users}
                 assigneeIds={assigneeIds}
@@ -400,6 +400,7 @@ const styles = StyleSheet.create({
   },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
   emptyIcon: {
+    backgroundColor: '#fff',
     width: 80,
     height: 80,
     borderWidth: 2,

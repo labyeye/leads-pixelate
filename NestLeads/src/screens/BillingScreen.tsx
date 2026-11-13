@@ -143,7 +143,6 @@ export default function BillingScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="wallet-outline" title="Billing" onBack={() => navigation.goBack()} />
-      <View style={styles.divider} />
 
       <ScrollView
         contentContainerStyle={[

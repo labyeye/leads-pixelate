@@ -240,7 +240,6 @@ export default function FacebookAdCampaignsScreen({ navigation }: any) {
         )}
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.filters}>
         <DeliveryFilterBar

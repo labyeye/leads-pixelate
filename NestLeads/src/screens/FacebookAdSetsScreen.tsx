@@ -248,7 +248,6 @@ export default function FacebookAdSetsScreen({ navigation }: any) {
         )}
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.filters}>
         <DeliveryFilterBar

@@ -284,7 +284,6 @@ export default function CampaignsScreen({ navigation }: any) {
         </View>
           </>
         } />
-      <View style={styles.divider} />
 
       {/* Status summary */}
       <View style={styles.summaryStrip}>

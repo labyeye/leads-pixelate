@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { notificationsAPI, AppNotification } from '../services/api';
 import { navigateFromNotification } from '../navigation/navigationRef';
 
@@ -93,29 +94,25 @@ export default function NotificationsScreen({ navigation }: any) {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
-        {unread > 0 && (
-          <View style={styles.count}>
-            <Text style={styles.countText}>{unread}</Text>
-          </View>
-        )}
-        <View style={{ flex: 1 }} />
-        {unread > 0 && (
-          <TouchableOpacity onPress={markAll} style={styles.iconBtn}>
-            <Icon name="checkmark-done-outline" size={18} color={PRIMARY} />
-          </TouchableOpacity>
-        )}
-        {items.length > 0 && (
-          <TouchableOpacity onPress={clearAll} style={styles.iconBtn}>
-            <Icon name="trash-outline" size={18} color="#DC2626" />
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.divider} />
+      <ScreenHeader
+        icon="notifications-outline"
+        title={unread > 0 ? `Notifications (${unread})` : 'Notifications'}
+        onBack={() => navigation.goBack()}
+        right={
+          <>
+            {unread > 0 && (
+              <TouchableOpacity onPress={markAll} hitSlop={8} style={{ padding: 4 }}>
+                <Icon name="checkmark-done-outline" size={22} color="#024BAB" />
+              </TouchableOpacity>
+            )}
+            {items.length > 0 && (
+              <TouchableOpacity onPress={clearAll} hitSlop={8} style={{ padding: 4 }}>
+                <Icon name="trash-outline" size={22} color="#DC2626" />
+              </TouchableOpacity>
+            )}
+          </>
+        }
+      />
 
       {loading ? (
         <View style={styles.center}>

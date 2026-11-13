@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
 import { whatsappAPI } from '../services/api';
 import { PERF_VARS } from '../constants/whatsappTemplateLibrary';
+import FieldLabel from './FieldLabel';
 
 const BLUE = '#024BAB';
 
@@ -143,7 +144,7 @@ export default function TemplateEditorModal({
         <ScrollView contentContainerStyle={{ padding: 14, paddingBottom: insets.bottom + 60 }} keyboardShouldPersistTaps="handled">
           {locked && <Text style={s.warn}>This template is already with Meta ({form.status}). It can't be edited now.</Text>}
 
-          <Text style={s.label}>Template name</Text>
+          <FieldLabel style={s.label}>Template name</FieldLabel>
           <TextInput
             value={form.displayName}
             onChangeText={v => set({ displayName: v, ...(editingId ? {} : { name: slug(v), metaTemplateName: slug(v) }) })}
@@ -153,13 +154,13 @@ export default function TemplateEditorModal({
             editable={!locked}
           />
 
-          <Text style={s.label}>Category</Text>
+          <FieldLabel style={s.label}>Category</FieldLabel>
           <View style={s.chips}>
             <Chip label="Utility" on={form.category === 'UTILITY'} onPress={() => set({ category: 'UTILITY' })} />
             <Chip label="Marketing" on={form.category === 'MARKETING'} onPress={() => set({ category: 'MARKETING' })} />
           </View>
 
-          <Text style={s.label}>Language</Text>
+          <FieldLabel style={s.label}>Language</FieldLabel>
           <View style={s.chips}>
             <Chip label="English" on={form.language === 'en'} onPress={() => set({ language: 'en' })} />
             <Chip label="हिन्दी" on={form.language === 'hi'} onPress={() => set({ language: 'hi' })} />
@@ -169,7 +170,7 @@ export default function TemplateEditorModal({
             <Text style={s.hint}>Header: {form.headerType === 'DOCUMENT' ? 'PDF document' : 'image'}. The file can only be changed on the web dashboard.</Text>
           ) : (
             <>
-              <Text style={s.label}>Header (optional, text only)</Text>
+              <FieldLabel style={s.label}>Header (optional, text only)</FieldLabel>
               <TextInput
                 value={form.headerText}
                 onChangeText={v => set({ headerText: v, headerType: v.trim() ? 'TEXT' : 'NONE' })}
@@ -182,7 +183,7 @@ export default function TemplateEditorModal({
             </>
           )}
 
-          <Text style={s.label}>Message text</Text>
+          <FieldLabel style={s.label}>Message text</FieldLabel>
           <TextInput
             value={form.bodyText}
             onChangeText={v => set({ bodyText: v })}
@@ -194,7 +195,7 @@ export default function TemplateEditorModal({
           />
           <Text style={s.hint}>Use {'{{1}}'}, {'{{2}}'}… for values that change. Don't start or end the text with one.</Text>
 
-          <Text style={s.label}>Team performance values (tap to add)</Text>
+          <FieldLabel style={s.label}>Team performance values (tap to add)</FieldLabel>
           <View style={s.chips}>
             {PERF_VARS.map(v => (
               <Chip key={v.key} label={`+ ${v.label}`} onPress={() => !locked && addPerfVar(v)} />
@@ -203,7 +204,7 @@ export default function TemplateEditorModal({
 
           {varNumbers(form.bodyText).map(n => (
             <View key={n}>
-              <Text style={s.label}>{`Sample for {{${n}}} (Meta needs it to review)`}</Text>
+              <FieldLabel style={s.label}>{`Sample for {{${n}}} (Meta needs it to review)`}</FieldLabel>
               <TextInput
                 value={form.exampleValues?.[n - 1] || ''}
                 onChangeText={v =>
@@ -219,7 +220,7 @@ export default function TemplateEditorModal({
             </View>
           ))}
 
-          <Text style={s.label}>Footer (optional)</Text>
+          <FieldLabel style={s.label}>Footer (optional)</FieldLabel>
           <TextInput
             value={form.footerText}
             onChangeText={v => set({ footerText: v })}

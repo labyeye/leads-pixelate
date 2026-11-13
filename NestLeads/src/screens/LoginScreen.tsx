@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import LegalLinks from '../components/LegalLinks';
 import { ArrowRight } from 'lucide-react-native';
+import FieldLabel from '../components/FieldLabel';
 
 const loginAnim = require('../assets/lottie/login.json');
 const otpAnim = require('../assets/lottie/otp.json');
@@ -249,7 +250,7 @@ export default function LoginScreen({ navigation }: any) {
           {pending2FA !== null ? (
             <>
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Authenticator Code</Text>
+                <FieldLabel style={styles.label}>Authenticator Code</FieldLabel>
                 <TextInput
                   style={styles.otpInput}
                   value={tfaCode}
@@ -302,9 +303,9 @@ export default function LoginScreen({ navigation }: any) {
               {!otpSent ? (
                 <>
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>
+                    <FieldLabel style={styles.label}>
                       {otpVia === 'email' ? 'Email Address' : 'Phone Number'}
-                    </Text>
+                    </FieldLabel>
                     <View style={styles.inputBorder}>
                       <Icon
                         name={otpVia === 'email' ? 'mail-outline' : 'call-outline'}
@@ -371,11 +372,11 @@ export default function LoginScreen({ navigation }: any) {
               ) : (
                 <>
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>
+                    <FieldLabel style={styles.label}>
                       {otpVia === 'email'
                         ? 'Enter OTP (from email)'
                         : 'Enter OTP (from WhatsApp)'}
-                    </Text>
+                    </FieldLabel>
                     <TextInput
                       style={styles.otpInput}
                       value={otp}
@@ -445,7 +446,7 @@ export default function LoginScreen({ navigation }: any) {
 
               <Animated.View style={slideUp(30)}>
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Email Address</Text>
+                  <FieldLabel style={styles.label}>Email Address</FieldLabel>
                   <View style={styles.inputBorder}>
                     <Icon
                       name="mail-outline"
@@ -472,7 +473,7 @@ export default function LoginScreen({ navigation }: any) {
 
               <Animated.View style={slideUp(30)}>
                 <View style={styles.fieldGroup}>
-                  <Text style={styles.label}>Password</Text>
+                  <FieldLabel style={styles.label}>Password</FieldLabel>
                   <View style={styles.inputBorder}>
                     <Icon
                       name="lock-closed-outline"

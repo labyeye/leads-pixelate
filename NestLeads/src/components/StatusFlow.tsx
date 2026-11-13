@@ -22,6 +22,7 @@ import {
   getStatusColor,
   getStatusLabel,
 } from '../constants/statusConstants';
+import FieldLabel from './FieldLabel';
 
 const PRIMARY = '#024BAB';
 
@@ -371,7 +372,7 @@ export default function StatusFlow({
               >
                 {showTag && (
                   <>
-                    <Text style={s.label}>ASSIGN CONTACT TAG *</Text>
+                    <FieldLabel style={s.label}>ASSIGN CONTACT TAG *</FieldLabel>
                     <View style={s.tagRow}>
                       {TAGS.map(t => (
                         <TouchableOpacity
@@ -401,7 +402,7 @@ export default function StatusFlow({
                   </>
                 )}
 
-                <Text style={s.label}>BUDGET</Text>
+                <FieldLabel style={s.label}>BUDGET</FieldLabel>
                 <TextInput
                   style={s.input}
                   value={budget}
@@ -411,7 +412,7 @@ export default function StatusFlow({
                   maxLength={15}
                 />
 
-                <Text style={s.label}>REMARKS *</Text>
+                <FieldLabel style={s.label}>REMARKS *</FieldLabel>
                 <TextInput
                   style={[s.input, s.textarea]}
                   value={remarks}
@@ -422,7 +423,7 @@ export default function StatusFlow({
                   maxLength={500}
                 />
 
-                <Text style={s.label}>INTERESTED PRODUCTS</Text>
+                <FieldLabel style={s.label}>INTERESTED PRODUCTS</FieldLabel>
                 <View style={s.chips}>
                   {allProducts.map(p => {
                     const on = products.includes(p.name);
@@ -465,19 +466,19 @@ export default function StatusFlow({
 
                 {showFollowUp && (
                   <>
-                    <Text style={s.label}>FOLLOW-UP DATE & TIME *</Text>
+                    <FieldLabel style={s.label}>FOLLOW-UP DATE & TIME *</FieldLabel>
                     <DateTimeField value={followUp} onChange={setFollowUp} />
                   </>
                 )}
                 {pending === 'VISIT SCHEDULED' && (
                   <>
-                    <Text style={s.label}>SCHEDULED VISIT DATE & TIME *</Text>
+                    <FieldLabel style={s.label}>SCHEDULED VISIT DATE & TIME *</FieldLabel>
                     <DateTimeField value={visitAt} onChange={setVisitAt} />
                   </>
                 )}
                 {pending === 'VISITED' && (
                   <>
-                    <Text style={s.label}>ACTUAL VISIT DATE *</Text>
+                    <FieldLabel style={s.label}>ACTUAL VISIT DATE *</FieldLabel>
                     <DateTimeField value={visitedOn} onChange={setVisitedOn} withTime={false} />
                   </>
                 )}

@@ -19,7 +19,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { documentFileUrl, documentsAPI, VaultDocument } from '../services/api';
+import FieldLabel from '../components/FieldLabel';
 
 const CATEGORIES: { key: string; label: string }[] = [
   { key: 'brochure', label: 'Brochure' },
@@ -121,16 +123,16 @@ export default function DocumentVaultScreen({ navigation }: any) {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingRight: 4 }}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={s.title}>Document Vault</Text>
-        <TouchableOpacity style={s.addBtn} onPress={pick}>
-          <Icon name="add" size={16} color="#fff" />
-          <Text style={s.addText}>Upload</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        icon="document-text-outline"
+        title="Document Vault"
+        onBack={() => navigation.goBack()}
+        right={
+            <TouchableOpacity onPress={pick} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+        }
+      />
 
       <View style={s.searchBox}>
         <Icon name="search-outline" size={14} color="#000" />
@@ -204,14 +206,14 @@ export default function DocumentVaultScreen({ navigation }: any) {
         <KeyboardAvoidingView style={s.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={s.sheet}>
             <Text style={s.sheetTitle}>{edit?.doc ? 'Edit document' : 'Upload document'}</Text>
-            <Text style={s.label}>NAME</Text>
+            <FieldLabel style={s.label}>NAME</FieldLabel>
             <TextInput
               style={s.input}
               value={edit?.name || ''}
               onChangeText={v => setEdit(e => (e ? { ...e, name: v } : e))}
               maxLength={160}
             />
-            <Text style={s.label}>CATEGORY</Text>
+            <FieldLabel style={s.label}>CATEGORY</FieldLabel>
             <View style={s.catWrap}>
               {CATEGORIES.map(c => (
                 <TouchableOpacity

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
 
@@ -98,16 +99,16 @@ export default function LivePerformanceScreen({ navigation }: any) {
 
   const Header = (
     <>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Live Performance</Text>
-        <TouchableOpacity onPress={load} style={s.backBtn}>
-          <Icon name="refresh" size={16} color="#000" />
-        </TouchableOpacity>
-      </View>
-      <View style={s.divider} />
+      <ScreenHeader
+        icon="stats-chart-outline"
+        title="Live Performance"
+        onBack={() => navigation.goBack()}
+        right={
+            <TouchableOpacity onPress={load} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="refresh" size={22} color="#000" />
+            </TouchableOpacity>
+        }
+      />
     </>
   );
 

@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import ImageZoomModal from '../components/ImageZoomModal';
 import { socialAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -1397,28 +1398,20 @@ export default function SocialPlannerScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('More')}
-          hitSlop={10}
-        >
-          <Icon name="menu" size={26} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitleCenter}>Social Planner</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => fetchData(true)} hitSlop={10}>
-            <Icon name="refresh-outline" size={22} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.plusBtn}
-            onPress={() => navigation.navigate('CreatePost')}
-            accessibilityLabel="New post"
-            activeOpacity={0.85}
-          >
-            <Icon name="add" size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ScreenHeader
+        icon="calendar-outline"
+        title="Social Planner"
+        right={
+          <>
+            <TouchableOpacity onPress={() => fetchData(true)} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="refresh-outline" size={22} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('CreatePost')} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+          </>
+        }
+      />
 
       {loading ? (
         <View style={styles.centerBox}>

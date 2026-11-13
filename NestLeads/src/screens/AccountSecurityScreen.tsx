@@ -118,7 +118,6 @@ export default function AccountSecurityScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="lock-closed-outline" title="Account Security" onBack={() => navigation.goBack()} />
-      <View style={styles.divider} />
 
       <ScrollView
         contentContainerStyle={[

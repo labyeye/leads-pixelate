@@ -148,7 +148,6 @@ export default function ScheduleScreen({ navigation }: any) {
         </View>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.toggle}>
         {(Object.keys(MODES) as Mode[]).map(m => (

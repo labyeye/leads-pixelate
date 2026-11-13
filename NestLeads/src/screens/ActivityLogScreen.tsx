@@ -112,7 +112,6 @@ export default function ActivityLogScreen({ navigation }: any) {
         </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.filters}>
         <TextInput

@@ -19,6 +19,7 @@ import LottieView from 'lottie-react-native';
 import forgot from '../assets/lottie/forgot.json';
 import PasswordChecklist from '../components/PasswordChecklist';
 import { passwordOk } from '../utils/passwordRules';
+import FieldLabel from '../components/FieldLabel';
 
 type Method = 'email' | 'whatsapp' | 'totp' | 'backup' | 'passkey';
 type Step = 'email' | 'methods' | 'emailSent' | 'form' | 'done';
@@ -243,7 +244,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               {step === 'email' && (
                 <>
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Email Address</Text>
+                    <FieldLabel style={styles.label}>Email Address</FieldLabel>
                     <View style={styles.inputBorder}>
                       <Icon
                         name="mail-outline"
@@ -332,9 +333,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                   </Text>
                   {method !== 'passkey' && (
                     <View style={styles.fieldGroup}>
-                      <Text style={styles.label}>
+                      <FieldLabel style={styles.label}>
                         {method === 'backup' ? 'Backup Code' : 'Code'}
-                      </Text>
+                      </FieldLabel>
                       <View style={styles.inputBorder}>
                         <TextInput
                           style={[styles.input, { paddingLeft: 12 }]}
@@ -357,7 +358,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                     </View>
                   )}
                   <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>New Password</Text>
+                    <FieldLabel style={styles.label}>New Password</FieldLabel>
                     <View style={styles.inputBorder}>
                       <TextInput
                         style={[styles.input, { paddingLeft: 12 }]}

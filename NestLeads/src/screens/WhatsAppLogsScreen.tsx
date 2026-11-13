@@ -176,7 +176,6 @@ export default function WhatsAppLogsScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="logo-whatsapp" title="WhatsApp Logs" onBack={() => navigation.goBack()} />
-      <View style={styles.divider} />
 
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>

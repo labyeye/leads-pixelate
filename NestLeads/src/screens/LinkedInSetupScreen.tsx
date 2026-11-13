@@ -246,7 +246,6 @@ export default function LinkedInSetupScreen({ navigation }: any) {
         </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.centerBox}>

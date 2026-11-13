@@ -227,7 +227,6 @@ export default function FacebookAdsListScreen({ navigation }: any) {
         )}
           </>
         } />
-      <View style={styles.divider} />
 
       <View style={styles.filters}>
         <DeliveryFilterBar

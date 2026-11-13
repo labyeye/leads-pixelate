@@ -17,7 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import SourceBadge, { SourceLogo } from '../components/SourceBadge';
-import AppHeader from '../components/AppHeader';
+import ScreenHeader from '../components/ScreenHeader';
 import LeadsBarChart from '../components/LeadsBarChart';
 import { SlideIn, CountUp, CountText } from '../components/motion';
 import UserAvatar from '../components/UserAvatar';
@@ -153,17 +153,34 @@ export default function DashboardScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      <AppHeader
-        name={user?.name}
-        avatar={user?.avatar}
+      <ScreenHeader
+        icon="grid-outline"
         title="Dashboard"
-        badge={unread > 0}
-        onMenu={() => navigation?.navigate('More')}
-        onSearch={() =>
-          navigation?.navigate('LeadsStack', { screen: 'LeadsList' })
+        right={
+          <>
+            <TouchableOpacity
+              hitSlop={8}
+              style={{ padding: 4 }}
+              onPress={() => navigation?.navigate('LeadsStack', { screen: 'LeadsList' })}
+              accessibilityLabel="Search leads"
+            >
+              <Icon name="search-outline" size={22} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              hitSlop={8}
+              style={{ padding: 4 }}
+              onPress={() => navigation?.navigate('More', { screen: 'Notifications' })}
+              accessibilityLabel="Notifications"
+            >
+              <Icon name="notifications-outline" size={22} color="#000" />
+              {unread > 0 && (
+                <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#DC2626', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '600' }}>{unread > 9 ? '9+' : unread}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </>
         }
-        onBell={() => navigation?.navigate('More', { screen: 'Notifications' })}
-        onAvatar={() => navigation?.navigate('More')}
       />
 
       {loading ? (

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -51,18 +52,7 @@ export default function AdPlatformLockedScreen({ navigation, route }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {meta.label} {section}
-        </Text>
-      </View>
-      <View style={styles.divider} />
+      <ScreenHeader icon="lock-closed-outline" title={`${meta.label} ${section}`} onBack={() => navigation.goBack()} />
 
       <View style={styles.body}>
         <View style={styles.card}>

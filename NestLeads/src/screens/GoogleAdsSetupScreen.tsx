@@ -250,7 +250,6 @@ export default function GoogleAdsSetupScreen({ navigation }: any) {
         </TouchableOpacity>
           </>
         } />
-      <View style={styles.divider} />
 
       {loading ? (
         <View style={styles.centerBox}>

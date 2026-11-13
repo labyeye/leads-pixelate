@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { whatsappAPI } from '../services/api';
 
@@ -96,38 +97,25 @@ export default function WhatsAppInboxScreen({ navigation }: any) {
 
   const Header = (
     <>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => (open ? setOpenPhone(null) : navigation.goBack())} style={s.backBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        {open ? (
-          <View style={{ flex: 1 }}>
-            <Text style={s.headerTitle} numberOfLines={1}>
-              {open.name || `+${open.phone}`}
-            </Text>
-            {!!open.name && <Text style={s.sub}>+{open.phone}</Text>}
-          </View>
-        ) : (
-          <>
-            <WhatsAppLogo size={20} />
-            <Text style={s.headerTitle}>WhatsApp Inbox</Text>
-          </>
-        )}
-        {open && !open.leadId && (
-          <TouchableOpacity onPress={convert} style={s.addBtn}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#000' }}>Add as lead</Text>
-          </TouchableOpacity>
-        )}
-        {open && !!open.leadId && (
-          <TouchableOpacity
-            onPress={() => navigation.navigate('LeadsStack', { screen: 'LeadDetail', params: { leadId: open.leadId } })}
-            style={s.addBtn}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '700', color: '#000' }}>View lead</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={s.divider} />
+      <ScreenHeader
+        icon="logo-whatsapp"
+        title={open ? open.name || `+${open.phone}` : 'WhatsApp Inbox'}
+        onBack={() => (open ? setOpenPhone(null) : navigation.goBack())}
+        right={
+          open && !open.leadId ? (
+            <TouchableOpacity onPress={convert} hitSlop={8}>
+              <Text style={{ fontSize: 12, fontWeight: '500', color: '#024BAB' }}>Add as lead</Text>
+            </TouchableOpacity>
+          ) : open && !!open.leadId ? (
+            <TouchableOpacity
+              hitSlop={8}
+              onPress={() => navigation.navigate('LeadsStack', { screen: 'LeadDetail', params: { leadId: open.leadId } })}
+            >
+              <Text style={{ fontSize: 12, fontWeight: '500', color: '#024BAB' }}>View lead</Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
     </>
   );
 

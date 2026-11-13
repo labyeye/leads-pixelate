@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { funnelsAPI, usersAPI, whatsappAPI } from '../services/api';
 import { ALL_STATUSES } from '../constants/statusConstants';
@@ -338,20 +339,18 @@ export default function FunnelsScreen({ navigation }: any) {
 
   const Header = (
     <>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.iconBtn}>
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={s.title}>Auto Funnels</Text>
-        {isAdmin ? (
-          <TouchableOpacity onPress={() => setDraft(blankDraft())} style={[s.iconBtn, { backgroundColor: BLUE }]}>
-            <Icon name="add" size={20} color="#fff" />
-          </TouchableOpacity>
-        ) : (
-          <View style={s.iconBtn} />
-        )}
-      </View>
-      <View style={s.divider} />
+      <ScreenHeader
+        icon="git-network-outline"
+        title="Auto Funnels"
+        onBack={() => navigation.goBack()}
+        right={
+          isAdmin ? (
+            <TouchableOpacity onPress={() => setDraft(blankDraft())} hitSlop={8} style={{ padding: 4 }}>
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
     </>
   );
 

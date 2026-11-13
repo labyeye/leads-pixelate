@@ -158,7 +158,6 @@ export default function AdCampaignsHubScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="megaphone-outline" title="Ad Campaigns" onBack={() => navigation.goBack()} />
-      <View style={styles.divider} />
 
       <ScrollView
         contentContainerStyle={[
