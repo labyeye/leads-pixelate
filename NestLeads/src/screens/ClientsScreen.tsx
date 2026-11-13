@@ -369,28 +369,28 @@ export default function ClientsScreen() {
               <MField
                 label="NAME *"
                 value={form.name}
-                onChange={v => set('name', v)}
+                onChange={(v: string) => set('name', v)}
                 placeholder="John Doe"
                 max={100}
               />
               <MField
                 label="COMPANY"
                 value={form.company}
-                onChange={v => set('company', v)}
+                onChange={(v: string) => set('company', v)}
                 placeholder="Acme Corp"
                 max={120}
               />
               <MField
                 label="PHONE"
                 value={form.phone}
-                onChange={v => set('phone', v)}
+                onChange={(v: string) => set('phone', v)}
                 placeholder="+91 9876543210"
                 kb="phone-pad"
               />
               <MField
                 label="EMAIL"
                 value={form.email}
-                onChange={v => set('email', v)}
+                onChange={(v: string) => set('email', v)}
                 placeholder="john@company.com"
                 kb="email-address"
                 cap="none"
@@ -399,7 +399,7 @@ export default function ClientsScreen() {
               <MField
                 label="ADDRESS"
                 value={form.address}
-                onChange={v => set('address', v)}
+                onChange={(v: string) => set('address', v)}
                 placeholder="City, State"
                 multiline
                 max={300}
@@ -408,13 +408,13 @@ export default function ClientsScreen() {
                 label="PROJECT STATUS"
                 value={form.projectStatus}
                 options={['Active', 'Completed', 'On Hold']}
-                onChange={v => set('projectStatus', v)}
+                onChange={(v: string) => set('projectStatus', v)}
               />
               <StatusPicker
                 label="PAYMENT STATUS"
                 value={form.paymentStatus}
                 options={['Paid', 'Pending', 'Overdue']}
-                onChange={v => set('paymentStatus', v)}
+                onChange={(v: string) => set('paymentStatus', v)}
               />
             </View>
             <View style={styles.modalFooter}>

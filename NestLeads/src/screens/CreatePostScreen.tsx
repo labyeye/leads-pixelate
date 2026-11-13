@@ -1046,7 +1046,7 @@ const styles = StyleSheet.create({
   mediaPlaceholderText: { fontSize: 13, fontWeight: '500', color: '#94a3b8' },
   mediaPlaceholderSub: { fontSize: 11, color: '#cbd5e1' },
   uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',

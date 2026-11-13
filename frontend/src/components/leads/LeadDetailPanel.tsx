@@ -286,49 +286,46 @@ export function LeadDetailPanel({
           </div>
         </div>
 
-        <div className="space-y-2 text-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="space-y-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
+            <div className="flex items-center gap-2 text-muted-foreground min-w-0">
               <Phone className="w-4 h-4 shrink-0" />
-              <span className="text-foreground">{lead.phone}</span>
+              <span className="text-foreground truncate">{lead.phone}</span>
             </div>
             {lead.location && (
-              <div className="flex items-start gap-2 text-muted-foreground">
+              <div className="flex items-start gap-2 text-muted-foreground min-w-0">
                 <MapPin className="w-4 h-4 mt-0.5 text-black/70 shrink-0" />
-                <span className="text-foreground font-medium text-xs leading-tight">
+                <span className="text-foreground font-medium text-xs leading-tight break-words">
                   City: {lead.location}
                 </span>
               </div>
             )}
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="w-4 h-4 flex items-center justify-center font-medium text-xs">
-              <Mail className="w-4 h-4 text-black" />
+            <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+              <Mail className="w-4 h-4 text-black shrink-0" />
+              <span className="text-primary truncate">
+                {lead.email || "No email"}
+              </span>
             </div>
-            <span className="text-primary">{lead.email || "No email"}</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            {lead.facebookAdName && (
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
-                  <span className="text-white font-medium text-[9px]">f</span>
-                </div>
-                <span className="text-foreground font-medium text-xs leading-tight">
-                  Campaign: {lead.facebookAdName}
-                </span>
-              </div>
-            )}
-            <div className="flex items-start gap-2 text-muted-foreground">
-              <IndianRupee className="w-4 h-4 mt-0.5 text-success/70" />
+            <div className="flex items-start gap-2 text-muted-foreground min-w-0">
+              <IndianRupee className="w-4 h-4 mt-0.5 text-success/70 shrink-0" />
               <span className="text-success font-medium text-xs leading-tight">
                 Budget: {lead.budget || "Not Specified"}
               </span>
             </div>
+            {lead.facebookAdName && (
+              <div className="flex items-start gap-2 text-muted-foreground min-w-0 sm:col-span-2">
+                <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
+                  <span className="text-white font-medium text-[9px]">f</span>
+                </div>
+                <span className="text-foreground font-medium text-xs leading-tight break-words">
+                  Campaign: {lead.facebookAdName}
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-start gap-2 text-muted-foreground pt-2">
-            <CalendarIcon className="w-4 h-4 mt-0.5 text-blue-500/70" />
+          <div className="flex items-start gap-2 text-muted-foreground">
+            <CalendarIcon className="w-4 h-4 mt-0.5 text-blue-500/70 shrink-0" />
             <span className="text-secondary font-medium text-xs leading-tight">
               Inquiry Date:{" "}
               {lead.indiamartQueryTime
@@ -337,23 +334,26 @@ export function LeadDetailPanel({
             </span>
           </div>
           {lead.visitScheduledDate && (
-            <div className="flex items-start gap-2 text-muted-foreground pt-2">
-              <CalendarIcon className="w-4 h-4 mt-0.5 text-indigo-500/70" />
+            <div className="flex items-start gap-2 text-muted-foreground">
+              <CalendarIcon className="w-4 h-4 mt-0.5 text-indigo-500/70 shrink-0" />
               <span className="text-indigo-600 font-medium text-xs leading-tight">
                 Scheduled Visit:{" "}
                 {format(new Date(lead.visitScheduledDate), "PPP p")}
               </span>
             </div>
           )}
-          <div className="flex items-start gap-2 text-muted-foreground pt-2">
-            <FileText className="w-4 h-4 mt-0.5" />
-            <span className="text-primary font-medium text-xs leading-tight">
+          <div className="flex items-start gap-2 text-muted-foreground">
+            <FileText className="w-4 h-4 mt-0.5 shrink-0" />
+            <span
+              className="text-primary font-medium text-xs leading-tight line-clamp-2 break-words"
+              title={lead.requirement || undefined}
+            >
               Requirement: {lead.requirement || "No requirement specified."}
             </span>
           </div>
-          <div className="flex items-start gap-2 text-muted-foreground pt-2">
-            <FileText className="w-4 h-4 mt-0.5 text-primary/70" />
-            <span className="text-black font-medium text-md leading-tight">
+          <div className="flex items-start gap-2 text-muted-foreground">
+            <FileText className="w-4 h-4 mt-0.5 text-primary/70 shrink-0" />
+            <span className="text-black font-medium text-md leading-tight break-words">
               Remarks: {lead.remarks || "No remarks added."}
             </span>
           </div>

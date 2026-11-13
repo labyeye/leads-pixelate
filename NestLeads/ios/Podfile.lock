@@ -89,9 +89,6 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.1)
-  - razorpay-core-pod (1.0.9)
-  - razorpay-pod (1.5.0):
-    - razorpay-core-pod
   - RCTDeprecation (0.86.0)
   - RCTRequired (0.86.0)
   - RCTSwiftUI (0.86.0)
@@ -1559,9 +1556,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - react-native-razorpay (2.3.1):
-    - razorpay-pod (= 1.5.0)
-    - React
   - react-native-safe-area-context (5.10.0):
     - hermes-engine
     - RCTRequired
@@ -2286,7 +2280,6 @@ DEPENDENCIES:
   - React-mutationobservernativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/mutationobserver`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-passkey (from `../node_modules/react-native-passkey`)
-  - react-native-razorpay (from `../node_modules/react-native-razorpay`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
@@ -2346,8 +2339,6 @@ SPEC REPOS:
     - lottie-ios
     - nanopb
     - PromisesObjC
-    - razorpay-core-pod
-    - razorpay-pod
 
 EXTERNAL SOURCES:
   BVLinearGradient:
@@ -2437,8 +2428,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-image-picker"
   react-native-passkey:
     :path: "../node_modules/react-native-passkey"
-  react-native-razorpay:
-    :path: "../node_modules/react-native-razorpay"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   React-NativeModulesApple:
@@ -2546,8 +2535,6 @@ SPEC CHECKSUMS:
   lottie-react-native: 05da779a370ea951bdf6ec01887333c1adc354fd
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
-  razorpay-core-pod: 7ecea8ed3c47751e6a958f6c88126ea068f8c8fc
-  razorpay-pod: f634f1b8397eb54d547f25d35291f679545ddf17
   RCTDeprecation: 2a74a2c57675e64419bd89078efde81f7c1de90b
   RCTRequired: 30451112e6fef4e6f31b4e7eee0845156e35e4b0
   RCTSwiftUI: 5aaf0b07e747ba749dc6acc94d8bd41eea4b570f
@@ -2587,7 +2574,6 @@ SPEC CHECKSUMS:
   React-mutationobservernativemodule: f53ad06cbe4b44d2a33df6aa3f01ca8e9b57e83b
   react-native-image-picker: 09cea417bef3ee25008ad21d4426f9a1fc54ad84
   react-native-passkey: ec6030a8c9bf5901a19e913881e9ade1dcfded8a
-  react-native-razorpay: 376ba84b614ef8a22b5701df4ffee10f4c116d14
   react-native-safe-area-context: 678f254e77e69986ae9d9e62721f152e73dbc76b
   React-NativeModulesApple: a092d89b58f635ebfab88048b0eda9fb516819fd
   React-networking: ee8e1504d7c1c73a3655bf545ca1184bebae4c7f

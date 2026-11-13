@@ -77,3 +77,6 @@ yarn-error.log
 # Firebase client config (kept out of the public repo; download from the Firebase console)
 android/app/google-services.json
 ios/NestLeads/GoogleService-Info.plist
+
+# Android release signing secrets
+android/keystore.properties

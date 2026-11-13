@@ -76,6 +76,13 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def keystoreProps = new Properties()
+def keystoreFile = rootProject.file('keystore.properties')
+if (keystoreFile.exists()) {
+    keystoreFile.withInputStream { keystoreProps.load(it) }
+}
+def releaseProp = { String key -> keystoreProps.getProperty(key) ?: System.getenv("NESTLEADS_" + key) }
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -86,8 +93,8 @@ android {
         applicationId "com.nestleads"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.4"
+        versionCode 7
+        versionName "1.5"
     }
     signingConfigs {
         debug {
@@ -96,15 +103,22 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Release keystore comes from android/keystore.properties (git-ignored) or NESTLEADS_* env vars.
+            if (releaseProp('storeFile')) {
+                storeFile file(releaseProp('storeFile'))
+                storePassword releaseProp('storePassword')
+                keyAlias releaseProp('keyAlias')
+                keyPassword releaseProp('keyPassword')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
@@ -120,5 +134,12 @@ dependencies {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+// Never sign a release with the debug key: fail the build when the release keystore is not configured.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name.toLowerCase().contains('release') && it.name.startsWith('assemble') || it.name.startsWith('bundle') && it.name.toLowerCase().contains('release') } && !releaseProp('storeFile')) {
+        throw new GradleException("Release keystore missing: create android/keystore.properties (see keystore.properties.example) or set NESTLEADS_storeFile/storePassword/keyAlias/keyPassword.")
     }
 }
