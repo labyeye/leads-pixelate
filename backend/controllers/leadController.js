@@ -216,7 +216,7 @@ const createLead = asyncHandler(async (req, res) => {
     if (!resolvedState) resolvedState = pinResolved.state;
   }
 
-  const lead = await Lead.create({
+  const lead = new Lead({
     name,
     company,
     source,
@@ -242,6 +242,8 @@ const createLead = asyncHandler(async (req, res) => {
       },
     ],
   });
+  lead.$locals.actorId = req.user._id; // the creator isn't pinged about their own lead
+  await lead.save();
 
   const populated = await Lead.findById(lead._id).populate(
     "assignedTo",
@@ -371,6 +373,7 @@ const updateLead = asyncHandler(async (req, res) => {
     updateOp = { $set: updateFields };
   }
 
+  const previousAssignee = String(lead.assignedTo?._id || lead.assignedTo || "");
   lead = await Lead.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, updateOp, {
     new: true,
     runValidators: true,
@@ -379,6 +382,17 @@ const updateLead = asyncHandler(async (req, res) => {
     .populate("statusHistory.changedBy", "name");
 
   if (statusChanged) funnels.onStatusChange(req.user.tenantId, lead, lead.status);
+
+  const newAssignee = String(lead.assignedTo?._id || lead.assignedTo || "");
+  if (newAssignee && newAssignee !== previousAssignee && newAssignee !== String(req.user._id)) {
+    require("../services/notifyService").notify([newAssignee], {
+      tenantId: req.user.tenantId || null,
+      type: "lead_assigned",
+      title: "Lead assigned to you",
+      body: `${lead.name}${lead.company ? ` · ${lead.company}` : ""}`,
+      data: { screen: "LeadDetail", id: String(lead._id) },
+    });
+  }
 
   logActivity({
     user: req.user,
@@ -424,6 +438,15 @@ const bulkAssignLeads = asyncHandler(async (req, res) => {
 
   const foundIds = leads.map((l) => l._id);
   await Lead.updateMany({ _id: { $in: foundIds } }, { $set: { assignedTo } });
+  if (String(assignedTo) !== String(req.user._id)) {
+    require("../services/notifyService").notify([assignedTo], {
+      tenantId: req.user.tenantId || null,
+      type: "lead_assigned",
+      title: `${foundIds.length} lead${foundIds.length > 1 ? "s" : ""} assigned to you`,
+      body: foundIds.length === 1 ? leads[0].name : `${leads[0].name} and ${foundIds.length - 1} more`,
+      data: { screen: "Leads" },
+    });
+  }
 
   logActivity({
     user: req.user,

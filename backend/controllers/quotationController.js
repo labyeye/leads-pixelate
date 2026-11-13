@@ -71,6 +71,20 @@ const getQuotation = asyncHandler(async (req, res) => {
   });
 });
 
+// Tells the approvers a quotation is waiting for them (not the person who asked, if they are one).
+function askApprovers(req, quotation, approvers) {
+  require("../services/notifyService").notify(
+    (approvers || []).filter((id) => String(id) !== String(req.user._id)),
+    {
+      tenantId: req.user.tenantId || null,
+      type: "quotation_approval",
+      title: "Quotation needs your approval",
+      body: `${quotation.number || "New quotation"} · ${quotation.companyName || quotation.clientName || "buyer"} · ₹${Number(quotation.total || 0).toLocaleString("en-IN")}`,
+      data: { screen: "Quotations", id: String(quotation._id) },
+    },
+  );
+}
+
 const createQuotation = asyncHandler(async (req, res) => {
   req.body.createdBy = req.user._id;
   req.body.tenantId = req.user.tenantId || null;
@@ -83,6 +97,7 @@ const createQuotation = asyncHandler(async (req, res) => {
   }
 
   const quotation = await Quotation.create(req.body);
+  if (req.body.approval?.status === "pending") askApprovers(req, quotation, req.body.approval.approvers);
 
   const populated = await Quotation.findById(quotation._id).populate(
     "createdBy",
@@ -140,6 +155,7 @@ const updateQuotation = asyncHandler(async (req, res) => {
         { _id: quotation._id },
         { $set: { approval: qa.pending(cfg, req.user._id) } },
       );
+      askApprovers(req, quotation, cfg.approvers);
     }
     res.status(403);
     throw new Error(
@@ -148,7 +164,10 @@ const updateQuotation = asyncHandler(async (req, res) => {
         : "Approval is needed before sending. The request has gone to the approvers.",
     );
   }
-  if (reask) req.body.approval = qa.pending(cfg, req.user._id);
+  if (reask) {
+    req.body.approval = qa.pending(cfg, req.user._id);
+    askApprovers(req, quotation, cfg.approvers);
+  }
 
   quotation = await Quotation.findOneAndUpdate({ _id: req.params.id, ...tenantScope(req) }, safeBody(req.body), {
     new: true,
@@ -199,6 +218,15 @@ const decideApproval = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Please give a reason for rejecting");
   }
+
+  const notifyService = require("../services/notifyService");
+  notifyService.notify([quotation.createdBy?._id || quotation.createdBy], {
+    tenantId: req.user.tenantId || null,
+    type: "quotation_decision",
+    title: `Quotation ${quotation.number} ${decision === "approve" ? "approved" : "rejected"}`,
+    body: decision === "approve" ? "You can send it now." : String(remarks).trim().slice(0, 140),
+    data: { screen: "Quotations", id: String(quotation._id) },
+  });
 
   await Quotation.updateOne(
     { _id: quotation._id },

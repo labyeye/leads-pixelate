@@ -387,6 +387,15 @@ async function executePublish(post) {
       : "POSTED";
 
   await post.save();
+  if (post.status !== "POSTED" && post.createdBy) {
+    require("../services/notifyService").notify([post.createdBy], {
+      tenantId: post.tenantId || null,
+      type: "post_failed",
+      title: post.status === "FAILED" ? "A post could not be published" : "A post went out only partly",
+      body: String(post.failureReason || post.caption || "").slice(0, 140),
+      data: { screen: "SocialPlanner", id: String(post._id) },
+    });
+  }
   return post;
 }
 

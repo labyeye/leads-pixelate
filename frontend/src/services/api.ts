@@ -443,6 +443,30 @@ export const callsAPI = {
     }>(`/calls/${id}`),
 };
 
+export interface AppNotification {
+  _id: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: { screen?: string; id?: string; phone?: string };
+  read: boolean;
+  createdAt: string;
+}
+
+export const notificationsAPI = {
+  list: () =>
+    request<{ success: boolean; data: AppNotification[]; unread: number }>(
+      "/notifications?limit=30",
+    ),
+  unreadCount: () =>
+    request<{ success: boolean; unread: number }>("/notifications/unread-count"),
+  markRead: (id: string) =>
+    request<{ success: boolean }>(`/notifications/${id}/read`, { method: "PATCH" }),
+  markAllRead: () =>
+    request<{ success: boolean }>("/notifications/read-all", { method: "POST" }),
+  clear: () => request<{ success: boolean }>("/notifications", { method: "DELETE" }),
+};
+
 export const celebrationsAPI = {
   today: () => request<{ success: boolean; data: any[] }>("/celebrations"),
 };

@@ -240,4 +240,29 @@ leadSchema.post("save", function (lead) {
   );
 });
 
+// A new lead pings the person it lands with, from any source (webhooks, forms, imports, manual); admins hear about
+// the ones that arrive on their own. Controllers set doc.$locals.actorId so the person who made the change isn't
+// told about their own action. (wasNew comes from the pre-save hook above.)
+leadSchema.post("save", function (doc) {
+  if (!doc.$locals.wasNew || !doc.assignedTo) return;
+  const actor = String(doc.$locals.actorId || "");
+  const { notify, notifyAdmins } = require("../services/notifyService");
+  const what = `${doc.name}${doc.company ? ` · ${doc.company}` : ""}`;
+  const data = { screen: "LeadDetail", id: String(doc._id) };
+  if (!actor)
+    notifyAdmins(
+      doc.tenantId || null,
+      { type: "new_lead", title: "New lead", body: `${what}${doc.source ? ` via ${doc.source}` : ""}`, data },
+      doc.assignedTo, // the person it lands with is told separately below
+    );
+  if (String(doc.assignedTo) === actor) return;
+  notify([doc.assignedTo], {
+    tenantId: doc.tenantId || null,
+    type: actor ? "lead_assigned" : "new_lead",
+    title: actor ? "Lead assigned to you" : "New lead",
+    body: actor ? what : `${what}${doc.source ? ` via ${doc.source}` : ""}`,
+    data,
+  });
+});
+
 module.exports = mongoose.model("Lead", leadSchema);

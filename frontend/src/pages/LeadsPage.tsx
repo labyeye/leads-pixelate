@@ -199,6 +199,12 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
 
 export default function LeadsPage() {
   const [search, setSearch] = useState("");
+
+  // A notification links here as /leads?lead=<id>: open that lead once.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("lead");
+    if (id) setSelectedLeadId(id);
+  }, []);
   const [activeCategory, setActiveCategory] = useState("New Lead");
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [fullLead, setFullLead] = useState<any>(null);

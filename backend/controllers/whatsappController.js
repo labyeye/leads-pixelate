@@ -1786,9 +1786,30 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
               },
             },
             { upsert: true },
-          ).catch((err) =>
-            log.error("Inbox store failed", { message: err.message }),
-          );
+          )
+            .then(async (r) => {
+              if (!r?.upsertedCount) return; // a repeat delivery of the same message
+              const tail = String(fromPhone).slice(-10);
+              const lead = await Lead.findOne({
+                tenantId: tenant._id,
+                deletedAt: null,
+                phone: { $regex: `${tail}$` },
+              })
+                .select("name assignedTo")
+                .lean();
+              const payload = {
+                tenantId: tenant._id,
+                type: "whatsapp_reply",
+                title: lead ? `${lead.name} replied on WhatsApp` : `New WhatsApp message from +${fromPhone}`,
+                body: String(messageText || "").slice(0, 140),
+                data: { screen: "WhatsAppInbox", phone: String(fromPhone) },
+              };
+              if (lead?.assignedTo) require("../services/notifyService").notify([lead.assignedTo], payload);
+              else require("../services/notifyService").notifyAdmins(tenant._id, payload);
+            })
+            .catch((err) =>
+              log.error("Inbox store failed", { message: err.message }),
+            );
         }
         try {
           const tenantFilter = tenant ? { tenantId: tenant._id } : {};

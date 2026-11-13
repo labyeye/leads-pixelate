@@ -27,6 +27,7 @@ connectDB().then(async () => {
   cron.schedule("* * * * *", runScheduledPosts);
   cron.schedule("* * * * *", require("./services/funnelService").runSchedules);
   cron.schedule("* * * * *", require("./services/funnelService").processDue);
+  cron.schedule("*/5 * * * *", require("./services/reminderService").runReminders);
   cron.schedule("0 * * * *", runAutopilotCron);
   // 03:30 UTC = 09:00 IST
   cron.schedule("30 3 * * *", () =>
@@ -224,6 +225,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/celebrations", require("./routes/celebrationRoutes"));
 app.use("/api/roles", require("./routes/roleRoutes"));
 app.use("/api/leads", require("./routes/leadRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/trash", require("./routes/trashRoutes"));
 app.use("/api/clients", require("./routes/clientRoutes"));
 app.use("/api/quotations", require("./routes/quotationRoutes"));
