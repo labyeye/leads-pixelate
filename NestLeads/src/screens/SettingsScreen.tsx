@@ -15,6 +15,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { useAuth } from '../contexts/AuthContext';
 import PhoneInput from '../components/PhoneInput';
 import { authAPI } from '../services/api';
@@ -199,15 +201,7 @@ export default function SettingsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-      </View>
+      <ScreenHeader icon="settings-outline" title="Settings" onBack={() => navigation.goBack()} />
       <View style={styles.divider} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}>

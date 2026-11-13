@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import SendWhatsAppModal from '../components/SendWhatsAppModal';
 import { leadsAPI, settingsAPI, callsAPI, aiCallingAPI } from '../services/api';
@@ -185,7 +187,9 @@ export default function LeadDetailScreen({ navigation, route }: any) {
           text: 'Start',
           onPress: async () => {
             try {
-              const r = await (ai ? aiCallingAPI.callLead(leadId) : callsAPI.manual(leadId));
+              const r = await (ai
+                ? aiCallingAPI.callLead(leadId)
+                : callsAPI.manual(leadId));
               Alert.alert('Call started', r.message || 'Pick up your phone.');
             } catch (err: any) {
               Alert.alert("Couldn't place call", err.message);
@@ -249,16 +253,8 @@ export default function LeadDetailScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('LeadsList')}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {lead.name}
-        </Text>
+      <ScreenHeader icon="person-outline" title={lead.name} onBack={() => navigation.navigate('LeadsList')} right={
+          <>
         {perm.update && (
           <TouchableOpacity
             onPress={() => setStatusModalOpen(true)}
@@ -278,7 +274,8 @@ export default function LeadDetailScreen({ navigation, route }: any) {
             <Icon name="trash-outline" size={18} color="#EF4444" />
           </TouchableOpacity>
         )}
-      </View>
+          </>
+        } />
 
       <ScrollView
         contentContainerStyle={[
@@ -333,46 +330,62 @@ export default function LeadDetailScreen({ navigation, route }: any) {
           </View>
           <View style={[styles.actionsRow, { marginTop: 10 }]}>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#FBFBFB' },
+                !lead.phone && { opacity: 0.4 },
+              ]}
               onPress={handleCall}
               disabled={!lead.phone}
             >
               <Icon name="call-outline" size={16} color="#044bab" />
-              <Text style={styles.actionBtnText}>Call</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#FBFBFB' },
+                !lead.phone && { opacity: 0.4 },
+              ]}
               onPress={() => placeCall('manual')}
               disabled={!lead.phone}
             >
               <Icon name="swap-horizontal-outline" size={16} color="#044bab" />
-              <Text style={styles.actionBtnText}>In-app</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#FBFBFB' },
+                !lead.phone && { opacity: 0.4 },
+              ]}
               onPress={() => placeCall('ai')}
               disabled={!lead.phone}
             >
               <Icon name="flash-outline" size={16} color="#044bab" />
-              <Text style={styles.actionBtnText}>AI Call</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#FBFBFB' }, !lead.phone && { opacity: 0.4 }]}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#FBFBFB' },
+                !lead.phone && { opacity: 0.4 },
+              ]}
               onPress={handleWhatsApp}
               disabled={!lead.phone}
             >
               <View style={styles.whatsappLogoChip}>
                 <WhatsAppLogo size={12} />
               </View>
-              <Text style={styles.actionBtnText}>WhatsApp</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: '#024BAB' }, !lead.email && { opacity: 0.4 }]}
+              style={[
+                styles.actionBtn,
+                { backgroundColor: '#024BAB' },
+                !lead.email && { opacity: 0.4 },
+              ]}
               onPress={handleEmail}
               disabled={!lead.email}
             >
               <Icon name="mail-outline" size={16} color="#fff" />
-              <Text style={[styles.actionBtnText, { color: '#fff' }]}>Email</Text>
+              
             </TouchableOpacity>
           </View>
         </View>
@@ -383,27 +396,80 @@ export default function LeadDetailScreen({ navigation, route }: any) {
           <View style={styles.grid}>
             <Field icon="call-outline" label="Phone" value={lead.phone} />
             <Field icon="mail-outline" label="Email" value={lead.email} />
-            <Field icon="wallet-outline" label="Budget" value={lead.budget || 'Not specified'} strong />
-            <Field icon="person-outline" label="Assigned to" value={lead.assignedTo?.name} />
-            <Field icon="calendar-outline" label="Inquiry" value={fmtDate(lead.indiamartQueryTime || lead.createdAt)} />
+            <Field
+              icon="wallet-outline"
+              label="Budget"
+              value={lead.budget || 'Not specified'}
+              strong
+            />
+            <Field
+              icon="person-outline"
+              label="Assigned to"
+              value={lead.assignedTo?.name}
+            />
+            <Field
+              icon="calendar-outline"
+              label="Inquiry"
+              value={fmtDate(lead.indiamartQueryTime || lead.createdAt)}
+            />
             <Field icon="location-outline" label="Location" value={location} />
-            {lead.company ? <Field icon="business-outline" label="Company" value={lead.company} /> : null}
-            {lead.website ? <Field icon="globe-outline" label="Website" value={lead.website} /> : null}
-            {lead.followUpDate ? <Field icon="time-outline" label="Follow-up" value={fmtDateTime(lead.followUpDate)} /> : null}
-            {lead.visitScheduledDate ? <Field icon="location-outline" label="Visit" value={fmtDateTime(lead.visitScheduledDate)} /> : null}
-            {lead.visitActualDate ? <Field icon="checkmark-circle-outline" label="Visited on" value={fmtDate(lead.visitActualDate)} /> : null}
-            {lead.facebookAdName ? <Field icon="megaphone-outline" label="Campaign" value={lead.facebookAdName} /> : null}
+            {lead.company ? (
+              <Field
+                icon="business-outline"
+                label="Company"
+                value={lead.company}
+              />
+            ) : null}
+            {lead.website ? (
+              <Field
+                icon="globe-outline"
+                label="Website"
+                value={lead.website}
+              />
+            ) : null}
+            {lead.followUpDate ? (
+              <Field
+                icon="time-outline"
+                label="Follow-up"
+                value={fmtDateTime(lead.followUpDate)}
+              />
+            ) : null}
+            {lead.visitScheduledDate ? (
+              <Field
+                icon="location-outline"
+                label="Visit"
+                value={fmtDateTime(lead.visitScheduledDate)}
+              />
+            ) : null}
+            {lead.visitActualDate ? (
+              <Field
+                icon="checkmark-circle-outline"
+                label="Visited on"
+                value={fmtDate(lead.visitActualDate)}
+              />
+            ) : null}
+            {lead.facebookAdName ? (
+              <Field
+                icon="megaphone-outline"
+                label="Campaign"
+                value={lead.facebookAdName}
+              />
+            ) : null}
           </View>
           {lead.requirement ? (
             <View style={styles.textBlock}>
               <Text style={styles.fieldLabel}>Requirement</Text>
-              <Text style={styles.fieldText} selectable>{lead.requirement}</Text>
+              <Text style={styles.fieldText} selectable>
+                {lead.requirement}
+              </Text>
             </View>
           ) : null}
           {lead.remarks ? (
             <View style={styles.textBlock}>
               <Text style={styles.fieldLabel}>Remarks</Text>
-              <Text style={styles.fieldText} selectable>{lead.remarks}</Text>
+              <Text style={styles.fieldText} selectable>
+                {lead.remarks}
+              </Text>
             </View>
           ) : null}
           {lead.interestedProducts?.length > 0 && (
@@ -419,6 +485,38 @@ export default function LeadDetailScreen({ navigation, route }: any) {
             </View>
           )}
         </View>
+
+        {/* Source / ad attribution details */}
+        {(() => {
+          const cf: Record<string, any> = lead.customFields && typeof lead.customFields === 'object' ? lead.customFields : {};
+          const rows: [string, string, any][] = [
+            ['globe-outline', 'Page', lead.facebookPageName],
+            ['document-text-outline', 'Form', lead.facebookFormName || lead.linkedinFormName],
+            ['key-outline', 'Form ID', lead.facebookFormId || lead.googleAdsFormId || lead.linkedinFormId],
+            ['megaphone-outline', 'Campaign', lead.facebookCampaignName || lead.googleAdsCampaignName],
+            ['key-outline', 'Campaign ID', lead.googleAdsCampaignId],
+            ['layers-outline', 'Ad set', lead.facebookAdsetName],
+            ['image-outline', 'Ad', lead.facebookAdName],
+            ['key-outline', 'Ad ID', lead.facebookAdId],
+            ['key-outline', 'Lead ID', lead.facebookLeadgenId || lead.googleAdsLeadId || lead.linkedinLeadId],
+            ['business-outline', 'Ad account', lead.googleAdsCustomerId || lead.linkedinAdAccountId],
+          ];
+          const shown = rows.filter(r => !!r[2]);
+          const answers = Object.entries(cf).filter(([, v]) => v !== '' && v != null);
+          if (!shown.length && !answers.length) return null;
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>SOURCE DETAILS</Text>
+              <InfoRow icon="git-network-outline" label="Source" value={lead.source} />
+              {shown.map(([icon, label, v], i) => (
+                <InfoRow key={label} icon={icon} label={label} value={String(v)} last={i === shown.length - 1 && !answers.length} />
+              ))}
+              {answers.map(([k, v], i) => (
+                <InfoRow key={k} icon="chatbox-ellipses-outline" label={k.replace(/_/g, ' ')} value={String(v)} last={i === answers.length - 1} />
+              ))}
+            </View>
+          );
+        })()}
 
         {/* Notes */}
         <View style={styles.section}>
@@ -479,17 +577,24 @@ export default function LeadDetailScreen({ navigation, route }: any) {
               <Text style={[styles.sectionLabel, { marginBottom: 0, flex: 1 }]}>
                 STATUS HISTORY ({lead.statusHistory.length})
               </Text>
-              <Icon name={histOpen ? 'chevron-up' : 'chevron-down'} size={16} color="#64748b" />
+              <Icon
+                name={histOpen ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color="#64748b"
+              />
             </TouchableOpacity>
             {histOpen &&
               [...lead.statusHistory].reverse().map((h: any, i: number) => {
                 const hsc = getStatusColor(h.status);
                 return (
-                  <View key={i} style={[styles.historyRow, i === 0 && { marginTop: 10 }]}>
+                  <View
+                    key={i}
+                    style={[styles.historyRow, i === 0 && { marginTop: 10 }]}
+                  >
                     <View
                       style={[
                         styles.historyDot,
-                        { backgroundColor: hsc.bg, borderColor: '#000' },
+                        { backgroundColor: hsc.bg, borderColor: '#000', borderRadius:50 },
                       ]}
                     />
                     <View style={styles.historyContent}>
@@ -505,7 +610,9 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                         <Text style={styles.historyRemarks}>{h.remarks}</Text>
                       ) : null}
                       {h.changedBy?.name ? (
-                        <Text style={styles.historyBy}>by {h.changedBy.name}</Text>
+                        <Text style={styles.historyBy}>
+                          by {h.changedBy.name}
+                        </Text>
                       ) : null}
                     </View>
                   </View>
@@ -541,14 +648,14 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                       k === 'name'
                         ? 100
                         : k === 'company'
-                          ? 120
-                          : k === 'budget'
-                            ? 15
-                            : k === 'requirement'
-                              ? 1000
-                              : k === 'remarks'
-                                ? 500
-                                : undefined
+                        ? 120
+                        : k === 'budget'
+                        ? 15
+                        : k === 'requirement'
+                        ? 1000
+                        : k === 'remarks'
+                        ? 500
+                        : undefined
                     }
                     placeholderTextColor="#94a3b8"
                   />
@@ -619,7 +726,12 @@ function Field({
 
 const fieldStyles = StyleSheet.create({
   cell: { width: '50%', paddingVertical: 6, paddingRight: 8 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
   label: { fontSize: 11, color: '#64748b', fontWeight: '500' },
   value: { fontSize: 13, color: '#000', fontWeight: '500' },
 });
@@ -684,8 +796,18 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 12, color: '#64748b', fontSize: 14 },
   scroll: { padding: 12, gap: 10 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  textBlock: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
-  fieldLabel: { fontSize: 11, color: '#64748b', fontWeight: '500', marginBottom: 3 },
+  textBlock: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  fieldLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
+    marginBottom: 3,
+  },
   fieldText: { fontSize: 13, color: '#000', fontWeight: '500', lineHeight: 18 },
   histHead: { flexDirection: 'row', alignItems: 'center' },
 
@@ -745,7 +867,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 2,
-    borderRadius: 8,
+    borderRadius: 50,
   },
   statusPillText: {
     fontSize: 10,
@@ -757,12 +879,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderWidth: 1,
     borderColor: '#000',
+    borderRadius: 50,
   },
   sourcePillText: { fontSize: 10, fontWeight: '500' },
   catPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,
+    borderRadius: 50,
     borderColor: '#000',
     backgroundColor: '#f8fafc',
   },
@@ -771,7 +895,6 @@ const styles = StyleSheet.create({
   // Actions
   actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   actionBtn: {
-    minWidth: '30%',
     flex: 1,
     paddingVertical: 8,
     flexDirection: 'row',
@@ -779,9 +902,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
+    borderRadius: 50,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
     borderRightColor: '#0A0A0A',
     borderBottomColor: '#0A0A0A',
     borderColor: '#000',

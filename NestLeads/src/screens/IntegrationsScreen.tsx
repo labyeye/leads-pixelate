@@ -17,6 +17,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { Check, CheckCheck, ClockPlus } from 'lucide-react-native';
 import { linkedinAdsAPI, googleAdsAPI } from '../services/api';
 import { CountText } from '../components/motion';
@@ -832,18 +834,12 @@ export default function IntegrationsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
+      <ScreenHeader icon="link-outline" title="Integrations" onBack={() => navigation.goBack()} right={
+          <>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Integrations</Text>
-          <Text style={styles.headerSub}>{connectedCount} active</Text>
         </View>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       <ScrollView

@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { useAuth } from '../contexts/AuthContext';
 import { facebookAPI, campaignAssignmentAPI } from '../services/api';
 import {
@@ -229,20 +231,15 @@ export default function FacebookAdCampaignsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ad Campaigns</Text>
+      <ScreenHeader icon="megaphone-outline" title="Ad Campaigns" onBack={() => navigation.goBack()} right={
+          <>
         {isAdmin && (
           <TouchableOpacity onPress={openAdd} style={styles.backBtn}>
             <Icon name="add" size={18} color="#000" />
           </TouchableOpacity>
         )}
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       <View style={styles.filters}>

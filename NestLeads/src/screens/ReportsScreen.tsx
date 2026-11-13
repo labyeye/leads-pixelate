@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import UserAvatar from '../components/UserAvatar';
 import SourceBadge from '../components/SourceBadge';
 import {
@@ -1872,18 +1874,12 @@ export default function ReportsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
+      <ScreenHeader icon="stats-chart-outline" title="Reports" onBack={() => navigation.goBack()} right={
+          <>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Reports</Text>
-          <Text style={styles.headerSub}>{leads.length} leads analysed</Text>
         </View>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       {/* Catalog / Analytics toggle */}

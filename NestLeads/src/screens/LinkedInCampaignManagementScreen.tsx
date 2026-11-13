@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import {
   linkedinAdsAPI,
   usersAPI,
@@ -96,18 +98,13 @@ export default function LinkedInCampaignManagementScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>LinkedIn Campaign Management</Text>
-        <TouchableOpacity onPress={load} style={styles.backBtn}>
-          <Icon name="refresh" size={16} color="#000" />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader icon="megaphone-outline" title="LinkedIn Campaign Management" onBack={() => navigation.goBack()} right={
+          <>
+        <TouchableOpacity onPress={load} hitSlop={8} style={{ padding: 4 }}>
+            <Icon name="refresh" size={24} color="#000" />
+          </TouchableOpacity>
+          </>
+        } />
       <View style={styles.divider} />
 
       <CampaignAssignmentList

@@ -9,10 +9,11 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
-  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { billingAPI } from '../services/api';
 import { CountText } from '../components/motion';
 
@@ -23,7 +24,6 @@ const NB_SHADOW = {
   shadowOffset: { width: 4, height: 4 },
   elevation: 4,
 };
-const WEB_BILLING_URL = 'https://leads.pixelatenest.com/billing';
 
 function formatDate(d?: string) {
   if (!d) return '—';
@@ -38,6 +38,38 @@ function formatAmount(paise: number) {
 }
 function capitalise(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+
+type BillingState = {
+  key: 'trial' | 'trial_ended' | 'active' | 'expiring' | 'expired' | 'cancelled';
+  label: string;
+  color: string;
+  note: string;
+  daysLeft: number | null;
+  needsPayment: boolean;
+};
+
+const EXPIRING_DAYS = 7;
+
+// One answer to "where does this account stand?": drives the badge, the line under it and the Renew button.
+function billingState(plan: string, status: string, periodEnd?: string): BillingState {
+  const end = periodEnd ? new Date(periodEnd).getTime() : null;
+  const daysLeft = end === null ? null : Math.ceil((end - Date.now()) / 86400000);
+  const ended = end !== null && end < Date.now();
+  const dayText = (n: number) => (n === 1 ? '1 day' : `${n} days`);
+
+  if (plan === 'trial') {
+    return ended
+      ? { key: 'trial_ended', label: 'Trial ended', color: '#DC2626', note: `Trial ended on ${formatDate(periodEnd)}. Choose a plan to continue.`, daysLeft, needsPayment: true }
+      : { key: 'trial', label: 'Trial', color: '#8B5CF6', note: daysLeft !== null ? `${dayText(Math.max(daysLeft, 0))} left in your free trial` : 'Free trial — pick a plan to activate', daysLeft, needsPayment: false };
+  }
+  if (ended || status === 'past_due')
+    return { key: 'expired', label: 'Expired', color: '#DC2626', note: periodEnd ? `Expired on ${formatDate(periodEnd)}. Renew to restore access.` : 'Payment is due. Renew to restore access.', daysLeft, needsPayment: true };
+  if (status === 'cancelled')
+    return { key: 'cancelled', label: 'Cancelled', color: '#64748b', note: `Cancelled — access ends ${formatDate(periodEnd)}`, daysLeft, needsPayment: true };
+  if (daysLeft !== null && daysLeft <= EXPIRING_DAYS)
+    return { key: 'expiring', label: 'Expiring soon', color: '#FA731C', note: `Expires in ${dayText(Math.max(daysLeft, 0))} (${formatDate(periodEnd)})`, daysLeft, needsPayment: true };
+  return { key: 'active', label: 'Active', color: '#1FA85A', note: periodEnd ? `Renews on ${formatDate(periodEnd)}${daysLeft !== null ? ` · ${dayText(daysLeft)} left` : ''}` : 'Active', daysLeft, needsPayment: false };
 }
 
 export default function BillingScreen({ navigation }: any) {
@@ -82,15 +114,10 @@ export default function BillingScreen({ navigation }: any) {
   const maxLeads = planLimits?.limits?.leadsPerMonth ?? 100;
   const maxMembers = planLimits?.limits?.teamMembers ?? 2;
   const status = subscription?.status || tenant?.status || 'trial';
+  const state = billingState(currentPlanId, status, periodEnd);
 
   // Three plans on sale (Social Autopilot is included); business / enterprise only for tenants already on them.
   const planIds = ['starter', 'growth', 'professional'];
-
-  const openWebBilling = () => {
-    Linking.openURL(WEB_BILLING_URL).catch(() =>
-      Alert.alert('Error', 'Could not open billing page'),
-    );
-  };
 
   if (loading) {
     return (
@@ -115,15 +142,7 @@ export default function BillingScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Billing</Text>
-      </View>
+      <ScreenHeader icon="wallet-outline" title="Billing" onBack={() => navigation.goBack()} />
       <View style={styles.divider} />
 
       <ScrollView
@@ -146,14 +165,11 @@ export default function BillingScreen({ navigation }: any) {
               <Icon name="ribbon-outline" size={20} color="#024BAB" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.planName}>
-                {capitalise(currentPlanId)} Plan — {capitalise(status)}
-              </Text>
-              <Text style={styles.planSub}>
-                {periodEnd
-                  ? `Next billing: ${formatDate(periodEnd)}`
-                  : 'Free trial — upgrade to activate'}
-              </Text>
+              <Text style={styles.planName}>{capitalise(currentPlanId)} Plan</Text>
+              <Text style={styles.planSub}>{state.note}</Text>
+            </View>
+            <View style={[styles.stateBadge, { backgroundColor: state.color }]}>
+              <Text style={styles.stateBadgeText}>{state.label}</Text>
             </View>
           </View>
         </View>
@@ -188,7 +204,7 @@ export default function BillingScreen({ navigation }: any) {
           const priceDisplay = isCustom
             ? 'Custom'
             : priceRaw != null
-              ? `₹${(priceRaw / 100).toLocaleString('en-IN')}/mo`
+              ? `${formatAmount(priceRaw)}/mo`
               : '—';
           return (
             <View
@@ -199,27 +215,18 @@ export default function BillingScreen({ navigation }: any) {
                 <Text style={styles.planRowName}>{capitalise(planId)}</Text>
                 <Text style={styles.planRowPrice}>{priceDisplay}</Text>
               </View>
-              {isCurrent ? (
-                <View style={styles.activeBadge}>
+              {isCurrent && (
+                <View style={[styles.activeBadge, { backgroundColor: state.color }]}>
                   <Icon name="checkmark-circle" size={14} color="#fff" />
-                  <Text style={styles.activeBadgeText}>Active</Text>
+                  <Text style={styles.activeBadgeText}>{state.label}</Text>
                 </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.upgradeBtn}
-                  onPress={openWebBilling}
-                >
-                  <Text style={styles.upgradeBtnText}>
-                    {isCustom ? 'Contact Sales' : 'Upgrade'}
-                  </Text>
-                </TouchableOpacity>
               )}
             </View>
           );
         })}
         <Text style={styles.webHint}>
-          Plan upgrades and payment are completed securely via Razorpay on the
-          web dashboard. Tap "Upgrade" to open it in your browser.
+          To renew or change your plan, please contact your account manager or
+          support.
         </Text>
 
         {/* Invoices */}
@@ -294,20 +301,14 @@ const styles = StyleSheet.create({
   },
   planName: { fontSize: 15, fontWeight: '500', color: '#fff' },
   planSub: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  statsRow: { flexDirection: 'row', gap: 12 },
-  statCard: {
-    flex: 1,
+  stateBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
     borderColor: '#000',
-    padding: 14,
-    alignItems: 'flex-start',
-    gap: 6,
+    borderRadius: 999,
   },
+  stateBadgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
   statValue: { fontSize: 20, fontWeight: '500', color: '#000' },
   statLabel: {
     fontSize: 10,
@@ -387,4 +388,18 @@ const styles = StyleSheet.create({
   invoiceNum: { fontSize: 12, fontWeight: '500', color: '#000' },
   invoiceDate: { fontSize: 11, color: '#64748b', marginTop: 2 },
   invoiceAmount: { fontSize: 14, fontWeight: '500', color: '#000' },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statCard: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 5,
+    borderBottomWidth: 5,
+    borderRightColor: '#0A0A0A',
+    borderBottomColor: '#0A0A0A',
+    borderColor: '#000',
+    padding: 14,
+    alignItems: 'flex-start',
+    gap: 6,
+  },
 });

@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { apiKeysAPI, usersAPI } from '../services/api';
 import AssigneePicker from '../components/AssigneePicker';
 
@@ -142,23 +144,13 @@ export default function ApiKeysScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>API Keys</Text>
-        <Text style={styles.headerSub}>{keys.length} active</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => setCreateVisible(true)}
-        >
-          <Icon name="add" size={16} color="#fff" />
-          <Text style={styles.addBtnText}>New</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader icon="key-outline" title="API Keys" onBack={() => navigation.goBack()} right={
+          <>
+        <TouchableOpacity onPress={() => setCreateVisible(true)} hitSlop={8} style={{ padding: 4 }}>
+            <Icon name="add" size={24} color="#000" />
+          </TouchableOpacity>
+          </>
+        } />
       <View style={styles.divider} />
 
       <View style={styles.securityNote}>

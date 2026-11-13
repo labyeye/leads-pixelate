@@ -17,6 +17,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { socialAPI, uploadFile } from '../services/api';
 import { checkMedia, MediaRule } from '../utils/mediaCheck';
 
@@ -812,20 +814,12 @@ export default function CreatePostScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
+      <ScreenHeader icon="create-outline" title="New Post" onBack={() => navigation.goBack()} right={
+          <>
         <View>
-          <Text style={styles.headerTitle}>New Post</Text>
-          <Text style={styles.headerSub}>
-            Step {step} of 4 — {STEP_LABELS[step - 1]}
-          </Text>
         </View>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       {/* Progress bar */}

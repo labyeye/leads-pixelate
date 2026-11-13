@@ -19,6 +19,7 @@ import LottieView from 'lottie-react-native';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
+import LegalLinks from '../components/LegalLinks';
 import { ArrowRight } from 'lucide-react-native';
 
 const loginAnim = require('../assets/lottie/login.json');
@@ -589,6 +590,7 @@ export default function LoginScreen({ navigation }: any) {
             </Text>
             <Text style={[styles.altLabel, { width: 50 }]}>Passkey</Text>
           </View>
+          <LegalLinks style={{ marginTop: 22, marginBottom: 8 }} />
         </>
       </ScrollView>
     </KeyboardAvoidingView>

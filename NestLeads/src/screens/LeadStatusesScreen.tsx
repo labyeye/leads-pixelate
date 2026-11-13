@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { settingsAPI } from '../services/api';
 import {
   categories,
@@ -117,14 +119,8 @@ export default function LeadStatusesScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Lead Statuses</Text>
+      <ScreenHeader icon="pricetag-outline" title="Lead Statuses" onBack={() => navigation.goBack()} right={
+          <>
         <TouchableOpacity
           style={styles.saveBtn}
           onPress={handleSave}
@@ -136,7 +132,8 @@ export default function LeadStatusesScreen({ navigation }: any) {
             <Text style={styles.saveBtnText}>Save</Text>
           )}
         </TouchableOpacity>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       {loading ? (

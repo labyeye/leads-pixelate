@@ -16,15 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { leadsAPI, usersAPI, productsAPI } from '../services/api';
 import { ALL_SOURCES } from '../constants/statusConstants';
-import SourceBadge from '../components/SourceBadge';
-
-const NB_SHADOW = {
-  shadowColor: '#000',
-  shadowOpacity: 1,
-  shadowRadius: 0,
-  shadowOffset: { width: 4, height: 4 },
-  elevation: 4,
-};
 
 export default function AddLeadScreen({ navigation }: any) {
   const onBack = () => navigation.goBack();
@@ -129,6 +120,8 @@ export default function AddLeadScreen({ navigation }: any) {
   };
 
   const assignedUser = users.find(u => u._id === form.assignedTo);
+  const hasAssignment = users.length > 0;
+  const hasProducts = products.length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -156,7 +149,6 @@ export default function AddLeadScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* Divider */}
       <View style={styles.divider} />
 
       <ScrollView
@@ -165,134 +157,188 @@ export default function AddLeadScreen({ navigation }: any) {
           { paddingBottom: insets.bottom + 24 },
         ]}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {/* Basic Info */}
+        {/* Basic Info — 2 inputs per row */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>BASIC INFORMATION</Text>
-          <Field
-            label="Full Name *"
-            value={form.name}
-            onChangeText={v => set('name', v)}
-            placeholder="John Doe"
-            maxLength={100}
-          />
-          <Field
-            label="Company"
-            value={form.company}
-            onChangeText={v => set('company', v)}
-            placeholder="Acme Corp"
-            maxLength={120}
-          />
-          <Field
-            label="Phone *"
-            value={form.phone}
-            onChangeText={v => set('phone', v)}
-            placeholder="+91 9876543210"
-            keyboardType="phone-pad"
-          />
-          <Field
-            label="Email"
-            value={form.email}
-            onChangeText={v => set('email', v)}
-            placeholder="john@company.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+
+          <View style={styles.twoCol}>
+            <View style={styles.halfCol}>
+              <Field
+                label="Full Name *"
+                value={form.name}
+                onChangeText={(v: string) => set('name', v)}
+                placeholder="John Doe"
+                maxLength={100}
+              />
+            </View>
+            <View style={styles.halfCol}>
+              <Field
+                label="Company"
+                value={form.company}
+                onChangeText={(v: string) => set('company', v)}
+                placeholder="Acme Corp"
+                maxLength={120}
+              />
+            </View>
+          </View>
+
+          <View style={styles.twoCol}>
+            <View style={styles.halfCol}>
+              <Field
+                label="Phone *"
+                value={form.phone}
+                onChangeText={(v: string) => set('phone', v)}
+                placeholder="+91 9876543210"
+                keyboardType="phone-pad"
+              />
+            </View>
+            <View style={styles.halfCol}>
+              <Field
+                label="Email"
+                value={form.email}
+                onChangeText={(v: string) => set('email', v)}
+                placeholder="john@company.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
         </View>
 
-        {/* Lead Details */}
+        {/* Lead Details — Source + Budget in 1 row, Requirement full width */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>LEAD DETAILS</Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Lead Source</Text>
-            <TouchableOpacity
-              style={styles.selectRow}
-              onPress={() => setSourceModalOpen(true)}
-            >
-              <Text style={styles.selectText}>{form.source}</Text>
-              <Text style={styles.selectChevron}>â€º</Text>
-            </TouchableOpacity>
+          <View style={styles.twoCol}>
+            <View style={styles.halfCol}>
+              <Text style={styles.label}>Lead Source</Text>
+              <TouchableOpacity
+                style={styles.selectRow}
+                onPress={() => setSourceModalOpen(true)}
+              >
+                <Text style={styles.selectText} numberOfLines={1}>
+                  {form.source}
+                </Text>
+                <Icon name="chevron-forward" size={16} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.halfCol}>
+              <Field
+                label="Budget"
+                value={form.budget}
+                onChangeText={(v: string) => set('budget', v)}
+                placeholder="e.g. 50000"
+                keyboardType="numeric"
+                maxLength={15}
+              />
+            </View>
           </View>
 
           <Field
             label="Requirement"
             value={form.requirement}
-            onChangeText={v => set('requirement', v)}
+            onChangeText={(v: string) => set('requirement', v)}
             placeholder="What does the client need?"
             multiline
             maxLength={1000}
           />
-          <Field
-            label="Budget"
-            value={form.budget}
-            onChangeText={v => set('budget', v)}
-            placeholder="e.g. 50000"
-            keyboardType="numeric"
-            maxLength={15}
-          />
         </View>
 
-        {/* Location */}
+        {/* Location — City/Pincode + State in 1 row */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>LOCATION</Text>
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>
-              City / Pincode{pincodeLoading ? ' (detecting...)' : ''}
-            </Text>
-            <View style={styles.inputBorder}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter city or 6-digit pincode"
-                placeholderTextColor="#94a3b8"
-                value={form.location}
-                onChangeText={handleLocationChange}
+
+          <View style={styles.twoCol}>
+            <View style={styles.halfCol}>
+              <Text style={styles.label} numberOfLines={1}>
+                City / Pincode{pincodeLoading ? '…' : ''}
+              </Text>
+              <View style={styles.inputBorder}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="City or 6-digit PIN"
+                  placeholderTextColor="#94a3b8"
+                  value={form.location}
+                  onChangeText={handleLocationChange}
+                />
+              </View>
+            </View>
+
+            <View style={styles.halfCol}>
+              <Field
+                label="State"
+                value={form.state}
+                onChangeText={(v: string) => set('state', v)}
+                placeholder="e.g. Telangana"
+                maxLength={60}
               />
             </View>
           </View>
+
           {!!form.state && (
             <View style={styles.statePill}>
-              <Text style={styles.statePillText}>
-                ðŸ" State detected: {form.state}
-              </Text>
+              <Icon name="location-outline" size={14} color="#15803d" />
+              <Text style={styles.statePillText}>State: {form.state}</Text>
             </View>
           )}
         </View>
 
-        {/* Assignment */}
-        {users.length > 0 && (
+        {/* Assignment & Interested Products — 2 per row */}
+        {(hasAssignment || hasProducts) && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>ASSIGNMENT</Text>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Assign To</Text>
-              <TouchableOpacity
-                style={styles.selectRow}
-                onPress={() => setAssignModalOpen(true)}
-              >
-                <Text style={styles.selectText}>
-                  {assignedUser?.name || 'Select user'}
-                </Text>
-                <Text style={styles.selectChevron}>â€º</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+            <Text style={styles.sectionLabel}>ASSIGNMENT & PRODUCTS</Text>
 
-        {/* Products */}
-        {products.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>INTERESTED IN</Text>
-            <TouchableOpacity
-              style={styles.selectRow}
-              onPress={() => setProductModalOpen(true)}
-            >
-              <Text style={styles.selectText} numberOfLines={1}>
-                {form.interestedProducts.length
-                  ? form.interestedProducts.join(', ')
-                  : 'Select products'}
-              </Text>
-              <Text style={styles.selectChevron}>â€º</Text>
-            </TouchableOpacity>
+            <View style={styles.twoCol}>
+              {hasAssignment && (
+                <View style={styles.halfCol}>
+                  <Text style={styles.label}>Assign To</Text>
+                  <TouchableOpacity
+                    style={styles.selectRow}
+                    onPress={() => setAssignModalOpen(true)}
+                  >
+                    <Text style={styles.selectText} numberOfLines={1}>
+                      {assignedUser?.name || 'Select user'}
+                    </Text>
+                    <Icon name="chevron-forward" size={16} color="#64748b" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {hasProducts && (
+                <View style={styles.halfCol}>
+                  <Text style={styles.label}>Interested In</Text>
+                  <TouchableOpacity
+                    style={styles.selectRow}
+                    onPress={() => setProductModalOpen(true)}
+                  >
+                    <Text style={styles.selectText} numberOfLines={1}>
+                      {form.interestedProducts.length
+                        ? `${form.interestedProducts.length} selected`
+                        : 'Select products'}
+                    </Text>
+                    <Icon name="chevron-forward" size={16} color="#64748b" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {form.interestedProducts.length > 0 && (
+              <View style={styles.chipWrap}>
+                {form.interestedProducts.map(prod => (
+                  <TouchableOpacity
+                    key={prod}
+                    style={styles.prodChip}
+                    onPress={() => toggleProduct(prod)}
+                  >
+                    <Text style={styles.prodChipText}>{prod}</Text>
+                    <Icon name="close" size={12} color="#024BAB" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -303,7 +349,7 @@ export default function AddLeadScreen({ navigation }: any) {
         title="SELECT SOURCE"
         items={ALL_SOURCES.map(s => ({ label: s, value: s }))}
         selected={form.source}
-        onSelect={v => {
+        onSelect={(v: string) => {
           set('source', v);
           setSourceModalOpen(false);
         }}
@@ -314,7 +360,7 @@ export default function AddLeadScreen({ navigation }: any) {
         title="ASSIGN TO"
         items={users.map(u => ({ label: u.name, value: u._id }))}
         selected={form.assignedTo}
-        onSelect={v => {
+        onSelect={(v: string) => {
           set('assignedTo', v);
           setAssignModalOpen(false);
         }}
@@ -331,23 +377,25 @@ export default function AddLeadScreen({ navigation }: any) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>SELECT PRODUCTS</Text>
-            {products.map((p: any) => {
-              const sel = form.interestedProducts.includes(p.name);
-              return (
-                <TouchableOpacity
-                  key={p._id}
-                  style={[styles.checkRow, sel && styles.checkRowActive]}
-                  onPress={() => toggleProduct(p.name)}
-                >
-                  <View
-                    style={[styles.checkbox, sel && styles.checkboxChecked]}
+            <ScrollView style={{ maxHeight: 320 }}>
+              {products.map((p: any) => {
+                const sel = form.interestedProducts.includes(p.name);
+                return (
+                  <TouchableOpacity
+                    key={p._id}
+                    style={[styles.checkRow, sel && styles.checkRowActive]}
+                    onPress={() => toggleProduct(p.name)}
                   >
-                    {sel && <Text style={styles.checkMark}>âœ"</Text>}
-                  </View>
-                  <Text style={styles.checkLabel}>{p.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
+                    <View
+                      style={[styles.checkbox, sel && styles.checkboxChecked]}
+                    >
+                      {sel && <Icon name="checkmark" size={14} color="#fff" />}
+                    </View>
+                    <Text style={styles.checkLabel}>{p.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
             <TouchableOpacity
               style={styles.modalDoneBtn}
               onPress={() => setProductModalOpen(false)}
@@ -372,8 +420,10 @@ function Field({
   maxLength,
 }: any) {
   return (
-    <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{label}</Text>
+    <View>
+      <Text style={styles.label} numberOfLines={1}>
+        {label}
+      </Text>
       <View style={styles.inputBorder}>
         <TextInput
           style={[styles.input, multiline && styles.inputMultiline]}
@@ -430,7 +480,7 @@ function PickerModal({
                   {item.label}
                 </Text>
                 {item.value === selected && (
-                  <Text style={styles.pickerCheck}>âœ"</Text>
+                  <Icon name="checkmark" size={16} color="#024BAB" />
                 )}
               </TouchableOpacity>
             )}
@@ -444,10 +494,20 @@ function PickerModal({
   );
 }
 
+const NB_BOX = {
+  borderWidth: 2,
+  borderRadius: 8,
+  borderRightWidth: 4,
+  borderBottomWidth: 4,
+  borderRightColor: '#0A0A0A',
+  borderBottomColor: '#0A0A0A',
+  borderColor: '#000',
+} as const;
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
   header: {
-    height: 64,
+    height: 60,
     backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
@@ -465,17 +525,11 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 20, fontWeight: '500', color: '#000' },
   saveBtn: {
+    ...NB_BOX,
     backgroundColor: '#FF751F',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
-    minWidth: 72,
+    minWidth: 74,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -483,74 +537,84 @@ const styles = StyleSheet.create({
   },
   saveBtnText: { color: '#fff', fontWeight: '500', fontSize: 13 },
   divider: { height: 2, backgroundColor: '#000' },
-  scroll: { padding: 16, gap: 12 },
+  scroll: { padding: 16, gap: 14 },
 
   section: {
+    ...NB_BOX,
     backgroundColor: '#fff',
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
     padding: 14,
-    marginBottom: 0,
+    gap: 12,
   },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
-    marginBottom: 14,
   },
-  fieldGroup: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: '500', color: '#000', marginBottom: 6 },
+  twoCol: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  halfCol: {
+    flex: 1,
+  },
+  label: { fontSize: 12, fontWeight: '500', color: '#000', marginBottom: 6 },
   inputBorder: {
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    ...NB_BOX,
     backgroundColor: '#fff',
   },
   input: {
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    fontSize: 13,
     color: '#000',
     fontWeight: '500',
   },
-  inputMultiline: { height: 80, textAlignVertical: 'top' },
+  inputMultiline: { height: 76, textAlignVertical: 'top' },
   selectRow: {
+    ...NB_BOX,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     backgroundColor: '#fff',
+    gap: 6,
   },
-  selectText: { fontSize: 14, color: '#000', flex: 1, fontWeight: '500' },
-  selectChevron: { fontSize: 20, color: '#64748b' },
+  selectText: { fontSize: 13, color: '#000', flex: 1, fontWeight: '500' },
   statePill: {
-    borderWidth: 1,
-    borderColor: '#000',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1.5,
+    borderRadius: 6,
+    borderColor: '#15803d',
     paddingHorizontal: 10,
     paddingVertical: 6,
     backgroundColor: '#f0fdf4',
-    borderLeftWidth: 4,
-    borderLeftColor: '#22c55e',
   },
-  statePillText: { fontSize: 13, color: '#15803d', fontWeight: '500' },
+  statePillText: { fontSize: 12, color: '#15803d', fontWeight: '500' },
+  chipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  prodChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1.5,
+    borderColor: '#024BAB',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  prodChipText: {
+    fontSize: 11,
+    color: '#024BAB',
+    fontWeight: '500',
+  },
 
   // Modals
   modalOverlay: {
@@ -560,11 +624,13 @@ const styles = StyleSheet.create({
   },
   modalSheet: {
     backgroundColor: '#fff',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     borderTopWidth: 2,
     borderLeftWidth: 2,
     borderRightWidth: 2,
     borderColor: '#000',
-    padding: 24,
+    padding: 20,
     maxHeight: '80%',
   },
   modalTitle: {
@@ -572,30 +638,24 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#64748b',
     letterSpacing: 1,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   pickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 13,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
   },
   pickerRowActive: { backgroundColor: '#eff6ff' },
   pickerText: { fontSize: 15, color: '#000', fontWeight: '500' },
   pickerTextActive: { color: '#024BAB', fontWeight: '500' },
-  pickerCheck: { color: '#024BAB', fontSize: 16, fontWeight: '500' },
   modalCancelBtn: {
-    marginTop: 16,
-    paddingVertical: 13,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
+    ...NB_BOX,
+    marginTop: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     backgroundColor: '#fff',
   },
@@ -604,6 +664,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
     gap: 12,
@@ -613,25 +674,19 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderWidth: 2,
+    borderRadius: 6,
     borderColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
   },
   checkboxChecked: { backgroundColor: '#024BAB' },
-  checkMark: { color: '#fff', fontSize: 13, fontWeight: '500' },
   checkLabel: { fontSize: 14, color: '#000', flex: 1, fontWeight: '500' },
   modalDoneBtn: {
-    marginTop: 16,
+    ...NB_BOX,
+    marginTop: 14,
     backgroundColor: '#FF751F',
     paddingVertical: 13,
-    borderWidth: 2,
-    borderRadius: 8,
-    borderRightWidth: 5,
-    borderBottomWidth: 5,
-    borderRightColor: '#0A0A0A',
-    borderBottomColor: '#0A0A0A',
-    borderColor: '#000',
     alignItems: 'center',
   },
   modalDoneText: { color: '#fff', fontWeight: '500', fontSize: 15 },

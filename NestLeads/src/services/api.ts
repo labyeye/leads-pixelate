@@ -57,10 +57,22 @@ async function request<T>(
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  // The login screen shows the Terms + Privacy links, so any /auth call made from it counts as acceptance.
+  // The server only records it when a session starts.
+  let body = options.body;
+  if (endpoint.startsWith('/auth/') && typeof body === 'string') {
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+        body = JSON.stringify({ ...parsed, acceptTerms: true });
+    } catch {}
+  }
+
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
+      body,
       headers,
       // Mobile uses Bearer tokens; don't send the web session cookies iOS stores
       credentials: 'omit',
@@ -1122,6 +1134,21 @@ export const supportAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+};
+
+// Terms & Privacy acceptance (backend /api/legal). Used by components/TermsGate.
+export const legalAPI = {
+  status: async () => {
+    const r: any = await request('/legal/status');
+    return r.data ?? r;
+  },
+  accept: async () => {
+    const r: any = await request('/legal/accept', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    return r.data ?? r;
+  },
 };
 
 export const billingAPI = {

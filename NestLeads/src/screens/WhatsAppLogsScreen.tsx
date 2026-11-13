@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { whatsappAPI } from '../services/api';
 import { CountText } from '../components/motion';
@@ -173,15 +175,7 @@ export default function WhatsAppLogsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>WhatsApp Logs</Text>
-      </View>
+      <ScreenHeader icon="logo-whatsapp" title="WhatsApp Logs" onBack={() => navigation.goBack()} />
       <View style={styles.divider} />
 
       <View style={styles.summaryRow}>

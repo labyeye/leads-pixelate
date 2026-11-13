@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { productsAPI } from '../services/api';
 
 const NB_SHADOW = {
@@ -202,20 +204,13 @@ export default function ProductsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Products</Text>
-        <Text style={styles.headerSub}>{products.length} items</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={openAdd}>
-          <Icon name="add" size={16} color="#fff" />
-          <Text style={styles.addBtnText}>Add</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader icon="cube-outline" title="Products" onBack={() => navigation.goBack()} right={
+          <>
+        <TouchableOpacity onPress={openAdd} hitSlop={8} style={{ padding: 4 }}>
+            <Icon name="add" size={24} color="#000" />
+          </TouchableOpacity>
+          </>
+        } />
       <View style={styles.divider} />
 
       <View style={styles.searchRow}>

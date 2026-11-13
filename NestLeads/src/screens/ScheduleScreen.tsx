@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { leadsAPI } from '../services/api';
 import { getStatusColor, getStatusLabel } from '../constants/statusConstants';
@@ -134,18 +136,9 @@ export default function ScheduleScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
+      <ScreenHeader icon="calendar-outline" title="Schedule" onBack={() => navigation.goBack()} right={
+          <>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Schedule</Text>
-          <Text style={styles.headerSub}>
-            {leads.length} {plural} total
-          </Text>
         </View>
         <View style={[styles.headerBadge, { backgroundColor: accent }]}>
           <Icon name={icon} size={13} color="#fff" />
@@ -153,7 +146,8 @@ export default function ScheduleScreen({ navigation }: any) {
             {totalThisMonth} this month
           </Text>
         </View>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       <View style={styles.toggle}>
@@ -605,7 +599,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  legendDot: { width: 12, height: 12, borderWidth: 1, borderColor: '#000' },
+  legendDot: { width: 12, height: 12, borderWidth: 1,borderRadius:80, borderColor: '#000' },
   legendText: { fontSize: 11, color: '#64748b', fontWeight: '500' },
 
   panel: {

@@ -15,6 +15,8 @@ interface Props {
   onSearch?: () => void;
   onBell?: () => void;
   onAvatar?: () => void;
+  /** Optional extra action rendered before search (e.g. an add button). */
+  extra?: React.ReactNode;
 }
 
 /** Shared top bar: menu · search · bell(dot) · avatar, then greeting + page title. */
@@ -27,6 +29,7 @@ export default function AppHeader({
   onSearch,
   onBell,
   onAvatar,
+  extra,
 }: Props) {
   const { user } = useAuth();
   const isStaff = !['admin', 'super_admin'].includes(user?.role);
@@ -41,6 +44,7 @@ export default function AppHeader({
           <Icon name="menu" size={26} color="#000" />
         </TouchableOpacity>
         <View style={s.right}>
+          {extra}
           <TouchableOpacity onPress={onSearch} hitSlop={10}>
             <Icon name="search-outline" size={24} color="#000" />
           </TouchableOpacity>

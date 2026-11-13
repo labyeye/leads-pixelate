@@ -12,6 +12,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PieChart } from 'react-native-gifted-charts';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { facebookAPI } from '../services/api';
 import {
   parseInsight,
@@ -122,18 +124,13 @@ export default function FacebookAdsDashboardScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Facebook Dashboard</Text>
+      <ScreenHeader icon="stats-chart-outline" title="Facebook Dashboard" onBack={() => navigation.goBack()} right={
+          <>
         <TouchableOpacity onPress={() => load(true)} style={styles.backBtn}>
           <Icon name="refresh" size={16} color="#000" />
         </TouchableOpacity>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       {loading ? (

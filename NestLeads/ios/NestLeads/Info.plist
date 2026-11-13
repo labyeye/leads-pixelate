@@ -50,7 +50,7 @@
 		<string>DMSans-Bold.ttf</string>
 		<string>DMSans-SemiBold.ttf</string>
 	</array>
-	<key>UIBackgroundModes</key>
+		<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 	</array>

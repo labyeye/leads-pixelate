@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import PhoneInput from '../components/PhoneInput';
@@ -115,15 +117,7 @@ export default function AccountSecurityScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Account Security</Text>
-      </View>
+      <ScreenHeader icon="lock-closed-outline" title="Account Security" onBack={() => navigation.goBack()} />
       <View style={styles.divider} />
 
       <ScrollView

@@ -14,9 +14,13 @@ import {
   ScrollView,
   Image,
   Linking,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import {
   leadsAPI,
   indiamartAPI,
@@ -38,11 +42,13 @@ import {
   ALL_SOURCES,
   ALL_STATUSES,
 } from '../constants/statusConstants';
+import WhatsAppLogo from '../components/WhatsAppLogo';
 import SourceBadge, { SourceLogo } from '../components/SourceBadge';
 import {
   ArrowRight,
   Mail,
   PhoneCall,
+  Ellipsis,
 } from 'lucide-react-native';
 
 const PRIMARY = '#024BAB';
@@ -135,6 +141,73 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
   { key: 'created', label: 'Created At', default: false, get: (l: any) => l.createdAt || '' },
 ];
 
+const SYNC_LABELS: Record<string, string> = {
+  indiamart: 'IndiaMART',
+  facebook: 'Facebook',
+  googleAds: 'Google Ads',
+  tradeindia: 'TradeIndia',
+  justdial: 'Justdial',
+};
+
+function SyncingOverlay({ source }: { source: string | null }) {
+  const spin = React.useRef(new Animated.Value(0)).current;
+  const dots = React.useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    if (!source) return;
+    const loop = Animated.loop(
+      Animated.timing(spin, { toValue: 1, duration: 1100, easing: Easing.linear, useNativeDriver: true }),
+    );
+    const dotLoops = dots.map((d, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 180),
+          Animated.timing(d, { toValue: 1, duration: 350, useNativeDriver: true }),
+          Animated.timing(d, { toValue: 0, duration: 350, useNativeDriver: true }),
+          Animated.delay((2 - i) * 180),
+        ]),
+      ),
+    );
+    loop.start();
+    dotLoops.forEach(l => l.start());
+    return () => {
+      loop.stop();
+      dotLoops.forEach(l => l.stop());
+      spin.setValue(0);
+    };
+  }, [source, spin, dots]);
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const label = source ? SYNC_LABELS[source] : '';
+  return (
+    <Modal visible={!!source} transparent animationType="fade">
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ backgroundColor: '#fff', borderWidth: 2, borderColor: '#000', padding: 28, alignItems: 'center', width: 260 }}>
+          <View style={{ width: 90, height: 90, alignItems: 'center', justifyContent: 'center' }}>
+            <Animated.View style={{ position: 'absolute', transform: [{ rotate }] }}>
+              <Icon name="sync-outline" size={86} color="#e2e8f0" />
+            </Animated.View>
+            <SourceLogo source={label} size={40} />
+          </View>
+          <Text style={{ marginTop: 16, fontSize: 16, fontWeight: '600', color: '#000' }}>
+            Syncing {label} leads
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
+            {dots.map((d, i) => (
+              <Animated.View
+                key={i}
+                style={{
+                  width: 8, height: 8, borderRadius: 4, backgroundColor: '#000',
+                  opacity: d.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] }),
+                  transform: [{ translateY: d.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) }],
+                }}
+              />
+            ))}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 export default function LeadsListScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
   const insets = useSafeAreaInsets();
@@ -152,6 +225,13 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [syncPickerOpen, setSyncPickerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { unread, refresh: refreshUnread } = useUnreadNotifications();
+  useEffect(() => {
+    const unsub = navigation.addListener?.('focus', refreshUnread);
+    return unsub;
+  }, [navigation, refreshUnread]);
   const [importText, setImportText] = useState('');
   const [importing, setImporting] = useState(false);
   const runImport = async () => {
@@ -487,6 +567,11 @@ export default function LeadsListScreen({ navigation }: Props) {
                 {subtitle}
               </Text>
             )}
+            {!!l.phone && (
+              <Text style={styles.leadPhone} numberOfLines={1}>
+                {l.phone}
+              </Text>
+            )}
           </View>
           <View style={styles.pillCol}>
             <View style={[styles.pill, { backgroundColor: sc.bg }]}>
@@ -525,7 +610,7 @@ export default function LeadsListScreen({ navigation }: Props) {
             }
             hitSlop={4}
           >
-            <Icon name="logo-whatsapp" size={16} color="#16a34a" />
+            <WhatsAppLogo size={18} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.iconBtn, !l.email && styles.actionDisabled]}
@@ -545,35 +630,29 @@ export default function LeadsListScreen({ navigation }: Props) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('More')} hitSlop={10}>
-          <Icon name="menu" size={26} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Leads</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            onPress={() => {
-              if (searchOpen) setSearch('');
-              setSearchOpen(v => !v);
-            }}
-            hitSlop={10}
-          >
-            <Icon name={searchOpen ? 'close' : 'search-outline'} size={24} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Dashboard')} hitSlop={10}>
-            <Icon name="notifications-outline" size={24} color="#000" />
-            {leads.length > 0 && <View style={styles.bellDot} />}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.plusBtn}
-            onPress={() => navigation.navigate('AddLead')}
-            accessibilityLabel="Add lead"
-            activeOpacity={0.85}
-          >
-            <Icon name="add" size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ScreenHeader
+        icon="people-outline"
+        title="Leads"
+        right={
+          <>
+            <TouchableOpacity hitSlop={8} style={{ padding: 4 }} onPress={() => navigation.navigate('More', { screen: 'Notifications' })} accessibilityLabel="Notifications">
+              <Icon name="notifications-outline" size={22} color="#000" />
+              {unread > 0 && (
+                <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#DC2626', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '600' }}>{unread > 9 ? '9+' : unread}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity hitSlop={8} style={{ padding: 4 }} onPress={() => setMenuOpen(true)} accessibilityLabel="More actions">
+              <Ellipsis size={22} color="#000" />
+              {syncingSource && <View style={styles.bellDot} />}
+            </TouchableOpacity>
+            <TouchableOpacity hitSlop={8} style={{ padding: 4 }} onPress={() => navigation.navigate('AddLead')} accessibilityLabel="Add lead">
+              <Icon name="add" size={24} color="#000" />
+            </TouchableOpacity>
+          </>
+        }
+      />
 
       {searchOpen && (
         <View style={styles.searchRow}>
@@ -657,6 +736,65 @@ export default function LeadsListScreen({ navigation }: Props) {
         </View>
       </Modal>
 
+      <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', alignItems: 'flex-end', paddingTop: 96, paddingHorizontal: 12 }}
+          activeOpacity={1}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View style={{ minWidth: 230, borderWidth: 2, borderRadius: 8, borderRightWidth: 4, borderBottomWidth: 4, borderColor: '#000', backgroundColor: '#fff', paddingVertical: 4 }}>
+            {[
+              { icon: 'swap-vertical', label: 'Sort leads', onPress: openSort },
+              { icon: 'sync-outline', label: 'Sync leads', onPress: () => setSyncPickerOpen(true) },
+              { icon: 'download-outline', label: 'Export leads', onPress: () => setExportOpen(true) },
+              { icon: 'cloud-upload-outline', label: 'Import leads', onPress: () => setImportOpen(true) },
+            ].map(item => (
+              <TouchableOpacity
+                key={item.label}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 }}
+                onPress={() => {
+                  setMenuOpen(false);
+                  item.onPress();
+                }}
+              >
+                <Icon name={item.icon} size={18} color="#000" />
+                <Text style={{ fontSize: 14, color: '#000' }}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal visible={syncPickerOpen} transparent animationType="slide" onRequestClose={() => setSyncPickerOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Sync leads from</Text>
+            {([
+              ['indiamart', 'IndiaMART'],
+              ['facebook', 'Facebook'],
+              ['googleAds', 'Google Ads'],
+              ['tradeindia', 'TradeIndia'],
+              ['justdial', 'Justdial'],
+            ] as const).map(([key, label]) => (
+              <TouchableOpacity
+                key={key}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}
+                onPress={() => {
+                  setSyncPickerOpen(false);
+                  handleSyncPress(key);
+                }}
+              >
+                <SourceLogo source={label} size={28} />
+                <Text style={{ fontSize: 15, color: '#000', fontWeight: '500' }}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={[styles.pillBtn, { justifyContent: 'center', marginTop: 12 }]} onPress={() => setSyncPickerOpen(false)}>
+              <Text style={styles.pillBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={bulkAssignOpen} transparent animationType="slide" onRequestClose={() => setBulkAssignOpen(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
@@ -692,31 +830,6 @@ export default function LeadsListScreen({ navigation }: Props) {
           </View>
         </View>
       </Modal>
-
-      <View style={styles.pipelineRow}>
-        <Text style={styles.pipelineTitle}>Lead Pipeline</Text>
-        <View style={styles.pipelineBtns}>
-          <TouchableOpacity
-            style={[styles.pillBtn, hasFilters && styles.pillBtnActive]}
-            onPress={openFilterModal}
-          >
-            <Icon name="funnel-outline" size={15} color={hasFilters ? '#fff' : '#000'} />
-            <Text style={[styles.pillBtnText, hasFilters && { color: '#fff' }]}>
-              Filter{hasFilters ? ` (${filterCount})` : ''}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pillBtn} onPress={openSort}>
-            <Icon name="swap-vertical" size={15} color="#000" />
-            <Text style={styles.pillBtnText}>Sort</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pillBtn} onPress={() => setExportOpen(true)}>
-            <Icon name="download-outline" size={15} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.pillBtn} onPress={() => setImportOpen(true)}>
-            <Icon name="cloud-upload-outline" size={15} color="#000" />
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* Active filter chips row */}
       {hasFilters && (
@@ -839,6 +952,8 @@ export default function LeadsListScreen({ navigation }: Props) {
           }
         />
       )}
+
+      <SyncingOverlay source={syncingSource} />
 
       {/* Date picker modal — for IndiaMART & Facebook */}
       <Modal
@@ -1559,8 +1674,8 @@ const styles = StyleSheet.create({
   avatar: {
     width: 40,
     height: 40,
-    borderRadius: 8,
-    backgroundColor: '#044bab',
+    borderRadius: 50,
+    backgroundColor: '#FF751F',
     borderWidth: 2,
     borderColor: '#000',
     borderRightWidth: 4,
@@ -1571,6 +1686,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 18, fontWeight: '500', color: '#FBFBFB' },
   cardTopMid: { flex: 1 },
   leadName: { fontSize: 15, fontWeight: '500', color: '#000' },
+  leadPhone: { fontSize: 12, color: '#000', fontWeight: '600', marginTop: 2 },
   leadSubtitle: { fontSize: 12, color: '#374151', fontWeight: '500', marginTop: 1 },
   pillCol: { alignItems: 'flex-end', gap: 4, maxWidth: 120 },
   metaRow: {
@@ -1583,11 +1699,11 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
   },
   metaInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { flexShrink: 1, fontSize: 12, fontWeight: '500', color: '#374151' },
+  metaText: { flexShrink: 1, fontSize: 14, fontWeight: '500', color: '#374151' },
   iconBtn: {
     width: 34,
     height: 34,
-    borderRadius: 8,
+    borderRadius: 50,
     borderWidth: 2,
     borderColor: '#000',
     backgroundColor: '#fff',
@@ -1598,7 +1714,7 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 50,
     borderWidth: 2,
     borderColor: '#000',
   },

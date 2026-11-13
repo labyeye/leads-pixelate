@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import { whatsappAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TemplateEditorModal, { EMPTY_TEMPLATE } from '../components/TemplateEditorModal';
@@ -152,15 +154,7 @@ export default function WhatsAppSetupScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>WhatsApp Setup</Text>
-      </View>
+      <ScreenHeader icon="settings-outline" title="WhatsApp Setup" onBack={() => navigation.goBack()} />
       <View style={styles.divider} />
 
       <View style={styles.tabBar}>

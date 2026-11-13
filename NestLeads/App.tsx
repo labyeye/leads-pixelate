@@ -25,6 +25,7 @@ import {
   navigateFromNotification,
 } from './src/navigation/navigationRef';
 import { setupPushNotifications } from './src/services/pushService';
+import TermsGate from './src/components/TermsGate';
 import { useLeadPolling } from './src/hooks/useLeadPolling';
 import storage from './src/utils/storage';
 
@@ -115,7 +116,12 @@ function RootNavigator() {
   }
 
   if (!user) return <AuthNavigator />;
-  return <AppNavigator />;
+  return (
+    <>
+      <AppNavigator />
+      <TermsGate />
+    </>
+  );
 }
 
 export default function App() {

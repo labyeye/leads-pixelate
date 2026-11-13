@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import ScreenHeader from '../components/ScreenHeader';
+
 import {
   facebookAPI,
   leadsAPI,
@@ -122,20 +124,12 @@ export default function CampaignReportsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-        >
-          <Icon name="arrow-back" size={18} color="#000" />
-        </TouchableOpacity>
+      <ScreenHeader icon="stats-chart-outline" title="Reports & Analytics" onBack={() => navigation.goBack()} right={
+          <>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Reports & Analytics</Text>
-          <Text style={styles.headerSub}>
-            Cross-channel marketing performance
-          </Text>
         </View>
-      </View>
+          </>
+        } />
       <View style={styles.divider} />
 
       {loading ? (
