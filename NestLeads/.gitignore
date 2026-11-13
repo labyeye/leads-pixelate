@@ -73,3 +73,7 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Firebase client config (kept out of the public repo; download from the Firebase console)
+android/app/google-services.json
+ios/NestLeads/GoogleService-Info.plist

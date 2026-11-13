@@ -61,6 +61,7 @@ import ActivityLogScreen from '../screens/ActivityLogScreen';
 import LivePerformanceScreen from '../screens/LivePerformanceScreen';
 import FunnelsScreen from '../screens/FunnelsScreen';
 import TrashScreen from '../screens/TrashScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import AccountSecurityScreen from '../screens/AccountSecurityScreen';
 import { withSlideUp } from '../components/motion';
 
@@ -106,6 +107,7 @@ const SocialPlannerScreenAnim = withSlideUp(SocialPlannerScreen);
 const SupportScreenAnim = withSlideUp(SupportScreen);
 const TradeDocumentsScreenAnim = withSlideUp(TradeDocumentsScreen);
 const TrashScreenAnim = withSlideUp(TrashScreen);
+const NotificationsScreenAnim = withSlideUp(NotificationsScreen);
 const UsersScreenAnim = withSlideUp(UsersScreen);
 const WhatsAppInboxScreenAnim = withSlideUp(WhatsAppInboxScreen);
 const WhatsAppLogsScreenAnim = withSlideUp(WhatsAppLogsScreen);
@@ -176,6 +178,7 @@ export type MoreStackParamList = {
   LivePerformance: undefined;
   Funnels: undefined;
   Trash: undefined;
+  Notifications: undefined;
   AccountSecurity: undefined;
 };
 
@@ -299,6 +302,10 @@ function MoreNavigator() {
       <MoreStack.Screen name="LivePerformance" component={LivePerformanceScreenAnim} />
       <MoreStack.Screen name="Funnels" component={FunnelsScreenAnim} />
       <MoreStack.Screen name="Trash" component={TrashScreenAnim} />
+      <MoreStack.Screen
+        name="Notifications"
+        component={NotificationsScreenAnim}
+      />
       <MoreStack.Screen
         name="AccountSecurity"
         component={AccountSecurityScreenAnim}

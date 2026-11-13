@@ -9,13 +9,13 @@ import {
   StatusBar,
   RefreshControl,
   Image,
-  Modal,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
+import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import SourceBadge, { SourceLogo } from '../components/SourceBadge';
 import AppHeader from '../components/AppHeader';
 import LeadsBarChart from '../components/LeadsBarChart';
@@ -70,7 +70,7 @@ export default function DashboardScreen({ navigation }: any) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  const { unread, refresh: refreshUnread } = useUnreadNotifications();
   const [recentLeads, setRecentLeads] = useState<any[]>([]);
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [sourceFocusedIdx, setSourceFocusedIdx] = useState(0);
@@ -104,6 +104,11 @@ export default function DashboardScreen({ navigation }: any) {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    const unsub = navigation?.addListener?.('focus', refreshUnread);
+    return unsub;
+  }, [navigation, refreshUnread]);
 
   useEffect(() => {
     fetchAll();
@@ -152,12 +157,12 @@ export default function DashboardScreen({ navigation }: any) {
         name={user?.name}
         avatar={user?.avatar}
         title="Dashboard"
-        badge={recentLeads.length > 0}
+        badge={unread > 0}
         onMenu={() => navigation?.navigate('More')}
         onSearch={() =>
           navigation?.navigate('LeadsStack', { screen: 'LeadsList' })
         }
-        onBell={() => setNotifOpen(true)}
+        onBell={() => navigation?.navigate('More', { screen: 'Notifications' })}
         onAvatar={() => navigation?.navigate('More')}
       />
 
@@ -489,155 +494,6 @@ export default function DashboardScreen({ navigation }: any) {
         </ScrollView>
       )}
 
-      {/* Notifications Modal */}
-      <Modal
-        visible={notifOpen}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setNotifOpen(false)}
-      >
-        <View style={styles.notifOverlay}>
-          <View style={styles.notifSheet}>
-            {/* Modal Header */}
-            <View style={styles.notifHeader}>
-              <View style={styles.notifHeaderLeft}>
-                <View style={styles.notifHeaderIcon}>
-                  <Icon name="notifications" size={16} color="#fff" />
-                </View>
-                <Text style={styles.notifHeaderTitle}>Notifications</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.notifCloseBtn}
-                onPress={() => setNotifOpen(false)}
-              >
-                <Icon name="close" size={18} color="#000" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.notifDivider} />
-
-            <ScrollView
-              contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
-            >
-              {/* Activity Log */}
-              <View style={styles.notifSection}>
-                <Text style={styles.notifSectionLabel}>SESSION ACTIVITY</Text>
-                {activities.map((act, i) => (
-                  <View key={i} style={styles.notifItem}>
-                    <View
-                      style={[
-                        styles.notifItemIcon,
-                        {
-                          backgroundColor:
-                            act.type === 'login' ? PRIMARY : '#ef4444',
-                        },
-                      ]}
-                    >
-                      <Icon
-                        name={
-                          act.type === 'login'
-                            ? 'log-in-outline'
-                            : 'log-out-outline'
-                        }
-                        size={14}
-                        color="#fff"
-                      />
-                    </View>
-                    <View style={styles.notifItemInfo}>
-                      <Text style={styles.notifItemTitle}>{act.label}</Text>
-                      <Text style={styles.notifItemTime}>
-                        {act.time.toLocaleString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.notifItemBadge,
-                        {
-                          backgroundColor:
-                            act.type === 'login' ? PRIMARY : '#ef4444',
-                        },
-                      ]}
-                    >
-                      <Text style={styles.notifItemBadgeText}>
-                        {act.type === 'login' ? 'IN' : 'OUT'}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.notifDivider} />
-
-              {/* Recent Leads */}
-              <View style={styles.notifSection}>
-                <View style={styles.notifSectionRow}>
-                  <Text style={styles.notifSectionLabel}>RECENT LEADS</Text>
-                  <View style={styles.notifCount}>
-                    <Text style={styles.notifCountText}>
-                      {recentLeads.length}
-                    </Text>
-                  </View>
-                </View>
-                {recentLeads.length === 0 ? (
-                  <View style={styles.notifEmpty}>
-                    <Icon name="people-outline" size={28} color="#e2e8f0" />
-                    <Text style={styles.notifEmptyText}>No recent leads</Text>
-                  </View>
-                ) : (
-                  recentLeads.map((l, i) => (
-                    <TouchableOpacity
-                      key={l._id || i}
-                      style={styles.notifItem}
-                      onPress={() => {
-                        setNotifOpen(false);
-                        navigation?.navigate('LeadsStack', {
-                          screen: 'LeadDetail',
-                          params: { leadId: l._id },
-                        });
-                      }}
-                    >
-                      <UserAvatar
-                        name={l.assignedTo?.name || l.name}
-                        avatar={l.assignedTo?.avatar}
-                        size={38}
-                        index={i}
-                      />
-                      <View style={styles.notifItemInfo}>
-                        <Text style={styles.notifItemTitle}>
-                          {l.name || '—'}
-                        </Text>
-                        <Text style={styles.notifItemSub} numberOfLines={1}>
-                          {l.source ? `via ${l.source}` : ''}
-                          {l.company ? ` · ${l.company}` : ''}
-                        </Text>
-                        {l.createdAt && (
-                          <Text style={styles.notifItemTime}>
-                            {new Date(l.createdAt).toLocaleString('en-IN', {
-                              day: 'numeric',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.notifLeadStatus}>
-                        <Text style={styles.notifLeadStatusText}>
-                          {(l.status || 'NEW').slice(0, 8)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

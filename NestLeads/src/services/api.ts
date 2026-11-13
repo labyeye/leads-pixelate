@@ -1281,3 +1281,44 @@ export const aiCallingAPI = {
       { method: 'POST' },
     ),
 };
+
+// ── In-app notifications (server inbox) + push device registration ─────────
+export interface AppNotification {
+  _id: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: { screen?: string; id?: string; phone?: string };
+  read: boolean;
+  createdAt: string;
+}
+
+export const notificationsAPI = {
+  list: (page = 1) =>
+    request<{
+      success: boolean;
+      data: AppNotification[];
+      total: number;
+      unread: number;
+    }>(`/notifications?limit=50&page=${page}`),
+  unreadCount: () =>
+    request<{ success: boolean; unread: number }>('/notifications/unread-count'),
+  markRead: (id: string) =>
+    request<{ success: boolean }>(`/notifications/${id}/read`, {
+      method: 'PATCH',
+    }),
+  markAllRead: () =>
+    request<{ success: boolean }>('/notifications/read-all', { method: 'POST' }),
+  clear: () =>
+    request<{ success: boolean }>('/notifications', { method: 'DELETE' }),
+  registerDevice: (fcmToken: string) =>
+    request<{ success: boolean }>('/notifications/devices', {
+      method: 'POST',
+      body: JSON.stringify({ fcmToken, platform: Platform.OS }),
+    }),
+  removeDevice: (fcmToken?: string) =>
+    request<{ success: boolean }>('/notifications/devices', {
+      method: 'DELETE',
+      body: JSON.stringify({ fcmToken }),
+    }),
+};

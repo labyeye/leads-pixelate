@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { resetNotificationState } from '../services/notificationService';
+import { unregisterPush } from '../services/pushService';
 import { authAPI, settingsAPI, setToken, removeToken } from '../services/api';
 import storage from '../utils/storage';
 import {
@@ -92,6 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    // This phone must stop getting the account's pushes (needs the token, so before it is removed)
+    try {
+      await unregisterPush();
+    } catch {}
     // Drop this device from the signed-in devices list (best effort)
     try {
       await authAPI.removeCurrentSession();

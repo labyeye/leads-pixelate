@@ -211,12 +211,11 @@ export async function setLastLeadIds(ids: string[]) {
 }
 
 export function setupForegroundNotificationHandler(
-  onLeadPress: (leadId: string) => void,
+  onPress: (data: Record<string, any>) => void,
 ) {
   return notifee.onForegroundEvent(({ type, detail }) => {
     if (type === EventType.PRESS || type === EventType.ACTION_PRESS) {
-      const leadId = detail.notification?.data?.leadId as string | undefined;
-      if (leadId) onLeadPress(leadId);
+      onPress((detail.notification?.data as Record<string, any>) || {});
     }
   });
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { leadsAPI } from '../services/api';
+import { isPushActive } from '../services/pushService';
 import {
   showNewLeadNotification,
   showFollowupNotification,
@@ -58,7 +59,10 @@ export function useLeadPolling(enabled: boolean, userId?: string) {
       if (!isFirstPollRef.current && sameUser && previousIds.length > 0) {
         const seen = new Set(previousIds); // O(1) lookups instead of includes() per lead
         const newLeads = leads.filter((l: any) => !seen.has(l._id));
-        if (newLeads.length > 3) {
+        // Server push already announces new leads when this phone is registered for it.
+        if (isPushActive()) {
+          /* nothing to show locally */
+        } else if (newLeads.length > 3) {
           await showNewLeadsSummary(newLeads.length);
         } else {
           for (const lead of newLeads) {
@@ -89,7 +93,7 @@ export function useLeadPolling(enabled: boolean, userId?: string) {
         const key = `f_${lead._id}_${lead.followUpDate}`;
         if (remindedRef.current.has(key)) continue;
         remindedRef.current.add(key);
-        await showFollowupNotification(lead);
+        if (!isPushActive()) await showFollowupNotification(lead);
       }
 
       // ── Visit reminders ──
@@ -102,7 +106,7 @@ export function useLeadPolling(enabled: boolean, userId?: string) {
         const key = `v_${lead._id}_${lead.visitScheduledDate}`;
         if (remindedRef.current.has(key)) continue;
         remindedRef.current.add(key);
-        await showVisitNotification(lead);
+        if (!isPushActive()) await showVisitNotification(lead);
       }
     } catch {
       // Silently ignore — user might be offline

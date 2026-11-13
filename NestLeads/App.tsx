@@ -20,7 +20,11 @@ import {
   getInitialNotification,
   clearAllNotifications,
 } from './src/services/notificationService';
-import { navigateToLead } from './src/navigation/navigationRef';
+import {
+  navigateToLead,
+  navigateFromNotification,
+} from './src/navigation/navigationRef';
+import { setupPushNotifications } from './src/services/pushService';
 import { useLeadPolling } from './src/hooks/useLeadPolling';
 import storage from './src/utils/storage';
 
@@ -55,11 +59,26 @@ function NotificationInit() {
 
   // Foreground notification press handler
   useEffect(() => {
-    const unsub = setupForegroundNotificationHandler(leadId => {
-      navigateToLead(leadId);
+    const unsub = setupForegroundNotificationHandler(data => {
+      if (data.leadId) navigateToLead(String(data.leadId));
+      else navigateFromNotification(data);
     });
     return () => unsub();
   }, []);
+
+  // Server push (Firebase): register this phone once signed in; a tap opens what the notification is about.
+  useEffect(() => {
+    if (!user) return;
+    let cleanup = () => {};
+    let cancelled = false;
+    setupPushNotifications(data => navigateFromNotification(data)).then(fn =>
+      cancelled ? fn() : (cleanup = fn),
+    );
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
+  }, [user?._id]);
 
   // Clear badge when user opens the app
   useEffect(() => {
