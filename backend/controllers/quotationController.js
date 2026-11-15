@@ -220,13 +220,15 @@ const decideApproval = asyncHandler(async (req, res) => {
   }
 
   const notifyService = require("../services/notifyService");
-  notifyService.notify([quotation.createdBy?._id || quotation.createdBy], {
-    tenantId: req.user.tenantId || null,
-    type: "quotation_decision",
-    title: `Quotation ${quotation.number} ${decision === "approve" ? "approved" : "rejected"}`,
-    body: decision === "approve" ? "You can send it now." : String(remarks).trim().slice(0, 140),
-    data: { screen: "Quotations", id: String(quotation._id) },
-  });
+  const notifyCreator = (body) =>
+    notifyService.notify([quotation.createdBy?._id || quotation.createdBy], {
+      tenantId: req.user.tenantId || null,
+      type: "quotation_decision",
+      title: `Quotation ${quotation.number} ${decision === "approve" ? "approved" : "rejected"}`,
+      body,
+      data: { screen: "Quotations", id: String(quotation._id) },
+    });
+  if (decision !== "approve") notifyCreator(String(remarks).trim().slice(0, 140));
 
   await Quotation.updateOne(
     { _id: quotation._id },
@@ -239,6 +241,20 @@ const decideApproval = asyncHandler(async (req, res) => {
       },
     },
   );
+
+  let autoSent = null;
+  if (decision === "approve" && cfg.autoSend?.enabled) {
+    autoSent = await require("./whatsappController").autoSendApprovedQuotation(quotation, req.user, cfg.autoSend);
+    if (autoSent.sent) await Quotation.updateOne({ _id: quotation._id, status: "Draft" }, { $set: { status: "Sent" } });
+  }
+  if (decision === "approve")
+    notifyCreator(
+      !autoSent
+        ? "You can send it now."
+        : autoSent.sent
+          ? "It was sent to the client on WhatsApp automatically."
+          : `Approved, but it could not be sent automatically: ${autoSent.reason}. You can send it manually.`,
+    );
 
   logActivity({
     user: req.user,
@@ -254,7 +270,7 @@ const decideApproval = asyncHandler(async (req, res) => {
   const fresh = await Quotation.findById(quotation._id)
     .populate("createdBy", "name email")
     .populate("approval.decidedBy", "name");
-  res.json({ success: true, data: fresh });
+  res.json({ success: true, data: fresh, autoSent });
 });
 
 const deleteQuotation = asyncHandler(async (req, res) => {

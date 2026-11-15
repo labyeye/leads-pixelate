@@ -21,9 +21,13 @@ import { useToast } from "@/hooks/use-toast";
 import { whatsappAPI } from "@/services/api";
 import { quotationPdfBlob } from "@/lib/quotationPdf";
 
-type Mapping = { position: number; fieldKey: string; customValue: string };
+export type Mapping = {
+  position: number;
+  fieldKey: string;
+  customValue: string;
+};
 
-const FIELDS = [
+export const FIELDS = [
   { key: "name", label: "Client Name" },
   { key: "company", label: "Company" },
   { key: "phone", label: "Phone" },
@@ -44,14 +48,17 @@ const RULES: [RegExp, string][] = [
 
 // Guess each {{n}} from the template's own wording ("Quotation {{3}}", "total {{4}}"), then its MAP hint.
 // Anything we can't place stays "custom" and is asked for.
-function autoMapping(t: any): Mapping[] {
+export function autoMapping(t: any): Mapping[] {
   const body: string = t?.bodyText || "";
   const hint = /MAP:\s*([A-Za-z,\s]+)/
     .exec(t?.notes || "")?.[1]
     .split(",")
     .map((x) => x.trim());
   return Array.from({ length: t?.variableCount || 0 }, (_, i) => {
-    const before = body.slice(0, body.indexOf(`{{${i + 1}}}`)).slice(-30).toLowerCase();
+    const before = body
+      .slice(0, body.indexOf(`{{${i + 1}}}`))
+      .slice(-30)
+      .toLowerCase();
     const h = hint?.[i];
     const fieldKey =
       (h && h !== "custom" && FIELDS.some((f) => f.key === h) && h) ||
@@ -160,7 +167,10 @@ export function SendQuotationDialog({
     (m.fieldKey === "custom" ? m.customValue : values[m.fieldKey]) || "";
   const preview = mapping.reduce(
     (text, m) =>
-      text.replace(`{{${m.position}}}`, `*${valueOf(m) || `{{${m.position}}}`}*`),
+      text.replace(
+        `{{${m.position}}}`,
+        `*${valueOf(m) || `{{${m.position}}}`}*`,
+      ),
     template?.bodyText || "",
   );
   const missing = mapping.some((m) => !valueOf(m).trim());
@@ -255,7 +265,9 @@ export function SendQuotationDialog({
             {template && (
               <div className="p-3 bg-[#DCF8C6] border-2 border-black text-sm whitespace-pre-wrap">
                 {preview}
-                <p className="mt-2 text-xs font-medium">📎 {quotation?.number}.pdf</p>
+                <p className="mt-2 text-xs font-medium">
+                  📎 {quotation?.number}.pdf
+                </p>
               </div>
             )}
 
@@ -289,7 +301,9 @@ export function SendQuotationDialog({
 
             <Button
               onClick={send}
-              disabled={!templateId || !validPhone || !senderId || missing || sending}
+              disabled={
+                !templateId || !validPhone || !senderId || missing || sending
+              }
               className="w-full"
             >
               {sending ? (

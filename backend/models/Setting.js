@@ -125,6 +125,20 @@ const settingSchema = new mongoose.Schema(
       enabled: { type: Boolean, default: false },
       minTotal: { type: Number, default: 0, min: 0 },
       approvers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      // When an approver approves, send the quotation PDF to the client on WhatsApp with this template.
+      autoSend: {
+        enabled: { type: Boolean, default: false },
+        templateId: { type: mongoose.Schema.Types.ObjectId, ref: "WhatsappTemplate", default: null },
+        phoneNumberId: { type: String, default: "" },
+        variableMapping: [
+          {
+            position: Number,
+            fieldKey: String,
+            customValue: { type: String, default: "" },
+            _id: false,
+          },
+        ],
+      },
     },
 
     // Live Performance page: each agent should make `calls` calls per `perMinutes` minutes.

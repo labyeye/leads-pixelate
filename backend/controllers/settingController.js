@@ -59,6 +59,21 @@ const updateSettings = asyncHandler(async (req, res) => {
       enabled: qa.enabled === true,
       minTotal: Math.min(Math.max(Number(qa.minTotal) || 0, 0), 1e9),
       approvers: valid.map((u) => u._id),
+      autoSend: {
+        enabled: qa.autoSend?.enabled === true && /^[0-9a-f]{24}$/i.test(String(qa.autoSend?.templateId || "")),
+        templateId: /^[0-9a-f]{24}$/i.test(String(qa.autoSend?.templateId || "")) ? qa.autoSend.templateId : null,
+        phoneNumberId: String(qa.autoSend?.phoneNumberId || "").slice(0, 64),
+        variableMapping: (Array.isArray(qa.autoSend?.variableMapping) ? qa.autoSend.variableMapping : [])
+          .slice(0, 20)
+          .map((m) => ({
+            position: Math.round(Number(m?.position)) || 0,
+            fieldKey: ["name", "company", "phone", "location", "requirement", "quotationNumber", "total", "custom"].includes(m?.fieldKey)
+              ? m.fieldKey
+              : "custom",
+            customValue: String(m?.customValue || "").slice(0, 200),
+          }))
+          .filter((m) => m.position >= 1),
+      },
     };
   }
 

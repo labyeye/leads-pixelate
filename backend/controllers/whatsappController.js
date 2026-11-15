@@ -1517,6 +1517,60 @@ exports.sendMessage = asyncHandler(async (req, res) => {
   });
 });
 
+// Sends the quotation PDF as the Document header of `template`. Shared by the manual send above
+// and the automatic send when a quotation is approved (Settings → Quotation Approval).
+async function deliverQuotation({ wa, phoneNumberId, phone, q, template, variableMapping, file, userId, tenantFilter }) {
+  const resolvedPhoneNumberId = phoneNumberId;
+  const fileName = `${q.number || "quotation"}.pdf`;
+  const buffer =
+    file ||
+    (await require("../utils/quotationPdf")(
+      q,
+      (await Setting.findOne(tenantFilter).lean()) || {},
+    ));
+  const media = await uploadMediaBuffer(
+    resolvedPhoneNumberId,
+    wa.accessToken,
+    buffer,
+    "application/pdf",
+    fileName,
+  );
+  const pseudoLead = {
+    name: q.clientName,
+    company: q.companyName,
+    phone: q.mobile,
+    location: q.address,
+    requirement: q.projectTitle,
+    budget: q.total,
+    quotationNumber: q.number,
+    total: Math.round(q.total),
+  };
+  const components = buildTemplateComponents(template, variableMapping, pseudoLead, media);
+  const blank = components.find((c) => c.type === "body")?.parameters.findIndex((p) => !String(p.text).trim());
+  if (blank >= 0) {
+    res.status(400);
+    throw new Error(`Template variable {{${blank + 1}}} is empty`);
+  }
+  const result = await sendWaMessage(
+    resolvedPhoneNumberId,
+    wa.accessToken,
+    phone,
+    template.metaTemplateName || template.name,
+    template.language,
+    components,
+  );
+  await recordOutgoing({
+    tenantId: wa.tenantId,
+    phone,
+    text: renderTemplateText(template, components, `📄 ${fileName}`),
+    result,
+    userId,
+  });
+  if (q.status === "Draft")
+    await Quotation.updateOne({ _id: q._id }, { $set: { status: "Sent" } });
+  return result;
+}
+
 // Quotation PDF as the header of a DOCUMENT-header template. The web app uploads its own PDF
 // (`file`); without one (mobile) the server renders a plain one.
 exports.sendQuotation = asyncHandler(async (req, res) => {
@@ -1562,53 +1616,17 @@ exports.sendQuotation = asyncHandler(async (req, res) => {
     );
   }
 
-  const fileName = `${q.number || "quotation"}.pdf`;
-  const buffer =
-    req.file?.buffer ||
-    (await require("../utils/quotationPdf")(
-      q,
-      (await Setting.findOne(tenantFilter).lean()) || {},
-    ));
-  const media = await uploadMediaBuffer(
-    resolvedPhoneNumberId,
-    wa.accessToken,
-    buffer,
-    "application/pdf",
-    fileName,
-  );
-  const pseudoLead = {
-    name: q.clientName,
-    company: q.companyName,
-    phone: q.mobile,
-    location: q.address,
-    requirement: q.projectTitle,
-    budget: q.total,
-    quotationNumber: q.number,
-    total: Math.round(q.total),
-  };
-  const components = buildTemplateComponents(template, variableMapping, pseudoLead, media);
-  const blank = components.find((c) => c.type === "body")?.parameters.findIndex((p) => !String(p.text).trim());
-  if (blank >= 0) {
-    res.status(400);
-    throw new Error(`Template variable {{${blank + 1}}} is empty`);
-  }
-  const result = await sendWaMessage(
-    resolvedPhoneNumberId,
-    wa.accessToken,
+  const result = await deliverQuotation({
+    wa,
+    phoneNumberId: resolvedPhoneNumberId,
     phone,
-    template.metaTemplateName || template.name,
-    template.language,
-    components,
-  );
-  await recordOutgoing({
-    tenantId: wa.tenantId,
-    phone,
-    text: renderTemplateText(template, components, `📄 ${fileName}`),
-    result,
+    q,
+    template,
+    variableMapping,
+    file: req.file?.buffer,
     userId: req.user._id,
+    tenantFilter,
   });
-  if (q.status === "Draft")
-    await Quotation.updateOne({ _id: q._id }, { $set: { status: "Sent" } });
   res.json({
     success: true,
     data: { messageId: result?.messages?.[0]?.id || "" },
@@ -2045,3 +2063,40 @@ exports.uploadMedia = asyncHandler(async (req, res) => {
 });
 
 exports._test = { buildTemplateComponents, checkHeaderFits };
+
+
+// Called when an approver approves a quotation and "send automatically" is on. Never throws:
+// returns { sent: true } or { sent: false, reason }.
+exports.autoSendApprovedQuotation = async (quotation, user, auto) => {
+  try {
+    const tenantFilter = tenantScope({ user });
+    const [q, template, wa] = await Promise.all([
+      Quotation.findOne({ _id: quotation._id, ...tenantFilter }),
+      WhatsappTemplate.findOne({ _id: auto.templateId, ...tenantFilter }),
+      getWaBase(user),
+    ]);
+    if (!q) return { sent: false, reason: "quotation not found" };
+    if (!template) return { sent: false, reason: "the chosen template no longer exists" };
+    if (!wa) return { sent: false, reason: "WhatsApp is not connected" };
+    if (template.status !== "APPROVED" || template.headerType !== "DOCUMENT")
+      return { sent: false, reason: "the chosen template must be approved and have a Document header" };
+    const phoneNumberId = resolvePhoneNumberId(wa, auto.phoneNumberId);
+    if (!phoneNumberId) return { sent: false, reason: "no WhatsApp number to send from" };
+    const phone = formatPhone(q.mobile);
+    if (!phone) return { sent: false, reason: "the quotation has no valid mobile number" };
+    await deliverQuotation({
+      wa,
+      phoneNumberId,
+      phone,
+      q,
+      template,
+      variableMapping: auto.variableMapping || [],
+      file: null,
+      userId: user._id,
+      tenantFilter,
+    });
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, reason: err.message || "send failed" };
+  }
+};

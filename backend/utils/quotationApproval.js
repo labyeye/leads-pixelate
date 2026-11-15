@@ -12,6 +12,12 @@ async function getConfig(tenantId) {
     enabled: !!c.enabled,
     minTotal: Number(c.minTotal) || 0,
     approvers: (c.approvers || []).map(String),
+    autoSend: {
+      enabled: !!c.autoSend?.enabled && !!c.autoSend?.templateId,
+      templateId: c.autoSend?.templateId ? String(c.autoSend.templateId) : "",
+      phoneNumberId: c.autoSend?.phoneNumberId || "",
+      variableMapping: c.autoSend?.variableMapping || [],
+    },
   };
 }
 

@@ -284,13 +284,28 @@ export default function QuotationsPage() {
     q.approval?.status === "pending" &&
     (q.approval.approvers || []).map(String).includes(String(user?.id));
 
-  const decide = async (q: any, decision: "approve" | "reject", remarks = "") => {
+  const decide = async (
+    q: any,
+    decision: "approve" | "reject",
+    remarks = "",
+  ) => {
     try {
       setDeciding(true);
-      await quotationsAPI.decideApproval(q._id || q.id, decision, remarks);
+      const res = await quotationsAPI.decideApproval(
+        q._id || q.id,
+        decision,
+        remarks,
+      );
+      const a = res.autoSent;
       notify.success(
         decision === "approve" ? "Quotation approved" : "Quotation rejected",
-        `${q.number} is now ${decision === "approve" ? "approved and can be sent" : "rejected"}.`,
+        decision === "reject"
+          ? `${q.number} is now rejected.`
+          : a?.sent
+            ? `${q.number} was approved and sent to the client on WhatsApp.`
+            : a
+              ? `${q.number} is approved, but auto-send failed: ${a.reason}. Send it manually.`
+              : `${q.number} is now approved and can be sent.`,
       );
       setRejectingQ(null);
       setRejectReason("");
@@ -594,7 +609,8 @@ export default function QuotationsPage() {
                             htmlFor="existingClient"
                             className="block text-[10px] font-medium uppercase tracking-widest text-black"
                           >
-                            Select {buyerSource === "client" ? "Client" : "Lead"}
+                            Select{" "}
+                            {buyerSource === "client" ? "Client" : "Lead"}
                           </label>
                           <div className="flex border-2 border-black">
                             {(["client", "lead"] as const).map((src) => (
@@ -1190,24 +1206,24 @@ export default function QuotationsPage() {
                       >
                         {q.status}
                       </span>
-                      {q.approval?.status &&
-                        q.approval.status !== "none" && (
-                          <span
-                            title={q.approval.remarks || undefined}
-                            className={cn(
-                              "block mt-1 text-[10px] font-medium uppercase tracking-wider",
-                              q.approval.status === "pending" && "text-amber-600",
-                              q.approval.status === "approved" && "text-green-700",
-                              q.approval.status === "rejected" && "text-red-600",
-                            )}
-                          >
-                            {q.approval.status === "pending"
-                              ? "Awaiting approval"
-                              : q.approval.status === "approved"
-                                ? `Approved${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ""}`
-                                : `Rejected${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ""}`}
-                          </span>
-                        )}
+                      {q.approval?.status && q.approval.status !== "none" && (
+                        <span
+                          title={q.approval.remarks || undefined}
+                          className={cn(
+                            "block mt-1 text-[10px] font-medium uppercase tracking-wider",
+                            q.approval.status === "pending" && "text-amber-600",
+                            q.approval.status === "approved" &&
+                              "text-green-700",
+                            q.approval.status === "rejected" && "text-red-600",
+                          )}
+                        >
+                          {q.approval.status === "pending"
+                            ? "Awaiting approval"
+                            : q.approval.status === "approved"
+                              ? `Approved${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ""}`
+                              : `Rejected${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ""}`}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
@@ -1259,7 +1275,9 @@ export default function QuotationsPage() {
                             </>
                           )}
                           <DropdownMenuItem
-                            disabled={["pending", "rejected"].includes(q.approval?.status)}
+                            disabled={["pending", "rejected"].includes(
+                              q.approval?.status,
+                            )}
                             onClick={() => setSendingQ(q)}
                             className="font-medium text-black hover:bg-[#00C48C] hover:text-black focus:bg-[#00C48C] focus:text-black rounded-none cursor-pointer border-t border-black/20 px-4 py-2.5"
                           >

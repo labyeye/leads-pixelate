@@ -1564,7 +1564,11 @@ export const quotationsAPI = {
     decision: "approve" | "reject",
     remarks = "",
   ) =>
-    request<{ success: boolean; data: any }>(`/quotations/${id}/approval`, {
+    request<{
+      success: boolean;
+      data: any;
+      autoSent?: { sent: boolean; reason?: string } | null;
+    }>(`/quotations/${id}/approval`, {
       method: "POST",
       body: JSON.stringify({ decision, remarks }),
     }),
