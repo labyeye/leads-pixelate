@@ -548,13 +548,12 @@ export default function ClientsPage() {
       {}
       <div className="border-2 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
+          <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
                 {[
                   "Client",
                   "Contact",
-                  "Status",
                   "Address / Type",
                   "Added By",
                   "Actions",
@@ -562,12 +561,11 @@ export default function ClientsPage() {
                   <th
                     key={h}
                     className={cn(
-                      "px-3 py-2 text-[10px] font-medium text-white uppercase tracking-widest",
-                      i < 5 ? "text-left" : "text-right",
+                      "px-5 py-3 text-[10px] font-medium text-white uppercase tracking-widest",
+                      i < 4 ? "text-left" : "text-right",
                       i === 1 ? "hidden md:table-cell" : "",
-                      i === 2 ? "hidden lg:table-cell" : "",
-                      i === 3 ? "hidden xl:table-cell" : "",
-                      i === 4 ? "hidden md:table-cell" : "",
+                      i === 2 ? "hidden xl:table-cell" : "",
+                      i === 3 ? "hidden md:table-cell" : "",
                     )}
                   >
                     {h}
@@ -578,7 +576,7 @@ export default function ClientsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-14">
+                  <td colSpan={5} className="text-center py-14">
                     <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#024BAB]" />
                     <p className="text-xs font-medium uppercase tracking-widest text-black/30 mt-2">
                       Loading...
@@ -587,7 +585,7 @@ export default function ClientsPage() {
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-14">
+                  <td colSpan={5} className="text-center py-14">
                     <p className="text-sm font-medium uppercase tracking-widest text-black/30">
                       {search
                         ? "No clients match your search."
@@ -619,69 +617,45 @@ export default function ClientsPage() {
                   <tr
                     key={client._id || client.id}
                     className={cn(
-                      "border-b border-black/30 last:border-b-0 hover:bg-[#FFDE00]/10 transition-colors",
+                      "border-b-2 border-black last:border-b-0 hover:bg-[#FFDE00]/10 transition-colors",
                       i % 2 === 1 && "bg-[#024BAB]/5",
                     )}
                   >
-                    <td className="px-3 py-1.5">
-                      <p className="font-medium text-black text-xs leading-tight">
+                    <td className="px-5 py-3.5">
+                      <p className="font-medium text-black text-sm">
                         {client.name}
                       </p>
-                      <p className="text-[11px] text-black/50 font-medium leading-tight">
+                      <p className="text-xs text-black/50 font-medium">
                         {client.company}
                       </p>
                     </td>
-                    <td className="px-3 py-1.5 hidden md:table-cell">
-                      <p className="font-medium text-black text-xs leading-tight">
+                    <td className="px-5 py-3.5 hidden md:table-cell">
+                      <p className="font-medium text-black text-sm">
                         {client.email}
                       </p>
-                      <p className="text-[11px] text-black/50 leading-tight">
-                        {client.phone}
-                      </p>
+                      <p className="text-xs text-black/50">{client.phone}</p>
                     </td>
-                    <td className="px-3 py-1.5 hidden lg:table-cell">
-                      <div className="flex flex-wrap gap-1 items-center">
-                        <span
-                          className={cn(
-                            "text-[9px] font-medium px-1.5 py-0 border uppercase tracking-wider",
-                            PROJECT_NB[client.projectStatus] ||
-                              "bg-white text-black border-black",
-                          )}
-                        >
-                          {client.projectStatus || "Active"}
-                        </span>
-                        <span
-                          className={cn(
-                            "text-[9px] font-medium px-1.5 py-0 border uppercase tracking-wider",
-                            PAYMENT_NB[client.paymentStatus] ||
-                              "bg-white text-black border-black",
-                          )}
-                        >
-                          {client.paymentStatus || "Pending"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-1.5 hidden xl:table-cell">
-                      <p className="text-xs font-medium text-black leading-tight">
+                    <td className="px-5 py-3.5 hidden xl:table-cell">
+                      <p className="text-xs font-medium text-black">
                         {client.address}
                       </p>
-                      <p className="text-[11px] text-black/50 leading-tight">
+                      <p className="text-xs text-black/50">
                         {client.businessType}
                       </p>
                     </td>
-                    <td className="px-3 py-1.5 hidden md:table-cell">
-                      <p className="text-xs font-medium text-black leading-tight">
+                    <td className="px-5 py-3.5 hidden md:table-cell">
+                      <p className="text-xs font-medium text-black">
                         {client.createdBy?.name || "—"}
                       </p>
-                      <p className="text-[11px] text-black/50 leading-tight">
+                      <p className="text-xs text-black/50">
                         {fmtAdded(client.createdAt)}
                       </p>
                     </td>
-                    <td className="px-3 py-1.5 text-right">
+                    <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="w-6 h-6 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors flex items-center justify-center">
-                            <MoreHorizontal className="w-3.5 h-3.5" />
+                          <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors nb-shadow-sm flex items-center justify-center">
+                            <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
