@@ -548,7 +548,7 @@ export default function ClientsPage() {
       {}
       <div className="border-2 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="border-b-2 border-black bg-[#024BAB]">
                 {[
@@ -562,7 +562,7 @@ export default function ClientsPage() {
                   <th
                     key={h}
                     className={cn(
-                      "px-5 py-3 text-[10px] font-medium text-white uppercase tracking-widest",
+                      "px-3 py-2 text-[10px] font-medium text-white uppercase tracking-widest",
                       i < 5 ? "text-left" : "text-right",
                       i === 1 ? "hidden md:table-cell" : "",
                       i === 2 ? "hidden lg:table-cell" : "",
@@ -619,29 +619,31 @@ export default function ClientsPage() {
                   <tr
                     key={client._id || client.id}
                     className={cn(
-                      "border-b-2 border-black last:border-b-0 hover:bg-[#FFDE00]/10 transition-colors",
+                      "border-b border-black/30 last:border-b-0 hover:bg-[#FFDE00]/10 transition-colors",
                       i % 2 === 1 && "bg-[#024BAB]/5",
                     )}
                   >
-                    <td className="px-5 py-3.5">
-                      <p className="font-medium text-black text-sm">
+                    <td className="px-3 py-1.5">
+                      <p className="font-medium text-black text-xs leading-tight">
                         {client.name}
                       </p>
-                      <p className="text-xs text-black/50 font-medium">
+                      <p className="text-[11px] text-black/50 font-medium leading-tight">
                         {client.company}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <p className="font-medium text-black text-sm">
+                    <td className="px-3 py-1.5 hidden md:table-cell">
+                      <p className="font-medium text-black text-xs leading-tight">
                         {client.email}
                       </p>
-                      <p className="text-xs text-black/50">{client.phone}</p>
+                      <p className="text-[11px] text-black/50 leading-tight">
+                        {client.phone}
+                      </p>
                     </td>
-                    <td className="px-5 py-3.5 hidden lg:table-cell">
-                      <div className="flex flex-col gap-1.5 items-start">
+                    <td className="px-3 py-1.5 hidden lg:table-cell">
+                      <div className="flex flex-wrap gap-1 items-center">
                         <span
                           className={cn(
-                            "text-[10px] font-medium px-2 py-0.5 border-2 uppercase tracking-wider",
+                            "text-[9px] font-medium px-1.5 py-0 border uppercase tracking-wider",
                             PROJECT_NB[client.projectStatus] ||
                               "bg-white text-black border-black",
                           )}
@@ -650,7 +652,7 @@ export default function ClientsPage() {
                         </span>
                         <span
                           className={cn(
-                            "text-[10px] font-medium px-2 py-0.5 border-2 uppercase tracking-wider",
+                            "text-[9px] font-medium px-1.5 py-0 border uppercase tracking-wider",
                             PAYMENT_NB[client.paymentStatus] ||
                               "bg-white text-black border-black",
                           )}
@@ -659,27 +661,27 @@ export default function ClientsPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 hidden xl:table-cell">
-                      <p className="text-xs font-medium text-black">
+                    <td className="px-3 py-1.5 hidden xl:table-cell">
+                      <p className="text-xs font-medium text-black leading-tight">
                         {client.address}
                       </p>
-                      <p className="text-xs text-black/50">
+                      <p className="text-[11px] text-black/50 leading-tight">
                         {client.businessType}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <p className="text-xs font-medium text-black">
+                    <td className="px-3 py-1.5 hidden md:table-cell">
+                      <p className="text-xs font-medium text-black leading-tight">
                         {client.createdBy?.name || "—"}
                       </p>
-                      <p className="text-xs text-black/50">
+                      <p className="text-[11px] text-black/50 leading-tight">
                         {fmtAdded(client.createdAt)}
                       </p>
                     </td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-3 py-1.5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="w-8 h-8 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors nb-shadow-sm flex items-center justify-center">
-                            <MoreHorizontal className="w-4 h-4" />
+                          <button className="w-6 h-6 border-2 border-black bg-white hover:bg-[#024BAB] hover:text-white transition-colors flex items-center justify-center">
+                            <MoreHorizontal className="w-3.5 h-3.5" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent

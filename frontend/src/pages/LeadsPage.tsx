@@ -2409,7 +2409,7 @@ export default function LeadsPage() {
                             )
                           }
                         />
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Name
                         </span>
                       </div>
@@ -2417,7 +2417,7 @@ export default function LeadsPage() {
                     {isColVisible("source") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest group">
                         <div className="flex items-center gap-1">
-                          <span className="block line-clamp-2 leading-tight">
+                          <span className="block whitespace-nowrap leading-tight">
                             Source
                           </span>
                           {renderHeaderFilter(
@@ -2441,91 +2441,106 @@ export default function LeadsPage() {
                     )}
                     {isColVisible("adPlatform") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 113 }}
+                        >
                           Ad Platform
                         </span>
                       </th>
                     )}
                     {isColVisible("inquiryDate") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 113 }}
+                        >
                           Inquiry Date
                         </span>
                       </th>
                     )}
                     {isColVisible("createdAt") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Created At
                         </span>
                       </th>
                     )}
                     {isColVisible("phone") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Phone
                         </span>
                       </th>
                     )}
                     {isColVisible("email") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Email
                         </span>
                       </th>
                     )}
                     {isColVisible("website") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Website
                         </span>
                       </th>
                     )}
                     {isColVisible("city") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           City
                         </span>
                       </th>
                     )}
                     {isColVisible("state") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           State
                         </span>
                       </th>
                     )}
                     {isColVisible("pageName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 124 }}
+                        >
                           Facebook Page
                         </span>
                       </th>
                     )}
                     {isColVisible("campaign") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Ad Name
                         </span>
                       </th>
                     )}
                     {isColVisible("campaignName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 124 }}
+                        >
                           Campaign Name
                         </span>
                       </th>
                     )}
                     {isColVisible("adsetName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 113 }}
+                        >
                           Ad Set Name
                         </span>
                       </th>
                     )}
                     {isColVisible("formName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Lead Form
                         </span>
                       </th>
@@ -2533,7 +2548,7 @@ export default function LeadsPage() {
                     {isColVisible("budget") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          <span className="block line-clamp-2 leading-tight">
+                          <span className="block whitespace-nowrap leading-tight">
                             Budget
                           </span>
                           {renderBudgetRangeFilter()}
@@ -2543,7 +2558,7 @@ export default function LeadsPage() {
                     {isColVisible("product") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          <span className="block line-clamp-2 leading-tight">
+                          <span className="block whitespace-nowrap leading-tight">
                             Interested
                           </span>
                           {renderHeaderFilter(
@@ -2557,7 +2572,7 @@ export default function LeadsPage() {
                     )}
                     {isColVisible("remarks") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Remarks
                         </span>
                       </th>
@@ -2567,16 +2582,33 @@ export default function LeadsPage() {
                       .map((c) => (
                         <th
                           key={c.id}
+                          title={c.label}
                           className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest"
                         >
-                          <span className="block line-clamp-2 leading-tight">
+                          <span
+                            className={
+                              c.label.length <= 10
+                                ? "block whitespace-nowrap leading-tight"
+                                : "block line-clamp-2 leading-tight"
+                            }
+                            style={
+                              c.label.length > 10
+                                ? {
+                                    minWidth:
+                                      Math.ceil((c.label.length + 1) / 2 + 1) *
+                                        10.5 +
+                                      40,
+                                  }
+                                : undefined
+                            }
+                          >
                             {c.label}
                           </span>
                         </th>
                       ))}
                     <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                       <div className="flex items-center gap-1">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Status
                         </span>
                         {renderHeaderFilter(
@@ -2589,7 +2621,7 @@ export default function LeadsPage() {
                     </th>
                     {showAssignedCol && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span className="block whitespace-nowrap leading-tight">
                           Assigned
                         </span>
                       </th>
@@ -2597,7 +2629,7 @@ export default function LeadsPage() {
                     {isColVisible("followup") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          <span className="block line-clamp-2 leading-tight">
+                          <span className="block whitespace-nowrap leading-tight">
                             Follow-up
                           </span>
                           {renderFollowUpDateFilter()}
@@ -2606,14 +2638,20 @@ export default function LeadsPage() {
                     )}
                     {isColVisible("visitScheduled") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 134 }}
+                        >
                           Visit Scheduled
                         </span>
                       </th>
                     )}
                     {isColVisible("visitActual") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        <span className="block line-clamp-2 leading-tight">
+                        <span
+                          className="block line-clamp-2 leading-tight"
+                          style={{ minWidth: 134 }}
+                        >
                           Visit Completed
                         </span>
                       </th>
