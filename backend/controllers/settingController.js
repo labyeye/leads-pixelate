@@ -12,6 +12,7 @@ const {
   sanitizeLeadStatusLabels,
   sanitizeCustomLeadStatuses,
   sanitizeCustomLeadCategories,
+  sanitizeHiddenStatuses,
 } = require("../utils/leadStatuses");
 
 const getSettings = asyncHandler(async (req, res) => {
@@ -88,6 +89,9 @@ const updateSettings = asyncHandler(async (req, res) => {
   }
 
   let setting = await Setting.findOne(tenantFilter);
+
+  if ("hiddenLeadStatuses" in body)
+    body.hiddenLeadStatuses = sanitizeHiddenStatuses(body.hiddenLeadStatuses);
 
   if ("customLeadCategories" in body || "customLeadStatuses" in body) {
     const cats =

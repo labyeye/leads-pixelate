@@ -54,48 +54,66 @@ export function getCustomLeadCategories() {
   return customCategoryNames;
 }
 
+// Pure builder: the pipeline for one tenant. `includeHidden` keeps removed default stages in place
+// (the Settings editor shows them so they can be restored); everywhere else they are left out.
+export function computeCategories(
+  list: CustomLeadStatus[] | null | undefined,
+  customCategories: string[],
+  hidden: string[],
+  includeHidden = false,
+) {
+  const items = Array.isArray(list) ? list : [];
+  const meta: Record<string, CustomLeadStatus> = {};
+  const merged: Record<string, string[]> = {};
+  const stagesOf = (cat: string) =>
+    items
+      .filter((s) => s.category === cat)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  for (const [cat, items0] of Object.entries(BASE_CATEGORIES)) {
+    const kept = includeHidden
+      ? items0
+      : items0.filter((v) => !hidden.includes(v));
+    const info = EXTENDABLE_CATEGORIES[cat];
+    const extras = info ? stagesOf(cat) : [];
+    for (const s of extras) meta[s.value] = { ...s, category: cat };
+    const extraValues = extras.map((s) => s.value);
+    const idx = info ? kept.indexOf(info.insertBefore) : -1;
+    const list2 = info
+      ? idx === -1
+        ? [...kept, ...extraValues]
+        : [...kept.slice(0, idx), ...extraValues, ...kept.slice(idx)]
+      : kept;
+    // A built-in group with every stage removed disappears from the app.
+    if (list2.length > 0) merged[cat] = list2;
+    if (cat === "Quotation") {
+      for (const name of customCategories) {
+        const stages = stagesOf(name);
+        for (const s of stages) meta[s.value] = { ...s, category: name };
+        merged[name] = stages.map((s) => s.value);
+      }
+    }
+  }
+  return { merged, meta };
+}
+
+let hiddenStatusList: string[] = [];
+export function getHiddenStatuses() {
+  return hiddenStatusList;
+}
+
 export function setCustomLeadStatuses(
   list: CustomLeadStatus[] | null | undefined,
   customCategories?: string[] | null,
+  hidden?: string[] | null,
 ) {
   if (customCategories) customCategoryNames = customCategories;
-  const items = Array.isArray(list) ? list : [];
-  const meta: typeof customStatusMeta = {};
-  const merged: Record<string, string[]> = {};
-
-  const addCustomGroups = () => {
-    for (const name of customCategoryNames) {
-      const stages = items
-        .filter((s) => s.category === name)
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-      for (const s of stages) {
-        meta[s.value] = { ...s, category: name };
-      }
-      merged[name] = stages.map((s) => s.value);
-    }
-  };
-
-  for (const [cat, items0] of Object.entries(BASE_CATEGORIES)) {
-    const info = EXTENDABLE_CATEGORIES[cat];
-    if (!info) {
-      merged[cat] = [...items0];
-      continue;
-    }
-    const extras = items
-      .filter((s) => s.category === cat)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-    for (const s of extras) {
-      meta[s.value] = { ...s, category: cat };
-    }
-    const extraValues = extras.map((s) => s.value);
-    const idx = items0.indexOf(info.insertBefore);
-    merged[cat] =
-      idx === -1
-        ? [...items0, ...extraValues]
-        : [...items0.slice(0, idx), ...extraValues, ...items0.slice(idx)];
-    if (cat === "Quotation") addCustomGroups();
-  }
-
+  if (hidden) hiddenStatusList = hidden;
+  const { merged, meta } = computeCategories(
+    list,
+    customCategoryNames,
+    hiddenStatusList,
+  );
   customStatusMeta = meta;
   categories = merged;
   ALL_STATUSES = Object.values(merged).flat();
@@ -113,7 +131,8 @@ export const getCategoryByStatus = (status: string) => {
   for (const [cat, items] of Object.entries(categories)) {
     if (items.includes(status)) return cat;
   }
-  return "New Lead";
+  // A lead sitting in a removed stage shows under the first group.
+  return Object.keys(categories)[0] || "New Lead";
 };
 
 export const statusColors: Record<string, string> = {

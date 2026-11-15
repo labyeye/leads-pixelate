@@ -60,11 +60,12 @@ const log = require("../utils/logger").scope("Leads");
 // buildTransitionMaps() rather than hardcoding a single global map.
 async function getTransitionMapsForTenant(tenantId) {
   const setting = await Setting.findOne({ tenantId: tenantId || null })
-    .select("customLeadStatuses customLeadCategories")
+    .select("customLeadStatuses customLeadCategories hiddenLeadStatuses")
     .lean();
   return buildTransitionMaps(setting?.customLeadStatuses || [], {
     openFlow: true,
     customCategories: setting?.customLeadCategories || [],
+    hidden: setting?.hiddenLeadStatuses || [],
   });
 }
 

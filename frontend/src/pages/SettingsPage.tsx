@@ -33,7 +33,7 @@ import InvoiceDesigner from "@/components/settings/invoice-designer/InvoiceDesig
 import { cn } from "@/lib/utils";
 import {
   categories as statusCategories,
-  PROTECTED_STATUSES,
+  computeCategories,
   COLOR_PRESETS,
   colorKeyToClasses,
   statusColors,
@@ -639,6 +639,7 @@ export default function SettingsPage() {
       setCustomLeadStatuses(
         res.data?.customLeadStatuses,
         res.data?.customLeadCategories || [],
+        res.data?.hiddenLeadStatuses || [],
       );
 
       if (res.data?.permissions) {
@@ -759,7 +760,11 @@ export default function SettingsPage() {
       const next = (prev.customLeadStatuses || []).map((s: CustomLeadStatus) =>
         s.value === value ? { ...s, ...patch } : s,
       );
-      setCustomLeadStatuses(next, prev.customLeadCategories || []);
+      setCustomLeadStatuses(
+        next,
+        prev.customLeadCategories || [],
+        prev.hiddenLeadStatuses || [],
+      );
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -769,7 +774,11 @@ export default function SettingsPage() {
       const next = (prev.customLeadStatuses || []).filter(
         (s: CustomLeadStatus) => s.value !== value,
       );
-      setCustomLeadStatuses(next, prev.customLeadCategories || []);
+      setCustomLeadStatuses(
+        next,
+        prev.customLeadCategories || [],
+        prev.hiddenLeadStatuses || [],
+      );
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -792,7 +801,11 @@ export default function SettingsPage() {
           autoFollowUpDays: 0,
         },
       ];
-      setCustomLeadStatuses(next, prev.customLeadCategories || []);
+      setCustomLeadStatuses(
+        next,
+        prev.customLeadCategories || [],
+        prev.hiddenLeadStatuses || [],
+      );
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -815,7 +828,11 @@ export default function SettingsPage() {
         if (s.value === b.value) return { ...s, order: a.order ?? 0 };
         return s;
       });
-      setCustomLeadStatuses(next, prev.customLeadCategories || []);
+      setCustomLeadStatuses(
+        next,
+        prev.customLeadCategories || [],
+        prev.hiddenLeadStatuses || [],
+      );
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -933,7 +950,7 @@ export default function SettingsPage() {
           autoFollowUpDays: st.days || 0,
         })),
       );
-      setCustomLeadStatuses(stages, cats);
+      setCustomLeadStatuses(stages, cats, prev.hiddenLeadStatuses || []);
       return {
         ...prev,
         customLeadCategories: cats,
@@ -941,6 +958,21 @@ export default function SettingsPage() {
       };
     });
   };
+
+  const hiddenList: string[] = settings?.hiddenLeadStatuses || [];
+  const setHidden = (next: string[]) =>
+    setSettings((prev: any) => {
+      setCustomLeadStatuses(
+        prev.customLeadStatuses || [],
+        prev.customLeadCategories || [],
+        next,
+      );
+      return { ...prev, hiddenLeadStatuses: next };
+    });
+  const removeDefaultStage = (status: string) =>
+    setHidden([...new Set([...hiddenList, status])]);
+  const restoreDefaultStage = (status: string) =>
+    setHidden(hiddenList.filter((x) => x !== status));
 
   const [newGroupName, setNewGroupName] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -951,12 +983,21 @@ export default function SettingsPage() {
     if (!name) return;
     setSettings((prev: any) => {
       const cats: string[] = prev.customLeadCategories || [];
-      const taken = [...Object.keys(statusCategories), ...cats].map((c) =>
-        c.toLowerCase(),
-      );
+      const taken = [
+        ...Object.keys(statusCategories),
+        "Visit Scheduled",
+        "Visited",
+        "Client",
+        "Dropped",
+        ...cats,
+      ].map((c) => c.toLowerCase());
       if (taken.includes(name.toLowerCase()) || cats.length >= 8) return prev;
       const nextCats = [...cats, name];
-      setCustomLeadStatuses(prev.customLeadStatuses || [], nextCats);
+      setCustomLeadStatuses(
+        prev.customLeadStatuses || [],
+        nextCats,
+        prev.hiddenLeadStatuses || [],
+      );
       return { ...prev, customLeadCategories: nextCats };
     });
     setOpenGroups((o) => ({
@@ -974,7 +1015,11 @@ export default function SettingsPage() {
       const nextStatuses = (prev.customLeadStatuses || []).filter(
         (s: CustomLeadStatus) => s.category !== name,
       );
-      setCustomLeadStatuses(nextStatuses, nextCats);
+      setCustomLeadStatuses(
+        nextStatuses,
+        nextCats,
+        prev.hiddenLeadStatuses || [],
+      );
       return {
         ...prev,
         customLeadCategories: nextCats,
@@ -1125,11 +1170,13 @@ export default function SettingsPage() {
       setCustomLeadStatuses(
         res.data?.customLeadStatuses,
         res.data?.customLeadCategories || [],
+        res.data?.hiddenLeadStatuses || [],
       );
       setSettings((prev: any) => ({
         ...prev,
         customLeadStatuses: res.data?.customLeadStatuses || [],
         customLeadCategories: res.data?.customLeadCategories || [],
+        hiddenLeadStatuses: res.data?.hiddenLeadStatuses || [],
       }));
       setActionModal({
         show: true,
@@ -1709,6 +1756,15 @@ export default function SettingsPage() {
                     Open a group to rename stages, change colors or add your
                     own. Save to apply.
                   </p>
+                  {hiddenList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setHidden([])}
+                      className="h-8 px-2.5 text-xs font-medium border-2 border-black bg-white hover:bg-[#FFDE00]"
+                    >
+                      Restore removed ({hiddenList.length})
+                    </button>
+                  )}
                   <select
                     defaultValue=""
                     onChange={(e) => {
@@ -1755,7 +1811,14 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {Object.entries(statusCategories).map(([cat, values]) => {
+                {Object.entries(
+                  computeCategories(
+                    settings?.customLeadStatuses,
+                    settings?.customLeadCategories || [],
+                    hiddenList,
+                    true,
+                  ).merged,
+                ).map(([cat, values]) => {
                   const isOpen = !!openGroups[cat];
                   const isGroup = (
                     settings?.customLeadCategories || []
@@ -1821,8 +1884,7 @@ export default function SettingsPage() {
                             </p>
                           )}
                           {values.map((status) => {
-                            const isProtected =
-                              PROTECTED_STATUSES.includes(status);
+                            const isRemoved = hiddenList.includes(status);
                             const custom = customList.find(
                               (x) => x.value === status,
                             );
@@ -1868,13 +1930,13 @@ export default function SettingsPage() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    !isProtected &&
+                                    !isRemoved &&
                                     setOpenStage(editing ? null : status)
                                   }
                                   className={cn(
                                     "w-full flex items-center gap-2.5 px-3 py-2 text-left",
-                                    isProtected
-                                      ? "cursor-default"
+                                    isRemoved
+                                      ? "cursor-default opacity-50"
                                       : "hover:bg-black/[0.03]",
                                   )}
                                 >
@@ -1900,9 +1962,16 @@ export default function SettingsPage() {
                                     </span>
                                   )}
                                   <span className="ml-auto text-muted-foreground">
-                                    {isProtected ? (
-                                      <span className="flex items-center gap-1 text-[10px]">
-                                        <Lock className="w-3 h-3" /> fixed
+                                    {isRemoved ? (
+                                      <span
+                                        role="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          restoreDefaultStage(status);
+                                        }}
+                                        className="text-[11px] font-medium text-[#024BAB] underline"
+                                      >
+                                        Removed · Restore
                                       </span>
                                     ) : (
                                       <ChevronDown
@@ -1915,7 +1984,7 @@ export default function SettingsPage() {
                                   </span>
                                 </button>
 
-                                {editing && !isProtected && (
+                                {editing && !isRemoved && (
                                   <div className="px-3 pb-3 pt-1 space-y-3 bg-black/[0.02]">
                                     <div className="flex flex-wrap items-center gap-3">
                                       <input
@@ -2079,17 +2148,30 @@ export default function SettingsPage() {
                                         </div>
                                       </>
                                     ) : (
-                                      (override.label || override.color) && (
+                                      <div className="flex items-center gap-3">
+                                        {(override.label || override.color) && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              resetStatusOverride(status)
+                                            }
+                                            className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                                          >
+                                            Reset to default
+                                          </button>
+                                        )}
                                         <button
                                           type="button"
-                                          onClick={() =>
-                                            resetStatusOverride(status)
-                                          }
-                                          className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                                          onClick={() => {
+                                            removeDefaultStage(status);
+                                            setOpenStage(null);
+                                          }}
+                                          className="ml-auto flex items-center gap-1 text-[11px] font-medium text-destructive hover:underline"
                                         >
-                                          Reset to default
+                                          <Trash2 className="w-3 h-3" /> Remove
+                                          stage
                                         </button>
-                                      )
+                                      </div>
                                     )}
                                   </div>
                                 )}

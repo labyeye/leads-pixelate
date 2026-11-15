@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setCustomLeadStatuses(
               res.data?.customLeadStatuses,
               res.data?.customLeadCategories || [],
+              res.data?.hiddenLeadStatuses || [],
             );
           })
           .catch(() => {});

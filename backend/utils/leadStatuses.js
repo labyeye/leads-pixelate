@@ -83,6 +83,13 @@ const COLOR_PRESET_NAMES = [
 ];
 
 const MAX_CUSTOM_STATUSES = 20;
+
+// Default stages a tenant has removed from their pipeline. A new tenant has none removed, so
+// everyone starts on the full default pipeline (the default itself lives in code).
+function sanitizeHiddenStatuses(input) {
+  if (!Array.isArray(input)) return [];
+  return [...new Set(input.filter((v) => typeof v === "string" && ALL_STATUSES.includes(v)))];
+}
 const STAGE_ROLES = ["active", "hot", "lost"];
 
 // Tenant-defined pipeline groups (extra tabs). They sit between Quotation and
@@ -161,7 +168,7 @@ function sanitizeCustomLeadStatuses(input, existing = [], customCategories = [])
   return clean;
 }
 
-function buildCategoriesWithCustom(customStatuses = [], customCategories = []) {
+function buildCategoriesWithCustom(customStatuses = [], customCategories = [], hidden = []) {
   const merged = {};
   const stagesOf = (cat) =>
     customStatuses
@@ -171,16 +178,19 @@ function buildCategoriesWithCustom(customStatuses = [], customCategories = []) {
 
   for (const [cat, items] of Object.entries(categories)) {
     const info = EXTENDABLE_CATEGORIES[cat];
+    const kept = items.filter((v) => !hidden.includes(v));
     if (!info) {
-      merged[cat] = [...items];
+      merged[cat] = kept;
     } else {
       const extras = stagesOf(cat);
-      const idx = items.indexOf(info.insertBefore);
+      const idx = kept.indexOf(info.insertBefore);
       merged[cat] =
         idx === -1
-          ? [...items, ...extras]
-          : [...items.slice(0, idx), ...extras, ...items.slice(idx)];
+          ? [...kept, ...extras]
+          : [...kept.slice(0, idx), ...extras, ...kept.slice(idx)];
     }
+    // A built-in group with every stage removed disappears (custom groups stay, they can be empty).
+    if (merged[cat].length === 0) delete merged[cat];
     if (cat === "Quotation") {
       for (const name of customCategories) merged[name] = stagesOf(name);
     }
@@ -188,9 +198,9 @@ function buildCategoriesWithCustom(customStatuses = [], customCategories = []) {
   return merged;
 }
 
-function buildAllStatusesWithCustom(customStatuses = [], customCategories = []) {
+function buildAllStatusesWithCustom(customStatuses = [], customCategories = [], hidden = []) {
   return Object.values(
-    buildCategoriesWithCustom(customStatuses, customCategories),
+    buildCategoriesWithCustom(customStatuses, customCategories, hidden),
   ).flat();
 }
 
@@ -341,7 +351,7 @@ const CUSTOM_TRANSITION_SHAPE = {
 // The AI call analysis keeps the guided pipeline (openFlow off) so it never jumps stages.
 function buildTransitionMaps(
   customStatuses = [],
-  { openFlow = false, customCategories = [] } = {},
+  { openFlow = false, customCategories = [], hidden = [] } = {},
 ) {
   const transitions = {};
   for (const [k, v] of Object.entries(BASE_VALID_TRANSITIONS)) {
@@ -405,9 +415,18 @@ function buildTransitionMaps(
   }
 
   if (openFlow) {
-    const all = buildAllStatusesWithCustom(customStatuses, customCategories);
-    for (const from of all) {
+    const all = buildAllStatusesWithCustom(customStatuses, customCategories, hidden);
+    // Leads already sitting in a removed stage can still move out of it.
+    const everyFrom = [...new Set([...all, ...ALL_STATUSES])];
+    for (const from of everyFrom) {
       transitions[from] = all.filter((s) => s !== "WON" || from === "VISITED");
+    }
+  }
+
+  // Removed stages are no longer a place a lead can be moved to (their own entries stay).
+  if (hidden.length) {
+    for (const k of Object.keys(transitions)) {
+      transitions[k] = transitions[k].filter((t) => !hidden.includes(t));
     }
   }
 
@@ -423,7 +442,6 @@ function sanitizeLeadStatusLabels(input) {
 
   const clean = {};
   for (const status of ALL_STATUSES) {
-    if (PROTECTED_STATUSES.includes(status)) continue;
     const entry = input[status];
     if (!entry || typeof entry !== "object") continue;
 
@@ -449,6 +467,7 @@ module.exports = {
   sanitizeLeadStatusLabels,
   sanitizeCustomLeadStatuses,
   sanitizeCustomLeadCategories,
+  sanitizeHiddenStatuses,
   STAGE_ROLES,
   buildCategoriesWithCustom,
   buildAllStatusesWithCustom,

@@ -177,6 +177,8 @@ const settingSchema = new mongoose.Schema(
     // backend/utils/leadStatuses.js for how these merge with the fixed set.
     // Tenant-defined pipeline groups (extra tabs) that hold custom stages.
     customLeadCategories: { type: [String], default: [] },
+    // Default stages this tenant removed. Empty for every new client = the full default pipeline.
+    hiddenLeadStatuses: { type: [String], default: [] },
     customLeadStatuses: {
       type: [
         {

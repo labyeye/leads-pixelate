@@ -16,9 +16,9 @@ const METRICS = [
 ];
 
 async function categoryMap(tenantId) {
-  const s = await Setting.findOne({ tenantId: tenantId || null }).select("customLeadStatuses customLeadCategories").lean();
+  const s = await Setting.findOne({ tenantId: tenantId || null }).select("customLeadStatuses customLeadCategories hiddenLeadStatuses").lean();
   const map = new Map();
-  for (const [cat, values] of Object.entries(buildCategoriesWithCustom(s?.customLeadStatuses || [], s?.customLeadCategories || [])))
+  for (const [cat, values] of Object.entries(buildCategoriesWithCustom(s?.customLeadStatuses || [], s?.customLeadCategories || [], s?.hiddenLeadStatuses || [])))
     for (const v of values) map.set(v, cat);
   return map;
 }
