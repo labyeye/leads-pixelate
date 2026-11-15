@@ -161,6 +161,8 @@ const settingSchema = new mongoose.Schema(
     // Tenant-defined extra pipeline stages, slotted into one of the
     // extendable categories (New Lead / Discussion / Quotation) — see
     // backend/utils/leadStatuses.js for how these merge with the fixed set.
+    // Tenant-defined pipeline groups (extra tabs) that hold custom stages.
+    customLeadCategories: { type: [String], default: [] },
     customLeadStatuses: {
       type: [
         {
@@ -169,6 +171,11 @@ const settingSchema = new mongoose.Schema(
           label: { type: String, required: true },
           colorKey: { type: String, default: "slate" },
           order: { type: Number, default: 0 },
+          // active | hot (counts as a hot lead) | lost (counts as closed)
+          role: { type: String, default: "active" },
+          requireRemarks: { type: Boolean, default: true },
+          requireFollowUp: { type: Boolean, default: true },
+          autoFollowUpDays: { type: Number, default: 0 },
           _id: false,
         },
       ],

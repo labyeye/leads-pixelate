@@ -115,7 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .then((res) => {
             if (res.data?.permissions) setPermissions(res.data.permissions);
             setStatusOverrides(res.data?.leadStatusLabels);
-            setCustomLeadStatuses(res.data?.customLeadStatuses);
+            setCustomLeadStatuses(
+              res.data?.customLeadStatuses,
+              res.data?.customLeadCategories || [],
+            );
           })
           .catch(() => {});
       } catch (error: any) {

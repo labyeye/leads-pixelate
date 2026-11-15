@@ -1,8 +1,20 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Search, Menu, Cake, PartyPopper, CheckCheck, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import {
+  Bell,
+  Search,
+  Menu,
+  Cake,
+  PartyPopper,
+  CheckCheck,
+  Trash2,
+} from "lucide-react";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { celebrationsAPI, notificationsAPI, type AppNotification } from "@/services/api";
+import {
+  celebrationsAPI,
+  notificationsAPI,
+  type AppNotification,
+} from "@/services/api";
 import { PaceBadge } from "./PaceBadge";
 
 interface AppHeaderProps {
@@ -13,6 +25,8 @@ interface AppHeaderProps {
 export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
   const { user } = useAuth();
   const [searchVal, setSearchVal] = useState("");
+  const [params, setParams] = useSearchParams();
+  const onLeads = useLocation().pathname === "/leads";
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -32,7 +46,11 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
   // Unread count for the badge: on load and every minute while the tab is open.
   useEffect(() => {
     if (!user) return;
-    const tick = () => notificationsAPI.unreadCount().then((r) => setUnread(r.unread ?? 0)).catch(() => {});
+    const tick = () =>
+      notificationsAPI
+        .unreadCount()
+        .then((r) => setUnread(r.unread ?? 0))
+        .catch(() => {});
     tick();
     const t = setInterval(tick, 60_000);
     return () => clearInterval(t);
@@ -53,7 +71,9 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
   };
   const openNotif = (n: AppNotification) => {
     if (!n.read) {
-      setNotifs((cur) => cur.map((x) => (x._id === n._id ? { ...x, read: true } : x)));
+      setNotifs((cur) =>
+        cur.map((x) => (x._id === n._id ? { ...x, read: true } : x)),
+      );
       setUnread((u) => Math.max(0, u - 1));
       notificationsAPI.markRead(n._id).catch(() => {});
     }
@@ -72,13 +92,18 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
   };
 
   useEffect(() => {
-    if (user) celebrationsAPI.today().then((r) => setItems(r.data ?? [])).catch(() => {});
+    if (user)
+      celebrationsAPI
+        .today()
+        .then((r) => setItems(r.data ?? []))
+        .catch(() => {});
   }, [user]);
 
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) setOpen(false);
+      if (panelRef.current && !panelRef.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
@@ -108,8 +133,19 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
           <input
             type="text"
             placeholder="Search leads..."
-            value={searchVal}
-            onChange={(e) => setSearchVal(e.target.value)}
+            value={onLeads ? params.get("q") || "" : searchVal}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!onLeads) return setSearchVal(v);
+              const n = new URLSearchParams(params);
+              if (v) n.set("q", v);
+              else n.delete("q");
+              setParams(n, { replace: true });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !onLeads && searchVal.trim())
+                navigate(`/leads?q=${encodeURIComponent(searchVal.trim())}`);
+            }}
             className="bg-transparent text-sm outline-none w-full text-black placeholder:text-muted-foreground font-medium"
           />
         </div>
@@ -173,40 +209,71 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
                       n.read ? "" : "bg-[#FFF8F1]"
                     }`}
                   >
-                    <span className={`mt-1.5 w-2 h-2 shrink-0 ${n.read ? "bg-transparent" : "bg-[#FA731C]"}`} />
+                    <span
+                      className={`mt-1.5 w-2 h-2 shrink-0 ${n.read ? "bg-transparent" : "bg-[#FA731C]"}`}
+                    />
                     <span className="min-w-0 flex-1">
-                      <span className={`block text-xs text-black ${n.read ? "" : "font-bold"}`}>{n.title}</span>
-                      {n.body && <span className="block text-[11px] text-muted-foreground truncate">{n.body}</span>}
+                      <span
+                        className={`block text-xs text-black ${n.read ? "" : "font-bold"}`}
+                      >
+                        {n.title}
+                      </span>
+                      {n.body && (
+                        <span className="block text-[11px] text-muted-foreground truncate">
+                          {n.body}
+                        </span>
+                      )}
                     </span>
-                    <span className="text-[10px] text-muted-foreground shrink-0">{ago(n.createdAt)}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {ago(n.createdAt)}
+                    </span>
                   </button>
                 ))
               )}
               {items.length > 0 && (
-                <div className="px-4 py-2 border-y-2 border-black bg-[#FFF1E6] text-[11px] font-bold">Today</div>
+                <div className="px-4 py-2 border-y-2 border-black bg-[#FFF1E6] text-[11px] font-bold">
+                  Today
+                </div>
               )}
-              {items.length === 0 ? null : (
-                items.map((n) => (
-                  <div key={n.id} className="flex items-center gap-3 px-4 py-3 border-b border-black/10 last:border-0">
-                    <div className="w-8 h-8 rounded-full border-2 border-black shrink-0 overflow-hidden bg-[#024BAB] flex items-center justify-center text-xs font-bold text-white">
-                      {n.avatar ? <img src={n.avatar} alt={n.name} className="w-full h-full object-cover" /> : n.name?.[0]?.toUpperCase()}
+              {items.length === 0
+                ? null
+                : items.map((n) => (
+                    <div
+                      key={n.id}
+                      className="flex items-center gap-3 px-4 py-3 border-b border-black/10 last:border-0"
+                    >
+                      <div className="w-8 h-8 rounded-full border-2 border-black shrink-0 overflow-hidden bg-[#024BAB] flex items-center justify-center text-xs font-bold text-white">
+                        {n.avatar ? (
+                          <img
+                            src={n.avatar}
+                            alt={n.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          n.name?.[0]?.toUpperCase()
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-black truncate">
+                          {n.name}
+                        </p>
+                        <p className="flex items-center gap-1 text-[11px] text-[#FA731C]">
+                          {n.kind === "birthday" ? (
+                            <Cake className="w-3 h-3" />
+                          ) : (
+                            <PartyPopper className="w-3 h-3" />
+                          )}
+                          {n.kind === "birthday" ? "🎂" : "🎉"} {n.detail}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-black truncate">{n.name}</p>
-                      <p className="flex items-center gap-1 text-[11px] text-[#FA731C]">
-                        {n.kind === "birthday" ? <Cake className="w-3 h-3" /> : <PartyPopper className="w-3 h-3" />}
-                        {n.kind === "birthday" ? "🎂" : "🎉"} {n.detail}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
+                  ))}
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-2 border-2 border-black bg-[#024BAB] px-2 sm:px-3 py-1.5">
-          <div className="w-6 h-6 border border-white shrink-0 overflow-hidden">
+          <div className="w-6 h-6 border border-white shrink-0 overflow-hidden rounded-full">
             {user.avatar ? (
               <img
                 src={user.avatar}

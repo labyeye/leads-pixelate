@@ -18,10 +18,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search,
   Plus,
+  MoreVertical,
   Calendar as CalendarIcon,
   FileText,
   UserCheck,
@@ -100,6 +101,7 @@ import { Input } from "@/components/ui/input";
 import {
   categories,
   getCategoryByStatus,
+  getCustomLeadStatusMeta,
   getStatusColorClasses,
   getStatusLabel,
   ALL_STATUSES,
@@ -198,7 +200,14 @@ const LEAD_EXPORT_FIELDS: ExportField[] = [
 ];
 
 export default function LeadsPage() {
-  const [search, setSearch] = useState("");
+  const [sp, setSp] = useSearchParams();
+  const search = sp.get("q") || "";
+  const setSearch = (v: string) => {
+    const n = new URLSearchParams(sp);
+    if (v) n.set("q", v);
+    else n.delete("q");
+    setSp(n, { replace: true });
+  };
 
   // A notification links here as /leads?lead=<id>: open that lead once.
   useEffect(() => {
@@ -254,6 +263,15 @@ export default function LeadsPage() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportSet, setExportSet] = useState<{
+    title: string;
+    prefix: string;
+    data: any[];
+  }>({ title: "Export Leads", prefix: "leads", data: [] });
+  const openExport = (title: string, data: any[], prefix: string) => {
+    setExportSet({ title, prefix, data });
+    setShowExportDialog(true);
+  };
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<any[]>([]);
@@ -1364,43 +1382,99 @@ export default function LeadsPage() {
       (c) => isColVisible(c.id) && (c.id !== "assigned" || showAssignedCol),
     ).length || 1;
 
-  const renderColumnConfigurator = () => (
+  const renderViewMenu = () => (
     <Popover>
       <PopoverTrigger asChild>
         <button
-          title="Configure columns"
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-widest border-2 border-black bg-white text-black hover:bg-[#FFDE00] transition-colors"
+          title="Columns & saved views"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium uppercase tracking-widest border-2 border-black bg-white text-black hover:bg-[#FFDE00] transition-colors whitespace-nowrap"
         >
-          <Filter className="w-3.5 h-3.5" /> Columns
+          <Bookmark className="w-3.5 h-3.5" /> View
+          {activeSavedViewId && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#024BAB]" />
+          )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-2" align="end">
+      <PopoverContent className="w-72 p-2" align="end">
         <p className="text-[10px] font-medium uppercase tracking-widest text-black px-2 pb-1">
-          Show Columns
+          Saved views
         </p>
-        <p className="text-[10px] text-black/50 px-2 pb-2">
-          Saved for your whole team.
-        </p>
-        <div className="max-h-80 overflow-y-auto space-y-0.5">
-          {ALL_COLUMNS.map((col) => (
-            <label
-              key={col.id}
+        <div className="max-h-32 overflow-y-auto space-y-0.5 mb-2">
+          {savedViews.length === 0 && (
+            <p className="text-xs text-black/50 px-2 py-1">
+              No saved views yet.
+            </p>
+          )}
+          {savedViews.map((v) => (
+            <div
+              key={v._id}
               className={cn(
-                "flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs",
-                col.alwaysOn
-                  ? "opacity-50 cursor-not-allowed"
-                  : "cursor-pointer hover:bg-muted",
+                "flex items-center justify-between gap-2 px-2 py-1.5 text-xs cursor-pointer hover:bg-muted",
+                activeSavedViewId === v._id && "bg-[#024BAB]/10 font-medium",
               )}
+              onClick={() => applySavedView(v)}
             >
-              <Checkbox
-                checked={isColVisible(col.id)}
-                disabled={col.alwaysOn}
-                onCheckedChange={() => toggleCol(col.id)}
+              <span className="truncate">{v.name}</span>
+              <Trash2
+                className="w-3 h-3 text-red-600 hover:text-red-800 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteView(v._id);
+                }}
               />
-              <span>{col.label}</span>
-            </label>
+            </div>
           ))}
         </div>
+        <div className="flex gap-1.5 px-1 pb-2 border-b border-border">
+          <Input
+            value={newViewName}
+            onChange={(e) => setNewViewName(e.target.value)}
+            placeholder="Save current filters as…"
+            className="h-8 text-xs"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSaveView();
+            }}
+          />
+          <Button
+            size="sm"
+            className="h-8 px-2"
+            onClick={handleSaveView}
+            disabled={savingView || !newViewName.trim()}
+            title="Save view"
+          >
+            <BookmarkPlus className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+        {viewMode === "table" && (
+          <>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-black px-2 pt-2 pb-1">
+              Columns{" "}
+              <span className="text-black/50 normal-case tracking-normal">
+                · saved for your team
+              </span>
+            </p>
+            <div className="max-h-60 overflow-y-auto space-y-0.5">
+              {ALL_COLUMNS.map((col) => (
+                <label
+                  key={col.id}
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs",
+                    col.alwaysOn
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer hover:bg-muted",
+                  )}
+                >
+                  <Checkbox
+                    checked={isColVisible(col.id)}
+                    disabled={col.alwaysOn}
+                    onCheckedChange={() => toggleCol(col.id)}
+                  />
+                  <span>{col.label}</span>
+                </label>
+              ))}
+            </div>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -1437,7 +1511,15 @@ export default function LeadsPage() {
       setBudgetInput(lead.budget || "");
       setSelectedProducts(lead.interestedProducts || []);
       setSelectedDate(
-        lead.followUpDate ? new Date(lead.followUpDate) : new Date(),
+        lead.followUpDate
+          ? new Date(lead.followUpDate)
+          : (() => {
+              const d = new Date();
+              const days =
+                getCustomLeadStatusMeta()[newStatus]?.autoFollowUpDays;
+              if (days) d.setDate(d.getDate() + days);
+              return d;
+            })(),
       );
       setSelectedTime(
         lead.followUpDate
@@ -1500,7 +1582,9 @@ export default function LeadsPage() {
     setBudgetInput(l.budget || "");
     setSelectedProducts(l.interestedProducts || []);
     setSelectedDate(l.followUpDate ? new Date(l.followUpDate) : new Date());
-    setSelectedTime(l.followUpDate ? format(new Date(l.followUpDate), "HH:mm") : "12:00");
+    setSelectedTime(
+      l.followUpDate ? format(new Date(l.followUpDate), "HH:mm") : "12:00",
+    );
     setIsStatusModalOpen(true);
   };
 
@@ -1656,12 +1740,6 @@ export default function LeadsPage() {
                   if (open) fetchSalesExecs();
                 }}
               >
-                <DialogTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap">
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Assign Lead
-                  </button>
-                </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>Lead Assignment Settings</DialogTitle>
@@ -1730,69 +1808,9 @@ export default function LeadsPage() {
               </Dialog>
             )}
 
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all whitespace-nowrap"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Lead
-            </button>
-
-            <button
-              onClick={() => setWaDialogOpen(true)}
-              disabled={filtered.length === 0}
-              title="Send a WhatsApp template (with a Document Vault file if the template has one) to the selected leads — or to all leads shown if none are selected"
-              className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-700 font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5" />
-              WhatsApp (
-              {selectedLeadIds.length > 0
-                ? `${selectedLeadIds.length} selected`
-                : filtered.length}
-              )
-            </button>
-
-            {selectedLeadIds.length > 0 && (
-              <button
-                onClick={() => setBulkDeleteOpen(true)}
-                title="Move the selected leads to Trash"
-                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Delete ({selectedLeadIds.length})
-              </button>
-            )}
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
-                  <FileText className="w-3.5 h-3.5" />
-                  Import / Export
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="border-2 border-black"
-              >
-                <DropdownMenuItem
-                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-emerald-700"
-                  onSelect={() => setImportModalOpen(true)}
-                >
-                  <FileText className="w-3.5 h-3.5" /> Import Excel / CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
-                  onSelect={() => setShowExportDialog(true)}
-                >
-                  <FileText className="w-3.5 h-3.5" /> Export
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-[#024BAB] font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
+                <button className="flex items-center gap-1.5 px-3 py-2 bg-white text-green-600 font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap">
                   {fbSyncing ||
                   syncing ||
                   tiSyncing ||
@@ -1800,9 +1818,9 @@ export default function LeadsPage() {
                   linkedinSyncing ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <RefreshCw className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5" />
                   )}
-                  Sync Leads
+                  Add Lead
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
               </DropdownMenuTrigger>
@@ -1810,6 +1828,22 @@ export default function LeadsPage() {
                 align="start"
                 className="border-2 border-black"
               >
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-green-700"
+                  onSelect={() => setIsAddModalOpen(true)}
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add manually
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-emerald-700"
+                  onSelect={() => setImportModalOpen(true)}
+                >
+                  <FileText className="w-3.5 h-3.5" /> Import Excel / CSV
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Sync leads from
+                </p>
                 {fbConnected && (
                   <DropdownMenuItem
                     className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-[#1877F2]"
@@ -1875,103 +1909,103 @@ export default function LeadsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {selectedLeadIds.length > 0 && (
+              <button
+                onClick={() => setBulkDeleteOpen(true)}
+                title="Move the selected leads to Trash"
+                className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white font-medium uppercase text-xs tracking-widest border-2 border-black whitespace-nowrap"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete ({selectedLeadIds.length})
+              </button>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  title="More"
+                  className="flex items-center justify-center w-9 h-9 bg-white text-black border-2 border-black"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="border-2 border-black"
+              >
+                {currentUser?.role !== "sales_executive" && (
+                  <>
+                    <DropdownMenuItem
+                      className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer"
+                      onSelect={() => {
+                        setIsAssignModalOpen(true);
+                        fetchSalesExecs();
+                      }}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" /> Assign Lead
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Export
+                </p>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
+                  onSelect={() =>
+                    openExport("Export All Leads", leads, "all-leads")
+                  }
+                >
+                  <FileText className="w-3.5 h-3.5" /> Export all (
+                  {leads.length})
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
+                  onSelect={() =>
+                    openExport("Export Current View", filtered, "leads")
+                  }
+                >
+                  <FileText className="w-3.5 h-3.5" /> Export current view (
+                  {filtered.length})
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
+                  onSelect={() =>
+                    openExport(
+                      "Export Pending Contact",
+                      leads.filter((l) => l.status === "PENDING CONTACT"),
+                      "pending-contact",
+                    )
+                  }
+                >
+                  <FileText className="w-3.5 h-3.5" /> Export pending contact
+                </DropdownMenuItem>
+                {selectedLeadIds.length > 0 && (
+                  <DropdownMenuItem
+                    className="gap-2 text-xs font-medium uppercase tracking-wider cursor-pointer text-blue-700"
+                    onSelect={() =>
+                      openExport(
+                        "Export Selected Leads",
+                        leads.filter((l) =>
+                          selectedLeadIds.includes(l._id || l.id),
+                        ),
+                        "selected-leads",
+                      )
+                    }
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Export selected (
+                    {selectedLeadIds.length})
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {}
           <div className="contents">
-            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white">
-              <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent text-xs font-medium outline-none w-full text-black"
-                title="Start Date"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 border-2 border-black px-3 h-10 w-full sm:w-40 bg-white">
-              <CalendarIcon className="w-3.5 h-3.5 text-black shrink-0" />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent text-xs font-medium outline-none w-full text-black"
-                title="End Date"
-              />
-            </div>
-
             <div
-              ref={searchBoxRef}
-              className="relative z-50 flex items-center gap-2 bg-white border-2 border-black px-3 h-10 flex-1 min-w-[200px]"
-            >
-              <Search className="w-4 h-4 text-black shrink-0" />
-              <input
-                type="text"
-                placeholder="Search by name, company, phone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-black"
-              />
-              {search.trim().length > 0 &&
-                searchBox &&
-                createPortal(
-                  <div
-                    className="fixed bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-80 overflow-y-auto z-[1000]"
-                    style={{
-                      top: searchBox.bottom + 4,
-                      left: searchBox.left,
-                      width: searchBox.width,
-                    }}
-                  >
-                    {searchMatches.length === 0 ? (
-                      <div className="p-3 text-sm text-black">
-                        No leads found.
-                      </div>
-                    ) : (
-                      searchMatches.map((l) => (
-                        <div
-                          key={l._id || l.id}
-                          className="p-3 bg-white hover:bg-[#FFF1E6] cursor-pointer border-b border-border/50 last:border-b-0"
-                          onClick={() => {
-                            setSearch("");
-                            setActiveCategory(
-                              getCategoryByStatus(l.status || "ALL"),
-                            );
-                            setSelectedLeadId(l._id || l.id);
-                          }}
-                        >
-                          <div className="font-medium text-sm flex justify-between items-center gap-2">
-                            <span className="truncate">{l.name}</span>
-                            <span
-                              className={cn(
-                                "text-[10px] px-2 py-0.5 rounded-full border shrink-0",
-                                getStatusColorClasses(l.status) ||
-                                  "bg-muted text-black border-transparent",
-                              )}
-                            >
-                              {getStatusLabel(l.status) || "ALL"}
-                            </span>
-                          </div>
-                          <div className="text-xs text-black mt-1 flex gap-2">
-                            <span>{l.company || "No Company"}</span>
-                            <span>•</span>
-                            <span>{l.phone || "No Phone"}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>,
-                  document.body,
-                )}
-            </div>
-            {viewMode === "table" && (
-              <div className="ml-auto">{renderColumnConfigurator()}</div>
-            )}
-            <div
-              className={cn(
-                "flex items-center border-2 border-black",
-                viewMode !== "table" && "ml-auto",
-              )}
+              className={cn("flex items-center border-2 border-black ml-auto")}
             >
               <button
                 onClick={() => setViewMode("table")}
@@ -2004,82 +2038,7 @@ export default function LeadsPage() {
               </button>
             </div>
 
-            <Select
-              value={activeSavedViewId || "__none"}
-              onValueChange={(val) => {
-                if (val === "__none") return;
-                const view = savedViews.find((v) => v._id === val);
-                if (view) applySavedView(view);
-              }}
-            >
-              <SelectTrigger className="h-9 w-[150px] border-2 border-black bg-white text-xs font-medium uppercase tracking-widest">
-                <Bookmark className="w-3.5 h-3.5 mr-1" />
-                <SelectValue placeholder="Saved Views" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none" disabled>
-                  {savedViews.length === 0 ? "No saved views" : "Saved Views"}
-                </SelectItem>
-                {savedViews.map((v) => (
-                  <SelectItem key={v._id} value={v._id}>
-                    <span className="flex items-center justify-between gap-2 w-full">
-                      <span>{v.name}</span>
-                      <Trash2
-                        className="w-3 h-3 text-red-600 hover:text-red-800 shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          handleDeleteView(v._id);
-                        }}
-                      />
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Dialog
-              open={saveViewDialogOpen}
-              onOpenChange={setSaveViewDialogOpen}
-            >
-              <DialogTrigger asChild>
-                <button
-                  className="flex items-center gap-1 px-3 py-2 bg-white text-black font-medium uppercase text-xs tracking-widest border-2 border-black hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all whitespace-nowrap"
-                  title="Save current filters as a view"
-                >
-                  <BookmarkPlus className="w-3.5 h-3.5" />{" "}
-                  <span className="hidden 2xl:inline">Save View</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Save Current Filters as a View</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2 py-2">
-                  <Label htmlFor="viewName">View Name</Label>
-                  <Input
-                    id="viewName"
-                    value={newViewName}
-                    onChange={(e) => setNewViewName(e.target.value)}
-                    placeholder="e.g. Hot leads this week"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveView();
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Saved views are shared with your whole team.
-                  </p>
-                </div>
-                <DialogFooter>
-                  <Button
-                    onClick={handleSaveView}
-                    disabled={savingView || !newViewName.trim()}
-                  >
-                    {savingView ? "Saving..." : "Save View"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            {renderViewMenu()}
 
             {(startDate ||
               endDate ||
@@ -2129,7 +2088,7 @@ export default function LeadsPage() {
                 {cat}
                 <span
                   className={cn(
-                    "text-[10px] font-medium px-1.5 py-0.5 border border-black min-w-[20px] text-center",
+                    "text-[10px] font-medium px-1.5 py-0.5 border border-black rounded-full min-w-[20px] text-center",
                     activeCategory === cat
                       ? "bg-[#FFDE00] text-black"
                       : "bg-black text-white",
@@ -2303,12 +2262,16 @@ export default function LeadsPage() {
                       onDrop={(e) => {
                         e.preventDefault();
                         setDragOverCat(null);
-                        handleKanbanDrop(e.dataTransfer.getData("text/plain"), cat);
+                        handleKanbanDrop(
+                          e.dataTransfer.getData("text/plain"),
+                          cat,
+                        );
                       }}
                       className={cn(
                         "p-2 space-y-2 min-h-[400px] max-h-[calc(100vh-340px)] overflow-y-auto transition-colors",
                         style.bg,
-                        dragOverCat === cat && "ring-4 ring-inset ring-[#024BAB]",
+                        dragOverCat === cat &&
+                          "ring-4 ring-inset ring-[#024BAB]",
                       )}
                     >
                       {loading ? (
@@ -2325,7 +2288,10 @@ export default function LeadsPage() {
                             key={l._id || l.id}
                             draggable
                             onDragStart={(e) => {
-                              e.dataTransfer.setData("text/plain", String(l._id || l.id));
+                              e.dataTransfer.setData(
+                                "text/plain",
+                                String(l._id || l.id),
+                              );
                               e.dataTransfer.effectAllowed = "move";
                             }}
                             onDragEnd={() => setDragOverCat(null)}
@@ -2418,12 +2384,15 @@ export default function LeadsPage() {
             <div
               ref={parentRef}
               className="overflow-x-auto overflow-y-auto relative"
-              style={{ maxHeight: "calc(100vh - 250px)", overflowAnchor: "none" }}
+              style={{
+                maxHeight: "calc(100vh - 250px)",
+                overflowAnchor: "none",
+              }}
             >
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-20">
                   <tr className="border-b-2 border-black bg-[#024BAB]">
-                    <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
+                    <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest min-w-[260px]">
                       <div className="flex items-center gap-2.5">
                         <Checkbox
                           aria-label="Select all leads"
@@ -2440,13 +2409,17 @@ export default function LeadsPage() {
                             )
                           }
                         />
-                        Name
+                        <span className="block line-clamp-2 leading-tight">
+                          Name
+                        </span>
                       </div>
                     </th>
                     {isColVisible("source") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest group">
                         <div className="flex items-center gap-1">
-                          Source
+                          <span className="block line-clamp-2 leading-tight">
+                            Source
+                          </span>
                           {renderHeaderFilter(
                             "source",
                             [
@@ -2468,73 +2441,101 @@ export default function LeadsPage() {
                     )}
                     {isColVisible("adPlatform") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Ad Platform
+                        <span className="block line-clamp-2 leading-tight">
+                          Ad Platform
+                        </span>
                       </th>
                     )}
                     {isColVisible("inquiryDate") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Inquiry Date
+                        <span className="block line-clamp-2 leading-tight">
+                          Inquiry Date
+                        </span>
                       </th>
                     )}
                     {isColVisible("createdAt") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Created At
+                        <span className="block line-clamp-2 leading-tight">
+                          Created At
+                        </span>
                       </th>
                     )}
                     {isColVisible("phone") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Phone
+                        <span className="block line-clamp-2 leading-tight">
+                          Phone
+                        </span>
                       </th>
                     )}
                     {isColVisible("email") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Email
+                        <span className="block line-clamp-2 leading-tight">
+                          Email
+                        </span>
                       </th>
                     )}
                     {isColVisible("website") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Website
+                        <span className="block line-clamp-2 leading-tight">
+                          Website
+                        </span>
                       </th>
                     )}
                     {isColVisible("city") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        City
+                        <span className="block line-clamp-2 leading-tight">
+                          City
+                        </span>
                       </th>
                     )}
                     {isColVisible("state") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        State
+                        <span className="block line-clamp-2 leading-tight">
+                          State
+                        </span>
                       </th>
                     )}
                     {isColVisible("pageName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Facebook Page
+                        <span className="block line-clamp-2 leading-tight">
+                          Facebook Page
+                        </span>
                       </th>
                     )}
                     {isColVisible("campaign") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Ad Name
+                        <span className="block line-clamp-2 leading-tight">
+                          Ad Name
+                        </span>
                       </th>
                     )}
                     {isColVisible("campaignName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Campaign Name
+                        <span className="block line-clamp-2 leading-tight">
+                          Campaign Name
+                        </span>
                       </th>
                     )}
                     {isColVisible("adsetName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Ad Set Name
+                        <span className="block line-clamp-2 leading-tight">
+                          Ad Set Name
+                        </span>
                       </th>
                     )}
                     {isColVisible("formName") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Lead Form
+                        <span className="block line-clamp-2 leading-tight">
+                          Lead Form
+                        </span>
                       </th>
                     )}
                     {isColVisible("budget") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          Budget
+                          <span className="block line-clamp-2 leading-tight">
+                            Budget
+                          </span>
                           {renderBudgetRangeFilter()}
                         </div>
                       </th>
@@ -2542,7 +2543,9 @@ export default function LeadsPage() {
                     {isColVisible("product") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          Interested
+                          <span className="block line-clamp-2 leading-tight">
+                            Interested
+                          </span>
                           {renderHeaderFilter(
                             "interestedProducts",
                             getUniqueValues("interestedProducts"),
@@ -2554,7 +2557,9 @@ export default function LeadsPage() {
                     )}
                     {isColVisible("remarks") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Remarks
+                        <span className="block line-clamp-2 leading-tight">
+                          Remarks
+                        </span>
                       </th>
                     )}
                     {customColumns
@@ -2564,12 +2569,16 @@ export default function LeadsPage() {
                           key={c.id}
                           className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest"
                         >
-                          {c.label}
+                          <span className="block line-clamp-2 leading-tight">
+                            {c.label}
+                          </span>
                         </th>
                       ))}
                     <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                       <div className="flex items-center gap-1">
-                        Status
+                        <span className="block line-clamp-2 leading-tight">
+                          Status
+                        </span>
                         {renderHeaderFilter(
                           "status",
                           ALL_STATUSES,
@@ -2580,25 +2589,33 @@ export default function LeadsPage() {
                     </th>
                     {showAssignedCol && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Assigned
+                        <span className="block line-clamp-2 leading-tight">
+                          Assigned
+                        </span>
                       </th>
                     )}
                     {isColVisible("followup") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
                         <div className="flex items-center gap-1">
-                          Follow-up
+                          <span className="block line-clamp-2 leading-tight">
+                            Follow-up
+                          </span>
                           {renderFollowUpDateFilter()}
                         </div>
                       </th>
                     )}
                     {isColVisible("visitScheduled") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Visit Scheduled
+                        <span className="block line-clamp-2 leading-tight">
+                          Visit Scheduled
+                        </span>
                       </th>
                     )}
                     {isColVisible("visitActual") && (
                       <th className="text-left px-5 py-3 text-[11px] font-medium text-white uppercase tracking-widest">
-                        Visit Completed
+                        <span className="block line-clamp-2 leading-tight">
+                          Visit Completed
+                        </span>
                       </th>
                     )}
                   </tr>
@@ -2680,7 +2697,7 @@ export default function LeadsPage() {
                             )}
                             onClick={() => setSelectedLeadId(l._id || l.id)}
                           >
-                            <td className="px-5 py-3.5">
+                            <td className="px-5 py-3.5 min-w-[260px]">
                               <div className="flex items-center gap-2.5">
                                 <span onClick={(e) => e.stopPropagation()}>
                                   <Checkbox
@@ -2699,7 +2716,6 @@ export default function LeadsPage() {
                                     }
                                   />
                                 </span>
-                                <Users className="w-4 h-4 shrink-0 text-black/60" />
                                 <div className="min-w-0">
                                   <p className="font-medium text-foreground">
                                     {l.name}
@@ -3214,7 +3230,9 @@ export default function LeadsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={bulkDeleting}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={bulkDeleting}
               className="bg-red-600 hover:bg-red-700"
@@ -3911,10 +3929,10 @@ export default function LeadsPage() {
       <ExportFieldsDialog
         open={showExportDialog}
         onOpenChange={setShowExportDialog}
-        title="Export Leads"
+        title={exportSet.title}
         fields={LEAD_EXPORT_FIELDS}
-        data={filtered}
-        filenamePrefix="leads"
+        data={exportSet.data}
+        filenamePrefix={exportSet.prefix}
         formats={["xlsx", "pdf", "csv"]}
       />
     </AppLayout>

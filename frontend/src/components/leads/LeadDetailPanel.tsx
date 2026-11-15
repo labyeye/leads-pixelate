@@ -53,6 +53,7 @@ import { whatsappAPI, aiCallingAPI, leadsAPI } from "@/services/api";
 import { usePermission } from "@/hooks/usePermission";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { SourceBadge } from "./SourceBadge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import {
@@ -228,16 +229,15 @@ export function LeadDetailPanel({
       </div>
 
       <div className="space-y-4 mb-6">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium">{lead.name}</p>
-          <p className="text-xs text-muted-foreground">{lead.company}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-muted/30 p-2.5 rounded-lg border-2 border-black">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              Status
-            </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <p className="text-sm font-medium break-words">{lead.name}</p>
+            {lead.company && !/^not provided$/i.test(lead.company.trim()) && (
+              <p className="text-xs text-muted-foreground">{lead.company}</p>
+            )}
+          </div>
+          <div className="flex flex-row flex-wrap items-center justify-end gap-2 shrink-0 max-w-[60%]">
+          <div>
             <span
               className={cn(
                 "text-[11px] font-medium px-2 py-0.5 rounded-full border inline-block",
@@ -248,10 +248,7 @@ export function LeadDetailPanel({
             </span>
           </div>
           {lead.contactTag && (
-            <div className="bg-muted/30 p-2.5 rounded-lg border border-border/50">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                Tag
-              </p>
+            <div>
               <span
                 className={cn(
                   "text-[11px] font-medium px-2 py-0.5 rounded-full border inline-flex items-center gap-1",
@@ -267,22 +264,7 @@ export function LeadDetailPanel({
               </span>
             </div>
           )}
-          <div className="bg-muted/30 p-2.5 rounded-lg border-2 border-black">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-              Source
-            </p>
-            <div className="flex items-center gap-1.5">
-              {SOURCE_LOGOS[lead.source?.toLowerCase()] && (
-                <img
-                  src={SOURCE_LOGOS[lead.source.toLowerCase()]}
-                  alt={lead.source}
-                  className="w-4 h-4 object-contain rounded-sm shrink-0"
-                />
-              )}
-              <p className="text-xs font-medium text-foreground">
-                {lead.source}
-              </p>
-            </div>
+          <SourceBadge source={lead.source} />
           </div>
         </div>
 
@@ -300,18 +282,20 @@ export function LeadDetailPanel({
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-muted-foreground min-w-0">
-              <Mail className="w-4 h-4 text-black shrink-0" />
-              <span className="text-primary truncate">
-                {lead.email || "No email"}
-              </span>
-            </div>
-            <div className="flex items-start gap-2 text-muted-foreground min-w-0">
-              <IndianRupee className="w-4 h-4 mt-0.5 text-success/70 shrink-0" />
-              <span className="text-success font-medium text-xs leading-tight">
-                Budget: {lead.budget || "Not Specified"}
-              </span>
-            </div>
+            {lead.email && (
+              <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                <Mail className="w-4 h-4 text-black shrink-0" />
+                <span className="text-primary truncate">{lead.email}</span>
+              </div>
+            )}
+            {lead.budget && (
+              <div className="flex items-start gap-2 text-muted-foreground min-w-0">
+                <IndianRupee className="w-4 h-4 mt-0.5 text-success/70 shrink-0" />
+                <span className="text-success font-medium text-xs leading-tight">
+                  Budget: {lead.budget}
+                </span>
+              </div>
+            )}
             {lead.facebookAdName && (
               <div className="flex items-start gap-2 text-muted-foreground min-w-0 sm:col-span-2">
                 <div className="w-4 h-4 mt-0.5 bg-[#1877F2] rounded-sm flex items-center justify-center shrink-0">
@@ -383,42 +367,57 @@ export function LeadDetailPanel({
           Actions
         </h4>
         {/* Actions buttons */}
-        {lead.phone && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              className="w-full border-2 justify-center gap-1.5 text-green-700 hover:text-green-800 hover:bg-green-50 border-black font-medium text-xs"
-              onClick={() => setWaDialogOpen(true)}
-            >
-              <WhatsAppIcon className="w-4 h-4" />
-              WhatsApp
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full border-2 justify-center gap-1.5 text-blue-900 hover:text-blue-950 hover:bg-blue-50 border-black font-medium text-xs bg-gradient-to-r from-blue-50 to-indigo-50"
-              onClick={handleTriggerAICall}
-              disabled // ponytail: coming soon, needs an upgraded ElevenLabs plan; drop this and the badge to re-enable
-            >
-              {callingAI ? (
-                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-              ) : (
-                <Bot className="w-4 h-4 text-blue-600" />
-              )}
-              AI Voice Call
-              <span className="ml-1 rounded-full border border-black/30 bg-white px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-black/60">
-                Coming soon
-              </span>
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full sm:col-span-2 border-2 justify-center gap-1.5 text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 border-black font-medium text-xs"
-              onClick={() => setCallDialogOpen(true)}
-            >
-              <Phone className="w-4 h-4" />
-              Call {lead.name?.split(" ")[0] || "lead"}
-            </Button>
+        {(lead.phone || lead.email) && (
+          <div className="flex flex-wrap gap-2">
+            {lead.phone && (
+              <>
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-0 border-2 justify-center gap-1.5 px-2 text-green-700 hover:text-green-800 hover:bg-green-50 border-black font-medium text-xs"
+                  onClick={() => setWaDialogOpen(true)}
+                  title="WhatsApp"
+                  aria-label="WhatsApp"
+                >
+                  <WhatsAppIcon className="w-4 h-4 shrink-0" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-0 border-2 justify-center gap-1.5 px-2 text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50 border-black font-medium text-xs"
+                  onClick={() => setCallDialogOpen(true)}
+                  title="Call"
+                  aria-label="Call"
+                >
+                  <Phone className="w-4 h-4 shrink-0" />
+                </Button>
+              </>
+            )}
+            {lead.email && (
+              <Button
+                asChild
+                variant="outline"
+                className="flex-1 min-w-0 border-2 justify-center gap-1.5 px-2 text-rose-700 hover:text-rose-800 hover:bg-rose-50 border-black font-medium text-xs"
+              >
+                <a href={`mailto:${lead.email}`} title="Mail" aria-label="Mail">
+                  <Mail className="w-4 h-4 shrink-0" />
+                </a>
+              </Button>
+            )}
+            {lead.phone && (
+              <Button
+                variant="outline"
+                className="flex-1 min-w-0 border-2 justify-center gap-1.5 px-2 text-blue-900 hover:text-blue-950 hover:bg-blue-50 border-black font-medium text-xs bg-gradient-to-r from-blue-50 to-indigo-50"
+                onClick={handleTriggerAICall}
+                disabled // ponytail: coming soon, needs an upgraded ElevenLabs plan; drop this and the badge to re-enable
+                title="AI Voice Call — coming soon"
+                aria-label="AI Voice Call"
+              >
+                {callingAI ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                ) : (
+                  <Bot className="w-4 h-4 text-blue-600 shrink-0" />
+                )}
+              </Button>
+            )}
           </div>
         )}
         {editOpen && (
@@ -444,302 +443,8 @@ export function LeadDetailPanel({
           toast={toast}
         />
         {}
-        {activeCategory === "New Lead" && (
-          <div className="grid grid-cols-1 gap-2">
-            {}
-            {}
-            <Button
-              className="w-full border-2 justify-start gap-2 bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => handleUpdateStatusTrigger("DISCUSSION")}
-            >
-              <Check className="w-4 h-4" /> Contacted
-            </Button>
-
-            {}
-            {lead.status === "PENDING CONTACT" && (
-              <Button
-                variant="outline"
-                className="w-full border-2 justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("1")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 1)
-              </Button>
-            )}
-
-            {lead.status === "1" && (
-              <Button
-                variant="outline"
-                className="w-full border-2 justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("2")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 2)
-              </Button>
-            )}
-
-            {lead.status === "2" && (
-              <Button
-                variant="outline"
-                className="w-full border-2 justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("3")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 3)
-              </Button>
-            )}
-
-            {lead.status === "3" && (
-              <Button
-                variant="outline"
-                className="w-full border-2 justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={() => handleUpdateStatusTrigger("COMPLETED")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 4 → Mark
-                Completed)
-              </Button>
-            )}
-
-            {lead.status === "COMPLETED" && (
-              <Button
-                variant="outline"
-                className="w-full border-2 justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={() => handleUpdateStatusTrigger("COMPLETED")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Additional Attempt)
-              </Button>
-            )}
-
-            {}
-            <Button
-              variant="ghost"
-              className="w-full border-2 justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleUpdateStatusTrigger("DROP")}
-            >
-              <Ban className="w-4 h-4" /> Drop Lead
-            </Button>
-          </div>
-        )}
-
-        {getCategoryByStatus(lead.status) === "Discussion/Requirement" && (
-          <div className="grid grid-cols-1 gap-2">
-            <Button
-              className="w-full justify-start gap-2 bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => handleUpdateStatusTrigger(lead.status)}
-            >
-              <Check className="w-4 h-4" /> Contacted (Update Remarks)
-            </Button>
-
-            {lead.status === "DISCUSSION" && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("DISCUSSION 1")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 1)
-              </Button>
-            )}
-
-            {lead.status === "DISCUSSION 1" && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("DISCUSSION 2")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 2)
-              </Button>
-            )}
-
-            {lead.status === "DISCUSSION 2" && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("DISCUSSION 3")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 3)
-              </Button>
-            )}
-
-            {(lead.status === "DISCUSSION 3" ||
-              lead.status === "DISCUSSION COMPLETED") && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={() =>
-                  handleUpdateStatusTrigger("DISCUSSION COMPLETED")
-                }
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 4+ →
-                Discussion Completed)
-              </Button>
-            )}
-
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 text-purple-600 hover:text-purple-700 border-purple-200"
-              onClick={() => handleUpdateStatusTrigger("QUOTATION")}
-            >
-              <FileText className="w-4 h-4" /> Send Quotation
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 border-indigo-200"
-              onClick={() => handleUpdateStatusTrigger("VISIT SCHEDULED")}
-            >
-              <MapPin className="w-4 h-4" /> Schedule Visit
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleUpdateStatusTrigger("DROP")}
-            >
-              <Ban className="w-4 h-4" /> Drop Lead
-            </Button>
-          </div>
-        )}
-
-        {getCategoryByStatus(lead.status) === "Quotation" && (
-          <div className="grid grid-cols-1 gap-2">
-            <Button
-              className="w-full justify-start gap-2 bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => handleUpdateStatusTrigger(lead.status)}
-            >
-              <Check className="w-4 h-4" /> Contacted (Update Remarks)
-            </Button>
-
-            {lead.status === "QUOTATION" && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("QUOTATION 1")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 1)
-              </Button>
-            )}
-
-            {lead.status === "QUOTATION 1" && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("QUOTATION 2")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 2)
-              </Button>
-            )}
-
-            {lead.status === "QUOTATION 2" && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-black"
-                onClick={() => handleUpdateStatusTrigger("QUOTATION 3")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 3)
-              </Button>
-            )}
-
-            {(lead.status === "QUOTATION 3" ||
-              lead.status === "QUOTATION COMPLETED") && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={() => handleUpdateStatusTrigger("QUOTATION COMPLETED")}
-              >
-                <PhoneOff className="w-4 h-4" /> Not Picked (Attempt 4+ →
-                Quotation Completed)
-              </Button>
-            )}
-
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 border-indigo-200"
-              onClick={() => handleUpdateStatusTrigger("VISIT SCHEDULED")}
-            >
-              <MapPin className="w-4 h-4" /> Schedule Visit
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleUpdateStatusTrigger("DROP")}
-            >
-              <Ban className="w-4 h-4" /> Drop Lead
-            </Button>
-          </div>
-        )}
-
-        {lead.status === "VISIT SCHEDULED" && (
-          <div className="grid grid-cols-1 gap-2">
-            <Button
-              className="w-full justify-start gap-2 bg-teal-600 hover:bg-teal-700 text-white"
-              onClick={() => handleUpdateStatusTrigger("VISITED")}
-            >
-              <MapPin className="w-4 h-4" /> Mark Visit Completed
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2 text-indigo-600 hover:text-indigo-700 border-indigo-200"
-              onClick={() => handleUpdateStatusTrigger("VISIT SCHEDULED")}
-            >
-              <CalendarIcon className="w-4 h-4" /> Reschedule Visit
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleUpdateStatusTrigger("DROP")}
-            >
-              <Ban className="w-4 h-4" /> Drop Lead
-            </Button>
-          </div>
-        )}
-
-        {}
-        {lead.status === "VISITED" && (
-          <div className="grid grid-cols-1 gap-2">
-            <Button
-              className="w-full justify-start gap-2 bg-success hover:bg-success/90 text-white"
-              onClick={() => handleUpdateStatusTrigger("WON")}
-            >
-              <Check className="w-4 h-4" /> Convert to Client (Won)
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => handleUpdateStatusTrigger("DROP")}
-            >
-              <Ban className="w-4 h-4" /> Drop Lead
-            </Button>
-          </div>
-        )}
-
-        {}
-        {lead.status === "WON" && (
-          <div className="grid grid-cols-1 gap-2">
-            <div className="bg-success/10 text-success border border-success/20 p-3 rounded-lg flex items-center gap-2">
-              <Check className="w-5 h-5" />
-              <span className="text-sm font-medium">
-                ✅ Successfully converted to Client
-              </span>
-            </div>
-          </div>
-        )}
-
-        {}
-        {lead.status === "DROP" && (
-          <div className="grid grid-cols-1 gap-2">
-            <p className="text-xs text-muted-foreground italic mb-2">
-              This lead has been dropped.
-            </p>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2"
-              onClick={() => handleUpdateStatusTrigger("PENDING CONTACT")}
-            >
-              Restore to New Lead
-            </Button>
-          </div>
-        )}
-
         {/* Any status can follow any status, so the quick buttons above are shortcuts, not the only way. */}
         <div className="mt-3">
-          <label className="block text-xs font-bold text-black mb-1">
-            Change status to any stage
-          </label>
           <select
             className="w-full border-2 border-black bg-white px-3 py-2 text-sm"
             value=""
@@ -747,7 +452,7 @@ export function LeadDetailPanel({
               if (e.target.value) handleUpdateStatusTrigger(e.target.value);
             }}
           >
-            <option value="">Select a status…</option>
+            <option value="">Change status to any stage…</option>
             {Object.entries(categories).map(([cat, list]) => {
               const opts = list.filter((s) => s !== lead.status);
               if (!opts.length) return null;

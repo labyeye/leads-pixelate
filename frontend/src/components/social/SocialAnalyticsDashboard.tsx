@@ -6,6 +6,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -30,7 +32,11 @@ import {
 import { socialAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { cn } from "@/lib/utils";
 
@@ -43,10 +49,12 @@ const INK = "#0A0A0A";
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SLOTS = ["12a", "3a", "6a", "9a", "12p", "3p", "6p", "9p"];
 
-const num = (n: number | null | undefined) =>
-  (n ?? 0).toLocaleString("en-IN");
+const num = (n: number | null | undefined) => (n ?? 0).toLocaleString("en-IN");
 const compact = (n: number) =>
-  new Intl.NumberFormat("en-IN", { notation: "compact", maximumFractionDigits: 1 }).format(n || 0);
+  new Intl.NumberFormat("en-IN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(n || 0);
 
 const score = (e: any = {}) =>
   (e.likes || 0) + (e.comments || 0) + (e.saved || 0) + (e.shares || 0);
@@ -157,7 +165,11 @@ function Delta({ now, before }: { now: number; before: number }) {
         up ? "bg-[#DDF5E7] text-[#12703A]" : "bg-[#FDE2E2] text-[#B42318]",
       )}
     >
-      {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+      {up ? (
+        <ArrowUpRight className="h-3 w-3" />
+      ) : (
+        <ArrowDownRight className="h-3 w-3" />
+      )}
       {Math.abs(pct)}%
     </span>
   );
@@ -199,7 +211,9 @@ function StatCard({
         </div>
         <div className="mt-3 flex items-end gap-2">
           <p className="text-3xl font-medium leading-none">{compact(shown)}</p>
-          {now !== undefined && before !== undefined && <Delta now={now} before={before} />}
+          {now !== undefined && before !== undefined && (
+            <Delta now={now} before={before} />
+          )}
         </div>
         <p className="mt-1.5 text-[11px] text-muted-foreground">{note}</p>
       </div>
@@ -207,7 +221,10 @@ function StatCard({
   );
 }
 
-const PLATFORM_META: Record<string, { label: string; color: string; icon: any }> = {
+const PLATFORM_META: Record<
+  string,
+  { label: string; color: string; icon: any }
+> = {
   instagram: { label: "Instagram", color: PURPLE, icon: Instagram },
   facebook: { label: "Facebook", color: BLUE, icon: Facebook },
   linkedin: { label: "LinkedIn", color: "#0A66C2", icon: LinkedInIcon },
@@ -234,6 +251,7 @@ export function SocialAnalyticsDashboard({
 }) {
   const [data, setData] = useState<any>(null);
   const [engagement, setEngagement] = useState<any>(null);
+  const [flowPosts, setFlowPosts] = useState<any[]>([]);
   const [followers, setFollowers] = useState<any>(null);
   const [range, setRange] = useState<30 | 90 | 180>(30);
   const [loading, setLoading] = useState(true);
@@ -254,16 +272,22 @@ export function SocialAnalyticsDashboard({
     socialAPI
       .getAccounts()
       .then((r) => {
-        const list = (r.data || []).filter((a: any) => a.platform === "instagram" && a.isActive !== false);
+        const list = (r.data || []).filter(
+          (a: any) => a.platform === "instagram" && a.isActive !== false,
+        );
         setIgAccounts(list);
         // Keep only ticks that still exist; first time, nothing is ticked.
-        setPicked((cur) => cur.filter((id) => list.some((a: any) => a._id === id)));
+        setPicked((cur) =>
+          cur.filter((id) => list.some((a: any) => a._id === id)),
+        );
       })
       .catch(() => {});
   };
   const togglePicked = (id: string) =>
     setPicked((cur) => {
-      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      const next = cur.includes(id)
+        ? cur.filter((x) => x !== id)
+        : [...cur, id];
       try {
         localStorage.setItem("ig-import-accounts", JSON.stringify(next));
       } catch {
@@ -279,17 +303,75 @@ export function SocialAnalyticsDashboard({
       .catch(() => {})
       .finally(() => setLoading(false));
     // Live from Meta, so it loads on its own and fills the charts when ready.
-    socialAPI.getEngagement().then((r) => setEngagement(r.data)).catch(() => {});
+    socialAPI
+      .getEngagement()
+      .then((r) => setEngagement(r.data))
+      .catch(() => {});
+    socialAPI
+      .getPosts({})
+      .then((r) => setFlowPosts(r.data || []))
+      .catch(() => {});
   }, []);
 
   useEffect(load, [load]);
   useEffect(() => {
-    socialAPI.getFollowers(range).then((r) => setFollowers(r.data)).catch(() => {});
+    socialAPI
+      .getFollowers(range)
+      .then((r) => setFollowers(r.data))
+      .catch(() => {});
   }, [range]);
+
+  // Working flow: how many posts were scheduled to go out vs actually posted (and failed), over time.
+  const flow = useMemo(() => {
+    const bucketDays = range > 30 ? 7 : 1;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = today.getTime() - (range - 1) * dayMs;
+    const n = Math.ceil(range / bucketDays);
+    const rows = Array.from({ length: n }, (_, i) => {
+      const d = new Date(start + i * bucketDays * dayMs);
+      return {
+        label: d.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }),
+        Scheduled: 0,
+        Posted: 0,
+        Failed: 0,
+      };
+    });
+    const slot = (t?: string | null) => {
+      if (!t) return -1;
+      const i = Math.floor(
+        (new Date(t).getTime() - start) / (bucketDays * dayMs),
+      );
+      return i >= 0 && i < n ? i : -1;
+    };
+    let scheduled = 0;
+    let posted = 0;
+    for (const p of flowPosts) {
+      const si = slot(p.scheduledAt);
+      if (si >= 0 && p.status !== "DRAFT") {
+        rows[si].Scheduled++;
+        scheduled++;
+        if (p.status === "FAILED") rows[si].Failed++;
+      }
+      const pi = slot(p.postedAt);
+      if (pi >= 0 && ["POSTED", "PARTIALLY_POSTED"].includes(p.status)) {
+        rows[pi].Posted++;
+        posted++;
+      }
+    }
+    return { rows, scheduled, posted };
+  }, [flowPosts, range]);
 
   const importInstagram = async () => {
     if (!picked.length) {
-      toast({ title: "Pick at least one account to import", variant: "destructive" });
+      toast({
+        title: "Pick at least one account to import",
+        variant: "destructive",
+      });
       return;
     }
     setImporting(true);
@@ -314,9 +396,24 @@ export function SocialAnalyticsDashboard({
 
   const exportCsv = () => {
     const rows = engagement?.rows || [];
-    const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""').replace(/\s+/g, " ")}"`;
+    const esc = (v: any) =>
+      `"${String(v ?? "")
+        .replace(/"/g, '""')
+        .replace(/\s+/g, " ")}"`;
     const csv = [
-      ["Posted", "Type", "Platforms", "Caption", "Views", "Reach", "Likes", "Comments", "Saved", "Shares", "Link"].join(","),
+      [
+        "Posted",
+        "Type",
+        "Platforms",
+        "Caption",
+        "Views",
+        "Reach",
+        "Likes",
+        "Comments",
+        "Saved",
+        "Shares",
+        "Link",
+      ].join(","),
       ...rows.map((r: any) =>
         [
           r.postedAt ? new Date(r.postedAt).toISOString().slice(0, 10) : "",
@@ -344,12 +441,19 @@ export function SocialAnalyticsDashboard({
 
   const totals = engagement?.totals;
   const trends = engagement?.trends;
-  const totalEngagement = (totals?.likes || 0) + (totals?.comments || 0) + (totals?.saved || 0) + (totals?.shares || 0);
+  const totalEngagement =
+    (totals?.likes || 0) +
+    (totals?.comments || 0) +
+    (totals?.saved || 0) +
+    (totals?.shares || 0);
 
   const growth = useMemo(
     () =>
       (followers?.points || []).map((p: any) => ({
-        label: new Date(p.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
+        label: new Date(p.date).toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+        }),
         Followers: p.total ?? 0,
         Gained: Math.max(p.gained, 0),
       })),
@@ -364,13 +468,16 @@ export function SocialAnalyticsDashboard({
   ];
   const mixTotal = mix.reduce((a, m) => a + m.value, 0);
 
-  const byType = Object.entries(engagement?.byType || {}).map(([type, v]: [string, any]) => ({
-    type: type[0].toUpperCase() + type.slice(1),
-    Posts: v.count,
-    Engagement: (v.likes || 0) + (v.comments || 0),
-  }));
+  const byType = Object.entries(engagement?.byType || {}).map(
+    ([type, v]: [string, any]) => ({
+      type: type[0].toUpperCase() + type.slice(1),
+      Posts: v.count,
+      Engagement: (v.likes || 0) + (v.comments || 0),
+    }),
+  );
 
-  const heat = engagement?.heatmap as { avg: number; count: number }[][] | undefined;
+  const heat = engagement?.heatmap as
+    { avg: number; count: number }[][] | undefined;
   const heatMax = Math.max(1, ...(heat || []).flat().map((c) => c.avg));
   const best = useMemo(() => {
     let b: { d: number; s: number; avg: number } | null = null;
@@ -407,11 +514,17 @@ export function SocialAnalyticsDashboard({
           <div>
             <h2 className="text-xl font-medium">Social Media Analytics</h2>
             <p className="text-xs text-muted-foreground">
-              Performance, engagement and growth across your connected platforms.
+              Performance, engagement and growth across your connected
+              platforms.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!engagement?.rows?.length}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCsv}
+              disabled={!engagement?.rows?.length}
+            >
               <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
             </Button>
             {isAdmin && (
@@ -426,22 +539,35 @@ export function SocialAnalyticsDashboard({
                     {importing ? "Importing…" : "Import from Instagram"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-72 border-2 border-black p-0 nb-shadow-sm">
+                <PopoverContent
+                  align="end"
+                  className="w-72 border-2 border-black p-0 nb-shadow-sm"
+                >
                   <div className="flex items-center justify-between border-b-2 border-black px-3 py-2">
-                    <p className="text-xs font-medium">Choose accounts to import</p>
+                    <p className="text-xs font-medium">
+                      Choose accounts to import
+                    </p>
                     <button
                       className="text-[11px] text-[#024BAB] hover:underline"
                       onClick={() => {
-                        const all = picked.length === igAccounts.length ? [] : igAccounts.map((a) => a._id);
+                        const all =
+                          picked.length === igAccounts.length
+                            ? []
+                            : igAccounts.map((a) => a._id);
                         setPicked(all);
                         try {
-                          localStorage.setItem("ig-import-accounts", JSON.stringify(all));
+                          localStorage.setItem(
+                            "ig-import-accounts",
+                            JSON.stringify(all),
+                          );
                         } catch {
                           /* convenience only */
                         }
                       }}
                     >
-                      {picked.length === igAccounts.length && igAccounts.length ? "Clear all" : "Select all"}
+                      {picked.length === igAccounts.length && igAccounts.length
+                        ? "Clear all"
+                        : "Select all"}
                     </button>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
@@ -450,13 +576,23 @@ export function SocialAnalyticsDashboard({
                         key={a._id}
                         className="flex cursor-pointer items-center gap-2.5 border-b border-border px-3 py-2 text-xs last:border-b-0 hover:bg-muted/50"
                       >
-                        <Checkbox checked={picked.includes(a._id)} onCheckedChange={() => togglePicked(a._id)} />
+                        <Checkbox
+                          checked={picked.includes(a._id)}
+                          onCheckedChange={() => togglePicked(a._id)}
+                        />
                         {a.profilePicture ? (
-                          <img referrerPolicy="no-referrer" src={a.profilePicture} alt="" className="h-6 w-6 rounded-full border border-black object-cover" />
+                          <img
+                            referrerPolicy="no-referrer"
+                            src={a.profilePicture}
+                            alt=""
+                            className="h-6 w-6 rounded-full border border-black object-cover"
+                          />
                         ) : (
                           <span className="h-6 w-6 rounded-full border border-black bg-muted" />
                         )}
-                        <span className="min-w-0 flex-1 truncate">{a.accountName}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {a.accountName}
+                        </span>
                       </label>
                     ))}
                     {!igAccounts.length && (
@@ -466,8 +602,16 @@ export function SocialAnalyticsDashboard({
                     )}
                   </div>
                   <div className="border-t-2 border-black p-2">
-                    <Button size="sm" className="w-full" onClick={importInstagram} disabled={!picked.length}>
-                      Import {picked.length ? `${picked.length} account${picked.length > 1 ? "s" : ""}` : ""}
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={importInstagram}
+                      disabled={!picked.length}
+                    >
+                      Import{" "}
+                      {picked.length
+                        ? `${picked.length} account${picked.length > 1 ? "s" : ""}`
+                        : ""}
                     </Button>
                     <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
                       Latest 100 posts per account.
@@ -542,18 +686,50 @@ export function SocialAnalyticsDashboard({
             <div className="h-52">
               {growth.length ? (
                 <ResponsiveContainer>
-                  <AreaChart data={growth} margin={{ left: -18, right: 4, top: 4 }}>
+                  <AreaChart
+                    data={growth}
+                    margin={{ left: -18, right: 4, top: 4 }}
+                  >
                     <defs>
-                      <linearGradient id="gFollowers" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        id="gFollowers"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop offset="0%" stopColor={BLUE} stopOpacity={0.35} />
                         <stop offset="100%" stopColor={BLUE} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} minTickGap={24} />
-                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={["auto", "auto"]} tickFormatter={compact} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#E5E7EB"
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={24}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      domain={["auto", "auto"]}
+                      tickFormatter={compact}
+                    />
                     <Tooltip content={<ChartTip />} />
-                    <Area type="monotone" dataKey="Followers" stroke={BLUE} strokeWidth={2.5} fill="url(#gFollowers)" animationDuration={1200} />
+                    <Area
+                      type="monotone"
+                      dataKey="Followers"
+                      stroke={BLUE}
+                      strokeWidth={2.5}
+                      fill="url(#gFollowers)"
+                      animationDuration={1200}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -568,17 +744,51 @@ export function SocialAnalyticsDashboard({
             <div className="h-52">
               {byType.some((t) => t.Posts) ? (
                 <ResponsiveContainer>
-                  <BarChart data={byType} margin={{ left: -18, right: 4, top: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                    <XAxis dataKey="type" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={compact} />
-                    <Tooltip content={<ChartTip />} cursor={{ fill: "rgba(250,115,28,0.08)" }} />
-                    <Bar dataKey="Engagement" fill={ORANGE} stroke={INK} strokeWidth={2} animationDuration={1000} />
-                    <Bar dataKey="Posts" fill={BLUE} stroke={INK} strokeWidth={2} animationDuration={1300} />
+                  <BarChart
+                    data={byType}
+                    margin={{ left: -18, right: 4, top: 4 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#E5E7EB"
+                    />
+                    <XAxis
+                      dataKey="type"
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={compact}
+                    />
+                    <Tooltip
+                      content={<ChartTip />}
+                      cursor={{ fill: "rgba(250,115,28,0.08)" }}
+                    />
+                    <Bar
+                      dataKey="Engagement"
+                      fill={ORANGE}
+                      stroke={INK}
+                      strokeWidth={2}
+                      animationDuration={1000}
+                    />
+                    <Bar
+                      dataKey="Posts"
+                      fill={BLUE}
+                      stroke={INK}
+                      strokeWidth={2}
+                      animationDuration={1300}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <Empty text={engagement ? "No published posts yet." : "Loading…"} />
+                <Empty
+                  text={engagement ? "No published posts yet." : "Loading…"}
+                />
               )}
             </div>
           </Panel>
@@ -592,7 +802,16 @@ export function SocialAnalyticsDashboard({
                   <div className="relative h-40 w-40 shrink-0">
                     <ResponsiveContainer>
                       <PieChart>
-                        <Pie data={mix} dataKey="value" innerRadius={48} outerRadius={72} paddingAngle={2} stroke={INK} strokeWidth={2} animationDuration={1200}>
+                        <Pie
+                          data={mix}
+                          dataKey="value"
+                          innerRadius={48}
+                          outerRadius={72}
+                          paddingAngle={2}
+                          stroke={INK}
+                          strokeWidth={2}
+                          animationDuration={1200}
+                        >
                           {mix.map((m) => (
                             <Cell key={m.name} fill={m.color} />
                           ))}
@@ -601,27 +820,136 @@ export function SocialAnalyticsDashboard({
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                      <p className="text-lg font-medium leading-none">{compact(mixTotal)}</p>
-                      <p className="text-[10px] text-muted-foreground">interactions</p>
+                      <p className="text-lg font-medium leading-none">
+                        {compact(mixTotal)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        interactions
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-2 text-xs">
                     {mix.map((m) => (
                       <div key={m.name} className="flex items-center gap-2">
-                        <span className="h-3 w-3 border border-black" style={{ background: m.color }} />
+                        <span
+                          className="h-3 w-3 border border-black"
+                          style={{ background: m.color }}
+                        />
                         <span className="text-muted-foreground">{m.name}</span>
-                        <span className="font-medium">{Math.round((m.value / mixTotal) * 100)}%</span>
+                        <span className="font-medium">
+                          {Math.round((m.value / mixTotal) * 100)}%
+                        </span>
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
-                <Empty text={engagement ? "No interactions yet." : "Loading…"} />
+                <Empty
+                  text={engagement ? "No interactions yet." : "Loading…"}
+                />
               )}
             </div>
           </Panel>
         </Reveal>
       </div>
+
+      <Reveal i={5}>
+        <Panel
+          title="Posting Flow"
+          action={
+            <Segmented
+              value={range}
+              onChange={(v) => setRange(Number(v) as 30 | 90 | 180)}
+              options={[
+                { value: 30, label: "30D" },
+                { value: 90, label: "90D" },
+                { value: 180, label: "6M" },
+              ]}
+            />
+          }
+        >
+          <p className="mb-2 text-xs text-muted-foreground">
+            {flow.scheduled
+              ? `${flow.posted} posted out of ${flow.scheduled} scheduled (${Math.round((flow.posted / flow.scheduled) * 100)}%)`
+              : "Scheduled vs posted over time"}
+            {range > 30 ? " · per week" : " · per day"}
+          </p>
+          <div className="h-52">
+            {flow.scheduled || flow.posted ? (
+              <ResponsiveContainer>
+                <LineChart
+                  data={flow.rows}
+                  margin={{ left: -18, right: 8, top: 8 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#E5E7EB"
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={24}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<ChartTip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="Scheduled"
+                    stroke={BLUE}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 5, stroke: INK, strokeWidth: 2 }}
+                    animationDuration={1000}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Posted"
+                    stroke={GREEN}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 5, stroke: INK, strokeWidth: 2 }}
+                    animationDuration={1200}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Failed"
+                    stroke="#EF4444"
+                    strokeWidth={2}
+                    strokeDasharray="5 4"
+                    dot={false}
+                    animationDuration={1400}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <Empty text="No scheduled or posted content in this period." />
+            )}
+          </div>
+          <div className="mt-2 flex items-center gap-4 text-[11px]">
+            {[
+              ["Scheduled", BLUE],
+              ["Posted", GREEN],
+              ["Failed", "#EF4444"],
+            ].map(([name, color]) => (
+              <span key={name} className="flex items-center gap-1.5">
+                <span
+                  className="h-2.5 w-2.5 border border-black"
+                  style={{ background: color }}
+                />
+                {name}
+              </span>
+            ))}
+          </div>
+        </Panel>
+      </Reveal>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Reveal i={8}>
@@ -665,7 +993,10 @@ export function SocialAnalyticsDashboard({
                           {p.followersBefore === null ? (
                             <span className="text-muted-foreground">—</span>
                           ) : (
-                            <Delta now={p.followers} before={p.followersBefore} />
+                            <Delta
+                              now={p.followers}
+                              before={p.followersBefore}
+                            />
                           )}
                         </td>
                       </tr>
@@ -673,7 +1004,9 @@ export function SocialAnalyticsDashboard({
                   })}
                 </tbody>
               </table>
-              {!engagement && <p className="py-4 text-xs text-muted-foreground">Loading…</p>}
+              {!engagement && (
+                <p className="py-4 text-xs text-muted-foreground">Loading…</p>
+              )}
             </div>
           </Panel>
         </Reveal>
@@ -695,20 +1028,31 @@ export function SocialAnalyticsDashboard({
                 <div className="grid grid-cols-[28px_repeat(8,1fr)] gap-1">
                   <span />
                   {SLOTS.map((s) => (
-                    <span key={s} className="text-center text-[9px] text-muted-foreground">
+                    <span
+                      key={s}
+                      className="text-center text-[9px] text-muted-foreground"
+                    >
                       {s}
                     </span>
                   ))}
                   {heat.map((row, d) => (
                     <div key={d} className="contents">
-                      <span className="self-center text-[10px] text-muted-foreground">{DAYS[d]}</span>
+                      <span className="self-center text-[10px] text-muted-foreground">
+                        {DAYS[d]}
+                      </span>
                       {row.map((c, s) => (
                         <div
                           key={s}
-                          title={c.count ? `${DAYS[d]} ${SLOTS[s]} · avg ${c.avg} interactions · ${c.count} post(s)` : "No posts"}
+                          title={
+                            c.count
+                              ? `${DAYS[d]} ${SLOTS[s]} · avg ${c.avg} interactions · ${c.count} post(s)`
+                              : "No posts"
+                          }
                           className={cn(
                             "aspect-[4/3] animate-pop-in border transition-transform hover:z-10 hover:scale-125 motion-reduce:animate-none",
-                            best.d === d && best.s === s ? "border-2 border-black" : "border-transparent",
+                            best.d === d && best.s === s
+                              ? "border-2 border-black"
+                              : "border-transparent",
                           )}
                           style={{
                             animationDelay: `${(d * 8 + s) * 14}ms`,
@@ -722,11 +1066,18 @@ export function SocialAnalyticsDashboard({
                   ))}
                 </div>
                 <p className="mt-3 text-[10px] text-muted-foreground">
-                  Average interactions per post by day and time (IST). Darker is better; grey means nothing posted then.
+                  Average interactions per post by day and time (IST). Darker is
+                  better; grey means nothing posted then.
                 </p>
               </div>
             ) : (
-              <Empty text={engagement ? "Publish a few posts to see your best times." : "Loading…"} />
+              <Empty
+                text={
+                  engagement
+                    ? "Publish a few posts to see your best times."
+                    : "Loading…"
+                }
+              />
             )}
           </Panel>
         </Reveal>
@@ -740,7 +1091,9 @@ export function SocialAnalyticsDashboard({
                 <div key={s.key} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="font-medium">{s.label}</span>
-                    <span className="text-muted-foreground">{statuses[s.key]}</span>
+                    <span className="text-muted-foreground">
+                      {statuses[s.key]}
+                    </span>
                   </div>
                   <div className="h-2.5 border border-black bg-muted">
                     <div
@@ -771,9 +1124,16 @@ export function SocialAnalyticsDashboard({
                   className="flex animate-fade-in items-center gap-3 border border-border p-2 text-xs transition-all hover:-translate-y-0.5 hover:border-black hover:bg-muted/30 motion-reduce:animate-none"
                   style={{ animationDelay: `${500 + i * 80}ms` }}
                 >
-                  <span className="w-5 text-center font-medium text-muted-foreground">{i + 1}</span>
+                  <span className="w-5 text-center font-medium text-muted-foreground">
+                    {i + 1}
+                  </span>
                   {p.imageUrl ? (
-                    <img referrerPolicy="no-referrer" src={p.imageUrl} alt="" className="h-10 w-10 shrink-0 border border-black object-cover" />
+                    <img
+                      referrerPolicy="no-referrer"
+                      src={p.imageUrl}
+                      alt=""
+                      className="h-10 w-10 shrink-0 border border-black object-cover"
+                    />
                   ) : (
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-black bg-muted">
                       <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -782,7 +1142,9 @@ export function SocialAnalyticsDashboard({
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{p.caption}</p>
                     <p className="text-muted-foreground">
-                      {p.postedAt ? new Date(p.postedAt).toLocaleDateString("en-IN") : ""}
+                      {p.postedAt
+                        ? new Date(p.postedAt).toLocaleDateString("en-IN")
+                        : ""}
                       {p.source === "imported" ? " · Imported" : ""}
                     </p>
                   </div>
@@ -794,7 +1156,9 @@ export function SocialAnalyticsDashboard({
                       ["Saved", p.engagement?.saved],
                     ].map(([k, v]) => (
                       <div key={k as string}>
-                        <p className="text-sm font-medium">{compact(Number(v) || 0)}</p>
+                        <p className="text-sm font-medium">
+                          {compact(Number(v) || 0)}
+                        </p>
                         <p className="text-muted-foreground">{k}</p>
                       </div>
                     ))}
@@ -802,7 +1166,13 @@ export function SocialAnalyticsDashboard({
                 </a>
               ))}
               {!engagement?.topPosts?.length && (
-                <Empty text={engagement ? "No published posts yet. Import from Instagram to see them here." : "Loading…"} />
+                <Empty
+                  text={
+                    engagement
+                      ? "No published posts yet. Import from Instagram to see them here."
+                      : "Loading…"
+                  }
+                />
               )}
             </div>
           </Panel>

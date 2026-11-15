@@ -39,6 +39,8 @@ import {
   RefreshCw,
   Instagram,
   Facebook,
+  MoreVertical,
+  Filter,
   CheckCircle2,
   XCircle,
   Clock,
@@ -75,7 +77,24 @@ import {
   isSameMonth,
   isToday,
 } from "date-fns";
-import { Link, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SocialPost {
   _id: string;
@@ -104,7 +123,13 @@ interface SocialPost {
   createdAt: string;
   source?: string;
   permalink?: string;
-  engagement?: { views?: number; likes?: number; comments?: number; saved?: number; shares?: number };
+  engagement?: {
+    views?: number;
+    likes?: number;
+    comments?: number;
+    saved?: number;
+    shares?: number;
+  };
 }
 
 interface SocialAccount {
@@ -185,11 +210,27 @@ export default function SocialMediaPlannerPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const { section } = useParams();
+  const navigate = useNavigate();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
-  const [activeTab, setActiveTab] = useState<
-    "posts" | "calendar" | "accounts" | "analytics"
-  >(searchParams.get("tab") === "accounts" ? "accounts" : "posts");
+  // The sidebar dropdown drives the section: /social-planner (analytics), /posts, /calendar, /accounts.
+  const activeTab: "posts" | "calendar" | "accounts" | "analytics" =
+    section === "posts" || section === "calendar" || section === "accounts"
+      ? section
+      : searchParams.get("tab") === "accounts"
+        ? "accounts"
+        : "analytics";
+  const setActiveTab = (t: string) =>
+    navigate(t === "analytics" ? "/social-planner" : `/social-planner/${t}`, {
+      replace: true,
+    });
+  const sectionTitle = {
+    analytics: "Analytics",
+    posts: "Posts",
+    calendar: "Calendar",
+    accounts: "Connected Accounts",
+  }[activeTab];
 
   const [stats, setStats] = useState<any>(null);
 
@@ -225,31 +266,8 @@ export default function SocialMediaPlannerPage() {
     <AppLayout title="Social Media Planner">
       <div className="flex flex-col h-full">
         {}
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-background">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary border-2 border-black nb-shadow flex items-center justify-center">
-              <Instagram className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-medium">Social Media Planner</h1>
-              <p className="text-xs text-muted-foreground">
-                Plan, approve & auto-post to Facebook, Instagram and LinkedIn
-              </p>
-            </div>
-          </div>
-          {isAdmin && (
-            <Link to="/social-autopilot">
-              <Button variant="outline" size="sm">
-                <Sparkles className="w-4 h-4 mr-1" />
-                Autopilot
-              </Button>
-            </Link>
-          )}
-        </div>
-
-        {}
-        {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-6 py-4 border-b border-border bg-muted/20">
+        {stats && activeTab === "posts" && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-1 py-4 bg-muted/20">
             <KpiCard
               title="Total Posts"
               value={stats.total}
@@ -284,27 +302,6 @@ export default function SocialMediaPlannerPage() {
         )}
 
         {}
-        <div className="flex border-b-2 border-black px-6 bg-background">
-          {[
-            { id: "posts", label: "Posts" },
-            { id: "calendar", label: "Calendar" },
-            { id: "analytics", label: "Analytics" },
-            { id: "accounts", label: "Connected Accounts" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              className={`py-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === t.id
-                  ? "border-primary-900 text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
         <div className="flex-1 overflow-hidden">
           {activeTab === "posts" && (
             <PostsTab
@@ -314,7 +311,9 @@ export default function SocialMediaPlannerPage() {
             />
           )}
           {activeTab === "calendar" && <CalendarTab toast={toast} />}
-          {activeTab === "analytics" && <SocialAnalyticsDashboard isAdmin={isAdmin} toast={toast} />}
+          {activeTab === "analytics" && (
+            <SocialAnalyticsDashboard isAdmin={isAdmin} toast={toast} />
+          )}
           {activeTab === "accounts" && (
             <AccountsTab isAdmin={isAdmin} toast={toast} />
           )}
@@ -359,16 +358,29 @@ function PostsTab({
   const [fTo, setFTo] = useState("");
   const [accounts, setAccounts] = useState<SocialAccount[]>([]);
   useEffect(() => {
-    socialAPI.getAccounts().then((r) => setAccounts(r.data || [])).catch(() => {});
+    socialAPI
+      .getAccounts()
+      .then((r) => setAccounts(r.data || []))
+      .catch(() => {});
   }, []);
 
   const dateOf = (p: SocialPost) =>
     new Date(p.postedAt || p.scheduledAt || p.createdAt).getTime();
   const engagementOf = (p: SocialPost) => {
     const e = p.engagement || {};
-    return (e.likes || 0) + (e.comments || 0) + (e.saved || 0) + (e.shares || 0);
+    return (
+      (e.likes || 0) + (e.comments || 0) + (e.saved || 0) + (e.shares || 0)
+    );
   };
-  const activeFilters = [q, fPlatform, fType, fSource, fAccount, fFrom, fTo].filter(Boolean).length;
+  const activeFilters = [
+    q,
+    fPlatform,
+    fType,
+    fSource,
+    fAccount,
+    fFrom,
+    fTo,
+  ].filter(Boolean).length;
   const clearFilters = () => {
     setQ("");
     setFPlatform("");
@@ -383,11 +395,17 @@ function PostsTab({
     const from = fFrom ? new Date(fFrom).getTime() : 0;
     const to = fTo ? new Date(fTo).getTime() + 24 * 60 * 60 * 1000 : Infinity;
     const list = posts.filter((p) => {
-      if (needle && !(p.caption || "").toLowerCase().includes(needle) && !(p.hashtags || []).join(" ").toLowerCase().includes(needle)) return false;
+      if (
+        needle &&
+        !(p.caption || "").toLowerCase().includes(needle) &&
+        !(p.hashtags || []).join(" ").toLowerCase().includes(needle)
+      )
+        return false;
       if (fPlatform && !(p.platforms || []).includes(fPlatform)) return false;
       if (fType && (p.postType || "image") !== fType) return false;
       if (fSource && (p.source || "manual") !== fSource) return false;
-      if (fAccount && !(p.accountIds || []).map(String).includes(fAccount)) return false;
+      if (fAccount && !(p.accountIds || []).map(String).includes(fAccount))
+        return false;
       const d = dateOf(p);
       return d >= from && d < to;
     });
@@ -521,40 +539,23 @@ function PostsTab({
   return (
     <div className="flex flex-col h-full">
       {}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border">
-        <div className="flex gap-1 overflow-x-auto">
+      <div className="flex flex-wrap items-center gap-2 px-1 py-3">
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          title="Status"
+          className={cn(
+            "h-9 border-2 border-black bg-white px-2 text-xs font-medium outline-none",
+            filter !== "ALL" && "bg-[#FFF1E6]",
+          )}
+        >
           {FILTER_TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setFilter(t.id)}
-              className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all border-2 ${
-                filter === t.id
-                  ? "border-black bg-primary text-white"
-                  : "border-transparent text-muted-foreground hover:border-black hover:bg-accent"
-              }`}
-            >
-              {t.label}
-            </button>
+            <option key={t.id} value={t.id}>
+              {t.id === "ALL" ? "All statuses" : t.label}
+            </option>
           ))}
-        </div>
-        <div className="flex gap-2 ml-3 shrink-0">
-          <Button variant="outline" size="sm" onClick={fetchPosts} className="">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            className=" bg-primary text-white hover:bg-purple-700"
-            onClick={() => {
-              setEditingPost(null);
-              setWizardOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-1" /> New Post
-          </Button>
-        </div>
-      </div>
+        </select>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
         <div className="flex h-9 min-w-[180px] flex-1 items-center gap-2 border-2 border-black bg-white px-2.5">
           <Search className="h-3.5 w-3.5 shrink-0" />
           <input
@@ -564,68 +565,145 @@ function PostsTab({
             className="w-full bg-transparent text-xs outline-none"
           />
         </div>
-        {[
-          { v: fPlatform, set: setFPlatform, all: "All platforms", opts: [["instagram", "Instagram"], ["facebook", "Facebook"], ["linkedin", "LinkedIn"]] },
-          { v: fType, set: setFType, all: "All types", opts: [["image", "Image"], ["carousel", "Carousel"], ["reel", "Reel"]] },
-          { v: fSource, set: setFSource, all: "All sources", opts: [["manual", "Created here"], ["autopilot", "Autopilot"], ["imported", "Imported"]] },
-          { v: fAccount, set: setFAccount, all: "All accounts", opts: accounts.map((a) => [a._id, a.accountName]) },
-        ].map((f) => (
-          <select
-            key={f.all}
-            value={f.v}
-            onChange={(e) => f.set(e.target.value)}
-            className={cn(
-              "h-9 max-w-[170px] border-2 border-black bg-white px-2 text-xs outline-none",
-              f.v && "bg-[#FFF1E6]",
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex h-9 items-center gap-1.5 border-2 border-black bg-white px-3 text-xs font-medium hover:bg-[#FFDE00]">
+              <Filter className="h-3.5 w-3.5" /> Filters
+              {activeFilters - (q ? 1 : 0) > 0 && (
+                <span className="ml-0.5 min-w-4 bg-[#024BAB] px-1 text-center text-[10px] text-white">
+                  {activeFilters - (q ? 1 : 0)}
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 space-y-3 p-3">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {
+                  v: fPlatform,
+                  set: setFPlatform,
+                  all: "All platforms",
+                  opts: [
+                    ["instagram", "Instagram"],
+                    ["facebook", "Facebook"],
+                    ["linkedin", "LinkedIn"],
+                  ],
+                },
+                {
+                  v: fType,
+                  set: setFType,
+                  all: "All types",
+                  opts: [
+                    ["image", "Image"],
+                    ["carousel", "Carousel"],
+                    ["reel", "Reel"],
+                  ],
+                },
+                {
+                  v: fSource,
+                  set: setFSource,
+                  all: "All sources",
+                  opts: [
+                    ["manual", "Created here"],
+                    ["autopilot", "Autopilot"],
+                    ["imported", "Imported"],
+                  ],
+                },
+                {
+                  v: fAccount,
+                  set: setFAccount,
+                  all: "All accounts",
+                  opts: accounts.map((a) => [a._id, a.accountName]),
+                },
+              ].map((f) => (
+                <select
+                  key={f.all}
+                  value={f.v}
+                  onChange={(e) => f.set(e.target.value)}
+                  className={cn(
+                    "h-9 w-full border-2 border-black bg-white px-2 text-xs outline-none",
+                    f.v && "bg-[#FFF1E6]",
+                  )}
+                >
+                  <option value="">{f.all}</option>
+                  {f.opts.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                From
+                <input
+                  type="date"
+                  value={fFrom}
+                  onChange={(e) => setFFrom(e.target.value)}
+                  className="mt-0.5 h-9 w-full border-2 border-black bg-white px-2 text-xs normal-case outline-none"
+                />
+              </label>
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                To
+                <input
+                  type="date"
+                  value={fTo}
+                  onChange={(e) => setFTo(e.target.value)}
+                  className="mt-0.5 h-9 w-full border-2 border-black bg-white px-2 text-xs normal-case outline-none"
+                />
+              </label>
+            </div>
+            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground">
+              Sort by
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="mt-0.5 h-9 w-full border-2 border-black bg-white px-2 text-xs normal-case outline-none"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="engagement">Most engagement</option>
+                <option value="likes">Most likes</option>
+                <option value="views">Most views</option>
+                <option value="caption">Caption A–Z</option>
+              </select>
+            </label>
+            {activeFilters > 0 && (
+              <button
+                onClick={clearFilters}
+                className="h-8 w-full border-2 border-black bg-white text-xs font-medium hover:bg-[#FFDE00]"
+              >
+                Clear all filters
+              </button>
             )}
-          >
-            <option value="">{f.all}</option>
-            {f.opts.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        ))}
-        <input
-          type="date"
-          value={fFrom}
-          onChange={(e) => setFFrom(e.target.value)}
-          title="From date"
-          className="h-9 border-2 border-black bg-white px-2 text-xs outline-none"
-        />
-        <input
-          type="date"
-          value={fTo}
-          onChange={(e) => setFTo(e.target.value)}
-          title="To date"
-          className="h-9 border-2 border-black bg-white px-2 text-xs outline-none"
-        />
-        <div className="flex items-center gap-1.5">
-          <ArrowUpDown className="h-3.5 w-3.5" />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="h-9 border-2 border-black bg-white px-2 text-xs outline-none"
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="engagement">Most engagement</option>
-            <option value="likes">Most likes</option>
-            <option value="views">Most views</option>
-            <option value="caption">Caption A–Z</option>
-          </select>
-        </div>
-        {activeFilters > 0 && (
-          <button onClick={clearFilters} className="h-9 border-2 border-black bg-white px-2.5 text-xs font-medium hover:bg-[#FFDE00]">
-            Clear ({activeFilters})
-          </button>
-        )}
-        <span className="ml-auto text-xs text-muted-foreground">
+          </PopoverContent>
+        </Popover>
+
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
           {visiblePosts.length === posts.length
             ? `${posts.length} posts`
-            : `${visiblePosts.length} of ${posts.length} posts`}
+            : `${visiblePosts.length} of ${posts.length}`}
         </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchPosts}
+          title="Refresh"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </Button>
+        <Button
+          size="sm"
+          className="bg-primary text-white hover:bg-purple-700"
+          onClick={() => {
+            setEditingPost(null);
+            setWizardOpen(true);
+          }}
+        >
+          <Plus className="w-4 h-4 mr-1" /> New Post
+        </Button>
       </div>
 
       {}
@@ -649,28 +727,212 @@ function PostsTab({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4 max-w-full mt-10">
-            {visiblePosts.map((post) => (
-              <PostCard
-                key={post._id}
-                post={post}
-                isAdmin={isAdmin}
-                actionLoading={actionLoading}
-                onEdit={() => {
-                  setEditingPost(post);
-                  setWizardOpen(true);
-                }}
-                onDelete={() => setDeleteId(post._id)}
-                onSubmit={() => handleSubmitForApproval(post)}
-                onApprove={() => setApprovalDialogPost(post)}
-                onReject={() => {
-                  setRejectionDialogPost(post);
-                  setRejectionReason("");
-                }}
-                onPublishNow={() => handlePublishNow(post)}
-                onView={() => setViewingPost(post)}
-              />
-            ))}
+          <div className="mt-4 border-2 border-black bg-white overflow-x-auto">
+            <table className="w-full text-sm min-w-[820px]">
+              <thead>
+                <tr className="bg-[#024BAB] text-white text-[11px] uppercase tracking-wider">
+                  <th className="text-left px-3 py-2.5 font-medium">Post</th>
+                  <th className="text-left px-3 py-2.5 font-medium">Status</th>
+                  <th className="text-left px-3 py-2.5 font-medium">
+                    Platforms
+                  </th>
+                  <th className="text-left px-3 py-2.5 font-medium">Date</th>
+                  <th className="text-left px-3 py-2.5 font-medium">By</th>
+                  <th className="text-right px-3 py-2.5 font-medium">Likes</th>
+                  <th className="px-3 py-2.5 w-24" />
+                </tr>
+              </thead>
+              <tbody>
+                {visiblePosts.map((post) => {
+                  const cfg = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
+                  const StatusIcon = cfg.icon;
+                  const when =
+                    post.postedAt || post.scheduledAt || post.createdAt;
+                  const canEdit = !["POSTING", "POSTED"].includes(post.status);
+                  return (
+                    <tr
+                      key={post._id}
+                      className="border-b border-black/10 hover:bg-black/[0.03] cursor-pointer"
+                      onClick={() => setViewingPost(post)}
+                    >
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {post.imageUrl ? (
+                            <img
+                              referrerPolicy="no-referrer"
+                              src={post.imageUrl}
+                              alt=""
+                              className="w-10 h-10 object-cover shrink-0 border-2 border-black rounded-full"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 shrink-0 bg-purple-100 border-2 border-black flex items-center justify-center rounded-full">
+                              <ImageIcon className="w-4 h-4 text-purple-400" />
+                            </div>
+                          )}
+                          <div className="min-w-0 max-w-[320px]">
+                            <p className="text-xs font-medium text-black line-clamp-2 leading-snug">
+                              {post.caption || "(no caption)"}
+                            </p>
+                            {post.status === "REJECTED" &&
+                              post.rejectionReason && (
+                                <p className="text-[10px] text-red-600 truncate">
+                                  Rejected: {post.rejectionReason}
+                                </p>
+                              )}
+                            {["FAILED", "PARTIALLY_POSTED"].includes(
+                              post.status,
+                            ) &&
+                              post.failureReason && (
+                                <p className="text-[10px] text-red-600 truncate">
+                                  Failed: {post.failureReason}
+                                </p>
+                              )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.color}`}
+                        >
+                          <StatusIcon
+                            className={`w-3 h-3 ${post.status === "POSTING" ? "animate-spin" : ""}`}
+                          />
+                          {cfg.label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1.5">
+                          {post.platforms.includes("facebook") && (
+                            <Facebook className="w-4 h-4 text-blue-600" />
+                          )}
+                          {post.platforms.includes("instagram") && (
+                            <Instagram className="w-4 h-4 text-pink-600" />
+                          )}
+                          {post.platforms.includes("linkedin") && (
+                            <LinkedInIcon className="w-4 h-4" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-black whitespace-nowrap">
+                        {format(new Date(when), "dd MMM yyyy, h:mm a")}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-black whitespace-nowrap">
+                        {post.createdBy?.name || "—"}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-right tabular-nums">
+                        {post.engagement?.likes ?? "—"}
+                      </td>
+                      <td
+                        className="px-3 py-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 w-7 p-0"
+                            title="View"
+                            onClick={() => setViewingPost(post)}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                                title="Actions"
+                              >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="border-2 border-black"
+                            >
+                              {canEdit && (
+                                <DropdownMenuItem
+                                  className="gap-2 text-xs cursor-pointer"
+                                  onSelect={() => {
+                                    setEditingPost(post);
+                                    setWizardOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="w-3.5 h-3.5" /> Edit
+                                </DropdownMenuItem>
+                              )}
+                              {["DRAFT", "REJECTED"].includes(post.status) && (
+                                <DropdownMenuItem
+                                  className="gap-2 text-xs cursor-pointer"
+                                  disabled={actionLoading}
+                                  onSelect={() => handleSubmitForApproval(post)}
+                                >
+                                  <Send className="w-3.5 h-3.5" /> Submit for
+                                  approval
+                                </DropdownMenuItem>
+                              )}
+                              {isAdmin &&
+                                post.status === "PENDING_APPROVAL" && (
+                                  <>
+                                    <DropdownMenuItem
+                                      className="gap-2 text-xs cursor-pointer text-emerald-700"
+                                      disabled={actionLoading}
+                                      onSelect={() =>
+                                        setApprovalDialogPost(post)
+                                      }
+                                    >
+                                      <ThumbsUp className="w-3.5 h-3.5" />{" "}
+                                      Approve
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="gap-2 text-xs cursor-pointer text-red-600"
+                                      disabled={actionLoading}
+                                      onSelect={() => {
+                                        setRejectionDialogPost(post);
+                                        setRejectionReason("");
+                                      }}
+                                    >
+                                      <ThumbsDown className="w-3.5 h-3.5" />{" "}
+                                      Reject
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              {isAdmin &&
+                                [
+                                  "SCHEDULED",
+                                  "FAILED",
+                                  "APPROVED",
+                                  "PARTIALLY_POSTED",
+                                ].includes(post.status) && (
+                                  <DropdownMenuItem
+                                    className="gap-2 text-xs cursor-pointer text-[#024BAB]"
+                                    disabled={actionLoading}
+                                    onSelect={() => handlePublishNow(post)}
+                                  >
+                                    <Zap className="w-3.5 h-3.5" /> Post now
+                                  </DropdownMenuItem>
+                                )}
+                              {canEdit && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="gap-2 text-xs cursor-pointer text-red-600"
+                                    onSelect={() => setDeleteId(post._id)}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -1044,7 +1306,8 @@ function CalendarTab({ toast }: { toast: any }) {
                       className="w-full flex items-center gap-3 p-2.5 border-2 border-black hover:bg-primary/5 transition-colors text-left"
                     >
                       {p.imageUrl ? (
-                        <img referrerPolicy="no-referrer"
+                        <img
+                          referrerPolicy="no-referrer"
                           src={p.imageUrl}
                           alt=""
                           className="w-10 h-10 object-cover shrink-0 border border-black"
@@ -1086,238 +1349,6 @@ function CalendarTab({ toast }: { toast: any }) {
           onReject={() => setViewingPost(null)}
         />
       )}
-    </div>
-  );
-}
-
-function PostCard({
-  post,
-  isAdmin,
-  actionLoading,
-  onEdit,
-  onDelete,
-  onSubmit,
-  onApprove,
-  onReject,
-  onPublishNow,
-  onView,
-}: {
-  post: SocialPost;
-  isAdmin: boolean;
-  actionLoading: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onSubmit: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-  onPublishNow: () => void;
-  onView: () => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const cfg = STATUS_CONFIG[post.status] || STATUS_CONFIG.DRAFT;
-  const StatusIcon = cfg.icon;
-  const isScheduledPast =
-    post.status === "SCHEDULED" && isPast(new Date(post.scheduledAt));
-
-  return (
-    <div className="border-2 border-2-hover overflow-hidden border-l-4 border-l-primary-900">
-      <div className="px-5 py-4">
-        <div className="flex items-start gap-4">
-          {}
-          {post.imageUrl ? (
-            <img referrerPolicy="no-referrer"
-              src={post.imageUrl}
-              alt=""
-              className="w-16 h-16 object-cover shrink-0 border-2 border-black"
-            />
-          ) : (
-            <div className="w-16 h-16 shrink-0 bg-purple-100 border-2 border-black flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-purple-400" />
-            </div>
-          )}
-
-          <div className="flex-1 min-w-0">
-            {}
-            <div className="flex items-center gap-2 flex-wrap mb-1.5">
-              <span
-                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.color}`}
-              >
-                <StatusIcon
-                  className={`w-3 h-3 ${post.status === "POSTING" ? "animate-spin" : ""}`}
-                />
-                {cfg.label}
-              </span>
-              {post.platforms.includes("facebook") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-300 font-medium">
-                  <Facebook className="w-3 h-3" /> Facebook
-                </span>
-              )}
-              {post.platforms.includes("instagram") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 border border-purple-300 font-medium">
-                  <Instagram className="w-3 h-3" /> Instagram
-                </span>
-              )}
-              {post.platforms.includes("linkedin") && (
-                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 bg-sky-100 text-sky-700 border border-sky-300 font-medium">
-                  <LinkedInIcon className="w-3 h-3" /> LinkedIn
-                </span>
-              )}
-            </div>
-
-            {}
-            <p className="text-sm text-foreground line-clamp-2">
-              {post.caption}
-            </p>
-
-            {}
-            {post.hashtags.length > 0 && (
-              <p className="text-xs text-primary-900 mt-1 truncate">
-                {post.hashtags
-                  .map((h) => (h.startsWith("#") ? h : `#${h}`))
-                  .join(" ")}
-              </p>
-            )}
-
-            {}
-            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {format(new Date(post.scheduledAt), "dd MMM yyyy, h:mm a")}
-              </span>
-              {post.createdBy && (
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  {post.createdBy.name}
-                </span>
-              )}
-            </div>
-
-            {}
-            {post.status === "REJECTED" && post.rejectionReason && (
-              <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
-                <strong>Rejected:</strong> {post.rejectionReason}
-              </div>
-            )}
-
-            {}
-            {["FAILED", "PARTIALLY_POSTED"].includes(post.status) &&
-              post.failureReason && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
-                  <strong>Failed:</strong> {post.failureReason}
-                </div>
-              )}
-
-            {}
-            {["POSTED", "PARTIALLY_POSTED"].includes(post.status) && (
-              <div className="mt-2 flex items-center gap-3 text-xs text-green-600">
-                <Check className="w-3 h-3" />
-                Posted{" "}
-                {post.postedAt
-                  ? formatDistanceToNow(new Date(post.postedAt), {
-                      addSuffix: true,
-                    })
-                  : ""}
-                {post.facebookPostId && (
-                  <span className="text-blue-600">FB ✓</span>
-                )}
-                {post.instagramPostId && (
-                  <span className="text-primary-900">IG ✓</span>
-                )}
-                {post.linkedinPostId && (
-                  <span className="text-sky-700">LI ✓</span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {}
-          <div className="flex flex-col gap-1.5 shrink-0">
-            {}
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs "
-              onClick={onView}
-            >
-              <Eye className="w-3 h-3 mr-1" /> View
-            </Button>
-
-            {}
-            {!["POSTING", "POSTED"].includes(post.status) && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs "
-                onClick={onEdit}
-              >
-                <Pencil className="w-3 h-3 mr-1" /> Edit
-              </Button>
-            )}
-
-            {}
-            {["DRAFT", "REJECTED"].includes(post.status) && (
-              <Button
-                size="sm"
-                className="h-7 text-xs  bg-primary text-white hover:bg-purple-700"
-                onClick={onSubmit}
-                disabled={actionLoading}
-              >
-                <Send className="w-3 h-3 mr-1" /> Submit
-              </Button>
-            )}
-
-            {}
-            {isAdmin && post.status === "PENDING_APPROVAL" && (
-              <>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs  bg-[#00C48C] text-black hover:bg-[#00C48C]/90"
-                  onClick={onApprove}
-                  disabled={actionLoading}
-                >
-                  <ThumbsUp className="w-3 h-3 mr-1" /> Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs  text-red-600 border-red-300 hover:bg-red-50"
-                  onClick={onReject}
-                  disabled={actionLoading}
-                >
-                  <ThumbsDown className="w-3 h-3 mr-1" /> Reject
-                </Button>
-              </>
-            )}
-
-            {}
-            {isAdmin &&
-              ["SCHEDULED", "FAILED", "APPROVED", "PARTIALLY_POSTED"].includes(
-                post.status,
-              ) && (
-                <Button
-                  size="sm"
-                  className="h-7 text-xs  bg-[#024BAB] text-white hover:bg-[#024BAB]/90"
-                  onClick={onPublishNow}
-                  disabled={actionLoading}
-                >
-                  <Zap className="w-3 h-3 mr-1" /> Post Now
-                </Button>
-              )}
-
-            {}
-            {!["POSTING", "POSTED"].includes(post.status) && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0 text-red-500 hover:bg-red-50 border-2 border-transparent hover:border-red-300"
-                onClick={onDelete}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -1921,7 +1952,8 @@ function PostWizard({
                       </div>
                       {}
                       {previewImage && (
-                        <img referrerPolicy="no-referrer"
+                        <img
+                          referrerPolicy="no-referrer"
                           src={previewImage}
                           alt=""
                           className="w-full object-cover max-h-48"
@@ -2083,7 +2115,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
       setSyncError("");
     } catch (err: any) {
       if (err?.name !== "AbortError")
-        setSyncError(err.message || "Couldn't fetch accounts from Integrations");
+        setSyncError(
+          err.message || "Couldn't fetch accounts from Integrations",
+        );
     } finally {
       await fetchAccounts();
       if (syncAbort.current === ctl) setSyncing(false);
@@ -2096,12 +2130,15 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     setSyncing(false);
     toast({
       title: "Sync stopped",
-      description: "Accounts already fetched are kept. Press Refresh to run it again.",
+      description:
+        "Accounts already fetched are kept. Press Refresh to run it again.",
     });
   };
 
   const toggleSelected = (id: string) =>
-    setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+    setSelected((cur) =>
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+    );
 
   const handleBulkDisconnect = async () => {
     setDisconnecting(true);
@@ -2110,7 +2147,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
     );
     const failed = results.filter((r) => r.status === "rejected").length;
     toast({
-      title: failed ? "Some accounts could not be disconnected" : "Accounts disconnected",
+      title: failed
+        ? "Some accounts could not be disconnected"
+        : "Accounts disconnected",
       description: `${selected.length - failed} disconnected${failed ? `, ${failed} failed` : ""}.`,
       variant: failed ? "destructive" : undefined,
     });
@@ -2181,7 +2220,12 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         </div>
         <div className="flex gap-2">
           {syncing && (
-            <Button variant="outline" size="sm" onClick={stopSync} className="border-red-600 text-red-600 hover:bg-red-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={stopSync}
+              className="border-red-600 text-red-600 hover:bg-red-50"
+            >
               <X className="w-4 h-4 mr-1" /> Stop
             </Button>
           )}
@@ -2200,17 +2244,26 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
             <Checkbox
               checked={selected.length === accounts.length}
               onCheckedChange={() =>
-                setSelected(selected.length === accounts.length ? [] : accounts.map((a) => a._id))
+                setSelected(
+                  selected.length === accounts.length
+                    ? []
+                    : accounts.map((a) => a._id),
+                )
               }
             />
             Select all
           </label>
           <span className="text-muted-foreground">
-            {selected.length ? `${selected.length} selected` : "Tick accounts to disconnect them together"}
+            {selected.length
+              ? `${selected.length} selected`
+              : "Tick accounts to disconnect them together"}
           </span>
           {selected.length > 0 && (
             <>
-              <button className="text-[#024BAB] hover:underline" onClick={() => setSelected([])}>
+              <button
+                className="text-[#024BAB] hover:underline"
+                onClick={() => setSelected([])}
+              >
                 Clear
               </button>
               <Button
@@ -2218,7 +2271,8 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                 className="ml-auto bg-red-600 text-white hover:bg-red-700"
                 onClick={() => setBulkOpen(true)}
               >
-                <Link2Off className="mr-1.5 h-3.5 w-3.5" /> Disconnect selected ({selected.length})
+                <Link2Off className="mr-1.5 h-3.5 w-3.5" /> Disconnect selected
+                ({selected.length})
               </Button>
             </>
           )}
@@ -2272,7 +2326,8 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                       key={acc._id}
                       className={cn(
                         "flex items-center gap-3 p-4 border border-border rounded-xl bg-white hover:shadow-sm transition-shadow",
-                        selected.includes(acc._id) && "border-red-500 bg-red-50/40",
+                        selected.includes(acc._id) &&
+                          "border-red-500 bg-red-50/40",
                       )}
                     >
                       {isAdmin && (
@@ -2284,7 +2339,8 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                       )}
                       <div className="relative shrink-0">
                         {acc.profilePicture ? (
-                          <img referrerPolicy="no-referrer"
+                          <img
+                            referrerPolicy="no-referrer"
                             src={acc.profilePicture}
                             alt=""
                             className="w-12 h-12 rounded-full object-cover border border-border bg-muted"
@@ -2344,7 +2400,9 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
       <AlertDialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect {selected.length} accounts?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Disconnect {selected.length} accounts?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Scheduled posts targeting these accounts will fail. Refresh brings
               them back while the Integrations login can still reach them.
@@ -2357,7 +2415,10 @@ function AccountsTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               disabled={disconnecting}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {disconnecting && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Disconnect all
+              {disconnecting && (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              )}{" "}
+              Disconnect all
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2448,7 +2509,8 @@ function PostDetailModal({
                   poster={post.coverImageUrl}
                 />
               ) : (
-                <img referrerPolicy="no-referrer"
+                <img
+                  referrerPolicy="no-referrer"
                   src={post.imageUrl}
                   alt=""
                   className="w-full max-h-64 object-contain"
@@ -2459,7 +2521,8 @@ function PostDetailModal({
           {post.mediaUrls && post.mediaUrls.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1">
               {post.mediaUrls.map((url, i) => (
-                <img referrerPolicy="no-referrer"
+                <img
+                  referrerPolicy="no-referrer"
                   key={i}
                   src={url}
                   alt=""

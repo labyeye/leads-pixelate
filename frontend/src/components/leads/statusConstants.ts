@@ -35,6 +35,10 @@ export interface CustomLeadStatus {
   label: string;
   colorKey: string;
   order?: number;
+  role?: "active" | "hot" | "lost";
+  requireRemarks?: boolean;
+  requireFollowUp?: boolean;
+  autoFollowUpDays?: number;
 }
 
 // `categories`/`ALL_STATUSES` are mutable module bindings (like
@@ -43,17 +47,33 @@ export interface CustomLeadStatus {
 // props everywhere.
 export let categories: Record<string, string[]> = { ...BASE_CATEGORIES };
 
-let customStatusMeta: Record<
-  string,
-  { label: string; colorKey: string; category: string }
-> = {};
+let customStatusMeta: Record<string, CustomLeadStatus> = {};
+
+let customCategoryNames: string[] = [];
+export function getCustomLeadCategories() {
+  return customCategoryNames;
+}
 
 export function setCustomLeadStatuses(
   list: CustomLeadStatus[] | null | undefined,
+  customCategories?: string[] | null,
 ) {
+  if (customCategories) customCategoryNames = customCategories;
   const items = Array.isArray(list) ? list : [];
   const meta: typeof customStatusMeta = {};
   const merged: Record<string, string[]> = {};
+
+  const addCustomGroups = () => {
+    for (const name of customCategoryNames) {
+      const stages = items
+        .filter((s) => s.category === name)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      for (const s of stages) {
+        meta[s.value] = { ...s, category: name };
+      }
+      merged[name] = stages.map((s) => s.value);
+    }
+  };
 
   for (const [cat, items0] of Object.entries(BASE_CATEGORIES)) {
     const info = EXTENDABLE_CATEGORIES[cat];
@@ -65,7 +85,7 @@ export function setCustomLeadStatuses(
       .filter((s) => s.category === cat)
       .sort((a, b) => (a.order || 0) - (b.order || 0));
     for (const s of extras) {
-      meta[s.value] = { label: s.label, colorKey: s.colorKey, category: cat };
+      meta[s.value] = { ...s, category: cat };
     }
     const extraValues = extras.map((s) => s.value);
     const idx = items0.indexOf(info.insertBefore);
@@ -73,6 +93,7 @@ export function setCustomLeadStatuses(
       idx === -1
         ? [...items0, ...extraValues]
         : [...items0.slice(0, idx), ...extraValues, ...items0.slice(idx)];
+    if (cat === "Quotation") addCustomGroups();
   }
 
   customStatusMeta = meta;
@@ -96,8 +117,7 @@ export const getCategoryByStatus = (status: string) => {
 };
 
 export const statusColors: Record<string, string> = {
-  "PENDING CONTACT":
-    "bg-slate-200 text-slate-900 border-slate-400 font-medium",
+  "PENDING CONTACT": "bg-slate-200 text-slate-900 border-slate-400 font-medium",
   "1": "bg-orange-300 text-slate-900 border-orange-500 font-medium",
   "2": "bg-orange-300 text-slate-900 border-orange-500 font-medium",
   "3": "bg-red-300 text-slate-900 border-red-500 font-medium",
@@ -106,8 +126,7 @@ export const statusColors: Record<string, string> = {
   "DISCUSSION 1": "bg-blue-300 text-slate-900 border-blue-500 font-medium",
   "DISCUSSION 2": "bg-blue-200 text-slate-900 border-blue-400 font-medium",
   "DISCUSSION 3": "bg-blue-100 text-slate-900 border-blue-300 font-medium",
-  "DISCUSSION COMPLETED":
-    "bg-blue-500 text-white border-blue-700 font-medium",
+  "DISCUSSION COMPLETED": "bg-blue-500 text-white border-blue-700 font-medium",
   QUOTATION: "bg-purple-400 text-white border-purple-600 font-medium",
   "QUOTATION 1": "bg-purple-300 text-slate-900 border-purple-500 font-medium",
   "QUOTATION 2": "bg-purple-200 text-slate-900 border-purple-400 font-medium",

@@ -387,7 +387,7 @@ function AppRoutes() {
         element={<Navigate to="/whatsapp/inbox" replace />}
       />
       <Route
-        path="/social-planner"
+        path="/social-planner/:section?"
         element={
           <ProtectedRoute>
             <SocialMediaPlannerPage />

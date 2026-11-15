@@ -157,9 +157,11 @@ async function processRecording(callLogId, recordingUrl, seconds) {
     const lead = await Lead.findById(claimed.leadId);
     if (!lead) return await fail("failed", "lead not found");
     const setting = await Setting.findOne({ tenantId: lead.tenantId || null })
-      .select("customLeadStatuses")
+      .select("customLeadStatuses customLeadCategories")
       .lean();
-    const maps = buildTransitionMaps(setting?.customLeadStatuses || []);
+    const maps = buildTransitionMaps(setting?.customLeadStatuses || [], {
+      customCategories: setting?.customLeadCategories || [],
+    });
     const allowed = nextStatuses(lead.status, maps.VALID_TRANSITIONS);
 
     const out = await analyse(lead, turns, allowed);

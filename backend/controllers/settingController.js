@@ -11,6 +11,7 @@ const { TYPES, checkFormat } = require("../utils/docNumber");
 const {
   sanitizeLeadStatusLabels,
   sanitizeCustomLeadStatuses,
+  sanitizeCustomLeadCategories,
 } = require("../utils/leadStatuses");
 
 const getSettings = asyncHandler(async (req, res) => {
@@ -73,10 +74,19 @@ const updateSettings = asyncHandler(async (req, res) => {
 
   let setting = await Setting.findOne(tenantFilter);
 
-  if ("customLeadStatuses" in body) {
+  if ("customLeadCategories" in body || "customLeadStatuses" in body) {
+    const cats =
+      "customLeadCategories" in body
+        ? sanitizeCustomLeadCategories(body.customLeadCategories)
+        : setting?.customLeadCategories || [];
+    body.customLeadCategories = cats;
+    // Stages whose group was removed are dropped along with it.
     body.customLeadStatuses = sanitizeCustomLeadStatuses(
-      body.customLeadStatuses,
+      "customLeadStatuses" in body
+        ? body.customLeadStatuses
+        : setting?.customLeadStatuses || [],
       setting?.customLeadStatuses || [],
+      cats,
     );
   }
 

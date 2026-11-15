@@ -184,16 +184,62 @@ const allGroups: NavGroup[] = [
     label: "Social Media",
     items: [
       {
-        title: "Meta",
+        title: "Social Media",
         href: "/social-planner",
         icon: MetaIcon,
         roles: ["super_admin", "admin", "sales_executive"],
+        children: [
+          {
+            title: "Analytics",
+            href: "/social-planner",
+            icon: BarChart3,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Posts",
+            href: "/social-planner/posts",
+            icon: ClipboardList,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Calendar",
+            href: "/social-planner/calendar",
+            icon: CalendarCheck,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
+            title: "Accounts",
+            href: "/social-planner/accounts",
+            icon: Plug,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+        ],
       },
       {
         title: "Autopilot",
         href: "/social-autopilot",
         icon: Sparkles,
         roles: ["super_admin", "admin"],
+        children: [
+          {
+            title: "Dashboard",
+            href: "/social-autopilot",
+            icon: LayoutGrid,
+            roles: ["super_admin", "admin"],
+          },
+          {
+            title: "Setup",
+            href: "/social-autopilot/setup",
+            icon: Settings,
+            roles: ["super_admin", "admin"],
+          },
+          {
+            title: "Report",
+            href: "/social-autopilot/report",
+            icon: BarChart3,
+            roles: ["super_admin", "admin"],
+          },
+        ],
       },
     ],
   },

@@ -35,6 +35,8 @@ import {
   categories as statusCategories,
   PROTECTED_STATUSES,
   COLOR_PRESETS,
+  colorKeyToClasses,
+  statusColors,
   setStatusOverrides,
   setCustomLeadStatuses,
   isCustomLeadStatus,
@@ -634,7 +636,10 @@ export default function SettingsPage() {
         ...res.data,
         companyName: res.data?.companyName || tenant?.name || "",
       });
-      setCustomLeadStatuses(res.data?.customLeadStatuses);
+      setCustomLeadStatuses(
+        res.data?.customLeadStatuses,
+        res.data?.customLeadCategories || [],
+      );
 
       if (res.data?.permissions) {
         const saved = res.data.permissions as Record<string, any>;
@@ -754,7 +759,7 @@ export default function SettingsPage() {
       const next = (prev.customLeadStatuses || []).map((s: CustomLeadStatus) =>
         s.value === value ? { ...s, ...patch } : s,
       );
-      setCustomLeadStatuses(next);
+      setCustomLeadStatuses(next, prev.customLeadCategories || []);
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -764,7 +769,7 @@ export default function SettingsPage() {
       const next = (prev.customLeadStatuses || []).filter(
         (s: CustomLeadStatus) => s.value !== value,
       );
-      setCustomLeadStatuses(next);
+      setCustomLeadStatuses(next, prev.customLeadCategories || []);
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -781,9 +786,13 @@ export default function SettingsPage() {
           label: "New Stage",
           colorKey: "slate",
           order: existing.filter((s) => s.category === category).length,
+          role: "active" as const,
+          requireRemarks: true,
+          requireFollowUp: true,
+          autoFollowUpDays: 0,
         },
       ];
-      setCustomLeadStatuses(next);
+      setCustomLeadStatuses(next, prev.customLeadCategories || []);
       return { ...prev, customLeadStatuses: next };
     });
   };
@@ -806,8 +815,171 @@ export default function SettingsPage() {
         if (s.value === b.value) return { ...s, order: a.order ?? 0 };
         return s;
       });
-      setCustomLeadStatuses(next);
+      setCustomLeadStatuses(next, prev.customLeadCategories || []);
       return { ...prev, customLeadStatuses: next };
+    });
+  };
+
+  const PIPELINE_TEMPLATES: Record<
+    string,
+    {
+      label: string;
+      groups: {
+        name: string;
+        stages: {
+          label: string;
+          colorKey: string;
+          role?: string;
+          days?: number;
+        }[];
+      }[];
+    }
+  > = {
+    blank: { label: "Default (no custom groups)", groups: [] },
+    realestate: {
+      label: "Real estate",
+      groups: [
+        {
+          name: "Site Visit",
+          stages: [
+            { label: "Visit Planned", colorKey: "cyan", days: 1 },
+            { label: "Visit Done", colorKey: "teal", days: 2 },
+          ],
+        },
+        {
+          name: "Negotiation",
+          stages: [
+            {
+              label: "Price Discussion",
+              colorKey: "orange",
+              role: "hot",
+              days: 2,
+            },
+            {
+              label: "Booking Pending",
+              colorKey: "emerald",
+              role: "hot",
+              days: 1,
+            },
+          ],
+        },
+      ],
+    },
+    manufacturing: {
+      label: "Manufacturing / B2B",
+      groups: [
+        {
+          name: "Sampling",
+          stages: [
+            { label: "Sample Sent", colorKey: "purple", days: 3 },
+            { label: "Sample Feedback", colorKey: "blue", days: 2 },
+          ],
+        },
+        {
+          name: "Negotiation",
+          stages: [
+            {
+              label: "Price Negotiation",
+              colorKey: "orange",
+              role: "hot",
+              days: 2,
+            },
+            { label: "PO Pending", colorKey: "emerald", role: "hot", days: 3 },
+          ],
+        },
+      ],
+    },
+    services: {
+      label: "Services / Agency",
+      groups: [
+        {
+          name: "Proposal",
+          stages: [
+            { label: "Proposal Sent", colorKey: "purple", days: 2 },
+            { label: "Proposal Review", colorKey: "blue", days: 3 },
+          ],
+        },
+        {
+          name: "Onboarding",
+          stages: [
+            {
+              label: "Contract Sent",
+              colorKey: "orange",
+              role: "hot",
+              days: 2,
+            },
+            { label: "Kickoff Planned", colorKey: "emerald", days: 1 },
+          ],
+        },
+      ],
+    },
+  };
+
+  const applyPipelineTemplate = (key: string) => {
+    const t = PIPELINE_TEMPLATES[key];
+    if (!t) return;
+    setSettings((prev: any) => {
+      const cats = t.groups.map((g) => g.name);
+      const stages: CustomLeadStatus[] = t.groups.flatMap((g) =>
+        g.stages.map((st, i) => ({
+          value: `NEW_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          category: g.name,
+          label: st.label,
+          colorKey: st.colorKey,
+          order: i,
+          role: (st.role as any) || "active",
+          requireRemarks: true,
+          requireFollowUp: true,
+          autoFollowUpDays: st.days || 0,
+        })),
+      );
+      setCustomLeadStatuses(stages, cats);
+      return {
+        ...prev,
+        customLeadCategories: cats,
+        customLeadStatuses: stages,
+      };
+    });
+  };
+
+  const [newGroupName, setNewGroupName] = useState("");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openStage, setOpenStage] = useState<string | null>(null);
+
+  const addPipelineGroup = () => {
+    const name = newGroupName.replace(/\s+/g, " ").trim().slice(0, 30);
+    if (!name) return;
+    setSettings((prev: any) => {
+      const cats: string[] = prev.customLeadCategories || [];
+      const taken = [...Object.keys(statusCategories), ...cats].map((c) =>
+        c.toLowerCase(),
+      );
+      if (taken.includes(name.toLowerCase()) || cats.length >= 8) return prev;
+      const nextCats = [...cats, name];
+      setCustomLeadStatuses(prev.customLeadStatuses || [], nextCats);
+      return { ...prev, customLeadCategories: nextCats };
+    });
+    setOpenGroups((o) => ({
+      ...o,
+      [newGroupName.replace(/\s+/g, " ").trim().slice(0, 30)]: true,
+    }));
+    setNewGroupName("");
+  };
+
+  const removePipelineGroup = (name: string) => {
+    setSettings((prev: any) => {
+      const nextCats = (prev.customLeadCategories || []).filter(
+        (c: string) => c !== name,
+      );
+      const nextStatuses = (prev.customLeadStatuses || []).filter(
+        (s: CustomLeadStatus) => s.category !== name,
+      );
+      setCustomLeadStatuses(nextStatuses, nextCats);
+      return {
+        ...prev,
+        customLeadCategories: nextCats,
+        customLeadStatuses: nextStatuses,
+      };
     });
   };
 
@@ -950,10 +1122,14 @@ export default function SettingsPage() {
       } = settings; // the designers save their own
       const res = await settingsAPI.update(generalSettings);
       setStatusOverrides(res.data?.leadStatusLabels);
-      setCustomLeadStatuses(res.data?.customLeadStatuses);
+      setCustomLeadStatuses(
+        res.data?.customLeadStatuses,
+        res.data?.customLeadCategories || [],
+      );
       setSettings((prev: any) => ({
         ...prev,
         customLeadStatuses: res.data?.customLeadStatuses || [],
+        customLeadCategories: res.data?.customLeadCategories || [],
       }));
       setActionModal({
         show: true,
@@ -1527,217 +1703,429 @@ export default function SettingsPage() {
               />
             )}
             {activeTab === "statuses" && (
-              <div className="space-y-6">
-                <div className="flex items-start gap-3 p-3 border-2 border-[#024BAB] bg-[#024BAB]/5">
-                  <Tag className="w-4 h-4 text-[#024BAB] shrink-0 mt-0.5" />
-                  <p className="text-xs text-black">
-                    Rename and recolor the fixed pipeline stages, or add
-                    brand-new stages of your own within New Lead, Discussion, or
-                    Quotation. New stages inherit that category's transition
-                    rules (drop, jump to Discussion/Quotation, etc.)
-                    automatically.
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs text-muted-foreground mr-auto">
+                    Open a group to rename stages, change colors or add your
+                    own. Save to apply.
                   </p>
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      const k = e.target.value;
+                      if (!k) return;
+                      if (
+                        (settings?.customLeadStatuses || []).length === 0 ||
+                        window.confirm(
+                          "Replace your current groups and custom stages with this template?",
+                        )
+                      )
+                        applyPipelineTemplate(k);
+                      e.target.value = "";
+                    }}
+                    className="h-8 border-2 border-black bg-white px-2 text-xs"
+                  >
+                    <option value="">Template…</option>
+                    {Object.entries(PIPELINE_TEMPLATES).map(([k, t]) => (
+                      <option key={k} value={k}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex">
+                    <input
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") addPipelineGroup();
+                      }}
+                      maxLength={30}
+                      placeholder="New group name"
+                      className="h-8 w-40 text-xs px-2 border-2 border-black focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={addPipelineGroup}
+                      disabled={!newGroupName.trim()}
+                      title="Add group (becomes a tab after Quotation)"
+                      className="h-8 px-2 border-2 border-l-0 border-black bg-[#024BAB] text-white disabled:opacity-40"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                {Object.entries(statusCategories).map(([cat, values]) => (
-                  <div key={cat} className="space-y-2">
-                    <p className="text-[11px] font-medium text-black/50 uppercase tracking-widest">
-                      {cat}
-                    </p>
-                    <div className="border-2 border-black divide-y-2 divide-black">
-                      {values.map((status) => {
-                        const isProtected = PROTECTED_STATUSES.includes(status);
-                        const isCustom = isCustomLeadStatus(status);
-                        const override =
-                          settings?.leadStatusLabels?.[status] || {};
-                        const custom = (
-                          settings?.customLeadStatuses || []
-                        ).find((s: CustomLeadStatus) => s.value === status);
-                        const customSiblings = (
-                          settings?.customLeadStatuses || []
-                        )
-                          .filter((s: CustomLeadStatus) => s.category === cat)
-                          .sort(
-                            (a: CustomLeadStatus, b: CustomLeadStatus) =>
-                              (a.order || 0) - (b.order || 0),
-                          );
-                        const siblingIdx = customSiblings.findIndex(
-                          (s: CustomLeadStatus) => s.value === status,
-                        );
-
-                        if (isCustom && custom) {
-                          return (
-                            <div
-                              key={status}
-                              className="flex flex-wrap items-center gap-3 p-3 bg-[#024BAB]/5"
-                            >
-                              <div className="w-40 shrink-0">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                  Custom Stage
-                                </p>
-                                <p className="text-xs font-mono font-medium text-[#024BAB] truncate">
-                                  {status}
-                                </p>
-                              </div>
-                              <div className="flex-1 min-w-[160px]">
-                                <input
-                                  value={custom.label}
-                                  onChange={(e) =>
-                                    updateCustomStatus(status, {
-                                      label: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Stage name"
-                                  maxLength={40}
-                                  className="w-full text-xs px-2 py-1.5 border-2 border-black focus:outline-none focus:ring-1 focus:ring-[#024BAB]"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1 flex-wrap">
-                                {COLOR_PRESETS.map((preset) => {
-                                  const key = preset.name.toLowerCase();
-                                  return (
-                                    <button
-                                      key={preset.name}
-                                      type="button"
-                                      title={preset.name}
-                                      onClick={() =>
-                                        updateCustomStatus(status, {
-                                          colorKey: key,
-                                        })
-                                      }
-                                      className={cn(
-                                        "w-5 h-5 border-2",
-                                        preset.classes.split(" ")[0],
-                                        custom.colorKey === key
-                                          ? "border-black ring-2 ring-offset-1 ring-[#024BAB]"
-                                          : "border-black/30",
-                                      )}
-                                    />
-                                  );
-                                })}
-                              </div>
-                              <div className="flex items-center gap-0.5">
-                                <button
-                                  type="button"
-                                  title="Move up"
-                                  disabled={siblingIdx <= 0}
-                                  onClick={() => moveCustomStatus(status, "up")}
-                                  className="p-1 border-2 border-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
-                                >
-                                  <ChevronUp className="w-3 h-3" />
-                                </button>
-                                <button
-                                  type="button"
-                                  title="Move down"
-                                  disabled={
-                                    siblingIdx === -1 ||
-                                    siblingIdx >= customSiblings.length - 1
-                                  }
-                                  onClick={() =>
-                                    moveCustomStatus(status, "down")
-                                  }
-                                  className="p-1 border-2 border-black disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/5"
-                                >
-                                  <ChevronDown className="w-3 h-3" />
-                                </button>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => removeCustomStatus(status)}
-                                className="flex items-center gap-1 text-[10px] font-medium text-destructive hover:underline"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                                Remove
-                              </button>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div
-                            key={status}
-                            className={cn(
-                              "flex flex-wrap items-center gap-3 p-3",
-                              isProtected && "bg-zinc-50",
-                            )}
-                          >
-                            <div className="w-40 shrink-0">
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                Value
-                              </p>
-                              <p className="text-xs font-mono font-medium text-black truncate">
-                                {status}
-                              </p>
-                            </div>
-
-                            {isProtected ? (
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground italic">
-                                <Lock className="w-3 h-3" />
-                                Fixed — used by other CRM features
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex-1 min-w-[160px]">
-                                  <input
-                                    value={override.label || ""}
-                                    onChange={(e) =>
-                                      updateStatusOverride(status, {
-                                        label: e.target.value,
-                                      })
-                                    }
-                                    placeholder={status}
-                                    maxLength={40}
-                                    className="w-full text-xs px-2 py-1.5 border-2 border-black focus:outline-none focus:ring-1 focus:ring-[#024BAB]"
-                                  />
-                                </div>
-                                <div className="flex items-center gap-1 flex-wrap">
-                                  {COLOR_PRESETS.map((preset) => (
-                                    <button
-                                      key={preset.name}
-                                      type="button"
-                                      title={preset.name}
-                                      onClick={() =>
-                                        updateStatusOverride(status, {
-                                          color: preset.classes,
-                                        })
-                                      }
-                                      className={cn(
-                                        "w-5 h-5 border-2",
-                                        preset.classes.split(" ")[0],
-                                        override.color === preset.classes
-                                          ? "border-black ring-2 ring-offset-1 ring-[#024BAB]"
-                                          : "border-black/30",
-                                      )}
-                                    />
-                                  ))}
-                                </div>
-                                {(override.label || override.color) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => resetStatusOverride(status)}
-                                    className="text-[10px] font-medium text-muted-foreground hover:text-destructive underline"
-                                  >
-                                    Reset
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {EXTENDABLE_STATUS_CATEGORIES.includes(cat) && (
+                {Object.entries(statusCategories).map(([cat, values]) => {
+                  const isOpen = !!openGroups[cat];
+                  const isGroup = (
+                    settings?.customLeadCategories || []
+                  ).includes(cat);
+                  const canAdd =
+                    EXTENDABLE_STATUS_CATEGORIES.includes(cat) || isGroup;
+                  const customList: CustomLeadStatus[] =
+                    settings?.customLeadStatuses || [];
+                  const dotOf = (st: string) => {
+                    const c = customList.find((x) => x.value === st);
+                    const cls = c
+                      ? colorKeyToClasses(c.colorKey)
+                      : settings?.leadStatusLabels?.[st]?.color ||
+                        statusColors[st] ||
+                        "bg-muted";
+                    return cls.split(" ")[0];
+                  };
+                  return (
+                    <div key={cat} className="border-2 border-black bg-white">
                       <button
                         type="button"
-                        onClick={() => addCustomStatus(cat)}
-                        className="flex items-center gap-1.5 text-xs font-medium text-[#024BAB] hover:underline"
+                        onClick={() =>
+                          setOpenGroups((o) => ({ ...o, [cat]: !o[cat] }))
+                        }
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-black/[0.03]"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        Add Stage to {cat}
+                        <ChevronDown
+                          className={cn(
+                            "w-4 h-4 shrink-0 transition-transform",
+                            !isOpen && "-rotate-90",
+                          )}
+                        />
+                        <span className="text-sm font-medium text-black">
+                          {cat}
+                        </span>
+                        {isGroup && (
+                          <span className="text-[10px] px-1.5 py-0.5 border border-[#024BAB] text-[#024BAB]">
+                            your group
+                          </span>
+                        )}
+                        <span className="ml-auto flex items-center gap-1">
+                          {values.slice(0, 8).map((st) => (
+                            <span
+                              key={st}
+                              className={cn(
+                                "w-2.5 h-2.5 border border-black/40",
+                                dotOf(st),
+                              )}
+                            />
+                          ))}
+                          <span className="ml-1.5 text-[11px] text-muted-foreground">
+                            {values.length} stage
+                            {values.length === 1 ? "" : "s"}
+                          </span>
+                        </span>
                       </button>
-                    )}
-                  </div>
-                ))}
+
+                      {isOpen && (
+                        <div className="border-t-2 border-black divide-y divide-black/10">
+                          {values.length === 0 && (
+                            <p className="px-3 py-3 text-xs text-muted-foreground">
+                              No stages yet.
+                            </p>
+                          )}
+                          {values.map((status) => {
+                            const isProtected =
+                              PROTECTED_STATUSES.includes(status);
+                            const custom = customList.find(
+                              (x) => x.value === status,
+                            );
+                            const override =
+                              settings?.leadStatusLabels?.[status] || {};
+                            const label = custom
+                              ? custom.label
+                              : override.label || status;
+                            const sibs = customList
+                              .filter((x) => x.category === cat)
+                              .sort((x, y) => (x.order || 0) - (y.order || 0));
+                            const sIdx = sibs.findIndex(
+                              (x) => x.value === status,
+                            );
+                            const editing = openStage === status;
+                            const swatches = (
+                              current: string | undefined,
+                              pick: (p: (typeof COLOR_PRESETS)[number]) => void,
+                              isActive: (
+                                p: (typeof COLOR_PRESETS)[number],
+                              ) => boolean,
+                            ) => (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                {COLOR_PRESETS.map((preset) => (
+                                  <button
+                                    key={preset.name}
+                                    type="button"
+                                    title={preset.name}
+                                    onClick={() => pick(preset)}
+                                    className={cn(
+                                      "w-5 h-5 border-2",
+                                      preset.classes.split(" ")[0],
+                                      isActive(preset)
+                                        ? "border-black ring-2 ring-offset-1 ring-[#024BAB]"
+                                        : "border-black/30",
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                            );
+                            return (
+                              <div key={status}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    !isProtected &&
+                                    setOpenStage(editing ? null : status)
+                                  }
+                                  className={cn(
+                                    "w-full flex items-center gap-2.5 px-3 py-2 text-left",
+                                    isProtected
+                                      ? "cursor-default"
+                                      : "hover:bg-black/[0.03]",
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      "w-3 h-3 border border-black/50 shrink-0",
+                                      dotOf(status),
+                                    )}
+                                  />
+                                  <span className="text-xs font-medium text-black truncate">
+                                    {label}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-muted-foreground truncate">
+                                    {custom
+                                      ? "custom"
+                                      : status !== label
+                                        ? status
+                                        : ""}
+                                  </span>
+                                  {custom?.role && custom.role !== "active" && (
+                                    <span className="text-[10px] px-1.5 border border-black/40 uppercase">
+                                      {custom.role}
+                                    </span>
+                                  )}
+                                  <span className="ml-auto text-muted-foreground">
+                                    {isProtected ? (
+                                      <span className="flex items-center gap-1 text-[10px]">
+                                        <Lock className="w-3 h-3" /> fixed
+                                      </span>
+                                    ) : (
+                                      <ChevronDown
+                                        className={cn(
+                                          "w-3.5 h-3.5 transition-transform",
+                                          editing && "rotate-180",
+                                        )}
+                                      />
+                                    )}
+                                  </span>
+                                </button>
+
+                                {editing && !isProtected && (
+                                  <div className="px-3 pb-3 pt-1 space-y-3 bg-black/[0.02]">
+                                    <div className="flex flex-wrap items-center gap-3">
+                                      <input
+                                        value={
+                                          custom
+                                            ? custom.label
+                                            : override.label || ""
+                                        }
+                                        onChange={(e) =>
+                                          custom
+                                            ? updateCustomStatus(status, {
+                                                label: e.target.value,
+                                              })
+                                            : updateStatusOverride(status, {
+                                                label: e.target.value,
+                                              })
+                                        }
+                                        placeholder={status}
+                                        maxLength={40}
+                                        className="flex-1 min-w-[160px] h-8 text-xs px-2 border-2 border-black focus:outline-none"
+                                      />
+                                      {custom
+                                        ? swatches(
+                                            custom.colorKey,
+                                            (p) =>
+                                              updateCustomStatus(status, {
+                                                colorKey: p.name.toLowerCase(),
+                                              }),
+                                            (p) =>
+                                              custom.colorKey ===
+                                              p.name.toLowerCase(),
+                                          )
+                                        : swatches(
+                                            override.color,
+                                            (p) =>
+                                              updateStatusOverride(status, {
+                                                color: p.classes,
+                                              }),
+                                            (p) => override.color === p.classes,
+                                          )}
+                                    </div>
+
+                                    {custom ? (
+                                      <>
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-black">
+                                          <label className="flex items-center gap-1.5">
+                                            Counts as
+                                            <select
+                                              value={custom.role || "active"}
+                                              onChange={(e) =>
+                                                updateCustomStatus(status, {
+                                                  role: e.target.value as any,
+                                                })
+                                              }
+                                              className="border-2 border-black bg-white px-1.5 py-1 text-[11px]"
+                                            >
+                                              <option value="active">
+                                                Active
+                                              </option>
+                                              <option value="hot">
+                                                Hot lead
+                                              </option>
+                                              <option value="lost">
+                                                Lost (closed)
+                                              </option>
+                                            </select>
+                                          </label>
+                                          <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={
+                                                custom.requireRemarks !== false
+                                              }
+                                              onChange={(e) =>
+                                                updateCustomStatus(status, {
+                                                  requireRemarks:
+                                                    e.target.checked,
+                                                })
+                                              }
+                                            />
+                                            Remarks required
+                                          </label>
+                                          <label className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={
+                                                custom.requireFollowUp !== false
+                                              }
+                                              onChange={(e) =>
+                                                updateCustomStatus(status, {
+                                                  requireFollowUp:
+                                                    e.target.checked,
+                                                })
+                                              }
+                                            />
+                                            Follow-up date required
+                                          </label>
+                                          <label className="flex items-center gap-1.5">
+                                            Default follow-up
+                                            <input
+                                              type="number"
+                                              min={0}
+                                              max={90}
+                                              value={
+                                                custom.autoFollowUpDays ?? 0
+                                              }
+                                              onChange={(e) =>
+                                                updateCustomStatus(status, {
+                                                  autoFollowUpDays: Math.max(
+                                                    0,
+                                                    Math.min(
+                                                      90,
+                                                      Number(e.target.value) ||
+                                                        0,
+                                                    ),
+                                                  ),
+                                                })
+                                              }
+                                              className="w-14 border-2 border-black px-1.5 py-1 text-[11px]"
+                                            />
+                                            days
+                                          </label>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            title="Move up"
+                                            disabled={sIdx <= 0}
+                                            onClick={() =>
+                                              moveCustomStatus(status, "up")
+                                            }
+                                            className="p-1 border-2 border-black disabled:opacity-30 hover:bg-black/5"
+                                          >
+                                            <ChevronUp className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            title="Move down"
+                                            disabled={
+                                              sIdx === -1 ||
+                                              sIdx >= sibs.length - 1
+                                            }
+                                            onClick={() =>
+                                              moveCustomStatus(status, "down")
+                                            }
+                                            className="p-1 border-2 border-black disabled:opacity-30 hover:bg-black/5"
+                                          >
+                                            <ChevronDown className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              removeCustomStatus(status);
+                                              setOpenStage(null);
+                                            }}
+                                            className="ml-auto flex items-center gap-1 text-[11px] font-medium text-destructive hover:underline"
+                                          >
+                                            <Trash2 className="w-3 h-3" />{" "}
+                                            Remove stage
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      (override.label || override.color) && (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            resetStatusOverride(status)
+                                          }
+                                          className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                                        >
+                                          Reset to default
+                                        </button>
+                                      )
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {(canAdd || isGroup) && (
+                            <div className="flex items-center justify-between px-3 py-2">
+                              {canAdd ? (
+                                <button
+                                  type="button"
+                                  onClick={() => addCustomStatus(cat)}
+                                  className="flex items-center gap-1.5 text-xs font-medium text-[#024BAB] hover:underline"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> Add stage
+                                </button>
+                              ) : (
+                                <span />
+                              )}
+                              {isGroup && (
+                                <button
+                                  type="button"
+                                  onClick={() => removePipelineGroup(cat)}
+                                  className="flex items-center gap-1 text-[11px] font-medium text-destructive hover:underline"
+                                >
+                                  <Trash2 className="w-3 h-3" /> Remove group
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 

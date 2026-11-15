@@ -60,9 +60,12 @@ const log = require("../utils/logger").scope("Leads");
 // buildTransitionMaps() rather than hardcoding a single global map.
 async function getTransitionMapsForTenant(tenantId) {
   const setting = await Setting.findOne({ tenantId: tenantId || null })
-    .select("customLeadStatuses")
+    .select("customLeadStatuses customLeadCategories")
     .lean();
-  return buildTransitionMaps(setting?.customLeadStatuses || [], { openFlow: true });
+  return buildTransitionMaps(setting?.customLeadStatuses || [], {
+    openFlow: true,
+    customCategories: setting?.customLeadCategories || [],
+  });
 }
 
 function isValidTransition(currentStatus, newStatus, VALID_TRANSITIONS) {
@@ -731,6 +734,8 @@ const convertToClient = asyncHandler(async (req, res) => {
     address: req.body.address || "Not Provided",
     businessType: req.body.businessType || "Not Specified",
     convertedFrom: lead._id,
+    tenantId: lead.tenantId || req.user.tenantId || null,
+    createdBy: req.user._id,
   };
 
   const Client = require("../models/Client");
@@ -1157,7 +1162,7 @@ const connectJustdial = asyncHandler(async (req, res) => {
   });
 
   const backendUrl =
-    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
+    process.env.BACKEND_URL || "http://localhost:4100";
   res.json({
     success: true,
     message:
@@ -1200,7 +1205,7 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
   });
 
   const backendUrl =
-    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
+    process.env.BACKEND_URL || "http://localhost:4100";
 
   res.json({
     success: true,

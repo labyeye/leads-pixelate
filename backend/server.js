@@ -136,9 +136,12 @@ app.use(
   }),
 );
 
+const isProd = process.env.NODE_ENV === "production";
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  // The app polls (Live Performance every 10s, notifications, telemetry) and a team can share one IP.
+  max: Number(process.env.RATE_LIMIT_MAX) || 1500,
+  skip: () => !isProd, // no limit while developing locally
   standardHeaders: true,
   legacyHeaders: false,
   message: {

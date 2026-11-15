@@ -349,7 +349,7 @@ const liveTalk = (sec: number) => {
 };
 
 // Admin-only compact summary of the Live Performance page: ranked agents, done counts, call share bar.
-function LiveSummary() {
+function LiveSummary({ workload = [] }: { workload?: any[] }) {
   const [windowMin, setWindowMin] = useState(480);
   const [live, setLive] = useState<any>(null);
   useEffect(() => {
@@ -375,7 +375,7 @@ function LiveSummary() {
 
   return (
     <div className="border-2 bg-white p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
         <div>
           <h3 className="font-display font-medium text-base text-black">Live Performance</h3>
           <p className="text-xs text-muted-foreground">
@@ -399,61 +399,50 @@ function LiveSummary() {
           </Link>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-black text-[10px] uppercase tracking-wider text-muted-foreground">
-              {heads.map((h, i) => (
-                <th key={h} className={cn("py-2 px-2 font-medium", i === 0 ? "text-left" : "text-right")}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {team.map((r, i) => (
-              <tr key={r._id} className="border-b border-slate-200">
-                <td className="py-2 px-2">
-                  <div className="flex items-center gap-2.5 min-w-[190px]">
-                    <span className="w-5 text-xs font-bold text-muted-foreground">{i + 1}</span>
-                    <div className="w-8 h-8 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] text-white flex items-center justify-center text-xs font-bold">
-                      {r.avatar ? <img src={r.avatar} alt={r.name} className="w-full h-full object-cover" /> : r.name?.[0]?.toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-black truncate">{r.name}</p>
-                      <div className="h-1 bg-slate-100 border border-black/30 mt-1">
-                        <div className="h-full bg-[#024BAB]" style={{ width: `${(r.done / maxDone) * 100}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-2 px-2 text-right font-bold tabular-nums">{r.calls}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{r.connected}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{liveTalk(r.talkSeconds || 0)}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{r.conversations}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{r.quotations}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{r.visits}</td>
-                <td className="py-2 px-2 text-right text-xs text-muted-foreground whitespace-nowrap">{r.lastCallAt ? timeAgo(r.lastCallAt) : "—"}</td>
-              </tr>
-            ))}
-            {live && team.length === 0 && (
-              <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No agents yet</td></tr>
-            )}
-          </tbody>
-          {tot && (
-            <tfoot>
-              <tr className="bg-slate-100 font-semibold border-t-2 border-black">
-                <td className="py-2 px-2">Team total</td>
-                <td className="py-2 px-2 text-right tabular-nums">{tot.calls}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{tot.connected}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{liveTalk(tot.talkSeconds || 0)}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{tot.conversations}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{tot.quotations}</td>
-                <td className="py-2 px-2 text-right tabular-nums">{tot.visits}</td>
-                <td />
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
+      {team.length > 0 && (
+        <div className="mb-4">
+          <ResponsiveContainer width="100%" height={170}>
+            <BarChart data={team} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="25%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+              <Tooltip content={<NbTooltip />} cursor={{ fill: "#024BAB22" }} />
+              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
+              <Bar dataKey="calls" name="Calls" fill="#024BAB" stroke="#0A0A0A" strokeWidth={2} />
+              <Bar dataKey="connected" name="Connected" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2} />
+              <Bar dataKey="conversations" name="Conversations" fill="#FA731C" stroke="#0A0A0A" strokeWidth={2} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {workload.length > 0 && (
+        <div className="mt-4 border-t-2 border-black pt-3">
+          <p className="text-sm font-medium text-black">This month: assigned vs worked</p>
+          <p className="text-xs text-muted-foreground mb-1">Did each salesperson work the leads they got? (worked = moved past Pending Contact)</p>
+          <ResponsiveContainer width="100%" height={Math.max(130, workload.length * 44)}>
+            <BarChart data={workload} layout="vertical" margin={{ top: 0, right: 40, left: 8, bottom: 0 }} barCategoryGap="25%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={90} />
+              <Tooltip content={<NbTooltip />} cursor={{ fill: "#024BAB22" }} />
+              <Bar dataKey="assigned" name="Assigned" fill="#024BAB" stroke="#0A0A0A" strokeWidth={2} />
+              <Bar dataKey="worked" name="Worked" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2}>
+                <LabelList dataKey="rate" position="right" formatter={(v: number) => `${v}%`} style={{ fontSize: 11, fontWeight: 700 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {tot && (
+        <div className="grid grid-cols-4 gap-2 mt-3 text-center">
+          {[["Calls", tot.calls], ["Connected", tot.connected], ["Talk time", liveTalk(tot.talkSeconds || 0)], ["Visits", tot.visits]].map(([l, v]) => (
+            <div key={l as string} className="border-2 border-black py-1.5">
+              <p className="text-base font-bold leading-none tabular-nums">{v}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{l}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -518,6 +507,7 @@ export default function DashboardPage() {
     userPerformance,
     recentQuotations,
     performerTrend,
+    dailySources,
   } = data;
 
   const greetingHour = new Date().getHours();
@@ -531,11 +521,6 @@ export default function DashboardPage() {
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const sc = data.statusCounts || {};
   const visits = (sc["VISIT SCHEDULED"] || 0) + (sc["VISITED"] || 0);
-  const dropped = sc["DROP"] || 0;
-  const topSource = Object.entries(data.sourceCounts || {}).sort(
-    (a: any, b: any) => b[1] - a[1],
-  )[0] as [string, number] | undefined;
-  const topAgent = (userPerformance || [])[0];
   const pct = (n: number) =>
     stats.totalLeads > 0 ? Math.round((n / stats.totalLeads) * 100) : 0;
 
@@ -583,80 +568,15 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {(stats.overdueFollowUps > 0 ||
-        stats.uncontactedLeads > 0 ||
-        stats.hotLeads > 0) && (
-        <div className="flex flex-wrap gap-2 mb-6 p-3 border-2 border-[#EF4444] bg-[#FFF0F0] ">
-          <span className="text-xs font-medium text-[#EF4444] uppercase tracking-wider flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> Action needed
-          </span>
-          {stats.hotLeads > 0 && (
-            <Link to="/leads">
-              <span className="nb-badge nb-tag-orange flex items-center gap-1 text-[11px]">
-                <Flame className="w-3 h-3" /> {stats.hotLeads} hot leads
-              </span>
-            </Link>
-          )}
-          {stats.overdueFollowUps > 0 && (
-            <Link to="/leads">
-              <span className="nb-badge nb-tag-red flex items-center gap-1 text-[11px]">
-                <Clock className="w-3 h-3" /> {stats.overdueFollowUps} overdue
-              </span>
-            </Link>
-          )}
-          {stats.uncontactedLeads > 0 && (
-            <Link to="/leads">
-              <span className="nb-badge nb-tag-blue flex items-center gap-1 text-[11px]">
-                <AlertTriangle className="w-3 h-3" /> {stats.uncontactedLeads}{" "}
-                uncontacted
-              </span>
-            </Link>
-          )}
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <KpiCard
           title="Total Leads"
           value={stats.totalLeads}
           sub={`${newLeadsValue} new this ${period}`}
           icon={Target}
           bg="bg-[#024BAB]"
-          trend={
-            stats.leadGrowth > 0
-              ? "up"
-              : stats.leadGrowth < 0
-                ? "down"
-                : undefined
-          }
+          trend={stats.leadGrowth > 0 ? "up" : stats.leadGrowth < 0 ? "down" : undefined}
           trendLabel={`${Math.abs(stats.leadGrowth)}%`}
-          to="/leads"
-        />
-        <KpiCard
-          title="Hot Leads"
-          value={stats.hotLeads}
-          sub="Need immediate action"
-          icon={Flame}
-          bg="bg-[#FB923C]"
-          urgent={stats.hotLeads > 0}
-          to="/leads"
-        />
-        <KpiCard
-          title="Today's Follow-ups"
-          value={todayFollowUps?.length ?? 0}
-          sub="Scheduled for today"
-          icon={Clock}
-          bg="bg-[#A3E635]"
-          to="/leads"
-        />
-        <KpiCard
-          title="Won This Month"
-          value={stats.convertedClients ?? 0}
-          sub={`${stats.totalLeads > 0 ? Math.round(((stats.convertedClients ?? 0) / stats.totalLeads) * 100) : 0}% conversion rate`}
-          icon={TrendingUp}
-          bg="bg-[#00C48C]"
-          trend={stats.convertedClients ? "up" : undefined}
-          trendLabel={`${stats.totalLeads > 0 ? Math.round(((stats.convertedClients ?? 0) / stats.totalLeads) * 100) : 0}%`}
           to="/leads"
         />
         <KpiCard
@@ -668,12 +588,35 @@ export default function DashboardPage() {
           to="/leads"
         />
         <KpiCard
+          title="Hot Leads"
+          value={stats.hotLeads}
+          sub="In discussion or quotation"
+          icon={Flame}
+          bg="bg-[#FB923C]"
+          to="/leads"
+        />
+        <KpiCard
+          title="Won"
+          value={stats.convertedClients ?? 0}
+          sub={`${pct(stats.convertedClients ?? 0)}% conversion rate`}
+          icon={TrendingUp}
+          bg="bg-[#00C48C]"
+          to="/leads"
+        />
+        <KpiCard
+          title="Today's Follow-ups"
+          value={todayFollowUps?.length ?? 0}
+          sub="Scheduled for today"
+          icon={Clock}
+          bg="bg-[#A3E635]"
+          to="/leads"
+        />
+        <KpiCard
           title="Overdue Follow-ups"
           value={stats.overdueFollowUps ?? 0}
-          sub="Missed, call them now"
+          sub="Missed follow-ups"
           icon={AlertTriangle}
           bg="bg-[#EF4444]"
-          urgent={stats.overdueFollowUps > 0}
           to="/leads"
         />
         <KpiCard
@@ -682,7 +625,6 @@ export default function DashboardPage() {
           sub="Not called yet"
           icon={PhoneOff}
           bg="bg-[#A855F7]"
-          urgent={stats.uncontactedLeads > 0}
           to="/leads"
         />
         <KpiCard
@@ -693,36 +635,65 @@ export default function DashboardPage() {
           bg="bg-[#14B8A6]"
           to="/leads"
         />
-        <KpiCard
-          title="Dropped Leads"
-          value={dropped}
-          sub={`${pct(dropped)}% of all leads`}
-          icon={XCircle}
-          bg="bg-[#6B7280]"
-          to="/leads"
-        />
-        <KpiCard
-          title="Top Source"
-          value={topSource ? topSource[0] : "-"}
-          sub={topSource ? `${topSource[1]} leads (${pct(topSource[1])}%)` : "No data yet"}
-          icon={Radio}
-          bg="bg-[#FB923C]"
-          to="/leads"
-        />
-        <KpiCard
-          title="Top Performer"
-          value={topAgent?.name?.split(" ")[0] ?? "-"}
-          sub={topAgent ? `${topAgent.conversions} won of ${topAgent.leadsCount} leads` : "No data yet"}
-          icon={Trophy}
-          bg="bg-[#EAB308]"
-        />
-        <KpiCard
-          title="Team Members"
-          value={stats.totalUsers ?? 0}
-          sub="Active users"
-          icon={Users}
-          bg="bg-[#024BAB]"
-        />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      {isAdmin && <LiveSummary workload={data.agentWorkload || []} />}
+      <div className="border-2 bg-white p-5">
+          <div className="mb-1">
+            <h3 className="font-display font-medium text-base text-black">Leads Received vs Worked</h3>
+            <p className="text-xs text-muted-foreground">
+              Each month's leads, and how many have been contacted (not Pending Contact)
+            </p>
+          </div>
+          <ResponsiveContainer width="100%" height={230}>
+            <LineChart data={leadsChartData} margin={{ top: 18, right: 4, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
+              <YAxis yAxisId="l" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={36} allowDecimals={false} />
+              <YAxis yAxisId="r" orientation="right" domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={36} unit="%" />
+              <Tooltip content={<NbTooltip />} />
+              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
+              <Line yAxisId="l" type="monotone" dataKey="leads" name="Received" stroke="#024BAB" strokeWidth={3} dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: "#024BAB" }} />
+              <Line yAxisId="l" type="monotone" dataKey="contacted" name="Worked" stroke="#00C48C" strokeWidth={3} dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: "#00C48C" }} />
+              <Line yAxisId="r" type="monotone" dataKey="contactedRate" name="Worked %" stroke="#FA731C" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, stroke: "#0A0A0A", strokeWidth: 2, fill: "#FA731C" }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Leads per day by source */}
+      <div className="border-2 bg-white p-5 mb-3">
+        <div className="mb-3">
+          <h3 className="font-display font-medium text-base text-black">Leads per Day · by Source</h3>
+          <p className="text-xs text-muted-foreground">
+            {(dailySources?.data || []).reduce((a: number, d: any) => a + d.total, 0)} leads in the last 30 days
+          </p>
+        </div>
+        {!dailySources || dailySources.sources.length === 0 ? (
+          <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">No leads in the last 30 days</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={dailySources.data} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} interval={2} />
+              <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+              <Tooltip content={<NbTooltip />} />
+              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
+              {dailySources.sources.map((name: string) => (
+                <Line
+                  key={name}
+                  type="monotone"
+                  dataKey={name}
+                  stroke={SOURCE_COLORS[name] || "#024BAB"}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 5, stroke: "#0A0A0A", strokeWidth: 2 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Clients won + monthly performers */}
@@ -795,7 +766,7 @@ export default function DashboardPage() {
 
       {/* Funnel + sources + overview in one row */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-4">
-        <div className="xl:col-span-4 border-2 bg-white p-5">
+        <div className="xl:col-span-6 border-2 bg-white p-5">
           <h3 className="font-display font-medium text-base text-black mb-1">
             Sales Funnel
           </h3>
@@ -805,7 +776,7 @@ export default function DashboardPage() {
           <SalesFunnel stages={funnelStages || []} />
         </div>
 
-        <div className="xl:col-span-3 border-2 bg-white p-5">
+        <div className="xl:col-span-6 border-2 bg-white p-5">
           <h3 className="font-display font-medium text-base text-black mb-1">
             Lead Sources
           </h3>
@@ -888,65 +859,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="xl:col-span-5 border-2 bg-white p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-display font-medium text-base text-black">
-                Leads Overview
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                6-month lead volume
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 border border-black bg-[#024BAB] inline-block" />{" "}
-                Leads
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 border border-black bg-[#00C48C] inline-block" />{" "}
-                Won
-              </span>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={leadsChartData} barGap={4} barCategoryGap="30%">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="#E5E7EB"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fontWeight: 500 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fontWeight: 500 }}
-                tickLine={false}
-                axisLine={false}
-                width={28}
-              />
-              <Tooltip content={<NbTooltip />} cursor={{ fill: "#024BAB22" }} />
-              <Bar
-                dataKey="leads"
-                name="Leads"
-                fill="#024BAB"
-                stroke="#0A0A0A"
-                strokeWidth={2}
-              />
-              <Bar
-                dataKey="converted"
-                name="Won"
-                fill="#00C48C"
-                stroke="#0A0A0A"
-                strokeWidth={2}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+              </div>
 
       {/* Recent leads + live performance in one row */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
@@ -969,8 +882,7 @@ export default function DashboardPage() {
           <RecentLeadsList leads={recentLeads || []} />
         </div>
         <div className="xl:col-span-7 flex flex-col gap-4">
-          {isAdmin && <LiveSummary />}
-          <RecentQuotations quotations={recentQuotations || []} rows={isAdmin ? 4 : 8} className="flex-1" />
+          <RecentQuotations quotations={recentQuotations || []} rows={8} className="flex-1" />
         </div>
       </div>
 

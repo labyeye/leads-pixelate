@@ -376,14 +376,7 @@ describe("Dashboard", () => {
       source: "autopilot",
       campaignId: "c1",
     });
-    expect(screen.getByRole("link", { name: "Report" })).toHaveAttribute(
-      "href",
-      "/social-autopilot/report",
-    );
-    expect(screen.getByRole("link", { name: "Setup" })).toHaveAttribute(
-      "href",
-      "/social-autopilot/setup",
-    );
+    // Section navigation (Dashboard / Setup / Report) now lives in the sidebar dropdown.
   });
 
   it("changing the range reloads the numbers, and pausing sends enabled:false to that campaign", async () => {

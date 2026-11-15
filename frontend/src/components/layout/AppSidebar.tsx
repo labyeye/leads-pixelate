@@ -10,7 +10,7 @@ import {
   Zap,
   X,
 } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import nestleadslogo from "@/assets/images/NestLeads_Logo_Name.png";
 import nestleadslogosmall from "../../../public/favicon.png";
 
@@ -27,6 +27,21 @@ function hasActiveDescendant(item: NavItem, pathname: string): boolean {
   return item.children.some(
     (c) => pathname === c.href || hasActiveDescendant(c, pathname),
   );
+}
+
+// hrefs of every dropdown that contains the current page, so landing inside one opens it.
+function activeAncestors(
+  items: NavItem[],
+  pathname: string,
+  acc: string[] = [],
+) {
+  for (const it of items) {
+    if (it.children?.length && hasActiveDescendant(it, pathname)) {
+      acc.push(it.href);
+      activeAncestors(it.children, pathname, acc);
+    }
+  }
+  return acc;
 }
 
 function firstLeaf(item: NavItem): string {
@@ -57,7 +72,7 @@ function NavNode({
 
   if (item.children?.length) {
     const childActive = hasActiveDescendant(item, location.pathname);
-    const expanded = openSet.has(item.href) || childActive;
+    const expanded = openSet.has(item.href);
     return (
       <div>
         <button
@@ -169,9 +184,25 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
   }, [user]);
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
-  if (!user) return null;
+  const { pathname } = useLocation();
+  const groups = user ? getNavGroupsForRole(user.role) : [];
 
-  const groups = getNavGroupsForRole(user.role);
+  // Open the dropdown(s) holding the current page when the route changes; the user can still close them.
+  useEffect(() => {
+    const hrefs = activeAncestors(
+      groups.flatMap((g) => g.items),
+      pathname,
+    );
+    if (hrefs.length)
+      setOpenDropdowns((prev) => {
+        const next = new Set(prev);
+        hrefs.forEach((h) => next.add(h));
+        return next;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, user?.role]);
+
+  if (!user) return null;
 
   const toggleOpen = (href: string) => {
     setOpenDropdowns((prev) => {
@@ -230,11 +261,14 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
         >
           {groups.map((group) => (
             <div key={group.label}>
-              {!collapsed && (
-                <p className="px-3 mb-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                  {group.label}
-                </p>
-              )}
+              {!collapsed &&
+                !group.items.some(
+                  (i) => i.title.toLowerCase() === group.label.toLowerCase(),
+                ) && (
+                  <p className="px-3 mb-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                    {group.label}
+                  </p>
+                )}
               <div className="space-y-0.5">
                 {group.items.map((item) => (
                   <NavNode

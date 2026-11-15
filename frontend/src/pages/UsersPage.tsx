@@ -1119,7 +1119,7 @@ export default function UsersPage() {
                     >
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 border-2 border-black shrink-0 overflow-hidden bg-[#024BAB]">
+                          <div className="w-9 h-9 border-2 border-black shrink-0 overflow-hidden bg-[#024BAB] rounded-full">
                             {user.avatar ? (
                               <img
                                 src={user.avatar}

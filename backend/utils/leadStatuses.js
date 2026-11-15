@@ -83,8 +83,29 @@ const COLOR_PRESET_NAMES = [
 ];
 
 const MAX_CUSTOM_STATUSES = 20;
+const STAGE_ROLES = ["active", "hot", "lost"];
 
-function sanitizeCustomLeadStatuses(input, existing = []) {
+// Tenant-defined pipeline groups (extra tabs). They sit between Quotation and
+// Visit Scheduled and hold only custom stages.
+const MAX_CUSTOM_CATEGORIES = 8;
+function sanitizeCustomLeadCategories(input) {
+  if (!Array.isArray(input)) return [];
+  const taken = new Set(Object.keys(categories).map((c) => c.toLowerCase()));
+  const out = [];
+  for (const raw of input) {
+    const name =
+      typeof raw === "string"
+        ? raw.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 30)
+        : "";
+    if (!name || taken.has(name.toLowerCase())) continue;
+    taken.add(name.toLowerCase());
+    out.push(name);
+    if (out.length >= MAX_CUSTOM_CATEGORIES) break;
+  }
+  return out;
+}
+
+function sanitizeCustomLeadStatuses(input, existing = [], customCategories = []) {
   if (!Array.isArray(input)) return Array.isArray(existing) ? existing : [];
 
   const existingValues = new Set(
@@ -98,7 +119,8 @@ function sanitizeCustomLeadStatuses(input, existing = []) {
     if (!raw || typeof raw !== "object") continue;
 
     const category = typeof raw.category === "string" ? raw.category : "";
-    if (!EXTENDABLE_CATEGORIES[category]) continue;
+    if (!EXTENDABLE_CATEGORIES[category] && !customCategories.includes(category))
+      continue;
 
     const label =
       typeof raw.label === "string" ? raw.label.trim().slice(0, 40) : "";
@@ -122,35 +144,54 @@ function sanitizeCustomLeadStatuses(input, existing = []) {
     }
     seenValues.add(value);
 
-    clean.push({ value, category, label, colorKey, order: order++ });
+    const days = Math.round(Number(raw.autoFollowUpDays));
+    clean.push({
+      value,
+      category,
+      label,
+      colorKey,
+      order: order++,
+      role: STAGE_ROLES.includes(raw.role) ? raw.role : "active",
+      requireRemarks: raw.requireRemarks !== false,
+      requireFollowUp: raw.requireFollowUp !== false,
+      autoFollowUpDays: days >= 0 && days <= 90 ? days : 0,
+    });
   }
 
   return clean;
 }
 
-function buildCategoriesWithCustom(customStatuses = []) {
+function buildCategoriesWithCustom(customStatuses = [], customCategories = []) {
   const merged = {};
+  const stagesOf = (cat) =>
+    customStatuses
+      .filter((s) => s.category === cat)
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map((s) => s.value);
+
   for (const [cat, items] of Object.entries(categories)) {
     const info = EXTENDABLE_CATEGORIES[cat];
     if (!info) {
       merged[cat] = [...items];
-      continue;
+    } else {
+      const extras = stagesOf(cat);
+      const idx = items.indexOf(info.insertBefore);
+      merged[cat] =
+        idx === -1
+          ? [...items, ...extras]
+          : [...items.slice(0, idx), ...extras, ...items.slice(idx)];
     }
-    const extras = customStatuses
-      .filter((s) => s.category === cat)
-      .sort((a, b) => (a.order || 0) - (b.order || 0))
-      .map((s) => s.value);
-    const idx = items.indexOf(info.insertBefore);
-    merged[cat] =
-      idx === -1
-        ? [...items, ...extras]
-        : [...items.slice(0, idx), ...extras, ...items.slice(idx)];
+    if (cat === "Quotation") {
+      for (const name of customCategories) merged[name] = stagesOf(name);
+    }
   }
   return merged;
 }
 
-function buildAllStatusesWithCustom(customStatuses = []) {
-  return Object.values(buildCategoriesWithCustom(customStatuses)).flat();
+function buildAllStatusesWithCustom(customStatuses = [], customCategories = []) {
+  return Object.values(
+    buildCategoriesWithCustom(customStatuses, customCategories),
+  ).flat();
 }
 
 // Base transition graph — see backend/controllers/leadController.js for
@@ -298,13 +339,24 @@ const CUSTOM_TRANSITION_SHAPE = {
 // WON is the exception: it only happens through convertToClient (which also creates the Client),
 // so it stays reachable from VISITED as before and is not offered in the generic status update.
 // The AI call analysis keeps the guided pipeline (openFlow off) so it never jumps stages.
-function buildTransitionMaps(customStatuses = [], { openFlow = false } = {}) {
+function buildTransitionMaps(
+  customStatuses = [],
+  { openFlow = false, customCategories = [] } = {},
+) {
   const transitions = {};
   for (const [k, v] of Object.entries(BASE_VALID_TRANSITIONS)) {
     transitions[k] = [...v];
   }
   const mandatory = { ...BASE_MANDATORY_FIELDS };
   const requiresDate = new Set(BASE_REQUIRES_DATE);
+  const byValue = new Map(customStatuses.map((c) => [c.value, c]));
+  // Per-stage rules chosen in Settings (default: remarks + follow-up date required).
+  const applyRules = (stage) => {
+    const c = byValue.get(stage) || {};
+    mandatory[stage] = c.requireRemarks === false ? [] : ["remarks"];
+    if (c.requireFollowUp === false) requiresDate.delete(stage);
+    else requiresDate.add(stage);
+  };
 
   for (const [category, info] of Object.entries(EXTENDABLE_CATEGORIES)) {
     const extras = customStatuses
@@ -322,8 +374,7 @@ function buildTransitionMaps(customStatuses = [], { openFlow = false } = {}) {
       transitions[stage] = shape.selfLoop
         ? [stage, next, ...shape.commonTargets]
         : [next, ...shape.commonTargets];
-      mandatory[stage] = ["remarks"];
-      requiresDate.add(stage);
+      applyRules(stage);
     }
 
     // Rewire the fixed "after" stage to point at the first custom stage
@@ -333,8 +384,28 @@ function buildTransitionMaps(customStatuses = [], { openFlow = false } = {}) {
     );
   }
 
+  // Custom groups: stages chain one after another and can jump to the fixed late stages.
+  for (const name of customCategories) {
+    const stages = customStatuses
+      .filter((s) => s.category === name)
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map((s) => s.value);
+    stages.forEach((stage, i) => {
+      const next = stages[i + 1];
+      transitions[stage] = [
+        stage,
+        ...(next ? [next] : []),
+        "DISCUSSION",
+        "QUOTATION",
+        "VISIT SCHEDULED",
+        "DROP",
+      ];
+      applyRules(stage);
+    });
+  }
+
   if (openFlow) {
-    const all = buildAllStatusesWithCustom(customStatuses);
+    const all = buildAllStatusesWithCustom(customStatuses, customCategories);
     for (const from of all) {
       transitions[from] = all.filter((s) => s !== "WON" || from === "VISITED");
     }
@@ -377,6 +448,8 @@ module.exports = {
   COLOR_PRESET_NAMES,
   sanitizeLeadStatusLabels,
   sanitizeCustomLeadStatuses,
+  sanitizeCustomLeadCategories,
+  STAGE_ROLES,
   buildCategoriesWithCustom,
   buildAllStatusesWithCustom,
   buildTransitionMaps,

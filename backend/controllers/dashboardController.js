@@ -29,7 +29,15 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   const twoDaysAgo = new Date(now);
   twoDaysAgo.setDate(now.getDate() - 2);
 
+  // Stages the tenant tagged as hot / lost in Settings → Lead Statuses.
+  const pipelineSetting = await Setting.findOne({ tenantId: req.user.tenantId || null })
+    .select("customLeadStatuses")
+    .lean();
+  const customOf = (role) =>
+    (pipelineSetting?.customLeadStatuses || []).filter((c) => c.role === role).map((c) => c.value);
+  const closedStatuses = [...CLOSED_STATUSES, ...customOf("lost")];
   const HOT_STATUSES = [
+    ...customOf("hot"),
     "DISCUSSION",
     "DISCUSSION 1",
     "DISCUSSION 2",
@@ -85,7 +93,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     Lead.find({
       ...tf,
       followUpDate: { $gte: todayStart, $lte: todayEnd },
-      status: { $nin: CLOSED_STATUSES },
+      status: { $nin: closedStatuses },
     })
       .select("name company phone status assignedTo followUpDate")
       .populate("assignedTo", "name")
@@ -95,7 +103,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     Lead.countDocuments({
       ...tf,
       followUpDate: { $lt: todayStart },
-      status: { $nin: CLOSED_STATUSES },
+      status: { $nin: closedStatuses },
     }),
 
     Lead.countDocuments({
@@ -165,14 +173,23 @@ const getDashboardStats = asyncHandler(async (req, res) => {
           status: "WON",
           updatedAt: { $gte: monthStart, $lte: monthEnd },
         }),
+        // Worked: leads created this month that have moved past PENDING CONTACT.
+        Lead.countDocuments({
+          ...tf,
+          status: { $ne: "PENDING CONTACT" },
+          createdAt: { $gte: monthStart, $lte: monthEnd },
+        }),
       ]),
     ),
   );
 
-  const leadsChartData = chartResults.map(([leads, converted], i) => ({
+  const leadsChartData = chartResults.map(([leads, converted, contacted], i) => ({
     month: monthBoundaries[i].monthName,
     leads,
     converted,
+    contacted,
+    pending: Math.max(leads - contacted, 0),
+    contactedRate: leads > 0 ? Math.round((contacted / leads) * 100) : 0,
     conversionRate: leads > 0 ? Math.round((converted / leads) * 100) : 0,
   }));
 
@@ -280,6 +297,90 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     })),
   };
 
+  // This month's leads per salesperson: assigned vs worked (moved past PENDING CONTACT).
+  const agentRows = await Lead.aggregate([
+    { $match: { ...tf, assignedTo: { $ne: null }, createdAt: { $gte: startOfMonth } } },
+    {
+      $group: {
+        _id: "$assignedTo",
+        assigned: { $sum: 1 },
+        worked: { $sum: { $cond: [{ $ne: ["$status", "PENDING CONTACT"] }, 1, 0] } },
+      },
+    },
+    { $sort: { assigned: -1 } },
+    { $limit: 15 },
+  ]);
+  const agentMonthUsers = agentRows.length
+    ? await User.find({ _id: { $in: agentRows.map((r) => r._id) } }).select("name").lean()
+    : [];
+  const agentMonthName = new Map(agentMonthUsers.map((u) => [String(u._id), u.name]));
+  const agentMonthly = agentRows.map((r) => ({
+    name: agentMonthName.get(String(r._id)) || "Former user",
+    assigned: r.assigned,
+    worked: r.worked,
+    pending: r.assigned - r.worked,
+    pct: r.assigned ? Math.round((r.worked / r.assigned) * 100) : 0,
+  }));
+
+  // Leads per day per source for the last 30 days (line graph). Days with no leads are filled with 0.
+  const DAILY_DAYS = 30;
+  const dailyStart = new Date(todayStart);
+  dailyStart.setDate(dailyStart.getDate() - (DAILY_DAYS - 1));
+  const dailyRows = await Lead.aggregate([
+    { $match: { ...tf, createdAt: { $gte: dailyStart } } },
+    {
+      $group: {
+        _id: {
+          day: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Kolkata" } },
+          source: { $ifNull: ["$source", "Other"] },
+        },
+        n: { $sum: 1 },
+      },
+    },
+  ]);
+  const dailySourceNames = [...new Set(dailyRows.map((r) => r._id.source))];
+  const dailyMap = new Map(dailyRows.map((r) => [`${r._id.day}|${r._id.source}`, r.n]));
+  const pad = (n) => String(n).padStart(2, "0");
+  const dailySources = {
+    sources: dailySourceNames,
+    data: Array.from({ length: DAILY_DAYS }, (_, i) => {
+      const d = new Date(dailyStart);
+      d.setDate(d.getDate() + i);
+      const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const row = { day: d.toLocaleString("en-IN", { day: "numeric", month: "short" }), total: 0 };
+      for (const s of dailySourceNames) {
+        row[s] = dailyMap.get(`${key}|${s}`) || 0;
+        row.total += row[s];
+      }
+      return row;
+    }),
+  };
+
+  // Per agent, this month: leads assigned vs leads worked (moved past PENDING CONTACT).
+  const workloadRows = await Lead.aggregate([
+    { $match: { ...tf, deletedAt: null, assignedTo: { $ne: null }, createdAt: { $gte: startOfMonth } } },
+    {
+      $group: {
+        _id: "$assignedTo",
+        assigned: { $sum: 1 },
+        worked: { $sum: { $cond: [{ $ne: ["$status", "PENDING CONTACT"] }, 1, 0] } },
+      },
+    },
+  ]);
+  const workloadUsers = workloadRows.length
+    ? await User.find({ _id: { $in: workloadRows.map((r) => r._id) } }).select("name").lean()
+    : [];
+  const wlName = new Map(workloadUsers.map((u) => [String(u._id), u.name]));
+  const agentWorkload = workloadRows
+    .map((r) => ({
+      name: wlName.get(String(r._id)) || "Former user",
+      assigned: r.assigned,
+      worked: r.worked,
+      pending: r.assigned - r.worked,
+      rate: r.assigned ? Math.round((r.worked / r.assigned) * 100) : 0,
+    }))
+    .sort((a, b) => b.assigned - a.assigned);
+
   const recentQuotations = await Quotation.find({ ...tf })
     .sort({ createdAt: -1 })
     .limit(8)
@@ -293,6 +394,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       recentLeads,
       recentQuotations,
       performerTrend,
+      dailySources,
+      agentMonthly,
       stats: {
         totalLeads,
         newLeadsToday,

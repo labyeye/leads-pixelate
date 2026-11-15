@@ -76,6 +76,13 @@ const FALLBACK_CFG: SourceCfg = {
   border: "border-[#4b5563]",
 };
 
+const SHORT: Record<string, string> = {
+  Instagram: "IG",
+  Facebook: "FB",
+  Website: "Web",
+  IndiaMART: "IM",
+};
+
 interface SourceBadgeProps {
   source?: string;
   size?: "sm" | "md";
@@ -86,6 +93,7 @@ export function SourceBadge({ source, size = "md" }: SourceBadgeProps) {
 
   return (
     <span
+      title={source || "Manual"}
       className={cn(
         "inline-flex items-center gap-1 font-medium border uppercase tracking-wide leading-none",
         cfg.bg,
@@ -95,7 +103,7 @@ export function SourceBadge({ source, size = "md" }: SourceBadgeProps) {
       )}
     >
       {cfg.icon}
-      {source || "Manual"}
+      {SHORT[source || ""] || source || "Manual"}
     </span>
   );
 }

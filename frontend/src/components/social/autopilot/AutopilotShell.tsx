@@ -163,25 +163,7 @@ function Frame({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <nav className="flex flex-wrap gap-2" aria-label="Autopilot sections">
-          {TABS.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to + keep}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-2 border-black transition-colors",
-                  isActive
-                    ? "bg-[#024BAB] text-white nb-shadow-sm"
-                    : "bg-white text-black hover:bg-[#FFDE00]",
-                )
-              }
-            >
-              <Icon className="w-4 h-4" /> {label}
-            </NavLink>
-          ))}
-        </nav>
+        <h1 className="text-xl font-medium">Autopilot</h1>
         <CampaignSwitcher />
       </div>
       {children}
