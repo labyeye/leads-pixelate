@@ -35,6 +35,18 @@ import {
 import { leadsAPI, productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
 
+export const LOST_REASONS = [
+  "Price too high",
+  "Chose a competitor",
+  "No budget / loan not approved",
+  "Postponed the decision",
+  "Machine didn't fit (features / capacity)",
+  "Delivery time too long",
+  "Not responding",
+  "Not a genuine enquiry",
+  "Other",
+];
+
 interface StatusUpdateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +67,8 @@ export function StatusUpdateModal({
   const { toast } = useToast();
   const [remarksInput, setRemarksInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  const [lostReasonInput, setLostReasonInput] = useState("");
+  const [competitorInput, setCompetitorInput] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date(),
@@ -115,6 +129,8 @@ export function StatusUpdateModal({
       setVisitActualDate(
         lead.visitActualDate ? new Date(lead.visitActualDate) : new Date(),
       );
+      setLostReasonInput(lead.lostReason || "");
+      setCompetitorInput(lead.competitor || "");
       setLocalTag(selectedTag);
       fetchProducts();
     }
@@ -209,6 +225,15 @@ export function StatusUpdateModal({
       return;
     }
 
+    if (pendingStatus === "DROP" && !lostReasonInput) {
+      toast({
+        title: "Lost Reason Required",
+        description: "Please choose why this lead is being dropped",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -237,6 +262,11 @@ export function StatusUpdateModal({
 
       if (budgetInput.trim()) {
         updateData.budget = budgetInput;
+      }
+
+      if (pendingStatus === "DROP") {
+        updateData.lostReason = lostReasonInput;
+        updateData.competitor = competitorInput.trim();
       }
 
       if (
@@ -366,6 +396,40 @@ export function StatusUpdateModal({
               />
             </div>
           </div>
+
+          {pendingStatus === "DROP" && (
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Lost reason{" "}
+                  <span className="text-destructive font-medium">*</span>
+                </Label>
+                <select
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                  value={lostReasonInput}
+                  onChange={(e) => setLostReasonInput(e.target.value)}
+                >
+                  <option value="">Choose a reason…</option>
+                  {LOST_REASONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Competitor (if any)
+                </Label>
+                <Input
+                  placeholder="Who did they buy from?"
+                  maxLength={80}
+                  value={competitorInput}
+                  onChange={(e) => setCompetitorInput(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2 pt-2 border-t border-border/50">
             <Label
@@ -573,6 +637,7 @@ export function StatusUpdateModal({
             disabled={
               loading ||
               !remarksInput.trim() ||
+              (pendingStatus === "DROP" && !lostReasonInput) ||
               (showFollowupPicker && !selectedDate) ||
               (pendingStatus === "VISIT SCHEDULED" && !visitScheduledDate) ||
               (pendingStatus === "VISITED" && !visitActualDate)
