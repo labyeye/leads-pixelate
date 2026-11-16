@@ -5,7 +5,7 @@ import { announceRefund, isRefundMessage } from '../utils/refundNotice';
 const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 export const API_BASE = __DEV__
   ? `http://${DEV_HOST}:4100/api`
-  : 'http://localhost:4100/api';
+  : 'https://leads-backend.pixelatenest.com/api';
 
 class ApiError extends Error {
   status: number;

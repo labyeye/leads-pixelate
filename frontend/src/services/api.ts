@@ -752,6 +752,9 @@ export const dashboardAPI = {
   getMyPace: () => request<{ success: boolean; data: any }>("/dashboard/my-pace"),
   getLive: (windowMin: number) =>
     request<{ success: boolean; data: any }>(`/dashboard/live?window=${windowMin}`),
+  getTargets: () => request<{ success: boolean; data: any }>("/dashboard/targets"),
+  getInsights: (days = 90) =>
+    request<{ success: boolean; data: any }>(`/dashboard/insights?days=${days}`),
 };
 
 export const productsAPI = {

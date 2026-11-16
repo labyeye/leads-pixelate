@@ -39,6 +39,12 @@ const WORKFLOW_FIELDS = [
   "followUpDate",
   "visitScheduledDate",
   "visitActualDate",
+  "expectedValue",
+  "purchaseTimeline",
+  "decisionMaker",
+  "paymentMode",
+  "lostReason",
+  "competitor",
 ];
 
 // Shows the last 4 characters only, so "Manage Connection" can confirm a key is saved without
@@ -94,6 +100,11 @@ function validateMandatoryFields(
 
   if (isSameStatus) {
     return null;
+  }
+
+  // Every lost lead needs a reason; Insights → Lost Leads is built from it.
+  if (newStatus === "DROP" && !String(updateData.lostReason || "").trim()) {
+    return "Lost reason is required when dropping a lead";
   }
 
   if (REQUIRES_DATE.includes(newStatus)) {
@@ -500,7 +511,7 @@ const bulkUpdateStatus = asyncHandler(async (req, res) => {
 
     const fieldError = validateMandatoryFields(
       status,
-      { status, remarks },
+      { status, remarks, lostReason: req.body.lostReason },
       lead.status,
       MANDATORY_FIELDS,
       REQUIRES_DATE,
@@ -516,7 +527,14 @@ const bulkUpdateStatus = asyncHandler(async (req, res) => {
     }
 
     await Lead.findByIdAndUpdate(lead._id, {
-      $set: { status, stagePath: newStagePath },
+      $set: {
+        status,
+        stagePath: newStagePath,
+        ...(status === "DROP" && {
+          lostReason: String(req.body.lostReason || "").slice(0, 80),
+          competitor: String(req.body.competitor || "").slice(0, 80),
+        }),
+      },
       $push: {
         statusHistory: {
           status,
@@ -1163,7 +1181,7 @@ const connectJustdial = asyncHandler(async (req, res) => {
   });
 
   const backendUrl =
-    process.env.BACKEND_URL || "http://localhost:4100";
+    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
   res.json({
     success: true,
     message:
@@ -1206,7 +1224,7 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
   });
 
   const backendUrl =
-    process.env.BACKEND_URL || "http://localhost:4100";
+    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
 
   res.json({
     success: true,

@@ -114,6 +114,21 @@ const leadSchema = new mongoose.Schema(
       type: String,
       default: "PENDING CONTACT",
     },
+    // Machine-sales qualification and loss tracking (feeds Insights / Targets).
+    expectedValue: { type: Number, default: 0, min: 0 },
+    purchaseTimeline: {
+      type: String,
+      enum: ["", "immediate", "1-3 months", "3-6 months", "6+ months", "just exploring"],
+      default: "",
+    },
+    decisionMaker: { type: String, default: "", maxlength: 80 },
+    paymentMode: {
+      type: String,
+      enum: ["", "cash", "loan", "subsidy", "tender"],
+      default: "",
+    },
+    lostReason: { type: String, default: "", maxlength: 80 },
+    competitor: { type: String, default: "", maxlength: 80 },
     contactTag: {
       type: String,
       enum: ["HOT", "WARM", "COLD"],

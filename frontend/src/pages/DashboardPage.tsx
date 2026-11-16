@@ -72,6 +72,18 @@ const SOURCE_COLORS: Record<string, string> = {
   Manual: "#6B7280",
 };
 
+// Distinct, colour-blind-friendly palette for multi-line charts.
+const LINE_PALETTE = [
+  "#024BAB",
+  "#FA731C",
+  "#00C48C",
+  "#E11D74",
+  "#EAB308",
+  "#0891B2",
+  "#7C3AED",
+  "#64748B",
+];
+
 const AGENT_COLORS = ["#024BAB", "#00C48C", "#FA731C", "#C026D3", "#EF4444"];
 
 const SOURCE_LOGOS: Record<string, string> = {
@@ -210,7 +222,9 @@ function Leaderboard({ performers }: { performers: any[] }) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-black truncate">{p.name}</p>
+              <p className="text-sm font-medium text-black truncate">
+                {p.name}
+              </p>
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex-1 h-1.5 bg-white border border-black overflow-hidden">
                   <div
@@ -260,7 +274,9 @@ function RecentLeadsList({ leads }: { leads: any[] }) {
               {(lead.name || "U")[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-black truncate">{lead.name}</p>
+              <p className="text-sm font-medium text-black truncate">
+                {lead.name}
+              </p>
               <p className="text-xs text-muted-foreground truncate">
                 {lead.company || lead.phone}
                 {lead.source ? ` · ${lead.source}` : ""}
@@ -289,21 +305,37 @@ const QUOTE_TONE: Record<string, string> = {
 };
 
 // Newest quotations; shows only as many rows as fit beside Recent Leads, so no empty space is left.
-function RecentQuotations({ quotations, rows, className }: { quotations: any[]; rows: number; className?: string }) {
+function RecentQuotations({
+  quotations,
+  rows,
+  className,
+}: {
+  quotations: any[];
+  rows: number;
+  className?: string;
+}) {
   const list = quotations.slice(0, rows);
   return (
     <div className={cn("border-2 bg-white p-5 flex flex-col", className)}>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h3 className="font-display font-medium text-base text-black">Recent Quotations</h3>
-          <p className="text-xs text-muted-foreground">Latest {list.length} created</p>
+          <h3 className="font-display font-medium text-base text-black">
+            Recent Quotations
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Latest {list.length} created
+          </p>
         </div>
         <Link to="/quotations">
-          <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">View all →</button>
+          <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">
+            View all →
+          </button>
         </Link>
       </div>
       {list.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground py-6">No quotations yet</div>
+        <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground py-6">
+          No quotations yet
+        </div>
       ) : (
         <div className="flex-1 flex flex-col justify-between gap-2">
           {list.map((q) => (
@@ -313,17 +345,30 @@ function RecentQuotations({ quotations, rows, className }: { quotations: any[]; 
                   <FileText className="w-4 h-4 text-white" strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-black truncate">{q.companyName || q.clientName}</p>
+                  <p className="text-sm font-medium text-black truncate">
+                    {q.companyName || q.clientName}
+                  </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {q.number} · {q.projectTitle}
                     {q.createdBy?.name ? ` · ${q.createdBy.name}` : ""}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-black">₹{Number(q.total || 0).toLocaleString("en-IN")}</p>
+                  <p className="text-sm font-bold text-black">
+                    ₹{Number(q.total || 0).toLocaleString("en-IN")}
+                  </p>
                   <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                    <span className={cn("text-[10px] font-medium px-1.5 py-0.5 border border-black", QUOTE_TONE[q.status] || "bg-white")}>{q.status}</span>
-                    <span className="text-[10px] text-muted-foreground">{q.createdAt ? timeAgo(q.createdAt) : ""}</span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-medium px-1.5 py-0.5 border border-black",
+                        QUOTE_TONE[q.status] || "bg-white",
+                      )}
+                    >
+                      {q.status}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {q.createdAt ? timeAgo(q.createdAt) : ""}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -367,19 +412,35 @@ function LiveSummary({ workload = [] }: { workload?: any[] }) {
     };
   }, [windowMin]);
 
-  const team: any[] = live ? [...live.team].sort((a, b) => b.done - a.done || b.calls - a.calls) : [];
+  const team: any[] = live
+    ? [...live.team].sort((a, b) => b.done - a.done || b.calls - a.calls)
+    : [];
   const maxDone = Math.max(1, ...team.map((r) => r.done));
   const tot = live?.totals;
-  const connectRate = tot && tot.calls ? Math.round((tot.connected / tot.calls) * 100) : 0;
-  const heads = ["Agent", "Calls", "Connected", "Talk time", "Conversations", "Quotations", "Visits", "Last call"];
+  const connectRate =
+    tot && tot.calls ? Math.round((tot.connected / tot.calls) * 100) : 0;
+  const heads = [
+    "Agent",
+    "Calls",
+    "Connected",
+    "Talk time",
+    "Conversations",
+    "Quotations",
+    "Visits",
+    "Last call",
+  ];
 
   return (
     <div className="border-2 bg-white p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
         <div>
-          <h3 className="font-display font-medium text-base text-black">Live Performance</h3>
+          <h3 className="font-display font-medium text-base text-black">
+            Live Performance
+          </h3>
           <p className="text-xs text-muted-foreground">
-            {tot ? `${tot.calls} calls · ${connectRate}% picked up · ${tot.conversations} conversations · ${tot.quotations} quotations` : "Loading…"}
+            {tot
+              ? `${tot.calls} calls · ${connectRate}% picked up · ${tot.conversations} conversations · ${tot.quotations} quotations`
+              : "Loading…"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -388,46 +449,140 @@ function LiveSummary({ workload = [] }: { workload?: any[] }) {
               <button
                 key={w.min}
                 onClick={() => setWindowMin(w.min)}
-                className={cn("px-2.5 py-1 text-xs font-medium", windowMin === w.min ? "bg-[#024BAB] text-white" : "bg-white hover:bg-slate-100")}
+                className={cn(
+                  "px-2.5 py-1 text-xs font-medium",
+                  windowMin === w.min
+                    ? "bg-[#024BAB] text-white"
+                    : "bg-white hover:bg-slate-100",
+                )}
               >
                 {w.label}
               </button>
             ))}
           </div>
           <Link to="/live-performance">
-            <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">Full view →</button>
+            <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">
+              Full view →
+            </button>
           </Link>
         </div>
       </div>
       {team.length > 0 && (
         <div className="mb-4">
           <ResponsiveContainer width="100%" height={170}>
-            <BarChart data={team} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="25%">
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+            <BarChart
+              data={team}
+              margin={{ top: 8, right: 8, left: -12, bottom: 0 }}
+              barCategoryGap="25%"
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#E5E7EB"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={32}
+                allowDecimals={false}
+              />
               <Tooltip content={<NbTooltip />} cursor={{ fill: "#024BAB22" }} />
-              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
-              <Bar dataKey="calls" name="Calls" fill="#024BAB" stroke="#0A0A0A" strokeWidth={2} />
-              <Bar dataKey="connected" name="Connected" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2} />
-              <Bar dataKey="conversations" name="Conversations" fill="#FA731C" stroke="#0A0A0A" strokeWidth={2} />
+              <Legend
+                iconType="square"
+                wrapperStyle={{ fontSize: 11, fontWeight: 500 }}
+              />
+              <Bar
+                dataKey="calls"
+                name="Calls"
+                fill="#024BAB"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+              />
+              <Bar
+                dataKey="connected"
+                name="Connected"
+                fill="#00C48C"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+              />
+              <Bar
+                dataKey="conversations"
+                name="Conversations"
+                fill="#FA731C"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
       {workload.length > 0 && (
         <div className="mt-4 border-t-2 border-black pt-3">
-          <p className="text-sm font-medium text-black">This month: assigned vs worked</p>
-          <p className="text-xs text-muted-foreground mb-1">Did each salesperson work the leads they got? (worked = moved past Pending Contact)</p>
-          <ResponsiveContainer width="100%" height={Math.max(130, workload.length * 44)}>
-            <BarChart data={workload} layout="vertical" margin={{ top: 0, right: 40, left: 8, bottom: 0 }} barCategoryGap="25%">
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} allowDecimals={false} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={90} />
+          <p className="text-sm font-medium text-black">
+            This month: assigned vs worked
+          </p>
+          <p className="text-xs text-muted-foreground mb-1">
+            Did each salesperson work the leads they got? (worked = moved past
+            Pending Contact)
+          </p>
+          <ResponsiveContainer
+            width="100%"
+            height={Math.max(130, workload.length * 44)}
+          >
+            <BarChart
+              data={workload}
+              layout="vertical"
+              margin={{ top: 0, right: 40, left: 8, bottom: 0 }}
+              barCategoryGap="25%"
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#E5E7EB"
+                horizontal={false}
+              />
+              <XAxis
+                type="number"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={90}
+              />
               <Tooltip content={<NbTooltip />} cursor={{ fill: "#024BAB22" }} />
-              <Bar dataKey="assigned" name="Assigned" fill="#024BAB" stroke="#0A0A0A" strokeWidth={2} />
-              <Bar dataKey="worked" name="Worked" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2}>
-                <LabelList dataKey="rate" position="right" formatter={(v: number) => `${v}%`} style={{ fontSize: 11, fontWeight: 700 }} />
+              <Bar
+                dataKey="assigned"
+                name="Assigned"
+                fill="#024BAB"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+              />
+              <Bar
+                dataKey="worked"
+                name="Worked"
+                fill="#00C48C"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+              >
+                <LabelList
+                  dataKey="rate"
+                  position="right"
+                  formatter={(v: number) => `${v}%`}
+                  style={{ fontSize: 11, fontWeight: 700 }}
+                />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -435,15 +590,112 @@ function LiveSummary({ workload = [] }: { workload?: any[] }) {
       )}
       {tot && (
         <div className="grid grid-cols-4 gap-2 mt-3 text-center">
-          {[["Calls", tot.calls], ["Connected", tot.connected], ["Talk time", liveTalk(tot.talkSeconds || 0)], ["Visits", tot.visits]].map(([l, v]) => (
+          {[
+            ["Calls", tot.calls],
+            ["Connected", tot.connected],
+            ["Talk time", liveTalk(tot.talkSeconds || 0)],
+            ["Visits", tot.visits],
+          ].map(([l, v]) => (
             <div key={l as string} className="border-2 border-black py-1.5">
-              <p className="text-base font-bold leading-none tabular-nums">{v}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{l}</p>
+              <p className="text-base font-bold leading-none tabular-nums">
+                {v}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">
+                {l}
+              </p>
             </div>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+// Owner's money card: this month's won orders against the target and break-even (Insights → Targets).
+function TargetCard() {
+  const [t, setT] = useState<any>(null);
+  useEffect(() => {
+    dashboardAPI
+      .getTargets()
+      .then((r) => setT(r.data))
+      .catch(() => {});
+  }, []);
+  if (!t) return null;
+  const inr = (n: number) => {
+    const v = Math.round(Number(n) || 0);
+    return Math.abs(v) >= 1e7
+      ? `₹${(v / 1e7).toFixed(2)} Cr`
+      : Math.abs(v) >= 1e5
+        ? `₹${(v / 1e5).toFixed(2)} L`
+        : `₹${v.toLocaleString("en-IN")}`;
+  };
+  const bar = (v: number, of: number, color: string) => (
+    <div className="h-3 border-2 border-black bg-slate-100">
+      <div
+        className="h-full"
+        style={{
+          width: `${of ? Math.min(100, (v / of) * 100) : 0}%`,
+          backgroundColor: color,
+        }}
+      />
+    </div>
+  );
+  const notSet = !t.target && !t.breakEven;
+  return (
+    <Link
+      to="/insights"
+      className="block border-2 bg-white p-5 mb-4 hover:bg-[#024BAB]/[0.03]"
+    >
+      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+        <h3 className="font-display font-medium text-base text-black">
+          This month's target
+        </h3>
+        <span className="text-xs text-muted-foreground">
+          {t.month.orders} orders · {t.month.daysLeft} days left
+        </span>
+        <span className="ml-auto text-xs font-medium text-[#024BAB]">
+          Open →
+        </span>
+      </div>
+      {notSet ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Set a monthly revenue target and fixed costs to see progress and
+          break-even here.
+        </p>
+      ) : (
+        <div className="mt-3 grid gap-4 md:grid-cols-3">
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="font-medium">Won vs target</span>
+              <span className="tabular-nums">
+                {inr(t.month.won)} / {t.target ? inr(t.target) : "—"}
+              </span>
+            </div>
+            {bar(t.month.won, t.target, "#00C48C")}
+          </div>
+          <div>
+            <div className="flex justify-between text-xs mb-1">
+              <span className="font-medium">Break-even</span>
+              <span className="tabular-nums">
+                {t.breakEven
+                  ? `${inr(t.month.won)} / ${inr(t.breakEven)}`
+                  : "—"}
+              </span>
+            </div>
+            {bar(t.month.won, t.breakEven, "#FA731C")}
+          </div>
+          <div className="text-xs">
+            <p className="font-medium">Pipeline</p>
+            <p className="tabular-nums text-sm">
+              {inr(t.pipeline.value)}{" "}
+              <span className="text-muted-foreground text-xs">
+                · likely {inr(t.pipeline.forecast)}
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+    </Link>
   );
 }
 
@@ -471,7 +723,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<Period>("week");
+  const [period] = useState<Period>("week");
 
   useEffect(() => {
     dashboardAPI
@@ -542,30 +794,6 @@ export default function DashboardPage() {
             Here's what's happening with your leads right now
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center border-2 border-black  overflow-hidden">
-            {(["today", "week", "month"] as Period[]).map((p, i) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={cn(
-                  "text-xs px-3 py-2 font-medium transition-colors capitalize",
-                  i > 0 && "border-l-2 border-black",
-                  period === p
-                    ? "bg-[#024BAB] text-white"
-                    : "bg-white text-black hover:bg-[#024BAB]/10",
-                )}
-              >
-                {p === "today" ? "Today" : p === "week" ? "Week" : "Month"}
-              </button>
-            ))}
-          </div>
-          <Link to="/leads">
-            <button className="border-2 bg-[#024BAB] text-white px-4 py-2 text-sm flex items-center gap-1.5">
-              <Plus className="w-4 h-4" /> Add Lead
-            </button>
-          </Link>
-        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -575,7 +803,13 @@ export default function DashboardPage() {
           sub={`${newLeadsValue} new this ${period}`}
           icon={Target}
           bg="bg-[#024BAB]"
-          trend={stats.leadGrowth > 0 ? "up" : stats.leadGrowth < 0 ? "down" : undefined}
+          trend={
+            stats.leadGrowth > 0
+              ? "up"
+              : stats.leadGrowth < 0
+                ? "down"
+                : undefined
+          }
           trendLabel={`${Math.abs(stats.leadGrowth)}%`}
           to="/leads"
         />
@@ -637,26 +871,102 @@ export default function DashboardPage() {
         />
       </div>
 
+      {isAdmin && <TargetCard />}
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
-      {isAdmin && <LiveSummary workload={data.agentWorkload || []} />}
-      <div className="border-2 bg-white p-5">
+        {isAdmin && <LiveSummary workload={data.agentWorkload || []} />}
+        <div className="border-2 bg-white p-5">
           <div className="mb-1">
-            <h3 className="font-display font-medium text-base text-black">Leads Received vs Worked</h3>
+            <h3 className="font-display font-medium text-base text-black">
+              Leads Received vs Worked
+            </h3>
             <p className="text-xs text-muted-foreground">
-              Each month's leads, and how many have been contacted (not Pending Contact)
+              Each month's leads, and how many have been contacted (not Pending
+              Contact)
             </p>
           </div>
           <ResponsiveContainer width="100%" height={230}>
-            <LineChart data={leadsChartData} margin={{ top: 18, right: 4, left: -12, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="l" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={36} allowDecimals={false} />
-              <YAxis yAxisId="r" orientation="right" domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={36} unit="%" />
+            <LineChart
+              data={leadsChartData}
+              margin={{ top: 18, right: 4, left: -12, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#E5E7EB"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                yAxisId="l"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                allowDecimals={false}
+              />
+              <YAxis
+                yAxisId="r"
+                orientation="right"
+                domain={[0, 100]}
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                unit="%"
+              />
               <Tooltip content={<NbTooltip />} />
-              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
-              <Line yAxisId="l" type="monotone" dataKey="leads" name="Received" stroke="#024BAB" strokeWidth={3} dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: "#024BAB" }} />
-              <Line yAxisId="l" type="monotone" dataKey="contacted" name="Worked" stroke="#00C48C" strokeWidth={3} dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: "#00C48C" }} />
-              <Line yAxisId="r" type="monotone" dataKey="contactedRate" name="Worked %" stroke="#FA731C" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, stroke: "#0A0A0A", strokeWidth: 2, fill: "#FA731C" }} />
+              <Legend
+                iconType="square"
+                wrapperStyle={{ fontSize: 11, fontWeight: 500 }}
+              />
+              <Line
+                yAxisId="l"
+                type="monotone"
+                dataKey="leads"
+                name="Received"
+                stroke="#024BAB"
+                strokeWidth={3}
+                dot={{
+                  r: 4,
+                  stroke: "#0A0A0A",
+                  strokeWidth: 2,
+                  fill: "#024BAB",
+                }}
+              />
+              <Line
+                yAxisId="l"
+                type="monotone"
+                dataKey="contacted"
+                name="Worked"
+                stroke="#00C48C"
+                strokeWidth={3}
+                dot={{
+                  r: 4,
+                  stroke: "#0A0A0A",
+                  strokeWidth: 2,
+                  fill: "#00C48C",
+                }}
+              />
+              <Line
+                yAxisId="r"
+                type="monotone"
+                dataKey="contactedRate"
+                name="Worked %"
+                stroke="#FA731C"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                dot={{
+                  r: 3,
+                  stroke: "#0A0A0A",
+                  strokeWidth: 2,
+                  fill: "#FA731C",
+                }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -665,27 +975,57 @@ export default function DashboardPage() {
       {/* Leads per day by source */}
       <div className="border-2 bg-white p-5 mb-3">
         <div className="mb-3">
-          <h3 className="font-display font-medium text-base text-black">Leads per Day · by Source</h3>
+          <h3 className="font-display font-medium text-base text-black">
+            Leads per Day · by Source
+          </h3>
           <p className="text-xs text-muted-foreground">
-            {(dailySources?.data || []).reduce((a: number, d: any) => a + d.total, 0)} leads in the last 30 days
+            {(dailySources?.data || []).reduce(
+              (a: number, d: any) => a + d.total,
+              0,
+            )}{" "}
+            leads in the last 30 days
           </p>
         </div>
         {!dailySources || dailySources.sources.length === 0 ? (
-          <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">No leads in the last 30 days</div>
+          <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
+            No leads in the last 30 days
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={dailySources.data} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-              <XAxis dataKey="day" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} interval={2} />
-              <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+            <LineChart
+              data={dailySources.data}
+              margin={{ top: 12, right: 12, left: -12, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#E5E7EB"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                interval={2}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={32}
+                allowDecimals={false}
+              />
               <Tooltip content={<NbTooltip />} />
-              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
-              {dailySources.sources.map((name: string) => (
+              <Legend
+                iconType="square"
+                wrapperStyle={{ fontSize: 11, fontWeight: 500 }}
+              />
+              {dailySources.sources.map((name: string, i: number) => (
                 <Line
                   key={name}
                   type="monotone"
                   dataKey={name}
-                  stroke={SOURCE_COLORS[name] || "#024BAB"}
+                  stroke={LINE_PALETTE[i % LINE_PALETTE.length]}
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 5, stroke: "#0A0A0A", strokeWidth: 2 }}
@@ -701,24 +1041,84 @@ export default function DashboardPage() {
         <div className="border-2 bg-white p-5">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="font-display font-medium text-base text-black">Clients Won · Monthly</h3>
+              <h3 className="font-display font-medium text-base text-black">
+                Clients Won · Monthly
+              </h3>
               <p className="text-xs text-muted-foreground">
-                {(leadsChartData || []).reduce((a: number, m: any) => a + m.converted, 0)} clients won in the last 6 months, with win rate
+                {(leadsChartData || []).reduce(
+                  (a: number, m: any) => a + m.converted,
+                  0,
+                )}{" "}
+                clients won in the last 6 months, with win rate
               </p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={240}>
-            <ComposedChart data={leadsChartData} margin={{ top: 18, right: 8, left: -12, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
-              <YAxis yAxisId="l" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
-              <YAxis yAxisId="r" orientation="right" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={36} unit="%" />
+            <ComposedChart
+              data={leadsChartData}
+              margin={{ top: 18, right: 8, left: -12, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#E5E7EB"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                yAxisId="l"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={32}
+                allowDecimals={false}
+              />
+              <YAxis
+                yAxisId="r"
+                orientation="right"
+                tick={{ fontSize: 11, fontWeight: 500 }}
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                unit="%"
+              />
               <Tooltip content={<NbTooltip />} cursor={{ fill: "#00C48C22" }} />
-              <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
-              <Bar yAxisId="l" dataKey="converted" name="Clients won" fill="#00C48C" stroke="#0A0A0A" strokeWidth={2}>
-                <LabelList dataKey="converted" position="top" style={{ fontSize: 11, fontWeight: 700 }} />
+              <Legend
+                iconType="square"
+                wrapperStyle={{ fontSize: 11, fontWeight: 500 }}
+              />
+              <Bar
+                yAxisId="l"
+                dataKey="converted"
+                name="Clients won"
+                fill="#00C48C"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+              >
+                <LabelList
+                  dataKey="converted"
+                  position="top"
+                  style={{ fontSize: 11, fontWeight: 700 }}
+                />
               </Bar>
-              <Line yAxisId="r" type="monotone" dataKey="conversionRate" name="Win rate %" stroke="#FA731C" strokeWidth={3} dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: "#FA731C" }} />
+              <Line
+                yAxisId="r"
+                type="monotone"
+                dataKey="conversionRate"
+                name="Win rate %"
+                stroke="#FA731C"
+                strokeWidth={3}
+                dot={{
+                  r: 4,
+                  stroke: "#0A0A0A",
+                  strokeWidth: 2,
+                  fill: "#FA731C",
+                }}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -726,23 +1126,52 @@ export default function DashboardPage() {
         <div className="border-2 bg-white p-5">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="font-display font-medium text-base text-black">Monthly Performers</h3>
-              <p className="text-xs text-muted-foreground">Clients won per agent, last 6 months</p>
+              <h3 className="font-display font-medium text-base text-black">
+                Monthly Performers
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Clients won per agent, last 6 months
+              </p>
             </div>
             <Link to="/users">
-              <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">Team →</button>
+              <button className="text-xs font-medium text-black border-2 border-black px-2 py-1 hover:bg-[#024BAB]/10 transition-colors">
+                Team →
+              </button>
             </Link>
           </div>
           {!performerTrend || performerTrend.agents.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">No clients won yet</div>
+            <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
+              No clients won yet
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={performerTrend.data} margin={{ top: 12, right: 12, left: -12, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fontWeight: 500 }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
+              <LineChart
+                data={performerTrend.data}
+                margin={{ top: 12, right: 12, left: -12, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="#E5E7EB"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11, fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={32}
+                  allowDecimals={false}
+                />
                 <Tooltip content={<NbTooltip />} />
-                <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 500 }} />
+                <Legend
+                  iconType="square"
+                  wrapperStyle={{ fontSize: 11, fontWeight: 500 }}
+                />
                 {performerTrend.agents.map((name: string, i: number) => (
                   <Line
                     key={name}
@@ -750,7 +1179,12 @@ export default function DashboardPage() {
                     dataKey={name}
                     stroke={AGENT_COLORS[i % AGENT_COLORS.length]}
                     strokeWidth={3}
-                    dot={{ r: 4, stroke: "#0A0A0A", strokeWidth: 2, fill: AGENT_COLORS[i % AGENT_COLORS.length] }}
+                    dot={{
+                      r: 4,
+                      stroke: "#0A0A0A",
+                      strokeWidth: 2,
+                      fill: AGENT_COLORS[i % AGENT_COLORS.length],
+                    }}
                     activeDot={{ r: 6, stroke: "#0A0A0A", strokeWidth: 2 }}
                     isAnimationActive
                     animationBegin={i * 250}
@@ -786,8 +1220,13 @@ export default function DashboardPage() {
           {sourceData && sourceData.length > 0 ? (
             <>
               {(() => {
-                const total = sourceData.reduce((a: number, e: any) => a + e.value, 0);
-                const rows = [...sourceData].sort((a: any, b: any) => b.value - a.value);
+                const total = sourceData.reduce(
+                  (a: number, e: any) => a + e.value,
+                  0,
+                );
+                const rows = [...sourceData].sort(
+                  (a: any, b: any) => b.value - a.value,
+                );
                 return (
                   <>
                     <div className="relative">
@@ -805,15 +1244,24 @@ export default function DashboardPage() {
                             strokeWidth={2}
                           >
                             {rows.map((entry: any) => (
-                              <Cell key={entry.name} fill={SOURCE_COLORS[entry.name] || "#024BAB"} />
+                              <Cell
+                                key={entry.name}
+                                fill={SOURCE_COLORS[entry.name] || "#024BAB"}
+                              />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(v: number, n: string) => [v, n]} />
+                          <Tooltip
+                            formatter={(v: number, n: string) => [v, n]}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-2xl font-black leading-none">{total.toLocaleString("en-IN")}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">total leads</span>
+                        <span className="text-2xl font-black leading-none">
+                          {total.toLocaleString("en-IN")}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          total leads
+                        </span>
                       </div>
                     </div>
                     <div className="mt-3 space-y-2">
@@ -822,26 +1270,49 @@ export default function DashboardPage() {
                         const color = SOURCE_COLORS[entry.name] || "#024BAB";
                         const pct = total ? (entry.value / total) * 100 : 0;
                         return (
-                          <div key={entry.name} className="flex items-center gap-3">
+                          <div
+                            key={entry.name}
+                            className="flex items-center gap-3"
+                          >
                             {SOURCE_LOGOS[entry.name] ? (
                               <span className="w-9 h-9 border-2 border-black bg-white flex items-center justify-center shrink-0 p-1 shadow-[2px_2px_0_0_#000]">
-                                <img src={SOURCE_LOGOS[entry.name]} alt={entry.name} className="w-full h-full object-contain" />
+                                <img
+                                  src={SOURCE_LOGOS[entry.name]}
+                                  alt={entry.name}
+                                  className="w-full h-full object-contain"
+                                />
                               </span>
                             ) : (
-                              <span className="w-9 h-9 border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#000]" style={{ background: color }}>
-                                <Icon className="w-4 h-4 text-white" strokeWidth={2.5} />
+                              <span
+                                className="w-9 h-9 border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#000]"
+                                style={{ background: color }}
+                              >
+                                <Icon
+                                  className="w-4 h-4 text-white"
+                                  strokeWidth={2.5}
+                                />
                               </span>
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between gap-2">
-                                <span className="text-sm font-bold text-black truncate">{entry.name}</span>
+                                <span className="text-sm font-bold text-black truncate">
+                                  {entry.name}
+                                </span>
                                 <span className="text-sm font-black text-black">
                                   {entry.value.toLocaleString("en-IN")}
-                                  <span className="ml-1 text-[11px] font-bold text-muted-foreground">{pct.toFixed(pct < 10 ? 1 : 0)}%</span>
+                                  <span className="ml-1 text-[11px] font-bold text-muted-foreground">
+                                    {pct.toFixed(pct < 10 ? 1 : 0)}%
+                                  </span>
                                 </span>
                               </div>
                               <div className="h-1.5 border border-black bg-gray-100 mt-1">
-                                <div className="h-full" style={{ width: `${Math.max(pct, 2)}%`, background: color }} />
+                                <div
+                                  className="h-full"
+                                  style={{
+                                    width: `${Math.max(pct, 2)}%`,
+                                    background: color,
+                                  }}
+                                />
                               </div>
                             </div>
                           </div>
@@ -858,8 +1329,7 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-
-              </div>
+      </div>
 
       {/* Recent leads + live performance in one row */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
@@ -882,7 +1352,11 @@ export default function DashboardPage() {
           <RecentLeadsList leads={recentLeads || []} />
         </div>
         <div className="xl:col-span-7 flex flex-col gap-4">
-          <RecentQuotations quotations={recentQuotations || []} rows={8} className="flex-1" />
+          <RecentQuotations
+            quotations={recentQuotations || []}
+            rows={8}
+            className="flex-1"
+          />
         </div>
       </div>
 

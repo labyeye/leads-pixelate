@@ -120,6 +120,18 @@ import {
   type ExportField,
 } from "@/components/export/ExportFieldsDialog";
 
+const LOST_REASONS = [
+  "Price too high",
+  "Chose a competitor",
+  "No budget / loan not approved",
+  "Postponed the decision",
+  "Machine didn't fit (features / capacity)",
+  "Delivery time too long",
+  "Not responding",
+  "Not a genuine enquiry",
+  "Other",
+];
+
 const LEAD_EXPORT_FIELDS: ExportField[] = [
   { key: "name", label: "Name", get: (l) => l.name || "" },
   { key: "company", label: "Company", get: (l) => l.company || "" },
@@ -320,6 +332,21 @@ export default function LeadsPage() {
   const [dragOverCat, setDragOverCat] = useState<string | null>(null);
   const [remarksInput, setRemarksInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  // Machine-sales qualification + loss tracking, filled in the status dialog.
+  const [expectedValueInput, setExpectedValueInput] = useState("");
+  const [timelineInput, setTimelineInput] = useState("");
+  const [decisionMakerInput, setDecisionMakerInput] = useState("");
+  const [paymentModeInput, setPaymentModeInput] = useState("");
+  const [lostReasonInput, setLostReasonInput] = useState("");
+  const [competitorInput, setCompetitorInput] = useState("");
+  const loadQualification = (l: any) => {
+    setExpectedValueInput(l.expectedValue ? String(l.expectedValue) : "");
+    setTimelineInput(l.purchaseTimeline || "");
+    setDecisionMakerInput(l.decisionMaker || "");
+    setPaymentModeInput(l.paymentMode || "");
+    setLostReasonInput(l.lostReason || "");
+    setCompetitorInput(l.competitor || "");
+  };
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date(),
@@ -1509,6 +1536,7 @@ export default function LeadsPage() {
       setPendingStatus(newStatus);
       setRemarksInput(lead.remarks || "");
       setBudgetInput(lead.budget || "");
+      loadQualification(lead);
       setSelectedProducts(lead.interestedProducts || []);
       setSelectedDate(
         lead.followUpDate
@@ -1532,7 +1560,15 @@ export default function LeadsPage() {
 
     try {
       setConverting(true);
+      const qualification = {
+        expectedValue: Number(expectedValueInput) || 0,
+        purchaseTimeline: timelineInput,
+        decisionMaker: decisionMakerInput.trim(),
+        paymentMode: paymentModeInput,
+      };
       if (newStatus === "WON") {
+        // Keep the order value on the lead: Targets and Insights read it for won orders.
+        await leadsAPI.update(lead._id || lead.id, qualification);
         await handleConvertToClient(remarksInput);
         setIsStatusModalOpen(false);
         setPendingStatus(null);
@@ -1543,6 +1579,11 @@ export default function LeadsPage() {
         remarks: remarksInput !== undefined ? remarksInput : lead.remarks,
         budget: budgetInput !== undefined ? budgetInput : lead.budget,
         interestedProducts: selectedProducts,
+        ...qualification,
+        ...(newStatus === "DROP" && {
+          lostReason: lostReasonInput,
+          competitor: competitorInput.trim(),
+        }),
       };
 
       if (!["DROP", "WON"].includes(newStatus)) {
@@ -1580,6 +1621,7 @@ export default function LeadsPage() {
     setPendingStatus(target);
     setRemarksInput(l.remarks || "");
     setBudgetInput(l.budget || "");
+    loadQualification(l);
     setSelectedProducts(l.interestedProducts || []);
     setSelectedDate(l.followUpDate ? new Date(l.followUpDate) : new Date());
     setSelectedTime(
@@ -3102,6 +3144,102 @@ export default function LeadsPage() {
             </div>
 
             {}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
+              <div className="space-y-1">
+                <Label className="text-xs text-black uppercase tracking-wider">
+                  Expected order value (₹)
+                </Label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                  value={expectedValueInput}
+                  onChange={(e) => setExpectedValueInput(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-black uppercase tracking-wider">
+                  Buying timeline
+                </Label>
+                <select
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                  value={timelineInput}
+                  onChange={(e) => setTimelineInput(e.target.value)}
+                >
+                  <option value="">Not known</option>
+                  <option value="immediate">Immediate</option>
+                  <option value="1-3 months">1–3 months</option>
+                  <option value="3-6 months">3–6 months</option>
+                  <option value="6+ months">6+ months</option>
+                  <option value="just exploring">Just exploring</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-black uppercase tracking-wider">
+                  Decision maker
+                </Label>
+                <input
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                  placeholder="Name / role"
+                  maxLength={80}
+                  value={decisionMakerInput}
+                  onChange={(e) => setDecisionMakerInput(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-black uppercase tracking-wider">
+                  Payment mode
+                </Label>
+                <select
+                  className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                  value={paymentModeInput}
+                  onChange={(e) => setPaymentModeInput(e.target.value)}
+                >
+                  <option value="">Not known</option>
+                  <option value="cash">Cash</option>
+                  <option value="loan">Loan</option>
+                  <option value="subsidy">Subsidy</option>
+                  <option value="tender">Tender</option>
+                </select>
+              </div>
+            </div>
+
+            {pendingStatus === "DROP" && (
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/50">
+                <div className="space-y-1">
+                  <Label className="text-xs text-black uppercase tracking-wider">
+                    Lost reason{" "}
+                    <span className="text-destructive font-medium">*</span>
+                  </Label>
+                  <select
+                    className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                    value={lostReasonInput}
+                    onChange={(e) => setLostReasonInput(e.target.value)}
+                  >
+                    <option value="">Choose a reason…</option>
+                    {LOST_REASONS.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-black uppercase tracking-wider">
+                    Competitor (if any)
+                  </Label>
+                  <input
+                    className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                    placeholder="Who did they buy from?"
+                    maxLength={80}
+                    value={competitorInput}
+                    onChange={(e) => setCompetitorInput(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {}
             <div className="space-y-2 pt-2 border-t border-border/50">
               <Label
                 htmlFor="remarks"
@@ -3246,6 +3384,7 @@ export default function LeadsPage() {
               disabled={
                 converting ||
                 !remarksInput.trim() ||
+                (pendingStatus === "DROP" && !lostReasonInput) ||
                 (pendingStatus &&
                   !["DROP", "WON"].includes(pendingStatus) &&
                   !selectedDate)

@@ -141,6 +141,14 @@ const settingSchema = new mongoose.Schema(
       },
     },
 
+    // Owner's money targets (Targets page / Dashboard card).
+    salesTargets: {
+      monthlyRevenue: { type: Number, default: 0, min: 0 },
+      marginPct: { type: Number, default: 0, min: 0, max: 100 },
+      fixedExpenses: [{ label: { type: String, default: "" }, amount: { type: Number, default: 0, min: 0 }, _id: false }],
+      sourceCosts: [{ source: { type: String, default: "" }, amount: { type: Number, default: 0, min: 0 }, _id: false }],
+    },
+
     // Live Performance page: each agent should make `calls` calls per `perMinutes` minutes.
     // Below `amberPct` of that pace is red, up to 100% is amber, at/above is green.
     callTargets: {

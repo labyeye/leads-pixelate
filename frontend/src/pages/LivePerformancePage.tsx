@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   Area,
   AreaChart,
   CartesianGrid,
+  Cell,
   Legend,
+  Pie,
+  PieChart,
   Bar as RBar,
   BarChart,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -129,6 +133,13 @@ const PERIODS = [
   { min: 10080, label: "per week" },
 ];
 
+const fmtMin = (m: number) =>
+  m < 60
+    ? `${Math.round(m)}m`
+    : m < 1440
+      ? `${Math.round((m / 60) * 10) / 10}h`
+      : `${Math.round((m / 1440) * 10) / 10}d`;
+
 const WINDOWS = [
   { min: 60, label: "1 hour" },
   { min: 240, label: "4 hours" },
@@ -197,6 +208,16 @@ const minutesLabel = (m: number) =>
       ? `${m / 60} hr`
       : `${m} min`;
 
+// ₹ in lakh / crore; `axis` gives the short form for chart ticks.
+const inrShort = (n: number, axis = false) => {
+  const v = Math.round(Number(n) || 0);
+  if (Math.abs(v) >= 1e7)
+    return `₹${(v / 1e7).toFixed(axis ? 1 : 2)}${axis ? "Cr" : " Cr"}`;
+  if (Math.abs(v) >= 1e5)
+    return `₹${(v / 1e5).toFixed(axis ? 1 : 2)}${axis ? "L" : " L"}`;
+  return `₹${v.toLocaleString("en-IN")}`;
+};
+
 export default function LivePerformancePage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -209,6 +230,8 @@ export default function LivePerformancePage() {
   const [error, setError] = useState("");
   const [monthly, setMonthly] = useState<any[]>([]);
   const [agentMonthly, setAgentMonthly] = useState<any[]>([]);
+  const [speed, setSpeed] = useState<any>(null);
+  const [money, setMoney] = useState<any>(null);
 
   // Target editor draft; null = not editing.
   const [draft, setDraft] = useState<{
@@ -246,6 +269,18 @@ export default function LivePerformancePage() {
         setMonthly(r?.data?.leadsChartData || []);
         setAgentMonthly(r?.data?.agentMonthly || []);
       })
+      .catch(() => {});
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    dashboardAPI
+      .getInsights(30)
+      .then((r: any) => setSpeed(r.data))
+      .catch(() => {});
+    dashboardAPI
+      .getTargets()
+      .then((r: any) => setMoney(r.data))
       .catch(() => {});
   }, [isAdmin]);
 
@@ -627,55 +662,7 @@ export default function LivePerformancePage() {
             <div className="flex flex-col gap-3">
               <div className="order-2 grid grid-cols-1 xl:grid-cols-12 gap-3 items-stretch">
                 <div
-                  className="xl:col-span-3 lp-in grid grid-cols-1 md:grid-cols-3 xl:grid-cols-1 gap-2"
-                  style={{ "--d": "0.4s" } as React.CSSProperties}
-                >
-                  {(["green", "amber", "red"] as Tone[]).map((tone) => {
-                    const list = view.groups[tone];
-                    const c = TONE[tone];
-                    return (
-                      <div
-                        key={tone}
-                        className="border-2 border-black p-2.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                        style={{ backgroundColor: c.bg }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-8 h-8 border-2 border-black flex items-center justify-center text-white text-base font-semibold tabular-nums"
-                            style={{ backgroundColor: c.hex }}
-                          >
-                            <CountUp value={list.length} delay={400} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-black uppercase tracking-wider">
-                              {c.label}
-                            </p>
-                            <p className="text-xs text-black/60">{c.hint}</p>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {list.length === 0 ? (
-                            <span className="text-xs text-black/50">
-                              Nobody here
-                            </span>
-                          ) : (
-                            list.map((r) => (
-                              <span
-                                key={r._id}
-                                className="text-[11px] font-medium bg-white border-2 border-black px-1.5 py-0"
-                              >
-                                {r.name} · {r.done}
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div
-                  className="xl:col-span-9 lp-one h-full"
+                  className="xl:col-span-12 lp-one h-full grid grid-cols-1 xl:grid-cols-12 gap-3"
                   style={{ "--d": "0.8s" } as React.CSSProperties}
                 >
                   {/* Performance table */}
@@ -721,16 +708,12 @@ export default function LivePerformancePage() {
                     };
                     const agents = Math.max(data.team.length, 1);
                     return (
-                      <div className="border-2 border-black bg-white overflow-x-auto h-full flex flex-col">
+                      <>
+                      <div className="xl:col-span-7 border-2 border-black bg-white overflow-x-auto h-full flex flex-col">
                         <div className="px-3 py-1.5 border-b-2 border-black bg-slate-100">
-                          <p className="text-xs font-semibold text-black">
+                          <p className="text-sm font-semibold text-black">
                             Team performance · last{" "}
                             {WINDOWS.find((w) => w.min === windowMin)?.label}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            Done / target for this window. A conversation is a
-                            lead moved out of New Lead; a quotation is a lead
-                            moved to the Quotation stage.
                           </p>
                         </div>
                         <table className="w-full flex-1 text-xs min-w-[480px]">
@@ -757,7 +740,7 @@ export default function LivePerformancePage() {
                               >
                                 <td className="px-3 py-1 font-medium text-black">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 border-2 border-black overflow-hidden shrink-0 bg-[#024BAB] text-white flex items-center justify-center text-[10px] font-bold">
+                                    <div className="w-6 h-6 border-2 border-black overflow-hidden shrink-0 rounded-full bg-[#024BAB] text-white flex items-center justify-center text-[10px] font-bold">
                                       {r.avatar ? (
                                         <img
                                           src={r.avatar}
@@ -812,6 +795,97 @@ export default function LivePerformancePage() {
                           </tbody>
                         </table>
                       </div>
+                      <div className="xl:col-span-5 flex flex-col gap-3 h-full">
+                        <div className="border-2 border-black bg-white flex-1 flex flex-col min-h-[200px]">
+                          <div className="px-3 py-1.5 border-b-2 border-black bg-slate-100">
+                            <p className="text-sm font-semibold text-black">
+                              How fast we respond
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              % of each day's new leads that got a first update within 1 hour · higher is better
+                            </p>
+                          </div>
+                          <div className="flex-1 p-2 min-h-[150px]">
+                            {!speed || !speed.response.daily?.length ? (
+                              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                                No worked leads yet.
+                              </div>
+                            ) : (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart
+                                  data={speed.response.daily}
+                                  margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                                  <XAxis dataKey="label" tick={{ fontSize: 10 }} minTickGap={20} />
+                                  <YAxis
+                                    domain={[0, 100]}
+                                    ticks={[0, 25, 50, 75, 100]}
+                                    tickFormatter={(v: number) => `${v}%`}
+                                    tick={{ fontSize: 11 }}
+                                    width={40}
+                                  />
+                                  <Tooltip
+                                    contentStyle={{ border: "2px solid #000", borderRadius: 0, fontSize: 12 }}
+                                    formatter={(v: any, _n: any, item: any) => [
+                                      `${v}% · ${item.payload.leads} leads, ${item.payload.worked} worked · median ${fmtMin(item.payload.medianMinutes)}`,
+                                      "Within 1h",
+                                    ]}
+                                  />
+                                  <ReferenceLine
+                                    y={80}
+                                    stroke="#16a34a"
+                                    strokeDasharray="5 4"
+                                    label={{ value: "Goal 80%", fontSize: 10, fill: "#16a34a", position: "insideTopRight" }}
+                                  />
+                                  <Line
+                                    type="linear"
+                                    dataKey="within1hPct"
+                                    stroke="#024BAB"
+                                    strokeWidth={2}
+                                    dot={{ r: 3 }}
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            )}
+                          </div>
+                        </div>
+                        <div className="border-2 border-black bg-white flex-1 flex flex-col min-h-[200px]">
+                          <div className="px-3 py-1.5 border-b-2 border-black bg-slate-100">
+                            <p className="text-sm font-semibold text-black">
+                              Response rate per agent
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              % of their new leads answered within 1 hour · last 30 days
+                            </p>
+                          </div>
+                          <div className="flex-1 p-2 min-h-[150px]">
+                            {!speed || !speed.response.perAgent?.length ? (
+                              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                                No worked leads yet.
+                              </div>
+                            ) : (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={speed.response.perAgent} layout="vertical" margin={{ left: 0, right: 12 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
+                                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={70} />
+                                  <Tooltip
+                                    contentStyle={{ border: "2px solid #000", borderRadius: 0, fontSize: 12 }}
+                                    formatter={(v: any, _n: any, item: any) => [`${v}% · median ${fmtMin(item.payload.medianMinutes)} · ${item.payload.leads} leads`, "Within 1h"]}
+                                  />
+                                  <RBar dataKey="within1hPct" stroke="#0A0A0A" strokeWidth={2}>
+                                    {speed.response.perAgent.map((r: any, i: number) => (
+                                      <Cell key={i} fill={r.within1hPct >= 80 ? "#00C48C" : r.within1hPct >= 50 ? "#FACC15" : "#EF4444"} />
+                                    ))}
+                                  </RBar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      </>
                     );
                   })()}
                 </div>
@@ -1127,6 +1201,379 @@ export default function LivePerformancePage() {
               </div>
             </div> */}
 
+            {/* Money: are we on the way to the target, and who is bringing the business */}
+            <div className="columns-1 md:columns-2 xl:columns-3 gap-3 [&>*]:mb-3 [&>*]:break-inside-avoid">
+            {money && (
+              <>
+                <div className="border-2 border-black bg-white p-3">
+                  <div className="flex flex-wrap items-baseline gap-x-4">
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Sales vs target &amp; break-even · this month
+                    </p>
+                    <Link
+                      to="/insights"
+                      className="ml-auto text-xs font-medium text-[#024BAB]"
+                    >
+                      Targets →
+                    </Link>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {inrShort(money.month.won)} won
+                    {money.target ? ` of ${inrShort(money.target)} target` : ""}
+                    {money.breakEven
+                      ? ` · break-even ${inrShort(money.breakEven)}`
+                      : ""}
+                    {money.target
+                      ? (() => {
+                          const day = new Date().getDate();
+                          const pace =
+                            (money.target * day) / (money.daily?.length || 30);
+                          return money.month.won >= pace
+                            ? " · ahead of pace"
+                            : ` · ${inrShort(pace - money.month.won)} behind pace`;
+                        })()
+                      : ""}
+                  </p>
+                  {!money.target && !money.breakEven ? (
+                    <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                      Set a monthly target and fixed costs in Insights → Targets
+                      to see this.
+                    </div>
+                  ) : (
+                    <div className="h-52">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={money.daily}
+                          margin={{ top: 8, right: 12, left: -6, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#e2e8f0"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="day"
+                            tick={{ fontSize: 10 }}
+                            tickLine={false}
+                            axisLine={false}
+                            interval={2}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 10 }}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => inrShort(v, true)}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              border: "2px solid #000",
+                              borderRadius: 0,
+                              fontSize: 12,
+                            }}
+                            formatter={(v: any) => inrShort(v)}
+                            labelFormatter={(d) => `Day ${d}`}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Line
+                            type="monotone"
+                            dataKey="won"
+                            name="Won so far"
+                            stroke="#00C48C"
+                            strokeWidth={3}
+                            dot={false}
+                            connectNulls={false}
+                          />
+                          {money.target > 0 && (
+                            <Line
+                              type="linear"
+                              dataKey="pace"
+                              name="Target pace"
+                              stroke="#FA731C"
+                              strokeWidth={2}
+                              strokeDasharray="5 4"
+                              dot={false}
+                            />
+                          )}
+                          {money.breakEven > 0 && (
+                            <Line
+                              type="linear"
+                              dataKey="breakEven"
+                              name="Break-even (expenses)"
+                              stroke="#EF4444"
+                              strokeWidth={2}
+                              strokeDasharray="2 4"
+                              dot={false}
+                            />
+                          )}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-2 border-black bg-white p-3">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
+                    Who is bringing the business
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Won orders this month, by value
+                  </p>
+                  {money.byAgent.length === 0 ? (
+                    <div className="flex h-44 items-center justify-center text-sm text-muted-foreground">
+                      No won orders yet this month.
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        height: Math.max(176, money.byAgent.length * 44),
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={money.byAgent}
+                          layout="vertical"
+                          margin={{ top: 4, right: 24, left: 8, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#e2e8f0"
+                            horizontal={false}
+                          />
+                          <XAxis
+                            type="number"
+                            tick={{ fontSize: 10 }}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={(v) => inrShort(v, true)}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={90}
+                            tick={{ fontSize: 11 }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              border: "2px solid #000",
+                              borderRadius: 0,
+                              fontSize: 12,
+                            }}
+                            formatter={(v: any, _n: any, p: any) => [
+                              `${inrShort(v)} · ${p.payload.orders} order${p.payload.orders === 1 ? "" : "s"}`,
+                              "Won",
+                            ]}
+                          />
+                          <RBar
+                            dataKey="value"
+                            name="Won value"
+                            fill="#00C48C"
+                            stroke="#0A0A0A"
+                            strokeWidth={2}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Charts for this window */}
+            <>
+              <div className="border-2 border-black bg-white p-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
+                  Work done per agent
+                </p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Against the target of {Math.round(view.perAgent * 10) / 10}{" "}
+                  for this window
+                </p>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={data.team.map((r) => ({
+                        name: r.name,
+                        Done: r.done,
+                        Target: Math.round(view.perAgent * 10) / 10,
+                      }))}
+                      margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#e2e8f0"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="name"
+                        tick={{ fontSize: 10 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval={0}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        tick={{ fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          border: "2px solid #000",
+                          borderRadius: 0,
+                          fontSize: 12,
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <RBar
+                        dataKey="Done"
+                        fill="#024BAB"
+                        stroke="#0A0A0A"
+                        strokeWidth={2}
+                      />
+                      <RBar
+                        dataKey="Target"
+                        fill="#E5E7EB"
+                        stroke="#0A0A0A"
+                        strokeWidth={2}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="border-2 border-black bg-white p-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
+                  Calls picked up
+                </p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {data.totals.calls} calls in this window
+                </p>
+                {data.totals.calls === 0 ? (
+                  <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+                    No calls yet.
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-40 w-40 shrink-0">
+                      <ResponsiveContainer>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              {
+                                name: "Picked up",
+                                value: data.totals.connected,
+                              },
+                              {
+                                name: "Not picked",
+                                value: Math.max(
+                                  0,
+                                  data.totals.calls - data.totals.connected,
+                                ),
+                              },
+                            ]}
+                            dataKey="value"
+                            innerRadius={44}
+                            outerRadius={70}
+                            paddingAngle={2}
+                            stroke="#0A0A0A"
+                            strokeWidth={2}
+                          >
+                            <Cell fill="#00C48C" />
+                            <Cell fill="#EF4444" />
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              border: "2px solid #000",
+                              borderRadius: 0,
+                              fontSize: 12,
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                        <p className="text-lg font-semibold leading-none">
+                          {connectRate}%
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          pick-up
+                        </p>
+                      </div>
+                    </div>
+                    <ul className="space-y-1.5 text-xs">
+                      <li className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 border border-black"
+                          style={{ background: "#00C48C" }}
+                        />
+                        Picked up{" "}
+                        <b className="ml-auto tabular-nums">
+                          {data.totals.connected}
+                        </b>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 border border-black"
+                          style={{ background: "#EF4444" }}
+                        />
+                        Not picked{" "}
+                        <b className="ml-auto tabular-nums">
+                          {Math.max(
+                            0,
+                            data.totals.calls - data.totals.connected,
+                          )}
+                        </b>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+
+            {/* Speed: first response + stuck leads (last 30 days) */}
+            {speed && (
+              <>
+                {[
+                  [
+                    "First response (30 days)",
+                    speed.response.worked
+                      ? speed.response.avgMinutes >= 60
+                        ? `${(speed.response.avgMinutes / 60).toFixed(1)} h`
+                        : `${speed.response.avgMinutes} min`
+                      : "—",
+                    "average time to first status update",
+                  ],
+                  [
+                    "Contacted within 1 hour",
+                    speed.response.worked
+                      ? `${speed.response.within1hPct}%`
+                      : "—",
+                    `${speed.response.worked} of ${speed.response.total} leads worked`,
+                  ],
+                  [
+                    "Stuck for 7+ days",
+                    String(speed.stuck.count),
+                    "open leads with no movement",
+                  ],
+                ].map(([label, value, sub]) => (
+                  <Link
+                    key={label}
+                    to="/insights"
+                    className="block border-2 border-black bg-white p-3 hover:bg-slate-50"
+                  >
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="text-xl font-semibold tabular-nums">
+                      {value}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">{sub}</p>
+                  </Link>
+                ))}
+              </>
+            )}
+
             {/* Updates in this window */}
             <div className="border-2 border-black bg-white">
               <div className="px-3 py-2 border-b-2 border-black bg-slate-100 flex items-center gap-2">
@@ -1179,6 +1626,7 @@ export default function LivePerformancePage() {
                   })}
                 </ul>
               )}
+            </div>
             </div>
 
             {/* Pipeline snapshot */}

@@ -1258,6 +1258,7 @@ export default function SettingsPage() {
       label: "Lead Statuses",
       icon: Tag,
       adminOnly: true,
+      ownerOnly: true,
     },
     {
       id: "ai-calling",

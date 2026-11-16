@@ -88,7 +88,30 @@ const updateSettings = asyncHandler(async (req, res) => {
     }
   }
 
+  // The lead pipeline (stages, groups, labels) is the account owner's to change. Other admins save
+  // the rest of the settings page; these fields are dropped rather than rejected so that works.
+  if (!(await isOwner(req.user))) {
+    for (const f of ["customLeadStatuses", "customLeadCategories", "hiddenLeadStatuses", "leadStatusLabels"])
+      delete body[f];
+  }
+
   let setting = await Setting.findOne(tenantFilter);
+
+  if ("salesTargets" in body) {
+    const t = body.salesTargets || {};
+    const num = (v, max = 1e12) => Math.min(Math.max(Number(v) || 0, 0), max);
+    const rows = (arr, key) =>
+      (Array.isArray(arr) ? arr : [])
+        .slice(0, 40)
+        .map((r) => ({ [key]: String(r?.[key] || "").trim().slice(0, 60), amount: num(r?.amount) }))
+        .filter((r) => r[key]);
+    body.salesTargets = {
+      monthlyRevenue: num(t.monthlyRevenue),
+      marginPct: num(t.marginPct, 100),
+      fixedExpenses: rows(t.fixedExpenses, "label"),
+      sourceCosts: rows(t.sourceCosts, "source"),
+    };
+  }
 
   if ("hiddenLeadStatuses" in body)
     body.hiddenLeadStatuses = sanitizeHiddenStatuses(body.hiddenLeadStatuses);
