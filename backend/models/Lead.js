@@ -183,6 +183,7 @@ const leadSchema = new mongoose.Schema(
         status: String,
         timestamp: { type: Date, default: Date.now },
         changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        byAI: Boolean, // changed by the AI calling agent, which has no user account
         remarks: String,
       },
     ],

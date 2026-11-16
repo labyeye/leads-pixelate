@@ -1181,7 +1181,7 @@ const connectJustdial = asyncHandler(async (req, res) => {
   });
 
   const backendUrl =
-    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
+    process.env.BACKEND_URL || "http://localhost:4100";
   res.json({
     success: true,
     message:
@@ -1224,7 +1224,7 @@ const getJustdialStatus = asyncHandler(async (req, res) => {
   });
 
   const backendUrl =
-    process.env.BACKEND_URL || "https://leads-backend.pixelatenest.com";
+    process.env.BACKEND_URL || "http://localhost:4100";
 
   res.json({
     success: true,

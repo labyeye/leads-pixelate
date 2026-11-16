@@ -35,6 +35,11 @@ interface AICallSettings {
   twilioAccountSid: string;
   twilioAuthToken: string;
   twilioPhoneNumber: string;
+  callChannel: "phone" | "whatsapp";
+  overrideFirstMessage: boolean;
+  whatsappPhoneNumberId: string;
+  whatsappPermissionTemplateName: string;
+  whatsappPermissionTemplateLang: string;
   callDelayMinutes: number;
   callingHoursStart: string;
   callingHoursEnd: string;
@@ -66,6 +71,11 @@ export default function AICallingSettingsTab() {
     twilioAccountSid: "",
     twilioAuthToken: "",
     twilioPhoneNumber: "",
+    callChannel: "phone",
+    overrideFirstMessage: true,
+    whatsappPhoneNumberId: "",
+    whatsappPermissionTemplateName: "",
+    whatsappPermissionTemplateLang: "en",
     callDelayMinutes: 1,
     callingHoursStart: "09:00",
     callingHoursEnd: "19:00",
@@ -313,6 +323,128 @@ export default function AICallingSettingsTab() {
           account, then Save. Use Test Voice Engine to verify it.
         </p>
       </div>
+
+      {/* Call channel: normal phone call or WhatsApp call */}
+      <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_#000] space-y-3">
+        <label className="text-sm font-medium text-black uppercase tracking-wide">
+          Call the lead on
+        </label>
+        <div className="flex border-2 border-black w-fit">
+          {(
+            [
+              ["phone", "Phone call"],
+              ["whatsapp", "WhatsApp call"],
+            ] as const
+          ).map(([value, label], i) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() =>
+                setSettings((prev) => ({ ...prev, callChannel: value }))
+              }
+              className={`px-4 py-1.5 text-xs font-medium ${i > 0 ? "border-l-2 border-black" : ""} ${
+                (settings.callChannel || "phone") === value
+                  ? "bg-[#024BAB] text-white"
+                  : "bg-white text-black hover:bg-slate-100"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {settings.callChannel === "whatsapp" ? (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500 font-medium">
+              The AI agent rings the lead inside WhatsApp. If the lead has not
+              allowed calls yet, WhatsApp first sends your call permission
+              template, and the call is placed as soon as they tap Allow.
+              Connect your WhatsApp Business account in ElevenLabs first.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-black">
+                  WhatsApp phone number ID
+                </label>
+                <input
+                  type="text"
+                  value={settings.whatsappPhoneNumberId || ""}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      whatsappPhoneNumberId: e.target.value.trim(),
+                    }))
+                  }
+                  placeholder="Copy from ElevenLabs → WhatsApp"
+                  className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-medium font-mono focus:outline-none focus:border-blue-600"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-black">
+                  Call permission template name
+                </label>
+                <input
+                  type="text"
+                  value={settings.whatsappPermissionTemplateName || ""}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      whatsappPermissionTemplateName: e.target.value.trim(),
+                    }))
+                  }
+                  placeholder="lead_call_permission_v1"
+                  className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-medium font-mono focus:outline-none focus:border-blue-600"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-black">
+                  Template language
+                </label>
+                <input
+                  type="text"
+                  value={settings.whatsappPermissionTemplateLang || ""}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      whatsappPermissionTemplateLang: e.target.value.trim(),
+                    }))
+                  }
+                  placeholder="en"
+                  className="w-full px-3 py-2 border-2 border-black bg-white text-xs font-medium font-mono focus:outline-none focus:border-blue-600"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 font-medium">
+            The AI agent dials the lead's number from the phone number imported
+            in ElevenLabs (Twilio, SIP or Exotel).
+          </p>
+        )}
+      </div>
+
+      {/* Greeting: override (paid ElevenLabs plans) or {{greeting}} variable (free plan) */}
+      <label className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_#000] flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          className="mt-0.5 h-4 w-4 accent-[#024BAB]"
+          checked={settings.overrideFirstMessage !== false}
+          onChange={(e) =>
+            setSettings((prev) => ({
+              ...prev,
+              overrideFirstMessage: e.target.checked,
+            }))
+          }
+        />
+        <span className="text-xs font-medium text-black">
+          Replace the agent's first message with the greeting below
+          <span className="block text-gray-500 mt-0.5">
+            Needs the "First message" override in ElevenLabs, which is not
+            available on the free plan. If you turn this off, set the agent's
+            first message in ElevenLabs to {"{{greeting}}"} and the greeting is
+            still spoken.
+          </span>
+        </span>
+      </label>
 
       {testResult && (
         <div

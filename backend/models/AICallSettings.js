@@ -47,6 +47,20 @@ const AICallSettingsSchema = new Schema(
       type: String,
       default: "",
     },
+    // "phone" dials through a Twilio/SIP/Exotel number; "whatsapp" rings the lead's WhatsApp
+    // through the WhatsApp Business account connected in ElevenLabs.
+    callChannel: {
+      type: String,
+      enum: ["phone", "whatsapp"],
+      default: "phone",
+    },
+    whatsappPhoneNumberId: { type: String, default: "" },
+    // Meta-approved template with a call permission request; sent when the lead hasn't allowed calls yet.
+    whatsappPermissionTemplateName: { type: String, default: "" },
+    whatsappPermissionTemplateLang: { type: String, default: "en" },
+    // ElevenLabs' free plan doesn't allow overriding the agent's first message. When off, the greeting
+    // is sent as the {{greeting}} dynamic variable instead (set the agent's first message to {{greeting}}).
+    overrideFirstMessage: { type: Boolean, default: true },
     callDelayMinutes: {
       type: Number,
       default: 1,

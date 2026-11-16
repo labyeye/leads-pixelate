@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://leads-backend.pixelatenest.com/api/:path*"
+      "destination": "http://localhost:4100/api/:path*"
     },
     {
       "source": "/(.*)",

@@ -3,7 +3,8 @@ const Lead = require("../models/Lead");
 const User = require("../models/User");
 const CallLog = require("../models/CallLog");
 const ActivityLog = require("../models/ActivityLog");
-const { METRICS, statusEvents, countByUser, targetOf } = require("../utils/performanceMetrics");
+const { METRICS, AI_USER_ID, AI_NAME, statusEvents, countByUser, targetOf } = require("../utils/performanceMetrics");
+const AICallSettings = require("../models/AICallSettings");
 const Setting = require("../models/Setting");
 const Quotation = require("../models/Quotation");
 
@@ -435,9 +436,14 @@ const getLiveStats = asyncHandler(async (req, res) => {
   const bucketOf = (field) => ({
     $floor: { $divide: [{ $subtract: [field, since] }, bucketMs] },
   });
-  const humanCalls = { ...tf, initiatedBy: { $ne: null }, createdAt: { $gte: since } };
+  // Calls the AI agent spoke on (auto-dialled, or started by someone with the "AI call" button).
+  const AI_CALL_TYPES = ["automated_ai", "manual_in_app"];
+  const humanCalls = { ...tf, initiatedBy: { $ne: null }, callType: { $nin: AI_CALL_TYPES }, createdAt: { $gte: since } };
+  const connectedSum = {
+    $sum: { $cond: [{ $and: [{ $eq: ["$status", "completed"] }, { $gt: ["$durationSeconds", 0] }] }, 1, 0] },
+  };
 
-  const [setting, agents, callsByAgent, callTrend, leadTrend, events, leadActivity, recentLeads, aiCalls, statusRows] =
+  const [setting, agents, callsByAgent, callTrend, leadTrend, events, leadActivity, recentLeads, aiCallRows, statusRows, aiSettings] =
     await Promise.all([
       Setting.findOne({ tenantId: req.user.tenantId || null }).select("callTargets").lean(),
       User.find({ ...tf, status: "active", role: { $in: ["admin", "super_admin", "sales_executive"] } })
@@ -449,9 +455,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
           $group: {
             _id: "$initiatedBy",
             calls: { $sum: 1 },
-            connected: {
-              $sum: { $cond: [{ $and: [{ $eq: ["$status", "completed"] }, { $gt: ["$durationSeconds", 0] }] }, 1, 0] },
-            },
+            connected: connectedSum,
             talkSeconds: { $sum: "$durationSeconds" },
             lastCallAt: { $max: "$createdAt" },
           },
@@ -481,9 +485,23 @@ const getLiveStats = asyncHandler(async (req, res) => {
         .select("name company source status phone assignedTo createdAt")
         .populate("assignedTo", "name")
         .lean(),
-      CallLog.countDocuments({ ...tf, initiatedBy: null, createdAt: { $gte: since } }),
+      CallLog.aggregate([
+        { $match: { ...tf, callType: { $in: AI_CALL_TYPES }, createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: null,
+            calls: { $sum: 1 },
+            connected: connectedSum,
+            talkSeconds: { $sum: "$durationSeconds" },
+            lastCallAt: { $max: "$createdAt" },
+          },
+        },
+      ]),
       Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$status", n: { $sum: 1 } } }]),
+      AICallSettings.findOne(tf).select("enabled").lean(),
     ]);
+  const ai = aiCallRows[0] || { calls: 0, connected: 0, talkSeconds: 0, lastCallAt: null };
+  const aiCalls = ai.calls;
 
   const callMap = new Map(callsByAgent.map((r) => [String(r._id), r]));
   const pendingLeadIds = new Set(
@@ -493,7 +511,8 @@ const getLiveStats = asyncHandler(async (req, res) => {
   // Everything else a person does to a lead (notes, remarks, follow-ups, edits) comes from the activity log.
   const changeMap = new Map();
   for (const a of leadActivity) {
-    if (a.user) changeMap.set(String(a.user), (changeMap.get(String(a.user)) || 0) + 1);
+    const who = a.user ? String(a.user) : a.userName === AI_NAME ? AI_USER_ID : "";
+    if (who) changeMap.set(who, (changeMap.get(who) || 0) + 1);
   }
   const countBy = setting?.callTargets?.countBy === "calls" ? "calls" : "updates";
   const updates = leadActivity.map((a) => ({
@@ -530,6 +549,28 @@ const getLiveStats = asyncHandler(async (req, res) => {
       };
     })
     .sort((a, b) => b.calls - a.calls);
+
+  // The AI calling agent sits in the table as one more team member once it is switched on or has worked.
+  const aiWork = perUser.get(AI_USER_ID);
+  if (aiSettings?.enabled || ai.calls || aiWork) {
+    const m = aiWork || { calls: 0, conversations: 0, quotations: 0, visits: 0 };
+    team.push({
+      _id: AI_USER_ID,
+      name: AI_NAME,
+      role: "ai_agent",
+      isAI: true,
+      calls: ai.calls,
+      statusUpdates: m.calls,
+      done: countBy === "calls" ? ai.calls : m.calls,
+      conversations: m.conversations,
+      quotations: m.quotations,
+      visits: m.visits,
+      connected: ai.connected,
+      talkSeconds: ai.talkSeconds,
+      lastCallAt: ai.lastCallAt,
+      statusChanges: changeMap.get(AI_USER_ID) || 0,
+    });
+  }
 
   const series = (rows) => {
     const byIdx = new Map(rows.map((r) => [r._id, r.n]));

@@ -15,6 +15,11 @@ const METRICS = [
   { key: "visits", label: "Visits scheduled" },
 ];
 
+// The AI calling agent has no user account; its status changes are filed under this id.
+const AI_USER_ID = "ai";
+const AI_NAME = "AI Agent";
+const isAIEntry = (e) => !e.changedBy && (e.byAI || /^AI call:/.test(e.remarks || ""));
+
 async function categoryMap(tenantId) {
   const s = await Setting.findOne({ tenantId: tenantId || null }).select("customLeadStatuses customLeadCategories hiddenLeadStatuses").lean();
   const map = new Map();
@@ -35,8 +40,10 @@ async function statusEvents(tf, since, userId) {
   for (const l of leads) {
     const h = l.statusHistory || [];
     h.forEach((e, i) => {
-      if (!e.timestamp || new Date(e.timestamp) < since || !e.changedBy) return;
-      if (userId && String(e.changedBy) !== String(userId)) return;
+      if (!e.timestamp || new Date(e.timestamp) < since) return;
+      const ai = isAIEntry(e);
+      if (!e.changedBy && !ai) return;
+      if (userId && (ai || String(e.changedBy) !== String(userId))) return;
       // A hand-made lead starts with a "PENDING CONTACT" creation entry; integration leads have an
       // empty history, so their first entry is a real change from PENDING CONTACT.
       if (i === 0 && e.status === "PENDING CONTACT") return;
@@ -44,7 +51,7 @@ async function statusEvents(tf, since, userId) {
       const fromCat = cat.get(from);
       const toCat = cat.get(e.status);
       out.push({
-        userId: String(e.changedBy),
+        userId: ai ? AI_USER_ID : String(e.changedBy),
         leadId: l._id,
         at: e.timestamp,
         from,
@@ -80,4 +87,4 @@ function targetOf(ct, key) {
   return { count: Number(t.count) || 0, perMinutes: Number(t.perMinutes) || 1440 };
 }
 
-module.exports = { METRICS, statusEvents, countByUser, targetOf };
+module.exports = { METRICS, AI_USER_ID, AI_NAME, statusEvents, countByUser, targetOf };

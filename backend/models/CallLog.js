@@ -46,6 +46,11 @@ const CallLogSchema = new Schema(
       type: String,
       required: true,
     },
+    channel: {
+      type: String,
+      enum: ["phone", "whatsapp"],
+      default: "phone",
+    },
     durationSeconds: {
       type: Number,
       default: 0,

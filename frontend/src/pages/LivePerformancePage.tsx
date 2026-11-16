@@ -33,6 +33,7 @@ import {
   Wifi,
   WifiOff,
   AlertTriangle,
+  Bot,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatCard } from "@/components/ui/StatCard";
@@ -65,6 +66,7 @@ interface TeamRow {
   talkSeconds: number;
   lastCallAt: string | null;
   statusChanges: number;
+  isAI?: boolean; // the AI calling agent: listed with the team, not held to the human targets
 }
 
 interface Target {
@@ -306,7 +308,7 @@ export default function LivePerformancePage() {
       const pct = perAgent > 0 ? (t.done / perAgent) * 100 : 0;
       return { ...t, pct, tone: toneFor(pct, targets.amberPct) };
     });
-    const teamTarget = perAgent * Math.max(team.length, 1);
+    const teamTarget = perAgent * Math.max(team.filter((m) => !m.isAI).length, 1);
     const teamPct = teamTarget > 0 ? (totals.done / teamTarget) * 100 : 0;
     const groups: Record<Tone, typeof rows> = { green: [], amber: [], red: [] };
     rows.forEach((r) => groups[r.tone].push(r));
@@ -706,7 +708,7 @@ export default function LivePerformancePage() {
                         bg: TONE[tone].bg,
                       };
                     };
-                    const agents = Math.max(data.team.length, 1);
+                    const agents = Math.max(data.team.filter((m) => !m.isAI).length, 1);
                     return (
                       <>
                       <div className="xl:col-span-7 border-2 border-black bg-white overflow-x-auto h-full flex flex-col">
@@ -736,12 +738,14 @@ export default function LivePerformancePage() {
                             {data.team.map((r) => (
                               <tr
                                 key={r._id}
-                                className="border-b border-slate-200"
+                                className={cn("border-b border-slate-200", r.isAI && "bg-[#024BAB]/5")}
                               >
                                 <td className="px-3 py-1 font-medium text-black">
                                   <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 border-2 border-black overflow-hidden shrink-0 rounded-full bg-[#024BAB] text-white flex items-center justify-center text-[10px] font-bold">
-                                      {r.avatar ? (
+                                    <div className={cn("w-6 h-6 border-2 border-black overflow-hidden shrink-0 rounded-full text-white flex items-center justify-center text-[10px] font-bold", r.isAI ? "bg-black" : "bg-[#024BAB]")}>
+                                      {r.isAI ? (
+                                        <Bot className="w-3.5 h-3.5" />
+                                      ) : r.avatar ? (
                                         <img
                                           src={r.avatar}
                                           alt={r.name}
@@ -752,10 +756,15 @@ export default function LivePerformancePage() {
                                       )}
                                     </div>
                                     {r.name}
+                                    {r.isAI && (
+                                      <span className="text-[10px] font-normal text-muted-foreground whitespace-nowrap">
+                                        {r.calls} {r.calls === 1 ? "call" : "calls"} · {r.connected} answered
+                                      </span>
+                                    )}
                                   </div>
                                 </td>
                                 {cols.map((c) => {
-                                  const x = cell(value(r, c), expected(c));
+                                  const x = cell(value(r, c), r.isAI ? 0 : expected(c));
                                   return (
                                     <td
                                       key={c.key}
@@ -1396,7 +1405,7 @@ export default function LivePerformancePage() {
                       data={data.team.map((r) => ({
                         name: r.name,
                         Done: r.done,
-                        Target: Math.round(view.perAgent * 10) / 10,
+                        Target: r.isAI ? undefined : Math.round(view.perAgent * 10) / 10,
                       }))}
                       margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
                     >
