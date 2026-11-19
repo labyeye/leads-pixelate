@@ -1,9 +1,10 @@
 const asyncHandler = require("express-async-handler");
+const mongoose = require("mongoose");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const CallLog = require("../models/CallLog");
 const ActivityLog = require("../models/ActivityLog");
-const { METRICS, AI_USER_ID, AI_NAME, statusEvents, countByUser, targetOf } = require("../utils/performanceMetrics");
+const { METRICS, AI_USER_ID, AI_NAME, AI_CALL_TYPES, aiCalledLeadIds, statusEvents, countByUser, targetOf } = require("../utils/performanceMetrics");
 const AICallSettings = require("../models/AICallSettings");
 const Setting = require("../models/Setting");
 const Quotation = require("../models/Quotation");
@@ -290,6 +291,23 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   const agentUsers = topIds.length ? await User.find({ _id: { $in: topIds.map(([id]) => id) } }).select("name").lean() : [];
   const nameOf = new Map(agentUsers.map((u) => [String(u._id), u.name]));
   const trendAgents = topIds.map(([id]) => nameOf.get(id) || "Former user");
+  // The AI agent gets its own line: clients won among the leads it called.
+  const aiLeadIds = [...(await aiCalledLeadIds(tf))];
+  if (aiLeadIds.length) {
+    const aiWon = [0, 0, 0, 0, 0, 0];
+    const rows = await Lead.find({ ...tf, _id: { $in: aiLeadIds }, status: "WON", updatedAt: { $gte: monthBoundaries[0].monthStart } })
+      .select("updatedAt")
+      .lean();
+    for (const l of rows) {
+      const d = new Date(l.updatedAt);
+      const i = d.getFullYear() * 12 + d.getMonth() - startIdx;
+      if (i >= 0 && i <= 5) aiWon[i]++;
+    }
+    if (aiWon.some(Boolean)) {
+      topIds.push([AI_USER_ID, aiWon]);
+      trendAgents.push(AI_NAME);
+    }
+  }
   const performerTrend = {
     agents: trendAgents,
     data: monthBoundaries.map((m, i) => ({
@@ -322,6 +340,21 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     pending: r.assigned - r.worked,
     pct: r.assigned ? Math.round((r.worked / r.assigned) * 100) : 0,
   }));
+  if (aiLeadIds.length) {
+    const [r] = await Lead.aggregate([
+      { $match: { ...tf, _id: { $in: aiLeadIds.map((id) => new mongoose.Types.ObjectId(id)) }, createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: null, assigned: { $sum: 1 }, worked: { $sum: { $cond: [{ $ne: ["$status", "PENDING CONTACT"] }, 1, 0] } } } },
+    ]);
+    if (r)
+      agentMonthly.push({
+        name: AI_NAME,
+        isAI: true,
+        assigned: r.assigned,
+        worked: r.worked,
+        pending: r.assigned - r.worked,
+        pct: r.assigned ? Math.round((r.worked / r.assigned) * 100) : 0,
+      });
+  }
 
   // Leads per day per source for the last 30 days (line graph). Days with no leads are filled with 0.
   const DAILY_DAYS = 30;
@@ -428,17 +461,29 @@ const LIVE_BUCKETS = { 60: 12, 240: 16, 480: 16, 1440: 24, 10080: 14 };
 const getLiveStats = asyncHandler(async (req, res) => {
   const tf = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const asked = parseInt(req.query.window, 10);
-  const windowMin = LIVE_WINDOWS.includes(asked) ? asked : 60;
-  const now = new Date();
-  const since = new Date(now.getTime() - windowMin * 60000);
-  const buckets = LIVE_BUCKETS[windowMin];
-  const bucketMs = (windowMin * 60000) / buckets;
+  // ?from=&to= (ISO) is a custom range (up to 2 years); otherwise a rolling window ending now.
+  const fromQ = new Date(req.query.from || "");
+  const toQ = new Date(req.query.to || "");
+  const custom = !isNaN(fromQ) && !isNaN(toQ) && toQ > fromQ && toQ - fromQ <= 731 * 86400000;
+  const now = custom ? new Date(Math.min(toQ.getTime(), Date.now())) : new Date();
+  const since = custom ? fromQ : new Date(now.getTime() - (LIVE_WINDOWS.includes(asked) ? asked : 60) * 60000);
+  const windowMin = Math.max(1, Math.round((now - since) / 60000));
+  const DAY_MS = 86400000;
+  const spanDays = (now - since) / DAY_MS;
+  // Custom ranges: hourly up to 2 days, daily up to 2 months, weekly after that.
+  const bucketMs = !custom
+    ? (windowMin * 60000) / (LIVE_BUCKETS[windowMin] || 12)
+    : spanDays <= 2
+      ? 3600000
+      : spanDays <= 62
+        ? DAY_MS
+        : 7 * DAY_MS;
+  const buckets = Math.max(1, Math.ceil((now - since) / bucketMs));
+  const inRange = { $gte: since, $lte: now };
   const bucketOf = (field) => ({
     $floor: { $divide: [{ $subtract: [field, since] }, bucketMs] },
   });
-  // Calls the AI agent spoke on (auto-dialled, or started by someone with the "AI call" button).
-  const AI_CALL_TYPES = ["automated_ai", "manual_in_app"];
-  const humanCalls = { ...tf, initiatedBy: { $ne: null }, callType: { $nin: AI_CALL_TYPES }, createdAt: { $gte: since } };
+  const humanCalls = { ...tf, initiatedBy: { $ne: null }, callType: { $nin: AI_CALL_TYPES }, createdAt: inRange };
   const connectedSum = {
     $sum: { $cond: [{ $and: [{ $eq: ["$status", "completed"] }, { $gt: ["$durationSeconds", 0] }] }, 1, 0] },
   };
@@ -466,27 +511,33 @@ const getLiveStats = asyncHandler(async (req, res) => {
         { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
       ]),
       Lead.aggregate([
-        { $match: { ...tf, createdAt: { $gte: since } } },
-        { $group: { _id: bucketOf("$createdAt"), n: { $sum: 1 } } },
+        { $match: { ...tf, createdAt: inRange } },
+        {
+          $group: {
+            _id: bucketOf("$createdAt"),
+            n: { $sum: 1 },
+            worked: { $sum: { $cond: [{ $ne: ["$status", "PENDING CONTACT"] }, 1, 0] } },
+          },
+        },
       ]),
-      statusEvents(tf, since),
+      statusEvents(tf, since, undefined, now),
       ActivityLog.find({
         ...tf,
         module: "Lead",
         action: { $in: ["UPDATE", "STATUS_UPDATED", "NOTE_ADDED", "LEAD_CONVERTED"] },
-        timestamp: { $gte: since },
+        timestamp: inRange,
       })
         .sort({ timestamp: -1 })
         .limit(2000)
         .lean(),
-      Lead.find({ ...tf })
+      Lead.find({ ...tf, ...(custom ? { createdAt: inRange } : {}) })
         .sort({ createdAt: -1 })
         .limit(12)
         .select("name company source status phone assignedTo createdAt")
         .populate("assignedTo", "name")
         .lean(),
       CallLog.aggregate([
-        { $match: { ...tf, callType: { $in: AI_CALL_TYPES }, createdAt: { $gte: since } } },
+        { $match: { ...tf, callType: { $in: AI_CALL_TYPES }, createdAt: inRange } },
         {
           $group: {
             _id: null,
@@ -586,6 +637,49 @@ const getLiveStats = asyncHandler(async (req, res) => {
   }
   const callSeries = countBy === "calls" ? series(callTrend) : series([...statusTrend].map(([_id, n]) => ({ _id, n })));
   const leadSeries = series(leadTrend);
+  const workedByIdx = new Map(leadTrend.map((r) => [r._id, r.worked]));
+
+  // Leads created in the range per salesperson: assigned vs worked (moved past PENDING CONTACT).
+  const rangeRows = await Lead.aggregate([
+    { $match: { ...tf, deletedAt: null, assignedTo: { $ne: null }, createdAt: inRange } },
+    {
+      $group: {
+        _id: "$assignedTo",
+        assigned: { $sum: 1 },
+        worked: { $sum: { $cond: [{ $ne: ["$status", "PENDING CONTACT"] }, 1, 0] } },
+      },
+    },
+    { $sort: { assigned: -1 } },
+    { $limit: 15 },
+  ]);
+  const rangeNames = new Map(
+    (rangeRows.length ? await User.find({ _id: { $in: rangeRows.map((r) => r._id) } }).select("name").lean() : []).map(
+      (u) => [String(u._id), u.name],
+    ),
+  );
+  const agentRange = rangeRows.map((r) => ({
+    name: rangeNames.get(String(r._id)) || "Former user",
+    assigned: r.assigned,
+    worked: r.worked,
+    pending: r.assigned - r.worked,
+    pct: r.assigned ? Math.round((r.worked / r.assigned) * 100) : 0,
+  }));
+  const aiIds = [...(await aiCalledLeadIds(tf))];
+  if (aiIds.length) {
+    const [r] = await Lead.aggregate([
+      { $match: { ...tf, _id: { $in: aiIds.map((id) => new mongoose.Types.ObjectId(id)) }, createdAt: inRange } },
+      { $group: { _id: null, assigned: { $sum: 1 }, worked: { $sum: { $cond: [{ $ne: ["$status", "PENDING CONTACT"] }, 1, 0] } } } },
+    ]);
+    if (r)
+      agentRange.push({
+        name: AI_NAME,
+        isAI: true,
+        assigned: r.assigned,
+        worked: r.worked,
+        pending: r.assigned - r.worked,
+        pct: r.assigned ? Math.round((r.worked / r.assigned) * 100) : 0,
+      });
+  }
 
   res.json({
     success: true,
@@ -617,7 +711,10 @@ const getLiveStats = asyncHandler(async (req, res) => {
         aiCalls,
       },
       team,
-      trend: callSeries.map((p, i) => ({ t: p.t, calls: p.n, leads: leadSeries[i].n })),
+      trend: callSeries.map((p, i) => ({ t: p.t, calls: p.n, leads: leadSeries[i].n, worked: workedByIdx.get(i) || 0 })),
+      custom,
+      bucketMin: Math.round(bucketMs / 60000),
+      agentRange,
       recentLeads,
       updates: updates.slice(0, 40),
       statusCounts: Object.fromEntries(statusRows.map((r) => [r._id, r.n])),

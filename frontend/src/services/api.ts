@@ -490,10 +490,22 @@ export const usersAPI = {
       method: "PUT",
       body: JSON.stringify(updates),
     }),
-  delete: (id: string) =>
-    request<{ success: boolean; message: string }>(`/users/${id}`, {
+  // transferTo: user id to receive their leads, "" to leave them unassigned.
+  delete: (id: string, transferTo?: string) =>
+    request<{
+      success: boolean;
+      message: string;
+      leadsMoved?: number;
+      movedTo?: string | null;
+    }>(`/users/${id}`, {
       method: "DELETE",
+      body:
+        transferTo === undefined ? undefined : JSON.stringify({ transferTo }),
     }),
+  leadCount: (id: string) =>
+    request<{ success: boolean; data: { count: number } }>(
+      `/users/${id}/lead-count`,
+    ),
   updateAutoAssign: (userIds: string[]) =>
     request<{ success: boolean; message: string }>("/users/auto-assign", {
       method: "POST",
@@ -750,11 +762,24 @@ export const justdialSyncAPI = {
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/dashboard/stats"),
   getMyPace: () => request<{ success: boolean; data: any }>("/dashboard/my-pace"),
-  getLive: (windowMin: number) =>
-    request<{ success: boolean; data: any }>(`/dashboard/live?window=${windowMin}`),
-  getTargets: () => request<{ success: boolean; data: any }>("/dashboard/targets"),
-  getInsights: (days = 90) =>
-    request<{ success: boolean; data: any }>(`/dashboard/insights?days=${days}`),
+  // range: exact ISO from/to (custom filter); without it, a rolling window ending now.
+  getLive: (windowMin: number, range?: { from: string; to: string }) =>
+    request<{ success: boolean; data: any }>(
+      range
+        ? `/dashboard/live?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`
+        : `/dashboard/live?window=${windowMin}`,
+    ),
+  // month: "YYYY-MM"; default is this month.
+  getTargets: (month?: string) =>
+    request<{ success: boolean; data: any }>(
+      `/dashboard/targets${month ? `?month=${month}` : ""}`,
+    ),
+  getInsights: (days = 90, range?: { from: string; to: string }) =>
+    request<{ success: boolean; data: any }>(
+      range
+        ? `/dashboard/insights?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`
+        : `/dashboard/insights?days=${days}`,
+    ),
 };
 
 export const productsAPI = {

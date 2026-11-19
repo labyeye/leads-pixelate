@@ -21,6 +21,7 @@ import {
   getCategoryByStatus,
   getStatusColor,
   getStatusLabel,
+  contactTagsEnabled,
 } from '../constants/statusConstants';
 import FieldLabel from './FieldLabel';
 
@@ -171,7 +172,8 @@ export default function StatusFlow({
   }, [visible]);
 
   const sameStatus = lead?.status === pending;
-  const showTag = TAG_STATUSES.includes(pending) && !sameStatus;
+  const showTag =
+    TAG_STATUSES.includes(pending) && !sameStatus && contactTagsEnabled();
   const showFollowUp = !['WON', 'DROP', 'VISIT SCHEDULED'].includes(pending);
 
   const prepareForm = (status: string, presetTag?: string) => {
@@ -195,7 +197,7 @@ export default function StatusFlow({
   };
 
   const pick = (status: string) => {
-    if (status === 'DISCUSSION') {
+    if (status === 'DISCUSSION' && contactTagsEnabled()) {
       setPending(status);
       setStep('tag');
     } else {
@@ -246,7 +248,8 @@ export default function StatusFlow({
           interestedProducts: products,
         };
         if (budget.trim()) data.budget = budget;
-        if (TAG_STATUSES.includes(pending) && tag) data.contactTag = tag;
+        if (TAG_STATUSES.includes(pending) && tag && contactTagsEnabled())
+          data.contactTag = tag;
         if (showFollowUp) data.followUpDate = followUp;
         if (pending === 'VISIT SCHEDULED') {
           data.visitScheduledDate = visitAt;

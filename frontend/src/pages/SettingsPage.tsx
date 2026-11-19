@@ -39,6 +39,7 @@ import {
   statusColors,
   setStatusOverrides,
   setCustomLeadStatuses,
+  setContactTagsEnabled,
   isCustomLeadStatus,
   type CustomLeadStatus,
 } from "@/components/leads/statusConstants";
@@ -1167,6 +1168,7 @@ export default function SettingsPage() {
       } = settings; // the designers save their own
       const res = await settingsAPI.update(generalSettings);
       setStatusOverrides(res.data?.leadStatusLabels);
+      setContactTagsEnabled(res.data?.contactTagsEnabled);
       setCustomLeadStatuses(
         res.data?.customLeadStatuses,
         res.data?.customLeadCategories || [],
@@ -1752,6 +1754,28 @@ export default function SettingsPage() {
             )}
             {activeTab === "statuses" && (
               <div className="space-y-3">
+                <label className="flex items-start gap-3 border-2 border-black bg-white p-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-black"
+                    checked={settings?.contactTagsEnabled !== false}
+                    onChange={(e) =>
+                      setSettings((prev: any) => ({
+                        ...prev,
+                        contactTagsEnabled: e.target.checked,
+                      }))
+                    }
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-black">
+                      Ask for a contact tag (HOT / WARM / COLD)
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      When a lead moves to Discussion, ask how interested it
+                      is. Turn off to skip this step. Save to apply.
+                    </span>
+                  </span>
+                </label>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-xs text-muted-foreground mr-auto">
                     Open a group to rename stages, change colors or add your

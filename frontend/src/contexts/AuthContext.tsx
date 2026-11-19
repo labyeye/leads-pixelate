@@ -10,6 +10,7 @@ import { authAPI, settingsAPI, hasSession } from "@/services/api";
 import {
   setStatusOverrides,
   setCustomLeadStatuses,
+  setContactTagsEnabled,
 } from "@/components/leads/statusConstants";
 
 interface Tenant {
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .then((res) => {
             if (res.data?.permissions) setPermissions(res.data.permissions);
             setStatusOverrides(res.data?.leadStatusLabels);
+            setContactTagsEnabled(res.data?.contactTagsEnabled);
             setCustomLeadStatuses(
               res.data?.customLeadStatuses,
               res.data?.customLeadCategories || [],

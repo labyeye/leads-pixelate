@@ -1130,7 +1130,7 @@ export default function DashboardPage() {
                 Monthly Performers
               </h3>
               <p className="text-xs text-muted-foreground">
-                Clients won per agent, last 6 months
+                Clients won per agent, last 6 months · AI Agent = leads it called
               </p>
             </div>
             <Link to="/users">

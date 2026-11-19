@@ -98,6 +98,15 @@ export function computeCategories(
 }
 
 let hiddenStatusList: string[] = [];
+
+// Tenant setting: ask for a HOT / WARM / COLD tag when a lead moves into Discussion.
+let contactTagsOn = true;
+export function setContactTagsEnabled(v: boolean | null | undefined) {
+  contactTagsOn = v !== false;
+}
+export function contactTagsEnabled() {
+  return contactTagsOn;
+}
 export function getHiddenStatuses() {
   return hiddenStatusList;
 }

@@ -102,7 +102,7 @@ Lead select ──► POST /api/whatsapp/send  (ya /campaigns)
 ### 4.1 Document Vault: "Failed to load documents"
 
 - **Symptom:** Vault page pe toast "Failed to load documents", list khali.
-- **Pakda kaise:** `curl http://localhost:4100/api/documents` → `404 Not found — /api/documents`, jabki `/api/leads` → 401 (route exist karta hai). Code `origin/main` mein tha (commit `b013d48`).
+- **Pakda kaise:** `curl https://leads-backend.pixelatenest.com/api/documents` → `404 Not found — /api/documents`, jabki `/api/leads` → 401 (route exist karta hai). Code `origin/main` mein tha (commit `b013d48`).
 - **Kaaran:** Production server purane code pe chal raha tha.
 - **Fix:** server pe `git pull && cd backend && npm install && pm2 restart leads-pixelate`. Phir `/api/documents` → 401 (matlab route aa gaya).
 - **Seekh:** "Failed to load X" pe pehle prod pe endpoint curl karo (404 vs 401), phir code dekho.
@@ -318,7 +318,7 @@ Fail hone par:
 - [ ] **System User** banaya, usko WABA **Full control** assign kiya.
 - [ ] System User token generate kiya: **Never expire**, `whatsapp_business_management` + `whatsapp_business_messaging`.
 - [ ] `POST /{wabaId}/subscribed_apps` kiya, `GET` se verify kiya.
-- [ ] App webhook: Callback URL `http://localhost:4100/api/whatsapp/webhook`, verify token sahi, field **`messages`** subscribed.
+- [ ] App webhook: Callback URL `https://leads-backend.pixelatenest.com/api/whatsapp/webhook`, verify token sahi, field **`messages`** subscribed.
 - [ ] App **Live** mode mein (production ke liye).
 
 **NestLeads side**

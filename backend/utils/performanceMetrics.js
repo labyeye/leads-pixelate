@@ -6,6 +6,7 @@
 // Tenant custom stages count through the category they were added to.
 const Lead = require("../models/Lead");
 const Setting = require("../models/Setting");
+const CallLog = require("../models/CallLog");
 const { buildCategoriesWithCustom } = require("./leadStatuses");
 
 const METRICS = [
@@ -20,6 +21,16 @@ const AI_USER_ID = "ai";
 const AI_NAME = "AI Agent";
 const isAIEntry = (e) => !e.changedBy && (e.byAI || /^AI call:/.test(e.remarks || ""));
 
+// Calls the AI agent spoke on (auto-dialled, or started by someone with the "AI call" button).
+const AI_CALL_TYPES = ["automated_ai", "manual_in_app"];
+
+// The AI agent owns no leads, so on charts grouped by lead owner its row is "the leads it called".
+// Those leads also stay under their human owner.
+async function aiCalledLeadIds(tf) {
+  const ids = await CallLog.distinct("leadId", { ...tf, callType: { $in: AI_CALL_TYPES } });
+  return new Set(ids.map(String));
+}
+
 async function categoryMap(tenantId) {
   const s = await Setting.findOne({ tenantId: tenantId || null }).select("customLeadStatuses customLeadCategories hiddenLeadStatuses").lean();
   const map = new Map();
@@ -30,7 +41,7 @@ async function categoryMap(tenantId) {
 
 // Status changes since `since` as events { userId, leadId, at, from, to, conversation, quotation, visit }.
 // Pass userId to look at one person only.
-async function statusEvents(tf, since, userId) {
+async function statusEvents(tf, since, userId, until) {
   const cat = await categoryMap(tf.tenantId);
   const match = userId
     ? { $elemMatch: { timestamp: { $gte: since }, changedBy: userId } }
@@ -41,6 +52,7 @@ async function statusEvents(tf, since, userId) {
     const h = l.statusHistory || [];
     h.forEach((e, i) => {
       if (!e.timestamp || new Date(e.timestamp) < since) return;
+      if (until && new Date(e.timestamp) > until) return;
       const ai = isAIEntry(e);
       if (!e.changedBy && !ai) return;
       if (userId && (ai || String(e.changedBy) !== String(userId))) return;
@@ -87,4 +99,4 @@ function targetOf(ct, key) {
   return { count: Number(t.count) || 0, perMinutes: Number(t.perMinutes) || 1440 };
 }
 
-module.exports = { METRICS, AI_USER_ID, AI_NAME, statusEvents, countByUser, targetOf };
+module.exports = { METRICS, AI_USER_ID, AI_NAME, AI_CALL_TYPES, isAIEntry, aiCalledLeadIds, statusEvents, countByUser, targetOf };

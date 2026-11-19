@@ -4,7 +4,9 @@ const asyncHandler = require("express-async-handler");
 const Lead = require("../models/Lead");
 const User = require("../models/User");
 const Setting = require("../models/Setting");
+const Product = require("../models/Product");
 const { buildCategoriesWithCustom } = require("../utils/leadStatuses");
+const { AI_USER_ID, AI_NAME, isAIEntry, aiCalledLeadIds } = require("../utils/performanceMetrics");
 
 const DAY = 24 * 60 * 60 * 1000;
 const tenantFilter = (req) => (req.user.tenantId ? { tenantId: req.user.tenantId } : {});
@@ -15,6 +17,25 @@ function wonAtOf(l) {
   return w.length ? Math.max(...w) : new Date(l.updatedAt).getTime();
 }
 const money = (l) => Number(l.expectedValue) || 0;
+// A lead's value = sum of the master-list prices of its products (matched by name).
+// Leads with no matching product keep their typed expectedValue.
+async function priceLeads(tf, leads) {
+  const prods = await Product.find({ ...tf }).select("name price").lean();
+  const price = new Map(prods.map((p) => [String(p.name || "").trim().toLowerCase(), Number(p.price) || 0]));
+  for (const l of leads) {
+    let sum = 0;
+    let hit = false;
+    for (const n of l.interestedProducts || []) {
+      const v = price.get(String(n).trim().toLowerCase());
+      if (v !== undefined) {
+        sum += v;
+        hit = true;
+      }
+    }
+    if (hit) l.expectedValue = sum;
+  }
+  return leads;
+}
 const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0);
 
 async function loadSetting(req) {
@@ -27,14 +48,25 @@ const getTargets = asyncHandler(async (req, res) => {
   const setting = await loadSetting(req);
   const t = setting.salesTargets || {};
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  // ?month=YYYY-MM picks a past month (up to 2 years back); default is this month.
+  const asked = /^(\d{4})-(\d{2})$/.exec(String(req.query.month || ""));
+  let ref = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (asked) {
+    const d = new Date(Number(asked[1]), Number(asked[2]) - 1, 1);
+    if (d <= ref && d >= new Date(now.getFullYear() - 2, now.getMonth(), 1)) ref = d;
+  }
+  const isCurrentMonth = ref.getFullYear() === now.getFullYear() && ref.getMonth() === now.getMonth();
+  const monthStart = ref.getTime();
+  const monthEnd = new Date(ref.getFullYear(), ref.getMonth() + 1, 1).getTime();
   const histStart = new Date(now.getFullYear(), now.getMonth() - 5, 1).getTime();
   const since180 = Date.now() - 180 * DAY;
+  const aiLeads = await aiCalledLeadIds(tf);
 
   const leads = await Lead.find({ ...tf, deletedAt: null, $or: [{ createdAt: { $gte: new Date(since180) } }, { status: "WON" }, { status: { $nin: ["WON", "DROP"] } }] })
-    .select("status expectedValue createdAt updatedAt statusHistory assignedTo")
+    .select("status expectedValue interestedProducts createdAt updatedAt statusHistory assignedTo")
     .limit(30000)
     .lean();
+  await priceLeads(tf, leads);
 
   // Month-by-month won value, last 6 months.
   const months = Array.from({ length: 6 }, (_, i) => {
@@ -49,7 +81,9 @@ const getTargets = asyncHandler(async (req, res) => {
   let created180 = 0;
   let pipelineValue = 0;
   let pipelineCount = 0;
-  const daysInMonthN = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysInMonthN = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+  // Days of the month that have happened: today for this month, all of them for a past month.
+  const dayNow = isCurrentMonth ? now.getDate() : daysInMonthN;
   const dayWon = Array.from({ length: daysInMonthN }, () => 0);
   const agentWon = new Map();
 
@@ -62,15 +96,17 @@ const getTargets = asyncHandler(async (req, res) => {
         months[m].won += money(l);
         months[m].orders++;
       }
-      if (at >= monthStart) {
+      if (at >= monthStart && at < monthEnd) {
         wonThisMonth += money(l);
         ordersThisMonth++;
         dayWon[Math.min(daysInMonthN, new Date(at).getDate()) - 1] += money(l);
-        const k = String(l.assignedTo || "");
-        const r = agentWon.get(k) || { orders: 0, value: 0 };
-        r.orders++;
-        r.value += money(l);
-        agentWon.set(k, r);
+        // A won lead the AI agent called also counts on the AI's own row.
+        for (const k of aiLeads.has(String(l._id)) ? [String(l.assignedTo || ""), AI_USER_ID] : [String(l.assignedTo || "")]) {
+          const r = agentWon.get(k) || { orders: 0, value: 0 };
+          r.orders++;
+          r.value += money(l);
+          agentWon.set(k, r);
+        }
       }
       if (at >= since180) {
         wonCount180++;
@@ -100,21 +136,30 @@ const getTargets = asyncHandler(async (req, res) => {
     run += v;
     return {
       day: i + 1,
-      won: i + 1 <= now.getDate() ? run : null,
+      won: i + 1 <= dayNow ? run : null,
       pace: target ? Math.round((target * (i + 1)) / daysInMonth) : null,
       breakEven: breakEven || null,
     };
   });
   const names = new Map((await User.find({ ...tf }).select("name").lean()).map((u) => [String(u._id), u.name]));
+  names.set(AI_USER_ID, AI_NAME);
   const byAgent = [...agentWon.entries()]
-    .map(([id, r]) => ({ name: names.get(id) || "Unassigned", orders: r.orders, value: r.value }))
+    .map(([id, r]) => ({ name: names.get(id) || "Unassigned", isAI: id === AI_USER_ID, orders: r.orders, value: r.value }))
     .sort((a, b) => b.value - a.value || b.orders - a.orders);
 
   res.json({
     success: true,
     data: {
       settings: { monthlyRevenue: target, marginPct: Number(t.marginPct) || 0, fixedExpenses: t.fixedExpenses || [], sourceCosts: t.sourceCosts || [] },
-      month: { won: wonThisMonth, orders: ordersThisMonth, daysLeft: daysInMonth - now.getDate() },
+      month: {
+        won: wonThisMonth,
+        orders: ordersThisMonth,
+        daysLeft: daysInMonth - dayNow,
+        dayNow,
+        isCurrent: isCurrentMonth,
+        key: `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, "0")}`,
+        label: ref.toLocaleString("en-IN", { month: "long", year: "numeric" }),
+      },
       fixedTotal,
       breakEven,
       target,
@@ -134,8 +179,21 @@ const getTargets = asyncHandler(async (req, res) => {
 // ---------- Insights: funnel, sources, machines, lost, speed ----------
 const getInsights = asyncHandler(async (req, res) => {
   const tf = tenantFilter(req);
-  const days = [30, 90, 180, 365].includes(Number(req.query.days)) ? Number(req.query.days) : 90;
-  const since = new Date(Date.now() - days * DAY);
+  // ?from=&to= (ISO) gives an exact range, as the Live Performance filter sends; else ?days=.
+  const fromQ = new Date(req.query.from || "");
+  const toQ = new Date(req.query.to || "");
+  const ranged = !isNaN(fromQ) && !isNaN(toQ) && toQ > fromQ && toQ - fromQ <= 731 * DAY;
+  const until = ranged ? new Date(Math.min(toQ.getTime(), Date.now())) : new Date();
+  const days = ranged
+    ? Math.max(1, Math.round((until - fromQ) / DAY))
+    : [30, 90, 180, 365].includes(Number(req.query.days))
+      ? Number(req.query.days)
+      : 90;
+  const since = ranged ? fromQ : new Date(Date.now() - days * DAY);
+  // Short ranges (2 days or less) show response speed per hour instead of per day.
+  const hourly = until - since <= 2 * DAY;
+  // Up to 3 hours: 10-minute points, so a 1-hour view still draws a line.
+  const fine = until - since <= 3 * 60 * 60 * 1000;
   const setting = await loadSetting(req);
   const cats = buildCategoriesWithCustom(setting.customLeadStatuses || [], setting.customLeadCategories || [], setting.hiddenLeadStatuses || []);
   const setOf = (name) => new Set(cats[name] || []);
@@ -143,10 +201,11 @@ const getInsights = asyncHandler(async (req, res) => {
   const quotation = setOf("Quotation");
   const visit = new Set([...setOf("Visit Scheduled"), ...setOf("Visited")]);
 
-  const leads = await Lead.find({ ...tf, deletedAt: null, createdAt: { $gte: since } })
+  const leads = await Lead.find({ ...tf, deletedAt: null, createdAt: { $gte: since, $lte: until } })
     .select("name source status stagePath createdAt updatedAt assignedTo interestedProducts expectedValue lostReason competitor statusHistory visitScheduledDate visitActualDate")
     .limit(30000)
     .lean();
+  await priceLeads(tf, leads);
 
   const reached = (l, set) => (l.stagePath || []).some((s) => set.has(s)) || set.has(l.status);
   const flags = (l) => {
@@ -221,16 +280,18 @@ const getInsights = asyncHandler(async (req, res) => {
 
   // Speed: lead created → first status change away from PENDING CONTACT.
   const agentName = new Map((await User.find({ ...tf }).select("name").lean()).map((u) => [String(u._id), u.name]));
+  agentName.set(AI_USER_ID, AI_NAME);
+  const aiLeads = await aiCalledLeadIds(tf);
   const mins = [];
   const perAgent = new Map();
   const dayMap = new Map();
   for (const l of leads) {
-    const first = (l.statusHistory || [])
+    const firstEntry = (l.statusHistory || [])
       .filter((h) => h.status !== "PENDING CONTACT")
-      .map((h) => new Date(h.timestamp).getTime())
-      .sort((a, b) => a - b)[0];
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))[0];
+    const first = firstEntry && new Date(firstEntry.timestamp).getTime();
     const cd = new Date(l.createdAt);
-    const dk = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate()).getTime();
+    const dk = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate(), hourly ? cd.getHours() : 0, hourly && fine ? Math.floor(cd.getMinutes() / 10) * 10 : 0).getTime();
     if (!dayMap.has(dk)) dayMap.set(dk, { mins: [], total: 0, ontime: 0 });
     const day = dayMap.get(dk);
     // Every lead counts toward the day; unworked leads older than 1h count as a miss.
@@ -240,7 +301,8 @@ const getInsights = asyncHandler(async (req, res) => {
     mins.push(m);
     day.mins.push(m);
     if (m <= 60) day.ontime++;
-    const k = String(l.assignedTo || "");
+    // Credit goes to whoever answered first: the AI agent when its call was the first update.
+    const k = isAIEntry(firstEntry) ? AI_USER_ID : String(l.assignedTo || "");
     if (!perAgent.has(k)) perAgent.set(k, []);
     perAgent.get(k).push(m);
   }
@@ -263,7 +325,9 @@ const getInsights = asyncHandler(async (req, res) => {
     daily: [...dayMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([t, d]) => ({
-        label: new Date(t).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+        label: hourly
+          ? new Date(t).toLocaleTimeString("en-IN", fine ? { hour: "numeric", minute: "2-digit", hour12: true } : { hour: "numeric", hour12: true })
+          : new Date(t).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
         leads: d.total,
         worked: d.mins.length,
         within1hPct: pct(d.ontime, d.total),
@@ -271,7 +335,7 @@ const getInsights = asyncHandler(async (req, res) => {
         medianMinutes: median(d.mins),
       })),
     perAgent: [...perAgent.entries()]
-      .map(([id, a]) => ({ name: agentName.get(id) || "Unassigned", leads: a.length, avgMinutes: avg(a), medianMinutes: median(a), within1hPct: pct(a.filter((x) => x <= 60).length, a.length) }))
+      .map(([id, a]) => ({ name: agentName.get(id) || "Unassigned", isAI: id === AI_USER_ID, leads: a.length, avgMinutes: avg(a), medianMinutes: median(a), within1hPct: pct(a.filter((x) => x <= 60).length, a.length) }))
       .sort((a, b) => b.within1hPct - a.within1hPct),
   };
 
@@ -280,16 +344,18 @@ const getInsights = asyncHandler(async (req, res) => {
   const cycleDays = [];
   const stageTime = new Map();
   for (const l of leads) {
-    const k = String(l.assignedTo || "");
-    if (!byAgent.has(k)) byAgent.set(k, { leads: 0, won: 0, lost: 0, wonValue: 0, open: 0 });
-    const a = byAgent.get(k);
-    a.leads++;
-    if (l.status === "WON") {
-      a.won++;
-      a.wonValue += money(l);
-      cycleDays.push(Math.max(0, (wonAtOf(l) - new Date(l.createdAt).getTime()) / DAY));
-    } else if (l.status === "DROP") a.lost++;
-    else a.open++;
+    // A lead the AI agent called also counts on the AI's own row.
+    for (const k of aiLeads.has(String(l._id)) ? [String(l.assignedTo || ""), AI_USER_ID] : [String(l.assignedTo || "")]) {
+      if (!byAgent.has(k)) byAgent.set(k, { leads: 0, won: 0, lost: 0, wonValue: 0, open: 0 });
+      const a = byAgent.get(k);
+      a.leads++;
+      if (l.status === "WON") {
+        a.won++;
+        a.wonValue += money(l);
+      } else if (l.status === "DROP") a.lost++;
+      else a.open++;
+    }
+    if (l.status === "WON") cycleDays.push(Math.max(0, (wonAtOf(l) - new Date(l.createdAt).getTime()) / DAY));
 
     // Time spent in each stage before moving on (completed stages only).
     const hist = [...(l.statusHistory || [])].sort((x, y) => new Date(x.timestamp) - new Date(y.timestamp));
@@ -307,6 +373,7 @@ const getInsights = asyncHandler(async (req, res) => {
     perAgent: [...byAgent.entries()]
       .map(([id, a]) => ({
         name: agentName.get(id) || "Unassigned",
+        isAI: id === AI_USER_ID,
         ...a,
         winRate: pct(a.won, a.leads),
         closeRate: pct(a.won, a.won + a.lost),
@@ -350,9 +417,10 @@ const getInsights = asyncHandler(async (req, res) => {
   // Stuck: open leads with no status change for 7+ days (any age, not just the period).
   const stuckDays = 7;
   const open = await Lead.find({ ...tf, deletedAt: null, status: { $nin: ["WON", "DROP"] } })
-    .select("name status assignedTo createdAt updatedAt statusHistory expectedValue")
+    .select("name status assignedTo createdAt updatedAt statusHistory expectedValue interestedProducts")
     .limit(30000)
     .lean();
+  await priceLeads(tf, open);
   const stuck = open
     .map((l) => {
       const last = Math.max(new Date(l.createdAt).getTime(), ...(l.statusHistory || []).map((h) => new Date(h.timestamp).getTime()));

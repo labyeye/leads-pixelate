@@ -62,6 +62,7 @@ import {
   getStatusColorClasses,
   getStatusLabel,
   categories,
+  contactTagsEnabled,
 } from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { VaultDocPicker } from "../documents/VaultDocPicker";
@@ -158,7 +159,7 @@ export function LeadDetailPanel({
   const activeCategory = getCategoryByStatus(lead.status || "PENDING CONTACT");
 
   const handleUpdateStatusTrigger = (status: string) => {
-    if (status === "DISCUSSION") {
+    if (status === "DISCUSSION" && contactTagsEnabled()) {
       setIsTagModalOpen(true);
       setPendingStatus(status);
     } else {

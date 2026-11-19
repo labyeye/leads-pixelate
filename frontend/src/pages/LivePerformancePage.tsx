@@ -101,7 +101,17 @@ interface LiveData {
     aiCalls: number;
   };
   team: TeamRow[];
-  trend: { t: string; calls: number; leads: number }[];
+  trend: { t: string; calls: number; leads: number; worked?: number }[];
+  custom?: boolean;
+  bucketMin?: number;
+  agentRange?: {
+    name: string;
+    isAI?: boolean;
+    assigned: number;
+    worked: number;
+    pending: number;
+    pct: number;
+  }[];
   recentLeads: {
     _id: string;
     name: string;
@@ -149,6 +159,44 @@ const WINDOWS = [
   { min: 1440, label: "24 hours" },
   { min: 10080, label: "7 days" },
 ];
+
+// Date helpers for the custom range filter (local dates, yyyy-mm-dd).
+const ymd = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const monthKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+const fmtDay = (s: string) =>
+  new Date(`${s}T00:00:00`).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+const MONTH_PRESETS = (() => {
+  const now = new Date();
+  const m = (offset: number) => {
+    const start = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    const end =
+      offset === 0 ? now : new Date(now.getFullYear(), now.getMonth() - offset + 1, 0);
+    return { from: ymd(start), to: ymd(end) };
+  };
+  return [
+    { key: "today", label: "Today", range: { from: ymd(now), to: ymd(now) } },
+    { key: "this-month", label: "This month", range: m(0) },
+    { key: "last-month", label: "Last month", range: m(1) },
+  ];
+})();
+// The last 12 months, newest first, for the sales-vs-target card.
+const LAST_12_MONTHS = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+  return {
+    key: monthKey(d),
+    label:
+      i === 0
+        ? "This month"
+        : i === 1
+          ? "Last month"
+          : d.toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+  };
+});
 
 type Tone = "green" | "amber" | "red";
 const TONE: Record<
@@ -226,12 +274,21 @@ export default function LivePerformancePage() {
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
 
   const [windowMin, setWindowMin] = useState(60);
+  // Custom date range (yyyy-mm-dd, both days included). null = the rolling window above.
+  const [custom, setCustom] = useState<{ from: string; to: string } | null>(
+    null,
+  );
+  const [customKey, setCustomKey] = useState(""); // which preset is on, "custom" for picked dates
+  const [customDraft, setCustomDraft] = useState(() => ({
+    from: ymd(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+    to: ymd(new Date()),
+  }));
+  const [customOpen, setCustomOpen] = useState(false);
+  const [moneyMonth, setMoneyMonth] = useState(monthKey(new Date()));
   const [live, setLive] = useState(true);
   const [data, setData] = useState<LiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [monthly, setMonthly] = useState<any[]>([]);
-  const [agentMonthly, setAgentMonthly] = useState<any[]>([]);
   const [speed, setSpeed] = useState<any>(null);
   const [money, setMoney] = useState<any>(null);
 
@@ -245,11 +302,39 @@ export default function LivePerformancePage() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // The exact range every card on the page follows.
+  const rangeISO = useMemo(
+    () =>
+      custom
+        ? {
+            from: new Date(`${custom.from}T00:00:00`).toISOString(),
+            to: new Date(`${custom.to}T23:59:59.999`).toISOString(),
+          }
+        : undefined,
+    [custom],
+  );
+  const rangeLabel = custom
+    ? MONTH_PRESETS.find((p) => p.key === customKey)?.label ||
+      (custom.from === custom.to
+        ? fmtDay(custom.from)
+        : `${fmtDay(custom.from)} – ${fmtDay(custom.to)}`)
+    : `last ${WINDOWS.find((w) => w.min === windowMin)?.label}`;
+  const pickRange = (
+    key: string,
+    r: { from: string; to: string } | null,
+  ) => {
+    setCustomKey(key);
+    setCustom(r);
+    setCustomOpen(false);
+    // The sales card follows the month the range ends in.
+    setMoneyMonth(monthKey(r ? new Date(`${r.to}T00:00:00`) : new Date()));
+  };
+
   const load = useCallback(
     async (quiet = false) => {
       if (!quiet) setLoading(true);
       try {
-        const res = await dashboardAPI.getLive(windowMin);
+        const res = await dashboardAPI.getLive(windowMin, rangeISO);
         if (res.success) {
           setData(res.data);
           setError("");
@@ -260,31 +345,29 @@ export default function LivePerformancePage() {
         setLoading(false);
       }
     },
-    [windowMin],
+    [windowMin, rangeISO],
   );
 
+  // Response speed follows the page range (a rolling window ends now).
   useEffect(() => {
     if (!isAdmin) return;
+    const r = rangeISO || {
+      from: new Date(Date.now() - windowMin * 60000).toISOString(),
+      to: new Date().toISOString(),
+    };
     dashboardAPI
-      .getStats()
-      .then((r: any) => {
-        setMonthly(r?.data?.leadsChartData || []);
-        setAgentMonthly(r?.data?.agentMonthly || []);
-      })
+      .getInsights(30, r)
+      .then((res: any) => setSpeed(res.data))
       .catch(() => {});
-  }, [isAdmin]);
+  }, [isAdmin, rangeISO, windowMin]);
 
   useEffect(() => {
     if (!isAdmin) return;
     dashboardAPI
-      .getInsights(30)
-      .then((r: any) => setSpeed(r.data))
-      .catch(() => {});
-    dashboardAPI
-      .getTargets()
+      .getTargets(moneyMonth)
       .then((r: any) => setMoney(r.data))
       .catch(() => {});
-  }, [isAdmin]);
+  }, [isAdmin, moneyMonth]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -322,17 +405,34 @@ export default function LivePerformancePage() {
     };
   }, [data]);
 
+  const agentRange = data?.agentRange || [];
   const chart = useMemo(
     () =>
       (data?.trend || []).map((p) => {
         const d = new Date(p.t);
-        const label =
-          data!.windowMin >= 10080
+        const step = data!.bucketMin || data!.windowMin;
+        const label = data!.custom
+          ? step >= 1440
+            ? d.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+            : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : data!.windowMin >= 10080
             ? d.toLocaleDateString([], { weekday: "short", day: "numeric" })
             : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         return { ...p, label };
       }),
     [data],
+  );
+
+  // New leads vs how many of them were worked, per bucket of the range.
+  const received = useMemo(
+    () =>
+      chart.map((p) => ({
+        month: p.label,
+        leads: p.leads,
+        contacted: p.worked || 0,
+        contactedRate: p.leads ? Math.round(((p.worked || 0) / p.leads) * 100) : 0,
+      })),
+    [chart],
   );
 
   const startEdit = () =>
@@ -436,7 +536,7 @@ export default function LivePerformancePage() {
               Live Performance
             </h1>
             <p className="text-xs text-muted-foreground">
-              Rolling last {WINDOWS.find((w) => w.min === windowMin)?.label} ·{" "}
+              {custom ? "Showing" : "Rolling"} {rangeLabel} ·{" "}
               {data
                 ? `updated ${ago(data.now, new Date().toISOString())}`
                 : "loading…"}
@@ -453,18 +553,97 @@ export default function LivePerformancePage() {
             {WINDOWS.map((w) => (
               <button
                 key={w.min}
-                onClick={() => setWindowMin(w.min)}
+                onClick={() => {
+                  setWindowMin(w.min);
+                  pickRange("", null);
+                }}
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium border-r-2 border-black last:border-r-0 transition-colors",
-                  windowMin === w.min ? "text-white" : "hover:bg-slate-100",
+                  !custom && windowMin === w.min
+                    ? "text-white"
+                    : "hover:bg-slate-100",
                 )}
                 style={
-                  windowMin === w.min ? { backgroundColor: BLUE } : undefined
+                  !custom && windowMin === w.min
+                    ? { backgroundColor: BLUE }
+                    : undefined
                 }
               >
                 {w.label}
               </button>
             ))}
+            {MONTH_PRESETS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => pickRange(p.key, p.range)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium border-r-2 border-black transition-colors",
+                  customKey === p.key ? "text-white" : "hover:bg-slate-100",
+                )}
+                style={
+                  customKey === p.key ? { backgroundColor: BLUE } : undefined
+                }
+              >
+                {p.label}
+              </button>
+            ))}
+            <div className="relative">
+              <button
+                onClick={() => setCustomOpen((v) => !v)}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-medium transition-colors",
+                  customKey === "custom" ? "text-white" : "hover:bg-slate-100",
+                )}
+                style={
+                  customKey === "custom" ? { backgroundColor: BLUE } : undefined
+                }
+              >
+                {customKey === "custom" && custom
+                  ? `${fmtDay(custom.from)} – ${fmtDay(custom.to)}`
+                  : "Custom"}
+              </button>
+              {customOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 w-64 border-2 border-black bg-white p-3 space-y-2 shadow-[4px_4px_0_#000]">
+                  <label className="block text-xs font-medium text-black">
+                    From
+                    <input
+                      type="date"
+                      value={customDraft.from}
+                      max={customDraft.to}
+                      onChange={(e) =>
+                        setCustomDraft((d) => ({ ...d, from: e.target.value }))
+                      }
+                      className="mt-1 w-full h-8 border-2 border-black px-2 text-xs"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-black">
+                    To
+                    <input
+                      type="date"
+                      value={customDraft.to}
+                      min={customDraft.from}
+                      max={ymd(new Date())}
+                      onChange={(e) =>
+                        setCustomDraft((d) => ({ ...d, to: e.target.value }))
+                      }
+                      className="mt-1 w-full h-8 border-2 border-black px-2 text-xs"
+                    />
+                  </label>
+                  <button
+                    disabled={
+                      !customDraft.from ||
+                      !customDraft.to ||
+                      customDraft.from > customDraft.to
+                    }
+                    onClick={() => pickRange("custom", { ...customDraft })}
+                    className="w-full h-8 text-xs font-medium text-white border-2 border-black disabled:opacity-50"
+                    style={{ backgroundColor: BLUE }}
+                  >
+                    Apply
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setLive((v) => !v)}
@@ -714,8 +893,7 @@ export default function LivePerformancePage() {
                       <div className="xl:col-span-7 border-2 border-black bg-white overflow-x-auto h-full flex flex-col">
                         <div className="px-3 py-1.5 border-b-2 border-black bg-slate-100">
                           <p className="text-sm font-semibold text-black">
-                            Team performance · last{" "}
-                            {WINDOWS.find((w) => w.min === windowMin)?.label}
+                            Team performance · {rangeLabel}
                           </p>
                         </div>
                         <table className="w-full flex-1 text-xs min-w-[480px]">
@@ -811,7 +989,7 @@ export default function LivePerformancePage() {
                               How fast we respond
                             </p>
                             <p className="text-[11px] text-muted-foreground">
-                              % of each day's new leads that got a first update within 1 hour · higher is better
+                              % of new leads in this period that got a first update within 1 hour · higher is better
                             </p>
                           </div>
                           <div className="flex-1 p-2 min-h-[150px]">
@@ -865,7 +1043,7 @@ export default function LivePerformancePage() {
                               Response rate per agent
                             </p>
                             <p className="text-[11px] text-muted-foreground">
-                              % of their new leads answered within 1 hour · last 30 days
+                              % of their new leads answered within 1 hour · {rangeLabel} · AI Agent = leads it answered first
                             </p>
                           </div>
                           <div className="flex-1 p-2 min-h-[150px]">
@@ -899,7 +1077,7 @@ export default function LivePerformancePage() {
                   })()}
                 </div>
               </div>
-              <div className="order-1 lp-in grid grid-cols-1 xl:grid-cols-3 gap-3">
+              <div className="order-1 lp-in grid grid-cols-1 xl:grid-cols-2 gap-3">
                 <div className="border-2 border-black bg-white p-3">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
                     {t?.countBy === "calls" ? "Calls" : "Status updates"} & new
@@ -1003,12 +1181,12 @@ export default function LivePerformancePage() {
                     Leads Received vs Worked
                   </p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Monthly leads vs contacted
+                    New leads vs contacted · {rangeLabel}
                   </p>
                   <div className="h-48">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
-                        data={monthly}
+                        data={received}
                         margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
                       >
                         <CartesianGrid
@@ -1093,132 +1271,27 @@ export default function LivePerformancePage() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-
-                <div className="border-2 border-black bg-white p-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
-                    Salesperson Target · This Month
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Assigned vs worked this month (worked = past Pending
-                    Contact)
-                  </p>
-                  {agentMonthly.length === 0 ? (
-                    <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
-                      No assigned leads this month
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        height: Math.max(192, agentMonthly.length * 36),
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={agentMonthly}
-                          layout="vertical"
-                          margin={{ top: 4, right: 30, left: 8, bottom: 0 }}
-                        >
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="#e2e8f0"
-                            horizontal={false}
-                          />
-                          <XAxis
-                            type="number"
-                            allowDecimals={false}
-                            tick={{ fontSize: 11 }}
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <YAxis
-                            type="category"
-                            dataKey="name"
-                            width={90}
-                            tick={{ fontSize: 11 }}
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              border: "2px solid #000",
-                              borderRadius: 0,
-                              fontSize: 12,
-                            }}
-                            formatter={(v: any, n: any, p: any) =>
-                              n === "Worked"
-                                ? [`${v} (${p.payload.pct}%)`, n]
-                                : [v, n]
-                            }
-                          />
-                          <Legend wrapperStyle={{ fontSize: 12 }} />
-                          <RBar
-                            dataKey="assigned"
-                            name="Assigned"
-                            fill="#024BAB"
-                            stroke="#0A0A0A"
-                            strokeWidth={2}
-                          />
-                          <RBar
-                            dataKey="worked"
-                            name="Worked"
-                            fill="#00C48C"
-                            stroke="#0A0A0A"
-                            strokeWidth={2}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </div>
               </div>
-            </div>
 
-            {/* Who hit the target and who didn't */}
-
-            {/* <div className="grid grid-cols-1 gap-4">
-              <div className="border-2 border-black bg-white p-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-                  Recent leads
-                </p>
-                <ul className="divide-y divide-slate-200">
-                  {data.recentLeads.length === 0 && (
-                    <li className="text-sm text-muted-foreground py-4">
-                      No leads yet.
-                    </li>
-                  )}
-                  {data.recentLeads.map((l) => (
-                    <li key={l._id} className="py-2 flex items-start gap-2">
-                      <span
-                        className="mt-1.5 w-2 h-2 shrink-0"
-                        style={{ backgroundColor: BLUE }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-black truncate">
-                          {l.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {l.source} · {title(l.status)} ·{" "}
-                          {l.assignedTo?.name || "Unassigned"}
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-muted-foreground shrink-0">
-                        {ago(l.createdAt, data.now)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div> */}
-
-            {/* Money: are we on the way to the target, and who is bringing the business */}
-            <div className="columns-1 md:columns-2 xl:columns-3 gap-3 [&>*]:mb-3 [&>*]:break-inside-avoid">
+              {/* Sales vs target and who is bringing the business, side by side */}
             {money && (
-              <>
-                <div className="border-2 border-black bg-white p-3">
+              <div className="order-1 grid grid-cols-1 xl:grid-cols-2 gap-3 items-stretch">
+                <div className="border-2 border-black bg-white p-3 h-full">
                   <div className="flex flex-wrap items-baseline gap-x-4">
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Sales vs target &amp; break-even · this month
+                      Sales vs target &amp; break-even
                     </p>
+                    <select
+                      value={moneyMonth}
+                      onChange={(e) => setMoneyMonth(e.target.value)}
+                      className="h-7 border-2 border-black bg-white px-1.5 text-xs font-medium"
+                    >
+                      {LAST_12_MONTHS.map((m) => (
+                        <option key={m.key} value={m.key}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
                     <Link
                       to="/insights"
                       className="ml-auto text-xs font-medium text-[#024BAB]"
@@ -1234,9 +1307,14 @@ export default function LivePerformancePage() {
                       : ""}
                     {money.target
                       ? (() => {
-                          const day = new Date().getDate();
+                          const day =
+                            money.month.dayNow ?? new Date().getDate();
                           const pace =
                             (money.target * day) / (money.daily?.length || 30);
+                          if (money.month.isCurrent === false)
+                            return money.month.won >= money.target
+                              ? " · target met"
+                              : ` · ${inrShort(money.target - money.month.won)} short of target`;
                           return money.month.won >= pace
                             ? " · ahead of pace"
                             : ` · ${inrShort(pace - money.month.won)} behind pace`;
@@ -1319,13 +1397,12 @@ export default function LivePerformancePage() {
                     </div>
                   )}
                 </div>
-
-                <div className="border-2 border-black bg-white p-3">
+                <div className="border-2 border-black bg-white p-3 h-full">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
                     Who is bringing the business
                   </p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Won orders this month, by value
+                    Won orders in {money?.month?.label || "this month"}, by value · AI Agent = leads it called
                   </p>
                   {money.byAgent.length === 0 ? (
                     <div className="flex h-44 items-center justify-center text-sm text-muted-foreground">
@@ -1386,12 +1463,130 @@ export default function LivePerformancePage() {
                     </div>
                   )}
                 </div>
-              </>
+              </div>
             )}
+            </div>
+
+            {/* Who hit the target and who didn't */}
+
+            {/* <div className="grid grid-cols-1 gap-4">
+              <div className="border-2 border-black bg-white p-3">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+                  Recent leads
+                </p>
+                <ul className="divide-y divide-slate-200">
+                  {data.recentLeads.length === 0 && (
+                    <li className="text-sm text-muted-foreground py-4">
+                      No leads yet.
+                    </li>
+                  )}
+                  {data.recentLeads.map((l) => (
+                    <li key={l._id} className="py-2 flex items-start gap-2">
+                      <span
+                        className="mt-1.5 w-2 h-2 shrink-0"
+                        style={{ backgroundColor: BLUE }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-black truncate">
+                          {l.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {l.source} · {title(l.status)} ·{" "}
+                          {l.assignedTo?.name || "Unassigned"}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {ago(l.createdAt, data.now)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div> */}
+
+            {/* Assigned vs worked, work done per agent and calls picked up: one row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-stretch">
+              {/* Assigned vs worked */}
+              <div className="border-2 border-black bg-white p-3 h-full">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
+                    Assigned vs worked · {rangeLabel}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Leads created in this period (worked = past Pending
+                    Contact)
+                  </p>
+                  {agentRange.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 text-muted-foreground text-sm font-medium">
+                      No assigned leads this month
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        height: Math.max(192, agentRange.length * 36),
+                      }}
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={agentRange}
+                          layout="vertical"
+                          margin={{ top: 4, right: 30, left: 8, bottom: 0 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#e2e8f0"
+                            horizontal={false}
+                          />
+                          <XAxis
+                            type="number"
+                            allowDecimals={false}
+                            tick={{ fontSize: 11 }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="name"
+                            width={90}
+                            tick={{ fontSize: 11 }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              border: "2px solid #000",
+                              borderRadius: 0,
+                              fontSize: 12,
+                            }}
+                            formatter={(v: any, n: any, p: any) =>
+                              n === "Worked"
+                                ? [`${v} (${p.payload.pct}%)`, n]
+                                : [v, n]
+                            }
+                          />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <RBar
+                            dataKey="assigned"
+                            name="Assigned"
+                            fill="#024BAB"
+                            stroke="#0A0A0A"
+                            strokeWidth={2}
+                          />
+                          <RBar
+                            dataKey="worked"
+                            name="Worked"
+                            fill="#00C48C"
+                            stroke="#0A0A0A"
+                            strokeWidth={2}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+              </div>
 
             {/* Charts for this window */}
             <>
-              <div className="border-2 border-black bg-white p-3">
+              <div className="border-2 border-black bg-white p-3 h-full">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
                   Work done per agent
                 </p>
@@ -1452,7 +1647,7 @@ export default function LivePerformancePage() {
                 </div>
               </div>
 
-              <div className="border-2 border-black bg-white p-3">
+              <div className="border-2 border-black bg-white p-3 h-full">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
                   Calls picked up
                 </p>
@@ -1539,56 +1734,13 @@ export default function LivePerformancePage() {
                 )}
               </div>
             </>
+            </div>
 
-            {/* Speed: first response + stuck leads (last 30 days) */}
-            {speed && (
-              <>
-                {[
-                  [
-                    "First response (30 days)",
-                    speed.response.worked
-                      ? speed.response.avgMinutes >= 60
-                        ? `${(speed.response.avgMinutes / 60).toFixed(1)} h`
-                        : `${speed.response.avgMinutes} min`
-                      : "—",
-                    "average time to first status update",
-                  ],
-                  [
-                    "Contacted within 1 hour",
-                    speed.response.worked
-                      ? `${speed.response.within1hPct}%`
-                      : "—",
-                    `${speed.response.worked} of ${speed.response.total} leads worked`,
-                  ],
-                  [
-                    "Stuck for 7+ days",
-                    String(speed.stuck.count),
-                    "open leads with no movement",
-                  ],
-                ].map(([label, value, sub]) => (
-                  <Link
-                    key={label}
-                    to="/insights"
-                    className="block border-2 border-black bg-white p-3 hover:bg-slate-50"
-                  >
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      {label}
-                    </p>
-                    <p className="text-xl font-semibold tabular-nums">
-                      {value}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">{sub}</p>
-                  </Link>
-                ))}
-              </>
-            )}
-
-            {/* Updates in this window */}
+            {/* Updates in this window: full row */}
             <div className="border-2 border-black bg-white">
               <div className="px-3 py-2 border-b-2 border-black bg-slate-100 flex items-center gap-2">
                 <p className="text-sm font-semibold text-black">
-                  Updates in the last{" "}
-                  {WINDOWS.find((w) => w.min === windowMin)?.label}
+                  Updates · {rangeLabel}
                 </p>
                 <span className="text-xs text-muted-foreground">
                   {data.totals.statusChanges} updates ·{" "}
@@ -1635,7 +1787,6 @@ export default function LivePerformancePage() {
                   })}
                 </ul>
               )}
-            </div>
             </div>
 
             {/* Pipeline snapshot */}

@@ -587,7 +587,7 @@ export default function InsightsPage() {
             <Card
               className="col-span-12 xl:col-span-6"
               title="Win rate by salesperson"
-              sub="Won vs lost leads"
+              sub="Won vs lost leads · AI Agent = the leads it called"
             >
               {d.team.perAgent.length === 0 ? (
                 <Empty text="No leads in this period." />

@@ -187,6 +187,8 @@ const settingSchema = new mongoose.Schema(
     customLeadCategories: { type: [String], default: [] },
     // Default stages this tenant removed. Empty for every new client = the full default pipeline.
     hiddenLeadStatuses: { type: [String], default: [] },
+    // Ask for a HOT / WARM / COLD tag when a lead moves into Discussion. Off = never ask.
+    contactTagsEnabled: { type: Boolean, default: true },
     customLeadStatuses: {
       type: [
         {

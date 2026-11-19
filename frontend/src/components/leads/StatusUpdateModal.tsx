@@ -31,6 +31,7 @@ import {
   statusColors,
   getStatusColorClasses,
   getStatusLabel,
+  contactTagsEnabled,
 } from "./statusConstants";
 import { leadsAPI, productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -96,7 +97,9 @@ export function StatusUpdateModal({
       "DISCUSSION 2",
       "DISCUSSION 3",
       "DISCUSSION COMPLETED",
-    ].includes(pendingStatus || "") && !isSameStatus;
+    ].includes(pendingStatus || "") &&
+    !isSameStatus &&
+    contactTagsEnabled();
 
   const showFollowupPicker =
     pendingStatus !== "WON" &&
@@ -278,7 +281,8 @@ export function StatusUpdateModal({
           "DISCUSSION 3",
           "DISCUSSION COMPLETED",
         ].includes(pendingStatus) &&
-        localTag
+        localTag &&
+        contactTagsEnabled()
       ) {
         updateData.contactTag = localTag;
       }

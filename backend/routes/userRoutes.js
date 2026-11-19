@@ -6,6 +6,7 @@ const {
   createUser,
   updateUser,
   deleteUser,
+  getUserLeadCount,
   updateAutoAssign,
   addUserDocument,
   removeUserDocument,
@@ -29,6 +30,8 @@ router
   .get(authorize("super_admin", "admin"), getUser)
   .put(authorize("super_admin", "admin"), updateUser)
   .delete(authorize("super_admin"), deleteUser);
+
+router.get("/:id/lead-count", authorize("super_admin"), getUserLeadCount);
 
 router.post(
   "/:id/documents",

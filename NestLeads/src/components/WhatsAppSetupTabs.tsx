@@ -14,7 +14,7 @@ import {
 import Icon from './Icon';
 import { whatsappAPI } from '../services/api';
 
-const WEBHOOK_URL = 'http://localhost:4100/api/whatsapp/webhook';
+const WEBHOOK_URL = 'https://leads-backend.pixelatenest.com/api/whatsapp/webhook';
 const when = (d?: string) =>
   d
     ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })

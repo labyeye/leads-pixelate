@@ -12,6 +12,7 @@ import storage from '../utils/storage';
 import {
   setStatusOverrides,
   setCustomLeadStatuses,
+  setContactTagsEnabled,
 } from '../constants/statusConstants';
 
 function loadStatusSettings() {
@@ -20,6 +21,7 @@ function loadStatusSettings() {
     .then(res => {
       setStatusOverrides(res.data?.leadStatusLabels);
       setCustomLeadStatuses(res.data?.customLeadStatuses);
+      setContactTagsEnabled(res.data?.contactTagsEnabled);
     })
     .catch(() => {});
 }

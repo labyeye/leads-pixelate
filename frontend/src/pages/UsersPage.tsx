@@ -361,21 +361,53 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteClick = async (id: string) => {
-    if (!window.confirm("Permanently delete this user? This cannot be undone."))
-      return;
+  // Removing someone who owns leads first asks who should get those leads.
+  const [removing, setRemoving] = useState<{
+    id: string;
+    name: string;
+    count: number;
+  } | null>(null);
+  const [transferTo, setTransferTo] = useState("");
+  const [removeBusy, setRemoveBusy] = useState(false);
+
+  const removeUser = async (id: string, to?: string) => {
     try {
-      const res = await usersAPI.delete(id);
+      setRemoveBusy(true);
+      const res = await usersAPI.delete(id, to);
       if (res.success) {
         notify.success(
           "User Deleted",
-          "The user has been permanently removed.",
+          res.leadsMoved
+            ? `${res.leadsMoved} lead${res.leadsMoved === 1 ? "" : "s"} moved to ${res.movedTo || "Unassigned"}.`
+            : "The user has been permanently removed.",
         );
+        setRemoving(null);
         fetchUsers();
       }
     } catch (error: any) {
       notify.error("Delete Failed", error.message);
+    } finally {
+      setRemoveBusy(false);
     }
+  };
+
+  const handleDeleteClick = async (id: string) => {
+    const name = users.find((u) => (u._id || u.id) === id)?.name || "this user";
+    let count = 0;
+    try {
+      count = (await usersAPI.leadCount(id)).data?.count || 0;
+    } catch (error: any) {
+      notify.error("Delete Failed", error.message);
+      return;
+    }
+    if (count > 0) {
+      setTransferTo("");
+      setRemoving({ id, name, count });
+      return;
+    }
+    if (!window.confirm("Permanently delete this user? This cannot be undone."))
+      return;
+    removeUser(id);
   };
 
   const filtered = users.filter(
@@ -1225,6 +1257,70 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+      <Dialog
+        open={!!removing}
+        onOpenChange={(o) => !o && !removeBusy && setRemoving(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove {removing?.name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {removing?.name} has{" "}
+            <span className="font-semibold text-black">
+              {removing?.count} lead{removing?.count === 1 ? "" : "s"}
+            </span>
+            . Who should get them?
+          </p>
+          <Select value={transferTo} onValueChange={setTransferTo}>
+            <SelectTrigger className="border-2 border-black">
+              <SelectValue placeholder="Choose a team member" />
+            </SelectTrigger>
+            <SelectContent>
+              {users
+                .filter(
+                  (u) =>
+                    (u._id || u.id) !== removing?.id &&
+                    (u.status || "active") === "active",
+                )
+                .map((u) => (
+                  <SelectItem key={u._id || u.id} value={u._id || u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              <SelectItem value="__none">Leave unassigned</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            All their leads, including won and dropped ones, move to this
+            person. The user is then deleted. This cannot be undone.
+          </p>
+          <DialogFooter>
+            <button
+              type="button"
+              disabled={removeBusy}
+              onClick={() => setRemoving(null)}
+              className="h-9 px-4 text-sm font-medium border-2 border-black bg-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!transferTo || removeBusy}
+              onClick={() =>
+                removing &&
+                removeUser(
+                  removing.id,
+                  transferTo === "__none" ? "" : transferTo,
+                )
+              }
+              className="h-9 px-4 text-sm font-medium border-2 border-black bg-red-600 text-white disabled:opacity-50"
+            >
+              {removeBusy ? "Removing…" : "Move leads & delete"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

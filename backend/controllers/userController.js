@@ -3,6 +3,7 @@ const escapeRegex = require("../utils/escapeRegex");
 const { tenantScope, safeBody } = require("../utils/tenantScope");
 const User = require("../models/User");
 const Role = require("../models/Role");
+const Lead = require("../models/Lead");
 const logActivity = require("../utils/activityLogger");
 
 // Resolves a roleId (from the Team page's role dropdown) to its tier, scoped
@@ -270,7 +271,38 @@ const deleteUser = asyncHandler(async (req, res) => {
     throw new Error("Only a super admin can remove another super admin");
   }
 
+  // Leads this person owns must go to someone before they are removed (or be left unassigned on purpose).
+  const leadFilter = { assignedTo: user._id, ...(user.tenantId ? { tenantId: user.tenantId } : {}) };
+  const leadCount = await Lead.countDocuments(leadFilter);
+  const transferTo = req.body?.transferTo;
+  let moved = 0;
+  let receiver = null;
+  if (leadCount > 0) {
+    if (transferTo === undefined) {
+      res.status(409);
+      throw new Error(`${user.name} has ${leadCount} lead${leadCount === 1 ? "" : "s"}. Choose who should get them before removing this user.`);
+    }
+    if (transferTo) {
+      receiver = await User.findOne({ _id: transferTo, status: "active", ...tenantScope(req) }).select("name");
+      if (!receiver || String(receiver._id) === String(user._id)) {
+        res.status(400);
+        throw new Error("Pick an active team member to receive the leads");
+      }
+    }
+    const r = await Lead.updateMany(leadFilter, { $set: { assignedTo: receiver ? receiver._id : null } });
+    moved = r.modifiedCount || 0;
+  }
+
   await User.findByIdAndDelete(user._id);
+
+  if (moved)
+    logActivity({
+      user: req.user,
+      action: "UPDATE",
+      module: "Lead",
+      description: `${moved} lead${moved === 1 ? "" : "s"} of ${user.name} moved to ${receiver ? receiver.name : "Unassigned"}`,
+      ip: req.ip,
+    });
 
   logActivity({
     user: req.user,
@@ -284,7 +316,20 @@ const deleteUser = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "User deleted successfully",
+    leadsMoved: moved,
+    movedTo: receiver ? receiver.name : null,
   });
+});
+
+// How many leads a person owns, so the Team page can ask where they go before removing them.
+const getUserLeadCount = asyncHandler(async (req, res) => {
+  const user = await User.findOne({ _id: req.params.id, ...tenantScope(req) }).select("tenantId");
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+  const count = await Lead.countDocuments({ assignedTo: user._id, ...(user.tenantId ? { tenantId: user.tenantId } : {}) });
+  res.json({ success: true, data: { count } });
 });
 
 const addUserDocument = asyncHandler(async (req, res) => {
@@ -362,6 +407,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  getUserLeadCount,
   updateAutoAssign,
   addUserDocument,
   removeUserDocument,
