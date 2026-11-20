@@ -36,6 +36,7 @@ const {
   createSavedView,
   updateSavedView,
   deleteSavedView,
+  editLatestStatus,
 } = require("../controllers/leadController");
 const { protect, authorize } = require("../middleware/auth");
 const { checkPermission } = require("../middleware/checkPermission");
@@ -153,6 +154,7 @@ router
   .delete(checkPermission("Leads", "delete"), deleteLead);
 
 router.post("/:id/notes", addNote);
+router.put("/:id/status-history/latest", editLatestStatus);
 router.post(
   "/:id/convert",
   checkPermission("Clients", "create"),

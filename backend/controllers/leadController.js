@@ -714,6 +714,70 @@ const addNote = asyncHandler(async (req, res) => {
   });
 });
 
+// Correct the latest status change (wrong stage picked, or a typo in the remark). The lead's current
+// status follows the corrected entry; nothing new is added to the history.
+const editLatestStatus = asyncHandler(async (req, res) => {
+  const lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) });
+  if (!lead || lead.deletedAt) {
+    res.status(404);
+    throw new Error("Lead not found");
+  }
+  const last = lead.statusHistory[lead.statusHistory.length - 1];
+  if (!last) {
+    res.status(400);
+    throw new Error("This lead has no status change to edit");
+  }
+  const isAdmin = ["admin", "super_admin"].includes(req.user.role);
+  if (!isAdmin && String(last.changedBy || "") !== String(req.user._id)) {
+    res.status(403);
+    throw new Error("Only the person who made this change, or an admin, can edit it");
+  }
+
+  const { status, remarks } = req.body || {};
+  const before = last.status;
+  if (status !== undefined && status !== last.status) {
+    const { VALID_TRANSITIONS } = await getTransitionMapsForTenant(req.user.tenantId);
+    if (!Object.prototype.hasOwnProperty.call(VALID_TRANSITIONS, status)) {
+      res.status(400);
+      throw new Error(`"${status}" is not a stage in your pipeline`);
+    }
+    if (status === "DROP" && req.body.lostReason) lead.lostReason = String(req.body.lostReason).slice(0, 80);
+    if (status === "DROP" && !lead.lostReason) {
+      res.status(400);
+      throw new Error("Lost reason is required when dropping a lead");
+    }
+    last.status = status;
+    lead.status = status;
+    // The wrong stage is replaced in the path the lead took.
+    const path = [...(lead.stagePath || [])];
+    const i = path.lastIndexOf(before);
+    if (i >= 0) path[i] = status;
+    else path.push(status);
+    lead.stagePath = path.filter((s, j) => path.indexOf(s) === j);
+  }
+  if (remarks !== undefined) last.remarks = String(remarks).slice(0, 2000);
+  last.editedAt = new Date();
+  last.editedBy = req.user._id;
+  await lead.save();
+
+  logActivity({
+    user: req.user,
+    action: "STATUS_UPDATED",
+    module: "Lead",
+    description:
+      before !== last.status
+        ? `${req.user.name} corrected status of ${lead.name} from ${before} to ${last.status}`
+        : `${req.user.name} edited the remark on ${lead.name}'s ${last.status} update`,
+    targetId: lead._id,
+    ip: req.ip,
+  });
+
+  const populated = await Lead.findById(lead._id)
+    .populate("assignedTo", "name email")
+    .populate("statusHistory.changedBy", "name");
+  res.json({ success: true, data: populated });
+});
+
 const convertToClient = asyncHandler(async (req, res) => {
   const lead = await Lead.findOne({ _id: req.params.id, ...tenantScope(req) });
 
@@ -1603,6 +1667,7 @@ const deleteSavedView = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  editLatestStatus,
   bulkDeleteLeads,
   getLeads,
   getLead,

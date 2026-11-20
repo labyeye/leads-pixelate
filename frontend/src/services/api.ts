@@ -601,6 +601,15 @@ export const leadsAPI = {
     request<{ success: boolean; message: string }>(`/leads/${id}`, {
       method: "DELETE",
     }),
+  // Correct the latest status change: its stage and/or remark. No new history entry is added.
+  editLatestStatus: (
+    id: string,
+    body: { status?: string; remarks?: string; lostReason?: string },
+  ) =>
+    request<{ success: boolean; data: any }>(
+      `/leads/${id}/status-history/latest`,
+      { method: "PUT", body: JSON.stringify(body) },
+    ),
   addNote: (id: string, text: string) =>
     request<{ success: boolean; data: any }>(`/leads/${id}/notes`, {
       method: "POST",
