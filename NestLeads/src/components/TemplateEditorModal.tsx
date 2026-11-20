@@ -8,7 +8,9 @@ import {
   Modal,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from './Icon';
 import { whatsappAPI } from '../services/api';
@@ -64,6 +66,27 @@ export default function TemplateEditorModal({
   const insets = useSafeAreaInsets();
   const [form, setForm] = useState<any>(initial);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const pickHeaderImage = () =>
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, async res => {
+      const a = res.assets?.[0];
+      if (!a?.uri) return;
+      try {
+        setUploading(true);
+        const r = await whatsappAPI.uploadMedia(a.uri, a.fileName || 'header.jpg', a.type || 'image/jpeg');
+        set({
+          headerType: 'IMAGE',
+          headerMediaId: r.data.mediaId,
+          headerMediaHandle: r.data.handle || '',
+          headerMediaName: r.data.filename,
+        });
+      } catch (e: any) {
+        Alert.alert('Upload failed', e.message);
+      } finally {
+        setUploading(false);
+      }
+    });
 
   useEffect(() => {
     if (visible) setForm(initial);
@@ -96,6 +119,10 @@ export default function TemplateEditorModal({
     });
 
   const save = async () => {
+    if (form.headerType === 'IMAGE' && !form.headerMediaId) {
+      Alert.alert('Header image missing', 'Upload the header image or set the header to None.');
+      return;
+    }
     const name = form.name || slug(form.displayName);
     if (!form.displayName.trim() || !form.bodyText.trim() || !name) {
       Alert.alert('Fill the required fields', 'Name and message text are needed.');
@@ -166,14 +193,49 @@ export default function TemplateEditorModal({
             <Chip label="हिन्दी" on={form.language === 'hi'} onPress={() => set({ language: 'hi' })} />
           </View>
 
-          {media ? (
-            <Text style={s.hint}>Header: {form.headerType === 'DOCUMENT' ? 'PDF document' : 'image'}. The file can only be changed on the web dashboard.</Text>
-          ) : (
+          <FieldLabel style={s.label}>Header</FieldLabel>
+          <View style={s.chips}>
+            {(['NONE', 'TEXT', 'IMAGE'] as const).map(t => (
+              <Chip
+                key={t}
+                label={t === 'NONE' ? 'None' : t === 'TEXT' ? 'Text' : 'Image'}
+                on={form.headerType === t}
+                onPress={() =>
+                  !locked &&
+                  set({
+                    headerType: t,
+                    ...(t !== 'IMAGE' ? { headerMediaId: '', headerMediaName: '', headerMediaHandle: '' } : {}),
+                    ...(t !== 'TEXT' ? { headerText: '' } : {}),
+                  })
+                }
+              />
+            ))}
+          </View>
+          {form.headerType === 'DOCUMENT' ? (
+            <Text style={s.hint}>Header: PDF document ({form.headerMediaName || 'uploaded'}). A PDF can be picked on the web dashboard.</Text>
+          ) : form.headerType === 'IMAGE' ? (
+            <View style={{ marginBottom: 10 }}>
+              {form.headerMediaId ? (
+                <Text style={s.hint}>✓ {form.headerMediaName || 'Image uploaded'}</Text>
+              ) : (
+                <Text style={s.hint}>Pick the image Meta will show above the message.</Text>
+              )}
+              {!locked && (
+                <TouchableOpacity style={[s.chip, { alignSelf: 'flex-start', marginTop: 6 }]} onPress={pickHeaderImage} disabled={uploading}>
+                  {uploading ? (
+                    <ActivityIndicator size="small" color={BLUE} />
+                  ) : (
+                    <Text style={s.chipText}>{form.headerMediaId ? 'Change image' : 'Upload image'}</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : form.headerType !== 'TEXT' ? null : (
             <>
-              <FieldLabel style={s.label}>Header (optional, text only)</FieldLabel>
+              <FieldLabel style={s.label}>Header text</FieldLabel>
               <TextInput
                 value={form.headerText}
-                onChangeText={v => set({ headerText: v, headerType: v.trim() ? 'TEXT' : 'NONE' })}
+                onChangeText={v => set({ headerText: v })}
                 placeholder="e.g. Your scorecard"
                 placeholderTextColor="#94a3b8"
                 maxLength={60}

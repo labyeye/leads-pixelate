@@ -14,7 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
-import { notificationsAPI, AppNotification } from '../services/api';
+import { notificationsAPI, AppNotification, celebrationsAPI } from '../services/api';
+import UserAvatar from '../components/UserAvatar';
 import { navigateFromNotification } from '../navigation/navigationRef';
 
 const PRIMARY = '#024BAB';
@@ -42,11 +43,13 @@ function ago(iso: string) {
 export default function NotificationsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<AppNotification[]>([]);
+  const [celebrations, setCelebrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
+      celebrationsAPI.today().then(r => setCelebrations(r.data || [])).catch(() => {});
       const res = await notificationsAPI.list();
       setItems(res.data || []);
     } catch {
@@ -131,6 +134,26 @@ export default function NotificationsScreen({ navigation }: any) {
                 load();
               }}
             />
+          }
+          ListHeaderComponent={
+            celebrations.length > 0 ? (
+              <View style={{ borderWidth: 2, borderColor: '#000', backgroundColor: '#FFF1E6' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#000', paddingHorizontal: 12, paddingVertical: 6, borderBottomWidth: 2, borderBottomColor: '#000' }}>
+                  Today
+                </Text>
+                {celebrations.map((c, i) => (
+                  <View key={c.id || i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10 }}>
+                    <UserAvatar name={c.name} avatar={c.avatar} size={30} index={i} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#000' }}>{c.name}</Text>
+                      <Text style={{ fontSize: 12, color: '#FA731C' }}>
+                        {c.kind === 'birthday' ? '🎂' : '🎉'} {c.detail}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : null
           }
           ListEmptyComponent={
             <View style={styles.center}>

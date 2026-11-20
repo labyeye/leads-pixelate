@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { AnimatedValue } from "@/components/ui/AnimatedValue";
 import { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
@@ -28,8 +29,8 @@ export function StatCard({
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-2xl font-medium text-foreground tracking-tight">
-            {value}
+          <p className="text-2xl font-medium text-foreground tracking-tight tabular-nums">
+            <AnimatedValue value={value} />
           </p>
           {change && (
             <p

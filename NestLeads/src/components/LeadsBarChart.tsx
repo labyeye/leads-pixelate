@@ -1,17 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, View, Text, StyleSheet } from 'react-native';
 
-const H = 130;
-
 /** Animated bar graph: bars grow up from the baseline, value shown above each bar. */
 export default function LeadsBarChart({
   data,
   width,
   color = '#024BAB',
+  height: H = 130,
 }: {
   data: { label: string; value: number }[];
   width: number;
   color?: string;
+  height?: number;
 }) {
   const grow = useRef(new Animated.Value(0)).current;
   useEffect(() => {

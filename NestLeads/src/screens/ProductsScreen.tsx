@@ -18,7 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 
-import { productsAPI } from '../services/api';
+import { productsAPI, autopilotAPI } from '../services/api';
+import MediaUploadField from '../components/MediaUploadField';
 import FieldLabel from '../components/FieldLabel';
 
 const NB_SHADOW = {
@@ -40,7 +41,17 @@ const BLANK = {
   stockQuantity: '',
   taxRate: '18',
   hsnCode: '',
+  status: 'Active',
+  photos: [] as string[],
 };
+const MAX_PHOTOS = 5;
+const SHOOT_STYLES: [string, string][] = [
+  ['studio', 'Studio'],
+  ['lifestyle', 'Lifestyle'],
+  ['flatlay', 'Flat lay'],
+  ['festive', 'Festive'],
+  ['premium', 'Premium'],
+];
 
 export default function ProductsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -98,8 +109,26 @@ export default function ProductsScreen({ navigation }: any) {
       stockQuantity: p.stockQuantity ? String(p.stockQuantity) : '',
       taxRate: p.taxRate != null ? String(p.taxRate) : '18',
       hsnCode: p.hsnCode || '',
+      status: p.status || 'Active',
+      photos: p.photos?.length ? p.photos : p.photoUrl ? [p.photoUrl] : [],
     });
     setModalVisible(true);
+  };
+
+  const [shootStyle, setShootStyle] = useState('studio');
+  const [shooting, setShooting] = useState(false);
+  // AI photoshoot: the main photo re-shot professionally, added as another photo.
+  const runPhotoshoot = async () => {
+    if (!form.photos[0]) return;
+    try {
+      setShooting(true);
+      const { url } = await autopilotAPI.photoshoot(form.photos[0], shootStyle);
+      setForm(f => ({ ...f, photos: [...f.photos, url].slice(0, MAX_PHOTOS) }));
+    } catch (e: any) {
+      Alert.alert('Photoshoot failed', e.message);
+    } finally {
+      setShooting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -114,6 +143,7 @@ export default function ProductsScreen({ navigation }: any) {
         price: parseFloat(form.price) || 0,
         stockQuantity: parseFloat(form.stockQuantity) || 0,
         taxRate: form.taxRate === '' ? 0 : parseFloat(form.taxRate) || 0,
+        photoUrl: form.photos[0] || '',
       };
       if (editing) {
         await productsAPI.update(editing._id, payload);
@@ -399,6 +429,62 @@ export default function ProductsScreen({ navigation }: any) {
                   />
                 </View>
               </View>
+              <FieldLabel style={styles.fieldLabel}>
+                PHOTOS ({form.photos.length}/{MAX_PHOTOS})
+              </FieldLabel>
+              <MediaUploadField
+                kind="image"
+                multiple
+                max={MAX_PHOTOS}
+                value={form.photos}
+                onChange={urls => setForm(f => ({ ...f, photos: urls.slice(0, MAX_PHOTOS) }))}
+              />
+              {form.photos.length > 0 && form.photos.length < MAX_PHOTOS && (
+                <View style={{ borderWidth: 2, borderColor: '#000', padding: 10, marginTop: 8, marginBottom: 6 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#000', marginBottom: 6 }}>
+                    AI photoshoot of the main photo
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {SHOOT_STYLES.map(([k, l]) => (
+                      <TouchableOpacity
+                        key={k}
+                        onPress={() => setShootStyle(k)}
+                        style={{ borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 4, backgroundColor: shootStyle === k ? '#024BAB' : '#fff' }}
+                      >
+                        <Text style={{ fontSize: 12, color: shootStyle === k ? '#fff' : '#000' }}>{l}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <TouchableOpacity
+                    onPress={runPhotoshoot}
+                    disabled={shooting}
+                    style={{ backgroundColor: '#FF751F', borderWidth: 2, borderColor: '#000', paddingVertical: 9, alignItems: 'center', opacity: shooting ? 0.6 : 1 }}
+                  >
+                    {shooting ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600' }}>✨ Create AI photo</Text>}
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              <FieldLabel style={styles.fieldLabel}>STATUS</FieldLabel>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                {['Active', 'Inactive'].map(st => (
+                  <TouchableOpacity
+                    key={st}
+                    onPress={() => setForm(f => ({ ...f, status: st }))}
+                    style={{
+                      flex: 1,
+                      borderWidth: 2,
+                      borderColor: '#000',
+                      paddingVertical: 8,
+                      alignItems: 'center',
+                      backgroundColor: form.status === st ? (st === 'Active' ? '#16a34a' : '#dc2626') : '#fff',
+                    }}
+                  >
+                    <Text style={{ fontWeight: '600', color: form.status === st ? '#fff' : '#000' }}>{st}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               <FieldLabel style={styles.fieldLabel}>DESCRIPTION</FieldLabel>
               <TextInput
                 style={[styles.input, styles.textArea]}

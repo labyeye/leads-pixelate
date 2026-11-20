@@ -34,7 +34,7 @@ const RULES: [RegExp, string][] = [
 ];
 
 // Guess each {{n}} from the template's wording, then its MAP hint; the rest stay "custom" and are asked for.
-function mappingFor(t: any) {
+export function mappingFor(t: any) {
   const body: string = t?.bodyText || '';
   const hint = /MAP:\s*([A-Za-z,\s]+)/
     .exec(t?.notes || '')?.[1]

@@ -17,11 +17,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import SourceBadge, { SourceLogo } from '../components/SourceBadge';
-import ScreenHeader from '../components/ScreenHeader';
+import AppHeader from '../components/AppHeader';
 import LeadsBarChart from '../components/LeadsBarChart';
 import { SlideIn, CountUp, CountText } from '../components/motion';
 import UserAvatar from '../components/UserAvatar';
-import { PieChart } from 'react-native-gifted-charts';
+import LeadsGeoMap from '../components/LeadsGeoMap';
+import { PieChart, LineChart } from 'react-native-gifted-charts';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -74,6 +75,9 @@ export default function DashboardScreen({ navigation }: any) {
   const [recentLeads, setRecentLeads] = useState<any[]>([]);
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [sourceFocusedIdx, setSourceFocusedIdx] = useState(0);
+  const [received, setReceived] = useState<
+    { label: string; leads: number; worked: number }[]
+  >([]);
   const [activities, setActivities] = useState<
     { type: string; label: string; time: Date }[]
   >([]);
@@ -83,6 +87,26 @@ export default function DashboardScreen({ navigation }: any) {
       if (isRefresh) setRefreshing(true);
       const statsRes = await dashboardAPI.getStats();
       if (statsRes.success) setData(statsRes.data);
+      // New leads vs worked, last 7 days (same data as Live Performance).
+      try {
+        const from = new Date();
+        from.setHours(0, 0, 0, 0);
+        from.setDate(from.getDate() - 6);
+        const liveRes = await dashboardAPI.getLive(10080, {
+          from: from.toISOString(),
+          to: new Date().toISOString(),
+        });
+        const trend = liveRes?.data?.trend || [];
+        setReceived(
+          trend.map((p: any) => ({
+            label: new Date(p.t).toLocaleDateString('en-IN', { weekday: 'short' }),
+            leads: p.leads || 0,
+            worked: p.worked || 0,
+          })),
+        );
+      } catch {
+        /* ignore */
+      }
       // Load recent leads for notifications
       try {
         const { leadsAPI } = require('../services/api');
@@ -153,34 +177,15 @@ export default function DashboardScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      <ScreenHeader
-        icon="grid-outline"
+      <AppHeader
+        name={user?.name}
+        avatar={user?.avatar}
         title="Dashboard"
-        right={
-          <>
-            <TouchableOpacity
-              hitSlop={8}
-              style={{ padding: 4 }}
-              onPress={() => navigation?.navigate('LeadsStack', { screen: 'LeadsList' })}
-              accessibilityLabel="Search leads"
-            >
-              <Icon name="search-outline" size={22} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              hitSlop={8}
-              style={{ padding: 4 }}
-              onPress={() => navigation?.navigate('More', { screen: 'Notifications' })}
-              accessibilityLabel="Notifications"
-            >
-              <Icon name="notifications-outline" size={22} color="#000" />
-              {unread > 0 && (
-                <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#DC2626', borderRadius: 8, minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
-                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: '600' }}>{unread > 9 ? '9+' : unread}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </>
-        }
+        badge={unread > 0}
+        onMenu={() => navigation?.navigate('More')}
+        onSearch={() => navigation?.navigate('LeadsStack', { screen: 'LeadsList' })}
+        onBell={() => navigation?.navigate('More', { screen: 'Notifications' })}
+        onAvatar={() => navigation?.navigate('More')}
       />
 
       {loading ? (
@@ -231,7 +236,52 @@ export default function DashboardScreen({ navigation }: any) {
               delay={240}
             />
           </View>
-          <View style={[styles.kpiRow, { marginTop: 10 }]}>
+          {received.length > 0 && (() => {
+            const newTotal = received.reduce((a, p) => a + p.leads, 0);
+            const workedTotal = received.reduce((a, p) => a + p.worked, 0);
+            const max = Math.max(...received.map(p => Math.max(p.leads, p.worked)), 4);
+            const chartW = SCREEN_WIDTH - 90;
+            return (
+              <SlideIn delay={260} style={[styles.section, { marginTop: 12 }]}>
+                <Text style={styles.sectionLabel}>NEW LEADS VS WORKED · LAST 7 DAYS</Text>
+                <View style={styles.rwLegend}>
+                  <View style={styles.rwLegendItem}>
+                    <View style={[styles.rwDot, { backgroundColor: PRIMARY }]} />
+                    <Text style={styles.rwLegendText}>New {newTotal}</Text>
+                  </View>
+                  <View style={styles.rwLegendItem}>
+                    <View style={[styles.rwDot, { backgroundColor: SECONDARY }]} />
+                    <Text style={styles.rwLegendText}>
+                      Worked {workedTotal}
+                      {newTotal ? ` · ${Math.round((workedTotal / newTotal) * 100)}%` : ''}
+                    </Text>
+                  </View>
+                </View>
+                <LineChart
+                  data={received.map(p => ({ value: p.leads, label: p.label }))}
+                  data2={received.map(p => ({ value: p.worked }))}
+                  color1={PRIMARY}
+                  color2={SECONDARY}
+                  dataPointsColor1={PRIMARY}
+                  dataPointsColor2={SECONDARY}
+                  thickness={2.5}
+                  maxValue={max}
+                  noOfSections={4}
+                  width={chartW}
+                  height={140}
+                  spacing={chartW / Math.max(1, received.length - 1) - 4}
+                  initialSpacing={10}
+                  endSpacing={10}
+                  yAxisTextStyle={{ fontSize: 10, color: '#475569' }}
+                  xAxisLabelTextStyle={{ fontSize: 10, color: '#000' }}
+                  yAxisThickness={0}
+                  xAxisColor="#000"
+                  rulesColor="#e2e8f0"
+                />
+              </SlideIn>
+            );
+          })()}
+          <View style={[styles.kpiRow, { marginTop: 12 }]}>
             <KpiCard
               title="FOLLOW-UPS TODAY"
               value={data?.todayFollowUps?.length ?? 0}
@@ -269,102 +319,6 @@ export default function DashboardScreen({ navigation }: any) {
             <Text style={styles.sectionLabel}>DAILY LEADS · LAST 7 DAYS</Text>
             <LeadsBarChart data={dailyLeads} width={SCREEN_WIDTH - 62} />
           </SlideIn>
-          <View style={[styles.kpiRow, { marginTop: 10 }]}>
-            {topSources.map((src, i) => (
-              <KpiCard
-                key={src.name}
-                title={src.name.toUpperCase()}
-                value={src.value}
-                iconNode={<SourceLogo source={src.name} size={30} />}
-                delay={320 + i * 80}
-              />
-            ))}
-            {Array.from({ length: 4 - topSources.length }).map((_, i) => (
-              <View key={`pad${i}`} style={{ flex: 1 }} />
-            ))}
-          </View>
-          <SlideIn delay={380} style={[styles.section, { marginTop: 12 }]}>
-            <Text style={styles.sectionLabel}>RECENT LEADS ADDED</Text>
-            <View style={styles.tHead}>
-              <Text style={[styles.tHeadText, { flex: 2 }]}>NAME</Text>
-              <Text style={[styles.tHeadText, { flex: 1.3 }]}>SOURCE</Text>
-              <Text style={[styles.tHeadText, { flex: 1.2 }]}>STATUS</Text>
-              <Text
-                style={[styles.tHeadText, { flex: 0.9, textAlign: 'right' }]}
-              >
-                ADDED
-              </Text>
-            </View>
-            {recentLeads.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Text style={styles.emptySub}>No leads yet</Text>
-              </View>
-            ) : (
-              recentLeads.slice(0, 6).map((l: any) => (
-                <TouchableOpacity
-                  key={l._id}
-                  style={styles.tRow}
-                  onPress={() =>
-                    navigation?.navigate('LeadsStack', {
-                      screen: 'LeadDetail',
-                      params: { leadId: l._id },
-                    })
-                  }
-                >
-                  <Text style={[styles.tName, { flex: 2 }]} numberOfLines={1}>
-                    {l.name || '—'}
-                  </Text>
-                  <View style={{ flex: 1.3, alignItems: 'flex-start' }}>
-                    <SourceLogo source={l.source} size={22} />
-                  </View>
-                  <Text style={[styles.tCell, { flex: 1.2 }]} numberOfLines={1}>
-                    {l.status || 'NEW'}
-                  </Text>
-                  <Text
-                    style={[styles.tCell, { flex: 0.9, textAlign: 'right' }]}
-                  >
-                    {l.createdAt
-                      ? new Date(l.createdAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                        })
-                      : ''}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </SlideIn>
-          {(data?.recentQuotations?.length ?? 0) > 0 && (
-            <SlideIn delay={420} style={[styles.section, { marginTop: 12 }]}>
-              <Text style={styles.sectionLabel}>RECENT QUOTATIONS</Text>
-              {data.recentQuotations.slice(0, 5).map((q: any) => (
-                <TouchableOpacity
-                  key={q._id}
-                  style={styles.tRow}
-                  onPress={() =>
-                    navigation?.navigate('More', { screen: 'Quotations' })
-                  }
-                >
-                  <View style={{ flex: 2 }}>
-                    <Text style={styles.tName} numberOfLines={1}>
-                      {q.companyName || q.clientName || '—'}
-                    </Text>
-                    <Text style={styles.emptySub} numberOfLines={1}>
-                      {q.number}
-                      {q.projectTitle ? ` · ${q.projectTitle}` : ''}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                    <Text style={styles.tName}>
-                      ₹{Number(q.total || 0).toLocaleString('en-IN')}
-                    </Text>
-                    <Text style={styles.emptySub}>{q.status}</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </SlideIn>
-          )}
-
           {/* Source Breakdown — Pie Chart */}
           {data?.sourceData?.length > 0 &&
             (() => {
@@ -467,47 +421,10 @@ export default function DashboardScreen({ navigation }: any) {
               );
             })()}
 
-          {/* Leaderboard */}
-          {data?.userPerformance?.length > 0 && (
-            <SlideIn delay={540} style={[styles.section, { marginTop: 12 }]}>
-              <Text style={styles.sectionLabel}>TEAM LEADERBOARD</Text>
-              {data.userPerformance.map((p: any, i: number) => {
-                const rate =
-                  p.leadsCount > 0
-                    ? Math.round((p.conversions / p.leadsCount) * 100)
-                    : 0;
-                return (
-                  <View key={p._id} style={styles.lbRow}>
-                    <UserAvatar
-                      name={p.name}
-                      avatar={p.avatar}
-                      size={34}
-                      index={i}
-                    />
-                    <View style={styles.lbInfo}>
-                      <Text style={styles.lbName}>{p.name}</Text>
-                      <View style={styles.lbBar}>
-                        <View
-                          style={[
-                            styles.lbFill,
-                            {
-                              width: `${rate}%` as any,
-                              backgroundColor:
-                                i % 2 === 0 ? PRIMARY : SECONDARY,
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                    <View style={styles.lbRight}>
-                      <Text style={styles.lbConv}>{p.conversions}</Text>
-                      <Text style={styles.lbLeads}>{p.leadsCount} leads</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </SlideIn>
-          )}
+          <SlideIn delay={520} style={[styles.section, { marginTop: 12 }]}>
+            <Text style={styles.sectionLabel}>WHERE LEADS COME FROM</Text>
+            <LeadsGeoMap width={SCREEN_WIDTH - 62} />
+          </SlideIn>
         </ScrollView>
       )}
 
@@ -573,6 +490,10 @@ function MonthRow({
 }
 
 const styles = StyleSheet.create({
+  rwLegend: { flexDirection: 'row', gap: 16, marginBottom: 10 },
+  rwLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rwDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: '#000' },
+  rwLegendText: { fontSize: 12, fontWeight: '500', color: '#000' },
   container: { flex: 1, backgroundColor: '#fff' },
 
   // Header — NestHR structure with neubrutalism style

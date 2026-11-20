@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
+import { csvToClients } from '../lib/clientsImport';
 import ScreenHeader from '../components/ScreenHeader';
 import { clientsAPI } from '../services/api';
 import ExportFieldsDialog, {
@@ -122,6 +123,36 @@ export default function ClientsScreen() {
       (c.company || '').toLowerCase().includes(q)
     );
   });
+
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const runImport = async () => {
+    const { rows, error } = csvToClients(importText);
+    if (error) return Alert.alert('Import', error);
+    try {
+      setImporting(true);
+      let imported = 0;
+      const skipped: any[] = [];
+      for (let k = 0; k < rows.length; k += 500) {
+        const r = await clientsAPI.importBulk(rows.slice(k, k + 500));
+        imported += r.imported || 0;
+        skipped.push(...(r.skipped || []).map((x: any) => ({ ...x, row: x.row + k })));
+      }
+      Alert.alert(
+        'Import complete',
+        `${imported} imported` +
+          (skipped.length ? `, ${skipped.length} skipped (e.g. row ${skipped[0].row}: ${skipped[0].reason})` : ''),
+      );
+      setImportOpen(false);
+      setImportText('');
+      fetchClients();
+    } catch (e: any) {
+      Alert.alert('Import failed', e.message);
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const openAdd = () => {
     setEditClient(null);
@@ -278,12 +309,48 @@ export default function ClientsScreen() {
               disabled={filtered.length === 0}>
               <Icon name="download-outline" size={22} color="#000" />
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => setImportOpen(true)} hitSlop={8} style={{ padding: 4 }} accessibilityLabel="Import clients">
+              <Icon name="cloud-upload-outline" size={22} color="#000" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={openAdd} hitSlop={8} style={{ padding: 4 }}>
               <Icon name="add" size={24} color="#000" />
             </TouchableOpacity>
           </>
         }
       />
+
+      <Modal visible={importOpen} transparent animationType="slide" onRequestClose={() => setImportOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, paddingBottom: insets.bottom + 16 }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: '#000' }}>Import clients (paste CSV)</Text>
+            <Text style={{ fontSize: 12, color: '#64748b', marginVertical: 6 }}>
+              First row: Name, Company, Email, Phone, Address, Business Type (GST, Services optional).
+            </Text>
+            <TextInput
+              style={{ borderWidth: 2, borderColor: '#000', minHeight: 160, padding: 10, fontSize: 12, color: '#000', textAlignVertical: 'top' }}
+              multiline
+              value={importText}
+              onChangeText={setImportText}
+              placeholder={'Name,Company,Email,Phone,Address,Business Type\nRavi,Acme,ravi@acme.in,9876543210,Pune,Manufacturing'}
+              placeholderTextColor="#94a3b8"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <TouchableOpacity style={{ flex: 1, borderWidth: 2, borderColor: '#000', paddingVertical: 12, alignItems: 'center' }} onPress={() => setImportOpen(false)}>
+                <Text style={{ fontWeight: '600', color: '#000' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, borderWidth: 2, borderColor: '#000', paddingVertical: 12, alignItems: 'center', backgroundColor: '#024BAB', opacity: importing ? 0.6 : 1 }}
+                onPress={runImport}
+                disabled={importing}
+              >
+                {importing ? <ActivityIndicator color="#fff" /> : <Text style={{ fontWeight: '600', color: '#fff' }}>Import</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>

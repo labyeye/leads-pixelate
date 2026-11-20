@@ -255,3 +255,37 @@ export function CountText({
     </Animated.Text>
   );
 }
+
+/**
+ * Counts up any card value: numbers, or strings like "₹4,500", "82%", "3 days".
+ * Anything that is not a single number is shown as-is.
+ */
+export function AnimatedValue({ value, style }: { value: any; style?: any }) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return (
+      <CountUp
+        value={value}
+        style={style}
+        decimals={Number.isInteger(value) ? 0 : 1}
+        locale
+      />
+    );
+  }
+  const m = typeof value === 'string' ? /^(\D*?)(\d[\d,]*(?:\.\d+)?)(\D*)$/.exec(value.trim()) : null;
+  if (m) {
+    const n = Number(m[2].replace(/,/g, ''));
+    if (Number.isFinite(n)) {
+      return (
+        <CountUp
+          value={n}
+          style={style}
+          prefix={m[1]}
+          suffix={m[3]}
+          decimals={m[2].split('.')[1]?.length || 0}
+          locale={m[2].includes(',')}
+        />
+      );
+    }
+  }
+  return <Animated.Text style={style}>{value}</Animated.Text>;
+}

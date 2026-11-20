@@ -115,6 +115,31 @@ export default function BillingScreen({ navigation }: any) {
   const maxMembers = planLimits?.limits?.teamMembers ?? 2;
   const status = subscription?.status || tenant?.status || 'trial';
   const state = billingState(currentPlanId, status, periodEnd);
+  const isActivePaid =
+    currentPlanId !== 'trial' &&
+    (subscription?.status === 'active' || tenant?.status === 'active') &&
+    !(periodEnd && new Date(periodEnd).getTime() < Date.now());
+  const [cancelling, setCancelling] = useState(false);
+  const cancelSub = () =>
+    Alert.alert('Cancel subscription?', 'You keep access until the end of the current period.', [
+      { text: 'Keep it', style: 'cancel' },
+      {
+        text: 'Cancel subscription',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setCancelling(true);
+            await billingAPI.cancelSubscription();
+            Alert.alert('Subscription cancelled');
+            loadAll(true);
+          } catch (e: any) {
+            Alert.alert('Error', e.message);
+          } finally {
+            setCancelling(false);
+          }
+        },
+      },
+    ]);
 
   // Three plans on sale (Social Autopilot is included); business / enterprise only for tenants already on them.
   const planIds = ['starter', 'growth', 'professional'];
@@ -227,6 +252,15 @@ export default function BillingScreen({ navigation }: any) {
           To renew or change your plan, please contact your account manager or
           support.
         </Text>
+        {isActivePaid && (
+          <TouchableOpacity
+            onPress={cancelSub}
+            disabled={cancelling}
+            style={{ borderWidth: 2, borderColor: '#dc2626', paddingVertical: 11, alignItems: 'center', opacity: cancelling ? 0.6 : 1 }}
+          >
+            <Text style={{ color: '#dc2626', fontWeight: '600' }}>{cancelling ? 'Cancelling…' : 'Cancel subscription'}</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Invoices */}
         <Text style={styles.sectionTitle}>Invoice History</Text>

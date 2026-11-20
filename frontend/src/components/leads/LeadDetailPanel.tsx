@@ -510,7 +510,7 @@ export function LeadDetailPanel({
         <StatusHistoryTimeline
           statusHistory={lead.statusHistory}
           stagePath={lead.stagePath}
-          leadId={lead._id}
+          lead={lead}
           onChanged={onRefresh}
         />
       </div>

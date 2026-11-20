@@ -97,6 +97,7 @@ const blankItem = () => ({
 const today = () => new Date().toISOString().slice(0, 10);
 const blank = () => ({
   partyName: '',
+  partyPhone: '',
   reference: '',
   date: today(),
   dueDate: '',
@@ -174,6 +175,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
     setEditing(d);
     setForm({
       partyName: d.partyName,
+      partyPhone: d.partyPhone || '',
       reference: d.reference || '',
       date: (d.date || today()).slice(0, 10),
       dueDate: d.dueDate ? d.dueDate.slice(0, 10) : '',
@@ -247,6 +249,7 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
     try {
       const payload = {
         partyName: form.partyName.trim(),
+        partyPhone: form.partyPhone.trim(),
         reference: form.reference.trim(),
         date: form.date,
         dueDate: form.dueDate || null,
@@ -451,6 +454,15 @@ export default function TradeDocumentsScreen({ navigation, route }: any) {
                 placeholderTextColor="#94a3b8"
                 value={form.partyName}
                 onChangeText={v => setForm(f => ({ ...f, partyName: v }))}
+              />
+              <FieldLabel style={styles.fieldLabel}>CLIENT PHONE (FOR WHATSAPP)</FieldLabel>
+              <TextInput
+                style={styles.input}
+                placeholder="+91 9876543210"
+                placeholderTextColor="#94a3b8"
+                keyboardType="phone-pad"
+                value={form.partyPhone}
+                onChangeText={v => setForm(f => ({ ...f, partyPhone: v }))}
               />
               <FieldLabel style={styles.fieldLabel}>REFERENCE (OPTIONAL)</FieldLabel>
               <TextInput

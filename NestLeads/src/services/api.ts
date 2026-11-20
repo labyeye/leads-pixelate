@@ -303,16 +303,22 @@ export const leadsAPI = {
     }),
   delete: (id: string) =>
     request<{ success: boolean }>(`/leads/${id}`, { method: 'DELETE' }),
-  bulkUpdateStatus: (leadIds: string[], status: string, remarks?: string) =>
+  bulkUpdateStatus: (leadIds: string[], status: string, remarks?: string, lostReason?: string) =>
     request<{ success: boolean; updatedCount: number; skipped: any[] }>(
       '/leads/bulk-status',
-      { method: 'POST', body: JSON.stringify({ leadIds, status, remarks }) },
+      { method: 'POST', body: JSON.stringify({ leadIds, status, remarks, lostReason }) },
     ),
   importBulk: (leads: any[]) =>
     request<{ success: boolean; count: number; message: string }>('/leads/import', {
       method: 'POST',
       body: JSON.stringify({ leads }),
     }),
+  // Same email to many leads from the connected Gmail.
+  bulkEmail: (leadIds: string[], subject: string, message: string) =>
+    request<{ success: boolean; sentCount: number; skipped: { id: string; name: string; reason: string }[] }>(
+      '/leads/bulk-email',
+      { method: 'POST', body: JSON.stringify({ leadIds, subject, message }) },
+    ),
   bulkAssign: (leadIds: string[], assignedTo: string) =>
     request<{ success: boolean; updatedCount: number; skippedCount: number }>(
       '/leads/bulk-assign',
@@ -327,6 +333,12 @@ export const leadsAPI = {
     request<{ success: boolean; data: any }>(`/leads/${id}/notes`, {
       method: 'POST',
       body: JSON.stringify({ text }),
+    }),
+  // Correct the latest status-history entry (no new entry is added).
+  editLatestStatus: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/leads/${id}/status-history/latest`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
   convertToClient: (id: string, data: any) =>
     request<{ success: boolean; data: any }>(`/leads/${id}/convert`, {
@@ -355,6 +367,12 @@ export interface SavedView {
 }
 
 export const clientsAPI = {
+  // Up to 1000 rows per call; the server skips duplicates and bad rows and says why.
+  importBulk: (clients: Record<string, string>[]) =>
+    request<{ success: boolean; imported: number; skipped: { row: number; name: string; reason: string }[]; message: string }>(
+      '/clients/import',
+      { method: 'POST', body: JSON.stringify({ clients }) },
+    ),
   getAll: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<{ success: boolean; data: any[] }>(`/clients${qs}`);
@@ -376,6 +394,12 @@ export const clientsAPI = {
 };
 
 export const quotationsAPI = {
+  // Approver says yes/no on a quotation waiting for approval.
+  decideApproval: (id: string, decision: 'approve' | 'reject', remarks = '') =>
+    request<{ success: boolean; data: any; autoSent?: { sent: boolean; reason?: string } | null }>(
+      `/quotations/${id}/approval`,
+      { method: 'POST', body: JSON.stringify({ decision, remarks }) },
+    ),
   getAll: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<{ success: boolean; data: any[] }>(`/quotations${qs}`);
@@ -434,6 +458,11 @@ export const salesOrdersAPI = inventoryResource('/sales-orders');
 export const purchaseOrdersAPI = inventoryResource('/purchase-orders');
 export const invoicesAPI = inventoryResource('/invoices');
 
+export const celebrationsAPI = {
+  // Team birthdays and work/marriage anniversaries today.
+  today: () => request<{ success: boolean; data: any[] }>('/celebrations'),
+};
+
 export const usersAPI = {
   getAll: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
@@ -451,8 +480,17 @@ export const usersAPI = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  delete: (id: string) =>
-    request<{ success: boolean }>(`/users/${id}`, { method: 'DELETE' }),
+  // transferTo: user id to get this person's leads, or '' to leave them unassigned.
+  delete: (id: string, transferTo?: string) =>
+    request<{ success: boolean; message?: string; leadsMoved?: number; movedTo?: string | null }>(
+      `/users/${id}`,
+      {
+        method: 'DELETE',
+        ...(transferTo !== undefined ? { body: JSON.stringify({ transferTo }) } : {}),
+      },
+    ),
+  leadCount: (id: string) =>
+    request<{ success: boolean; data: { count: number } }>(`/users/${id}/lead-count`),
   updateAutoAssign: (userIds: string[]) =>
     request<{ success: boolean }>('/users/auto-assign', {
       method: 'POST',
@@ -556,6 +594,14 @@ export const reportsAPI = {
 };
 
 export const campaignsAPI = {
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/campaigns/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  // How many leads a campaign audience would reach, with a few names.
+  resolveAudience: (body: any) =>
+    request<{ success: boolean; data: { count: number; preview: any[] } }>('/campaigns/resolve-audience', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   getAll: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<{ success: boolean; count: number; data: any[] }>(
@@ -608,13 +654,38 @@ export const funnelsAPI = {
 
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>('/dashboard/stats'),
-  getLive: (windowMin: number) =>
-    request<{ success: boolean; data: any }>(`/dashboard/live?window=${windowMin}`),
+  getLive: (windowMin: number, range?: { from: string; to: string }) =>
+    request<{ success: boolean; data: any }>(
+      `/dashboard/live?window=${windowMin}` +
+        (range ? `&from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}` : ''),
+    ),
   getMyPace: () =>
     request<{ success: boolean; data: any }>('/dashboard/my-pace'),
+  // month: "YYYY-MM"; default is this month.
+  getTargets: (month?: string) =>
+    request<{ success: boolean; data: any }>(
+      `/dashboard/targets${month ? `?month=${month}` : ''}`,
+    ),
+  getGeo: () => request<{ success: boolean; data: any }>('/dashboard/geo'),
+  getInsights: (days: number, range?: { from: string; to: string }) =>
+    request<{ success: boolean; data: any }>(
+      `/dashboard/insights?days=${days}` +
+        (range ? `&from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}` : ''),
+    ),
 };
 
 export const indiamartAPI = {
+  connect: (apiKey: string) =>
+    request<{ success: boolean; message: string }>('/leads/indiamart/connect', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey }),
+    }),
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>('/leads/indiamart/settings', {
+      method: 'POST',
+      body: JSON.stringify({ assigneeIds, batchSize }),
+    }),
+  disconnect: () => request<{ success: boolean; message: string }>('/leads/indiamart/disconnect', { method: 'POST' }),
   getStatus: () =>
     request<{ success: boolean; data: any }>('/indiamart/status'),
   sync: (body: { start_time?: string; end_time?: string }) =>
@@ -628,6 +699,11 @@ export const indiamartAPI = {
 };
 
 export const facebookAPI = {
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>('/facebook/settings', {
+      method: 'POST',
+      body: JSON.stringify({ assigneeIds, batchSize }),
+    }),
   sync: (pageId?: string, since?: string, until?: string) =>
     request<{ success: boolean; data: any; message: string }>(
       '/facebook/sync',
@@ -860,6 +936,18 @@ export const linkedinAdsAPI = {
 };
 
 export const tradeindiaSyncAPI = {
+  getStatus: () => request<{ success: boolean; data: any }>('/leads/tradeindia/status'),
+  connect: (userId: string, profileId: string, apiKey: string, apiUrl: string) =>
+    request<{ success: boolean; message: string }>('/leads/tradeindia/connect', {
+      method: 'POST',
+      body: JSON.stringify({ userId, profileId, apiKey, apiUrl }),
+    }),
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>('/leads/tradeindia/settings', {
+      method: 'POST',
+      body: JSON.stringify({ assigneeIds, batchSize }),
+    }),
+  disconnect: () => request<{ success: boolean; message: string }>('/leads/tradeindia/disconnect', { method: 'POST' }),
   sync: () =>
     request<{ success: boolean; data: any; message: string }>(
       '/tradeindia/sync',
@@ -870,6 +958,18 @@ export const tradeindiaSyncAPI = {
 };
 
 export const justdialSyncAPI = {
+  getStatus: () => request<{ success: boolean; data: any }>('/leads/justdial/status'),
+  connect: (apiKey?: string) =>
+    request<{ success: boolean; message: string; data: { webhookUrl: string } }>('/leads/justdial/connect', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey: apiKey || '' }),
+    }),
+  updateSettings: (assigneeIds: string[], batchSize?: number) =>
+    request<{ success: boolean; message: string }>('/leads/justdial/settings', {
+      method: 'POST',
+      body: JSON.stringify({ assigneeIds, batchSize }),
+    }),
+  disconnect: () => request<{ success: boolean; message: string }>('/leads/justdial/disconnect', { method: 'POST' }),
   sync: () =>
     request<{ success: boolean; data: any; message: string }>(
       '/justdial/sync',
@@ -923,6 +1023,15 @@ export const socialAPI = {
       method: 'PUT',
       body: JSON.stringify({ reason }),
     }),
+  submitPost: (id: string) =>
+    request<{ success: boolean; data: any }>(`/social/posts/${id}/submit`, { method: 'PUT' }),
+  disconnectAccount: (id: string) =>
+    request<{ success: boolean; message: string }>(`/social/accounts/${id}`, { method: 'DELETE' }),
+  // Pull the Facebook pages / Instagram accounts already connected under Integrations.
+  importFromIntegration: () =>
+    request<{ success: boolean; data: { connected: number } }>('/social/accounts/import-from-integration', {
+      method: 'POST',
+    }),
   publishPost: (id: string) =>
     request<{ success: boolean; data: any; message: string }>(
       `/social/posts/${id}/publish`,
@@ -955,7 +1064,36 @@ export async function uploadFile(
   return data.url;
 }
 
+export const emailAPI = {
+  getAuthUrl: () => request<{ success: boolean; data: { authUrl: string } }>('/email/gmail/auth-url'),
+  getStatus: () =>
+    request<{ success: boolean; data: { connected: boolean; emailAddress: string; lastSyncedAt: string | null } }>(
+      '/email/gmail/status',
+    ),
+  disconnect: () => request<{ success: boolean; message: string }>('/email/gmail/disconnect', { method: 'POST' }),
+  getThread: (leadId: string) => request<{ success: boolean; data: any[] }>(`/email/leads/${leadId}`),
+  send: (leadId: string, data: { subject: string; bodyHtml: string; bodyText?: string }) =>
+    request<{ success: boolean; data: any }>(`/email/leads/${leadId}/send`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 export const whatsappAPI = {
+  // Upload a header image to Meta for a template; returns its media id/handle.
+  uploadMedia: async (fileUri: string, fileName: string, mimeType: string) => {
+    const token = await getToken();
+    const fd = new FormData();
+    fd.append('file', { uri: fileUri, name: fileName, type: mimeType } as any);
+    const res = await fetch(`${API_BASE}/whatsapp/upload-media`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed');
+    return data as { success: boolean; data: { mediaId: string; handle?: string; filename: string } };
+  },
   getConversations: () =>
     request<{ success: boolean; data: any[] }>('/whatsapp/conversations'),
   sendMessage: (phone: string, message: string) =>
@@ -973,7 +1111,7 @@ export const whatsappAPI = {
     leadId: string;
     templateId?: string;
     variableMapping?: { position: number; fieldKey: string; customValue: string }[];
-    messageType?: 'text';
+    messageType?: 'text' | 'document';
     messageText?: string;
     phoneNumberId?: string;
     documentId?: string;
@@ -1134,6 +1272,9 @@ export const supportAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  update: (id: string, data: { subject?: string; description?: string; priority?: string }) =>
+    request<{ success: boolean; data: any }>(`/support/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<{ success: boolean; data: any }>(`/support/${id}`, { method: 'DELETE' }),
 };
 
 // Terms & Privacy acceptance (backend /api/legal). Used by components/TermsGate.
@@ -1157,6 +1298,8 @@ export const billingAPI = {
     request<{ success: boolean; data: any }>('/billing/subscription'),
   getInvoices: () =>
     request<{ success: boolean; data: any[] }>('/billing/invoices'),
+  cancelSubscription: () =>
+    request<{ success: boolean; message: string }>('/billing/cancel', { method: 'POST' }),
 };
 
 // Social Autopilot (backend: routes/autopilotRoutes.js). Same endpoints as the web app.
@@ -1192,6 +1335,12 @@ function autopilotCampaignApi(id: string) {
 }
 
 export const autopilotAPI = {
+  // AI product photoshoot: an uploaded product photo re-shot in a style; returns the new photo URL.
+  photoshoot: (photoUrl: string, style: string) =>
+    request<{ success: boolean; url: string }>('/autopilot/photoshoot', {
+      method: 'POST',
+      body: JSON.stringify({ photoUrl, style }),
+    }),
   overview: () => request<{ success: boolean; data: any }>('/autopilot'),
   createCampaign: (name: string) =>
     request<{ success: boolean; data: { id: string; name: string } }>(
@@ -1302,6 +1451,17 @@ export const callsAPI = {
 };
 
 export const aiCallingAPI = {
+  getSettings: () => request<{ success: boolean; data: any }>('/ai-calling/settings'),
+  updateSettings: (data: object) =>
+    request<{ success: boolean; message: string; data: any }>('/ai-calling/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  testConnection: (apiKey?: string, agentId?: string) =>
+    request<{ success: boolean; message: string }>('/ai-calling/test-connection', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey, agentId }),
+    }),
   callLead: (leadId: string) =>
     request<{ success: boolean; message: string; data: any }>(
       `/ai-calling/call-lead/${leadId}`,

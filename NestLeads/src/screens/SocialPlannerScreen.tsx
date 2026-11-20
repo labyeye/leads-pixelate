@@ -990,6 +990,64 @@ export default function SocialPlannerScreen({ navigation }: any) {
     )
     .slice(0, 6);
 
+  const handleSubmit = async (post: any) => {
+    setActionLoading(true);
+    try {
+      await socialAPI.submitPost(post._id);
+      Alert.alert('Submitted for approval');
+      fetchData(true);
+    } catch (e: any) {
+      Alert.alert('Failed', e.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Connected social accounts: list, import from Integrations, disconnect.
+  const [accountsOpen, setAccountsOpen] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accBusy, setAccBusy] = useState(false);
+  const loadAccounts = async () => {
+    try {
+      const r = await socialAPI.getAccounts();
+      setAccounts((r.data || []).filter((a: any) => a.isActive !== false));
+    } catch {
+      setAccounts([]);
+    }
+  };
+  const openAccounts = () => {
+    setAccountsOpen(true);
+    loadAccounts();
+  };
+  const importAccounts = async () => {
+    try {
+      setAccBusy(true);
+      const r = await socialAPI.importFromIntegration();
+      Alert.alert('Accounts updated', `${r.data?.connected ?? 0} account(s) connected from Integrations.`);
+    } catch (e: any) {
+      Alert.alert("Couldn't fetch accounts", e.message || 'Connect Facebook under Integrations first.');
+    } finally {
+      setAccBusy(false);
+      loadAccounts();
+    }
+  };
+  const disconnectAccount = (a: any) =>
+    Alert.alert(`Disconnect ${a.accountName}?`, 'Scheduled posts will no longer go to this account.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await socialAPI.disconnectAccount(a._id);
+            loadAccounts();
+          } catch (e: any) {
+            Alert.alert('Failed', e.message);
+          }
+        },
+      },
+    ]);
+
   const handleApprove = (post: any) => {
     Alert.alert('Approve Post?', `Schedule for ${fmt(post.scheduledAt)}`, [
       { text: 'Cancel', style: 'cancel' },
@@ -1170,6 +1228,19 @@ export default function SocialPlannerScreen({ navigation }: any) {
 
           <Icon name="chevron-forward" size={16} color="#cbd5e1" />
         </View>
+
+        {['DRAFT', 'REJECTED'].includes(p.status) && (
+          <View style={styles.quickActions}>
+            <TouchableOpacity
+              style={[styles.quickBtn, { backgroundColor: '#eff6ff' }]}
+              onPress={() => handleSubmit(p)}
+              disabled={actionLoading}
+            >
+              <Icon name="send-outline" size={13} color="#024BAB" />
+              <Text style={[styles.quickBtnText, { color: '#024BAB' }]}>Submit for approval</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Quick approve/reject bar for pending */}
         {isAdmin && p.status === 'PENDING_APPROVAL' && (
@@ -1403,6 +1474,9 @@ export default function SocialPlannerScreen({ navigation }: any) {
         title="Social Planner"
         right={
           <>
+            <TouchableOpacity onPress={openAccounts} hitSlop={8} style={{ padding: 4 }} accessibilityLabel="Social accounts">
+              <Icon name="link-outline" size={22} color="#000" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => fetchData(true)} hitSlop={8} style={{ padding: 4 }}>
               <Icon name="refresh-outline" size={22} color="#000" />
             </TouchableOpacity>
@@ -1412,6 +1486,46 @@ export default function SocialPlannerScreen({ navigation }: any) {
           </>
         }
       />
+
+      <Modal visible={accountsOpen} transparent animationType="slide" onRequestClose={() => setAccountsOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16, paddingBottom: insets.bottom + 16, maxHeight: '80%' }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: '#000' }}>Social accounts</Text>
+            <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+              Pages and Instagram accounts posts can go to. They come from Facebook under Integrations.
+            </Text>
+            <ScrollView style={{ maxHeight: 320 }}>
+              {accounts.length === 0 ? (
+                <Text style={{ color: '#64748b', paddingVertical: 12 }}>No accounts connected yet.</Text>
+              ) : (
+                accounts.map(a => (
+                  <View key={a._id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' }}>
+                    <SourceLogo source={a.platform === 'instagram' ? 'Instagram' : 'Facebook'} size={22} />
+                    <Text style={{ flex: 1, color: '#000', fontWeight: '500' }} numberOfLines={1}>{a.accountName}</Text>
+                    {isAdmin && (
+                      <TouchableOpacity onPress={() => disconnectAccount(a)} hitSlop={8}>
+                        <Text style={{ color: '#dc2626', fontWeight: '600', fontSize: 12 }}>Disconnect</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+            {isAdmin && (
+              <TouchableOpacity
+                style={{ backgroundColor: '#024BAB', borderWidth: 2, borderColor: '#000', paddingVertical: 12, alignItems: 'center', marginTop: 12, opacity: accBusy ? 0.6 : 1 }}
+                onPress={importAccounts}
+                disabled={accBusy}
+              >
+                {accBusy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600' }}>Fetch from Integrations</Text>}
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={{ borderWidth: 2, borderColor: '#000', paddingVertical: 11, alignItems: 'center', marginTop: 8 }} onPress={() => setAccountsOpen(false)}>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {loading ? (
         <View style={styles.centerBox}>

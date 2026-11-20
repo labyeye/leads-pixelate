@@ -120,7 +120,19 @@ export default function ScheduleScreen({ navigation }: any) {
   }, [leads]);
 
   const todayStr = toLocalKey(new Date()) as string;
-  const selectedLeads = selectedDate ? dayMap[selectedDate] || [] : [];
+  // Overdue: date already passed and the lead is still open (same rule as web calendars).
+  const [showOverdue, setShowOverdue] = useState(false);
+  const overdue = useMemo(
+    () =>
+      leads
+        .filter(l => {
+          const k = toLocalKey(l[field]);
+          return !!k && k < todayStr && !['WON', 'DROP'].includes(l.status);
+        })
+        .sort((a, b) => new Date(a[field]).getTime() - new Date(b[field]).getTime()),
+    [leads, field, todayStr],
+  );
+  const selectedLeads = showOverdue ? overdue : selectedDate ? dayMap[selectedDate] || [] : [];
   const totalThisMonth = Object.keys(dayMap)
     .filter(d => d.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`))
     .reduce((a, d) => a + dayMap[d].length, 0);
@@ -160,6 +172,7 @@ export default function ScheduleScreen({ navigation }: any) {
             onPress={() => {
               setMode(m);
               setSelectedDate(null);
+              setShowOverdue(false);
             }}
           >
             <Icon
@@ -173,6 +186,33 @@ export default function ScheduleScreen({ navigation }: any) {
           </TouchableOpacity>
         ))}
       </View>
+
+      {!loading && overdue.length > 0 && (
+        <TouchableOpacity
+          onPress={() => {
+            setShowOverdue(v => !v);
+            setSelectedDate(null);
+          }}
+          style={{
+            marginHorizontal: 16,
+            marginBottom: 8,
+            borderWidth: 2,
+            borderColor: '#000',
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            backgroundColor: showOverdue ? '#dc2626' : '#fee2e2',
+          }}
+        >
+          <Icon name="alert-circle-outline" size={16} color={showOverdue ? '#fff' : '#dc2626'} />
+          <Text style={{ flex: 1, fontWeight: '600', color: showOverdue ? '#fff' : '#dc2626' }}>
+            {overdue.length} overdue {plural}
+          </Text>
+          <Text style={{ fontSize: 12, color: showOverdue ? '#fff' : '#dc2626' }}>{showOverdue ? 'Hide' : 'Show'}</Text>
+        </TouchableOpacity>
+      )}
 
       {loading ? (
         <View style={styles.centerBox}>
@@ -247,7 +287,10 @@ export default function ScheduleScreen({ navigation }: any) {
                       ],
                       isPast && !isToday && !isSelected && styles.dayCellPast,
                     ]}
-                    onPress={() => setSelectedDate(isSelected ? null : key)}
+                    onPress={() => {
+                      setShowOverdue(false);
+                      setSelectedDate(isSelected ? null : key);
+                    }}
                   >
                     <Text
                       style={[
@@ -305,7 +348,7 @@ export default function ScheduleScreen({ navigation }: any) {
           </View>
 
           {/* Selected day panel */}
-          {selectedDate && (
+          {(selectedDate || showOverdue) && (
             <View style={styles.panel}>
               <View style={styles.panelHeader}>
                 <View
@@ -314,10 +357,13 @@ export default function ScheduleScreen({ navigation }: any) {
                   <Icon name={icon} size={14} color="#fff" />
                 </View>
                 <Text style={styles.panelTitle}>
-                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString(
-                    'en-IN',
-                    { weekday: 'long', day: 'numeric', month: 'long' },
-                  )}
+                  {showOverdue || !selectedDate
+                    ? `Overdue ${plural}`
+                    : new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                      })}
                 </Text>
                 <View style={[styles.panelBadge, { backgroundColor: accent }]}>
                   <Text style={styles.panelBadgeText}>

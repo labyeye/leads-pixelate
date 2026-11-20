@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { AnimatedValue } from "@/components/ui/AnimatedValue";
 import type { ComponentType } from "react";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
@@ -47,7 +48,9 @@ export function KpiCard({
         <Icon className="w-5 h-5 text-white" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-2xl font-medium text-black leading-tight">{value}</p>
+        <p className="text-2xl font-medium text-black leading-tight tabular-nums">
+          <AnimatedValue value={value} />
+        </p>
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider truncate">
           {title}
         </p>

@@ -35,6 +35,7 @@ export default function AddLeadScreen({ navigation }: any) {
     company: '',
     phone: '',
     email: '',
+    website: '',
     requirement: '',
     budget: '',
     source: 'Manual',
@@ -230,6 +231,15 @@ export default function AddLeadScreen({ navigation }: any) {
               />
             </View>
           </View>
+
+          <Field
+            label="Website"
+            value={form.website}
+            onChangeText={(v: string) => set('website', v)}
+            placeholder="www.company.com"
+            keyboardType="url"
+            autoCapitalize="none"
+          />
 
           <Field
             label="Requirement"

@@ -755,10 +755,64 @@ const editLatestStatus = asyncHandler(async (req, res) => {
     else path.push(status);
     lead.stagePath = path.filter((s, j) => path.indexOf(s) === j);
   }
-  if (remarks !== undefined) last.remarks = String(remarks).slice(0, 2000);
+  if (remarks !== undefined) {
+    last.remarks = String(remarks).slice(0, 2000);
+    lead.remarks = last.remarks;
+  }
+  // The same details the status modal collects can be corrected too.
+  const b = req.body || {};
+  if (b.budget !== undefined) {
+    last.budget = String(b.budget || "").slice(0, 60);
+    lead.budget = last.budget;
+  }
+  for (const k of ["followUpDate", "visitScheduledDate", "visitActualDate"]) {
+    if (b[k] !== undefined) {
+      const d = b[k] ? new Date(b[k]) : null;
+      if (d && isNaN(d.getTime())) {
+        res.status(400);
+        throw new Error(`Invalid ${k}`);
+      }
+      last[k] = d || undefined;
+      lead[k] = d;
+    }
+  }
+  if (b.contactTag !== undefined) {
+    if (b.contactTag && !["HOT", "WARM", "COLD"].includes(b.contactTag)) {
+      res.status(400);
+      throw new Error("Contact tag must be one of: HOT, WARM, COLD");
+    }
+    last.contactTag = b.contactTag || undefined;
+    if (b.contactTag) lead.contactTag = b.contactTag;
+  }
+  if (Array.isArray(b.interestedProducts)) {
+    lead.interestedProducts = b.interestedProducts.map(String).slice(0, 50);
+  }
+  if (last.status === "DROP") {
+    if (b.lostReason) lead.lostReason = String(b.lostReason).slice(0, 80);
+    if (b.competitor !== undefined) lead.competitor = String(b.competitor || "").slice(0, 80);
+  }
   last.editedAt = new Date();
   last.editedBy = req.user._id;
   await lead.save();
+
+  // Corrected to WON: make sure the client exists, as a normal WON would.
+  if (before !== "WON" && last.status === "WON") {
+    const Client = require("../models/Client");
+    const exists = await Client.findOne({ convertedFrom: lead._id });
+    if (!exists) {
+      await Client.create({
+        name: lead.name,
+        company: lead.company,
+        phone: lead.phone,
+        email: lead.email,
+        address: "Not Provided",
+        businessType: "Not Specified",
+        convertedFrom: lead._id,
+        tenantId: lead.tenantId || req.user.tenantId || null,
+        createdBy: req.user._id,
+      });
+    }
+  }
 
   logActivity({
     user: req.user,

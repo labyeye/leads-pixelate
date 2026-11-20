@@ -185,6 +185,11 @@ const leadSchema = new mongoose.Schema(
         changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         byAI: Boolean, // changed by the AI calling agent, which has no user account
         remarks: String,
+        budget: String,
+        followUpDate: Date,
+        visitScheduledDate: Date,
+        visitActualDate: Date,
+        contactTag: String,
         editedAt: Date, // set when this entry was corrected afterwards
         editedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       },

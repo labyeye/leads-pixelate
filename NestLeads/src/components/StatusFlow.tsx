@@ -137,17 +137,33 @@ export function getStatusActions(lead: any): Action[] {
 
 type Step = 'actions' | 'tag' | 'form';
 
+export const LOST_REASONS = [
+  'Price too high',
+  'Chose a competitor',
+  'No budget / loan not approved',
+  'Postponed the decision',
+  "Machine didn't fit (features / capacity)",
+  'Delivery time too long',
+  'Not responding',
+  'Not a genuine enquiry',
+  'Other',
+];
+
 export default function StatusFlow({
   visible,
   lead,
   onClose,
   onDone,
+  editEntry,
 }: {
   visible: boolean;
   lead: any;
   onClose: () => void;
   onDone: () => void;
+  /** Latest status-history entry: opens in "correct this update" mode. */
+  editEntry?: any;
 }) {
+  const isEdit = !!editEntry;
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>('actions');
   const [pending, setPending] = useState('');
@@ -162,16 +178,27 @@ export default function StatusFlow({
   const [visitAt, setVisitAt] = useState(new Date());
   const [visitedOn, setVisitedOn] = useState(new Date());
   const [saving, setSaving] = useState(false);
+  const [lostReason, setLostReason] = useState('');
+  const [competitor, setCompetitor] = useState('');
 
   useEffect(() => {
-    if (visible) {
+    if (!visible) return;
+    if (editEntry) {
+      prepareForm(editEntry.status, editEntry.contactTag || lead?.contactTag || undefined);
+      setRemarks(editEntry.remarks || '');
+      if (editEntry.budget) setBudget(editEntry.budget);
+      if (editEntry.followUpDate) setFollowUp(new Date(editEntry.followUpDate));
+      if (editEntry.visitScheduledDate) setVisitAt(new Date(editEntry.visitScheduledDate));
+      if (editEntry.visitActualDate) setVisitedOn(new Date(editEntry.visitActualDate));
+    } else {
       setStep('actions');
       setPending('');
       setTag(undefined);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  const sameStatus = lead?.status === pending;
+  const sameStatus = !isEdit && lead?.status === pending;
   const showTag =
     TAG_STATUSES.includes(pending) && !sameStatus && contactTagsEnabled();
   const showFollowUp = !['WON', 'DROP', 'VISIT SCHEDULED'].includes(pending);
@@ -189,6 +216,8 @@ export default function StatusFlow({
     setVisitedOn(
       lead?.visitActualDate ? new Date(lead.visitActualDate) : new Date(),
     );
+    setLostReason(lead?.lostReason || '');
+    setCompetitor(lead?.competitor || '');
     productsAPI
       .getAll()
       .then(r => setAllProducts(r.data || []))
@@ -197,6 +226,12 @@ export default function StatusFlow({
   };
 
   const pick = (status: string) => {
+    // Editing: only the stage changes, the filled-in details stay.
+    if (isEdit) {
+      setPending(status);
+      setStep('form');
+      return;
+    }
     if (status === 'DISCUSSION' && contactTagsEnabled()) {
       setPending(status);
       setStep('tag');
@@ -232,10 +267,33 @@ export default function StatusFlow({
       Alert.alert('Remarks Required', 'Please add remarks for this status change');
       return;
     }
+    if (pending === 'DROP' && !lostReason) {
+      Alert.alert('Lost Reason Required', 'Please choose why this lead is being dropped');
+      return;
+    }
     const id = lead._id || lead.id;
     try {
       setSaving(true);
-      if (pending === 'WON') {
+      if (isEdit) {
+        const data: any = {
+          remarks,
+          budget: budget.trim(),
+          interestedProducts: products,
+        };
+        if (pending !== editEntry.status) data.status = pending;
+        if (pending === 'DROP') {
+          data.lostReason = lostReason;
+          data.competitor = competitor.trim();
+        }
+        if (showTag && tag) data.contactTag = tag;
+        if (showFollowUp) data.followUpDate = followUp;
+        if (pending === 'VISIT SCHEDULED') {
+          data.visitScheduledDate = visitAt;
+          data.followUpDate = visitAt;
+        }
+        if (pending === 'VISITED') data.visitActualDate = visitedOn;
+        await leadsAPI.editLatestStatus(id, data);
+      } else if (pending === 'WON') {
         await leadsAPI.convertToClient(id, {
           address: 'Not Provided',
           businessType: 'Not Specified',
@@ -256,6 +314,10 @@ export default function StatusFlow({
           data.followUpDate = visitAt;
         }
         if (pending === 'VISITED') data.visitActualDate = visitedOn;
+        if (pending === 'DROP') {
+          data.lostReason = lostReason;
+          data.competitor = competitor.trim();
+        }
         await leadsAPI.update(id, data);
       }
       onDone();
@@ -281,7 +343,7 @@ export default function StatusFlow({
           {step === 'actions' && (
             <>
               <View style={s.titleRow}>
-                <Text style={s.title}>Change Status</Text>
+                <Text style={s.title}>{isEdit ? 'Correct status to' : 'Change Status'}</Text>
                 <TouchableOpacity onPress={onClose} hitSlop={10}>
                   <Icon name="close" size={22} color="#000" />
                 </TouchableOpacity>
@@ -301,7 +363,7 @@ export default function StatusFlow({
                 </View>
               )}
               <ScrollView style={{ maxHeight: 440 }}>
-                {actions.map(a => {
+                {!isEdit && actions.map(a => {
                   const t = TONES[a.tone];
                   return (
                     <TouchableOpacity
@@ -316,10 +378,10 @@ export default function StatusFlow({
                   );
                 })}
                 {/* Any status can follow any status: the shortcuts above are not the only way. */}
-                <Text style={[s.sub, { marginTop: 12 }]}>Or move to any status</Text>
+                {!isEdit && <Text style={[s.sub, { marginTop: 12 }]}>Or move to any status</Text>}
                 {Object.values(categories)
                   .flat()
-                  .filter(st => st !== lead?.status)
+                  .filter(st => isEdit || st !== lead?.status)
                   .map(st => (
                     <TouchableOpacity
                       key={st}
@@ -361,13 +423,23 @@ export default function StatusFlow({
           {step === 'form' && (
             <>
               <View style={s.currentRow}>
-                <Text style={s.sub}>Updating to:</Text>
+                <Text style={s.sub}>{isEdit ? 'Editing update:' : 'Updating to:'}</Text>
                 <View style={[s.pill, { backgroundColor: target.bg }]}>
                   <Text style={[s.pillText, { color: target.text }]}>
                     {getStatusLabel(pending)}
                   </Text>
                 </View>
+                {isEdit && (
+                  <TouchableOpacity onPress={() => setStep('actions')} hitSlop={8}>
+                    <Text style={s.ghostText}>Change</Text>
+                  </TouchableOpacity>
+                )}
               </View>
+              {isEdit && pending !== editEntry.status && (
+                <Text style={[s.sub, { marginBottom: 10 }]}>
+                  {getStatusLabel(editEntry.status)} → {getStatusLabel(pending)}. No new history entry is added.
+                </Text>
+              )}
               <ScrollView
                 style={{ maxHeight: 460 }}
                 keyboardShouldPersistTaps="handled"
@@ -402,6 +474,35 @@ export default function StatusFlow({
                         </TouchableOpacity>
                       ))}
                     </View>
+                  </>
+                )}
+
+                {pending === 'DROP' && (
+                  <>
+                    <FieldLabel style={s.label}>LOST REASON *</FieldLabel>
+                    <View style={s.chips}>
+                      {LOST_REASONS.map(r => {
+                        const on = lostReason === r;
+                        return (
+                          <TouchableOpacity
+                            key={r}
+                            style={[s.chip, on && { backgroundColor: '#DC2626' }]}
+                            onPress={() => setLostReason(r)}
+                          >
+                            <Text style={[s.chipText, on && { color: '#fff' }]}>{r}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <FieldLabel style={s.label}>COMPETITOR (IF ANY)</FieldLabel>
+                    <TextInput
+                      style={s.input}
+                      value={competitor}
+                      onChangeText={setCompetitor}
+                      placeholder="Who did they buy from?"
+                      placeholderTextColor="#94a3b8"
+                      maxLength={80}
+                    />
                   </>
                 )}
 
@@ -489,18 +590,18 @@ export default function StatusFlow({
               </ScrollView>
 
               <View style={s.btnRow}>
-                <TouchableOpacity style={s.cancel} onPress={() => setStep('actions')}>
-                  <Text style={s.cancelText}>Back</Text>
+                <TouchableOpacity style={s.cancel} onPress={() => (isEdit ? onClose() : setStep('actions'))}>
+                  <Text style={s.cancelText}>{isEdit ? 'Cancel' : 'Back'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[s.confirm, (saving || !remarks.trim()) && { opacity: 0.5 }]}
+                  style={[s.confirm, (saving || !remarks.trim() || (pending === 'DROP' && !lostReason)) && { opacity: 0.5 }]}
                   onPress={submit}
-                  disabled={saving || !remarks.trim()}
+                  disabled={saving || !remarks.trim() || (pending === 'DROP' && !lostReason)}
                 >
                   {saving ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text style={s.confirmText}>Update Status</Text>
+                    <Text style={s.confirmText}>{isEdit ? 'Save changes' : 'Update Status'}</Text>
                   )}
                 </TouchableOpacity>
               </View>

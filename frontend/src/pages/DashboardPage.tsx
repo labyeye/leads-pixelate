@@ -5,6 +5,7 @@ import { dashboardAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { LeadsGeoMap } from "@/components/dashboard/LeadsGeoMap";
 import {
   BarChart,
   Bar,
@@ -1330,6 +1331,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      <LeadsGeoMap />
 
       {/* Recent leads + live performance in one row */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">

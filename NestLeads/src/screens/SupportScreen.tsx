@@ -53,6 +53,41 @@ export default function SupportScreen({ navigation }: any) {
   const [priority, setPriority] = useState('medium');
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<any>(null);
+  // Editing reuses the "raise a ticket" form; only open tickets with no reply yet can change.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editable = (t: any) => t?.status === 'open' && (t.replies?.length || 0) === 0;
+  const openNew = () => {
+    setEditingId(null);
+    setSubject('');
+    setDescription('');
+    setPriority('medium');
+    setCreateVisible(true);
+  };
+  const startEdit = (t: any) => {
+    setEditingId(t._id);
+    setSubject(t.subject || '');
+    setDescription(t.description || '');
+    setPriority(t.priority || 'medium');
+    setSelected(null);
+    setCreateVisible(true);
+  };
+  const deleteTicket = (t: any) =>
+    Alert.alert('Delete ticket?', t.subject, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await supportAPI.remove(t._id);
+            setSelected(null);
+            fetchTickets();
+          } catch (e: any) {
+            Alert.alert('Error', e.message || 'Failed to delete ticket');
+          }
+        },
+      },
+    ]);
 
   const fetchTickets = useCallback(async (isRefresh = false) => {
     try {
@@ -79,17 +114,17 @@ export default function SupportScreen({ navigation }: any) {
     }
     setSaving(true);
     try {
-      await supportAPI.create({
-        subject: subject.trim(),
-        description: description.trim(),
-        priority,
-      });
+      const data = { subject: subject.trim(), description: description.trim(), priority };
+      if (editingId) await supportAPI.update(editingId, data);
+      else await supportAPI.create(data);
       setCreateVisible(false);
       setSubject('');
       setDescription('');
       setPriority('medium');
       fetchTickets();
-      Alert.alert('Ticket Raised', 'Our team will get back to you shortly.');
+      if (editingId) Alert.alert('Ticket updated');
+      else Alert.alert('Ticket Raised', 'Our team will get back to you shortly.');
+      setEditingId(null);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -158,7 +193,7 @@ export default function SupportScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="chatbubble-outline" title="Support" onBack={() => navigation.goBack()} right={
           <>
-        <TouchableOpacity onPress={() => setCreateVisible(true)} hitSlop={8} style={{ padding: 4 }}>
+        <TouchableOpacity onPress={openNew} hitSlop={8} style={{ padding: 4 }}>
             <Icon name="add" size={24} color="#000" />
           </TouchableOpacity>
           </>
@@ -192,7 +227,7 @@ export default function SupportScreen({ navigation }: any) {
               <Text style={styles.emptyText}>No tickets yet</Text>
               <TouchableOpacity
                 style={styles.emptyAddBtn}
-                onPress={() => setCreateVisible(true)}
+                onPress={openNew}
               >
                 <Icon name="add" size={14} color="#fff" />
                 <Text style={styles.emptyAddBtnText}>Raise a Ticket</Text>
@@ -214,9 +249,12 @@ export default function SupportScreen({ navigation }: any) {
             style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]}
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Raise a Ticket</Text>
+              <Text style={styles.modalTitle}>{editingId ? 'Edit Ticket' : 'Raise a Ticket'}</Text>
               <TouchableOpacity
-                onPress={() => setCreateVisible(false)}
+                onPress={() => {
+                  setCreateVisible(false);
+                  setEditingId(null);
+                }}
                 style={styles.modalClose}
               >
                 <Icon name="close" size={18} color="#000" />
@@ -368,6 +406,22 @@ export default function SupportScreen({ navigation }: any) {
                 <View style={styles.descBox}>
                   <Text style={styles.descText}>{selected.description}</Text>
                 </View>
+                {editable(selected) && (
+                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                    <TouchableOpacity
+                      style={{ flex: 1, borderWidth: 2, borderColor: '#000', paddingVertical: 10, alignItems: 'center' }}
+                      onPress={() => startEdit(selected)}
+                    >
+                      <Text style={{ fontWeight: '600', color: '#024BAB' }}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{ flex: 1, borderWidth: 2, borderColor: '#000', paddingVertical: 10, alignItems: 'center', backgroundColor: '#fee2e2' }}
+                      onPress={() => deleteTicket(selected)}
+                    >
+                      <Text style={{ fontWeight: '600', color: '#dc2626' }}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
                 {selected.replies?.length > 0 && (
                   <View style={{ marginTop: 12, gap: 8 }}>
                     <FieldLabel style={styles.fieldLabel}>REPLIES</FieldLabel>

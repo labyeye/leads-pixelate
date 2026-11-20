@@ -58,6 +58,9 @@ export default function CampaignsScreen({ navigation }: any) {
     }
   }, []);
 
+  // Back from the builder: show the new/edited campaign.
+  useEffect(() => navigation.addListener?.('focus', () => fetchCampaigns(true)), [navigation, fetchCampaigns]);
+
   useEffect(() => {
     fetchCampaigns();
   }, [fetchCampaigns]);
@@ -202,6 +205,15 @@ export default function CampaignsScreen({ navigation }: any) {
 
         {/* Action buttons */}
         <View style={styles.actionRow}>
+          {status === 'draft' ? (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: '#fff', borderColor: '#000' }]}
+              onPress={() => navigation.navigate('CampaignBuilder', { campaignId: c._id })}
+            >
+              <Icon name="create-outline" size={12} color="#024BAB" />
+              <Text style={[styles.actionBtnText, { color: '#024BAB' }]}>Edit</Text>
+            </TouchableOpacity>
+          ) : null}
           {status === 'draft' || status === 'scheduled' ? (
             <TouchableOpacity
               style={[
@@ -279,10 +291,9 @@ export default function CampaignsScreen({ navigation }: any) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="megaphone-outline" title="Campaigns" onBack={() => navigation.goBack()} right={
-          <>
-        <View>
-        </View>
-          </>
+          <TouchableOpacity onPress={() => navigation.navigate('CampaignBuilder')} hitSlop={8} style={{ padding: 4 }} accessibilityLabel="New campaign">
+            <Icon name="add" size={24} color="#000" />
+          </TouchableOpacity>
         } />
 
       {/* Status summary */}

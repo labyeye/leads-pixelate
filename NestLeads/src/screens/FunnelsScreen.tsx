@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
+import { AnimatedValue } from '../components/motion';
 import { useAuth } from '../contexts/AuthContext';
 import { funnelsAPI, usersAPI, whatsappAPI } from '../services/api';
 import { ALL_STATUSES } from '../constants/statusConstants';
@@ -391,7 +392,7 @@ export default function FunnelsScreen({ navigation }: any) {
               ].map(([label, value, hint, bad]) => (
                 <View key={label as string} style={s.sumCard}>
                   <Text style={s.statLabel}>{label}</Text>
-                  <Text style={[s.sumVal, !!bad && { color: '#dc2626' }]}>{value}</Text>
+                  <AnimatedValue value={value} style={[s.sumVal, !!bad && { color: '#dc2626' }]} />
                   <Text style={s.muted}>{hint}</Text>
                 </View>
               ))}

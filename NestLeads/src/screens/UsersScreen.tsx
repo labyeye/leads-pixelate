@@ -66,11 +66,13 @@ const BLANK = {
   roleId: '',
   role: 'sales_executive',
   password: '',
+  confirmPassword: '',
   avatarUri: '',
   department: '',
   designation: '',
   dateOfJoining: '',
   dateOfBirth: '',
+  marriageAnniversary: '',
   gender: '',
   employmentType: '',
   addressLine1: '',
@@ -93,6 +95,9 @@ export default function UsersScreen({ navigation }: any) {
   const { user: me } = useAuth();
   const isSuperAdmin = me?.role === 'super_admin';
   const [users, setUsers] = useState<any[]>([]);
+  // Removing someone who owns leads: pick who gets them first.
+  const [transferFor, setTransferFor] = useState<{ user: any; count: number | null } | null>(null);
+  const [removing, setRemoving] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -154,11 +159,13 @@ export default function UsersScreen({ navigation }: any) {
       roleId: u.roleId || '',
       role: u.role || 'sales_executive',
       password: '',
+      confirmPassword: '',
       avatarUri: u.avatar || u.avatarUri || '',
       department: u.department || '',
       designation: u.designation || '',
       dateOfJoining: u.dateOfJoining?.slice(0, 10) || '',
       dateOfBirth: u.dateOfBirth?.slice(0, 10) || '',
+      marriageAnniversary: u.marriageAnniversary?.slice(0, 10) || '',
       gender: u.gender || '',
       employmentType: u.employmentType || '',
       addressLine1: u.address?.line1 || '',
@@ -209,6 +216,7 @@ export default function UsersScreen({ navigation }: any) {
       designation: form.designation,
       dateOfJoining: form.dateOfJoining || undefined,
       dateOfBirth: form.dateOfBirth || undefined,
+      marriageAnniversary: form.marriageAnniversary || undefined,
       gender: form.gender || undefined,
       employmentType: form.employmentType || undefined,
       address: {
@@ -246,6 +254,10 @@ export default function UsersScreen({ navigation }: any) {
       Alert.alert('Error', 'Password is required');
       return;
     }
+    if (form.password && form.password !== form.confirmPassword) {
+      Alert.alert('Error', "Passwords don't match");
+      return;
+    }
     setSaving(true);
     try {
       const payload = buildPayload();
@@ -273,21 +285,53 @@ export default function UsersScreen({ navigation }: any) {
       Alert.alert('Error', 'Only a super admin can delete another super admin');
       return;
     }
-    Alert.alert('Delete User', `Delete "${u.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await usersAPI.delete(u._id);
-            fetchUsers();
-          } catch (e: any) {
-            Alert.alert('Error', e.message);
-          }
-        },
-      },
-    ]);
+    usersAPI
+      .leadCount(u._id)
+      .then(r => r?.data?.count ?? null)
+      .catch(() => null)
+      .then(count => {
+        if (count && count > 0) {
+          setTransferFor({ user: u, count });
+          return;
+        }
+        Alert.alert('Delete User', `Delete "${u.name}"?`, [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await usersAPI.delete(u._id);
+                fetchUsers();
+              } catch (e: any) {
+                // The server says they still own leads: ask where they go.
+                if (/lead/i.test(e.message || '')) setTransferFor({ user: u, count: null });
+                else Alert.alert('Error', e.message);
+              }
+            },
+          },
+        ]);
+      });
+  };
+
+  const removeWithTransfer = async (to: string) => {
+    if (!transferFor) return;
+    try {
+      setRemoving(true);
+      const r = await usersAPI.delete(transferFor.user._id, to);
+      setTransferFor(null);
+      Alert.alert(
+        'User removed',
+        r.leadsMoved
+          ? `${r.leadsMoved} lead(s) moved to ${r.movedTo || 'unassigned'}.`
+          : `${transferFor.user.name} was removed.`,
+      );
+      fetchUsers();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setRemoving(false);
+    }
   };
 
   const toggleStatus = async (u: any) => {
@@ -685,6 +729,22 @@ export default function UsersScreen({ navigation }: any) {
                       />
                     </TouchableOpacity>
                   </View>
+                  {!!form.password && (
+                    <>
+                      <FieldLabel style={styles.fieldLabel}>CONFIRM PASSWORD *</FieldLabel>
+                      <TextInput
+                        style={[
+                          styles.fieldInput,
+                          !!form.confirmPassword && form.confirmPassword !== form.password && { borderColor: '#dc2626' },
+                        ]}
+                        value={form.confirmPassword}
+                        onChangeText={v => setForm(f => ({ ...f, confirmPassword: v }))}
+                        placeholder="Type the password again"
+                        placeholderTextColor="#94a3b8"
+                        secureTextEntry={!showPwd}
+                      />
+                    </>
+                  )}
 
                   <FieldLabel style={styles.fieldLabel}>ROLE *</FieldLabel>
                   <TouchableOpacity
@@ -745,6 +805,15 @@ export default function UsersScreen({ navigation }: any) {
                       />
                     </View>
                   </View>
+
+                  <FieldLabel style={styles.fieldLabel}>MARRIAGE ANNIVERSARY (OPTIONAL)</FieldLabel>
+                  <TextInput
+                    style={styles.fieldInput}
+                    value={form.marriageAnniversary}
+                    onChangeText={v => setForm(f => ({ ...f, marriageAnniversary: v }))}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#94a3b8"
+                  />
 
                   <FieldLabel style={styles.fieldLabel}>GENDER</FieldLabel>
                   <View style={styles.chipRow}>
@@ -990,6 +1059,54 @@ export default function UsersScreen({ navigation }: any) {
             </View>
           </View>
         </View>
+      </Modal>
+
+      <Modal
+        visible={!!transferFor}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !removing && setTransferFor(null)}
+      >
+        <TouchableOpacity
+          style={styles.pickerOverlay}
+          activeOpacity={1}
+          onPress={() => !removing && setTransferFor(null)}
+        >
+          <View style={styles.pickerSheet}>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#000', padding: 14, paddingBottom: 4 }}>
+              Remove {transferFor?.user?.name}
+            </Text>
+            <Text style={{ fontSize: 13, color: '#64748b', paddingHorizontal: 14, paddingBottom: 10 }}>
+              {transferFor?.count
+                ? `They have ${transferFor.count} lead(s). Who should get them?`
+                : 'They still have leads. Who should get them?'}
+            </Text>
+            {removing ? (
+              <ActivityIndicator style={{ padding: 20 }} color="#024BAB" />
+            ) : (
+              <FlatList
+                data={[
+                  ...users.filter(
+                    x => x._id !== transferFor?.user?._id && (x.status || 'active') === 'active',
+                  ),
+                  { _id: '__none', name: 'Leave unassigned' },
+                ]}
+                keyExtractor={(x: any) => x._id}
+                style={{ maxHeight: 360 }}
+                renderItem={({ item: x }: any) => (
+                  <TouchableOpacity
+                    style={styles.pickerRow}
+                    onPress={() => removeWithTransfer(x._id === '__none' ? '' : x._id)}
+                  >
+                    <Text style={[styles.pickerRowText, x._id === '__none' && { color: '#64748b' }]}>
+                      {x.name}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       <Modal

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 import { quotationsAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import SendQuotationModal from '../components/SendQuotationModal';
 import ExportFieldsDialog, {
   type ExportField,
@@ -97,6 +98,49 @@ export default function QuotationsScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [exportOpen, setExportOpen] = useState(false);
   const [sendingQ, setSendingQ] = useState<any | null>(null);
+  const { user } = useAuth();
+  const myId = String((user as any)?._id || (user as any)?.id || '');
+  const canDecide = (q: any) =>
+    q.approval?.status === 'pending' && (q.approval.approvers || []).map(String).includes(myId);
+
+  const decide = (q: any, decision: 'approve' | 'reject') => {
+    const run = async (remarks = '') => {
+      try {
+        const res = await quotationsAPI.decideApproval(q._id, decision, remarks);
+        const a = res.autoSent;
+        Alert.alert(
+          decision === 'approve' ? 'Quotation approved' : 'Quotation rejected',
+          decision === 'reject'
+            ? `${q.number || 'Quotation'} is now rejected.`
+            : a?.sent
+              ? 'Approved and sent to the client on WhatsApp.'
+              : a
+                ? `Approved, but auto-send failed: ${a.reason}. Send it manually.`
+                : 'Approved. It can be sent now.',
+        );
+        fetchQuotations(true);
+      } catch (e: any) {
+        Alert.alert("Couldn't save decision", e.message);
+      }
+    };
+    if (decision === 'approve') {
+      Alert.alert('Approve quotation?', q.projectTitle || q.number || '', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Approve', onPress: () => run() },
+      ]);
+    } else if (Alert.prompt) {
+      // iOS can ask for the reason inline.
+      Alert.prompt('Reject quotation', 'Reason (optional)', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reject', style: 'destructive', onPress: (r?: string) => run(r || '') },
+      ]);
+    } else {
+      Alert.alert('Reject quotation?', q.projectTitle || q.number || '', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reject', style: 'destructive', onPress: () => run() },
+      ]);
+    }
+  };
 
   const fetchQuotations = useCallback(async (isRefresh = false) => {
     try {
@@ -206,6 +250,33 @@ export default function QuotationsScreen({ navigation }: any) {
             </Text>
           </View>
         </View>
+        {q.approval?.status && q.approval.status !== 'none' && (
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: '600',
+              marginTop: 6,
+              color:
+                q.approval.status === 'pending' ? '#d97706' : q.approval.status === 'approved' ? '#16a34a' : '#dc2626',
+            }}
+          >
+            {q.approval.status === 'pending'
+              ? 'Awaiting approval'
+              : `${q.approval.status === 'approved' ? 'Approved' : 'Rejected'}${q.approval.decidedBy?.name ? ` by ${q.approval.decidedBy.name}` : ''}`}
+          </Text>
+        )}
+        {canDecide(q) && (
+          <View style={[styles.actionRow, { marginTop: 8 }]}>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#dcfce7' }]} onPress={() => decide(q, 'approve')}>
+              <Icon name="checkmark-circle-outline" size={13} color="#16a34a" />
+              <Text style={[styles.deleteBtnText, { color: '#16a34a' }]}>Approve</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#fee2e2' }]} onPress={() => decide(q, 'reject')}>
+              <Icon name="close-circle-outline" size={13} color="#dc2626" />
+              <Text style={styles.deleteBtnText}>Reject</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.actionBtn}

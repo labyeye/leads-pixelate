@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
+import { LOST_REASONS } from '../components/StatusFlow';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import {
   leadsAPI,
@@ -222,11 +223,22 @@ export default function LeadsListScreen({ navigation }: Props) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkStatusOpen, setBulkStatusOpen] = useState(false);
+  const [bulkDropAsk, setBulkDropAsk] = useState(false);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [syncPickerOpen, setSyncPickerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Bulk email to the selected leads.
+  const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
+  const [bulkSubject, setBulkSubject] = useState('');
+  const [bulkMessage, setBulkMessage] = useState('');
+  const [bulkSending, setBulkSending] = useState(false);
+  // Auto-assign: which executives get new leads automatically.
+  const [autoOpen, setAutoOpen] = useState(false);
+  const [execs, setExecs] = useState<any[]>([]);
+  const [autoIds, setAutoIds] = useState<string[]>([]);
+  const [autoSaving, setAutoSaving] = useState(false);
   const { unread, refresh: refreshUnread } = useUnreadNotifications();
   useEffect(() => {
     const unsub = navigation.addListener?.('focus', refreshUnread);
@@ -255,11 +267,22 @@ export default function LeadsListScreen({ navigation }: Props) {
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const toggleSel = (id: string) =>
     setSelected(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
-  const bulkStatus = async (status: string) => {
+  const bulkStatus = async (status: string, lostReason?: string) => {
+    // Dropping needs a reason first.
+    if (status === 'DROP' && !lostReason) {
+      setBulkDropAsk(true);
+      return;
+    }
     setBulkStatusOpen(false);
+    setBulkDropAsk(false);
     try {
-      const r = await leadsAPI.bulkUpdateStatus(selected, status);
-      Alert.alert('Updated', `${r.updatedCount} lead(s) moved to ${status}.`);
+      const r = await leadsAPI.bulkUpdateStatus(selected, status, undefined, lostReason);
+      const skipped = r.skipped?.length || 0;
+      Alert.alert(
+        'Updated',
+        `${r.updatedCount} lead(s) moved to ${status}.` +
+          (skipped ? `\n${skipped} skipped: ${r.skipped[0]?.reason || ''}` : ''),
+      );
       setSelected([]);
       fetchLeads(true);
     } catch (e: any) {
@@ -277,6 +300,58 @@ export default function LeadsListScreen({ navigation }: Props) {
       Alert.alert('Failed', e.message);
     }
   };
+  const sendBulkEmail = async () => {
+    if (!bulkSubject.trim() || !bulkMessage.trim()) {
+      Alert.alert('Subject and message are required');
+      return;
+    }
+    try {
+      setBulkSending(true);
+      const r = await leadsAPI.bulkEmail(selected, bulkSubject.trim(), bulkMessage.trim());
+      setBulkEmailOpen(false);
+      setBulkSubject('');
+      setBulkMessage('');
+      setSelected([]);
+      Alert.alert(
+        'Emails sent',
+        `Sent to ${r.sentCount} lead(s)` +
+          (r.skipped?.length ? `, ${r.skipped.length} skipped (${r.skipped[0]?.reason || 'no email'})` : ''),
+      );
+    } catch (e: any) {
+      Alert.alert('Failed to send', e.message);
+    } finally {
+      setBulkSending(false);
+    }
+  };
+
+  const openAutoAssign = async () => {
+    setAutoOpen(true);
+    try {
+      const r = await usersAPI.getAll({ role: 'sales_executive', status: 'active' });
+      setExecs(r.data || []);
+      setAutoIds((r.data || []).filter((u: any) => u.receiveAutoAssignedLeads).map((u: any) => u._id));
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    }
+  };
+  const saveAutoAssign = async () => {
+    try {
+      setAutoSaving(true);
+      await usersAPI.updateAutoAssign(autoIds);
+      setAutoOpen(false);
+      Alert.alert(
+        'Auto-assign updated',
+        autoIds.length
+          ? `New leads will go to the ${autoIds.length} selected executive(s).`
+          : 'New leads will be shared among all active executives.',
+      );
+    } catch (e: any) {
+      Alert.alert('Update failed', e.message);
+    } finally {
+      setAutoSaving(false);
+    }
+  };
+
   const bulkDelete = () =>
     Alert.alert('Delete leads', `Move ${selected.length} lead(s) to Trash?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -356,7 +431,8 @@ export default function LeadsListScreen({ navigation }: Props) {
         const match =
           (l.name || '').toLowerCase().includes(q) ||
           (l.company || '').toLowerCase().includes(q) ||
-          (l.phone || '').includes(q);
+          (l.phone || '').replace(/\s/g, '').includes(q.replace(/\s/g, '')) ||
+          (l.email || '').toLowerCase().includes(q);
         if (!match) return false;
       }
       if (filters.sources.length && !filters.sources.includes(l.source))
@@ -635,6 +711,17 @@ export default function LeadsListScreen({ navigation }: Props) {
         title="Leads"
         right={
           <>
+            <TouchableOpacity
+              hitSlop={8}
+              style={{ padding: 4 }}
+              onPress={() => {
+                if (searchOpen) setSearch('');
+                setSearchOpen(o => !o);
+              }}
+              accessibilityLabel={searchOpen ? 'Close search' : 'Search leads'}
+            >
+              <Icon name={searchOpen ? 'close' : 'search-outline'} size={22} color="#000" />
+            </TouchableOpacity>
             <TouchableOpacity hitSlop={8} style={{ padding: 4 }} onPress={() => navigation.navigate('More', { screen: 'Notifications' })} accessibilityLabel="Notifications">
               <Icon name="notifications-outline" size={22} color="#000" />
               {unread > 0 && (
@@ -660,12 +747,20 @@ export default function LeadsListScreen({ navigation }: Props) {
             <Icon name="search-outline" size={14} color="#000" style={{ marginRight: 6 }} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search leads..."
+              placeholder="Name, company, phone or email…"
               placeholderTextColor="#64748b"
               value={search}
               onChangeText={setSearch}
               autoFocus
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
             />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8} accessibilityLabel="Clear search">
+                <Icon name="close-circle" size={16} color="#64748b" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
@@ -681,6 +776,9 @@ export default function LeadsListScreen({ navigation }: Props) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.pillBtn} onPress={() => setBulkStatusOpen(true)}>
             <Text style={styles.pillBtnText}>Status</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.pillBtn} onPress={() => setBulkEmailOpen(true)}>
+            <Text style={styles.pillBtnText}>Email</Text>
           </TouchableOpacity>
           {isAdmin && (
             <TouchableOpacity style={styles.pillBtn} onPress={() => setBulkAssignOpen(true)}>
@@ -736,6 +834,86 @@ export default function LeadsListScreen({ navigation }: Props) {
         </View>
       </Modal>
 
+      <Modal visible={bulkEmailOpen} transparent animationType="slide" onRequestClose={() => setBulkEmailOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { maxHeight: '85%' }]}>
+            <Text style={styles.modalTitle}>Email {selected.length} lead(s)</Text>
+            <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
+              Sent from your connected Gmail. Leads without an email are skipped.
+            </Text>
+            <TextInput
+              style={{ borderWidth: 2, borderColor: '#000', padding: 10, fontSize: 14, color: '#000', marginBottom: 8 }}
+              value={bulkSubject}
+              onChangeText={setBulkSubject}
+              placeholder="Subject"
+              placeholderTextColor="#94a3b8"
+            />
+            <TextInput
+              style={{ borderWidth: 2, borderColor: '#000', padding: 10, fontSize: 14, color: '#000', minHeight: 120, textAlignVertical: 'top' }}
+              value={bulkMessage}
+              onChangeText={setBulkMessage}
+              placeholder="Message"
+              placeholderTextColor="#94a3b8"
+              multiline
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <TouchableOpacity style={[styles.pillBtn, { flex: 1, alignItems: 'center', paddingVertical: 12 }]} onPress={() => setBulkEmailOpen(false)}>
+                <Text style={styles.pillBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pillBtn, { flex: 1, alignItems: 'center', paddingVertical: 12, backgroundColor: '#024BAB' }, bulkSending && { opacity: 0.6 }]}
+                onPress={sendBulkEmail}
+                disabled={bulkSending}
+              >
+                {bulkSending ? <ActivityIndicator color="#fff" /> : <Text style={[styles.pillBtnText, { color: '#fff' }]}>Send</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={autoOpen} transparent animationType="slide" onRequestClose={() => setAutoOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { maxHeight: '80%' }]}>
+            <Text style={styles.modalTitle}>Auto-assign new leads</Text>
+            <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 8 }}>
+              Pick who gets new leads automatically. Pick nobody to share them among all active executives.
+            </Text>
+            <ScrollView>
+              {execs.length === 0 ? (
+                <Text style={{ color: '#64748b', paddingVertical: 12 }}>No active sales executives.</Text>
+              ) : (
+                execs.map(u => {
+                  const on = autoIds.includes(u._id);
+                  return (
+                    <TouchableOpacity
+                      key={u._id}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 }}
+                      onPress={() => setAutoIds(p => (on ? p.filter(x => x !== u._id) : [...p, u._id]))}
+                    >
+                      <Icon name={on ? 'checkmark-circle' : 'stop'} size={20} color={on ? '#024BAB' : '#64748b'} />
+                      <Text style={{ color: '#000', fontWeight: '500' }}>{u.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+              <TouchableOpacity style={[styles.pillBtn, { flex: 1, alignItems: 'center', paddingVertical: 12 }]} onPress={() => setAutoOpen(false)}>
+                <Text style={styles.pillBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pillBtn, { flex: 1, alignItems: 'center', paddingVertical: 12, backgroundColor: '#024BAB' }, autoSaving && { opacity: 0.6 }]}
+                onPress={saveAutoAssign}
+                disabled={autoSaving}
+              >
+                {autoSaving ? <ActivityIndicator color="#fff" /> : <Text style={[styles.pillBtnText, { color: '#fff' }]}>Save</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={menuOpen} transparent animationType="fade" onRequestClose={() => setMenuOpen(false)}>
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', alignItems: 'flex-end', paddingTop: 96, paddingHorizontal: 12 }}
@@ -748,6 +926,7 @@ export default function LeadsListScreen({ navigation }: Props) {
               { icon: 'sync-outline', label: 'Sync leads', onPress: () => setSyncPickerOpen(true) },
               { icon: 'download-outline', label: 'Export leads', onPress: () => setExportOpen(true) },
               { icon: 'cloud-upload-outline', label: 'Import leads', onPress: () => setImportOpen(true) },
+              ...(isAdmin ? [{ icon: 'people-outline', label: 'Auto-assign settings', onPress: openAutoAssign }] : []),
             ].map(item => (
               <TouchableOpacity
                 key={item.label}
@@ -813,18 +992,37 @@ export default function LeadsListScreen({ navigation }: Props) {
         </View>
       </Modal>
 
-      <Modal visible={bulkStatusOpen} transparent animationType="slide" onRequestClose={() => setBulkStatusOpen(false)}>
+      <Modal
+        visible={bulkStatusOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setBulkDropAsk(false);
+          setBulkStatusOpen(false);
+        }}
+      >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { maxHeight: '70%' }]}>
-            <Text style={styles.modalTitle}>Set status for {selected.length}</Text>
+            <Text style={styles.modalTitle}>
+              {bulkDropAsk ? `Why drop ${selected.length} lead(s)?` : `Set status for ${selected.length}`}
+            </Text>
             <ScrollView>
-              {ALL_STATUSES.map(st => (
-                <TouchableOpacity key={st} style={{ paddingVertical: 12 }} onPress={() => bulkStatus(st)}>
-                  <Text style={{ color: '#000', fontWeight: '500' }}>{getStatusLabel(st) || st}</Text>
-                </TouchableOpacity>
-              ))}
+              {bulkDropAsk
+                ? LOST_REASONS.map(r => (
+                    <TouchableOpacity key={r} style={{ paddingVertical: 12 }} onPress={() => bulkStatus('DROP', r)}>
+                      <Text style={{ color: '#000', fontWeight: '500' }}>{r}</Text>
+                    </TouchableOpacity>
+                  ))
+                : ALL_STATUSES.map(st => (
+                    <TouchableOpacity key={st} style={{ paddingVertical: 12 }} onPress={() => bulkStatus(st)}>
+                      <Text style={{ color: '#000', fontWeight: '500' }}>{getStatusLabel(st) || st}</Text>
+                    </TouchableOpacity>
+                  ))}
             </ScrollView>
-            <TouchableOpacity style={{ paddingVertical: 12 }} onPress={() => setBulkStatusOpen(false)}>
+            <TouchableOpacity
+              style={{ paddingVertical: 12 }}
+              onPress={() => (bulkDropAsk ? setBulkDropAsk(false) : setBulkStatusOpen(false))}
+            >
               <Text style={{ color: '#64748b' }}>Cancel</Text>
             </TouchableOpacity>
           </View>

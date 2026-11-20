@@ -604,7 +604,7 @@ export const leadsAPI = {
   // Correct the latest status change: its stage and/or remark. No new history entry is added.
   editLatestStatus: (
     id: string,
-    body: { status?: string; remarks?: string; lostReason?: string },
+    body: { status?: string; remarks?: string; lostReason?: string; [k: string]: any },
   ) =>
     request<{ success: boolean; data: any }>(
       `/leads/${id}/status-history/latest`,
@@ -771,6 +771,13 @@ export const justdialSyncAPI = {
 export const dashboardAPI = {
   getStats: () => request<{ success: boolean; data: any }>("/dashboard/stats"),
   getMyPace: () => request<{ success: boolean; data: any }>("/dashboard/my-pace"),
+  // Leads by Indian state and by country (from phone code), with wins.
+  getGeo: (range?: { from: string; to: string }) =>
+    request<{ success: boolean; data: any }>(
+      range
+        ? `/dashboard/geo?from=${encodeURIComponent(range.from)}&to=${encodeURIComponent(range.to)}`
+        : "/dashboard/geo",
+    ),
   // range: exact ISO from/to (custom filter); without it, a rolling window ending now.
   getLive: (windowMin: number, range?: { from: string; to: string }) =>
     request<{ success: boolean; data: any }>(

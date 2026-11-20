@@ -14,13 +14,26 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Linking,
+  AppState,
+  Switch,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 
 import { Check, CheckCheck, ClockPlus } from 'lucide-react-native';
-import { linkedinAdsAPI, googleAdsAPI } from '../services/api';
+import {
+  linkedinAdsAPI,
+  googleAdsAPI,
+  indiamartAPI,
+  tradeindiaSyncAPI,
+  justdialSyncAPI,
+  facebookAPI,
+  whatsappAPI,
+  emailAPI,
+  usersAPI,
+} from '../services/api';
 import { CountText } from '../components/motion';
 
 // ─── Logo assets ─────────────────────────────────────────────────────────────
@@ -46,6 +59,7 @@ interface StepField {
   placeholder?: string;
   help?: string;
   value?: string;
+  optional?: boolean;
 }
 
 interface WizardStep {
@@ -253,11 +267,25 @@ const INTEGRATIONS: Integration[] = [
             help: 'Found in Seller Panel → My Account → API Settings',
           },
           {
+            key: 'profile_id',
+            label: 'TradeIndia Profile ID (optional)',
+            type: 'text',
+            placeholder: 'Your TradeIndia Profile ID',
+            optional: true,
+          },
+          {
             key: 'api_key',
             label: 'TradeIndia API Key',
             type: 'password',
             placeholder: 'Your TradeIndia API Key',
             help: 'Found alongside your User ID in API Settings',
+          },
+          {
+            key: 'api_url',
+            label: 'TradeIndia API Link',
+            type: 'text',
+            placeholder: 'https://...',
+            help: 'The full API link shown on the same page',
           },
         ],
         actionLabel: 'Connect TradeIndia',
@@ -295,8 +323,9 @@ const INTEGRATIONS: Integration[] = [
         fields: [
           {
             key: 'api_key',
-            label: 'Justdial API Key',
+            label: 'Justdial API Key (optional)',
             type: 'password',
+            optional: true,
             placeholder: 'Paste your Justdial API key here',
             help: 'Received from Justdial Business Support team via email',
           },
@@ -363,8 +392,8 @@ const INTEGRATIONS: Integration[] = [
   },
   {
     key: 'email',
-    label: 'Email / SMTP',
-    desc: 'Send automated emails and follow-ups via SMTP',
+    label: 'Gmail',
+    desc: 'Email leads from your Gmail and keep the thread in the CRM',
     logoKey: 'mail',
     fallbackIcon: 'mail-outline',
     color: '#64748b',
@@ -505,10 +534,13 @@ function WizardModal({
   integration,
   onClose,
   onConnected,
+  onSave,
 }: {
   integration: Integration;
   onClose: () => void;
   onConnected: () => void;
+  /** Saves the keys entered on a step to the server; throws on failure. */
+  onSave?: (fields: Record<string, string>) => Promise<void>;
 }) {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
@@ -529,14 +561,20 @@ function WizardModal({
     const hasInput = current.fields?.some(f => f.type !== 'readonly');
     if (hasInput) {
       const missing = current.fields?.filter(
-        f => f.type !== 'readonly' && !fields[f.key],
+        f => f.type !== 'readonly' && !f.optional && !fields[f.key]?.trim(),
       );
       if (missing?.length) {
         Alert.alert('Required', `Please fill in: ${missing[0].label}`);
         return;
       }
       setSaving(true);
-      await new Promise<void>(resolve => setTimeout(resolve, 900));
+      try {
+        if (onSave) await onSave(fields);
+      } catch (e: any) {
+        setSaving(false);
+        Alert.alert('Could not connect', e?.message || 'Check the details and try again.');
+        return;
+      }
       setSaving(false);
     }
 
@@ -792,13 +830,234 @@ function WizardModal({
   );
 }
 
+// ─── Manage a connected source: lead assignment, new key, disconnect ─────────
+const ASSIGN_API: Record<string, any> = {
+  indiamart: indiamartAPI,
+  tradeindia: tradeindiaSyncAPI,
+  justdial: justdialSyncAPI,
+  facebook: facebookAPI,
+};
+function ManageSheet({
+  integration,
+  onClose,
+  onDisconnect,
+  onUpdateKey,
+}: {
+  integration: Integration;
+  onClose: () => void;
+  onDisconnect: () => void;
+  onUpdateKey: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [people, setPeople] = useState<any[]>([]);
+  const [ids, setIds] = useState<string[]>([]);
+  const [batch, setBatch] = useState('1');
+  const [saving, setSaving] = useState(false);
+  const canAssign = !!ASSIGN_API[integration.key];
+  const keyBased = ['indiamart', 'tradeindia', 'justdial'].includes(integration.key);
+
+  useEffect(() => {
+    if (!canAssign) return;
+    usersAPI
+      .getAll({ status: 'active' })
+      .then(r => setPeople(r.data || []))
+      .catch(() => {});
+    const api = ASSIGN_API[integration.key];
+    if (api.getStatus)
+      api
+        .getStatus()
+        .then((r: any) => {
+          const d = r.data || {};
+          setIds((d.assigneeIds || []).map(String));
+          if (d.assignBatchSize || d.batchSize) setBatch(String(d.assignBatchSize || d.batchSize));
+        })
+        .catch(() => {});
+  }, [integration.key, canAssign]);
+
+  const save = async () => {
+    try {
+      setSaving(true);
+      await ASSIGN_API[integration.key].updateSettings(ids, Math.max(1, Number(batch) || 1));
+      Alert.alert('Saved', `${integration.label} lead assignment updated.`);
+      onClose();
+    } catch (e: any) {
+      Alert.alert("Couldn't save", e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.sheetOverlay}>
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+          <Text style={styles.sheetTitle}>{integration.label}</Text>
+          <Text style={[styles.sheetSub, { color: '#16a34a' }]}>Connected</Text>
+          {canAssign && (
+            <>
+              <Text style={[styles.sheetSub, { marginTop: 12, fontWeight: '600', color: '#000' }]}>
+                Who gets these leads ({ids.length || 'everyone'})
+              </Text>
+              <ScrollView style={{ maxHeight: 220 }}>
+                {people.map(u => {
+                  const on = ids.includes(String(u._id));
+                  return (
+                    <TouchableOpacity
+                      key={u._id}
+                      style={[styles.sheetRow, { flexDirection: 'row', alignItems: 'center', gap: 10 }]}
+                      onPress={() => setIds(p => (on ? p.filter(x => x !== String(u._id)) : [...p, String(u._id)]))}
+                    >
+                      <Icon name={on ? 'checkmark-circle' : 'stop'} size={18} color={on ? '#024BAB' : '#94a3b8'} />
+                      <Text style={styles.sheetRowText}>{u.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                <Text style={[styles.sheetSub, { flex: 1 }]}>Leads in a row to each person</Text>
+                <TextInput
+                  style={{ borderWidth: 2, borderColor: '#000', width: 60, paddingVertical: 6, textAlign: 'center', color: '#000' }}
+                  keyboardType="number-pad"
+                  value={batch}
+                  onChangeText={setBatch}
+                />
+              </View>
+              <TouchableOpacity style={[styles.sheetPrimary, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600' }}>Save assignment</Text>}
+              </TouchableOpacity>
+            </>
+          )}
+          {keyBased && (
+            <TouchableOpacity style={styles.sheetCancel} onPress={onUpdateKey}>
+              <Text style={{ fontWeight: '600', color: '#024BAB' }}>Update key</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.sheetCancel} onPress={onDisconnect}>
+            <Text style={{ fontWeight: '600', color: '#dc2626' }}>Disconnect</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sheetCancel} onPress={onClose}>
+            <Text style={{ fontWeight: '600', color: '#000' }}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function IntegrationsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const [connected, setConnected] = useState<Set<string>>(
-    new Set(['indiamart', 'whatsapp']),
-  );
+  // Real connection state from the server (was a hard-coded mock before).
+  const [connected, setConnected] = useState<Set<string>>(new Set());
   const [wizard, setWizard] = useState<Integration | null>(null);
+  const [manage, setManage] = useState<Integration | null>(null);
+  const [waitingOAuth, setWaitingOAuth] = useState<'facebook' | 'email' | null>(null);
+  const [fbPages, setFbPages] = useState<any[] | null>(null);
+
+  const refreshStatus = async () => {
+    const checks: [string, () => Promise<boolean>][] = [
+      ['indiamart', async () => !!(await indiamartAPI.getStatus()).data?.connected],
+      ['tradeindia', async () => !!(await tradeindiaSyncAPI.getStatus()).data?.connected],
+      ['justdial', async () => !!(await justdialSyncAPI.getStatus()).data?.connected],
+      ['facebook', async () => ((await facebookAPI.getConnectedPages()).data || []).length > 0],
+      [
+        'whatsapp',
+        async () => {
+          const d = (await whatsappAPI.getStatus()).data;
+          return !!(d?.connected || d?.phoneNumbers?.length);
+        },
+      ],
+      ['email', async () => !!(await emailAPI.getStatus()).data?.connected],
+    ];
+    const results = await Promise.all(checks.map(([k, f]) => f().then(v => [k, v] as const).catch(() => [k, false] as const)));
+    setConnected(prev => {
+      const n = new Set(prev);
+      results.forEach(([k, v]) => (v ? n.add(k) : n.delete(k)));
+      return n;
+    });
+  };
+
+  useEffect(() => {
+    refreshStatus();
+    const unsub = navigation.addListener?.('focus', refreshStatus);
+    return unsub;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation]);
+
+  // Facebook and Gmail consent happens in the browser; continue when the user comes back.
+  useEffect(() => {
+    if (!waitingOAuth) return;
+    const sub = AppState.addEventListener('change', async st => {
+      if (st !== 'active') return;
+      if (waitingOAuth === 'facebook') {
+        try {
+          const r = await facebookAPI.getPages();
+          if (r.data?.length) {
+            setFbPages(r.data);
+            setWaitingOAuth(null);
+          }
+        } catch {
+          /* not authorised yet */
+        }
+      } else {
+        await refreshStatus();
+        setWaitingOAuth(null);
+      }
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitingOAuth]);
+
+  const saveKeys = async (key: string, f: Record<string, string>) => {
+    if (key === 'indiamart') await indiamartAPI.connect(f.api_key.trim());
+    else if (key === 'tradeindia')
+      await tradeindiaSyncAPI.connect(f.user_id.trim(), (f.profile_id || '').trim(), f.api_key.trim(), f.api_url.trim());
+    else if (key === 'justdial') {
+      const r = await justdialSyncAPI.connect((f.api_key || '').trim());
+      if (r.data?.webhookUrl)
+        Alert.alert('Give this link to Justdial', r.data.webhookUrl, [
+          { text: 'Copy-friendly view', onPress: () => Alert.alert('Webhook URL', r.data.webhookUrl) },
+          { text: 'OK' },
+        ]);
+    }
+    await refreshStatus();
+  };
+
+  const startOAuth = async (which: 'facebook' | 'email') => {
+    try {
+      const r = which === 'facebook' ? await facebookAPI.getAuthUrl() : await emailAPI.getAuthUrl();
+      const url = (r as any).data?.authUrl || (r as any).authUrl;
+      if (!url) throw new Error('No sign-in link returned');
+      setWaitingOAuth(which);
+      Linking.openURL(url);
+    } catch (e: any) {
+      Alert.alert('Could not start sign-in', e.message);
+    }
+  };
+
+  const connectFbPage = async (page: any) => {
+    try {
+      await facebookAPI.connectPage(page.id, []);
+      setFbPages(null);
+      await refreshStatus();
+      Alert.alert('Facebook connected', `${page.name} is now syncing leads (all forms).`);
+    } catch (e: any) {
+      Alert.alert('Connection failed', e.message);
+    }
+  };
+
+  const disconnect = async (key: string) => {
+    try {
+      if (key === 'indiamart') await indiamartAPI.disconnect();
+      else if (key === 'tradeindia') await tradeindiaSyncAPI.disconnect();
+      else if (key === 'justdial') await justdialSyncAPI.disconnect();
+      else if (key === 'facebook') await facebookAPI.disconnect();
+      else if (key === 'email') await emailAPI.disconnect();
+      await refreshStatus();
+    } catch (e: any) {
+      Alert.alert("Couldn't disconnect", e.message);
+    }
+  };
 
   // LinkedIn/Google Ads connect real backend state (unlike the other cards'
   // local-only mock state) — refresh whenever the screen regains focus, e.g.
@@ -880,7 +1139,7 @@ export default function IntegrationsScreen({ navigation }: any) {
             </View>
             <View>
               <CountText style={styles.summaryNum}>
-                {INTEGRATIONS.length - connectedCount}
+                {INTEGRATIONS.length - 1 - connectedCount}
               </CountText>
               <Text style={styles.summaryLabel}>Available</Text>
             </View>
@@ -898,7 +1157,7 @@ export default function IntegrationsScreen({ navigation }: any) {
               <CheckCheck size={25} color="#e77b00" />
             </View>
             <View>
-              <CountText style={styles.summaryNum}>{INTEGRATIONS.length}</CountText>
+              <CountText style={styles.summaryNum}>{INTEGRATIONS.length - 1}</CountText>
               <Text style={styles.summaryLabel}>Total</Text>
             </View>
           </View>
@@ -906,7 +1165,7 @@ export default function IntegrationsScreen({ navigation }: any) {
 
         <Text style={styles.sectionLabel}>ALL INTEGRATIONS</Text>
 
-        {INTEGRATIONS.map(intg => {
+        {INTEGRATIONS.filter(i => i.key !== 'sms').map(intg => {
           const isOn = connected.has(intg.key);
           const logo = intg.logoKey ? LOGOS[intg.logoKey] : null;
           return (
@@ -958,27 +1217,17 @@ export default function IntegrationsScreen({ navigation }: any) {
                     navigation.navigate('GoogleAdsSetup');
                     return;
                   }
-                  if (isOn) {
-                    Alert.alert(
-                      `Disconnect ${intg.label}`,
-                      'This will stop syncing leads from this source.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Disconnect',
-                          style: 'destructive',
-                          onPress: () =>
-                            setConnected(s => {
-                              const n = new Set(s);
-                              n.delete(intg.key);
-                              return n;
-                            }),
-                        },
-                      ],
-                    );
-                  } else {
-                    setWizard(intg);
+                  if (intg.key === 'whatsapp') {
+                    navigation.navigate('WhatsAppSetup');
+                    return;
                   }
+                  if (isOn) {
+                    setManage(intg);
+                    return;
+                  }
+                  if (intg.key === 'facebook') startOAuth('facebook');
+                  else if (intg.key === 'email') startOAuth('email');
+                  else setWizard(intg);
                 }}
               >
                 <Text
@@ -997,7 +1246,7 @@ export default function IntegrationsScreen({ navigation }: any) {
         {/* Coming soon */}
         <Text style={[styles.sectionLabel, { marginTop: 8 }]}>COMING SOON</Text>
         <View style={styles.comingSoonRow}>
-          {['Sulekha', '99acres', 'MagicBricks'].map(name => (
+          {['SMS', 'Sulekha', '99acres', 'MagicBricks'].map(name => (
             <View key={name} style={styles.comingSoonTag}>
               <Text style={styles.comingSoonText}>{name}</Text>
             </View>
@@ -1009,7 +1258,49 @@ export default function IntegrationsScreen({ navigation }: any) {
         <WizardModal
           integration={wizard}
           onClose={() => setWizard(null)}
-          onConnected={() => setConnected(s => new Set([...s, wizard.key]))}
+          onConnected={refreshStatus}
+          onSave={f => saveKeys(wizard.key, f)}
+        />
+      )}
+
+      {/* Facebook: pick the page after signing in */}
+      <Modal visible={!!fbPages} transparent animationType="slide" onRequestClose={() => setFbPages(null)}>
+        <View style={styles.sheetOverlay}>
+          <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+            <Text style={styles.sheetTitle}>Pick a Facebook page</Text>
+            <Text style={styles.sheetSub}>Leads from all its forms will come in. Fine-tune forms and filters on the web.</Text>
+            <ScrollView style={{ maxHeight: 360 }}>
+              {(fbPages || []).map(p => (
+                <TouchableOpacity key={p.id} style={styles.sheetRow} onPress={() => connectFbPage(p)}>
+                  <Text style={styles.sheetRowText}>{p.name}</Text>
+                  <Text style={styles.sheetSub}>{p.category}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.sheetCancel} onPress={() => setFbPages(null)}>
+              <Text style={{ fontWeight: '600', color: '#000' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {manage && (
+        <ManageSheet
+          integration={manage}
+          onClose={() => setManage(null)}
+          onDisconnect={() => {
+            const k = manage.key;
+            setManage(null);
+            Alert.alert(`Disconnect ${manage.label}?`, 'Leads will stop coming in until you reconnect.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Disconnect', style: 'destructive', onPress: () => disconnect(k) },
+            ]);
+          }}
+          onUpdateKey={() => {
+            const intg = manage;
+            setManage(null);
+            if (['indiamart', 'tradeindia', 'justdial'].includes(intg.key)) setWizard(intg);
+          }}
         />
       )}
     </View>
@@ -1018,6 +1309,14 @@ export default function IntegrationsScreen({ navigation }: any) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#fff', borderTopWidth: 2, borderColor: '#000', padding: 16 },
+  sheetTitle: { fontSize: 17, fontWeight: '600', color: '#000' },
+  sheetSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  sheetRow: { paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  sheetRowText: { fontSize: 14, color: '#000', fontWeight: '500' },
+  sheetPrimary: { backgroundColor: '#024BAB', borderWidth: 2, borderColor: '#000', paddingVertical: 12, alignItems: 'center', marginTop: 12 },
+  sheetCancel: { borderWidth: 2, borderColor: '#000', paddingVertical: 11, alignItems: 'center', marginTop: 8 },
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,

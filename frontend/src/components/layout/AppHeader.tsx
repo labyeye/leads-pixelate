@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Bell,
+  Clock,
   Search,
   Menu,
   Cake,
@@ -16,6 +17,7 @@ import {
   type AppNotification,
 } from "@/services/api";
 import { PaceBadge } from "./PaceBadge";
+import { ProfileMenu } from "./ProfileMenu";
 
 interface AppHeaderProps {
   title: string;
@@ -116,12 +118,12 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuOpen}
-          className="lg:hidden w-9 h-9 border-2 border-black bg-white flex items-center justify-center hover:bg-[#024BAB] transition-colors"
+          className="lg:hidden w-9 h-9 border-2 border-black bg-white flex items-center justify-center hover:bg-[#024BAB]/10 transition-colors"
           aria-label="Open menu"
         >
           <Menu className="w-[18px] h-[18px] text-black" />
         </button>
-        <h1 className="font-display font-medium text-lg sm:text-xl text-black">
+        <h1 className="font-display font-bold text-lg sm:text-xl text-black">
           {title}
         </h1>
       </div>
@@ -153,12 +155,12 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
         <div className="relative" ref={panelRef}>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="relative w-9 h-9 border-2 border-black bg-white flex items-center justify-center hover:bg-[#024BAB] transition-colors"
+            className="relative w-9 h-9 border-2 border-black bg-white flex items-center justify-center hover:bg-[#024BAB]/10 transition-colors"
             aria-label="Notifications"
           >
             <Bell className="w-[18px] h-[18px] text-black" />
             {(unread > 0 || items.length > 0) && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-[#FA731C] border-2 border-black text-[10px] font-bold text-white flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-[#FA731C] border border-black rounded-xl text-[9px] font-bold text-white flex items-center justify-center">
                 {unread > 0 ? (unread > 9 ? "9+" : unread) : ""}
               </span>
             )}
@@ -166,7 +168,10 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
           {open && (
             <div className="absolute right-0 top-11 w-80 max-w-[92vw] border-2 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 max-h-[80vh] overflow-y-auto">
               <div className="px-4 py-3 border-b-2 border-black bg-[#024BAB] text-sm font-bold text-white flex items-center justify-between">
-                <span>Notifications{unread > 0 ? ` (${unread})` : ""}</span>
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Notifications{unread > 0 ? ` (${unread})` : ""}
+                </span>
                 <span className="flex gap-1.5">
                   {unread > 0 && (
                     <button
@@ -268,28 +273,22 @@ export function AppHeader({ title, onMenuOpen }: AppHeaderProps) {
                       </div>
                     </div>
                   ))}
+              <div className="border-t-2 border-black px-4 py-2.5 bg-[#F8FAFF] flex items-center justify-between sticky bottom-0">
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  {unread} unread
+                </span>
+                <button
+                  onClick={loadNotifs}
+                  className="text-[11px] font-bold text-[#024BAB] hover:underline"
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2 border-2 border-black bg-[#024BAB] px-2 sm:px-3 py-1.5">
-          <div className="w-6 h-6 border border-white shrink-0 overflow-hidden rounded-full">
-            {user.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-white flex items-center justify-center text-[10px] font-medium text-black">
-                {user.name?.[0]?.toUpperCase() ?? "U"}
-              </div>
-            )}
-          </div>
-          <span className="hidden sm:block text-sm font-medium text-white max-w-[100px] truncate">
-            {user.name}
-          </span>
-        </div>
+        <ProfileMenu />
       </div>
     </header>
   );

@@ -14,6 +14,38 @@ import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../contexts/AuthContext';
 import { dashboardAPI } from '../services/api';
+import { CountUp } from '../components/motion';
+
+const inr = (n: number) => {
+  const v = Number(n) || 0;
+  if (v >= 1e7) return `₹${(v / 1e7).toFixed(1)}Cr`;
+  if (v >= 1e5) return `₹${(v / 1e5).toFixed(1)}L`;
+  if (v >= 1e3) return `₹${(v / 1e3).toFixed(0)}k`;
+  return `₹${Math.round(v)}`;
+};
+const mins = (m: number) =>
+  !m ? '—' : m < 60 ? `${Math.round(m)}m` : m < 1440 ? `${(m / 60).toFixed(1)}h` : `${(m / 1440).toFixed(1)}d`;
+
+// Calendar presets: exact from/to, and the month the money card should show.
+const PRESETS = [
+  { key: 'today', label: 'Today' },
+  { key: 'month', label: 'This month' },
+  { key: 'last', label: 'Last month' },
+];
+function presetRange(key: string) {
+  const now = new Date();
+  if (key === 'today') {
+    const f = new Date(now);
+    f.setHours(0, 0, 0, 0);
+    return { from: f, to: now, month: undefined as string | undefined };
+  }
+  const y = now.getFullYear();
+  const m = now.getMonth() - (key === 'last' ? 1 : 0);
+  const from = new Date(y, m, 1);
+  const to = key === 'last' ? new Date(y, m + 1, 0, 23, 59, 59) : now;
+  const mk = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`;
+  return { from, to, month: key === 'last' ? mk : undefined };
+}
 
 type Tone = 'green' | 'amber' | 'red';
 const TONE: Record<Tone, { hex: string; bg: string; label: string }> = {
@@ -53,14 +85,21 @@ export default function LivePerformanceScreen({ navigation }: any) {
   const isAdmin = ['admin', 'super_admin'].includes(user?.role);
 
   const [windowMin, setWindowMin] = useState(60);
+  const [preset, setPreset] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
+  const [money, setMoney] = useState<any>(null);
+  const [speed, setSpeed] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     try {
-      const r = await dashboardAPI.getLive(windowMin);
+      const pr = preset ? presetRange(preset) : null;
+      const range = pr
+        ? { from: pr.from.toISOString(), to: pr.to.toISOString() }
+        : { from: new Date(Date.now() - windowMin * 60000).toISOString(), to: new Date().toISOString() };
+      const r = await dashboardAPI.getLive(windowMin, pr ? range : undefined);
       if (r.success) {
         setData(r.data);
         setError('');
@@ -71,7 +110,18 @@ export default function LivePerformanceScreen({ navigation }: any) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [windowMin]);
+  }, [windowMin, preset]);
+
+  // Money and speed change slowly: load them when the filter changes, not on every 15s refresh.
+  useEffect(() => {
+    if (!isAdmin) return;
+    const pr = preset ? presetRange(preset) : null;
+    const range = pr
+      ? { from: pr.from.toISOString(), to: pr.to.toISOString() }
+      : { from: new Date(Date.now() - windowMin * 60000).toISOString(), to: new Date().toISOString() };
+    dashboardAPI.getTargets(pr?.month).then(r => r?.success && setMoney(r.data)).catch(() => {});
+    dashboardAPI.getInsights(30, range).then(r => r?.success && setSpeed(r.data?.response)).catch(() => {});
+  }, [windowMin, preset, isAdmin]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -90,11 +140,12 @@ export default function LivePerformanceScreen({ navigation }: any) {
     };
     const perAgentCalls = expected(COLS[0]);
     const groups: Record<Tone, any[]> = { green: [], amber: [], red: [] };
-    data.team.forEach((r: any) => {
+    const humans = data.team.filter((r: any) => !r.isAI);
+    humans.forEach((r: any) => {
       const pct = perAgentCalls > 0 ? (r.done / perAgentCalls) * 100 : 0;
       groups[toneFor(pct, t.amberPct)].push(r);
     });
-    return { expected, groups, agents: Math.max(data.team.length, 1) };
+    return { expected, groups, agents: Math.max(humans.length, 1) };
   }, [data]);
 
   const Header = (
@@ -143,13 +194,28 @@ export default function LivePerformanceScreen({ navigation }: any) {
         }
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-          {WINDOWS.map(w => (
+          {WINDOWS.map(w => {
+            const on = !preset && windowMin === w.min;
+            return (
+              <TouchableOpacity
+                key={w.min}
+                onPress={() => {
+                  setPreset(null);
+                  setWindowMin(w.min);
+                }}
+                style={[s.chip, on && s.chipOn]}
+              >
+                <Text style={[s.chipText, on && { color: '#fff' }]}>{w.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {PRESETS.map(p => (
             <TouchableOpacity
-              key={w.min}
-              onPress={() => setWindowMin(w.min)}
-              style={[s.chip, windowMin === w.min && s.chipOn]}
+              key={p.key}
+              onPress={() => setPreset(p.key)}
+              style={[s.chip, preset === p.key && s.chipOn, { borderStyle: 'dashed' }]}
             >
-              <Text style={[s.chipText, windowMin === w.min && { color: '#fff' }]}>{w.label}</Text>
+              <Text style={[s.chipText, preset === p.key && { color: '#fff' }]}>{p.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -164,7 +230,7 @@ export default function LivePerformanceScreen({ navigation }: any) {
             {(['green', 'amber', 'red'] as Tone[]).map(tone => (
               <View key={tone} style={[s.toneCard, { backgroundColor: TONE[tone].bg }]}>
                 <View style={[s.toneCount, { backgroundColor: TONE[tone].hex }]}>
-                  <Text style={s.toneCountText}>{view.groups[tone].length}</Text>
+                  <CountUp value={view.groups[tone].length} style={s.toneCountText} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.toneLabel}>{TONE[tone].label}</Text>
@@ -191,10 +257,10 @@ export default function LivePerformanceScreen({ navigation }: any) {
               {data.team.map((r: any) => (
                 <View key={r._id} style={s.tr}>
                   <Text style={[s.td, s.nameCol]} numberOfLines={1}>
-                    {r.name}
+                    {r.isAI ? `🤖 ${r.name}` : r.name}
                   </Text>
                   {COLS.map(c => {
-                    const exp = view.expected(c);
+                    const exp = r.isAI ? 0 : view.expected(c);
                     const done = r[c.key];
                     const tone = exp > 0 ? toneFor((done / exp) * 100, data.targets.amberPct) : null;
                     return (
@@ -226,7 +292,7 @@ export default function LivePerformanceScreen({ navigation }: any) {
                 })}
               </View>
               <Text style={s.hint}>
-                Convo = lead moved out of New Lead · Quote = moved to Quotation · Visit = Visit Scheduled. Targets are set on the web.
+                Convo = lead moved out of New Lead · Quote = moved to Quotation · Visit = Visit Scheduled. 🤖 AI Agent: calls it made (no target). Targets are set on the web.
               </Text>
             </View>
 
@@ -237,9 +303,109 @@ export default function LivePerformanceScreen({ navigation }: any) {
               <Stat label="Pending worked" value={data.totals.pendingWorked} sub={`${data.totals.pendingNow} still pending`} />
             </View>
 
+            {/* Sales vs target */}
+            {money && (
+              <View style={s.box}>
+                <Text style={s.boxTitle}>Sales vs target · {money.month?.label}</Text>
+                <View style={{ padding: 10 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <CountUp value={money.month?.won || 0} prefix="₹" locale style={s.bigMoney} />
+                    <Text style={s.muted}>of {money.target ? inr(money.target) : 'no target set'}</Text>
+                  </View>
+                  <View style={s.meter}>
+                    <View
+                      style={[
+                        s.meterFill,
+                        {
+                          width: `${money.target ? Math.min(100, ((money.month?.won || 0) / money.target) * 100) : 0}%` as any,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[s.muted, { marginTop: 6 }]}>
+                    {money.month?.orders || 0} orders ·{' '}
+                    {money.month?.isCurrent
+                      ? `${money.month?.daysLeft} days left`
+                      : money.target && (money.month?.won || 0) >= money.target
+                        ? 'target met ✓'
+                        : money.target
+                          ? `short of target by ${inr(money.target - (money.month?.won || 0))}`
+                          : 'month closed'}
+                  </Text>
+                </View>
+                <Text style={[s.boxTitle, { borderTopWidth: 2, borderTopColor: '#000' }]}>Who is bringing the business</Text>
+                {money.byAgent?.length ? (
+                  money.byAgent.map((a: any, i: number) => {
+                    const top = Math.max(1, ...money.byAgent.map((x: any) => x.value || 0));
+                    return (
+                      <View key={`${a.name}-${i}`} style={s.barRow}>
+                        <Text style={s.barName} numberOfLines={1}>
+                          {a.isAI ? `🤖 ${a.name}` : a.name}
+                        </Text>
+                        <View style={s.track}>
+                          <View style={[s.fill, { width: `${Math.max(((a.value || 0) / top) * 100, 2)}%` as any, backgroundColor: '#00A86B' }]} />
+                        </View>
+                        <Text style={s.barVal}>{inr(a.value)}</Text>
+                        <Text style={s.barSub}>{a.orders} ord</Text>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={[s.muted, { padding: 10 }]}>No orders won in this month yet.</Text>
+                )}
+              </View>
+            )}
+
+            {/* Assigned vs worked */}
+            {data.agentRange?.length > 0 && (
+              <View style={s.box}>
+                <Text style={s.boxTitle}>Assigned vs worked (leads received in range)</Text>
+                {data.agentRange.map((a: any, i: number) => (
+                  <View key={`${a.name}-${i}`} style={s.barRow}>
+                    <Text style={s.barName} numberOfLines={1}>
+                      {a.isAI ? `🤖 ${a.name}` : a.name}
+                    </Text>
+                    <View style={s.track}>
+                      <View style={[s.fill, { width: `${Math.max(a.pct || 0, a.worked ? 2 : 0)}%` as any, backgroundColor: '#024BAB' }]} />
+                    </View>
+                    <Text style={s.barVal}>
+                      {a.worked}/{a.assigned}
+                    </Text>
+                    <Text style={[s.barSub, { color: a.pct >= 80 ? '#16a34a' : a.pct >= 50 ? '#f59e0b' : '#dc2626' }]}>{a.pct}%</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Response speed */}
+            {speed && (
+              <View style={s.box}>
+                <Text style={s.boxTitle}>How fast new leads are called</Text>
+                <View style={[s.stats, { padding: 10, marginBottom: 0 }]}>
+                  <Stat label="Within 1 hour" value={speed.within1hPct} suffix="%" />
+                  <Stat label="Median" text={mins(speed.medianMinutes)} />
+                  <Stat label="Worked" value={speed.worked} sub={`of ${speed.total}`} />
+                </View>
+                {(speed.perAgent || []).map((a: any, i: number) => (
+                  <View key={`${a.name}-${i}`} style={s.barRow}>
+                    <Text style={s.barName} numberOfLines={1}>
+                      {a.isAI ? `🤖 ${a.name}` : a.name}
+                    </Text>
+                    <View style={s.track}>
+                      <View style={[s.fill, { width: `${Math.max(a.within1hPct || 0, 2)}%` as any, backgroundColor: '#FF751F' }]} />
+                    </View>
+                    <Text style={s.barVal}>{a.within1hPct}%</Text>
+                    <Text style={s.barSub}>{mins(a.medianMinutes)}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
             {/* updates */}
             <View style={s.box}>
-              <Text style={s.boxTitle}>Updates in the last {WINDOWS.find(w => w.min === windowMin)?.label}</Text>
+              <Text style={s.boxTitle}>
+                Updates · {preset ? PRESETS.find(p => p.key === preset)?.label : `last ${WINDOWS.find(w => w.min === windowMin)?.label}`}
+              </Text>
               {data.updates.length === 0 ? (
                 <Text style={s.muted}>No lead updates in this window.</Text>
               ) : (
@@ -263,10 +429,14 @@ export default function LivePerformanceScreen({ navigation }: any) {
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function Stat({ label, value, sub, suffix, text }: { label: string; value?: number; sub?: string; suffix?: string; text?: string }) {
   return (
     <View style={s.stat}>
-      <Text style={s.statVal}>{value}</Text>
+      {text !== undefined ? (
+        <Text style={s.statVal}>{text}</Text>
+      ) : (
+        <CountUp value={value || 0} suffix={suffix} locale style={s.statVal} />
+      )}
       <Text style={s.statLabel}>{label}</Text>
       {!!sub && <Text style={s.statSub}>{sub}</Text>}
     </View>
@@ -305,6 +475,15 @@ const s = StyleSheet.create({
   statVal: { fontSize: 20, fontWeight: '700', color: '#000' },
   statLabel: { fontSize: 10, textTransform: 'uppercase', color: '#64748b' },
   statSub: { fontSize: 10, color: '#64748b' },
+  bigMoney: { fontSize: 24, fontWeight: '700', color: '#000' },
+  meter: { height: 12, borderWidth: 1.5, borderColor: '#000', backgroundColor: '#f1f5f9', marginTop: 6 },
+  meterFill: { height: '100%', backgroundColor: '#00A86B' },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  barName: { width: 96, fontSize: 12, fontWeight: '600', color: '#000' },
+  track: { flex: 1, height: 8, backgroundColor: '#f1f5f9', overflow: 'hidden' },
+  fill: { height: '100%' },
+  barVal: { width: 56, textAlign: 'right', fontSize: 12, fontWeight: '600', color: '#000' },
+  barSub: { width: 40, textAlign: 'right', fontSize: 10, color: '#64748b' },
   upd: { flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0', gap: 8 },
   updText: { fontSize: 12, color: '#000' },
   updBy: { fontSize: 11, color: '#64748b' },

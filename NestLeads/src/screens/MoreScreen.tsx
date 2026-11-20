@@ -72,16 +72,24 @@ const GROUPS: { title: string; color: string; screens: string[] }[] = [
   {
     title: 'Account',
     color: SECONDARY,
-    screens: ['Billing', 'AccountSecurity', 'Support', 'Settings'],
+    screens: ['Billing', 'AccountSecurity', 'Support', 'CompanySettings', 'AICallingSettings', 'Settings'],
   },
   {
     title: 'Admin',
     color: '#000000',
-    screens: ['LivePerformance', 'ActivityLog', 'Trash'],
+    screens: ['Insights', 'LivePerformance', 'ActivityLog', 'Trash'],
   },
 ];
 
 const MENU_ITEMS: MenuItem[] = [
+  {
+    icon: 'call-outline',
+    label: 'AI Calling',
+    sub: 'ElevenLabs agent, greeting & questions',
+    screen: 'AICallingSettings',
+    color: PRIMARY,
+    adminOnly: true,
+  },
   {
     icon: 'briefcase-outline',
     label: 'Clients',
@@ -246,6 +254,14 @@ const MENU_ITEMS: MenuItem[] = [
     color: PRIMARY,
   },
   {
+    icon: 'stats-chart-outline',
+    label: 'Insights',
+    sub: 'Target, funnel, sources, team & losses',
+    screen: 'Insights',
+    color: PRIMARY,
+    adminOnly: true,
+  },
+  {
     icon: 'pulse-outline',
     label: 'Live Performance',
     sub: 'Team calls, conversations & targets',
@@ -267,6 +283,14 @@ const MENU_ITEMS: MenuItem[] = [
     sub: 'Restore deleted leads, clients & more',
     screen: 'Trash',
     color: '#000',
+    adminOnly: true,
+  },
+  {
+    icon: 'business-outline',
+    label: 'Company Settings',
+    sub: 'Company, GST, bank details & quotation terms',
+    screen: 'CompanySettings',
+    color: PRIMARY,
     adminOnly: true,
   },
   {

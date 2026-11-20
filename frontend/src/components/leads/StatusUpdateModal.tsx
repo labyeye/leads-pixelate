@@ -32,6 +32,7 @@ import {
   getStatusColorClasses,
   getStatusLabel,
   contactTagsEnabled,
+  categories,
 } from "./statusConstants";
 import { leadsAPI, productsAPI } from "@/services/api";
 import { useToast } from "@/components/ui/use-toast";
@@ -55,17 +56,23 @@ interface StatusUpdateModalProps {
   pendingStatus: string | null;
   onSuccess: () => void;
   selectedTag?: string;
+  // Edit mode corrects the latest status entry instead of adding a new one.
+  editEntry?: any;
 }
 
 export function StatusUpdateModal({
   open,
   onOpenChange,
   lead,
-  pendingStatus,
+  pendingStatus: pendingStatusProp,
   onSuccess,
   selectedTag,
+  editEntry,
 }: StatusUpdateModalProps) {
   const { toast } = useToast();
+  const isEdit = !!editEntry;
+  const [editStatus, setEditStatus] = useState<string>(editEntry?.status || "");
+  const pendingStatus = isEdit ? editStatus : pendingStatusProp;
   const [remarksInput, setRemarksInput] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
   const [lostReasonInput, setLostReasonInput] = useState("");
@@ -88,7 +95,7 @@ export function StatusUpdateModal({
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [localTag, setLocalTag] = useState<string | undefined>(selectedTag);
 
-  const isSameStatus = lead?.status === pendingStatus;
+  const isSameStatus = !isEdit && lead?.status === pendingStatus;
   const showTagPicker =
     [
       "1",
@@ -135,9 +142,27 @@ export function StatusUpdateModal({
       setLostReasonInput(lead.lostReason || "");
       setCompetitorInput(lead.competitor || "");
       setLocalTag(selectedTag);
+      if (editEntry) {
+        setEditStatus(editEntry.status || "");
+        setRemarksInput(editEntry.remarks || "");
+        if (editEntry.budget) setBudgetInput(editEntry.budget);
+        if (editEntry.followUpDate) {
+          setSelectedDate(new Date(editEntry.followUpDate));
+          setSelectedTime(format(new Date(editEntry.followUpDate), "HH:mm"));
+        }
+        if (editEntry.visitScheduledDate) {
+          setVisitScheduledDate(new Date(editEntry.visitScheduledDate));
+          setVisitScheduledTime(
+            format(new Date(editEntry.visitScheduledDate), "HH:mm"),
+          );
+        }
+        if (editEntry.visitActualDate)
+          setVisitActualDate(new Date(editEntry.visitActualDate));
+        setLocalTag(editEntry.contactTag || lead.contactTag || undefined);
+      }
       fetchProducts();
     }
-  }, [open, lead, selectedTag]);
+  }, [open, lead, selectedTag, editEntry]);
 
   const fetchProducts = async () => {
     try {
@@ -199,7 +224,6 @@ export function StatusUpdateModal({
       return;
     }
 
-    const isSameStatus = lead.status === pendingStatus;
     if (showFollowupPicker && !selectedDate) {
       toast({
         title: "Date Required",
@@ -239,6 +263,45 @@ export function StatusUpdateModal({
 
     try {
       setLoading(true);
+
+      if (isEdit) {
+        const data: any = {
+          remarks: remarksInput,
+          budget: budgetInput.trim(),
+          interestedProducts: selectedProducts,
+        };
+        if (pendingStatus !== editEntry.status) data.status = pendingStatus;
+        if (pendingStatus === "DROP") {
+          data.lostReason = lostReasonInput;
+          data.competitor = competitorInput.trim();
+        }
+        if (showTagPicker && localTag) data.contactTag = localTag;
+        const at = (d: Date, t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          const x = new Date(d);
+          x.setHours(h, m, 0, 0);
+          return x;
+        };
+        if (showFollowupPicker && selectedDate)
+          data.followUpDate = at(selectedDate, selectedTime);
+        if (pendingStatus === "VISIT SCHEDULED" && visitScheduledDate) {
+          data.visitScheduledDate = at(visitScheduledDate, visitScheduledTime);
+          data.followUpDate = data.visitScheduledDate;
+        }
+        if (pendingStatus === "VISITED" && visitActualDate)
+          data.visitActualDate = visitActualDate;
+        await leadsAPI.editLatestStatus(lead._id || lead.id, data);
+        toast({
+          title: "Status corrected",
+          description:
+            pendingStatus !== editEntry.status
+              ? `${getStatusLabel(editEntry.status)} → ${getStatusLabel(pendingStatus)}`
+              : "Update saved",
+        });
+        onSuccess();
+        onOpenChange(false);
+        return;
+      }
 
       if (pendingStatus === "WON") {
         const res = await leadsAPI.convertToClient(lead._id || lead.id, {
@@ -334,7 +397,7 @@ export function StatusUpdateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-muted-foreground font-normal">
-              Updating to:
+              {isEdit ? "Editing update:" : "Updating to:"}
             </span>
             <span
               className={cn(
@@ -348,6 +411,37 @@ export function StatusUpdateModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {isEdit && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                Status
+              </Label>
+              <select
+                className="w-full rounded-lg border border-border bg-background p-2.5 text-sm"
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+              >
+                {Object.entries(categories).map(([group, list]) => (
+                  <optgroup key={group} label={group}>
+                    {list.map((st) => (
+                      <option key={st} value={st}>
+                        {getStatusLabel(st)}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {editStatus !== editEntry.status && (
+                <p className="text-xs text-muted-foreground">
+                  Changes this update from{" "}
+                  <b>{getStatusLabel(editEntry.status)}</b> to{" "}
+                  <b>{getStatusLabel(editStatus)}</b>. No new history entry is
+                  added.
+                </p>
+              )}
+            </div>
+          )}
+
           {showTagPicker && (
             <div className="space-y-4 p-4 rounded-xl border border-border bg-card/50">
               <Label className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
@@ -648,7 +742,7 @@ export function StatusUpdateModal({
             }
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Update Status
+            {isEdit ? "Save changes" : "Update Status"}
           </Button>
         </DialogFooter>
       </DialogContent>

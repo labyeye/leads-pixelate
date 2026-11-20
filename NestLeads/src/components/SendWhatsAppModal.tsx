@@ -13,7 +13,7 @@ const fieldText = (lead: any, key: string) =>
 export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const [templates, setTemplates] = useState<any[] | null>(null);
-  const [mode, setMode] = useState<'template' | 'text'>('template');
+  const [mode, setMode] = useState<'template' | 'text' | 'document'>('template');
   const [picked, setPicked] = useState<any>(null);
   const [mapping, setMapping] = useState<{ position: number; fieldKey: string; customValue: string }[]>([]);
   const [message, setMessage] = useState('');
@@ -59,6 +59,8 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
     try {
       if (mode === 'template' && picked)
         await whatsappAPI.sendToLead({ leadId: lead._id, templateId: picked._id, variableMapping: mapping, phoneNumberId: sender, documentId: documentId || undefined });
+      else if (mode === 'document')
+        await whatsappAPI.sendToLead({ leadId: lead._id, messageType: 'document', documentId, messageText: message.trim(), phoneNumberId: sender });
       else await whatsappAPI.sendToLead({ leadId: lead._id, messageType: 'text', messageText: message.trim(), phoneNumberId: sender });
       Alert.alert('Sent', 'It will show in your WhatsApp Inbox.');
       onClose();
@@ -74,7 +76,12 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
     }
   };
 
-  const ready = mode === 'template' ? !!picked && (!needsDoc || !!documentId) : !!message.trim();
+  const ready =
+    mode === 'template'
+      ? !!picked && (!needsDoc || !!documentId)
+      : mode === 'document'
+        ? !!documentId
+        : !!message.trim();
 
   return (
     <Modal visible={!!lead} animationType="slide" onRequestClose={onClose}>
@@ -99,6 +106,15 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
             <TouchableOpacity onPress={() => setMode('text')} style={[s.chip, mode === 'text' && s.chipOn]}>
               <Text style={[s.chipText, mode === 'text' && { color: '#fff' }]}>Message</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setMode('document');
+                setDocumentId('');
+              }}
+              style={[s.chip, mode === 'document' && s.chipOn]}
+            >
+              <Text style={[s.chipText, mode === 'document' && { color: '#fff' }]}>Document</Text>
+            </TouchableOpacity>
           </View>
 
           {numbers.length > 1 && (
@@ -111,7 +127,22 @@ export default function SendWhatsAppModal({ lead, onClose }: { lead: any | null;
             </TouchableOpacity>
           )}
 
-          {mode === 'text' ? (
+          {mode === 'document' ? (
+            <>
+              <Text style={s.hint}>Send a file from Document Vault. Like a free message, it only reaches them within 24 hours of their last reply.</Text>
+              {docs.length === 0 ? (
+                <Text style={s.hint}>Nothing in the vault yet. Upload from More, Document Vault.</Text>
+              ) : (
+                docs.map(d => (
+                  <TouchableOpacity key={d._id} onPress={() => setDocumentId(d._id)} style={[s.tpl, documentId === d._id && s.tplOn]}>
+                    <Text style={{ fontWeight: '700', fontSize: 13, color: '#000' }} numberOfLines={1}>{d.name}</Text>
+                    <Text style={s.hint}>{d.fileName}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+              <TextInput value={message} onChangeText={setMessage} multiline placeholder="Caption (optional)" placeholderTextColor="#94a3b8" style={[s.input, { minHeight: 70, textAlignVertical: 'top', marginTop: 8 }]} />
+            </>
+          ) : mode === 'text' ? (
             <>
               <Text style={s.hint}>A free message only reaches them within 24 hours of their last reply. Otherwise use a template.</Text>
               <TextInput value={message} onChangeText={setMessage} multiline placeholder="Type your message" placeholderTextColor="#94a3b8" style={[s.input, { minHeight: 120, textAlignVertical: 'top' }]} />

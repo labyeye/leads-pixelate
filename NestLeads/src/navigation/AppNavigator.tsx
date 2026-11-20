@@ -59,6 +59,10 @@ import CampaignManagementOverviewScreen from '../screens/CampaignManagementOverv
 import CampaignReportsScreen from '../screens/CampaignReportsScreen';
 import ActivityLogScreen from '../screens/ActivityLogScreen';
 import LivePerformanceScreen from '../screens/LivePerformanceScreen';
+import InsightsScreen from '../screens/InsightsScreen';
+import CampaignBuilderScreen from '../screens/CampaignBuilderScreen';
+import AICallingSettingsScreen from '../screens/AICallingSettingsScreen';
+import CompanySettingsScreen from '../screens/CompanySettingsScreen';
 import FunnelsScreen from '../screens/FunnelsScreen';
 import TrashScreen from '../screens/TrashScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -68,6 +72,10 @@ import { withSlideUp } from '../components/motion';
 const AccountSecurityScreenAnim = withSlideUp(AccountSecurityScreen);
 const ActivityLogScreenAnim = withSlideUp(ActivityLogScreen);
 const LivePerformanceScreenAnim = withSlideUp(LivePerformanceScreen);
+const InsightsScreenAnim = withSlideUp(InsightsScreen);
+const CampaignBuilderScreenAnim = withSlideUp(CampaignBuilderScreen);
+const AICallingSettingsScreenAnim = withSlideUp(AICallingSettingsScreen);
+const CompanySettingsScreenAnim = withSlideUp(CompanySettingsScreen);
 const FunnelsScreenAnim = withSlideUp(FunnelsScreen);
 const AdCampaignsHubScreenAnim = withSlideUp(AdCampaignsHubScreen);
 const AdPlatformLockedScreenAnim = withSlideUp(AdPlatformLockedScreen);
@@ -176,6 +184,10 @@ export type MoreStackParamList = {
   CampaignReports: undefined;
   ActivityLog: undefined;
   LivePerformance: undefined;
+  Insights: undefined;
+  CampaignBuilder: { campaignId?: string } | undefined;
+  AICallingSettings: undefined;
+  CompanySettings: undefined;
   Funnels: undefined;
   Trash: undefined;
   Notifications: undefined;
@@ -300,6 +312,10 @@ function MoreNavigator() {
       />
       <MoreStack.Screen name="ActivityLog" component={ActivityLogScreenAnim} />
       <MoreStack.Screen name="LivePerformance" component={LivePerformanceScreenAnim} />
+      <MoreStack.Screen name="Insights" component={InsightsScreenAnim} />
+      <MoreStack.Screen name="CampaignBuilder" component={CampaignBuilderScreenAnim} />
+      <MoreStack.Screen name="AICallingSettings" component={AICallingSettingsScreenAnim} />
+      <MoreStack.Screen name="CompanySettings" component={CompanySettingsScreenAnim} />
       <MoreStack.Screen name="Funnels" component={FunnelsScreenAnim} />
       <MoreStack.Screen name="Trash" component={TrashScreenAnim} />
       <MoreStack.Screen

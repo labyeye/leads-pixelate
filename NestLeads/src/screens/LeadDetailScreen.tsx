@@ -28,6 +28,7 @@ import {
   getCategoryByStatus,
 } from '../constants/statusConstants';
 import SourceBadge from '../components/SourceBadge';
+import EmailModal from '../components/EmailModal';
 import StatusFlow from '../components/StatusFlow';
 
 const TAG_COLORS: Record<string, { bg: string; text: string }> = {
@@ -86,10 +87,12 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const [lead, setLead] = useState<any>(null);
   const [waLead, setWaLead] = useState<any>(null);
+  const [emailLead, setEmailLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [noteText, setNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [editStatusOpen, setEditStatusOpen] = useState(false);
   const [histOpen, setHistOpen] = useState(false);
   const { user } = useAuth();
   const [perm, setPerm] = useState<{ update?: boolean; delete?: boolean }>(
@@ -203,7 +206,8 @@ export default function LeadDetailScreen({ navigation, route }: any) {
     if (lead?.phone) setWaLead(lead);
   };
   const handleEmail = () => {
-    if (lead?.email) Linking.openURL(`mailto:${lead.email}`);
+    // Gmail inside the app (thread + send), same as web.
+    if (lead) setEmailLead(lead);
   };
 
   const handleAddNote = async () => {
@@ -242,6 +246,16 @@ export default function LeadDetailScreen({ navigation, route }: any) {
   }
 
   if (!lead) return null;
+
+  // The latest status change can be corrected by an admin or by whoever made it.
+  const latestEntry = lead.statusHistory?.[lead.statusHistory.length - 1];
+  const latestBy = latestEntry?.changedBy?._id || latestEntry?.changedBy;
+  const myId = (user as any)?._id || (user as any)?.id;
+  const canEditLatest =
+    !!latestEntry &&
+    (user?.role === 'admin' ||
+      user?.role === 'super_admin' ||
+      (!!latestBy && String(latestBy) === String(myId)));
 
   const sc = getStatusColor(lead.status);
   const tag = lead.contactTag ? TAG_COLORS[lead.contactTag] : null;
@@ -603,7 +617,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                           {getStatusLabel(h.status)}
                         </Text>
                         <Text style={styles.historyDate}>
-                          {fmtDate(h.changedAt)}
+                          {fmtDate(h.timestamp || h.changedAt)}
                         </Text>
                       </View>
                       {h.remarks ? (
@@ -612,8 +626,19 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                       {h.changedBy?.name ? (
                         <Text style={styles.historyBy}>
                           by {h.changedBy.name}
+                          {h.editedAt ? ' · edited' : ''}
                         </Text>
                       ) : null}
+                      {i === 0 && canEditLatest && (
+                        <TouchableOpacity
+                          onPress={() => setEditStatusOpen(true)}
+                          hitSlop={8}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}
+                        >
+                          <Icon name="create-outline" size={14} color="#024BAB" />
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: '#024BAB' }}>Edit</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 );
@@ -691,7 +716,17 @@ export default function LeadDetailScreen({ navigation, route }: any) {
         onClose={() => setStatusModalOpen(false)}
         onDone={fetchLead}
       />
+      {canEditLatest && (
+        <StatusFlow
+          visible={editStatusOpen}
+          lead={lead}
+          editEntry={latestEntry}
+          onClose={() => setEditStatusOpen(false)}
+          onDone={fetchLead}
+        />
+      )}
       <SendWhatsAppModal lead={waLead} onClose={() => setWaLead(null)} />
+      <EmailModal lead={emailLead} onClose={() => setEmailLead(null)} />
     </View>
   );
 }
