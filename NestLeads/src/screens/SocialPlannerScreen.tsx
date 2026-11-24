@@ -1474,6 +1474,9 @@ export default function SocialPlannerScreen({ navigation }: any) {
         title="Social Planner"
         right={
           <>
+            <TouchableOpacity onPress={() => navigation.navigate('SocialPlanSheet')} hitSlop={8} style={{ padding: 4 }} accessibilityLabel="Content planner">
+              <Icon name="clipboard-outline" size={22} color="#000" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={openAccounts} hitSlop={8} style={{ padding: 4 }} accessibilityLabel="Social accounts">
               <Icon name="link-outline" size={22} color="#000" />
             </TouchableOpacity>

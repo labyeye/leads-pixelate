@@ -35,6 +35,7 @@ import CampaignsScreen from '../screens/CampaignsScreen';
 import UsersScreen from '../screens/UsersScreen';
 import IntegrationsScreen from '../screens/IntegrationsScreen';
 import SocialPlannerScreen from '../screens/SocialPlannerScreen';
+import SocialPlanSheetScreen from '../screens/SocialPlanSheetScreen';
 import AutopilotScreen from '../screens/AutopilotScreen';
 import CreatePostScreen from '../screens/CreatePostScreen';
 import ServicesScreen from '../screens/ServicesScreen';
@@ -112,6 +113,7 @@ const ScheduleScreenAnim = withSlideUp(ScheduleScreen);
 const ServicesScreenAnim = withSlideUp(ServicesScreen);
 const SettingsScreenAnim = withSlideUp(SettingsScreen);
 const SocialPlannerScreenAnim = withSlideUp(SocialPlannerScreen);
+const SocialPlanSheetScreenAnim = withSlideUp(SocialPlanSheetScreen);
 const SupportScreenAnim = withSlideUp(SupportScreen);
 const TradeDocumentsScreenAnim = withSlideUp(TradeDocumentsScreen);
 const TrashScreenAnim = withSlideUp(TrashScreen);
@@ -141,6 +143,7 @@ export type RootTabParamList = {
 
 export type SocialStackParamList = {
   SocialPlanner: undefined;
+  SocialPlanSheet: undefined;
   CreatePost: undefined;
 };
 
@@ -216,6 +219,10 @@ function SocialNavigator() {
       <SocialStack.Screen
         name="SocialPlanner"
         component={SocialPlannerScreenAnim}
+      />
+      <SocialStack.Screen
+        name="SocialPlanSheet"
+        component={SocialPlanSheetScreenAnim}
       />
       <SocialStack.Screen name="CreatePost" component={CreatePostScreenAnim} />
     </SocialStack.Navigator>

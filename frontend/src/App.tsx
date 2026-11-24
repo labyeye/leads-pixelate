@@ -46,6 +46,7 @@ const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
 const SocialMediaPlannerPage = lazy(
   () => import("./pages/SocialMediaPlannerPage"),
 );
+const SocialPlanSheetPage = lazy(() => import("./pages/SocialPlanSheetPage"));
 const SocialAutopilotPage = lazy(() => import("./pages/SocialAutopilotPage"));
 const SocialAutopilotSetupPage = lazy(
   () => import("./pages/SocialAutopilotSetupPage"),
@@ -422,6 +423,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <InsightsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/social-planner/planner"
+          element={
+            <ProtectedRoute>
+              <SocialPlanSheetPage />
             </ProtectedRoute>
           }
         />

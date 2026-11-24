@@ -202,6 +202,12 @@ const allGroups: NavGroup[] = [
             roles: ["super_admin", "admin", "sales_executive"],
           },
           {
+            title: "Planner",
+            href: "/social-planner/planner",
+            icon: ClipboardList,
+            roles: ["super_admin", "admin", "sales_executive"],
+          },
+          {
             title: "Posts",
             href: "/social-planner/posts",
             icon: ClipboardList,

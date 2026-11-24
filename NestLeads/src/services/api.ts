@@ -987,6 +987,44 @@ export const deviceAPI = {
     }),
 };
 
+export const socialPlanAPI = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ success: boolean; data: any[] }>(`/social-plans${qs}`);
+  },
+  create: (data: any) =>
+    request<{ success: boolean; data: any }>('/social-plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/social-plans/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  remove: (id: string) =>
+    request<{ success: boolean }>(`/social-plans/${id}`, { method: 'DELETE' }),
+  submit: (id: string) =>
+    request<{ success: boolean; data: any }>(`/social-plans/${id}/submit`, {
+      method: 'PUT',
+    }),
+  approve: (id: string, note?: string) =>
+    request<{ success: boolean; data: any }>(`/social-plans/${id}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify({ note }),
+    }),
+  reject: (id: string, reason?: string) =>
+    request<{ success: boolean; data: any }>(`/social-plans/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason }),
+    }),
+  schedule: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/social-plans/${id}/schedule`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 export const socialAPI = {
   getStats: () => request<{ success: boolean; data: any }>('/social/stats'),
   getEngagement: () =>

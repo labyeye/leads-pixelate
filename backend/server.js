@@ -251,6 +251,7 @@ app.use("/api/funnels", require("./routes/funnelRoutes"));
 app.use("/api/documents", require("./routes/documentRoutes"));
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/social", require("./routes/socialRoutes"));
+app.use("/api/social-plans", require("./routes/socialPlanRoutes"));
 app.use("/api/autopilot", require("./routes/autopilotRoutes"));
 app.use("/api/ai-usage", require("./routes/aiUsageRoutes"));
 app.use("/api/campaigns", require("./routes/campaignRoutes"));
