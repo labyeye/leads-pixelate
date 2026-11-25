@@ -40,6 +40,11 @@ interface Plan {
   _id: string;
   title: string;
   brief: string;
+  pillar?: string;
+  projectStage?: string;
+  visualBrief?: string;
+  shotList?: string;
+  storyIdea?: string;
   platforms: string[];
   postType: "image" | "carousel" | "reel";
   plannedDate: string;
@@ -294,11 +299,11 @@ export default function SocialPlanSheetPage() {
         </div>
 
         {/* The sheet */}
-        <div className="overflow-x-auto rounded-lg border bg-card">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
-            <thead className="bg-muted/60 text-left text-xs text-muted-foreground">
+        <div className="max-h-[70vh] overflow-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[2600px] border-collapse text-sm">
+            <thead className="sticky top-0 z-10 bg-muted text-left text-xs text-muted-foreground">
               <tr>
-                {["#", "Date", "Time", "Platform", "Type", "Topic", "References", "Owner", "Status", ""].map(
+                {["#", "Date", "Day", "Time (IST)", "Platform", "Format", "Pillar", "Project stage", "Visual brief", "Slides / Reel shot list", "On-screen text / hook", "Caption", "Hashtags", "Story idea", "References", "Owner", "Status", ""].map(
                   (h, i) => (
                     <th key={i} className="border-b border-r px-3 py-2 font-medium last:border-r-0">
                       {h}
@@ -310,13 +315,13 @@ export default function SocialPlanSheetPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="py-16 text-center text-muted-foreground">
+                  <td colSpan={18} className="py-16 text-center text-muted-foreground">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-16 text-center text-muted-foreground">
+                  <td colSpan={18} className="py-16 text-center text-muted-foreground">
                     {plans.length
                       ? "No plans match these filters."
                       : "Nothing planned for this month yet. Add your first row with “New plan”."}
@@ -333,17 +338,20 @@ export default function SocialPlanSheetPage() {
                     <td className="whitespace-nowrap border-b border-r px-3 py-2">
                       {format(new Date(dayKey(p.plannedDate) + "T00:00"), "EEE, d MMM")}
                     </td>
-                    <td className="border-b border-r px-3 py-2">{p.plannedTime}</td>
+                    <td className="whitespace-nowrap border-b border-r px-3 py-2">{format(new Date(dayKey(p.plannedDate) + "T00:00"), "EEE")}</td>
+                    <td className="whitespace-nowrap border-b border-r px-3 py-2">{p.plannedTime}</td>
                     <td className="border-b border-r px-3 py-2 capitalize">
                       {p.platforms.join(", ") || "—"}
                     </td>
                     <td className="border-b border-r px-3 py-2 capitalize">{p.postType}</td>
-                    <td className="max-w-[260px] border-b border-r px-3 py-2">
-                      <div className="truncate font-medium">{p.title}</div>
-                      {p.brief && (
-                        <div className="truncate text-xs text-muted-foreground">{p.brief}</div>
-                      )}
-                    </td>
+                    <td className="min-w-[160px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.pillar || "—"}</td>
+                    <td className="min-w-[130px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.projectStage || "—"}</td>
+                    <td className="min-w-[260px] max-w-[320px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.visualBrief || "—"}</td>
+                    <td className="min-w-[320px] max-w-[380px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.shotList || "—"}</td>
+                    <td className="min-w-[220px] font-medium whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.title || "—"}</td>
+                    <td className="min-w-[360px] max-w-[420px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.caption || "—"}</td>
+                    <td className="min-w-[260px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.hashtags.join(' ') || "—"}</td>
+                    <td className="min-w-[200px] whitespace-pre-line border-b border-r px-3 py-2 align-top text-xs">{p.storyIdea || "—"}</td>
                     <td className="border-b border-r px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <div className="flex flex-wrap gap-1.5">
                         {p.references.filter((r) => r.url).map((r, k) => (
@@ -463,6 +471,12 @@ function PlanDialog({
   const [f, setF] = useState(() => ({
     title: plan?.title || "",
     brief: plan?.brief || "",
+    pillar: plan?.pillar || "",
+    projectStage: plan?.projectStage || "",
+    visualBrief: plan?.visualBrief || "",
+    shotList: plan?.shotList || "",
+    storyIdea: plan?.storyIdea || "",
+    caption: plan?.caption || "",
     platforms: plan?.platforms || ([] as string[]),
     postType: plan?.postType || "image",
     plannedDate: plan ? dayKey(plan.plannedDate) : ymd(month),
@@ -519,7 +533,7 @@ function PlanDialog({
 
         <fieldset disabled={locked} className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label>Topic</Label>
+            <Label>On-screen text / hook (topic)</Label>
             <Input value={f.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Diwali offer teaser" />
           </div>
           <div>
@@ -559,6 +573,30 @@ function PlanDialog({
           <div className="sm:col-span-2">
             <Label>Brief / idea</Label>
             <Textarea rows={3} value={f.brief} onChange={(e) => set("brief", e.target.value)} placeholder="What should this post say or show?" />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Pillar</Label>
+            <Textarea rows={1} value={f.pillar} onChange={(e) => set("pillar", e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Project stage</Label>
+            <Textarea rows={1} value={f.projectStage} onChange={(e) => set("projectStage", e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Visual brief</Label>
+            <Textarea rows={3} value={f.visualBrief} onChange={(e) => set("visualBrief", e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Slides / Reel shot list</Label>
+            <Textarea rows={3} value={f.shotList} onChange={(e) => set("shotList", e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Story idea</Label>
+            <Textarea rows={1} value={f.storyIdea} onChange={(e) => set("storyIdea", e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Caption</Label>
+            <Textarea rows={4} value={f.caption} onChange={(e) => set("caption", e.target.value)} />
           </div>
 
           <div className="sm:col-span-2">

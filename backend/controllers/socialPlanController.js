@@ -15,6 +15,11 @@ const POPULATE = [
 const EDITABLE = [
   "title",
   "brief",
+  "pillar",
+  "projectStage",
+  "visualBrief",
+  "shotList",
+  "storyIdea",
   "platforms",
   "postType",
   "plannedDate",

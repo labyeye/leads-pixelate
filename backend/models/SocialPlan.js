@@ -6,6 +6,11 @@ const socialPlanSchema = new mongoose.Schema(
   {
     title: { type: String, required: [true, "Title is required"], trim: true },
     brief: { type: String, default: "", trim: true },
+    pillar: { type: String, default: "", trim: true },
+    projectStage: { type: String, default: "", trim: true },
+    visualBrief: { type: String, default: "", trim: true },
+    shotList: { type: String, default: "", trim: true }, // slides or reel shot list
+    storyIdea: { type: String, default: "", trim: true },
     platforms: {
       type: [String],
       enum: ["facebook", "instagram", "linkedin"],
