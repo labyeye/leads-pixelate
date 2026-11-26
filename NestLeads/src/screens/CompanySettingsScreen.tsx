@@ -19,10 +19,20 @@ import Icon from '../components/Icon';
 import { settingsAPI, usersAPI, whatsappAPI } from '../services/api';
 import { mappingFor } from '../components/SendQuotationModal';
 import { useAuth } from '../contexts/AuthContext';
-import { setContactTagsEnabled } from '../constants/statusConstants';
+import {
+  setContactTagsEnabled,
+  setContactTagColors,
+  DEFAULT_TAG_COLORS,
+  DEFAULT_LOST_REASONS,
+  setLeadQuickPicks,
+} from '../constants/statusConstants';
 import { launchImageLibrary } from 'react-native-image-picker';
 
 const BLUE = '#024BAB';
+const TAG_SWATCHES = [
+  '#ef4444', '#f97316', '#FFDE00', '#22c55e', '#14b8a6',
+  '#024BAB', '#8b5cf6', '#ec4899', '#64748b', '#000000',
+];
 
 // Same fields as the web Settings → General / Bank / Terms tabs.
 const SECTIONS: { title: string; fields: [string, string, any?][] }[] = [
@@ -132,10 +142,17 @@ export default function CompanySettingsScreen({ navigation }: any) {
       const body: any = { quotationTerms: terms.map(t => t.trim()).filter(Boolean) };
       SECTIONS.forEach(sec => sec.fields.forEach(([k]) => (body[k] = form[k] ?? '')));
       body.contactTagsEnabled = form.contactTagsEnabled !== false;
+      body.contactTagColors = form.contactTagColors || {};
+      body.lostReasonOptions = (form.lostReasonOptions ?? DEFAULT_LOST_REASONS)
+        .map((x: string) => x.trim())
+        .filter(Boolean);
+      body.remarkPresets = (form.remarkPresets || []).map((x: string) => x.trim()).filter(Boolean);
       body.logoUrl = form.logoUrl || '';
       if (form.quotationApproval) body.quotationApproval = qa;
       await settingsAPI.update(body);
       setContactTagsEnabled(body.contactTagsEnabled);
+      setContactTagColors(body.contactTagColors);
+      setLeadQuickPicks(body);
       Alert.alert('Saved', 'Company settings updated.');
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -360,6 +377,57 @@ export default function CompanySettingsScreen({ navigation }: any) {
                   trackColor={{ true: BLUE }}
                 />
               </View>
+              <Text style={[s.rowTitle, { marginTop: 14 }]}>Tag colors</Text>
+              {(['HOT', 'WARM', 'COLD'] as const).map(t => {
+                const cur = form.contactTagColors?.[t] || DEFAULT_TAG_COLORS[t];
+                return (
+                  <View key={t} style={{ marginTop: 8 }}>
+                    <Text style={s.muted}>{t}</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                      {TAG_SWATCHES.map(c => (
+                        <TouchableOpacity
+                          key={c}
+                          disabled={!canEdit}
+                          onPress={() =>
+                            set('contactTagColors', { ...(form.contactTagColors || {}), [t]: c })
+                          }
+                          style={{
+                            width: 30,
+                            height: 30,
+                            backgroundColor: c,
+                            borderWidth: cur.toLowerCase() === c.toLowerCase() ? 3 : 1,
+                            borderColor: '#000',
+                          }}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
+            <View style={s.card}>
+              <Text style={s.cardTitle}>Quick picks</Text>
+              <Text style={s.rowTitle}>Drop reasons</Text>
+              <Text style={s.muted}>One per line. Shown when dropping a lead.</Text>
+              <TextInput
+                style={s.quickInput}
+                multiline
+                editable={canEdit}
+                value={(form.lostReasonOptions?.length ? form.lostReasonOptions : DEFAULT_LOST_REASONS).join('\n')}
+                onChangeText={t => set('lostReasonOptions', t.split('\n'))}
+              />
+              <Text style={[s.rowTitle, { marginTop: 14 }]}>Ready-made remarks</Text>
+              <Text style={s.muted}>One per line. Tap to fill remarks on a status update.</Text>
+              <TextInput
+                style={s.quickInput}
+                multiline
+                editable={canEdit}
+                placeholder={'Call not picked\nAsked to call back later'}
+                placeholderTextColor="#94a3b8"
+                value={(form.remarkPresets || []).join('\n')}
+                onChangeText={t => set('remarkPresets', t.split('\n'))}
+              />
             </View>
           </ScrollView>
 
@@ -385,6 +453,17 @@ const s = StyleSheet.create({
   input: { borderWidth: 2, borderColor: '#000', paddingHorizontal: 10, paddingVertical: 9, fontSize: 14, color: '#000', backgroundColor: '#fff' },
   rowTitle: { fontSize: 14, fontWeight: '500', color: '#000' },
   muted: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  quickInput: {
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 8,
+    marginTop: 8,
+    padding: 10,
+    minHeight: 110,
+    fontSize: 14,
+    color: '#000',
+    textAlignVertical: 'top',
+  },
   logoBox: { width: 84, height: 84, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
   smallBtn: { borderWidth: 2, borderColor: '#000', paddingHorizontal: 12, paddingVertical: 7, backgroundColor: '#fff' },
   smallBtnText: { fontWeight: '600', color: BLUE, fontSize: 13 },

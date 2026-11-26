@@ -4,13 +4,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { withSlideUp } from '../components/motion';
+import AuthChoiceScreen from '../screens/AuthChoiceScreen';
 import IntroOnboardingScreen from '../screens/IntroOnboardingScreen';
 
 const ForgotPasswordAnim = withSlideUp(ForgotPasswordScreen);
 
 export type AuthStackParamList = {
   IntroOnboarding: undefined;
-  Login: undefined;
+  AuthChoice: undefined;
+  Login: { initialMode?: 'email' | 'phone' } | undefined;
   ForgotPassword: undefined;
 };
 
@@ -23,6 +25,7 @@ export default function AuthNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="IntroOnboarding" component={IntroOnboardingScreen} />
+        <Stack.Screen name="AuthChoice" component={AuthChoiceScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordAnim} />
       </Stack.Navigator>

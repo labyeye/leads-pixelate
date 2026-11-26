@@ -97,6 +97,7 @@ const FacebookCampaignManagementScreenAnim = withSlideUp(FacebookCampaignManagem
 const FiltersScreenAnim = withSlideUp(FiltersScreen);
 const GoogleAdsSetupScreenAnim = withSlideUp(GoogleAdsSetupScreen);
 const IntegrationsScreenAnim = withSlideUp(IntegrationsScreen);
+const DashboardScreenAnim = withSlideUp(DashboardScreen);
 const LeadDetailScreenAnim = withSlideUp(LeadDetailScreen);
 const LeadStatusesScreenAnim = withSlideUp(LeadStatusesScreen);
 const LeadsListScreenAnim = withSlideUp(LeadsListScreen);
@@ -486,7 +487,7 @@ export default function AppNavigator() {
       >
         <Tab.Screen
           name="Dashboard"
-          component={DashboardScreen}
+          component={DashboardScreenAnim}
           options={{ tabBarLabel: 'Home' }}
         />
         <Tab.Screen

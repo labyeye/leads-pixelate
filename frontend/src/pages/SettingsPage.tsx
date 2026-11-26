@@ -40,6 +40,10 @@ import {
   setStatusOverrides,
   setCustomLeadStatuses,
   setContactTagsEnabled,
+  setContactTagColors,
+  setLeadQuickPicks,
+  DEFAULT_TAG_COLORS,
+  DEFAULT_LOST_REASONS,
   isCustomLeadStatus,
   type CustomLeadStatus,
 } from "@/components/leads/statusConstants";
@@ -1169,6 +1173,8 @@ export default function SettingsPage() {
       const res = await settingsAPI.update(generalSettings);
       setStatusOverrides(res.data?.leadStatusLabels);
       setContactTagsEnabled(res.data?.contactTagsEnabled);
+      setContactTagColors(res.data?.contactTagColors);
+      setLeadQuickPicks(res.data);
       setCustomLeadStatuses(
         res.data?.customLeadStatuses,
         res.data?.customLeadCategories || [],
@@ -1776,6 +1782,85 @@ export default function SettingsPage() {
                     </span>
                   </span>
                 </label>
+                <div className="border-2 border-black bg-white p-3">
+                  <span className="block text-sm font-medium text-black mb-2">
+                    Tag colors
+                  </span>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {(["HOT", "WARM", "COLD"] as const).map((t) => (
+                      <label key={t} className="flex items-center gap-2 text-xs font-medium">
+                        <input
+                          type="color"
+                          className="h-8 w-10 cursor-pointer border-2 border-black p-0"
+                          value={settings?.contactTagColors?.[t] || DEFAULT_TAG_COLORS[t]}
+                          onChange={(e) =>
+                            setSettings((prev: any) => ({
+                              ...prev,
+                              contactTagColors: {
+                                ...(prev?.contactTagColors || {}),
+                                [t]: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                        {t}
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      className="text-xs underline"
+                      onClick={() =>
+                        setSettings((prev: any) => ({
+                          ...prev,
+                          contactTagColors: { HOT: "", WARM: "", COLD: "" },
+                        }))
+                      }
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Used for tags on leads and the calendar. Save to apply.
+                  </p>
+                </div>
+                <div className="border-2 border-black bg-white p-3">
+                  <span className="block text-sm font-medium text-black mb-1">
+                    Drop reasons
+                  </span>
+                  <textarea
+                    className="w-full border-2 border-black p-2 text-sm min-h-[110px]"
+                    placeholder=""
+                    value={(settings?.lostReasonOptions?.length ? settings.lostReasonOptions : DEFAULT_LOST_REASONS).join("\n")}
+                    onChange={(e) =>
+                      setSettings((prev: any) => ({
+                        ...prev,
+                        lostReasonOptions: e.target.value.split("\n"),
+                      }))
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    One per line. Save to apply.
+                  </p>
+                </div>
+                <div className="border-2 border-black bg-white p-3">
+                  <span className="block text-sm font-medium text-black mb-1">
+                    Ready-made remarks
+                  </span>
+                  <textarea
+                    className="w-full border-2 border-black p-2 text-sm min-h-[110px]"
+                    placeholder="e.g. Call not picked\nAsked to call back later"
+                    value={(settings?.remarkPresets ?? []).join("\n")}
+                    onChange={(e) =>
+                      setSettings((prev: any) => ({
+                        ...prev,
+                        remarkPresets: e.target.value.split("\n"),
+                      }))
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    One per line. Save to apply.
+                  </p>
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-xs text-muted-foreground mr-auto">
                     Open a group to rename stages, change colors or add your

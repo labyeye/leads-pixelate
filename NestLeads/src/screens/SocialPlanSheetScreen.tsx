@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -40,6 +40,24 @@ const STATUS: Record<string, { bg: string; text: string; label: string }> = {
   REJECTED: { bg: '#fee2e2', text: '#991b1b', label: 'Rejected' },
   SCHEDULED: { bg: '#ede9fe', text: '#5b21b6', label: 'Scheduled' },
 };
+
+const EXTRA_FIELDS: [string, string, boolean][] = [
+  ['pillar', 'Content pillar', false],
+  ['projectStage', 'Project stage', false],
+  ['visualBrief', 'Visual brief', true],
+  ['shotList', 'Shot list / slides', true],
+  ['storyIdea', 'Story idea', true],
+];
+
+function Detail({ label, value }: { label: string; value?: string }) {
+  if (!value || !String(value).trim()) return null;
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Text style={s.detailLabel}>{label}</Text>
+      <Text style={s.detailValue}>{value}</Text>
+    </View>
+  );
+}
 
 function Chip({
   label,
@@ -107,6 +125,13 @@ function PlanModal({
   const locked = !!plan && ['PENDING_APPROVAL', 'SCHEDULED'].includes(plan.status);
   const [title, setTitle] = useState(plan?.title || '');
   const [brief, setBrief] = useState(plan?.brief || '');
+  const [extra, setExtra] = useState<Record<string, string>>({
+    pillar: plan?.pillar || '',
+    projectStage: plan?.projectStage || '',
+    visualBrief: plan?.visualBrief || '',
+    shotList: plan?.shotList || '',
+    storyIdea: plan?.storyIdea || '',
+  });
   const [platforms, setPlatforms] = useState<string[]>(plan?.platforms || []);
   const [postType, setPostType] = useState(plan?.postType || 'image');
   const [when, setWhen] = useState<Date>(
@@ -138,6 +163,7 @@ function PlanModal({
     const payload = {
       title: title.trim(),
       brief,
+      ...extra,
       platforms,
       postType,
       plannedDate: ymd(when),
@@ -211,6 +237,17 @@ function PlanModal({
               <FieldLabel>Brief / idea</FieldLabel>
               <TextInput style={[s.input, { height: 80 }]} multiline value={brief} onChangeText={setBrief} placeholder="What should this post say or show?" />
             </View>
+            {EXTRA_FIELDS.map(([k, label, multi]) => (
+              <View key={k}>
+                <FieldLabel>{label}</FieldLabel>
+                <TextInput
+                  style={[s.input, multi && { height: 80, textAlignVertical: 'top' }]}
+                  multiline={multi}
+                  value={extra[k]}
+                  onChangeText={v => setExtra(x => ({ ...x, [k]: v }))}
+                />
+              </View>
+            ))}
             <View>
               <FieldLabel>Reference</FieldLabel>
               {refs.map((r, i) => (
@@ -425,6 +462,7 @@ export default function SocialPlanSheetScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<any | 'new' | null>(null);
   const [scheduling, setScheduling] = useState<any | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const load = useCallback(
     async (refresh = false) => {
@@ -461,6 +499,18 @@ export default function SocialPlanSheetScreen({ navigation }: any) {
     );
   }, [plans, filter, search]);
 
+  const sections = useMemo(() => {
+    const sorted = [...rows].sort((a, b) =>
+      `${dayKey(a.plannedDate)} ${a.plannedTime}`.localeCompare(`${dayKey(b.plannedDate)} ${b.plannedTime}`),
+    );
+    const map = new Map<string, any[]>();
+    sorted.forEach(p => {
+      const k = dayKey(p.plannedDate);
+      map.set(k, [...(map.get(k) || []), p]);
+    });
+    return [...map.entries()].map(([k, data]) => ({ key: k, data }));
+  }, [rows]);
+
   const count = (st: string) => plans.filter(p => p.status === st).length;
   const shift = (n: number) => setMonth(m => new Date(m.getFullYear(), m.getMonth() + n, 1));
 
@@ -484,31 +534,13 @@ export default function SocialPlanSheetScreen({ navigation }: any) {
 
   const renderItem = ({ item: p }: { item: any }) => {
     const st = STATUS[p.status];
-    const day = new Date(dayKey(p.plannedDate) + 'T00:00');
+    const isOpen = !!open[p._id];
+    const refs = (p.references || []).filter((r: any) => r.url);
     return (
-      <TouchableOpacity activeOpacity={0.8} onPress={() => openRow(p)} style={s.card}>
-        <View style={s.dateBox}>
-          <Text style={s.dateDay}>{day.getDate()}</Text>
-          <Text style={s.dateMon}>{day.toLocaleDateString('en-IN', { weekday: 'short' })}</Text>
-          <Text style={s.dateTime}>{p.plannedTime}</Text>
-        </View>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={s.cardTitle} numberOfLines={2}>{p.title}</Text>
-          <Text style={s.muted} numberOfLines={1}>
-            {(p.platforms.join(', ') || 'No platform') + ' · ' + p.postType}
-            {p.assignedTo?.name ? ' · ' + p.assignedTo.name : ''}
-          </Text>
-          {p.references?.some((r: any) => r.url) && (
-            <TouchableOpacity
-              onPress={() => Linking.openURL(p.references.find((r: any) => r.url).url).catch(() => {})}
-              hitSlop={6}
-            >
-              <Text style={s.link} numberOfLines={1}>
-                Reference ({p.references.filter((r: any) => r.url).length})
-              </Text>
-            </TouchableOpacity>
-          )}
+      <View style={s.card}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => openRow(p)}>
           <View style={s.row}>
+            <Text style={s.timeChip}>{p.plannedTime}</Text>
             <View style={[s.badge, { backgroundColor: st.bg }]}>
               <Text style={[s.badgeText, { color: st.text }]}>{st.label}</Text>
             </View>
@@ -516,19 +548,59 @@ export default function SocialPlanSheetScreen({ navigation }: any) {
               <Text style={s.muted}>post: {String(p.postId.status).toLowerCase().replace('_', ' ')}</Text>
             )}
           </View>
-          <View style={s.row}>
-            {['PLANNED', 'REJECTED'].includes(p.status) && (
-              <Btn label="Send for approval" onPress={() => quick(() => socialPlanAPI.submit(p._id))} />
+          <Text style={[s.cardTitle, { marginTop: 6 }]} numberOfLines={2}>{p.title}</Text>
+          <Text style={s.muted} numberOfLines={1}>
+            {(p.platforms.join(', ') || 'No platform') + ' · ' + p.postType}
+            {p.assignedTo?.name ? ' · ' + p.assignedTo.name : ''}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={s.detailsToggle}
+          onPress={() => setOpen(o => ({ ...o, [p._id]: !o[p._id] }))}
+        >
+          <Text style={s.detailsToggleText}>{isOpen ? 'Hide details' : 'View details'}</Text>
+          <Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color={PRIMARY} />
+        </TouchableOpacity>
+
+        {isOpen && (
+          <View style={s.detailsBox}>
+            <Detail label="BRIEF / IDEA" value={p.brief} />
+            <Detail label="CONTENT PILLAR" value={p.pillar} />
+            <Detail label="PROJECT STAGE" value={p.projectStage} />
+            <Detail label="VISUAL BRIEF" value={p.visualBrief} />
+            <Detail label="SHOT LIST / SLIDES" value={p.shotList} />
+            <Detail label="STORY IDEA" value={p.storyIdea} />
+            <Detail label="CAPTION" value={p.caption} />
+            <Detail label="HASHTAGS" value={(p.hashtags || []).map((h: string) => (h.startsWith('#') ? h : '#' + h)).join(' ')} />
+            <Detail label="REFERENCE NOTES" value={p.referenceNotes} />
+            {refs.length > 0 && (
+              <View style={{ marginTop: 8 }}>
+                <Text style={s.detailLabel}>REFERENCES</Text>
+                {refs.map((r: any, i: number) => (
+                  <TouchableOpacity key={i} onPress={() => Linking.openURL(r.url).catch(() => {})}>
+                    <Text style={s.link} numberOfLines={1}>{r.label || r.url}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )}
-            {p.status === 'PENDING_APPROVAL' && isAdmin && (
-              <Btn primary label="Approve" onPress={() => quick(() => socialPlanAPI.approve(p._id))} />
-            )}
-            {p.status === 'APPROVED' && isAdmin && (
-              <Btn primary label="Schedule" onPress={() => setScheduling(p)} />
-            )}
+            <Detail label="REJECTION REASON" value={p.status === 'REJECTED' ? p.rejectionReason : ''} />
+            <Detail label="APPROVAL NOTE" value={p.approvalNote} />
           </View>
+        )}
+
+        <View style={[s.row, { marginTop: 8 }]}>
+          {['PLANNED', 'REJECTED'].includes(p.status) && (
+            <Btn label="Send for approval" onPress={() => quick(() => socialPlanAPI.submit(p._id))} />
+          )}
+          {p.status === 'PENDING_APPROVAL' && isAdmin && (
+            <Btn primary label="Approve" onPress={() => quick(() => socialPlanAPI.approve(p._id))} />
+          )}
+          {p.status === 'APPROVED' && isAdmin && (
+            <Btn primary label="Schedule" onPress={() => setScheduling(p)} />
+          )}
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -575,10 +647,24 @@ export default function SocialPlanSheetScreen({ navigation }: any) {
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={PRIMARY} />
       ) : (
-        <FlatList
-          data={rows}
+        <SectionList
+          sections={sections}
           keyExtractor={p => p._id}
           renderItem={renderItem}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => {
+            const d = new Date(section.key + 'T00:00');
+            const today = ymd(new Date()) === section.key;
+            return (
+              <View style={s.dayHeader}>
+                <Text style={s.dayHeaderText}>
+                  {d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {today ? '  · Today' : ''}
+                </Text>
+                <Text style={s.dayCount}>{section.data.length}</Text>
+              </View>
+            );
+          }}
           contentContainerStyle={{ padding: 12, gap: 10, paddingBottom: insets.bottom + 24 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
           ListEmptyComponent={
@@ -630,8 +716,7 @@ const s = StyleSheet.create({
   },
   monthText: { fontSize: 16, fontWeight: '600', color: '#000' },
   card: {
-    flexDirection: 'row',
-    gap: 12,
+    gap: 4,
     backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: '#000',
@@ -656,6 +741,15 @@ const s = StyleSheet.create({
   dateDay: { fontSize: 20, fontWeight: '700', color: PRIMARY },
   dateMon: { fontSize: 11, color: '#475569' },
   dateTime: { fontSize: 11, fontWeight: '600', color: '#000', marginTop: 2 },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, marginBottom: 2 },
+  dayHeaderText: { fontSize: 14, fontWeight: '700', color: '#000' },
+  dayCount: { fontSize: 12, fontWeight: '700', color: '#fff', backgroundColor: PRIMARY, paddingHorizontal: 8, paddingVertical: 1, borderRadius: 10, overflow: 'hidden' },
+  timeChip: { fontSize: 12, fontWeight: '700', color: '#000', borderWidth: 2, borderColor: '#000', paddingHorizontal: 6, paddingVertical: 1, backgroundColor: '#eff6ff' },
+  detailsToggle: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, alignSelf: 'flex-start' },
+  detailsToggleText: { fontSize: 13, fontWeight: '700', color: PRIMARY },
+  detailsBox: { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  detailLabel: { fontSize: 10, fontWeight: '700', color: '#64748b', letterSpacing: 1 },
+  detailValue: { fontSize: 13, color: '#000', marginTop: 2 },
   cardTitle: { fontSize: 15, fontWeight: '600', color: '#000' },
   muted: { fontSize: 12, color: '#64748b' },
   link: { fontSize: 12, color: PRIMARY, textDecorationLine: 'underline' },

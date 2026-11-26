@@ -51,7 +51,7 @@ export default function IntroOnboardingScreen({ navigation }: any) {
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_KEY)
       .then(value => {
-        if (value === 'true') navigation.replace('Login');
+        if (value === 'true') navigation.replace('AuthChoice');
       })
       .catch(error => {
         console.warn('Unable to read NestLeads onboarding state', error);
@@ -64,7 +64,7 @@ export default function IntroOnboardingScreen({ navigation }: any) {
     } catch (error) {
       console.warn('Unable to save NestLeads onboarding state', error);
     }
-    navigation.replace('Login');
+    navigation.replace('AuthChoice');
   };
 
   const next = () => {

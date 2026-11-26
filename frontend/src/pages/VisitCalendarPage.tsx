@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   statusColors,
   getStatusColorClasses,
+  getContactTagStyle,
 } from "@/components/leads/statusConstants";
 import { DateLeadModal } from "@/components/leads/DateLeadModal";
 
@@ -71,7 +72,7 @@ export default function VisitCalendarPage() {
       const res = await leadsAPI.getAll({
         status: "VISIT SCHEDULED",
       });
-      const freshLeads = res.data || [];
+      const freshLeads = (res.data || []).filter((l: any) => l.status !== "DROP");
       setLeads(freshLeads);
 
       if (selectedDate) {
@@ -203,6 +204,12 @@ export default function VisitCalendarPage() {
               onClick={() => setTagFilter(tag)}
               className="text-xs"
             >
+              {tag !== "ALL" && (
+                <span
+                  className="mr-1 inline-block h-2.5 w-2.5 rounded-full border border-black"
+                  style={{ backgroundColor: getContactTagStyle(tag).bg }}
+                />
+              )}
               {tag}
               {tag !== "ALL" && (
                 <span className="ml-1 text-[10px]">
@@ -323,7 +330,18 @@ export default function VisitCalendarPage() {
                           {dayLeads.slice(0, 2).map((lead) => (
                             <div
                               key={lead._id}
-                              className="bg-blue-400 rounded px-1.5 py-1 text-[10px] font-medium text-white truncate hover:bg-blue-500 shadow-sm"
+                              className={cn(
+                                "rounded px-1.5 py-1 text-[10px] font-medium truncate shadow-sm",
+                                !lead.contactTag && "bg-blue-400 text-white hover:bg-blue-500",
+                              )}
+                              style={
+                                lead.contactTag
+                                  ? {
+                                      backgroundColor: getContactTagStyle(lead.contactTag).bg,
+                                      color: getContactTagStyle(lead.contactTag).text,
+                                    }
+                                  : undefined
+                              }
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedDate(date);

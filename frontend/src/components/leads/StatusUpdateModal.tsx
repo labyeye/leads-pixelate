@@ -35,19 +35,14 @@ import {
   categories,
 } from "./statusConstants";
 import { leadsAPI, productsAPI } from "@/services/api";
+import {
+  DEFAULT_LOST_REASONS,
+  getLostReasons,
+  getRemarkPresets,
+} from "@/components/leads/statusConstants";
 import { useToast } from "@/components/ui/use-toast";
 
-export const LOST_REASONS = [
-  "Price too high",
-  "Chose a competitor",
-  "No budget / loan not approved",
-  "Postponed the decision",
-  "Machine didn't fit (features / capacity)",
-  "Delivery time too long",
-  "Not responding",
-  "Not a genuine enquiry",
-  "Other",
-];
+export const LOST_REASONS = DEFAULT_LOST_REASONS;
 
 interface StatusUpdateModalProps {
   open: boolean;
@@ -508,7 +503,7 @@ export function StatusUpdateModal({
                   onChange={(e) => setLostReasonInput(e.target.value)}
                 >
                   <option value="">Choose a reason…</option>
-                  {LOST_REASONS.map((r) => (
+                  {getLostReasons().map((r) => (
                     <option key={r} value={r}>
                       {r}
                     </option>
@@ -543,6 +538,22 @@ export function StatusUpdateModal({
               value={remarksInput}
               onChange={(e) => setRemarksInput(e.target.value)}
             />
+            {getRemarkPresets().length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {getRemarkPresets().map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    className="border-2 border-black bg-white px-2 py-1 text-xs hover:bg-muted"
+                    onClick={() =>
+                      setRemarksInput((v) => (v.trim() ? `${v.trim()}. ${r}` : r))
+                    }
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2 pt-2 border-t border-border/50">

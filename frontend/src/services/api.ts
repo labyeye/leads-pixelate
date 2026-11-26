@@ -1765,6 +1765,10 @@ export const whatsappAPI = {
     request<{ success: boolean; count: number; data: any[] }>(
       "/whatsapp/campaigns",
     ),
+  getMessageLogs: (params?: Record<string, string>) =>
+    request<any>(
+      `/whatsapp/message-logs${params ? "?" + new URLSearchParams(params).toString() : ""}`,
+    ),
   getCampaign: (id: string) =>
     request<{ success: boolean; data: any }>(`/whatsapp/campaigns/${id}`),
   createCampaign: (data: any) =>

@@ -21,6 +21,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import WhatsAppMessageLog from "@/components/whatsapp/WhatsAppMessageLog";
 
 interface Campaign {
   _id: string;
@@ -55,6 +56,7 @@ export default function WhatsAppLogsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detail, setDetail] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [tab, setTab] = useState<"log" | "campaigns">("log");
 
   const fetchCampaigns = useCallback(async () => {
     setLoading(true);
@@ -130,7 +132,26 @@ export default function WhatsAppLogsPage() {
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex gap-2 px-6 py-2 border-b-2 border-black bg-white shrink-0">
+          {([
+            ["log", "Message log & insights"],
+            ["campaigns", "Campaigns"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium border-2 border-black",
+                tab === k ? "bg-[#ff751f] text-black" : "bg-white hover:bg-muted",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "log" && <WhatsAppMessageLog />}
+        <div className={cn("flex-1 overflow-y-auto", tab === "log" && "hidden")}>
           {}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-6 pb-0">
             {[

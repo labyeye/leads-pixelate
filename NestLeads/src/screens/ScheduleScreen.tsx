@@ -16,7 +16,12 @@ import ScreenHeader from '../components/ScreenHeader';
 
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { leadsAPI } from '../services/api';
-import { getStatusColor, getStatusLabel } from '../constants/statusConstants';
+import {
+  getStatusColor,
+  getStatusLabel,
+  getContactTagStyle,
+  contactTagsEnabled,
+} from '../constants/statusConstants';
 import UserAvatar from '../components/UserAvatar';
 
 const PRIMARY = '#024BAB';
@@ -71,6 +76,7 @@ export default function ScheduleScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState<'ALL' | 'HOT' | 'WARM' | 'COLD'>('ALL');
 
   useEffect(() => {
     (async () => {
@@ -87,8 +93,14 @@ export default function ScheduleScreen({ navigation }: any) {
 
   const { field, plural, icon, accent } = MODES[mode];
   const leads = useMemo(
-    () => allLeads.filter(l => !!l[field]),
-    [allLeads, field],
+    () =>
+      allLeads.filter(
+        l =>
+          !!l[field] &&
+          l.status !== 'DROP' &&
+          (tagFilter === 'ALL' || l.contactTag === tagFilter),
+      ),
+    [allLeads, field, tagFilter],
   );
 
   const year = current.getFullYear();
@@ -186,6 +198,37 @@ export default function ScheduleScreen({ navigation }: any) {
           </TouchableOpacity>
         ))}
       </View>
+
+      {contactTagsEnabled() && (
+        <View style={styles.tagBar}>
+          {(['ALL', 'HOT', 'WARM', 'COLD'] as const).map(t => {
+            const on = tagFilter === t;
+            const tc = t === 'ALL' ? null : getContactTagStyle(t);
+            return (
+              <TouchableOpacity
+                key={t}
+                onPress={() => setTagFilter(t)}
+                style={[
+                  styles.tagChip,
+                  on && { backgroundColor: tc ? tc.bg : '#000' },
+                ]}
+              >
+                {tc && !on && (
+                  <View style={[styles.tagDot, { backgroundColor: tc.bg }]} />
+                )}
+                <Text
+                  style={[
+                    styles.tagChipText,
+                    on && { color: tc ? tc.text : '#fff' },
+                  ]}
+                >
+                  {t === 'ALL' ? 'All tags' : t}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       {!loading && overdue.length > 0 && (
         <TouchableOpacity
@@ -437,6 +480,23 @@ export default function ScheduleScreen({ navigation }: any) {
                             {getStatusLabel(l.status)}
                           </Text>
                         </View>
+                        {l.contactTag ? (
+                          <View
+                            style={[
+                              styles.statusPill,
+                              { backgroundColor: getContactTagStyle(l.contactTag).bg },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.statusPillText,
+                                { color: getContactTagStyle(l.contactTag).text },
+                              ]}
+                            >
+                              {l.contactTag}
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
                       <View style={styles.leadActions}>
                         {l.phone && (
@@ -523,6 +583,27 @@ const styles = StyleSheet.create({
   },
   headerBadgeText: { fontSize: 11, fontWeight: '500', color: '#fff' },
   divider: { height: 2, backgroundColor: '#000' },
+  tagBar: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+  },
+  tagDot: { width: 9, height: 9, borderWidth: 1, borderColor: '#000', borderRadius: 5 },
+  tagChipText: { fontSize: 12, fontWeight: '700', color: '#000' },
   toggle: {
     flexDirection: 'row',
     gap: 8,

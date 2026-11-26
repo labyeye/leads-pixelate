@@ -42,11 +42,73 @@ function FieldLabel({ icon, text }: { icon: string; text: string }) {
   );
 }
 
+function SectionHead({
+  icon,
+  title,
+  sub,
+  open,
+  onPress,
+}: {
+  icon: string;
+  title: string;
+  sub: string;
+  open: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[styles.sectionHead, open && styles.sectionHeadOpen]}
+    >
+      <View style={styles.sectionIcon}>
+        <Icon name={icon} size={18} color={PRIMARY_BLUE} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionSub}>{sub}</Text>
+      </View>
+      <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} color="#000" />
+    </TouchableOpacity>
+  );
+}
+
+function LinkRow({
+  icon,
+  label,
+  sub,
+  onPress,
+  last,
+}: {
+  icon: string;
+  label: string;
+  sub?: string;
+  onPress: () => void;
+  last?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onPress}
+      style={[styles.linkRow, !last && styles.linkRowBorder]}
+    >
+      <View style={styles.sectionIcon}>
+        <Icon name={icon} size={18} color={PRIMARY_BLUE} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.sectionTitle}>{label}</Text>
+        {!!sub && <Text style={styles.sectionSub}>{sub}</Text>}
+      </View>
+      <Icon name="chevron-forward" size={16} color="#94a3b8" />
+    </TouchableOpacity>
+  );
+}
+
 export default function SettingsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, logout, refreshUser } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'password' | null>('profile');
 
   // Profile form
   const [name, setName] = useState(user?.name || '');
@@ -201,83 +263,56 @@ export default function SettingsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <ScreenHeader icon="settings-outline" title="Settings" onBack={() => navigation.goBack()} />
+      <ScreenHeader icon="settings-outline" title="Account Center" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}>
-        {/* Profile card */}
-        <View style={styles.profileCard}>
+        {/* Instagram-style profile header */}
+        <View style={styles.igHeader}>
           <TouchableOpacity
-            style={styles.avatarWrap}
+            style={styles.igRing}
             onPress={isSuperAdmin ? handlePickPhoto : undefined}
             activeOpacity={isSuperAdmin ? 0.7 : 1}
           >
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImg} />
-            ) : (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initial}</Text>
-              </View>
-            )}
+            <View style={styles.igRingInner}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.igAvatar} />
+              ) : (
+                <View style={[styles.igAvatar, styles.igAvatarFallback]}>
+                  <Text style={styles.igAvatarText}>{initial}</Text>
+                </View>
+              )}
+            </View>
             {isSuperAdmin && (
-              <View style={styles.avatarEditBadge}>
-                <Icon name="camera-outline" size={10} color="#fff" />
+              <View style={styles.igCamera}>
+                <Icon name="camera-outline" size={13} color="#fff" />
               </View>
             )}
           </TouchableOpacity>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name || 'User'}</Text>
-            <Text style={styles.profileEmail}>{user?.email}</Text>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>
-                {(user?.role || 'agent').toUpperCase()}
-              </Text>
-            </View>
+          <Text style={styles.igName}>{user?.name || 'User'}</Text>
+          <Text style={styles.igHandle}>{user?.email}</Text>
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleText}>{(user?.role || 'agent').replace(/_/g, ' ').toUpperCase()}</Text>
+          </View>
+          <View style={styles.igActions}>
+            <TouchableOpacity style={[styles.igBtn, styles.igBtnPrimary]} onPress={() => setActiveTab('profile')}>
+              <Text style={[styles.igBtnText, { color: '#fff' }]}>Edit profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.igBtn} onPress={() => setActiveTab('password')}>
+              <Text style={styles.igBtnText}>Password</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Tabs */}
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'profile' && styles.tabActive]}
-            onPress={() => setActiveTab('profile')}
-          >
-            <Icon
-              name="person-outline"
-              size={14}
-              color={activeTab === 'profile' ? '#fff' : '#64748b'}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'profile' && styles.tabTextActive,
-              ]}
-            >
-              Profile
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'password' && styles.tabActive]}
-            onPress={() => setActiveTab('password')}
-          >
-            <Icon
-              name="lock-closed-outline"
-              size={14}
-              color={activeTab === 'password' ? '#fff' : '#64748b'}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'password' && styles.tabTextActive,
-              ]}
-            >
-              Password
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.thinDivider} />
-
+        <Text style={styles.groupLabel}>YOUR INFORMATION</Text>
+        <SectionHead
+          icon="person-outline"
+          title="Personal details"
+          sub="Name, email & WhatsApp number"
+          open={activeTab === 'profile'}
+          onPress={() => setActiveTab(activeTab === 'profile' ? null : 'profile')}
+        />
         {activeTab === 'profile' && (
-          <View style={styles.formSection}>
+          <View style={styles.sectionBody}>
             <FieldLabel icon="person-outline" text="FULL NAME" />
             <TextInput
               style={styles.input}
@@ -395,8 +430,15 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         )}
 
+        <SectionHead
+          icon="lock-closed-outline"
+          title="Password and security"
+          sub="Change your password"
+          open={activeTab === 'password'}
+          onPress={() => setActiveTab(activeTab === 'password' ? null : 'password')}
+        />
         {activeTab === 'password' && (
-          <View style={styles.formSection}>
+          <View style={styles.sectionBody}>
             <FieldLabel icon="lock-closed-outline" text="CURRENT PASSWORD" />
             <View style={styles.pwdRow}>
               <TextInput
@@ -478,30 +520,31 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* Admin: Lead Statuses */}
         {canManageStatuses && (
-          <View style={styles.logoutSection}>
-            <TouchableOpacity
-              style={styles.leadStatusesBtn}
-              onPress={() => navigation.navigate('LeadStatuses')}
-            >
-              <Icon name="pricetag-outline" size={18} color="#024BAB" />
-              <Text style={styles.leadStatusesBtnText}>
-                Manage Lead Statuses
-              </Text>
-              <Icon name="chevron-forward" size={16} color="#94a3b8" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.leadStatusesBtn, { marginTop: 10 }]}
-              onPress={() => navigation.navigate('RolesPermissions')}
-            >
-              <Icon name="shield-checkmark-outline" size={18} color="#024BAB" />
-              <Text style={styles.leadStatusesBtnText}>
-                Roles & Permissions
-              </Text>
-              <Icon name="chevron-forward" size={16} color="#94a3b8" />
-            </TouchableOpacity>
-          </View>
+          <>
+            <Text style={styles.groupLabel}>WORKSPACE</Text>
+            <View style={styles.groupCard}>
+              <LinkRow
+                icon="pricetag-outline"
+                label="Lead statuses"
+                sub="Pipeline stages & colours"
+                onPress={() => navigation.navigate('LeadStatuses')}
+              />
+              <LinkRow
+                icon="shield-checkmark-outline"
+                label="Roles & permissions"
+                sub="Who can see and do what"
+                onPress={() => navigation.navigate('RolesPermissions')}
+              />
+              <LinkRow
+                icon="business-outline"
+                label="Company settings"
+                sub="Company, GST, tags & quick picks"
+                onPress={() => navigation.navigate('CompanySettings')}
+                last
+              />
+            </View>
+          </>
         )}
 
         {canManageStatuses && (
@@ -616,7 +659,106 @@ const styles = StyleSheet.create({
   otpInput: { borderWidth: 2, borderRadius: 8, borderRightWidth: 5, borderBottomWidth: 5, borderColor: '#000', paddingVertical: 12, fontSize: 24, fontWeight: '500', letterSpacing: 10, textAlign: 'center', color: '#000' },
   otpLinks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
   otpLink: { fontSize: 13, fontWeight: '500', color: PRIMARY_BLUE },
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  igHeader: { alignItems: 'center', paddingTop: 20, paddingHorizontal: 16 },
+  igRing: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    borderWidth: 3,
+    borderColor: '#FF751F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  igRingInner: { width: 96, height: 96, borderRadius: 48, overflow: 'hidden', backgroundColor: '#fff' },
+  igAvatar: { width: 96, height: 96, borderRadius: 48 },
+  igAvatarFallback: { backgroundColor: PRIMARY_BLUE, alignItems: 'center', justifyContent: 'center' },
+  igAvatarText: { fontSize: 38, fontWeight: '600', color: '#fff' },
+  igCamera: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: PRIMARY_BLUE,
+    borderWidth: 2,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  igName: { fontSize: 20, fontWeight: '700', color: '#000', marginTop: 12 },
+  igHandle: { fontSize: 13, color: '#64748b', marginTop: 2, marginBottom: 8 },
+  igActions: { flexDirection: 'row', gap: 8, marginTop: 14, alignSelf: 'stretch' },
+  igBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#000',
+    backgroundColor: '#fff',
+  },
+  igBtnPrimary: { backgroundColor: PRIMARY_BLUE },
+  igBtnText: { fontSize: 13, fontWeight: '700', color: '#000' },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 10,
+    padding: 12,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+  },
+  sectionHeadOpen: { backgroundColor: '#eff6ff' },
+  sectionIcon: {
+    width: 38,
+    height: 38,
+    borderWidth: 2,
+    borderColor: PRIMARY_BLUE,
+    borderRadius: 8,
+    backgroundColor: '#e8f0fb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#000' },
+  sectionSub: { fontSize: 11, color: '#64748b', marginTop: 1 },
+  sectionBody: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderColor: '#000',
+  },
+  groupLabel: {
+    marginHorizontal: 20,
+    marginTop: 22,
+    marginBottom: 8,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: '#64748b',
+  },
+  groupCard: {
+    marginHorizontal: 16,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderRadius: 8,
+    borderRightWidth: 4,
+    borderBottomWidth: 4,
+    borderColor: '#000',
+    overflow: 'hidden',
+  },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  linkRowBorder: { borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
   header: {
     height: 64,
     flexDirection: 'row',

@@ -13,6 +13,8 @@ import {
   setStatusOverrides,
   setCustomLeadStatuses,
   setContactTagsEnabled,
+  setContactTagColors,
+  setLeadQuickPicks,
 } from '../constants/statusConstants';
 
 function loadStatusSettings() {
@@ -22,6 +24,8 @@ function loadStatusSettings() {
       setStatusOverrides(res.data?.leadStatusLabels);
       setCustomLeadStatuses(res.data?.customLeadStatuses);
       setContactTagsEnabled(res.data?.contactTagsEnabled);
+      setContactTagColors(res.data?.contactTagColors);
+      setLeadQuickPicks(res.data);
     })
     .catch(() => {});
 }

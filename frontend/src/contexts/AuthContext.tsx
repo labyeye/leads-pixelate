@@ -11,6 +11,8 @@ import {
   setStatusOverrides,
   setCustomLeadStatuses,
   setContactTagsEnabled,
+  setContactTagColors,
+  setLeadQuickPicks,
 } from "@/components/leads/statusConstants";
 
 interface Tenant {
@@ -117,6 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (res.data?.permissions) setPermissions(res.data.permissions);
             setStatusOverrides(res.data?.leadStatusLabels);
             setContactTagsEnabled(res.data?.contactTagsEnabled);
+            setContactTagColors(res.data?.contactTagColors);
+            setLeadQuickPicks(res.data);
             setCustomLeadStatuses(
               res.data?.customLeadStatuses,
               res.data?.customLeadCategories || [],

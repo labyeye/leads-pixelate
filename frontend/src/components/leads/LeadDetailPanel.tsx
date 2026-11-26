@@ -63,6 +63,7 @@ import {
   getStatusLabel,
   categories,
   contactTagsEnabled,
+  getContactTagStyle,
 } from "./statusConstants";
 import { StatusUpdateModal } from "./StatusUpdateModal";
 import { VaultDocPicker } from "../documents/VaultDocPicker";
@@ -251,10 +252,11 @@ export function LeadDetailPanel({
           {lead.contactTag && (
             <div>
               <span
-                className={cn(
-                  "text-[11px] font-medium px-2 py-0.5 rounded-full border inline-flex items-center gap-1",
-                  getStatusColorClasses(lead.contactTag) || "bg-muted",
-                )}
+                className="text-[11px] font-medium px-2 py-0.5 rounded-full border inline-flex items-center gap-1"
+                style={{
+                  backgroundColor: getContactTagStyle(lead.contactTag).bg,
+                  color: getContactTagStyle(lead.contactTag).text,
+                }}
               >
                 {lead.contactTag === "HOT" && <Flame className="w-3 h-3" />}
                 {lead.contactTag === "WARM" && <Wind className="w-3 h-3" />}

@@ -104,6 +104,8 @@ import {
   getCustomLeadStatusMeta,
   getStatusColorClasses,
   getStatusLabel,
+  getContactTagStyle,
+  getLostReasons,
   ALL_STATUSES,
 } from "@/components/leads/statusConstants";
 import { SourceBadge } from "@/components/leads/SourceBadge";
@@ -120,17 +122,6 @@ import {
   type ExportField,
 } from "@/components/export/ExportFieldsDialog";
 
-const LOST_REASONS = [
-  "Price too high",
-  "Chose a competitor",
-  "No budget / loan not approved",
-  "Postponed the decision",
-  "Machine didn't fit (features / capacity)",
-  "Delivery time too long",
-  "Not responding",
-  "Not a genuine enquiry",
-  "Other",
-];
 
 const LEAD_EXPORT_FIELDS: ExportField[] = [
   { key: "name", label: "Name", get: (l) => l.name || "" },
@@ -2352,15 +2343,11 @@ export default function LeadsPage() {
                             {l.contactTag && (
                               <div className="flex justify-end mb-1.5">
                                 <span
-                                  className={cn(
-                                    "inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 border border-black uppercase",
-                                    l.contactTag === "HOT" &&
-                                      "bg-red-500 text-white",
-                                    l.contactTag === "WARM" &&
-                                      "bg-[#FFDE00] text-black",
-                                    l.contactTag === "COLD" &&
-                                      "bg-[#024BAB] text-white",
-                                  )}
+                                  className="inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 border border-black uppercase"
+                                  style={{
+                                    backgroundColor: getContactTagStyle(l.contactTag).bg,
+                                    color: getContactTagStyle(l.contactTag).text,
+                                  }}
                                 >
                                   {l.contactTag === "HOT" && (
                                     <Flame className="w-2.5 h-2.5" />
@@ -3217,7 +3204,7 @@ export default function LeadsPage() {
                     onChange={(e) => setLostReasonInput(e.target.value)}
                   >
                     <option value="">Choose a reason…</option>
-                    {LOST_REASONS.map((r) => (
+                    {getLostReasons().map((r) => (
                       <option key={r} value={r}>
                         {r}
                       </option>

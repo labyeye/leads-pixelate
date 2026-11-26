@@ -184,7 +184,7 @@ const MENU_ITEMS: MenuItem[] = [
     color: SECONDARY,
   },
   {
-    icon: 'briefcase-outline',
+    icon: 'layers-outline',
     label: 'Services',
     sub: 'Service allocations & delivery',
     screen: 'Services',
@@ -468,7 +468,7 @@ export default function MoreScreen({ navigation }: any) {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.scroll,
-          { paddingBottom: insets.bottom + 32 },
+          { paddingBottom: insets.bottom + 110 },
           isTablet && {
             maxWidth: maxContentWidth,
             width: '100%',
@@ -533,37 +533,35 @@ export default function MoreScreen({ navigation }: any) {
         {/* Grouped 3-column tiles matching NestHR MoreScreen */}
         {sections.map(g => (
           <View key={g.title}>
-            <View style={styles.grid}>
-              {g.items.map(item => (
-                <View
+            <View style={styles.sectionHead}>
+              <View style={[styles.sectionBar, { backgroundColor: g.color }]} />
+              <Text style={styles.sectionTitle}>{g.title}</Text>
+              <View style={styles.sectionLine} />
+              <Text style={styles.sectionCount}>{g.items.length}</Text>
+            </View>
+            <View style={styles.listCard}>
+              {g.items.map((item, idx) => (
+                <TouchableOpacity
                   key={item.screen}
-                  style={[styles.tileWrap, isTablet && { width: '18.8%' }]}
+                  style={[
+                    styles.listRow,
+                    idx < g.items.length - 1 && styles.listRowDivider,
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate(item.screen)}
                 >
-                  <TouchableOpacity
-                    style={styles.tile}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate(item.screen)}
-                  >
-                    <View
-                      style={[
-                        styles.tileIcon,
-                        {
-                          backgroundColor: g.color + '1A',
-                          borderColor: g.color,
-                        },
-                      ]}
-                    >
-                      {item.icon === 'logo-whatsapp' ? (
-                        <WhatsAppLogo size={22} />
-                      ) : (
-                        <Icon name={item.icon} size={22} color={g.color} />
-                      )}
-                    </View>
-                    <Text style={styles.tileLabel} numberOfLines={1}>
-                      {item.label}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                  <View style={styles.listIcon}>
+                    {item.icon === 'logo-whatsapp' ? (
+                      <WhatsAppLogo size={22} />
+                    ) : (
+                      <Icon name={item.icon} size={22} color={g.color} />
+                    )}
+                  </View>
+                  <Text style={styles.listLabel} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                  <Icon name="chevron-forward" size={18} color="#6B7280" />
+                </TouchableOpacity>
               ))}
             </View>
           </View>
@@ -618,7 +616,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: PRIMARY,
   },
-  scroll: { padding: 16, gap: 16 },
+  scroll: { padding: 16, gap: 22 },
 
   hero: { ...box, backgroundColor: '#fff', padding: 14 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -680,17 +678,35 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
+  listCard: { ...box, backgroundColor: '#fff', overflow: 'hidden' },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  listRowDivider: { borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  listIcon: { width: 28, alignItems: 'center', justifyContent: 'center' },
+  listLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: '#000' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tileWrap: { width: '31.3%' },
+  tileWrap: { width: '48.5%' },
   tile: {
     ...box,
     backgroundColor: '#fff',
     width: '100%',
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    gap: 6,
+    flexDirection: 'row',
+    minHeight: 72,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    gap: 10,
     alignItems: 'center',
   },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  sectionBar: { width: 4, height: 16, borderRadius: 2 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#000', letterSpacing: 0.3 },
+  sectionLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+  sectionCount: { fontSize: 11, fontWeight: '700', color: '#6B7280' },
   tileIcon: {
     width: 42,
     height: 42,
@@ -698,14 +714,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    marginBottom: 0,
   },
-  tileLabel: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000',
-    textAlign: 'center',
-  },
+  tileText: { flex: 1 },
+  tileLabel: { fontSize: 13, fontWeight: '700', color: '#000' },
+  tileSub: { fontSize: 11, lineHeight: 14, color: '#6B7280', marginTop: 2 },
 
   modalOverlay: {
     flex: 1,

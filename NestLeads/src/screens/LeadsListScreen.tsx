@@ -20,7 +20,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
-import { LOST_REASONS } from '../components/StatusFlow';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 import {
   leadsAPI,
@@ -40,6 +39,8 @@ import {
   getCategoryByStatus,
   getStatusColor,
   getStatusLabel,
+  getContactTagStyle,
+  getLostReasons,
   ALL_SOURCES,
   ALL_STATUSES,
 } from '../constants/statusConstants';
@@ -610,7 +611,9 @@ export default function LeadsListScreen({ navigation }: Props) {
   };
 
   const renderLeadCard = ({ item: l }: { item: any }) => {
-    const tag = l.contactTag ? PRIORITY[l.contactTag] : null;
+    const tag = l.contactTag
+      ? { ...PRIORITY[l.contactTag], ...getContactTagStyle(l.contactTag) }
+      : null;
     const sc = getStatusColor(l.status);
     const subtitle =
       l.interestedProduct || l.product?.name || l.company || l.requirement;
@@ -1008,7 +1011,7 @@ export default function LeadsListScreen({ navigation }: Props) {
             </Text>
             <ScrollView>
               {bulkDropAsk
-                ? LOST_REASONS.map(r => (
+                ? getLostReasons().map(r => (
                     <TouchableOpacity key={r} style={{ paddingVertical: 12 }} onPress={() => bulkStatus('DROP', r)}>
                       <Text style={{ color: '#000', fontWeight: '500' }}>{r}</Text>
                     </TouchableOpacity>

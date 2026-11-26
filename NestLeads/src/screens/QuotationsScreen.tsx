@@ -98,6 +98,9 @@ export default function QuotationsScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [exportOpen, setExportOpen] = useState(false);
   const [sendingQ, setSendingQ] = useState<any | null>(null);
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const toggleExpand = (id: string) =>
+    setExpanded(p => (p.includes(id) ? p.filter(x => x !== id) : [...p, id]));
   const { user } = useAuth();
   const myId = String((user as any)?._id || (user as any)?.id || '');
   const canDecide = (q: any) =>
@@ -200,6 +203,22 @@ export default function QuotationsScreen({ navigation }: any) {
         (sum: number, s: any) => sum + s.price * s.quantity,
         0,
       ) || 0;
+    const isOpen = expanded.includes(q._id);
+    const subtotal = total;
+    const discount = Number(q.discount) || 0;
+    const tax = (subtotal - discount) * 0.18;
+    const details: [string, any][] = [
+      ['Number', q.number],
+      ['Mobile', q.mobile],
+      ['Email', q.email],
+      ['GST', q.gst],
+      ['PAN', q.pan],
+      ['Aadhar', q.aadhar],
+      ['Address', q.address],
+      ['Lead', q.leadTag],
+    ].filter(([, v]) => !!v) as [string, any][];
+    const inr = (n: number) =>
+      '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -219,6 +238,17 @@ export default function QuotationsScreen({ navigation }: any) {
               {q.status}
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={() => toggleExpand(q._id)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={isOpen ? 'Hide details' : 'Show details'}
+          >
+            <Icon
+              name={isOpen ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color="#024BAB"
+            />
+          </TouchableOpacity>
         </View>
         <View style={styles.cardFooter}>
           <View style={styles.footerLeft}>
@@ -250,6 +280,47 @@ export default function QuotationsScreen({ navigation }: any) {
             </Text>
           </View>
         </View>
+        {isOpen && (
+          <View style={styles.panel}>
+            {details.map(([k, v]) => (
+              <View key={k} style={styles.detailRow}>
+                <Text style={styles.detailKey}>{k}</Text>
+                <Text style={styles.detailVal}>{String(v)}</Text>
+              </View>
+            ))}
+            <Text style={styles.panelHead}>Items</Text>
+            {(q.services || []).map((s: any, i: number) => (
+              <View key={i} style={styles.detailRow}>
+                <Text style={[styles.detailVal, { textAlign: 'left' }]}>
+                  {s.name}
+                  {s.hsnCode ? ` · HSN ${s.hsnCode}` : ''}
+                  {`\n${s.quantity} × ${inr(Number(s.price))}`}
+                </Text>
+                <Text style={styles.detailVal}>
+                  {inr(Number(s.price) * Number(s.quantity))}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.detailRow}>
+              <Text style={styles.detailKey}>Subtotal</Text>
+              <Text style={styles.detailVal}>{inr(subtotal)}</Text>
+            </View>
+            {discount > 0 && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailKey}>Discount</Text>
+                <Text style={styles.detailVal}>-{inr(discount)}</Text>
+              </View>
+            )}
+            <View style={styles.detailRow}>
+              <Text style={styles.detailKey}>GST (18%)</Text>
+              <Text style={styles.detailVal}>{inr(tax)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailKey, { color: '#000' }]}>Total</Text>
+              <Text style={styles.detailVal}>{inr(subtotal - discount + tax)}</Text>
+            </View>
+          </View>
+        )}
         {q.approval?.status && q.approval.status !== 'none' && (
           <Text
             style={{
@@ -573,6 +644,27 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
   },
   deleteBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
+  panel: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    gap: 6,
+  },
+  panelHead: {
+    fontSize: 10,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    color: '#64748b',
+    marginTop: 4,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  detailKey: { fontSize: 12, color: '#64748b' },
+  detailVal: { fontSize: 12, color: '#000', flexShrink: 1, textAlign: 'right' },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText: { fontSize: 14, fontWeight: '500', color: '#94a3b8' },
   emptySub: { fontSize: 12, color: '#cbd5e1' },

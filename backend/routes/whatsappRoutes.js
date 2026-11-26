@@ -16,6 +16,7 @@ const {
   submitTemplate,
   getCampaigns,
   getCampaign,
+  getMessageLogs,
   createCampaign,
   resendCampaign,
   syncPhoneNumbers,
@@ -79,6 +80,7 @@ router.post("/templates/:id/submit", ownerOnly, submitTemplate);
 
 router.route("/campaigns").get(getCampaigns).post(createCampaign);
 router.route("/campaigns/:id").get(getCampaign);
+router.get("/message-logs", getMessageLogs);
 router.post("/campaigns/:id/resend", resendCampaign);
 
 router.post("/send", sendMessage);

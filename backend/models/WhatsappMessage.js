@@ -16,6 +16,12 @@ const whatsappMessageSchema = new mongoose.Schema(
       enum: ["SENT", "DELIVERED", "READ", "FAILED"],
       default: "SENT",
     },
+    // Where an outgoing message came from: chat reply, quotation, automation / follow-up.
+    source: { type: String, default: "chat" },
+    deliveredAt: Date,
+    readAt: Date,
+    failedAt: Date,
+    failedReason: { type: String, default: "" },
     sentBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     timestamp: { type: Date, default: Date.now },
   },

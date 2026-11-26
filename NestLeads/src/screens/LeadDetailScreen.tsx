@@ -26,6 +26,7 @@ import {
   getStatusColor,
   getStatusLabel,
   getCategoryByStatus,
+  getContactTagStyle,
 } from '../constants/statusConstants';
 import SourceBadge from '../components/SourceBadge';
 import EmailModal from '../components/EmailModal';
@@ -258,7 +259,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
       (!!latestBy && String(latestBy) === String(myId)));
 
   const sc = getStatusColor(lead.status);
-  const tag = lead.contactTag ? TAG_COLORS[lead.contactTag] : null;
+  const tag = lead.contactTag ? getContactTagStyle(lead.contactTag) : null;
   const activeCategory = getCategoryByStatus(lead.status || 'PENDING CONTACT');
   const location = [lead.location, lead.state].filter(Boolean).join(', ');
 
@@ -658,14 +659,28 @@ export default function LeadDetailScreen({ navigation, route }: any) {
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={[styles.modalSheet, { maxHeight: '90%' }]}>
-            <Text style={styles.modalTitle}>Edit Lead</Text>
-            <ScrollView keyboardShouldPersistTaps="handled">
+          <View
+            style={[
+              styles.modalSheet,
+              { maxHeight: '90%', paddingBottom: insets.bottom + 16 },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { marginBottom: 14 }]}>Edit Lead</Text>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={{ flexShrink: 1 }}
+            >
               {EDIT_FIELDS.map(([k, label]) => (
                 <View key={k}>
                   <Text style={styles.modalLabel}>{label.toUpperCase()}</Text>
                   <TextInput
-                    style={styles.modalInput}
+                    style={[
+                      styles.modalInput,
+                      k === 'requirement' || k === 'remarks'
+                        ? styles.editInputMulti
+                        : styles.editInput,
+                    ]}
                     value={editForm[k] || ''}
                     onChangeText={v => setEditForm(f => ({ ...f, [k]: v }))}
                     multiline={k === 'requirement' || k === 'remarks'}
@@ -687,7 +702,7 @@ export default function LeadDetailScreen({ navigation, route }: any) {
                 </View>
               ))}
             </ScrollView>
-            <View style={styles.modalBtns}>
+            <View style={[styles.modalBtns, styles.editBtnRow]}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}
                 onPress={() => setEditOpen(false)}
@@ -1102,6 +1117,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalBtns: { flexDirection: 'row', gap: 10 },
+  editInput: { height: 48, paddingVertical: 0, textAlignVertical: 'center', marginBottom: 14 },
+  editInputMulti: { height: 96, paddingTop: 12, marginBottom: 14 },
+  editBtnRow: {
+    paddingTop: 14,
+    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
   modalCancelBtn: {
     flex: 1,
     paddingVertical: 13,
@@ -1114,7 +1137,6 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     alignItems: 'center',
     backgroundColor: '#fff',
-    marginTop: 8,
   },
   modalCancelText: { fontWeight: '500', color: '#000', fontSize: 14 },
   modalConfirmBtn: {

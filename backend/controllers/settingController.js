@@ -19,6 +19,21 @@ const getSettings = asyncHandler(async (req, res) => {
   const tenantFilter = { tenantId: req.user.tenantId || null };
   let setting = await Setting.findOne(tenantFilter);
 
+  for (const f of ["lostReasonOptions", "remarkPresets"]) {
+    if (!(f in body)) continue;
+    const seen = new Set();
+    body[f] = (Array.isArray(body[f]) ? body[f] : [])
+      .map((v) => String(v || "").trim().slice(0, f === "remarkPresets" ? 200 : 80))
+      .filter((v) => v && !seen.has(v.toLowerCase()) && seen.add(v.toLowerCase()))
+      .slice(0, 30);
+  }
+
+  if ("contactTagColors" in body) {
+    const c = body.contactTagColors || {};
+    const hex = (v) => (/^#[0-9a-fA-F]{6}$/.test(String(v || "")) ? String(v).toLowerCase() : "");
+    body.contactTagColors = { HOT: hex(c.HOT), WARM: hex(c.WARM), COLD: hex(c.COLD) };
+  }
+
   if (!setting) {
     setting = await Setting.create(tenantFilter);
   }

@@ -22,6 +22,9 @@ import {
   getStatusColor,
   getStatusLabel,
   contactTagsEnabled,
+  DEFAULT_LOST_REASONS,
+  getLostReasons,
+  getRemarkPresets,
 } from '../constants/statusConstants';
 import FieldLabel from './FieldLabel';
 
@@ -137,17 +140,7 @@ export function getStatusActions(lead: any): Action[] {
 
 type Step = 'actions' | 'tag' | 'form';
 
-export const LOST_REASONS = [
-  'Price too high',
-  'Chose a competitor',
-  'No budget / loan not approved',
-  'Postponed the decision',
-  "Machine didn't fit (features / capacity)",
-  'Delivery time too long',
-  'Not responding',
-  'Not a genuine enquiry',
-  'Other',
-];
+export const LOST_REASONS = DEFAULT_LOST_REASONS;
 
 export default function StatusFlow({
   visible,
@@ -481,7 +474,7 @@ export default function StatusFlow({
                   <>
                     <FieldLabel style={s.label}>LOST REASON *</FieldLabel>
                     <View style={s.chips}>
-                      {LOST_REASONS.map(r => {
+                      {getLostReasons().map(r => {
                         const on = lostReason === r;
                         return (
                           <TouchableOpacity
@@ -526,6 +519,21 @@ export default function StatusFlow({
                   multiline
                   maxLength={500}
                 />
+                {getRemarkPresets().length > 0 && (
+                  <View style={[s.chips, { marginTop: 8 }]}>
+                    {getRemarkPresets().map(r => (
+                      <TouchableOpacity
+                        key={r}
+                        style={s.chip}
+                        onPress={() =>
+                          setRemarks(v => (v.trim() ? `${v.trim()}. ${r}` : r))
+                        }
+                      >
+                        <Text style={s.chipText}>{r}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
 
                 <FieldLabel style={s.label}>INTERESTED PRODUCTS</FieldLabel>
                 <View style={s.chips}>

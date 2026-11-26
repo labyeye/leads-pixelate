@@ -1,3 +1,4 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing } from 'react-native';
 
@@ -88,15 +89,48 @@ export function SlideUp({
   );
 }
 
-/** HOC: wraps a whole screen in the SlideUp entrance. Call at module level. */
+/**
+ * HOC: wraps a whole screen in the SlideUp entrance. It plays every time the screen comes into
+ * focus (opening it, switching to its tab, coming back to it), not only on first mount, and it
+ * animates the wrapper only, so the screen's own state is never reset. Call at module level.
+ */
 export function withSlideUp<T extends React.ComponentType<any>>(
   Component: T,
 ): T {
-  const Wrapped = (props: any) => (
-    <SlideUp style={{ flex: 1 }}>
-      <Component {...props} />
-    </SlideUp>
-  );
+  const Wrapped = (props: any) => {
+    const navigation = useNavigation<any>();
+    const v = useRef(new Animated.Value(0)).current;
+    useEffect(() => {
+      const play = () => {
+        v.setValue(0);
+        Animated.timing(v, {
+          toValue: 1,
+          duration: 420,
+          useNativeDriver: true,
+        }).start();
+      };
+      if (navigation.isFocused()) play();
+      return navigation.addListener('focus', play);
+    }, [navigation, v]);
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: v,
+          transform: [
+            {
+              translateY: v.interpolate({
+                inputRange: [0, 1],
+                outputRange: [28, 0],
+              }),
+            },
+          ],
+        }}
+      >
+        <Component {...props} />
+      </Animated.View>
+    );
+  };
   Wrapped.displayName = `SlideUp(${Component.displayName || Component.name})`;
   return Wrapped as unknown as T;
 }

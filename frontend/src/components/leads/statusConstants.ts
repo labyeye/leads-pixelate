@@ -107,6 +107,53 @@ export function setContactTagsEnabled(v: boolean | null | undefined) {
 export function contactTagsEnabled() {
   return contactTagsOn;
 }
+
+// Tenant quick-pick lists for the status-update form.
+export const DEFAULT_LOST_REASONS = [
+  'Price too high',
+  'Chose a competitor',
+  'No budget / loan not approved',
+  'Postponed the decision',
+  "Machine didn't fit (features / capacity)",
+  'Delivery time too long',
+  'Not responding',
+  'Not a genuine enquiry',
+  'Other',
+];
+let lostReasonList: string[] = [];
+let remarkPresetList: string[] = [];
+export function setLeadQuickPicks(
+  s: { lostReasonOptions?: string[]; remarkPresets?: string[] } | null | undefined,
+) {
+  lostReasonList = Array.isArray(s?.lostReasonOptions) ? s!.lostReasonOptions! : [];
+  remarkPresetList = Array.isArray(s?.remarkPresets) ? s!.remarkPresets! : [];
+}
+export function getLostReasons() {
+  return lostReasonList.length ? lostReasonList : DEFAULT_LOST_REASONS;
+}
+export function getRemarkPresets() {
+  return remarkPresetList;
+}
+
+// Tenant setting: custom hex colour per contact tag (HOT / WARM / COLD).
+export const DEFAULT_TAG_COLORS: Record<string, string> = {
+  HOT: '#ef4444',
+  WARM: '#FFDE00',
+  COLD: '#024BAB',
+};
+let tagColors: Record<string, string> = {};
+export function setContactTagColors(v: Record<string, string> | null | undefined) {
+  tagColors = v || {};
+}
+export function getContactTagColors() {
+  return { ...DEFAULT_TAG_COLORS, ...Object.fromEntries(Object.entries(tagColors).filter(([, c]) => !!c)) };
+}
+export function getContactTagStyle(tag?: string | null) {
+  const bg = (tag && getContactTagColors()[tag]) || '#94a3b8';
+  const n = parseInt(bg.slice(1), 16);
+  const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return { bg, text: lum > 0.6 ? '#000' : '#fff' };
+}
 export function getHiddenStatuses() {
   return hiddenStatusList;
 }

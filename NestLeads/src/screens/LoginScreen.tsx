@@ -28,10 +28,12 @@ const otpAnim = require('../assets/lottie/otp.json');
 
 type Mode = 'email' | 'phone';
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation, route }: any) {
   const { login, loginWithToken } = useAuth();
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<Mode>('email');
+  const [mode, setMode] = useState<Mode>(
+    route?.params?.initialMode === 'phone' ? 'phone' : 'email',
+  );
 
   // Email + password
   const [email, setEmail] = useState('');
@@ -606,10 +608,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
   },
-  // Same box + negative top margin as NestSports' login/OTP screens: both animations have
-  // generous transparent padding in their canvas, so the art floats above the centred form.
-  lottieLogin: { width: '100%', height: 220, marginTop: 5, marginBottom: 6 },
-  lottieOtp: { width: '100%', height: 300, marginTop: -204, marginBottom: 24 },
+  lottieLogin: { width: '100%', height: 200, marginTop: 5, marginBottom: 6 },
+  lottieOtp: { width: '100%', height: 250, marginTop: 0, marginBottom: 8 },
   heading: {
     fontSize: 36,
     fontWeight: '500',

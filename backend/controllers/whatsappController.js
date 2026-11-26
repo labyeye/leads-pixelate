@@ -261,7 +261,7 @@ function renderTemplateText(template, components, extra = "") {
 }
 
 // Saves an outgoing message. Never throws: a send that already went out must not fail on bookkeeping.
-async function recordOutgoing({ tenantId, phone, text, result, userId }) {
+async function recordOutgoing({ tenantId, phone, text, result, userId, source = "chat" }) {
   try {
     await WhatsappMessage.create({
       tenantId,
@@ -269,6 +269,7 @@ async function recordOutgoing({ tenantId, phone, text, result, userId }) {
       direction: "out",
       text: String(text || "").slice(0, 4000),
       waMessageId: result?.messages?.[0]?.id,
+      source,
       sentBy: userId,
     });
   } catch (err) {
@@ -498,7 +499,7 @@ exports.sendFunnelMessage = async function sendFunnelMessage(tenantId, step, lea
     template.language,
     components,
   );
-  if (lead._id) await recordOutgoing({ tenantId, phone, text: renderTemplateText(template, components), result: r });
+  if (lead._id) await recordOutgoing({ tenantId, phone, text: renderTemplateText(template, components), result: r, source: "automation" });
   return r?.messages?.[0]?.id || "";
 };
 
@@ -1073,6 +1074,112 @@ exports.getCampaigns = asyncHandler(async (req, res) => {
   res.json({ success: true, count: campaigns.length, data: campaigns });
 });
 
+// Every outgoing WhatsApp message (chat replies, quotations, automations, campaigns) with its
+// delivery status, plus totals for the insights cards. Query: status, source, search, days, page, limit.
+exports.getMessageLogs = asyncHandler(async (req, res) => {
+  const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
+  const days = Math.min(Math.max(Number(req.query.days) || 30, 1), 365);
+  const since = new Date(Date.now() - days * 86400000);
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+
+  const [chat, campaigns, replies] = await Promise.all([
+    WhatsappMessage.find({ ...tenantFilter, direction: "out", timestamp: { $gte: since } })
+      .sort({ timestamp: -1 })
+      .limit(5000)
+      .populate("sentBy", "name")
+      .lean(),
+    WhatsappCampaign.find({ ...tenantFilter, createdAt: { $gte: since } })
+      .select("name messages createdAt")
+      .lean(),
+    WhatsappMessage.countDocuments({ ...tenantFilter, direction: "in", timestamp: { $gte: since } }),
+  ]);
+
+  let rows = chat.map((m) => ({
+    id: String(m._id),
+    phone: m.phone,
+    name: "",
+    text: m.text,
+    source: m.source || "chat",
+    campaign: "",
+    status: m.status,
+    sentAt: m.timestamp,
+    deliveredAt: m.deliveredAt || null,
+    readAt: m.readAt || null,
+    error: m.failedReason || "",
+    sentBy: m.sentBy?.name || "",
+  }));
+  for (const c of campaigns)
+    for (const m of c.messages || []) {
+      if (m.status === "PENDING") continue;
+      rows.push({
+        id: String(m._id),
+        phone: m.phone,
+        name: m.leadName || "",
+        text: "",
+        source: "campaign",
+        campaign: c.name,
+        status: m.status,
+        sentAt: m.sentAt || c.createdAt,
+        deliveredAt: m.deliveredAt || null,
+        readAt: m.readAt || null,
+        error: m.failedReason || "",
+        sentBy: "",
+      });
+    }
+
+  const total = rows.length;
+  const count = (s) => rows.filter((r) => r.status === s).length;
+  const read = count("READ");
+  const delivered = count("DELIVERED") + read;
+  const failed = count("FAILED");
+  const pct = (n, d) => (d ? Math.round((n / d) * 1000) / 10 : 0);
+  const bySource = {};
+  const byDay = {};
+  for (const r of rows) {
+    bySource[r.source] = (bySource[r.source] || 0) + 1;
+    const d = new Date(r.sentAt).toISOString().slice(0, 10);
+    byDay[d] = byDay[d] || { date: d, sent: 0, delivered: 0, read: 0, failed: 0 };
+    byDay[d].sent++;
+    if (r.status === "READ") byDay[d].read++;
+    if (r.status === "READ" || r.status === "DELIVERED") byDay[d].delivered++;
+    if (r.status === "FAILED") byDay[d].failed++;
+  }
+  const insights = {
+    days,
+    total,
+    sentOnly: count("SENT"),
+    delivered,
+    read,
+    failed,
+    replies,
+    deliveryRate: pct(delivered, total - failed),
+    readRate: pct(read, delivered),
+    failureRate: pct(failed, total),
+    bySource,
+    daily: Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)),
+  };
+
+  const { status, source } = req.query;
+  const q = String(req.query.search || "").trim().toLowerCase();
+  if (status) rows = rows.filter((r) => r.status === String(status).toUpperCase());
+  if (source) rows = rows.filter((r) => r.source === source);
+  if (q)
+    rows = rows.filter((r) =>
+      [r.phone, r.name, r.text, r.campaign].some((v) => String(v || "").toLowerCase().includes(q)),
+    );
+  rows.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+
+  res.json({
+    success: true,
+    insights,
+    total: rows.length,
+    page,
+    pages: Math.max(Math.ceil(rows.length / limit), 1),
+    data: rows.slice((page - 1) * limit, page * limit),
+  });
+});
+
 exports.getCampaign = asyncHandler(async (req, res) => {
   const tenantFilter = req.user.tenantId ? { tenantId: req.user.tenantId } : {};
   const campaign = await WhatsappCampaign.findOne({
@@ -1565,6 +1672,7 @@ async function deliverQuotation({ wa, phoneNumberId, phone, q, template, variabl
     text: renderTemplateText(template, components, `📄 ${fileName}`),
     result,
     userId,
+    source: "quotation",
   });
   if (q.status === "Draft")
     await Quotation.updateOne({ _id: q._id }, { $set: { status: "Sent" } });
@@ -1745,10 +1853,23 @@ exports.handleWebhook = asyncHandler(async (req, res) => {
         };
         const statusField = statusMap[newStatus];
         if (!statusField) continue;
-        await WhatsappMessage.updateOne(
-          { waMessageId },
-          { status: statusField },
-        ).catch(() => {});
+        const stamp = { status: statusField };
+        if (statusField === "DELIVERED") stamp.deliveredAt = new Date();
+        if (statusField === "READ") {
+          stamp.readAt = new Date();
+          stamp.deliveredAt = new Date();
+        }
+        if (statusField === "FAILED") {
+          stamp.failedAt = new Date();
+          stamp.failedReason = statusObj?.errors?.[0]?.message || "Failed";
+        }
+        // Receipts can arrive out of order: never move a message backwards (READ -> DELIVERED).
+        const rank = { SENT: 1, DELIVERED: 2, READ: 3 };
+        const filter =
+          statusField === "FAILED"
+            ? { waMessageId, status: { $ne: "READ" } }
+            : { waMessageId, status: { $nin: Object.keys(rank).filter((k) => rank[k] > rank[statusField]) } };
+        await WhatsappMessage.updateOne(filter, stamp).catch(() => {});
         try {
           const tenantFilter = tenant ? { tenantId: tenant._id } : {};
           const campaign = await WhatsappCampaign.findOne({

@@ -189,6 +189,15 @@ const settingSchema = new mongoose.Schema(
     hiddenLeadStatuses: { type: [String], default: [] },
     // Ask for a HOT / WARM / COLD tag when a lead moves into Discussion. Off = never ask.
     contactTagsEnabled: { type: Boolean, default: true },
+    // Quick-pick lists for status updates. Empty lostReasonOptions = built-in defaults.
+    lostReasonOptions: { type: [String], default: [] },
+    remarkPresets: { type: [String], default: [] },
+    // Hex colour per tag (e.g. { HOT: "#ef4444" }). Missing = the built-in colour.
+    contactTagColors: {
+      HOT: { type: String, default: "" },
+      WARM: { type: String, default: "" },
+      COLD: { type: String, default: "" },
+    },
     customLeadStatuses: {
       type: [
         {

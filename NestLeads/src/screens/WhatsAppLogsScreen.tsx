@@ -18,6 +18,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import WhatsAppLogo from '../components/WhatsAppLogo';
 import { whatsappAPI } from '../services/api';
 import { CountText } from '../components/motion';
+import WhatsAppMessageLog from '../components/WhatsAppMessageLog';
 
 const NB_SHADOW = {
   shadowColor: '#000',
@@ -41,6 +42,7 @@ export default function WhatsAppLogsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'log' | 'campaigns'>('log');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detail, setDetail] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -177,6 +179,22 @@ export default function WhatsAppLogsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScreenHeader icon="logo-whatsapp" title="WhatsApp Logs" onBack={() => navigation.goBack()} />
 
+      <View style={styles.tabRow}>
+        {([['log', 'Message log'], ['campaigns', 'Campaigns']] as const).map(([k, label]) => (
+          <TouchableOpacity
+            key={k}
+            onPress={() => setTab(k)}
+            style={[styles.tabBtn, tab === k && styles.tabBtnOn]}
+          >
+            <Text style={[styles.tabText, tab === k && { color: '#fff' }]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {tab === 'log' ? (
+        <WhatsAppMessageLog bottomInset={insets.bottom} />
+      ) : (
+      <>
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
           <CountText style={styles.summaryValue}>{totalSent}</CountText>
@@ -243,11 +261,17 @@ export default function WhatsAppLogsScreen({ navigation }: any) {
           }
         />
       )}
+      </>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
+  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff' },
+  tabBtnOn: { backgroundColor: '#FF751F' },
+  tabText: { fontWeight: '700', color: '#000', fontSize: 13 },
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
     height: 64,
