@@ -551,6 +551,8 @@ const getLiveStats = asyncHandler(async (req, res) => {
       Lead.aggregate([{ $match: { ...tf } }, { $group: { _id: "$status", n: { $sum: 1 } } }]),
       AICallSettings.findOne(tf).select("enabled").lean(),
     ]);
+  const includeAdmins = setting?.callTargets?.includeAdmins === true;
+  const isCounted = (u) => includeAdmins || u.role === "sales_executive";
   const ai = aiCallRows[0] || { calls: 0, connected: 0, talkSeconds: 0, lastCallAt: null };
   const aiCalls = ai.calls;
 
@@ -579,6 +581,7 @@ const getLiveStats = asyncHandler(async (req, res) => {
   const extraUsers = extra.length ? await User.find({ _id: { $in: extra } }).select("name role avatar").lean() : [];
 
   const team = [...agents, ...extraUsers]
+    .filter(isCounted)
     .map((u) => {
       const c = callMap.get(String(u._id)) || {};
       const m = perUser.get(String(u._id)) || { calls: 0, conversations: 0, quotations: 0, visits: 0 };
@@ -681,17 +684,67 @@ const getLiveStats = asyncHandler(async (req, res) => {
       });
   }
 
+  // Current leads per person by stage (Priya: 12 Pending Contact, 3 Dropped, …). All open + closed leads.
+  const stageRows = await Lead.aggregate([
+    { $match: { ...tf, deletedAt: null } },
+    { $group: { _id: { a: "$assignedTo", s: "$status" }, n: { $sum: 1 } } },
+  ]);
+  const stagePeople = [...agents, ...extraUsers].filter(isCounted);
+  const agentStages = [
+    ...stagePeople.map((u) => ({ _id: u._id, name: u.name, stages: {} })),
+    { _id: null, name: "Unassigned", stages: {} },
+  ];
+  const stageIdx = new Map(agentStages.map((r, i) => [String(r._id), i]));
+  for (const r of stageRows) {
+    const i = stageIdx.get(String(r._id.a ?? null));
+    if (i === undefined) continue;
+    agentStages[i].stages[r._id.s] = r.n;
+  }
+  for (const r of agentStages) r.total = Object.values(r.stages).reduce((a, n) => a + n, 0);
+  const agentStagesOut = agentStages.filter((r) => r.total > 0 || r._id);
+
+  // Status changes per day in the range: totals, each "from -> to" move and who made them.
+  const nameOf = new Map([...agents, ...extraUsers].map((u) => [String(u._id), u.name]));
+  nameOf.set(AI_USER_ID, AI_NAME);
+  const dayMap = new Map();
+  for (const e of events) {
+    const d = new Date(e.at);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const day = dayMap.get(key) || { date: key, total: 0, moves: {}, people: {} };
+    day.total++;
+    const mv = `${e.from}→${e.to}`;
+    day.moves[mv] = (day.moves[mv] || 0) + 1;
+    const who = nameOf.get(e.userId) || "Former user";
+    day.people[who] = (day.people[who] || 0) + 1;
+    dayMap.set(key, day);
+  }
+  const dailyMoves = [...dayMap.values()]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((d) => ({
+      date: d.date,
+      total: d.total,
+      moves: Object.entries(d.moves)
+        .map(([k, n]) => ({ from: k.split("→")[0], to: k.split("→")[1], n }))
+        .sort((a, b) => b.n - a.n),
+      people: Object.entries(d.people)
+        .map(([name, n]) => ({ name, n }))
+        .sort((a, b) => b.n - a.n),
+    }));
+
   res.json({
     success: true,
     data: {
       now,
       since,
       windowMin,
+      agentStages: agentStagesOut,
+      dailyMoves,
       targets: {
         calls: setting?.callTargets?.calls ?? 20,
         perMinutes: setting?.callTargets?.perMinutes ?? 60,
         amberPct: setting?.callTargets?.amberPct ?? 60,
         countBy,
+        includeAdmins,
         conversations: targetOf(setting?.callTargets, "conversations"),
         quotations: targetOf(setting?.callTargets, "quotations"),
         visits: targetOf(setting?.callTargets, "visits"),

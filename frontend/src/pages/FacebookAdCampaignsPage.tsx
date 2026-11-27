@@ -45,6 +45,7 @@ import {
   DeliveryToggle,
   MetaTable,
   MetaTableColumn,
+  campaignResult,
 } from "@/lib/metaAdsShared";
 
 export default function FacebookAdCampaignsPage() {
@@ -240,22 +241,32 @@ export default function FacebookAdCampaignsPage() {
       },
     },
     {
-      header: "Results",
+      header: "Result",
       align: "right",
-      render: (c) => (
-        <span className="flex items-center justify-end gap-1 font-medium text-[#00C48C]">
-          <TrendingUp className="w-3 h-3" />
-          {(insights[c.id]?.results ?? 0).toLocaleString()}
-        </span>
-      ),
+      render: (c) => {
+        const r = campaignResult(c.objective, insights[c.id]);
+        return (
+          <span className="flex flex-col items-end">
+            <span className="flex items-center gap-1 font-medium text-[#00C48C]">
+              <TrendingUp className="w-3 h-3" />
+              {r.value.toLocaleString()}
+            </span>
+            <span className="text-[10px] text-gray-500">{r.label}</span>
+          </span>
+        );
+      },
     },
     {
       header: "Cost / Result",
       align: "right",
       render: (c) => {
-        const ins = insights[c.id];
-        const cost = ins && ins.results > 0 ? ins.spend / ins.results : null;
-        return cost !== null ? `₹${cost.toFixed(2)}` : "—";
+        const r = campaignResult(c.objective, insights[c.id]);
+        return r.cost !== null ? (
+          <span className="flex flex-col items-end">
+            <span>₹{r.cost.toFixed(2)}</span>
+            <span className="text-[10px] text-gray-500">{r.costLabel}</span>
+          </span>
+        ) : "—";
       },
     },
     {

@@ -77,7 +77,7 @@ const GROUPS: { title: string; color: string; screens: string[] }[] = [
   {
     title: 'Admin',
     color: '#000000',
-    screens: ['Insights', 'LivePerformance', 'ActivityLog', 'Trash'],
+    screens: ['LivePerformance', 'ActivityLog', 'Trash'],
   },
 ];
 
@@ -264,7 +264,7 @@ const MENU_ITEMS: MenuItem[] = [
   {
     icon: 'pulse-outline',
     label: 'Live Performance',
-    sub: 'Team calls, conversations & targets',
+    sub: 'Team activity, stages, results & targets',
     screen: 'LivePerformance',
     color: PRIMARY,
     adminOnly: true,

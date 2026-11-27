@@ -178,12 +178,6 @@ const allGroups: NavGroup[] = [
         icon: BarChart2,
         roles: ["super_admin", "admin"],
       },
-      {
-        title: "Insights",
-        href: "/insights",
-        icon: Activity,
-        roles: ["super_admin", "admin"],
-      },
     ],
   },
   {

@@ -32,6 +32,7 @@ import {
   StatusBadge,
   type Insight,
   type DeliveryFilter,
+  campaignResult,
 } from '../lib/metaAdsShared';
 import { CountText } from '../components/motion';
 
@@ -305,19 +306,22 @@ export default function FacebookAdCampaignsScreen({ navigation }: any) {
                 )}
 
                 <View style={styles.metricsGrid}>
-                  <Metric
-                    label="Results"
-                    value={ins.results.toLocaleString('en-IN')}
-                    color="#00C48C"
-                  />
-                  <Metric
-                    label="Cost/Result"
-                    value={
-                      ins.results
-                        ? `₹${(ins.spend / ins.results).toFixed(0)}`
-                        : '—'
-                    }
-                  />
+                  {(() => {
+                    const r = campaignResult(c.objective, ins);
+                    return (
+                      <>
+                        <Metric
+                          label={r.label}
+                          value={r.value.toLocaleString('en-IN')}
+                          color="#00C48C"
+                        />
+                        <Metric
+                          label={r.costLabel}
+                          value={r.cost !== null ? `₹${r.cost.toFixed(0)}` : '—'}
+                        />
+                      </>
+                    );
+                  })()}
                   <Metric
                     label="Budget"
                     value={budget ? `₹${budget.toLocaleString('en-IN')}` : '—'}

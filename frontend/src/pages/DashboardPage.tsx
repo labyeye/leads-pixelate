@@ -644,7 +644,7 @@ function TargetCard() {
   const notSet = !t.target && !t.breakEven;
   return (
     <Link
-      to="/insights"
+      to="/live-performance?tab=results"
       className="block border-2 bg-white p-5 mb-4 hover:bg-[#024BAB]/[0.03]"
     >
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">

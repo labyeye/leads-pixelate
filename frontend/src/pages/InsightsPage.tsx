@@ -208,7 +208,11 @@ function Donut({
 }
 
 // One page for everything the owner needs: target progress, funnel, sources, team, why leads are lost.
-export default function InsightsPage() {
+function Shell({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
+  return embedded ? <>{children}</> : <AppLayout title="Insights">{children}</AppLayout>;
+}
+
+export default function InsightsPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth();
   const isAdmin = user?.role === "super_admin" || user?.role === "admin";
   const [days, setDays] = useState(90);
@@ -272,10 +276,12 @@ export default function InsightsPage() {
   const showMachines = d?.preset?.insights?.items !== false;
 
   return (
-    <AppLayout title="Insights">
-      <div className="p-3 md:p-4 space-y-3">
+    <Shell embedded={embedded}>
+      <div className={embedded ? "space-y-3" : "p-3 md:p-4 space-y-3"}>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="mr-auto text-xl font-semibold text-black">Insights</h1>
+          <h1 className="mr-auto text-xl font-semibold text-black">
+            {embedded ? "Results" : "Insights"}
+          </h1>
           <div className="flex border-2 border-black bg-white">
             {DAYS.map((x) => (
               <button
@@ -836,7 +842,7 @@ export default function InsightsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </Shell>
   );
 }
 

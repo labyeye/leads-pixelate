@@ -13,7 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from '../components/Icon';
 import ScreenHeader from '../components/ScreenHeader';
 import { useAuth } from '../contexts/AuthContext';
-import { dashboardAPI } from '../services/api';
+import { dashboardAPI, settingsAPI } from '../services/api';
+import InsightsScreen from './InsightsScreen';
+import { Switch } from 'react-native';
+import { getStatusColor, getStatusLabel, ALL_STATUSES } from '../constants/statusConstants';
 import { CountUp } from '../components/motion';
 
 const inr = (n: number) => {
@@ -84,6 +87,7 @@ export default function LivePerformanceScreen({ navigation }: any) {
   const { user } = useAuth();
   const isAdmin = ['admin', 'super_admin'].includes(user?.role);
 
+  const [tab, setTab] = useState<'activity' | 'results'>('activity');
   const [windowMin, setWindowMin] = useState(60);
   const [preset, setPreset] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
@@ -176,10 +180,42 @@ export default function LivePerformanceScreen({ navigation }: any) {
     );
   }
 
+  const TabBar = (
+    <View style={s.tabRow}>
+      {([['activity', 'Team activity'], ['results', 'Results & targets']] as const).map(([k, label]) => (
+        <TouchableOpacity key={k} onPress={() => setTab(k)} style={[s.tabBtn, tab === k && s.tabBtnOn]}>
+          <Text style={[s.tabText, tab === k && { color: '#fff' }]}>{label}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const toggleAdmins = async (v: boolean) => {
+    setData((d: any) => (d ? { ...d, targets: { ...d.targets, includeAdmins: v } } : d));
+    try {
+      await settingsAPI.update({ 'callTargets.includeAdmins': v });
+      load();
+    } catch {
+      setData((d: any) => (d ? { ...d, targets: { ...d.targets, includeAdmins: !v } } : d));
+    }
+  };
+
+  if (tab === 'results') {
+    return (
+      <View style={[s.container, { paddingTop: insets.top }]}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+        {Header}
+        {TabBar}
+        <InsightsScreen navigation={navigation} embedded />
+      </View>
+    );
+  }
+
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       {Header}
+      {TabBar}
 
       <ScrollView
         contentContainerStyle={{ padding: 14, paddingBottom: 40 }}
@@ -292,7 +328,7 @@ export default function LivePerformanceScreen({ navigation }: any) {
                 })}
               </View>
               <Text style={s.hint}>
-                Convo = lead moved out of New Lead · Quote = moved to Quotation · Visit = Visit Scheduled. 🤖 AI Agent: calls it made (no target). Targets are set on the web.
+                Convo = lead moved out of New Lead · Quote = moved to Quotation · Visit = Visit Scheduled. 🤖 AI Agent: calls it made (no target). Targets are set on the web; admins can be counted with the switch below.
               </Text>
             </View>
 
@@ -301,6 +337,84 @@ export default function LivePerformanceScreen({ navigation }: any) {
               <Stat label="New leads" value={data.totals.newLeads} />
               <Stat label="Lead updates" value={data.totals.statusChanges} />
               <Stat label="Pending worked" value={data.totals.pendingWorked} sub={`${data.totals.pendingNow} still pending`} />
+            </View>
+
+            {/* Admins on/off */}
+            <View style={[s.box, s.adminRow]}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.adminTitle}>Admins also call leads</Text>
+                <Text style={s.muted}>Off = admins are left out of the team table and targets</Text>
+              </View>
+              <Switch
+                value={!!data.targets.includeAdmins}
+                onValueChange={toggleAdmins}
+                trackColor={{ true: '#024BAB' }}
+              />
+            </View>
+
+            {/* Leads by stage per person */}
+            {data.agentStages?.length > 0 && (() => {
+              const used = Object.keys(data.statusCounts || {}).filter((st: string) =>
+                data.agentStages.some((r: any) => r.stages[st]),
+              );
+              const cols = [
+                ...ALL_STATUSES.filter(st => used.includes(st)),
+                ...used.filter((st: string) => !ALL_STATUSES.includes(st)),
+              ];
+              return (
+                <View style={s.box}>
+                  <Text style={s.boxTitle}>Leads by stage per person (right now)</Text>
+                  {data.agentStages.map((r: any) => (
+                    <View key={String(r._id)} style={s.stageRow}>
+                      <View style={s.stageHead}>
+                        <Text style={s.stageName}>{r.name}</Text>
+                        <Text style={s.stageTotal}>{r.total} leads</Text>
+                      </View>
+                      <View style={s.stageChips}>
+                        {cols.filter(st => r.stages[st]).map(st => {
+                          const c = getStatusColor(st);
+                          return (
+                            <View key={st} style={[s.stageChip, { backgroundColor: c.bg }]}>
+                              <Text style={[s.stageChipText, { color: c.text }]}>
+                                {getStatusLabel(st) || st} {r.stages[st]}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                        {!r.total && <Text style={s.muted}>No leads</Text>}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
+
+            {/* Status changes per day */}
+            <View style={s.box}>
+              <Text style={s.boxTitle}>Status changes per day</Text>
+              {!data.dailyMoves?.length ? (
+                <Text style={[s.muted, { padding: 10 }]}>No status changes in this period.</Text>
+              ) : (
+                data.dailyMoves.map((d: any) => (
+                  <View key={d.date} style={s.stageRow}>
+                    <View style={s.stageHead}>
+                      <Text style={s.stageName}>
+                        {new Date(d.date + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </Text>
+                      <Text style={s.stageTotal}>{d.total} changes</Text>
+                    </View>
+                    {d.moves.map((m: any) => (
+                      <Text key={m.from + m.to} style={s.moveText}>
+                        {getStatusLabel(m.from) || m.from} → {getStatusLabel(m.to) || m.to}
+                        <Text style={{ fontWeight: '700' }}>  {m.n}</Text>
+                      </Text>
+                    ))}
+                    <Text style={[s.muted, { marginTop: 4 }]}>
+                      {d.people.map((p: any) => `${p.name} ${p.n}`).join(' · ')}
+                    </Text>
+                  </View>
+                ))
+              )}
             </View>
 
             {/* Sales vs target */}
@@ -444,6 +558,20 @@ function Stat({ label, value, sub, suffix, text }: { label: string; value?: numb
 }
 
 const s = StyleSheet.create({
+  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4 },
+  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderWidth: 2, borderColor: '#000', backgroundColor: '#fff' },
+  tabBtnOn: { backgroundColor: '#024BAB' },
+  tabText: { fontSize: 13, fontWeight: '700', color: '#000' },
+  adminRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10 },
+  adminTitle: { fontSize: 14, fontWeight: '700', color: '#000' },
+  stageRow: { paddingHorizontal: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  stageHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stageName: { fontSize: 14, fontWeight: '700', color: '#000' },
+  stageTotal: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  stageChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  stageChip: { borderWidth: 1, borderColor: '#000', paddingHorizontal: 6, paddingVertical: 2 },
+  stageChipText: { fontSize: 11, fontWeight: '700' },
+  moveText: { fontSize: 12, color: '#000', marginTop: 3 },
   container: { flex: 1, backgroundColor: '#fff' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
   backBtn: { width: 34, height: 34, borderWidth: 2, borderColor: '#000', alignItems: 'center', justifyContent: 'center' },

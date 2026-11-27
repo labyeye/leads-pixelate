@@ -17,7 +17,6 @@ const UsersPage = lazy(() => import("./pages/UsersPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const FunnelsPage = lazy(() => import("./pages/FunnelsPage"));
 const LivePerformancePage = lazy(() => import("./pages/LivePerformancePage"));
-const InsightsPage = lazy(() => import("./pages/InsightsPage"));
 const TrashPage = lazy(() => import("./pages/TrashPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 import LoginPage from "./pages/LoginPage";
@@ -420,11 +419,7 @@ function AppRoutes() {
         />
         <Route
           path="/insights"
-          element={
-            <ProtectedRoute>
-              <InsightsPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/live-performance?tab=results" replace />}
         />
         <Route
           path="/social-planner/planner"

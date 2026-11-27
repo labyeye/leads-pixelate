@@ -33,7 +33,7 @@ const mins = (m: number) =>
   !m ? '—' : m < 60 ? `${Math.round(m)} min` : m < 1440 ? `${(m / 60).toFixed(1)} h` : `${(m / 1440).toFixed(1)} d`;
 
 /** Everything the owner needs on one screen: target, funnel, sources, team, losses. Same data as web Insights. */
-export default function InsightsScreen({ navigation }: any) {
+export default function InsightsScreen({ navigation, embedded = false }: any) {
   const insets = useSafeAreaInsets();
   const [days, setDays] = useState(90);
   const [d, setD] = useState<any>(null);
@@ -72,8 +72,10 @@ export default function InsightsScreen({ navigation }: any) {
     : [];
 
   return (
-    <View style={[s.container, { paddingTop: insets.top }]}>
-      <ScreenHeader icon="stats-chart-outline" title="Insights" onBack={() => navigation.goBack()} />
+    <View style={[s.container, { paddingTop: embedded ? 0 : insets.top }]}>
+      {!embedded && (
+        <ScreenHeader icon="stats-chart-outline" title="Insights" onBack={() => navigation.goBack()} />
+      )}
 
       <View style={s.periods}>
         {PERIODS.map(p => (

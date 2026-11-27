@@ -73,6 +73,8 @@ export interface Insight {
   ctr: number;
   cpc: number;
   results: number;
+  reach: number;
+  leads: number;
 }
 
 export type Period = "today" | "week" | "month" | "custom";
@@ -122,10 +124,14 @@ export const META_OBJECTIVES: Record<string, string> = {
 
 export function parseInsight(raw: any): Insight {
   if (!raw)
-    return { spend: 0, impressions: 0, clicks: 0, ctr: 0, cpc: 0, results: 0 };
-  const results = Array.isArray(raw.actions)
-    ? raw.actions.reduce((s: number, a: any) => s + (+a.value || 0), 0)
-    : 0;
+    return { spend: 0, impressions: 0, clicks: 0, ctr: 0, cpc: 0, results: 0, reach: 0, leads: 0 };
+  const actions: any[] = Array.isArray(raw.actions) ? raw.actions : [];
+  const act = (t: string) =>
+    +(actions.find((a: any) => a.action_type === t)?.value || 0);
+  // Meta reports the same lead under several action types; take the first one present.
+  const leads =
+    act('lead') || act('onsite_conversion.lead_grouped') || act('leadgen_grouped');
+  const results = leads;
   return {
     spend: +raw.spend || 0,
     impressions: +raw.impressions || 0,
@@ -133,6 +139,8 @@ export function parseInsight(raw: any): Insight {
     ctr: +raw.ctr || 0,
     cpc: +raw.cpc || 0,
     results,
+    reach: +raw.reach || 0,
+    leads,
   };
 }
 
@@ -514,4 +522,16 @@ export function DeliveryFilterBar({
       </div>
     </div>
   );
+}
+
+/** One result metric per campaign: leads for lead campaigns, reach for everything else. */
+export function campaignResult(objective: string | undefined, ins?: Insight) {
+  const isLeads = objective === 'OUTCOME_LEADS' || objective === 'LEAD_GENERATION';
+  const value = ins ? (isLeads ? ins.leads : ins.reach) : 0;
+  return {
+    label: isLeads ? 'Leads' : 'Reach',
+    value,
+    costLabel: isLeads ? 'Cost/Lead' : 'Cost/1K Reach',
+    cost: ins && value ? (isLeads ? ins.spend / value : (ins.spend / value) * 1000) : null,
+  };
 }

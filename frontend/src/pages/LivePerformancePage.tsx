@@ -50,6 +50,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { dashboardAPI, settingsAPI } from "@/services/api";
 import { cn } from "@/lib/utils";
+import InsightsPage from "./InsightsPage";
+import {
+  ALL_STATUSES,
+  getStatusColorClasses,
+  getStatusLabel,
+} from "@/components/leads/statusConstants";
 
 interface TeamRow {
   _id: string;
@@ -82,6 +88,7 @@ interface LiveData {
     perMinutes: number;
     amberPct: number;
     countBy: "updates" | "calls";
+    includeAdmins?: boolean;
     conversations: Target;
     quotations: Target;
     visits: Target;
@@ -129,6 +136,13 @@ interface LiveData {
     at: string;
   }[];
   statusCounts: Record<string, number>;
+  agentStages?: { _id: string | null; name: string; total: number; stages: Record<string, number> }[];
+  dailyMoves?: {
+    date: string;
+    total: number;
+    moves: { from: string; to: string; n: number }[];
+    people: { name: string; n: number }[];
+  }[];
 }
 
 type ExtraKey = "conversations" | "quotations" | "visits";
@@ -298,9 +312,13 @@ export default function LivePerformancePage() {
     perMinutes: string;
     amberPct: string;
     countBy: "updates" | "calls";
+    includeAdmins: boolean;
     extra: Record<ExtraKey, { count: string; perMinutes: string }>;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<"activity" | "results">(() =>
+    new URLSearchParams(window.location.search).get("tab") === "results" ? "results" : "activity",
+  );
 
   // The exact range every card on the page follows.
   const rangeISO = useMemo(
@@ -442,6 +460,7 @@ export default function LivePerformancePage() {
       perMinutes: String(data.targets.perMinutes),
       amberPct: String(data.targets.amberPct),
       countBy: data.targets.countBy,
+      includeAdmins: !!data.targets.includeAdmins,
       extra: Object.fromEntries(
         EXTRAS.map((x) => [
           x.key,
@@ -496,6 +515,7 @@ export default function LivePerformancePage() {
           perMinutes,
           amberPct,
           countBy: draft.countBy,
+          includeAdmins: draft.includeAdmins,
           ...extra,
         },
       });
@@ -528,6 +548,28 @@ export default function LivePerformancePage() {
   return (
     <AppLayout title="Live Performance">
       <style>{ANIM_CSS}</style>
+      <div className="px-3 md:px-4 pt-3 md:pt-4 flex gap-2">
+        {([
+          ["activity", "Team activity"],
+          ["results", "Results & targets"],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={cn(
+              "px-3 py-1.5 text-sm font-medium border-2 border-black",
+              tab === k ? "bg-[#024BAB] text-white" : "bg-white hover:bg-slate-100",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {tab === "results" ? (
+        <div className="p-3 md:p-4">
+          <InsightsPage embedded />
+        </div>
+      ) : (
       <div className="p-3 md:p-4 max-w-full mx-auto space-y-3">
         {/* Header */}
         <div className="flex flex-wrap items-center gap-3">
@@ -724,6 +766,17 @@ export default function LivePerformancePage() {
                         <option value="updates">Lead status updates</option>
                         <option value="calls">CRM calls only</option>
                       </select>
+                    </Field>
+                    <Field label="Admins">
+                      <label className="h-9 flex items-center gap-2 border-2 border-black bg-white px-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-black"
+                          checked={draft.includeAdmins}
+                          onChange={(e) => setDraft({ ...draft, includeAdmins: e.target.checked })}
+                        />
+                        Admins also call leads (count them)
+                      </label>
                     </Field>
                     <Field label="Target per agent">
                       <Input
@@ -1293,7 +1346,8 @@ export default function LivePerformancePage() {
                       ))}
                     </select>
                     <Link
-                      to="/insights"
+                      to="/live-performance?tab=results"
+                      onClick={() => setTab("results")}
                       className="ml-auto text-xs font-medium text-[#024BAB]"
                     >
                       Targets →
@@ -1586,66 +1640,6 @@ export default function LivePerformancePage() {
 
             {/* Charts for this window */}
             <>
-              <div className="border-2 border-black bg-white p-3 h-full">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
-                  Work done per agent
-                </p>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Against the target of {Math.round(view.perAgent * 10) / 10}{" "}
-                  for this window
-                </p>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={data.team.map((r) => ({
-                        name: r.name,
-                        Done: r.done,
-                        Target: r.isAI ? undefined : Math.round(view.perAgent * 10) / 10,
-                      }))}
-                      margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="#e2e8f0"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="name"
-                        tick={{ fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                        interval={0}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          border: "2px solid #000",
-                          borderRadius: 0,
-                          fontSize: 12,
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <RBar
-                        dataKey="Done"
-                        fill="#024BAB"
-                        stroke="#0A0A0A"
-                        strokeWidth={2}
-                      />
-                      <RBar
-                        dataKey="Target"
-                        fill="#E5E7EB"
-                        stroke="#0A0A0A"
-                        strokeWidth={2}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
 
               <div className="border-2 border-black bg-white p-3 h-full">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">
@@ -1736,6 +1730,98 @@ export default function LivePerformancePage() {
             </>
             </div>
 
+            {/* Leads per person by stage */}
+            {!!data.agentStages?.length && (() => {
+              const used = Object.keys(data.statusCounts || {}).filter((st) =>
+                data.agentStages!.some((r) => r.stages[st]),
+              );
+              const cols = [
+                ...ALL_STATUSES.filter((st) => used.includes(st)),
+                ...used.filter((st) => !ALL_STATUSES.includes(st)),
+              ];
+              return (
+                <div className="border-2 border-black bg-white overflow-x-auto">
+                  <div className="px-3 py-2 border-b-2 border-black bg-slate-100">
+                    <p className="text-sm font-semibold text-black">Leads by stage per person</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Where each person's leads are right now (all time)
+                    </p>
+                  </div>
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b-2 border-black">
+                        <th className="px-3 py-2 text-left font-medium sticky left-0 bg-white">Person</th>
+                        {cols.map((st) => (
+                          <th key={st} className="px-2 py-2 text-right font-medium whitespace-nowrap">
+                            {getStatusLabel(st) || st}
+                          </th>
+                        ))}
+                        <th className="px-3 py-2 text-right font-semibold">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.agentStages.map((r) => (
+                        <tr key={String(r._id)} className="border-t border-slate-200">
+                          <td className="px-3 py-1.5 font-medium whitespace-nowrap sticky left-0 bg-white">{r.name}</td>
+                          {cols.map((st) => (
+                            <td key={st} className="px-2 py-1.5 text-right tabular-nums">
+                              {r.stages[st] ? (
+                                <span className={cn("inline-block min-w-[24px] px-1 border", getStatusColorClasses(st))}>
+                                  {r.stages[st]}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">0</span>
+                              )}
+                            </td>
+                          ))}
+                          <td className="px-3 py-1.5 text-right font-semibold tabular-nums">{r.total}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+
+            {/* Status changes per day */}
+            <div className="border-2 border-black bg-white">
+              <div className="px-3 py-2 border-b-2 border-black bg-slate-100">
+                <p className="text-sm font-semibold text-black">Status changes per day · {rangeLabel}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  How many leads moved each day, from which stage to which, and by whom
+                </p>
+              </div>
+              {!data.dailyMoves?.length ? (
+                <p className="p-6 text-sm text-muted-foreground">No status changes in this period.</p>
+              ) : (
+                <div className="divide-y divide-slate-200 max-h-[28rem] overflow-y-auto">
+                  {data.dailyMoves.map((d) => (
+                    <div key={d.date} className="px-4 py-3 grid grid-cols-1 md:grid-cols-[150px_1fr_220px] gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {new Date(`${d.date}T00:00`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{d.total} changes</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {d.moves.map((m) => (
+                          <span key={m.from + m.to} className="inline-flex items-center gap-1 border border-black bg-white px-1.5 py-0.5 text-[11px]">
+                            <span className={cn("px-1", getStatusColorClasses(m.from))}>{getStatusLabel(m.from) || m.from}</span>
+                            →
+                            <span className={cn("px-1", getStatusColorClasses(m.to))}>{getStatusLabel(m.to) || m.to}</span>
+                            <b className="ml-0.5">{m.n}</b>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {d.people.map((p) => `${p.name} ${p.n}`).join(" · ")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Updates in this window: full row */}
             <div className="border-2 border-black bg-white">
               <div className="px-3 py-2 border-b-2 border-black bg-slate-100 flex items-center gap-2">
@@ -1793,6 +1879,7 @@ export default function LivePerformancePage() {
           </>
         )}
       </div>
+      )}
     </AppLayout>
   );
 }
